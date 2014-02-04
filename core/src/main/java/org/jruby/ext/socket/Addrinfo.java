@@ -17,9 +17,12 @@ import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.UnknownHostException;
+import org.jruby.exceptions.RaiseException;
 
 public class Addrinfo extends RubyObject {
+
     public static void createAddrinfo(Ruby runtime) {
         RubyClass addrinfo = runtime.defineClass(
                 "Addrinfo",
@@ -29,12 +32,24 @@ public class Addrinfo extends RubyObject {
                         return new Addrinfo(runtime, klazz);
                     }
                 });
-        
+
         addrinfo.defineAnnotatedMethods(Addrinfo.class);
     }
-    
+
     public Addrinfo(Ruby runtime, RubyClass cls) {
         super(runtime, cls);
+    }
+
+    public Addrinfo(Ruby runtime, RubyClass cls, NetworkInterface networkInterface, InetAddress inetAddress, boolean isLink) {
+        super(runtime, cls);
+        this.inetAddress = inetAddress;
+        this.interfaceLink = isLink;
+        this.interfaceName = networkInterface.getName();
+
+        this.sock = Sock.SOCK_STREAM;
+        this.pfamily = inetAddress instanceof Inet4Address ? ProtocolFamily.PF_INET : ProtocolFamily.PF_INET6;
+        this.afamily = inetAddress instanceof Inet4Address ? AddressFamily.AF_INET : AddressFamily.AF_INET6;
+        this.socketType = SocketType.SOCKET;
     }
 
     public Addrinfo(Ruby runtime, RubyClass cls, InetAddress inetAddress) {
@@ -102,9 +117,12 @@ public class Addrinfo extends RubyObject {
     @JRubyMethod(required = 1, optional = 4)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
-            case 1: return initialize(context, args[0]);
-            case 2: return initialize(context, args[0], args[1]);
-            case 3: return initialize(context, args[0], args[1], args[2]);
+            case 1:
+                return initialize(context, args[0]);
+            case 2:
+                return initialize(context, args[0], args[1]);
+            case 3:
+                return initialize(context, args[0], args[1], args[2]);
         }
 
         IRubyObject _sockaddr = args[0];
@@ -150,7 +168,7 @@ public class Addrinfo extends RubyObject {
             if (port == null) {
                 this.port = 0;
             } else {
-                this.port = (int)port.convertToInteger().getLongValue();
+                this.port = (int) port.convertToInteger().getLongValue();
             }
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
@@ -159,9 +177,13 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        // TODO: MRI also shows hostname, but we don't want to reverse every time...
-        String portString = port == 0 ? "" : ":" + port;
-        return context.runtime.newString("#<Addrinfo: " + inetAddress.getHostAddress() +  portString + ">");
+        if (interfaceLink == true) {
+            return context.runtime.newString("#<Addrinfo: LINK[" + interfaceName + "]>");
+        } else {
+            // TODO: MRI also shows hostname, but we don't want to reverse every time...
+            String portString = port == 0 ? "" : ":" + port;
+            return context.runtime.newString("#<Addrinfo: " + inetAddress.getHostAddress() + portString + ">");
+        }
     }
 
     @JRubyMethod
@@ -181,7 +203,7 @@ public class Addrinfo extends RubyObject {
 
         try {
             InetAddress addy = InetAddress.getByName(host);
-            return new Addrinfo(context.runtime, (RubyClass)recv, addy);
+            return new Addrinfo(context.runtime, (RubyClass) recv, addy);
         } catch (UnknownHostException uhe) {
             throw SocketUtils.sockerr(context.runtime, "host not found");
         }
@@ -189,7 +211,7 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject tcp(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
-        Addrinfo addrinfo = new Addrinfo(context.runtime, (RubyClass)recv);
+        Addrinfo addrinfo = new Addrinfo(context.runtime, (RubyClass) recv);
 
         addrinfo.initializeCommon(context.runtime, arg0, null, null, arg1);
 
@@ -198,12 +220,12 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject udp(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
-        return ((RubyClass)recv).newInstance(context, arg0, arg1, Block.NULL_BLOCK);
+        return ((RubyClass) recv).newInstance(context, arg0, arg1, Block.NULL_BLOCK);
     }
 
     @JRubyMethod(rest = true, meta = true, notImplemented = true)
     public static IRubyObject unix(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return ((RubyClass)recv).newInstance(context, args, Block.NULL_BLOCK);
+        return ((RubyClass) recv).newInstance(context, args, Block.NULL_BLOCK);
     }
 
     @JRubyMethod
@@ -255,17 +277,25 @@ public class Addrinfo extends RubyObject {
     public IRubyObject ip_unpack(ThreadContext context) {
         byte[] bytes = inetAddress.getAddress();
         RubyArray ary = RubyArray.newArray(context.runtime, bytes.length);
-        for (byte bite : bytes) ary.append(context.runtime.newFixnum(bite));
+        for (byte bite : bytes) {
+            ary.append(context.runtime.newFixnum(bite));
+        }
         return ary;
     }
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject ip_address(ThreadContext context) {
+        if (interfaceLink == true) {
+            throw SocketUtils.sockerr(context.runtime, "need IPv4 or IPv6 address");
+        }
         return context.runtime.newString(inetAddress.getHostAddress());
     }
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject ip_port(ThreadContext context) {
+        if (interfaceLink ==  true) {
+             throw SocketUtils.sockerr(context.runtime, "need IPv4 or IPv6 address");
+       }
         return context.runtime.newFixnum(port);
     }
 
@@ -319,8 +349,10 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(name = "ipv6_v4compat?")
     public IRubyObject ipv6_v4compat_p(ThreadContext context) {
-        if (!(inetAddress instanceof Inet6Address)) return context.runtime.getFalse();
-        return context.runtime.newBoolean(((Inet6Address)inetAddress).isIPv4CompatibleAddress());
+        if (!(inetAddress instanceof Inet6Address)) {
+            return context.runtime.getFalse();
+        }
+        return context.runtime.newBoolean(((Inet6Address) inetAddress).isIPv4CompatibleAddress());
     }
 
     @JRubyMethod(name = "ipv6_mc_nodelocal?")
@@ -399,4 +431,6 @@ public class Addrinfo extends RubyObject {
     private AddressFamily afamily;
     private Sock sock;
     private SocketType socketType;
+    private String interfaceName;
+    private boolean interfaceLink;
 }
