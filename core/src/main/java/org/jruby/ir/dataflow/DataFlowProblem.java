@@ -111,8 +111,8 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
         return buf.toString();
     }
 
-    public U getFlowGraphNode(BasicBlock b) {
-        return basicBlockToFlowGraph.get(b.getID());
+    public U getFlowGraphNode(BasicBlock bb) {
+        return basicBlockToFlowGraph.get(bb);
     }
 
     public U getEntryNode() {
@@ -134,18 +134,20 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
 
 /* -------------- Private fields and methods below ---------------- */
     private int nextVariableId = -1;
-    private Map<Integer, U> basicBlockToFlowGraph;
+
+    // Map for hash-speed retrieval of flowgraph nodes instead of walking flowGraphNodes.
+    private Map<BasicBlock, U> basicBlockToFlowGraph;
 
     private void buildFlowGraph() {
         flowGraphNodes = new LinkedList<U>();
-        basicBlockToFlowGraph = new HashMap<Integer, U>();
+        basicBlockToFlowGraph = new HashMap<BasicBlock, U>();
 
         for (BasicBlock bb: scope.cfg().getBasicBlocks()) {
             U fgNode = buildFlowGraphNode(bb);
             fgNode.init();
             fgNode.buildDataFlowVars();
             flowGraphNodes.add(fgNode);
-            basicBlockToFlowGraph.put(bb.getID(), fgNode);
+            basicBlockToFlowGraph.put(bb, fgNode);
         }
     }
 }
