@@ -19,23 +19,25 @@ public class NoVarsDynamicScope extends DynamicScope {
     public NoVarsDynamicScope(StaticScope staticScope) {
         super(staticScope);
     }
-    
+
+    @Override
     public void growIfNeeded() {
-        growIfNeeded(SIZE, GROW_ERROR);
+        errorOnInvalidGrow(SIZE, GROW_ERROR);
     }
 
-    protected void growIfNeeded(int size, String message) {
-        if (staticScope.getNumberOfVariables() != size) {
-            throw new RuntimeException(message);
-        }
-    }
-    
+    @Override
     public DynamicScope cloneScope() {
         return new NoVarsDynamicScope(staticScope, parent);
     }
 
+    @Override
     public IRubyObject[] getValues() {
         return IRubyObject.NULL_ARRAY;
+    }
+
+    @Override
+    public Object[] getObjectValues() {
+        return NULL_ARRAY;
     }
     
     /**
@@ -48,18 +50,35 @@ public class NoVarsDynamicScope extends DynamicScope {
      * @param depth how many captured scopes down this variable should be set
      * @return the value here
      */
+    @Override
     public IRubyObject getValue(int offset, int depth) {
-        assert depth != 0: SIZE_ERROR;
-        return parent.getValue(offset, depth - 1);
+        return (IRubyObject)getObjectValue(offset, depth);
     }
-    
+
+    /**
+     * Get value from current scope or one of its captured scopes.
+     *
+     * FIXME: block variables are not getting primed to nil so we need to null check those
+     *  until we prime them properly.  Also add assert back in.
+     *
+     * @param offset zero-indexed value that represents where variable lives
+     * @param depth how many captured scopes down this variable should be set
+     * @return the value here
+     */
+    @Override
+    public Object getObjectValue(int offset, int depth) {
+        if (depth > 0) {
+            return parent.getObjectValue(offset, depth - 1);
+        }
+        throw new RuntimeException(SIZE_ERROR);
+    }
+
     /**
      * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
      */
     public IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil) {
         return parent.getValueOrNil(offset, depth - 1, nil);
     }
-    
     public IRubyObject getValueDepthZeroOrNil(int offset, IRubyObject nil) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with any variables");
     }
@@ -75,6 +94,24 @@ public class NoVarsDynamicScope extends DynamicScope {
     public IRubyObject getValueThreeDepthZeroOrNil(IRubyObject nil) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with four or more variables");
     }
+    public Object getObjectValueOrDefault(int offset, int depth, Object nil) {
+        return parent.getObjectValueOrDefault(offset, depth - 1, nil);
+    }
+    public Object getObjectValueDepthZeroOrDefault(int offset, Object nil) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with any variables");
+    }
+    public Object getObjectValueZeroDepthZeroOrDefault(Object nil) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with one or more variables");
+    }
+    public Object getObjectValueOneDepthZeroOrDefault(Object nil) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with two or more variables");
+    }
+    public Object getObjectValueTwoDepthZeroOrDefault(Object nil) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with three or more variables");
+    }
+    public Object getObjectValueThreeDepthZeroOrDefault(Object nil) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with four or more variables");
+    }
 
     /**
      * Set value in current dynamic scope or one of its captured scopes.
@@ -86,7 +123,6 @@ public class NoVarsDynamicScope extends DynamicScope {
     public IRubyObject setValue(int offset, IRubyObject value, int depth) {
         return parent.setValue(offset, value, depth - 1);
     }
-
     public IRubyObject setValueDepthZero(IRubyObject value, int offset) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with any variables");
     }
@@ -100,6 +136,24 @@ public class NoVarsDynamicScope extends DynamicScope {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with three or more variables");
     }
     public IRubyObject setValueThreeDepthZero(IRubyObject value) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with four or more variables");
+    }
+    public Object setObjectValue(int offset, Object value, int depth) {
+        return parent.setObjectValue(offset, value, depth - 1);
+    }
+    public Object setObjectValueDepthZero(Object value, int offset) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with any variables");
+    }
+    public Object setObjectValueZeroDepthZero(Object value) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with one or more variables");
+    }
+    public Object setObjectValueOneDepthZero(Object value) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with two or more variables");
+    }
+    public Object setObjectValueTwoDepthZero(Object value) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with three or more variables");
+    }
+    public Object setObjectValueThreeDepthZero(Object value) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with four or more variables");
     }
 
@@ -117,24 +171,40 @@ public class NoVarsDynamicScope extends DynamicScope {
     public void setArgValues(IRubyObject[] values, int size) {
         assert size <= SIZE : this.getClass().getSimpleName() + " does not support scopes with " + size + " variables";
     }
-    
+    public void setArgObjectValues(Object[] values, int size) {
+        assert size <= SIZE : this.getClass().getSimpleName() + " does not support scopes with " + size + " variables";
+    }
+
     public void setArgValues(IRubyObject arg0) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with 1 variable");
     }
-    
+    public void setArgObjectValues(Object arg0) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with 1 variable");
+    }
+
     public void setArgValues(IRubyObject arg0, IRubyObject arg1) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with 2 variables");
     }
-    
+    public void setArgObjectValues(Object arg0, Object arg1) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with 2 variables");
+    }
+
     public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with 3 variables");
+    }
+    public void setArgObjectValues(Object arg0, Object arg1, Object arg2) {
         throw new RuntimeException(this.getClass().getSimpleName() + " does not support scopes with 3 variables");
     }
 
     public void setEndArgValues(IRubyObject[] values, int index, int size) {
         assert false : this.getClass().getSimpleName() + " does not support any variables";
     }
+    public void setEndArgObjectValues(Object[] values, int index, int size) {
+        assert false : this.getClass().getSimpleName() + " does not support any variables";
+    }
 
     @Override
+    @Deprecated
     public IRubyObject[] getArgValues() {
         // if we're not the "argument scope" for zsuper, try our parent
         if (!staticScope.isArgumentScope()) {
