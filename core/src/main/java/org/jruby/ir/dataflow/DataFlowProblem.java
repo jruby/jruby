@@ -1,6 +1,5 @@
 package org.jruby.ir.dataflow;
 
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -17,10 +16,8 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
 
     public final DF_Direction direction;
 
-    public DataFlowProblem(DF_Direction d) {
-        direction = d;
-        variables = new ArrayList<DataFlowVar>();
-        nextVariableId = -1;
+    public DataFlowProblem(DF_Direction direction) {
+        this.direction = direction;
     }
 
 // ------- Abstract methods without a default implementation -------
@@ -82,7 +79,7 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
     }
 
     public int getDFVarsCount() {
-        return variables.size();
+        return nextVariableId + 1;
     }
 
     public Iterable<BasicBlock> getIncomingSourcesOf(BasicBlock bb) {
@@ -126,11 +123,8 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
         return getFlowGraphNode(scope.cfg().getExitBB());
     }
 
-/* -------------- Packaged/protected fields and methods below ---------------- */
-    int addDataFlowVar(DataFlowVar v) {
-        // We want unique ids for dataflow variables
+    public int addDataFlowVar() {
         nextVariableId++;
-        variables.add(nextVariableId, v);
         return nextVariableId;
     }
 
@@ -139,8 +133,7 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
     protected IRScope scope;
 
 /* -------------- Private fields and methods below ---------------- */
-    private int     nextVariableId;
-    private ArrayList<DataFlowVar> variables;
+    private int nextVariableId = -1;
     private Map<Integer, U> basicBlockToFlowGraph;
 
     private void buildFlowGraph() {

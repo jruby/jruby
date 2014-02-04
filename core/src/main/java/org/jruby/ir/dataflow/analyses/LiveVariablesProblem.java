@@ -10,7 +10,6 @@ import java.util.Set;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
-import org.jruby.ir.dataflow.DataFlowVar;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
@@ -47,7 +46,7 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
     }
 
     public void addDFVar(Variable v) {
-        Integer dfv = new DataFlowVar(this).getId();
+        Integer dfv = addDataFlowVar();
         dfVarMap.put(v, dfv);
         varDfVarMap.put(dfv, v);
         if (v instanceof LocalVariable && !v.isSelf()) {
