@@ -113,17 +113,4 @@ public interface IRubyWarnings {
     public abstract void warning(ID id, String message);
     public abstract void warning(ID id, ISourcePosition position, String message);
     public abstract void warning(ID id, String fileName, int lineNumber, String message);
-    
-    @Deprecated
-    public abstract void warn(ID id, String message, Object... data);
-    @Deprecated
-    public abstract void warning(ID id, String message, Object... data);
-    @Deprecated
-    public abstract void warn(ID id, ISourcePosition position, String message, Object... data);
-    @Deprecated
-    public abstract void warn(ID id, String fileName, int lineNumber, String message, Object... data);
-    @Deprecated
-    public abstract void warning(ID id, ISourcePosition position, String message, Object... data);
-    @Deprecated
-    public abstract void warning(ID id, String fileName, int lineNumber, String message, Object...data);
 }
