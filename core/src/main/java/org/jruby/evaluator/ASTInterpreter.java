@@ -31,9 +31,6 @@
 
 package org.jruby.evaluator;
 
-import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.Truffle;
-
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyLocalJumpError;
@@ -355,9 +352,6 @@ public class ASTInterpreter {
     public static RubyModule getClassVariableBase(Ruby runtime, StaticScope scope) {
         RubyModule rubyClass = scope.getModule();
         while (rubyClass.isSingleton() || rubyClass == runtime.getDummy()) {
-            // We ran out of scopes to check
-            if (scope == null) return null;
-
             scope = scope.getPreviousCRefScope();
             rubyClass = scope.getModule();
             if (scope.getPreviousCRefScope() == null) {
