@@ -647,7 +647,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         checkUnicodeRange(runtime, code, str, mode);
 
         if (code < 0x80) {
-            Sprintf.sprintf(runtime, to, "\\x%02X", code);
+            if (to != null) Sprintf.sprintf(runtime, to, "\\x%02X", code);
         } else {
             if (to != null) {
                 to.ensure(to.getRealSize() + 6);
