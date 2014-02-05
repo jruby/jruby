@@ -62,6 +62,13 @@ public class RubyString extends RubyObject {
         cachedStringValue = value;
     }
 
+    public RubyString(RubyClass stringClass, org.jruby.RubyString value) {
+        super(stringClass);
+        fromJavaString = true;
+        encoding = null;
+        bytes = null;
+        cachedStringValue = value.asJavaString();
+    }
     /**
      * Construct a string from bytes representing characters in an encoding, lazily converting to a
      * Java {@link String} as needed.

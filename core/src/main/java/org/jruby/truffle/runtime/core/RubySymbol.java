@@ -16,6 +16,7 @@ import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.runtime.objects.*;
+import org.jruby.util.ByteList;
 
 /**
  * Represents the Ruby {@code Symbol} class.
@@ -23,10 +24,12 @@ import org.jruby.truffle.runtime.objects.*;
 public class RubySymbol extends RubyObject {
 
     private final String symbol;
+    private final ByteList symbolBytes;
 
-    private RubySymbol(RubyClass symbolClass, String symbol) {
+    private RubySymbol(RubyClass symbolClass, String symbol, ByteList byteList) {
         super(symbolClass);
-        this.symbol = symbol.intern();
+        this.symbol = symbol;
+        this.symbolBytes = byteList;
     }
 
     public static RubySymbol newSymbol(RubyContext runtime, String name) {
@@ -57,12 +60,18 @@ public class RubySymbol extends RubyObject {
 
     @Override
     public String toString() {
-        return symbol;
+        return org.jruby.RubyString.newStringShared(getRubyClass().getContext().getRuntime(),
+                symbolBytes).decodeString();
+    }
+
+
+    public org.jruby.RubySymbol getJRubySymbol() {
+        return getRubyClass().getContext().getRuntime().newSymbol(symbolBytes);
     }
 
     @Override
     public String inspect() {
-        return ":" + symbol;
+        return getJRubySymbol().inspect(getRubyClass().getContext().getRuntime().getCurrentContext()).asString().decodeString();
     }
 
     @Override
@@ -83,9 +92,13 @@ public class RubySymbol extends RubyObject {
         }
     }
 
+    public RubyString toRubyString() {
+         return getRubyClass().getContext().makeString(toString());
+    }
+
     public static final class SymbolTable {
 
-        private final ConcurrentHashMap<String, RubySymbol> symbolsTable = new ConcurrentHashMap<>();
+        private final ConcurrentHashMap<ByteList, RubySymbol> symbolsTable = new ConcurrentHashMap<>();
         private final RubyContext context;
 
         public SymbolTable(RubyContext context) {
@@ -93,7 +106,9 @@ public class RubySymbol extends RubyObject {
         }
 
         public RubySymbol getSymbol(String name) {
-            RubySymbol symbol = symbolsTable.get(name);
+            ByteList byteList = org.jruby.RubySymbol.symbolBytesFromString(context.getRuntime(), name);
+
+            RubySymbol symbol = symbolsTable.get(byteList);
 
             if (symbol == null) {
                 symbol = createSymbol(name);
@@ -101,13 +116,30 @@ public class RubySymbol extends RubyObject {
             return symbol;
         }
 
-        private RubySymbol createSymbol(String name) {
-            RubySymbol symbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), name);
-            symbolsTable.put(name, symbol);
+        public RubySymbol getSymbol(ByteList byteList) {
+            RubySymbol symbol = symbolsTable.get(byteList);
+
+            if (symbol == null) {
+                symbol = createSymbol(byteList);
+            }
+            return symbol;
+
+        }
+
+        private RubySymbol createSymbol(ByteList byteList) {
+            RubySymbol symbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), byteList.toString(), byteList);
+            symbolsTable.put(byteList, symbol);
             return symbol;
         }
 
-        public ConcurrentHashMap<String, RubySymbol> getSymbolsTable(){
+        private RubySymbol createSymbol(String name) {
+            ByteList byteList = org.jruby.RubySymbol.symbolBytesFromString(context.getRuntime(), name);
+            RubySymbol symbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), name, byteList);
+            symbolsTable.put(byteList, symbol);
+            return symbol;
+        }
+
+        public ConcurrentHashMap<ByteList, RubySymbol> getSymbolsTable(){
             return symbolsTable;
         }
     }

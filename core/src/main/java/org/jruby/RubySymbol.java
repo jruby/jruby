@@ -602,7 +602,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding {
         return super.toJava(target);
     }
 
-    private static ByteList symbolBytesFromString(Ruby runtime, String internedSymbol) {
+    public static ByteList symbolBytesFromString(Ruby runtime, String internedSymbol) {
         return new ByteList(ByteList.plain(internedSymbol), USASCIIEncoding.INSTANCE, false);
     }
 

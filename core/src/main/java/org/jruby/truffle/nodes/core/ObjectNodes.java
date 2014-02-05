@@ -353,7 +353,7 @@ public abstract class ObjectNodes {
 
             for (RubyMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC || method.getVisibility() == Visibility.PROTECTED) {
-                    array.push(RubySymbol.newSymbol(self.getRubyClass().getContext(), method.getName()));
+                    array.push(self.getRubyClass().getContext().newSymbol(method.getName()));
                 }
             }
 
