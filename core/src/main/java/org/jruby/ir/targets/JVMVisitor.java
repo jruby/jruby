@@ -3,6 +3,7 @@ package org.jruby.ir.targets;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyFloat;
 import org.jruby.RubyString;
@@ -18,9 +19,98 @@ import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.Tuple;
+import org.jruby.ir.instructions.AliasInstr;
+import org.jruby.ir.instructions.AttrAssignInstr;
+import org.jruby.ir.instructions.BEQInstr;
+import org.jruby.ir.instructions.BFalseInstr;
+import org.jruby.ir.instructions.BNEInstr;
+import org.jruby.ir.instructions.BNilInstr;
+import org.jruby.ir.instructions.BTrueInstr;
+import org.jruby.ir.instructions.BUndefInstr;
+import org.jruby.ir.instructions.BlockGivenInstr;
+import org.jruby.ir.instructions.BreakInstr;
+import org.jruby.ir.instructions.BuildLambdaInstr;
+import org.jruby.ir.instructions.CallInstr;
+import org.jruby.ir.instructions.CheckArgsArrayArityInstr;
+import org.jruby.ir.instructions.CheckArityInstr;
+import org.jruby.ir.instructions.ClassSuperInstr;
+import org.jruby.ir.instructions.ConstMissingInstr;
+import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.DefineClassInstr;
+import org.jruby.ir.instructions.DefineClassMethodInstr;
+import org.jruby.ir.instructions.DefineInstanceMethodInstr;
+import org.jruby.ir.instructions.DefineMetaClassInstr;
+import org.jruby.ir.instructions.DefineModuleInstr;
+import org.jruby.ir.instructions.EQQInstr;
+import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
+import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
+import org.jruby.ir.instructions.GVarAliasInstr;
+import org.jruby.ir.instructions.GetClassVarContainerModuleInstr;
+import org.jruby.ir.instructions.GetClassVariableInstr;
+import org.jruby.ir.instructions.GetEncodingInstr;
+import org.jruby.ir.instructions.GetFieldInstr;
+import org.jruby.ir.instructions.GetGlobalVariableInstr;
+import org.jruby.ir.instructions.InheritanceSearchConstInstr;
+import org.jruby.ir.instructions.InstanceSuperInstr;
+import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.JumpInstr;
+import org.jruby.ir.instructions.LabelInstr;
+import org.jruby.ir.instructions.LexicalSearchConstInstr;
+import org.jruby.ir.instructions.LineNumberInstr;
+import org.jruby.ir.instructions.LoadLocalVarInstr;
+import org.jruby.ir.instructions.Match2Instr;
+import org.jruby.ir.instructions.Match3Instr;
+import org.jruby.ir.instructions.MatchInstr;
+import org.jruby.ir.instructions.MethodLookupInstr;
+import org.jruby.ir.instructions.ModuleVersionGuardInstr;
+import org.jruby.ir.instructions.NoResultCallInstr;
+import org.jruby.ir.instructions.NonlocalReturnInstr;
+import org.jruby.ir.instructions.NopInstr;
+import org.jruby.ir.instructions.NotInstr;
+import org.jruby.ir.instructions.OptArgMultipleAsgnInstr;
+import org.jruby.ir.instructions.PopBindingInstr;
+import org.jruby.ir.instructions.PopFrameInstr;
+import org.jruby.ir.instructions.ProcessModuleBodyInstr;
+import org.jruby.ir.instructions.PushBindingInstr;
+import org.jruby.ir.instructions.PushFrameInstr;
+import org.jruby.ir.instructions.PutClassVariableInstr;
+import org.jruby.ir.instructions.PutConstInstr;
+import org.jruby.ir.instructions.PutFieldInstr;
+import org.jruby.ir.instructions.PutGlobalVarInstr;
+import org.jruby.ir.instructions.RaiseArgumentErrorInstr;
+import org.jruby.ir.instructions.ReceiveClosureInstr;
+import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
+import org.jruby.ir.instructions.ReceiveOptArgInstr;
+import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
+import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
+import org.jruby.ir.instructions.ReceiveRestArgInstr;
+import org.jruby.ir.instructions.ReceiveRubyExceptionInstr;
+import org.jruby.ir.instructions.ReceiveSelfInstr;
+import org.jruby.ir.instructions.RecordEndBlockInstr;
+import org.jruby.ir.instructions.ReqdArgMultipleAsgnInstr;
+import org.jruby.ir.instructions.RescueEQQInstr;
+import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
+import org.jruby.ir.instructions.ReturnInstr;
+import org.jruby.ir.instructions.SearchConstInstr;
+import org.jruby.ir.instructions.StoreLocalVarInstr;
+import org.jruby.ir.instructions.ThreadPollInstr;
+import org.jruby.ir.instructions.ThrowExceptionInstr;
+import org.jruby.ir.instructions.ToAryInstr;
+import org.jruby.ir.instructions.UndefMethodInstr;
+import org.jruby.ir.instructions.UnresolvedSuperInstr;
+import org.jruby.ir.instructions.YieldInstr;
+import org.jruby.ir.instructions.ZSuperInstr;
+import org.jruby.ir.instructions.boxing.AluInstr;
+import org.jruby.ir.instructions.boxing.BoxBooleanInstr;
+import org.jruby.ir.instructions.boxing.BoxFixnumInstr;
+import org.jruby.ir.instructions.boxing.BoxFloatInstr;
+import org.jruby.ir.instructions.boxing.UnboxBooleanInstr;
+import org.jruby.ir.instructions.boxing.UnboxFixnumInstr;
+import org.jruby.ir.instructions.boxing.UnboxFloatInstr;
+import org.jruby.ir.operands.*;
+import org.jruby.ir.operands.Boolean;
+import org.jruby.ir.operands.Float;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.instructions.*;
-import org.jruby.ir.instructions.boxing.*;
 import org.jruby.ir.instructions.defined.BackrefIsMatchDataInstr;
 import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
 import org.jruby.ir.instructions.defined.GetBackrefInstr;
@@ -33,65 +123,23 @@ import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
-import org.jruby.ir.operands.Array;
-import org.jruby.ir.operands.AsString;
-import org.jruby.ir.operands.Backref;
-import org.jruby.ir.operands.BacktickString;
-import org.jruby.ir.operands.Bignum;
-import org.jruby.ir.operands.BooleanLiteral;
-import org.jruby.ir.operands.ClosureLocalVariable;
-import org.jruby.ir.operands.CompoundArray;
-import org.jruby.ir.operands.CompoundString;
-import org.jruby.ir.operands.CurrentScope;
-import org.jruby.ir.operands.DynamicSymbol;
-import org.jruby.ir.operands.Float;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.GlobalVariable;
-import org.jruby.ir.operands.Hash;
-import org.jruby.ir.operands.IRException;
-import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.MethAddr;
-import org.jruby.ir.operands.MethodHandle;
-import org.jruby.ir.operands.Nil;
-import org.jruby.ir.operands.NthRef;
-import org.jruby.ir.operands.ObjectClass;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Range;
-import org.jruby.ir.operands.Regexp;
-import org.jruby.ir.operands.SValue;
-import org.jruby.ir.operands.ScopeModule;
-import org.jruby.ir.operands.Self;
-import org.jruby.ir.operands.Splat;
-import org.jruby.ir.operands.StandardError;
-import org.jruby.ir.operands.StringLiteral;
-import org.jruby.ir.operands.Symbol;
-import org.jruby.ir.operands.TemporaryBooleanVariable;
-import org.jruby.ir.operands.TemporaryFloatVariable;
-import org.jruby.ir.operands.TemporaryLocalVariable;
-import org.jruby.ir.operands.UndefinedValue;
-import org.jruby.ir.operands.UnexecutableNil;
-import org.jruby.ir.operands.Variable;
-import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
+import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.JRubyClassLoader;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import org.jruby.RubyArray;
 import org.jruby.RubyRange;
-import org.jruby.ir.operands.TemporaryVariable;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -303,19 +351,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public void visit(Operand operand) {
-        if (operand.hasKnownValue()) {
-            operand.visit(this);
-        } else if (operand instanceof Variable) {
-            jvmLoadLocal((Variable)operand);
-        } else {
-            operand.visit(this);
-        }
+        operand.visit(this);
     }
 
     private int getJVMLocalVarIndex(Variable variable) {
         if (variable instanceof TemporaryLocalVariable) {
             switch (((TemporaryLocalVariable)variable).getType()) {
             case FLOAT: return jvm.methodData().local(variable, JVM.DOUBLE_TYPE);
+            case FIXNUM: return jvm.methodData().local(variable, JVM.LONG_TYPE);
             case BOOLEAN: return jvm.methodData().local(variable, JVM.BOOLEAN_TYPE);
             default: return jvm.methodData().local(variable);
             }
@@ -336,6 +379,7 @@ public class JVMVisitor extends IRVisitor {
         if (variable instanceof TemporaryLocalVariable) {
             switch (((TemporaryLocalVariable)variable).getType()) {
             case FLOAT: jvm.method().adapter.dstore(getJVMLocalVarIndex(variable)); break;
+            case FIXNUM: jvm.method().adapter.lstore(getJVMLocalVarIndex(variable)); break;
             case BOOLEAN: jvm.method().adapter.istore(getJVMLocalVarIndex(variable)); break;
             default: jvm.method().storeLocal(getJVMLocalVarIndex(variable)); break;
             }
@@ -352,6 +396,7 @@ public class JVMVisitor extends IRVisitor {
         if (variable instanceof TemporaryLocalVariable) {
             switch (((TemporaryLocalVariable)variable).getType()) {
             case FLOAT: jvm.method().adapter.dload(getJVMLocalVarIndex(variable)); break;
+            case FIXNUM: jvm.method().adapter.lload(getJVMLocalVarIndex(variable)); break;
             case BOOLEAN: jvm.method().adapter.iload(getJVMLocalVarIndex(variable)); break;
             default: jvm.method().loadLocal(getJVMLocalVarIndex(variable)); break;
             }
@@ -408,8 +453,10 @@ public class JVMVisitor extends IRVisitor {
     public void BFalseInstr(BFalseInstr bFalseInstr) {
         Operand arg1 = bFalseInstr.getArg1();
         visit(arg1);
-        if (!(arg1 instanceof TemporaryBooleanVariable)) {
-            jvm.method().isTrue();
+        // this is a gross hack because we don't have distinction in boolean instrs between boxed and unboxed
+        if (!(arg1 instanceof TemporaryBooleanVariable) && !(arg1 instanceof UnboxedBoolean)) {
+            // unbox
+            jvm.method().adapter.invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class));
         }
         jvm.method().bfalse(getJVMLabel(bFalseInstr.getJumpTarget()));
     }
@@ -440,6 +487,38 @@ public class JVMVisitor extends IRVisitor {
         }
     }
 
+    private void loadFixnumArg(Operand arg) {
+        if (arg instanceof Variable) {
+            visit(arg);
+        } else {
+            long val;
+            if (arg instanceof Float) {
+                val = (long)((Float)arg).value;
+            } else if (arg instanceof Fixnum) {
+                val = ((Fixnum)arg).value;
+            } else {
+                // Should not happen -- so, forcing an exception.
+                throw new RuntimeException("Non-float/fixnum in loadFixnumArg!" + arg);
+            }
+            jvm.method().adapter.ldc(val);
+        }
+    }
+
+    private void loadBooleanArg(Operand arg) {
+        if (arg instanceof Variable) {
+            visit(arg);
+        } else {
+            boolean val;
+            if (arg instanceof UnboxedBoolean) {
+                val = ((UnboxedBoolean)arg).isTrue();
+            } else {
+                // Should not happen -- so, forcing an exception.
+                throw new RuntimeException("Non-float/fixnum in loadFixnumArg!" + arg);
+            }
+            jvm.method().adapter.ldc(val);
+        }
+    }
+
     @Override
     public void BoxFloatInstr(BoxFloatInstr instr) {
         IRBytecodeAdapter   m = jvm.method();
@@ -460,6 +539,44 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void BoxFixnumInstr(BoxFixnumInstr instr) {
+        IRBytecodeAdapter   m = jvm.method();
+        SkinnyMethodAdapter a = m.adapter;
+
+        // Load runtime
+        m.loadContext();
+        a.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+
+        // Get unboxed fixnum
+        loadFixnumArg(instr.getValue());
+
+        // Box the fixnum
+        a.invokevirtual(p(Ruby.class), "newFixnum", sig(RubyFixnum.class, long.class));
+
+        // Store it
+        jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
+    public void BoxBooleanInstr(BoxBooleanInstr instr) {
+        IRBytecodeAdapter   m = jvm.method();
+        SkinnyMethodAdapter a = m.adapter;
+
+        // Load runtime
+        m.loadContext();
+        a.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+
+        // Get unboxed boolean
+        loadBooleanArg(instr.getValue());
+
+        // Box the fixnum
+        a.invokevirtual(p(Ruby.class), "newBoolean", sig(RubyBoolean.class, boolean.class));
+
+        // Store it
+        jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
     public void UnboxFloatInstr(UnboxFloatInstr instr) {
         // Load boxed value
         visit(instr.getValue());
@@ -471,23 +588,53 @@ public class JVMVisitor extends IRVisitor {
         jvmStoreLocal(instr.getResult());
     }
 
+    @Override
+    public void UnboxFixnumInstr(UnboxFixnumInstr instr) {
+        // Load boxed value
+        visit(instr.getValue());
+
+        // Unbox it
+        jvm.method().invokeIRHelper("unboxFixnum", sig(long.class, IRubyObject.class));
+
+        // Store it
+        jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
+    public void UnboxBooleanInstr(UnboxBooleanInstr instr) {
+        // Load boxed value
+        visit(instr.getValue());
+
+        // Unbox it
+        jvm.method().invokeIRHelper("unboxBoolean", sig(boolean.class, IRubyObject.class));
+
+        // Store it
+        jvmStoreLocal(instr.getResult());
+    }
+
     public void AluInstr(AluInstr instr) {
         IRBytecodeAdapter   m = jvm.method();
         SkinnyMethodAdapter a = m.adapter;
 
         // Load args
-        loadFloatArg(instr.getArg1());
-        loadFloatArg(instr.getArg2());
+        visit(instr.getArg1());
+        visit(instr.getArg2());
 
         // Compute result
         switch (instr.getOperation()) {
-        case FADD: a.dadd(); break;
-        case FSUB: a.dsub(); break;
-        case FMUL: a.dmul(); break;
-        case FDIV: a.ddiv(); break;
-        case FLT: m.invokeIRHelper("flt", sig(boolean.class, double.class, double.class)); break; // annoying to have to do it in a method
-        case FGT: m.invokeIRHelper("fgt", sig(boolean.class, double.class, double.class)); break; // annoying to have to do it in a method
-        default: throw new RuntimeException("UNHANDLED!");
+            case FADD: a.dadd(); break;
+            case FSUB: a.dsub(); break;
+            case FMUL: a.dmul(); break;
+            case FDIV: a.ddiv(); break;
+            case FLT: m.invokeIRHelper("flt", sig(boolean.class, double.class, double.class)); break; // annoying to have to do it in a method
+            case FGT: m.invokeIRHelper("fgt", sig(boolean.class, double.class, double.class)); break; // annoying to have to do it in a method
+            case IADD: a.ladd(); break;
+            case ISUB: a.lsub(); break;
+            case IMUL: a.lmul(); break;
+            case IDIV: a.ldiv(); break;
+            case ILT: m.invokeIRHelper("ilt", sig(boolean.class, long.class, long.class)); break; // annoying to have to do it in a method
+            case IGT: m.invokeIRHelper("igt", sig(boolean.class, long.class, long.class)); break; // annoying to have to do it in a method
+            default: throw new RuntimeException("UNHANDLED!");
         }
 
         // Store it
@@ -530,7 +677,8 @@ public class JVMVisitor extends IRVisitor {
     public void BTrueInstr(BTrueInstr btrueinstr) {
         Operand arg1 = btrueinstr.getArg1();
         visit(arg1);
-        if (!(arg1 instanceof TemporaryBooleanVariable)) {
+        // this is a gross hack because we don't have distinction in boolean instrs between boxed and unboxed
+        if (!(arg1 instanceof TemporaryBooleanVariable) && !(arg1 instanceof UnboxedBoolean)) {
             jvm.method().isTrue();
         }
         jvm.method().btrue(getJVMLabel(btrueinstr.getJumpTarget()));
@@ -623,6 +771,8 @@ public class JVMVisitor extends IRVisitor {
         Variable res = copyinstr.getResult();
         if (res instanceof TemporaryFloatVariable) {
             loadFloatArg(src);
+        } else if (res instanceof TemporaryFixnumVariable) {
+            loadFixnumArg(src);
         } else {
             visit(src);
         }
@@ -1290,7 +1440,11 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ThreadPollInstr(ThreadPollInstr threadpollinstr) {
-        jvm.method().poll();
+        jvm.method().loadContext();
+        jvm.method().adapter.invokedynamic(
+                "checkpoint",
+                sig(void.class, ThreadContext.class),
+                InvokeDynamicSupport.checkpointHandle());
     }
 
     @Override
@@ -1458,8 +1612,13 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void BooleanLiteral(BooleanLiteral booleanliteral) {
+    public void Boolean(org.jruby.ir.operands.Boolean booleanliteral) {
         jvm.method().pushBoolean(booleanliteral.isTrue());
+    }
+
+    @Override
+    public void UnboxedBoolean(org.jruby.ir.operands.UnboxedBoolean bool) {
+        jvm.method().adapter.ldc(bool.isTrue());
     }
 
     @Override
@@ -1500,8 +1659,18 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void UnboxedFixnum(UnboxedFixnum fixnum) {
+        jvm.method().adapter.ldc(fixnum.getValue());
+    }
+
+    @Override
     public void Float(org.jruby.ir.operands.Float flote) {
         jvm.method().pushFloat(flote.getValue());
+    }
+
+    @Override
+    public void UnboxedFloat(org.jruby.ir.operands.UnboxedFloat flote) {
+        jvm.method().adapter.ldc(flote.getValue());
     }
 
     @Override
@@ -1603,6 +1772,26 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void TemporaryVariable(TemporaryVariable temporaryvariable) {
         jvmLoadLocal(temporaryvariable);
+    }
+
+    @Override
+    public void TemporaryLocalVariable(TemporaryLocalVariable temporarylocalvariable) {
+        jvmLoadLocal(temporarylocalvariable);
+    }
+
+    @Override
+    public void TemporaryFloatVariable(TemporaryFloatVariable temporaryfloatvariable) {
+        jvmLoadLocal(temporaryfloatvariable);
+    }
+
+    @Override
+    public void TemporaryFixnumVariable(TemporaryFixnumVariable temporaryfixnumvariable) {
+        jvmLoadLocal(temporaryfixnumvariable);
+    }
+
+    @Override
+    public void TemporaryBooleanVariable(TemporaryBooleanVariable temporarybooleanvariable) {
+        jvmLoadLocal(temporarybooleanvariable);
     }
 
     @Override

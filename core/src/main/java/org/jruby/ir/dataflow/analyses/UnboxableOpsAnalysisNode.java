@@ -23,19 +23,15 @@ import org.jruby.ir.instructions.OneOperandBranchInstr;
 import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.boxing.AluInstr;
+import org.jruby.ir.instructions.boxing.BoxBooleanInstr;
+import org.jruby.ir.instructions.boxing.BoxFixnumInstr;
 import org.jruby.ir.instructions.boxing.BoxFloatInstr;
+import org.jruby.ir.instructions.boxing.UnboxBooleanInstr;
+import org.jruby.ir.instructions.boxing.UnboxFixnumInstr;
 import org.jruby.ir.instructions.boxing.UnboxFloatInstr;
-import org.jruby.ir.operands.Bignum;
-import org.jruby.ir.operands.BooleanLiteral;
+import org.jruby.ir.operands.*;
+import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.MethAddr;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.TemporaryLocalVariable;
-import org.jruby.ir.operands.TemporaryVariableType;
-import org.jruby.ir.operands.Variable;
-import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.util.Edge;
@@ -258,6 +254,9 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             if (srcType == Float.class) {
                 dirtied = true;
                 tmpState.unboxedVars.put(dst, srcType);
+            } else if (srcType == Fixnum.class) {
+                dirtied = true;
+                tmpState.unboxedVars.put(dst, srcType);
             }
         } else if (i instanceof CallBase) {
             // Process calls specially -- these are what we want to optimize!
@@ -288,6 +287,23 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                         }
                         if (a instanceof Variable) {
                             tmpState.unboxedVars.put((Variable)a, Float.class);
+                        }
+                    } else if (receiverType == Float.class ||
+                            (receiverType == Fixnum.class && argType == Fixnum.class))
+                    {
+                        dirtied = true;
+
+                        Class dstType = m.getUnboxedResultType(Fixnum.class);
+                        setOperandType(tmpState, dst, dstType);
+                        tmpState.unboxedVars.put(dst, dstType);
+
+                        // If 'r' and 'a' are not already in unboxed forms at this point,
+                        // they will get unboxed after this, because we want to opt. this call
+                        if (r instanceof Variable) {
+                            tmpState.unboxedVars.put((Variable)r, Fixnum.class);
+                        }
+                        if (a instanceof Variable) {
+                            tmpState.unboxedVars.put((Variable)a, Fixnum.class);
                         }
                     } else {
                         if (receiverType == Fixnum.class && argType == Fixnum.class) {
@@ -374,8 +390,9 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
     private boolean matchingTypes(Class c, TemporaryVariableType t) {
         switch (t) {
         case FLOAT: return c == Float.class;
-        case BOOLEAN: return c == BooleanLiteral.class;
-        default: return c != Float.class && c != Boolean.class;
+        case FIXNUM: return c == Fixnum.class;
+        case BOOLEAN: return c == UnboxedBoolean.class;
+        default: return c != Float.class && c != Boolean.class && c != Fixnum.class;
         }
     }
 
@@ -401,9 +418,11 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         TemporaryVariableType vType = unboxedV.getType();
         if (vType == TemporaryVariableType.BOOLEAN) {
             // boolean literals are lightweight enough that they dont need unboxed variants.
-            newInstrs.add(new CopyInstr(v, unboxedV));
-        } else { // SSS FIXME: This is broken
+            newInstrs.add(new BoxBooleanInstr(v, unboxedV));
+        } else if (vType == TemporaryVariableType.FLOAT) { // SSS FIXME: This is broken
             newInstrs.add(new BoxFloatInstr(v, unboxedV));
+        } else if (vType == TemporaryVariableType.FIXNUM) { // CON FIXME: So this is probably broken too
+            newInstrs.add(new BoxFixnumInstr(v, unboxedV));
         }
         state.unboxedDirtyVars.remove(v);
         // System.out.println("BOXING for " + v);
@@ -411,11 +430,13 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
     public void unboxVar(UnboxState state, Class reqdType, Map<Variable, TemporaryLocalVariable> unboxMap, Variable v, List<Instr> newInstrs) {
         Variable unboxedV = getUnboxedVar(reqdType, unboxMap, v);
-        if (reqdType == BooleanLiteral.class) {
+        if (reqdType == UnboxedBoolean.class) {
             // boolean literals are lightweight enough that they dont need unboxed variants.
-            newInstrs.add(new CopyInstr(unboxedV, v));
-        } else { // SSS FIXME: This is broken
+            newInstrs.add(new UnboxBooleanInstr(unboxedV, v));
+        } else if (reqdType == Float.class) { // SSS FIXME: This is broken
             newInstrs.add(new UnboxFloatInstr(unboxedV, v));
+        } else if (reqdType == Fixnum.class) { // CON FIXME: So this is probably broken too
+            newInstrs.add(new UnboxFixnumInstr(unboxedV, v));
         }
         state.unboxedVars.put(v, reqdType);
         // System.out.println("UNBOXING for " + v + " with type " + vType);
@@ -434,7 +455,14 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
             return unboxedVar;
         } else {
-            // This has to be a known operand like (Float, Fixnum, BooleanLiteral, etc.)
+            if (arg instanceof Float) {
+                return new UnboxedFloat(((Float)arg).getValue());
+            } else if (arg instanceof Fixnum) {
+                return new UnboxedFixnum(((Fixnum)arg).getValue());
+            } else if (arg instanceof org.jruby.ir.operands.Boolean) {
+                return new UnboxedBoolean(((Boolean)arg).isTrue());
+            }
+            // This has to be a known operand like (UnboxedBoolean, etc.)
             return arg;
         }
     }
@@ -445,6 +473,13 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             Class unboxedType = state.unboxedVars.get(v);
             return unboxedType == null ? arg : getUnboxedVar(unboxedType, unboxMap, v);
         } else {
+            if (arg instanceof Float) {
+                return new UnboxedFloat(((Float)arg).getValue());
+            } else if (arg instanceof Fixnum) {
+                return new UnboxedFixnum(((Fixnum)arg).getValue());
+            } else if (arg instanceof Boolean) {
+                return new UnboxedBoolean(((Boolean)arg).isTrue());
+            }
             return arg;
         }
     }
@@ -616,7 +651,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                     // should ideally be done 'on-demand'. This indicates that this could
                     // be a backward-flow algo OR that this algo should be run on a
                     // dataflow graph / SSA graph.
-                    if (srcType == Float.class) {
+                    if (srcType == Float.class || srcType == Fixnum.class) {
                         Operand unboxedSrc = src instanceof Variable ? getUnboxedVar(srcType, unboxMap, (Variable)src) : src;
                         TemporaryLocalVariable unboxedDst = getUnboxedVar(srcType, unboxMap, dst);
                         newInstrs.add(new CopyInstr(Operation.COPY, unboxedDst, unboxedSrc));
@@ -649,6 +684,19 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                                 TemporaryLocalVariable unboxedDst = getUnboxedVar(dstType, unboxMap, dst);
                                 r = unboxOperand(tmpState, Float.class, unboxMap, r, newInstrs);
                                 a = unboxOperand(tmpState, Float.class, unboxMap, a, newInstrs);
+                                newInstrs.add(new AluInstr(unboxedOp, unboxedDst, r, a));
+                            } else if ((receiverType == Float.class || (receiverType == Fixnum.class && argType == Fixnum.class)) &&
+                                    (unboxedOp = m.getUnboxedOp(Fixnum.class)) != null)
+                            {
+                                dirtied = true;
+
+                                Class dstType = m.getUnboxedResultType(Fixnum.class);
+                                setOperandType(tmpState, dst, dstType);
+                                tmpState.unboxedVars.put(dst, dstType);
+
+                                TemporaryLocalVariable unboxedDst = getUnboxedVar(dstType, unboxMap, dst);
+                                r = unboxOperand(tmpState, Fixnum.class, unboxMap, r, newInstrs);
+                                a = unboxOperand(tmpState, Fixnum.class, unboxMap, a, newInstrs);
                                 newInstrs.add(new AluInstr(unboxedOp, unboxedDst, r, a));
                             } else {
                                 if (receiverType == Fixnum.class && argType == Fixnum.class) {

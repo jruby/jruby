@@ -15,7 +15,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.Invalidator;
 
 import java.util.Map;
-import org.jruby.ir.operands.BooleanLiteral;
+import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.StringLiteral;
 
 // The runtime method call that GET_CONST is translated to in this case will call
@@ -48,7 +48,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr, F
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { currentModule, new StringLiteral(constName), new BooleanLiteral(noPrivateConsts) };
+        return new Operand[] { currentModule, new StringLiteral(constName), new UnboxedBoolean(noPrivateConsts) };
     }
 
     @Override

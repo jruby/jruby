@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyFloat;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
@@ -19,6 +20,8 @@ import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.IRTranslator;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.boxing.AluInstr;
+import org.jruby.ir.instructions.boxing.BoxBooleanInstr;
+import org.jruby.ir.instructions.boxing.BoxFixnumInstr;
 import org.jruby.ir.instructions.boxing.BoxFloatInstr;
 import org.jruby.ir.instructions.boxing.BoxInstr;
 import org.jruby.ir.instructions.boxing.UnboxInstr;
@@ -44,13 +47,14 @@ import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.Bignum;
-import org.jruby.ir.operands.BooleanLiteral;
+import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Self;
+import org.jruby.ir.operands.TemporaryFixnumVariable;
 import org.jruby.ir.operands.TemporaryFloatVariable;
 import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.TemporaryVariable;
@@ -209,7 +213,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     private static void setResult(Object[] temp, DynamicScope currDynScope, Instr instr, Object result) {
         if (instr instanceof ResultInstr) {
-            setResult(temp, currDynScope, ((ResultInstr)instr).getResult(), result);
+            setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), result);
         }
     }
 
@@ -244,26 +248,69 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
+    private static long getFixnumArg(long[] fixnums, Operand arg) {
+        if (arg instanceof Float) {
+            return (long)((Float)arg).value;
+        } else if (arg instanceof Fixnum) {
+            return ((Fixnum)arg).value;
+        } else if (arg instanceof Bignum) {
+            return ((Bignum)arg).value.longValue();
+        } else if (arg instanceof TemporaryLocalVariable) {
+            return fixnums[((TemporaryLocalVariable)arg).offset];
+        } else {
+            throw new RuntimeException("invalid fixnum operand: " + arg);
+        }
+    }
+
+    private static boolean getBooleanArg(boolean[] booleans, Operand arg) {
+        if (arg instanceof UnboxedBoolean) {
+            return ((UnboxedBoolean)arg).isTrue();
+        } else if (arg instanceof TemporaryLocalVariable) {
+            return booleans[((TemporaryLocalVariable)arg).offset];
+        } else {
+            throw new RuntimeException("invalid fixnum operand: " + arg);
+        }
+    }
+
     private static void setFloatVar(double[] floats, TemporaryLocalVariable var, double val) {
         floats[var.offset] = val;
     }
 
-    private static void setBooleanVar(ThreadContext context, Object[] temp, TemporaryLocalVariable var, boolean val) {
-        BooleanLiteral bVal = val ? BooleanLiteral.TRUE : BooleanLiteral.FALSE;
-        temp[var.offset] = bVal.cachedObject(context);
+    private static void setFixnumVar(long[] fixnums, TemporaryLocalVariable var, long val) {
+        fixnums[var.offset] = val;
     }
 
-    private static void computeResult(AluInstr instr, Operation op, ThreadContext context, double[] floats, Object[] temp) {
+    private static void setBooleanVar(ThreadContext context, boolean[] booleans, TemporaryLocalVariable var, boolean val) {
+        booleans[var.offset] = val;
+    }
+
+    private static void computeResult(AluInstr instr, Operation op, ThreadContext context, double[] floats, long[] fixnums, boolean[] booleans, Object[] temp) {
         TemporaryLocalVariable dst = (TemporaryLocalVariable)instr.getResult();
-        double a1 = getFloatArg(floats, instr.getArg1());
-        double a2 = getFloatArg(floats, instr.getArg2());
         switch (op) {
-        case FADD: setFloatVar(floats, dst, a1 + a2); break;
-        case FSUB: setFloatVar(floats, dst, a1 - a2); break;
-        case FMUL: setFloatVar(floats, dst, a1 * a2); break;
-        case FDIV: setFloatVar(floats, dst, a1 / a2); break;
-        case FLT : setBooleanVar(context, temp, dst, a1 < a2); break;
-        case FGT : setBooleanVar(context, temp, dst, a1 > a2); break;
+            case FADD: case FSUB: case FMUL: case FDIV: case FLT: case FGT:
+                double a1 = getFloatArg(floats, instr.getArg1());
+                double a2 = getFloatArg(floats, instr.getArg2());
+                switch (op) {
+                    case FADD: setFloatVar(floats, dst, a1 + a2); break;
+                    case FSUB: setFloatVar(floats, dst, a1 - a2); break;
+                    case FMUL: setFloatVar(floats, dst, a1 * a2); break;
+                    case FDIV: setFloatVar(floats, dst, a1 / a2); break;
+                    case FLT : setBooleanVar(context, booleans, dst, a1 < a2); break;
+                    case FGT : setBooleanVar(context, booleans, dst, a1 > a2); break;
+                }
+                break;
+            case IADD: case ISUB: case IMUL: case IDIV: case ILT: case IGT:
+                long i1 = getFixnumArg(fixnums, instr.getArg1());
+                long i2 = getFixnumArg(fixnums, instr.getArg2());
+                switch (op) {
+                    case IADD: setFixnumVar(fixnums, dst, i1 + i2); break;
+                    case ISUB: setFixnumVar(fixnums, dst, i1 - i2); break;
+                    case IMUL: setFixnumVar(fixnums, dst, i1 * i2); break;
+                    case IDIV: setFixnumVar(fixnums, dst, i1 / i2); break;
+                    case ILT : setBooleanVar(context, booleans, dst, i1 < i2); break;
+                    case IGT : setBooleanVar(context, booleans, dst, i1 > i2); break;
+                }
+                break;
         }
     }
 
@@ -408,7 +455,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         return null;
     }
 
-    private static void processOtherOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, double[] floats)
+    private static void processOtherOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, double[] floats, long[] fixnums, boolean[] booleans)
     {
         Object result;
         switch(operation) {
@@ -418,6 +465,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             Variable res = c.getResult();
             if (res instanceof TemporaryFloatVariable) {
                 setFloatVar(floats, (TemporaryFloatVariable)res, getFloatArg(floats, src));
+            } else if (res instanceof TemporaryFixnumVariable) {
+                setFixnumVar(fixnums, (TemporaryFixnumVariable)res, getFixnumArg(fixnums, src));
             } else {
                 setResult(temp, currDynScope, res, retrieveOp(src, context, self, currDynScope, temp));
             }
@@ -450,6 +499,18 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             break;
         }
 
+        case BOX_FIXNUM: {
+            RubyFixnum f = context.runtime.newFixnum(getFixnumArg(fixnums, ((BoxFixnumInstr) instr).getValue()));
+            setResult(temp, currDynScope, ((BoxInstr)instr).getResult(), f);
+            break;
+        }
+
+        case BOX_BOOLEAN: {
+            RubyBoolean f = context.runtime.newBoolean(getBooleanArg(booleans, ((BoxBooleanInstr) instr).getValue()));
+            setResult(temp, currDynScope, ((BoxInstr)instr).getResult(), f);
+            break;
+        }
+
         case UNBOX_FLOAT: {
             UnboxInstr ui = (UnboxInstr)instr;
             Object val = retrieveOp(ui.getValue(), context, self, currDynScope, temp);
@@ -457,6 +518,17 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                 floats[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFloat)val).getValue();
             } else {
                 floats[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFixnum)val).getDoubleValue();
+            }
+            break;
+        }
+
+        case UNBOX_FIXNUM: {
+            UnboxInstr ui = (UnboxInstr)instr;
+            Object val = retrieveOp(ui.getValue(), context, self, currDynScope, temp);
+            if (val instanceof RubyFloat) {
+                fixnums[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFloat)val).getLongValue();
+            } else {
+                fixnums[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFixnum)val).getLongValue();
             }
             break;
         }
@@ -478,7 +550,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         int      numTempVars    = scope.getTemporaryVariablesCount();
         Object[] temp           = numTempVars > 0 ? new Object[numTempVars] : null;
         int      numFloatVars   = scope.getFloatVariablesCount();
+        int      numFixnumVars  = scope.getFixnumVariablesCount();
+        int      numBooleanVars  = scope.getBooleanVariablesCount();
         double[] floats         = numFloatVars > 0 ? new double[numFloatVars] : null;
+        long[]   fixnums        = numFixnumVars > 0 ? new long[numFixnumVars] : null;
+        boolean[]   booleans    = numBooleanVars > 0 ? new boolean[numBooleanVars] : null;
         int      n              = instrs.length;
         int      ipc            = 0;
         Object   exception      = null;
@@ -506,7 +582,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             try {
                 switch (operation.opClass) {
                 case ALU_OP:
-                    computeResult((AluInstr)instr, operation, context, floats, temp);
+                    computeResult((AluInstr)instr, operation, context, floats, fixnums, booleans, temp);
                     break;
                 case ARG_OP:
                     receiveArg(context, instr, operation, args, kwArgHashCount, currDynScope, temp, exception, block);
@@ -536,7 +612,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     }
                     break;
                 case OTHER_OP:
-                    processOtherOp(context, instr, operation, currDynScope, temp, self, block, floats);
+                    processOtherOp(context, instr, operation, currDynScope, temp, self, block, floats, fixnums, booleans);
                     break;
                 }
             } catch (Throwable t) {

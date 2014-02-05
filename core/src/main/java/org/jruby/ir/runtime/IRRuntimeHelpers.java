@@ -195,11 +195,27 @@ public class IRRuntimeHelpers {
         }
     }
 
+    public static long unboxFixnum(IRubyObject val) {
+        if (val instanceof RubyFloat) {
+            return (long)((RubyFloat)val).getValue();
+        } else {
+            return ((RubyFixnum)val).getLongValue();
+        }
+    }
+
     public static boolean flt(double v1, double v2) {
         return v1 < v2;
     }
 
     public static boolean fgt(double v1, double v2) {
+        return v1 > v2;
+    }
+
+    public static boolean ilt(long v1, long v2) {
+        return v1 < v2;
+    }
+
+    public static boolean igt(long v1, long v2) {
         return v1 > v2;
     }
 
