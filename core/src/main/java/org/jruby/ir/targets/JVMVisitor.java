@@ -1082,8 +1082,7 @@ public class JVMVisitor extends IRVisitor {
         IRBytecodeAdapter m = jvm.method();
         jvmLoadLocal(DYNAMIC_SCOPE);
         int depth = loadlocalvarinstr.getLocalVar().getScopeDepth();
-        // TODO should not have to subtract 1
-        int location = loadlocalvarinstr.getLocalVar().getLocation() - 1;
+        int location = loadlocalvarinstr.getLocalVar().getLocation();
         // TODO if we can avoid loading nil unnecessarily, it could be a big win
         switch (depth) {
             case 0:
@@ -1415,8 +1414,7 @@ public class JVMVisitor extends IRVisitor {
         IRBytecodeAdapter m = jvm.method();
         jvmLoadLocal(DYNAMIC_SCOPE);
         int depth = storelocalvarinstr.getLocalVar().getScopeDepth();
-        // TODO should not have to subtract 1
-        int location = storelocalvarinstr.getLocalVar().getLocation() - 1;
+        int location = storelocalvarinstr.getLocalVar().getLocation();
         Operand storeValue = storelocalvarinstr.getValue();
         switch (depth) {
             case 0:

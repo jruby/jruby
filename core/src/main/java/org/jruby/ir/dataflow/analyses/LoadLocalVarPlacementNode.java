@@ -108,12 +108,12 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
 
         if (i.getOperation() == Operation.BINDING_STORE) {
             LocalVariable lv = ((StoreLocalVarInstr)i).getLocalVar();
-            if (!lv.isSelf() && !lv.isImplicitBlockArg()) reqdLoads.add(lv);
+            if (!lv.isSelf()) reqdLoads.add(lv);
         } else {
             // The variables used as arguments will need to be loaded
             // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
             for (Variable x : i.getUsedVariables()) {
-                if (x instanceof LocalVariable && !x.isSelf() && !x.isImplicitBlockArg()) {
+                if (x instanceof LocalVariable && !x.isSelf()) {
                     reqdLoads.add((LocalVariable)x);
                 }
             }
@@ -231,7 +231,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
 
             if (i.getOperation() == Operation.BINDING_STORE) {
                 LocalVariable lv = ((StoreLocalVarInstr)i).getLocalVar();
-                if (!lv.isSelf() && !lv.isImplicitBlockArg()) {
+                if (!lv.isSelf()) {
                     reqdLoads.add(lv);
                     // SSS FIXME: Why is this reqd again?  Document with example
                     // Make sure there is a replacement var for all local vars
@@ -244,7 +244,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                     if (!(v instanceof LocalVariable)) continue;
 
                     LocalVariable lv = (LocalVariable)v;
-                    if (!lv.isSelf() && !lv.isImplicitBlockArg()) {
+                    if (!lv.isSelf()) {
                         reqdLoads.add(lv);
                         // SSS FIXME: Why is this reqd again?  Document with example
                         // Make sure there is a replacement var for all local vars

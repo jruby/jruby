@@ -736,14 +736,6 @@ public abstract class IRScope implements ParseResult {
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
     public Tuple<Instr[], Map<Integer,Label[]>> prepareForCompilation() {
-        // Build CFG and run compiler passes, if necessary
-        if (getCFG() == null) {
-            runCompilerPasses(getManager().getJITPasses(this));
-
-            // no DCE for now to stress-test JIT
-            //runDeadCodeAndVarLoadStorePasses();
-        }
-
         // Add this always since we dont re-JIT a previously
         // JIT-ted closure.  But, check if there are other
         // smarts available to us and eliminate adding this
@@ -753,6 +745,16 @@ public abstract class IRScope implements ParseResult {
         // and throw a LocalJumpError.
         if (this instanceof IRClosure && ((IRClosure)this).addGEBForUncaughtBreaks()) {
             this.relinearizeCFG = true;
+        }
+
+        checkRelinearization();
+
+        // Build CFG and run compiler passes, if necessary
+        if (getCFG() == null) {
+            runCompilerPasses(getManager().getJITPasses(this));
+
+            // no DCE for now to stress-test JIT
+            //runDeadCodeAndVarLoadStorePasses();
         }
 
         prepareInstructionsForInterpretation();
