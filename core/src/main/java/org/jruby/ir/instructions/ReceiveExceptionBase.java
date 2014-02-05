@@ -1,11 +1,8 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class ReceiveExceptionBase extends Instr implements ResultInstr, FixedArityInstr {
     protected Variable result;

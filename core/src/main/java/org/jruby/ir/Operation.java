@@ -166,8 +166,10 @@ public enum Operation {
     /* Boxing/Unboxing between Ruby <--> Java types */
     BOX_FIXNUM(0),
     BOX_FLOAT(0),
+    BOX_BOOLEAN(0),
     UNBOX_FIXNUM(0),
     UNBOX_FLOAT(0),
+    UNBOX_BOOLEAN(0),
 
     /* Unboxed ALU ops */
     IADD(OpFlags.f_is_alu_op),

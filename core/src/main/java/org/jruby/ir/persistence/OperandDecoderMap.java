@@ -6,46 +6,10 @@ import java.util.List;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
-import org.jruby.ir.operands.Array;
-import org.jruby.ir.operands.AsString;
-import org.jruby.ir.operands.Backref;
-import org.jruby.ir.operands.BacktickString;
-import org.jruby.ir.operands.Bignum;
-import org.jruby.ir.operands.BooleanLiteral;
-import org.jruby.ir.operands.CompoundArray;
-import org.jruby.ir.operands.CompoundString;
-import org.jruby.ir.operands.CurrentScope;
-import org.jruby.ir.operands.DynamicSymbol;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.GlobalVariable;
-import org.jruby.ir.operands.Hash;
-import org.jruby.ir.operands.IRException;
-import org.jruby.ir.operands.KeyValuePair;
-import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.MethAddr;
-import org.jruby.ir.operands.MethodHandle;
-import org.jruby.ir.operands.NthRef;
-import org.jruby.ir.operands.ObjectClass;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.OperandType;
-import org.jruby.ir.operands.Range;
-import org.jruby.ir.operands.Regexp;
-import org.jruby.ir.operands.SValue;
-import org.jruby.ir.operands.ScopeModule;
-import org.jruby.ir.operands.Self;
-import org.jruby.ir.operands.Splat;
-import org.jruby.ir.operands.StandardError;
-import org.jruby.ir.operands.StringLiteral;
-import org.jruby.ir.operands.Symbol;
-import org.jruby.ir.operands.TemporaryClosureVariable;
-import org.jruby.ir.operands.TemporaryCurrentModuleVariable;
-import org.jruby.ir.operands.TemporaryCurrentScopeVariable;
-import org.jruby.ir.operands.TemporaryFloatVariable;
-import org.jruby.ir.operands.TemporaryLocalVariable;
-import org.jruby.ir.operands.TemporaryVariableType;
-import org.jruby.ir.operands.UndefinedValue;
+import org.jruby.ir.operands.*;
+
 import static org.jruby.ir.operands.UnexecutableNil.U_NIL;
-import org.jruby.ir.operands.WrappedIRClosure;
+
 import org.jruby.ir.persistence.read.parser.NonIRObjectFactory;
 import org.jruby.util.RegexpOptions;
 
@@ -70,13 +34,15 @@ class OperandDecoderMap {
             case BACKREF: return new Backref(d.decodeChar());
             case BACKTICK_STRING: return new BacktickString(d.decodeOperandList());
             case BIGNUM: return new Bignum(new BigInteger(d.decodeString()));
-            case BOOLEAN_LITERAL: return new BooleanLiteral(d.decodeBoolean());
+            case BOOLEAN_LITERAL: return new UnboxedBoolean(d.decodeBoolean());
             case COMPOUND_ARRAY: return new CompoundArray(d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case COMPOUND_STRING: return decodeCompoundString();
             case CURRENT_SCOPE: return new CurrentScope(d.decodeScope());
             case DYNAMIC_SYMBOL: return new DynamicSymbol((CompoundString) d.decodeOperand());
             case FIXNUM: return new Fixnum(d.decodeLong());
+            case UNBOXED_FIXNUM: return new UnboxedFixnum(d.decodeLong());
             case FLOAT: return new org.jruby.ir.operands.Float(d.decodeDouble());
+            case UNBOXED_FLOAT: return new org.jruby.ir.operands.UnboxedFloat(d.decodeDouble());
             case GLOBAL_VARIABLE: return new GlobalVariable(d.decodeString());
             case HASH: return decodeHash();
             case IR_EXCEPTION: return IRException.getExceptionFromOrdinal(d.decodeByte());
@@ -168,6 +134,8 @@ class OperandDecoderMap {
                 return new TemporaryCurrentScopeVariable(d.decodeInt());
             case FLOAT:
                 return new TemporaryFloatVariable(d.decodeInt());
+            case FIXNUM:
+                return new TemporaryFixnumVariable(d.decodeInt());
             case LOCAL:
                 return new TemporaryLocalVariable(d.decodeInt());
         }

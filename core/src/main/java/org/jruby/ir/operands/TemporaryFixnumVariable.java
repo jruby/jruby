@@ -34,14 +34,14 @@ import org.jruby.ir.transformations.inlining.InlinerInfo;
 /**
  * Represents a temporary variable for an unboxed Float operand.
  */
-public class TemporaryFloatVariable extends TemporaryLocalVariable {
-    public TemporaryFloatVariable(int offset) {
+public class TemporaryFixnumVariable extends TemporaryLocalVariable {
+    public TemporaryFixnumVariable(int offset) {
         super(offset);
     }
 
     @Override
     public TemporaryVariableType getType() {
-        return TemporaryVariableType.FLOAT;
+        return TemporaryVariableType.FIXNUM;
     }
 
     @Override
@@ -51,11 +51,11 @@ public class TemporaryFloatVariable extends TemporaryLocalVariable {
 
     @Override
     public Variable clone(InlinerInfo ii) {
-        return new TemporaryFloatVariable(offset);
+        return new TemporaryFixnumVariable(offset);
     }
 
     @Override
     public void visit(IRVisitor visitor) {
-        visitor.TemporaryFloatVariable(this);
+        visitor.TemporaryFixnumVariable(this);
     }
 }

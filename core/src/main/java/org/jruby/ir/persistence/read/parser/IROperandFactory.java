@@ -15,7 +15,7 @@ import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Backref;
 import org.jruby.ir.operands.BacktickString;
 import org.jruby.ir.operands.Bignum;
-import org.jruby.ir.operands.BooleanLiteral;
+import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.CompoundArray;
 import org.jruby.ir.operands.CompoundString;
 import org.jruby.ir.operands.CurrentScope;
@@ -44,7 +44,8 @@ import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StandardError;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
-import org.jruby.ir.operands.TemporaryLocalVariable;
+import org.jruby.ir.operands.UnboxedFixnum;
+import org.jruby.ir.operands.UnboxedFloat;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
@@ -136,8 +137,12 @@ public class IROperandFactory {
             return createDynamicSymbol(parametersIterator);
         case FIXNUM:
             return createFixnum(parametersIterator);
+        case UNBOXED_FIXNUM:
+            return createUnboxedFixnum(parametersIterator);
         case FLOAT:
             return createFloat(parametersIterator);
+        case UNBOXED_FLOAT:
+            return createUnboxedFloat(parametersIterator);
         case GLOBAL_VARIABLE:
             return createGlobalVariable(parametersIterator);
         case HASH:
@@ -209,7 +214,7 @@ public class IROperandFactory {
         return new Bignum(value);
     }
 
-    private BooleanLiteral createBooleanLiteral(final ParametersIterator parametersIterator) {
+    private UnboxedBoolean createBooleanLiteral(final ParametersIterator parametersIterator) {
         final IRManager irManager = context.getIRManager();
         final boolean isTrue = parametersIterator.nextBoolean();
 
@@ -252,10 +257,23 @@ public class IROperandFactory {
         return new Fixnum(value);
     }
 
+    private UnboxedFixnum createUnboxedFixnum(final ParametersIterator parametersIterator) {
+        final String valueString = parametersIterator.nextString();
+        final Long value = Long.valueOf(valueString);
+
+        return new UnboxedFixnum(value);
+    }
+
     private org.jruby.ir.operands.Float createFloat(final ParametersIterator parametersIterator) {
         final String valueString = parametersIterator.nextString();
         final Double value = Double.valueOf(valueString);
         return new Float(value);
+    }
+
+    private org.jruby.ir.operands.UnboxedFloat createUnboxedFloat(final ParametersIterator parametersIterator) {
+        final String valueString = parametersIterator.nextString();
+        final Double value = Double.valueOf(valueString);
+        return new UnboxedFloat(value);
     }
 
     private GlobalVariable createGlobalVariable(final ParametersIterator parametersIterator) {

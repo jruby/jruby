@@ -30,6 +30,7 @@ public abstract class TemporaryVariable extends Variable {
 
         return getName().compareTo(((TemporaryVariable) other).getName());
     }
+
     @Override
     public void visit(IRVisitor visitor) {
         visitor.TemporaryVariable(this);
