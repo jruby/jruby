@@ -91,6 +91,7 @@ import org.jruby.ir.instructions.ReqdArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.RescueEQQInstr;
 import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.ReturnInstr;
+import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.StoreLocalVarInstr;
 import org.jruby.ir.instructions.ThreadPollInstr;
@@ -229,6 +230,14 @@ public class JVMVisitor extends IRVisitor {
 
         jvm.pushmethodVarargs(name);
 
+        // UGLY hack for blocks, which still have their scopes pushed before invocation
+        // Scope management for blocks needs to be figured out
+        if (scope instanceof IRClosure) {
+            jvm.method().loadContext();
+            jvm.method().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("org.jruby.runtime.DynamicScope getCurrentScope()"));
+            jvmStoreLocal(DYNAMIC_SCOPE);
+        }
+
         IRBytecodeAdapter m = jvm.method();
         org.objectweb.asm.Label[] allLabels = new org.objectweb.asm.Label[instrs.length + 1];
         for (int i = 0; i < allLabels.length; i++) {
@@ -304,7 +313,7 @@ public class JVMVisitor extends IRVisitor {
         jvm.popclass();
     }
 
-    public void emit(IRMethod method) {
+    public String[] emit(IRMethod method) {
         String name = emitScope(method, method.getName(), method.getCallArgs().length);
 
         // Emit code for all nested closures
@@ -312,15 +321,15 @@ public class JVMVisitor extends IRVisitor {
             emit(c);
         }
 
-        // push a method handle for binding purposes
-        jvm.method().pushHandleVarargs(jvm.clsData().clsName, name);
+        // return array of class name and generated method name
+        return new String[]{jvm.clsData().clsName, name};
     }
 
-    public void emit(IRClosure closure) {
+    public String[] emit(IRClosure closure) {
         /* Compile the closure like a method */
         String name = closure.getName() + "__" + closure.getLexicalParent().getName();
 
-        name = emitScope(closure, name, closure.getBlockArgs().length);
+        name = emitScope(closure, name, 0);
 
         /* .. Build a CompiledIRBlockBody object here ... */
         /* .. and bind that with the "method" emitted ... */
@@ -330,8 +339,10 @@ public class JVMVisitor extends IRVisitor {
             emit(c);
         }
 
+        // return array of class name and generated method name
+        return new String[]{jvm.clsData().clsName, name};
         // push a method handle for binding purposes
-        jvm.method().pushHandle(jvm.clsData().clsName, name, closure.getStaticScope().getRequiredArgs());
+        //jvm.method().pushHandle(jvm.clsData().clsName, name, closure.getStaticScope().getRequiredArgs());
     }
 
     public void emit(IRModuleBody method) {
@@ -864,7 +875,8 @@ public class JVMVisitor extends IRVisitor {
         List<String[]> parameters = method.getArgDesc();
 
         a.aload(0); // ThreadContext
-        emit(method); // handle
+        String[] classAndMethod = emit(method); // handle
+        jvm.method().pushHandleVarargs(classAndMethod[0], classAndMethod[1]);
         a.ldc(method.getName());
         a.aload(1);
         a.ldc(scopeString);
@@ -1259,7 +1271,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ReceiveClosureInstr(ReceiveClosureInstr receiveclosureinstr) {
+        jvm.method().loadRuntime();
         jvmLoadLocal("$block");
+        jvm.method().invokeIRHelper("newProc", sig(IRubyObject.class, Ruby.class, Block.class));
         jvmStoreLocal(receiveclosureinstr.getResult());
     }
 
@@ -1354,6 +1368,11 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void RestArgMultipleAsgnInstr(RestArgMultipleAsgnInstr restargmultipleasgninstr) {
         super.RestArgMultipleAsgnInstr(restargmultipleasgninstr);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) {
+        // no-op for the moment
     }
 
     @Override
@@ -1473,19 +1492,15 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void YieldInstr(YieldInstr yieldinstr) {
+        jvm.method().loadLocal(0);
         visit(yieldinstr.getBlockArg());
 
-        // TODO: proc, nil block logic
-
-        jvm.method().loadLocal(0);
         if (yieldinstr.getYieldArg() == UndefinedValue.UNDEFINED) {
-            jvm.method().adapter.invokevirtual(p(Block.class), "yieldSpecific", sig(IRubyObject.class, ThreadContext.class));
+            jvm.method().invokeIRHelper("yieldSpecific", sig(IRubyObject.class, ThreadContext.class, Object.class));
         } else {
             visit(yieldinstr.getYieldArg());
-
-            // TODO: if yielding array, call yieldArray
-
-            jvm.method().adapter.invokevirtual(p(Block.class), "yield", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
+            jvm.method().adapter.ldc(yieldinstr.isUnwrapArray());
+            jvm.method().invokeIRHelper("yield", sig(IRubyObject.class, ThreadContext.class, Object.class, Object.class, boolean.class));
         }
 
         jvmStoreLocal(yieldinstr.getResult());

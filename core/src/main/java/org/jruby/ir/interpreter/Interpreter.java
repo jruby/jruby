@@ -324,7 +324,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
         case RECV_CLOSURE:
-            result = (block == Block.NULL_BLOCK) ? context.nil : context.runtime.newProc(Block.Type.PROC, block);
+            result = IRRuntimeHelpers.newProc(context.runtime, block);
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
         case RECV_OPT_ARG:

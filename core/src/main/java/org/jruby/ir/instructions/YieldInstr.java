@@ -9,6 +9,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -90,14 +91,11 @@ public class YieldInstr extends Instr implements ResultInstr, FixedArityInstr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Object blk = blockArg.retrieve(context, self, currDynScope, temp);
-        if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
-        if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
-        Block b = (Block)blk;
         if (yieldArg == UndefinedValue.UNDEFINED) {
-            return b.yieldSpecific(context);
+            return IRRuntimeHelpers.yieldSpecific(context, blk);
         } else {
             IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(context, self, currDynScope, temp);
-            return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null, null) : b.yield(context, yieldVal);
+            return IRRuntimeHelpers.yield(context, blk, yieldVal, unwrapArray);
         }
     }
 

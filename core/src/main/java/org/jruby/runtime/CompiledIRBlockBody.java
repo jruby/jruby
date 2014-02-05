@@ -6,13 +6,17 @@ import org.jruby.ir.IRClosure;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.lang.invoke.MethodHandle;
+
 // By default, this only supports 1.9 mode
 public class CompiledIRBlockBody extends ContextAwareBlockBody {
     protected final IRClosure closure;
+    protected final MethodHandle handle;
 
-    public CompiledIRBlockBody(IRClosure closure, Arity arity, int argumentType) {
+    public CompiledIRBlockBody(IRClosure closure, MethodHandle handle, Arity arity, int argumentType) {
         super(closure.getStaticScope(), arity, -1);
         this.closure = closure;
+        this.handle = handle;
     }
 
     @Override

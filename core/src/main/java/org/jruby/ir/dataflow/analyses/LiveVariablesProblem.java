@@ -50,7 +50,7 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
         dfVarMap.put(v, dfv);
         varDfVarMap.put(dfv, v);
         
-        if (v instanceof LocalVariable && !v.isSelf()) {
+        if (v instanceof LocalVariable && !v.isSelf() && !v.isImplicitBlockArg()) {
             //System.out.println("Adding df var for " + v + ":" + dfv.id);
             IRScope s = getScope();
             for (int n = ((LocalVariable) v).getScopeDepth(); s != null && n >= 0; n--) {
