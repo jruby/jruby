@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -64,5 +65,10 @@ public class TemporaryLocalVariable extends TemporaryVariable {
         // I dont like this at all.  This feels ugly!
         Object o = temp[offset];
         return o == null ? context.nil : o;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.TemporaryLocalVariable(this);
     }
 }

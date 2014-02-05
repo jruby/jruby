@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -11,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2008 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2014 The JRuby Team (admin@jruby.org)
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -25,41 +26,36 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.ast;
+package org.jruby.ir.operands;
 
-import org.jruby.Ruby;
-import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 /**
- *
+ * Represents a temporary variable for an unboxed Float operand.
  */
-public class ArgsPreOneArgNode extends ArgsNode {
-    public ArgsPreOneArgNode(ISourcePosition position, ListNode pre) {
-        super(position, pre, null, null, null, null);
+public class TemporaryFixnumVariable extends TemporaryLocalVariable {
+    public TemporaryFixnumVariable(int offset) {
+        super(offset);
     }
 
     @Override
-    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args, Block block) {
-        super.prepare(context, runtime, self, args, block);
+    public TemporaryVariableType getType() {
+        return TemporaryVariableType.FIXNUM;
     }
 
     @Override
-    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0, Block block) {
-        context.getCurrentScope().setArgValues(arg0);
+    public String getPrefix() {
+        return "%f_";
     }
 
     @Override
-    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0,
-            IRubyObject arg1, Block block) {
-        throw runtime.newArgumentError(2, 1);
+    public Variable clone(InlinerInfo ii) {
+        return new TemporaryFixnumVariable(offset);
     }
 
     @Override
-    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0,
-            IRubyObject arg1, IRubyObject arg2, Block block) {
-        throw runtime.newArgumentError(3, 1);
+    public void visit(IRVisitor visitor) {
+        visitor.TemporaryFixnumVariable(this);
     }
 }

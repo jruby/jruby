@@ -4,9 +4,6 @@ package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.BooleanLiteral;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.Float;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -59,9 +56,9 @@ public class MethAddr extends Reference {
             case '+' :
             case '-' :
             case '*' :
-            case '/' : return operandType == Float.class ? Float.class : /*(operandType == Fixnum.class ? Fixnum.class : null)*/ null;
+            case '/' : return operandType == Float.class ? Float.class : operandType == Fixnum.class ? Fixnum.class : null;
             case '>' :
-            case '<' : return operandType == Float.class /*|| operandType == Fixnum.class*/ ? BooleanLiteral.class : null;
+            case '<' : return operandType == Float.class || operandType == Fixnum.class ? UnboxedBoolean.class : null;
             }
         }
         return null;
@@ -77,6 +74,15 @@ public class MethAddr extends Reference {
             case '/' : return Operation.FDIV;
             case '>' : return Operation.FGT;
             case '<' : return Operation.FLT;
+            }
+        } else if (unboxedType == Fixnum.class && n.length() == 1) {
+            switch (n.charAt(0)) {
+                case '+' : return Operation.IADD;
+                case '-' : return Operation.ISUB;
+                case '*' : return Operation.IMUL;
+                case '/' : return Operation.IDIV;
+                case '>' : return Operation.IGT;
+                case '<' : return Operation.ILT;
             }
         }
         return null;

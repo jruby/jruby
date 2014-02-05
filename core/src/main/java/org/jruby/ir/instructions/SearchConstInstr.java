@@ -5,6 +5,7 @@ import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
@@ -15,7 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.Invalidator;
 
 import java.util.Map;
-import org.jruby.ir.operands.BooleanLiteral;
+
 import org.jruby.ir.operands.StringLiteral;
 
 // Const search:
@@ -46,7 +47,7 @@ public class SearchConstInstr extends Instr implements ResultInstr, FixedArityIn
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { new StringLiteral(constName), startingScope, new BooleanLiteral(noPrivateConsts) };
+        return new Operand[] { new StringLiteral(constName), startingScope, new UnboxedBoolean(noPrivateConsts) };
     }
 
     @Override

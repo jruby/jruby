@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ir.operands;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 /**
@@ -51,5 +52,10 @@ public class TemporaryFloatVariable extends TemporaryLocalVariable {
     @Override
     public Variable clone(InlinerInfo ii) {
         return new TemporaryFloatVariable(offset);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.TemporaryFloatVariable(this);
     }
 }

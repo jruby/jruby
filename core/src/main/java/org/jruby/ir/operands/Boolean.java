@@ -3,13 +3,13 @@ package org.jruby.ir.operands;
 import org.jruby.ir.IRVisitor;
 import org.jruby.runtime.ThreadContext;
 
-public class BooleanLiteral extends ImmutableLiteral {
+public class Boolean extends ImmutableLiteral {
     private final boolean truthy;
 
-    public static final BooleanLiteral TRUE = new BooleanLiteral(true);
-    public static final BooleanLiteral FALSE = new BooleanLiteral(false);
+    public static final Boolean TRUE = new Boolean(true);
+    public static final Boolean FALSE = new Boolean(false);
 
-    public BooleanLiteral(boolean truthy) {
+    public Boolean(boolean truthy) {
         super(OperandType.BOOLEAN_LITERAL);
 
         this.truthy = truthy;
@@ -30,7 +30,7 @@ public class BooleanLiteral extends ImmutableLiteral {
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof BooleanLiteral && truthy == ((BooleanLiteral) other).truthy;
+        return other instanceof Boolean && truthy == ((Boolean) other).truthy;
     }
 
     @Override
@@ -40,7 +40,7 @@ public class BooleanLiteral extends ImmutableLiteral {
 
     @Override
     public void visit(IRVisitor visitor) {
-        visitor.BooleanLiteral(this);
+        visitor.Boolean(this);
     }
 
     @Override

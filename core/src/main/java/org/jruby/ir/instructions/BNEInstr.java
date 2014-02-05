@@ -2,7 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.BooleanLiteral;
+import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
@@ -13,8 +13,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class BNEInstr extends TwoOperandBranchInstr implements FixedArityInstr {
     public static BranchInstr create(Operand v1, Operand v2, Label jmpTarget) {
-        if (v2 instanceof BooleanLiteral) {
-            return ((BooleanLiteral) v2).isFalse() ? new BTrueInstr(v1, jmpTarget) : new BFalseInstr(v1, jmpTarget);
+        if (v2 instanceof UnboxedBoolean) {
+            return ((UnboxedBoolean) v2).isFalse() ? new BTrueInstr(v1, jmpTarget) : new BFalseInstr(v1, jmpTarget);
         }
         return new BNEInstr(v1, v2, jmpTarget);
     }

@@ -3,11 +3,11 @@ package org.jruby.ir.operands;
 import org.jruby.ir.IRVisitor;
 import org.jruby.runtime.ThreadContext;
 
-public class Float extends ImmutableLiteral {
+public class UnboxedFloat extends ImmutableLiteral {
     final public double value;
 
-    public Float(double value) {
-        super(OperandType.FLOAT);
+    public UnboxedFloat(double value) {
+        super(OperandType.UNBOXED_FLOAT);
 
         this.value = value;
     }
@@ -24,12 +24,12 @@ public class Float extends ImmutableLiteral {
 
     @Override
     public String toString() {
-        return "Float:" + value;
+        return "UnboxedFloat:" + value;
     }
 
     @Override
     public void visit(IRVisitor visitor) {
-        visitor.Float(this);
+        visitor.UnboxedFloat(this);
     }
 
     public double getValue() {

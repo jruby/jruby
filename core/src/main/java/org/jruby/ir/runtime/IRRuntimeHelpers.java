@@ -7,6 +7,8 @@ import org.jruby.RubyModule;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyNil;
+import org.jruby.RubyProc;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.IREvalScript;
@@ -195,11 +197,27 @@ public class IRRuntimeHelpers {
         }
     }
 
+    public static long unboxFixnum(IRubyObject val) {
+        if (val instanceof RubyFloat) {
+            return (long)((RubyFloat)val).getValue();
+        } else {
+            return ((RubyFixnum)val).getLongValue();
+        }
+    }
+
     public static boolean flt(double v1, double v2) {
         return v1 < v2;
     }
 
     public static boolean fgt(double v1, double v2) {
+        return v1 > v2;
+    }
+
+    public static boolean ilt(long v1, long v2) {
+        return v1 < v2;
+    }
+
+    public static boolean igt(long v1, long v2) {
         return v1 > v2;
     }
 
@@ -260,5 +278,24 @@ public class IRRuntimeHelpers {
             // SSS FIXME: Why are we returning 'excType'? Shouldn't this be a boolean?
             return isUndefExc ? excType : runtime.newBoolean(IRRuntimeHelpers.exceptionHandled(context, excType, excObj));
         }
+    }
+
+    public static IRubyObject newProc(Ruby runtime, Block block) {
+        return (block == Block.NULL_BLOCK) ? runtime.getNil() : runtime.newProc(Block.Type.PROC, block);
+    }
+
+    public static IRubyObject yield(ThreadContext context, Object blk, Object yieldArg, boolean unwrapArray) {
+        if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
+        if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
+        Block b = (Block)blk;
+        IRubyObject yieldVal = (IRubyObject)yieldArg;
+        return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null, null) : b.yield(context, yieldVal);
+    }
+
+    public static IRubyObject yieldSpecific(ThreadContext context, Object blk) {
+        if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
+        if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
+        Block b = (Block)blk;
+        return b.yieldSpecific(context);
     }
 }

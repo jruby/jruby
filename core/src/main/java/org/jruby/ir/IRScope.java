@@ -25,7 +25,8 @@ import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.listeners.IRScopeListener;
-import org.jruby.ir.operands.BooleanLiteral;
+import org.jruby.ir.operands.UnboxedBoolean;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
@@ -35,6 +36,7 @@ import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.TemporaryCurrentModuleVariable;
 import org.jruby.ir.operands.TemporaryCurrentScopeVariable;
 import org.jruby.ir.operands.TemporaryBooleanVariable;
+import org.jruby.ir.operands.TemporaryFixnumVariable;
 import org.jruby.ir.operands.TemporaryFloatVariable;
 import org.jruby.ir.operands.TemporaryLocalReplacementVariable;
 import org.jruby.ir.operands.TemporaryLocalVariable;
@@ -139,6 +141,8 @@ public abstract class IRScope implements ParseResult {
     private Map<Integer, Integer> rescueMap;
     protected int temporaryVariableIndex;
     protected int floatVariableIndex;
+    protected int fixnumVariableIndex;
+    protected int booleanVariableIndex;
 
     /** Keeps track of types of prefix indexes for variables and labels */
     private Map<String, Integer> nextVarIndex;
@@ -732,14 +736,6 @@ public abstract class IRScope implements ParseResult {
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
     public Tuple<Instr[], Map<Integer,Label[]>> prepareForCompilation() {
-        // Build CFG and run compiler passes, if necessary
-        if (getCFG() == null) {
-            runCompilerPasses(getManager().getJITPasses(this));
-
-            // no DCE for now to stress-test JIT
-            //runDeadCodeAndVarLoadStorePasses();
-        }
-
         // Add this always since we dont re-JIT a previously
         // JIT-ted closure.  But, check if there are other
         // smarts available to us and eliminate adding this
@@ -749,6 +745,16 @@ public abstract class IRScope implements ParseResult {
         // and throw a LocalJumpError.
         if (this instanceof IRClosure && ((IRClosure)this).addGEBForUncaughtBreaks()) {
             this.relinearizeCFG = true;
+        }
+
+        checkRelinearization();
+
+        // Build CFG and run compiler passes, if necessary
+        if (getCFG() == null) {
+            runCompilerPasses(getManager().getJITPasses(this));
+
+            // no DCE for now to stress-test JIT
+            //runDeadCodeAndVarLoadStorePasses();
         }
 
         prepareInstructionsForInterpretation();
@@ -1051,6 +1057,10 @@ public abstract class IRScope implements ParseResult {
                 floatVariableIndex++;
                 return new TemporaryFloatVariable(floatVariableIndex);
             }
+            case FIXNUM: {
+                fixnumVariableIndex++;
+                return new TemporaryFixnumVariable(fixnumVariableIndex);
+            }
             case BOOLEAN: {
                 // Shares var index with locals
                 temporaryVariableIndex++;
@@ -1073,7 +1083,9 @@ public abstract class IRScope implements ParseResult {
         TemporaryVariableType varType;
         if (type == Float.class) {
             varType = TemporaryVariableType.FLOAT;
-        } else if (type == BooleanLiteral.class) {
+        } else if (type == Fixnum.class) {
+            varType = TemporaryVariableType.FIXNUM;
+        } else if (type == UnboxedBoolean.class) {
             varType = TemporaryVariableType.BOOLEAN;
         } else {
             varType = TemporaryVariableType.LOCAL;
@@ -1084,6 +1096,8 @@ public abstract class IRScope implements ParseResult {
     public void resetTemporaryVariables() {
         temporaryVariableIndex = -1;
         floatVariableIndex = -1;
+        fixnumVariableIndex = -1;
+        booleanVariableIndex = -1;
     }
 
     public int getTemporaryVariablesCount() {
@@ -1092,6 +1106,14 @@ public abstract class IRScope implements ParseResult {
 
     public int getFloatVariablesCount() {
         return floatVariableIndex + 1;
+    }
+
+    public int getFixnumVariablesCount() {
+        return fixnumVariableIndex + 1;
+    }
+
+    public int getBooleanVariablesCount() {
+        return booleanVariableIndex + 1;
     }
 
     // Generate a new variable for inlined code

@@ -25,15 +25,15 @@ import java.math.BigInteger;
  *   end
  * </pre>
  */
-public class Fixnum extends ImmutableLiteral {
+public class UnboxedFixnum extends ImmutableLiteral {
     final public long value;
 
-    public Fixnum(long val) {
+    public UnboxedFixnum(long val) {
         super(OperandType.FIXNUM);
         value = val;
     }
 
-    public Fixnum(BigInteger val) {
+    public UnboxedFixnum(BigInteger val) {
         this(val.longValue());
     }
 
@@ -49,12 +49,12 @@ public class Fixnum extends ImmutableLiteral {
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof Fixnum && value == ((Fixnum) other).value;
+        return other instanceof UnboxedFixnum && value == ((UnboxedFixnum) other).value;
     }
 
     @Override
     public void visit(IRVisitor visitor) {
-        visitor.Fixnum(this);
+        visitor.UnboxedFixnum(this);
     }
 
     public long getValue() {
@@ -63,6 +63,6 @@ public class Fixnum extends ImmutableLiteral {
 
     @Override
     public String toString() {
-        return "Fixnum:" + value;
+        return "UnboxedFixnum:" + value;
     }
 }
