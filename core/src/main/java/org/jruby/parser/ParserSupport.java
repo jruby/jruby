@@ -397,8 +397,8 @@ public class ParserSupport {
     public Node ret_args(Node node, ISourcePosition position) {
         if (node != null) {
             if (node instanceof BlockPassNode) {
-                throw new SyntaxException(PID.DYNAMIC_CONSTANT_ASSIGNMENT, position,
-                        lexer.getCurrentLine(), "Dynamic constant assignment.");
+                throw new SyntaxException(PID.BLOCK_ARG_UNEXPECTED, position,
+                        lexer.getCurrentLine(), "block argument should not be given");
             } else if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {
                 node = ((ArrayNode)node).get(0);
             } else if (node instanceof SplatNode) {
