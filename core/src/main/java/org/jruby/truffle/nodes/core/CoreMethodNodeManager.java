@@ -48,7 +48,6 @@ public abstract class CoreMethodNodeManager {
         getMethods(methods, ClassNodesFactory.getFactories());
         getMethods(methods, ContinuationNodesFactory.getFactories());
         getMethods(methods, ComparableNodesFactory.getFactories());
-        getMethods(methods, DebugNodesFactory.getFactories());
         getMethods(methods, DirNodesFactory.getFactories());
         getMethods(methods, ExceptionNodesFactory.getFactories());
         getMethods(methods, FalseClassNodesFactory.getFactories());
@@ -164,7 +163,7 @@ public abstract class CoreMethodNodeManager {
             assert arity.getMaximum() != Arity.NO_MAXIMUM;
 
             for (int n = 0; n < arity.getMaximum(); n++) {
-                argumentsNodes.add(new ReadPreArgumentNode(context, sourceSection, n, true));
+                argumentsNodes.add(new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED));
             }
         }
 

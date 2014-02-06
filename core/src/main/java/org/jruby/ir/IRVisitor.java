@@ -14,42 +14,8 @@ import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
-import org.jruby.ir.operands.Array;
-import org.jruby.ir.operands.AsString;
-import org.jruby.ir.operands.Backref;
-import org.jruby.ir.operands.BacktickString;
-import org.jruby.ir.operands.Bignum;
-import org.jruby.ir.operands.BooleanLiteral;
-import org.jruby.ir.operands.ClosureLocalVariable;
-import org.jruby.ir.operands.CompoundArray;
-import org.jruby.ir.operands.CompoundString;
-import org.jruby.ir.operands.ScopeModule;
-import org.jruby.ir.operands.CurrentScope;
-import org.jruby.ir.operands.DynamicSymbol;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.GlobalVariable;
-import org.jruby.ir.operands.Hash;
-import org.jruby.ir.operands.IRException;
-import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.MethAddr;
-import org.jruby.ir.operands.MethodHandle;
-import org.jruby.ir.operands.Nil;
-import org.jruby.ir.operands.NthRef;
-import org.jruby.ir.operands.ObjectClass;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Range;
-import org.jruby.ir.operands.Regexp;
-import org.jruby.ir.operands.SValue;
-import org.jruby.ir.operands.Self;
-import org.jruby.ir.operands.Splat;
-import org.jruby.ir.operands.StandardError;
-import org.jruby.ir.operands.StringLiteral;
-import org.jruby.ir.operands.Symbol;
-import org.jruby.ir.operands.TemporaryVariable;
-import org.jruby.ir.operands.UndefinedValue;
-import org.jruby.ir.operands.UnexecutableNil;
-import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.operands.*;
+import org.jruby.ir.operands.Boolean;
 
 /**
  * Superclass for IR visitors.
@@ -169,8 +135,12 @@ public abstract class IRVisitor {
 
     // unboxing instrs
     public void BoxFloatInstr(BoxFloatInstr instr) { error(instr); }
+    public void BoxFixnumInstr(BoxFixnumInstr instr) { error(instr); }
+    public void BoxBooleanInstr(BoxBooleanInstr instr) { error(instr); }
     public void AluInstr(AluInstr instr) { error(instr); }
     public void UnboxFloatInstr(UnboxFloatInstr instr) { error(instr); }
+    public void UnboxFixnumInstr(UnboxFixnumInstr instr) { error(instr); }
+    public void UnboxBooleanInstr(UnboxBooleanInstr instr) { error(instr); }
 
     // operands
     public void Array(Array array) { error(array); }
@@ -178,14 +148,17 @@ public abstract class IRVisitor {
     public void Backref(Backref backref) { error(backref); }
     public void BacktickString(BacktickString backtickstring) { error(backtickstring); }
     public void Bignum(Bignum bignum) { error(bignum); }
-    public void BooleanLiteral(BooleanLiteral booleanliteral) { error(booleanliteral); }
+    public void Boolean(Boolean bool) { error(bool); }
+    public void UnboxedBoolean(UnboxedBoolean bool) { error(bool); }
     public void ClosureLocalVariable(ClosureLocalVariable closurelocalvariable) { error(closurelocalvariable); }
     public void CompoundArray(CompoundArray compoundarray) { error(compoundarray); }
     public void CompoundString(CompoundString compoundstring) { error(compoundstring); }
     public void CurrentScope(CurrentScope currentscope) { error(currentscope); }
     public void DynamicSymbol(DynamicSymbol dynamicsymbol) { error(dynamicsymbol); }
     public void Fixnum(Fixnum fixnum) { error(fixnum); }
+    public void UnboxedFixnum(UnboxedFixnum fixnum) { error(fixnum); }
     public void Float(org.jruby.ir.operands.Float flote) { error(flote); }
+    public void UnboxedFloat(org.jruby.ir.operands.UnboxedFloat flote) { error(flote); }
     public void GlobalVariable(GlobalVariable globalvariable) { error(globalvariable); }
     public void Hash(Hash hash) { error(hash); }
     public void IRException(IRException irexception) { error(irexception); }
@@ -206,6 +179,10 @@ public abstract class IRVisitor {
     public void SValue(SValue svalue) { error(svalue); }
     public void Symbol(Symbol symbol) { error(symbol); }
     public void TemporaryVariable(TemporaryVariable temporaryvariable) { error(temporaryvariable); }
+    public void TemporaryLocalVariable(TemporaryLocalVariable temporarylocalvariable) { error(temporarylocalvariable); }
+    public void TemporaryFloatVariable(TemporaryFloatVariable temporaryfloatvariable) { error(temporaryfloatvariable); }
+    public void TemporaryFixnumVariable(TemporaryFixnumVariable temporaryfixnumvariable) { error(temporaryfixnumvariable); }
+    public void TemporaryBooleanVariable(TemporaryBooleanVariable temporarybooleanvariable) { error(temporarybooleanvariable); }
     public void UndefinedValue(UndefinedValue undefinedvalue) { error(undefinedvalue); }
     public void UnexecutableNil(UnexecutableNil unexecutablenil) { error(unexecutablenil); }
     public void WrappedIRClosure(WrappedIRClosure wrappedirclosure) { error(wrappedirclosure); }

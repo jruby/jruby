@@ -202,7 +202,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case POP_FRAME: return new PopFrameInstr();
             case PROCESS_MODULE_BODY: return new ProcessModuleBodyInstr(d.decodeVariable(), d.decodeOperand());
             case PUSH_BINDING: return new PushBindingInstr(d.decodeScope());
-            case PUSH_FRAME: return new PushFrameInstr();
+            case PUSH_FRAME: return decodeFrame();
             case PUT_CONST: return new PutConstInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
             case PUT_CVAR: return new PutClassVariableInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
             case PUT_FIELD: return new PutFieldInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
@@ -275,6 +275,11 @@ class InstrDecoderMap implements IRPersistenceValues {
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
 
         return CallInstr.create(CallType.fromOrdinal(callTypeOrdinal), result, new MethAddr(methAddr), receiver, args, closure);
+    }
+
+    private Instr decodeFrame() {
+        String methAddr = d.decodeString();
+        return new PushFrameInstr(new MethAddr(methAddr));
     }
     
     private Instr decodeConstMissingInstr() {
@@ -414,14 +419,29 @@ class InstrDecoderMap implements IRPersistenceValues {
         
         return new UnresolvedSuperInstr(result, receiver, args, closure);
     }
-    
+
+    // FIXME: Verify
     public Instr decodeZSuperInstr() {
         Variable result = d.decodeVariable();
         Operand receiver = d.decodeOperand();
         boolean hasClosure = d.decodeBoolean();
         Operand closure = hasClosure ? d.decodeOperand() : null;
-        
-        return new ZSuperInstr(result, receiver, closure);
+
+        int argsLength = d.decodeInt();
+        // if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("ARGS: " + argsLength + ", CLOSURE: " + hasClosure);
+        Operand[] args = new Operand[argsLength];
+        for (int i = 0; i < argsLength; i++) {
+            args[i] = d.decodeOperand();
+        }
+
+        argsLength = d.decodeInt();
+        // if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("ARGS: " + argsLength + ", CLOSURE: " + hasClosure);
+        Integer[] argCounts = new Integer[argsLength];
+        for (int i = 0; i < argsLength; i++) {
+            argCounts[i] = d.decodeInt();
+        }
+
+        return new ZSuperInstr(result, receiver, closure, args, argCounts);
     }
 
     private Instr decodeNonlocalReturnInstr() {

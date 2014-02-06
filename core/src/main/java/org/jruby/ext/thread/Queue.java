@@ -84,6 +84,10 @@ public class Queue extends RubyObject {
         notifyAll();
     }
 
+    public boolean isShutdown() {
+        return entries == null;
+    }
+
     public synchronized void checkShutdown(ThreadContext context) {
         if (entries == null) {
             throw new RaiseException(context.runtime, context.runtime.getThreadError(), "queue shut down", false);

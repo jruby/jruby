@@ -1,33 +1,37 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.IRMethod;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.parser.IRStaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ZSuperInstr extends UnresolvedSuperInstr implements FixedArityInstr {
-	 // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
-    public ZSuperInstr(Variable result, Operand receiver, Operand closure) {
-        super(Operation.ZSUPER, result, receiver, closure);
+import java.util.Arrays;
+
+public class ZSuperInstr extends UnresolvedSuperInstr {
+    Operand[] allPossibleArgs;
+    Integer[] argCounts;
+
+	// SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
+    public ZSuperInstr(Variable result, Operand receiver, Operand closure, Operand[] allPossibleArgs, Integer[] argCounts) {
+        super(Operation.ZSUPER, result, receiver, allPossibleArgs, closure);
+        this.allPossibleArgs = allPossibleArgs;
+        this.argCounts = argCounts;
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ZSuperInstr(ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii), closure == null ? null : closure.cloneForInlining(ii));
-    }
+        int numArgs = allPossibleArgs.length;
+        Operand[] clonedArgs = new Operand[numArgs];
+        for (int i = 0; i < numArgs; i++) {
+            clonedArgs[i] = allPossibleArgs[i].cloneForInlining(ii);
+        }
 
-    @Override
-    public Operand[] getOperands() {
-        return (closure == null) ? EMPTY_OPERANDS : new Operand[] { closure };
+        return new ZSuperInstr(ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii), closure == null ? null : closure.cloneForInlining(ii), clonedArgs, argCounts);
     }
 
     @Override
@@ -44,9 +48,18 @@ public class ZSuperInstr extends UnresolvedSuperInstr implements FixedArityInstr
         DynamicScope argsDynScope = currDynScope;
 
         // Find args that need to be passed into super
-        while (!argsDynScope.getStaticScope().isArgumentScope()) argsDynScope = argsDynScope.getNextCapturedScope();
-        IRScope argsIRScope = ((IRStaticScope)argsDynScope.getStaticScope()).getIRScope();
-        Operand[] superArgs = (argsIRScope instanceof IRMethod) ? ((IRMethod)argsIRScope).getCallArgs() : ((IRClosure)argsIRScope).getBlockArgs();
+        int i = 0, offset = 0;
+        while (!argsDynScope.getStaticScope().isArgumentScope()) {
+            argsDynScope = argsDynScope.getNextCapturedScope();
+            offset += argCounts[i];
+            i++;
+        }
+
+        int n = argCounts[i];
+        Operand[] superArgs = new Operand[n];
+        for (int j = 0; j < n; j++) {
+            superArgs[j] = allPossibleArgs[offset+j];
+        }
 
         // Prepare args -- but look up in 'argsDynScope', not 'currDynScope'
         IRubyObject[] args = prepareArguments(context, self, superArgs, argsDynScope, temp);
@@ -58,8 +71,17 @@ public class ZSuperInstr extends UnresolvedSuperInstr implements FixedArityInstr
         return interpretSuper(context, self, args, block);
     }
 
+    public Integer[] getArgCounts() {
+        return argCounts;
+    }
+
     @Override
     public void visit(IRVisitor visitor) {
         visitor.ZSuperInstr(this);
+    }
+
+    @Override
+    public String toString() {
+        return "" + getOperation()  + "(" + receiver + ", " + Arrays.toString(getCallArgs()) + ", " + Arrays.toString(argCounts) + (closure == null ? "" : ", &" + closure) + ")";
     }
 }

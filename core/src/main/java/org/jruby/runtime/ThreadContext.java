@@ -843,17 +843,7 @@ public final class ThreadContext {
     }
     
     public RubyStackTraceElement[] gatherCallerBacktrace() {
-        Thread nativeThread = thread.getNativeThread();
-
-        // Future thread or otherwise unforthgiving thread impl.
-        if (nativeThread == null) return new RubyStackTraceElement[] {};
-
-        BacktraceElement[] copy = new BacktraceElement[backtraceIndex + 1];
-
-        System.arraycopy(backtrace, 0, copy, 0, backtraceIndex + 1);
-        RubyStackTraceElement[] trace = Gather.CALLER.getBacktraceData(this, false).getBacktrace(runtime);
-
-        return trace;
+        return Gather.CALLER.getBacktraceData(this, false).getBacktrace(runtime);
     }
     
     /**
@@ -1044,6 +1034,13 @@ public final class ThreadContext {
         if (ssModule == null) ssModule = implClass;
         pushRubyClass(ssModule);
         pushCallFrame(implClass, name, self, block);
+    }
+
+    // FIXME: This may not be correct for RubyClass in all cases
+    public void preMethodFrameAndClass(String name, IRubyObject self, Block block, StaticScope staticScope) {
+        RubyModule ssModule = staticScope.getModule();
+        pushRubyClass(ssModule);
+        pushCallFrame(ssModule, name, self, block);
     }
     
     public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, Block block, 

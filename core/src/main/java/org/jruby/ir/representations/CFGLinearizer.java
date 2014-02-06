@@ -83,12 +83,11 @@ public class CFGLinearizer {
      * Process (fixup) list of instruction and add or remove jumps.
      */
     private static void fixupList(CFG cfg, List<BasicBlock> list) {
-        BasicBlock exitBB = cfg.getExitBB();
         int n = list.size();
         for (int i = 0; i < n - 1; i++) {
             BasicBlock current = list.get(i);
 
-            if (current == exitBB) { // exit not last
+            if (current.isExitBB()) { // exit not last
                 current.addInstr(new ReturnInstr(cfg.getScope().getManager().getNil()));
                 continue;
             }
@@ -102,7 +101,7 @@ public class CFGLinearizer {
         }
 
         BasicBlock current = list.get(n - 1);
-        if (current != exitBB) {
+        if (!current.isExitBB()) {
             Instr lastInstr = current.getLastInstr();
             // Last instruction of the last basic block in the linearized list can NEVER
             // be a branch instruction because this basic block would then have a fallthrough

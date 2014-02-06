@@ -43,8 +43,8 @@ public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
             public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                 try {
                     return (IRubyObject) compiled.getMethod("__script__0", ThreadContext.class,
-                            StaticScope.class, IRubyObject.class, Block.class).invoke(null,
-                            runtime.getCurrentContext(), scope.getStaticScope(), runtimeTopSelf, block);
+                            StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class).invoke(null,
+                            runtime.getCurrentContext(), scope.getStaticScope(), runtimeTopSelf, IRubyObject.NULL_ARRAY, block);
                 } catch (InvocationTargetException ite) {
                     if (ite.getCause() instanceof JumpException) {
                         throw (JumpException) ite.getCause();

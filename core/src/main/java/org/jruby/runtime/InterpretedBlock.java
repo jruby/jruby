@@ -244,8 +244,8 @@ public class InterpretedBlock extends ContextAwareBlockBody {
 
             // This while loop is for restarting the block call in case a 'redo' fires.
             return evalBlockBody(context, binding, self);
-        } catch (JumpException.NextJump nj) {
-            return Helpers.handleNextJump(context, nj);
+        } catch (JumpException.FlowControlException jump) {
+            return Helpers.handleBlockJump(context, jump, type);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -264,8 +264,8 @@ public class InterpretedBlock extends ContextAwareBlockBody {
 
             // This while loop is for restarting the block call in case a 'redo' fires.
             return evalBlockBody(context, binding, self);
-        } catch (JumpException.NextJump nj) {
-            return Helpers.handleNextJump(context, nj);
+        } catch (JumpException.FlowControlException jump) {
+            return Helpers.handleBlockJump(context, jump, type);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -284,8 +284,8 @@ public class InterpretedBlock extends ContextAwareBlockBody {
 
             // This while loop is for restarting the block call in case a 'redo' fires.
             return evalBlockBody(context, binding, self);
-        } catch (JumpException.NextJump nj) {
-            return Helpers.handleNextJump(context, nj);
+        } catch (JumpException.FlowControlException jump) {
+            return Helpers.handleBlockJump(context, jump, type);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -303,8 +303,8 @@ public class InterpretedBlock extends ContextAwareBlockBody {
             }
 
             return evalBlockBody(context, binding, self);
-        } catch (JumpException.NextJump nj) {
-            return Helpers.handleNextJump(context, nj);
+        } catch (JumpException.FlowControlException jump) {
+            return Helpers.handleBlockJump(context, jump, type);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -338,8 +338,8 @@ public class InterpretedBlock extends ContextAwareBlockBody {
 
             // This while loop is for restarting the block call in case a 'redo' fires.
             return evalBlockBody(context, binding, self);
-        } catch (JumpException.NextJump nj) {
-            return Helpers.handleNextJump(context, nj);
+        } catch (JumpException.FlowControlException jump) {
+            return Helpers.handleBlockJump(context, jump, type);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -359,8 +359,8 @@ public class InterpretedBlock extends ContextAwareBlockBody {
             }
 
             return evalBlockBody(context, binding, self);
-        } catch (JumpException.NextJump nj) {
-            return Helpers.handleNextJump(context, nj);
+        } catch (JumpException.FlowControlException jump) {
+            return Helpers.handleBlockJump(context, jump, type);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }

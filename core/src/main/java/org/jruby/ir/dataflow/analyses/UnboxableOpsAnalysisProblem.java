@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.dataflow.DataFlowConstants;
-import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
@@ -24,18 +23,20 @@ import org.jruby.ir.representations.BasicBlock;
 //
 // Type of a variable will change at most twice: TOP --> class --> BOTTOM
 
-public class UnboxableOpsAnalysisProblem extends DataFlowProblem {
+public class UnboxableOpsAnalysisProblem extends DataFlowProblem<UnboxableOpsAnalysisProblem, UnboxableOpsAnalysisNode> {
     public final static String NAME = "UnboxableOpsAnalysis";
 
     public UnboxableOpsAnalysisProblem() {
         super(DataFlowProblem.DF_Direction.FORWARD);
     }
 
+    @Override
     public String getName() {
         return "Unboxable Operands Analysis";
     }
 
-    public FlowGraphNode buildFlowGraphNode(BasicBlock bb) {
+    @Override
+    public UnboxableOpsAnalysisNode buildFlowGraphNode(BasicBlock bb) {
         return new UnboxableOpsAnalysisNode(this, bb);
     }
 
@@ -48,8 +49,8 @@ public class UnboxableOpsAnalysisProblem extends DataFlowProblem {
         // System.out.println("---------------- SCOPE BEFORE unboxing ----------------");
         // System.out.println("\nInstrs:\n" + getScope().cfg().toStringInstrs());
         Map<Variable, TemporaryLocalVariable> unboxMap = new HashMap<Variable, TemporaryLocalVariable>();
-        for (FlowGraphNode n : getInitialWorkList()) {
-            ((UnboxableOpsAnalysisNode) n).unbox(unboxMap);
+        for (UnboxableOpsAnalysisNode n : generateWorkList()) {
+            n.unbox(unboxMap);
         }
 
         // SSS FIXME: This should be done differently

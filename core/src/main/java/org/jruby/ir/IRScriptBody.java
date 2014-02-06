@@ -60,10 +60,12 @@ public class IRScriptBody extends IRScope {
         endBlocks.add(endBlockClosure);
     }
 
+    @Override
     public List<IRClosure> getBeginBlocks() {
         return beginBlocks;
     }
 
+    @Override
     public List<IRClosure> getEndBlocks() {
         return endBlocks;
     }

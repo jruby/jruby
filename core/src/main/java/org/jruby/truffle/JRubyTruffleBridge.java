@@ -16,14 +16,12 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyNil;
-import org.jruby.RubyKernel;
 import org.jruby.ast.Node;
 import org.jruby.ast.ArgsNode;
-import org.jruby.javasupport.JavaUtil;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.truffle.nodes.core.CoreMethodNodeManager;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
-import org.jruby.truffle.parser.JRubyParser;
+import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
@@ -46,7 +44,7 @@ public class JRubyTruffleBridge {
 
         // Set up a context
 
-        truffleContext = new RubyContext(runtime, new JRubyParser(runtime));
+        truffleContext = new RubyContext(runtime, new TranslatorDriver(runtime));
     }
 
     public void init() {
@@ -76,13 +74,13 @@ public class JRubyTruffleBridge {
     }
 
     public TruffleMethod truffelize(DynamicMethod originalMethod, ArgsNode argsNode, Node bodyNode) {
-        final MethodDefinitionNode methodDefinitionNode = truffleContext.getParser().parse(truffleContext, argsNode, bodyNode);
+        final MethodDefinitionNode methodDefinitionNode = truffleContext.getTranslator().parse(truffleContext, argsNode, bodyNode);
         return new TruffleMethod(originalMethod, methodDefinitionNode.getCallTarget());
     }
 
-    public Object execute(RubyParser.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
+    public Object execute(TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
         try {
-            final RubyParserResult parseResult = truffleContext.getParser().parse(truffleContext, DUMMY_SOURCE, parserContext, parentFrame, rootNode);
+            final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, DUMMY_SOURCE, parserContext, parentFrame, rootNode);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
 
             final RubyArguments arguments = new RubyArguments(parentFrame, self, null);
@@ -102,12 +100,18 @@ public class JRubyTruffleBridge {
     public IRubyObject toJRuby(Object object) {
         if (object instanceof NilPlaceholder) {
             return runtime.getNil();
-        } else if (object == truffleContext.getCoreLibrary().getMainObject()) {
-            return runtime.getTopSelf();
         } else if (object == truffleContext.getCoreLibrary().getKernelModule()) {
             return runtime.getKernel();
+        } else if (object == truffleContext.getCoreLibrary().getMainObject()) {
+            return runtime.getTopSelf();
+        } else if (object instanceof Boolean) {
+            return runtime.newBoolean((boolean) object);
+        } else if (object instanceof Integer) {
+            return runtime.newFixnum((int) object);
+        } else if (object instanceof Double) {
+            return runtime.newFloat((double) object);
         } else {
-            return JavaUtil.convertJavaToUsableRubyObject(runtime, object);
+            throw new UnsupportedOperationException("can't convert " + object.getClass() + " to JRuby");
         }
     }
 

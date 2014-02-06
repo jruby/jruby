@@ -23,27 +23,29 @@ import org.jruby.truffle.runtime.*;
 public class ReadPreArgumentNode extends RubyNode {
 
     private final int index;
-    private final boolean undefinedIfNotPresent;
+    private final MissingArgumentBehaviour missingArgumentBehaviour;
 
-    private final BranchProfile notPresentProfile = new BranchProfile();
-
-    public ReadPreArgumentNode(RubyContext context, SourceSection sourceSection, int index, boolean undefinedIfNotPresent) {
+    public ReadPreArgumentNode(RubyContext context, SourceSection sourceSection, int index, MissingArgumentBehaviour missingArgumentBehaviour) {
         super(context, sourceSection);
         this.index = index;
-        this.undefinedIfNotPresent = undefinedIfNotPresent;
+        this.missingArgumentBehaviour = missingArgumentBehaviour;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
         final Object[] arguments = frame.getArguments(RubyArguments.class).getArguments();
 
-        if (undefinedIfNotPresent) {
-            if (index >= arguments.length) {
-                notPresentProfile.enter();
-                return UndefinedPlaceholder.INSTANCE;
+        if (index >= arguments.length) {
+            switch (missingArgumentBehaviour) {
+                case RUNTIME_ERROR:
+                    break;
+
+                case UNDEFINED:
+                    return UndefinedPlaceholder.INSTANCE;
+
+                case NIL:
+                    return NilPlaceholder.INSTANCE;
             }
-        } else {
-            assert index < arguments.length;
         }
 
         return arguments[index];

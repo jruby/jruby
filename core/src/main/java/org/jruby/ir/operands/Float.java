@@ -27,23 +27,6 @@ public class Float extends ImmutableLiteral {
         return "Float:" + value;
     }
 
-    public Operand computeValue(String methodName, Operand arg) {
-        double v1 = value;
-        double v2 = (arg instanceof Fixnum) ? 1.0 * ((Fixnum)arg).value : (double)((Float)arg).value;
-
-        if (methodName.equals("+")) {
-            return new Float(v1 + v2);
-        } else if (methodName.equals("-")) {
-            return new Float(v1 - v2);
-        } else if (methodName.equals("*")) {
-            return new Float(v1 * v2);
-        } else if (methodName.equals("/")) {
-            return v2 == 0.0 ? null : new Float(v1 / v2); // If divisor is zero, don't simplify!
-        }
-
-        return null;
-    }
-
     @Override
     public void visit(IRVisitor visitor) {
         visitor.Float(this);

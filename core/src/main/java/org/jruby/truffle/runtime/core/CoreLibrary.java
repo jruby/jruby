@@ -16,6 +16,7 @@ import java.util.*;
 import com.oracle.truffle.api.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.hash.RubyHash;
 import org.jruby.truffle.runtime.objects.*;
 
 public class CoreLibrary {
@@ -350,6 +351,10 @@ public class CoreLibrary {
 
     public RubyException typeError(String message) {
         return new RubyException(typeErrorClass, message);
+    }
+
+    public RubyException typeErrorShouldReturn(String object, String method, String expectedType) {
+        return typeError(String.format("%s#%s should return %s", object, method, expectedType));
     }
 
     public RubyException typeError(String from, String to) {

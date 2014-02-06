@@ -1420,7 +1420,7 @@ public class ScriptingContainerTest {
         esw = new StringWriter();
         instance.setErrorWriter(esw);
         instance.runScriptlet("ABC=10;ABC=20");
-        String expResult = "<script>:2 warning: already initialized constant ABC";
+        String expResult = "<script>:1 warning: already initialized constant ABC";
         assertEquals(expResult, esw.toString().trim());
 
         instance.getVarMap().clear();

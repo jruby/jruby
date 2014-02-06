@@ -293,9 +293,6 @@ public class RubyProc extends RubyObject implements DataType {
         
         try {
             return newBlock.call(context, args, passedBlock);
-            } catch (NullPointerException npe) {
-                npe.printStackTrace();
-                throw npe;
         } catch (JumpException.BreakJump bj) {
             return handleBreakJump(getRuntime(), newBlock, bj, jumpTarget);
         } catch (JumpException.ReturnJump rj) {

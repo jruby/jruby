@@ -21,6 +21,7 @@ import org.jruby.ir.instructions.ThrowExceptionInstr;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.operands.Label;
+import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -86,7 +87,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
             boolean requireBinding = bindingHasEscaped || scopeHasLocalVarStores;
             if (scope.usesBackrefOrLastline() || requireBinding || scopeHasUnrescuedExceptions) {
                 // Push
-                entryBB.addInstr(new PushFrameInstr());
+                entryBB.addInstr(new PushFrameInstr(new MethAddr(scope.getName())));
                 if (requireBinding) entryBB.addInstr(new PushBindingInstr(scope));
 
                 // Allocate GEB if necessary for popping
@@ -99,12 +100,11 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 }
 
                 // Pop on all scope-exit paths
-                BasicBlock exitBB = cfg.getExitBB();
                 for (BasicBlock bb: cfg.getBasicBlocks()) {
                     ListIterator<Instr> instrs = bb.getInstrs().listIterator();
                     while (instrs.hasNext()) {
                         Instr i = instrs.next();
-                        if ((bb != exitBB) && (i instanceof ReturnBase) || (i instanceof BreakInstr)) {
+                        if (!bb.isExitBB() && (i instanceof ReturnBase) || (i instanceof BreakInstr)) {
                             // Add before the break/return
                             instrs.previous();
                             if (requireBinding) instrs.add(new PopBindingInstr());
@@ -113,7 +113,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         }
                     }
 
-                    if (bb == exitBB && !bb.isEmpty()) {
+                    if (bb.isExitBB() && !bb.isEmpty()) {
                         // Last instr could be a return -- so, move iterator one position back
                         if (instrs.hasPrevious()) instrs.previous();
                         if (requireBinding) instrs.add(new PopBindingInstr());

@@ -1609,13 +1609,6 @@ public class RubyInstanceConfig {
     public static final int POOL_TTL = Options.THREADPOOL_TTL.load();
 
     /**
-     * Maximum timeout thread pool size (integer, default # of cores).
-     *
-     * Set with the <tt>jruby.timeout.thread.pool.max</tt> system property.
-     */
-    public static final int TIMEOUT_POOL_MAX = Options.TIMEOUT_THREADPOOL_MAX.load();
-
-    /**
      * Enable use of the native Java version of the 'net/protocol' library.
      *
      * Set with the <tt>jruby.thread.pool.max</tt> system property.
@@ -1779,6 +1772,7 @@ public class RubyInstanceConfig {
     public static boolean IR_VISUALIZER = Options.IR_VISUALIZER.load();
     public static boolean IR_UNBOXING = Options.IR_UNBOXING.load();
     public static String IR_COMPILER_PASSES = Options.IR_COMPILER_PASSES.load();
+    public static String IR_JIT_PASSES = Options.IR_JIT_PASSES.load();
     public static String IR_INLINE_COMPILER_PASSES = Options.IR_INLINE_COMPILER_PASSES.load();
     
     public static final boolean COROUTINE_FIBERS = Options.FIBER_COROUTINES.load();

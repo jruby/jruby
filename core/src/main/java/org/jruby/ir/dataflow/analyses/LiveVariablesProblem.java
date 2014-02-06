@@ -10,13 +10,11 @@ import java.util.Set;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
-import org.jruby.ir.dataflow.DataFlowVar;
-import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 
-public class LiveVariablesProblem extends DataFlowProblem {
+public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, LiveVariableNode> {
     public static final String NAME = "Live Variables Analysis";
     private static final Set<LocalVariable> EMPTY_SET = new HashSet<LocalVariable>();
 
@@ -30,7 +28,7 @@ public class LiveVariablesProblem extends DataFlowProblem {
         setup(scope, nonSelfLocalVars);
     }
 
-    public DataFlowVar getDFVar(Variable v) {
+    public Integer getDFVar(Variable v) {
         return dfVarMap.get(v);
     }
 
@@ -42,28 +40,29 @@ public class LiveVariablesProblem extends DataFlowProblem {
         return varDfVarMap.get(id);
     }
 
-    public FlowGraphNode buildFlowGraphNode(BasicBlock bb) {
+    @Override
+    public LiveVariableNode buildFlowGraphNode(BasicBlock bb) {
         return new LiveVariableNode(this, bb);
     }
 
     public void addDFVar(Variable v) {
-        DataFlowVar dfv = new DataFlowVar(this);
+        Integer dfv = addDataFlowVar();
         dfVarMap.put(v, dfv);
-        varDfVarMap.put(dfv.id, v);
-        if ((v instanceof LocalVariable) && !((LocalVariable) v).isSelf()) {
+        varDfVarMap.put(dfv, v);
+        
+        if (v instanceof LocalVariable && !v.isSelf()) {
             //System.out.println("Adding df var for " + v + ":" + dfv.id);
-            int n = ((LocalVariable)v).getScopeDepth();
             IRScope s = getScope();
-            while ((s != null) && (n >= 0)) {
+            for (int n = ((LocalVariable) v).getScopeDepth(); s != null && n >= 0; n--) {
                 if (s instanceof IREvalScript) {
                     // If a variable is at the topmost scope of the eval OR crosses an eval boundary,
                     // it is going to be marked always live since it could be used by other evals (n = 0)
                     // or by enclosing scopes (n > 0)
-                    alwaysLiveVars.add((LocalVariable)v);
+                    alwaysLiveVars.add((LocalVariable) v);
                     break;
                 }
+
                 s = s.getLexicalParent();
-                n--;
             }
             localVars.add((LocalVariable) v);
         }
@@ -93,14 +92,14 @@ public class LiveVariablesProblem extends DataFlowProblem {
      */
     public List<Variable> getVarsLiveOnScopeEntry() {
         List<Variable> liveVars = new ArrayList<Variable>();
-        BitSet liveIn = ((LiveVariableNode) getFlowGraphNode(getScope().cfg().getEntryBB())).getLiveOutBitSet();
+        BitSet liveIn = getFlowGraphNode(getScope().cfg().getEntryBB()).getLiveOutBitSet();
 
         for (int i = 0; i < liveIn.size(); i++) {
-            if (liveIn.get(i) == true) {
-                Variable v = getVariable(i);
-                liveVars.add(v);
-                // System.out.println("variable " + v + " is live on entry!");
-            }
+            if (!liveIn.get(i)) continue;
+
+            Variable v = getVariable(i);
+            liveVars.add(v);
+            // System.out.println("variable " + v + " is live on entry!");
         }
 
         return liveVars;
@@ -123,10 +122,10 @@ public class LiveVariablesProblem extends DataFlowProblem {
         setup(scope);
 
         // Init vars live on scope exit to vars that always live throughout the scope
-        this.varsLiveOnScopeExit = new ArrayList<LocalVariable>(alwaysLiveVars);
+        varsLiveOnScopeExit = new ArrayList<LocalVariable>(alwaysLiveVars);
 
-        for (Variable v : allVars) {
-            if (getDFVar(v) == null) addDFVar(v);
+        for (LocalVariable v: allVars) {
+            if (!dfVarExists(v)) addDFVar(v);
         }
     }
 
@@ -134,15 +133,15 @@ public class LiveVariablesProblem extends DataFlowProblem {
     public String getDataFlowVarsForOutput() {
         StringBuilder buf = new StringBuilder();
         for (Variable v : dfVarMap.keySet()) {
-            buf.append("DF Var ").append(dfVarMap.get(v).getId()).append(" = ").append(v).append("\n");
+            buf.append("DF Var ").append(dfVarMap.get(v)).append(" = ").append(v).append("\n");
         }
 
         return buf.toString();
     }
 
     public void markDeadInstructions() {
-        for (FlowGraphNode n : flowGraphNodes) {
-            ((LiveVariableNode) n).markDeadInstructions();
+        for (LiveVariableNode n : flowGraphNodes) {
+            n.markDeadInstructions();
         }
     }
 
@@ -162,15 +161,18 @@ public class LiveVariablesProblem extends DataFlowProblem {
         return localVars;
     }
 
+    @Override
     public String getName() {
         return NAME;
     }
 
     /* ----------- Private Interface ------------ */
-    private HashMap<Variable, DataFlowVar> dfVarMap = new HashMap<Variable, DataFlowVar>();
+    private HashMap<Variable, Integer> dfVarMap = new HashMap<Variable, Integer>();
     private HashMap<Integer, Variable> varDfVarMap = new HashMap<Integer, Variable>();
     private HashSet<LocalVariable> localVars = new HashSet<LocalVariable>(); // Local variables that can be live across dataflow barriers
     // SSS FIXME: Should this be part of IRScope??
-    private List<LocalVariable> alwaysLiveVars; // Variables that cross eval boundaries and are always live in this scope
+    
+    // Variables that cross eval boundaries and are always live in this scope
+    private List<LocalVariable> alwaysLiveVars; 
     private Collection<LocalVariable> varsLiveOnScopeExit;
 }

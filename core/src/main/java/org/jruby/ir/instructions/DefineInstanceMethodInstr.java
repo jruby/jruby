@@ -72,7 +72,6 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, name, currVisibility);
 
         DynamicMethod newMethod = new InterpretedIRMethod(method, newVisibility, clazz);
-        clazz.addMethod(name, newMethod);
 
         Helpers.addInstanceMethod(clazz, name, newMethod, currVisibility, context, runtime);
 

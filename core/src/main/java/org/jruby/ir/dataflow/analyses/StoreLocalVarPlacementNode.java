@@ -9,7 +9,6 @@ import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.dataflow.DataFlowConstants;
-import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CallBase;
@@ -26,8 +25,8 @@ import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.util.Edge;
 
-public class StoreLocalVarPlacementNode extends FlowGraphNode {
-    public StoreLocalVarPlacementNode(DataFlowProblem prob, BasicBlock n) {
+public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlacementProblem, StoreLocalVarPlacementNode> {
+    public StoreLocalVarPlacementNode(StoreLocalVarPlacementProblem prob, BasicBlock n) {
         super(prob, n);
     }
 
@@ -39,27 +38,30 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
         if (getBB().isRescueEntry()) inDirtyVars = new HashSet<LocalVariable>();
     }
 
+    @Override
     public void buildDataFlowVars(Instr i) {
         // Nothing to do -- because we are going to simply use non-closure, non-self, non-block LocalVariables as our data flow variables
         // rather than build a new data flow type for it
     }
 
+    @Override
     public void applyPreMeetHandler() {
         // For rescue entries, <in> is handled specially
         if (!getBB().isRescueEntry()) inDirtyVars = new HashSet<LocalVariable>();
     }
 
-    public void compute_MEET(Edge e, BasicBlock source, FlowGraphNode pred) {
-        StoreLocalVarPlacementNode n = (StoreLocalVarPlacementNode) pred;
-
+    @Override
+    public void compute_MEET(Edge e, StoreLocalVarPlacementNode pred) {
         // Ignore rescue entries -- dirty vars are handled specially for these
-        if (!source.isRescueEntry()) inDirtyVars.addAll(n.outDirtyVars);
+        if (!pred.basicBlock.isRescueEntry()) inDirtyVars.addAll(pred.outDirtyVars);
     }
 
+    @Override
     public void initSolution() {
         dirtyVars = new HashSet<LocalVariable>(inDirtyVars);
     }
 
+    @Override
     public void applyTransferFunction(Instr i) {
         IRScope scope = problem.getScope();
         boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
@@ -125,16 +127,18 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
             Variable v = ((ResultInstr) i).getResult();
 
             // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
-            if (v instanceof LocalVariable && !((LocalVariable) v).isSelf()) dirtyVars.add((LocalVariable) v);
+            if (v instanceof LocalVariable && !v.isSelf()) dirtyVars.add((LocalVariable) v);
         }
 
         if (i.getOperation().isReturn()) dirtyVars.clear();
     }
 
+    @Override
     public boolean solutionChanged() {
         return !outDirtyVars.equals(dirtyVars);
     }
 
+    @Override
     public void finalizeSolution() {
         outDirtyVars = dirtyVars;
     }
@@ -170,7 +174,6 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
 
         boolean addedStores            = false;
         boolean isClosure              = scope instanceof IRClosure;
-        boolean isEvalScript           = scope instanceof IREvalScript;
         boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
 
         ListIterator<Instr> instrs    = basicBlock.getInstrs().listIterator();
@@ -185,9 +188,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
         //         Ex: s=0; a.each { |i| j = i+1; sum += j; }; puts sum
         //       i,j are dirty inside the block, but not used outside
 
-        boolean amExitBB = basicBlock == scope.cfg().getExitBB();
-
-        if (amExitBB) {
+        if (basicBlock.isExitBB()) {
             LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
             java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
             if (liveVars != null) {
@@ -266,7 +267,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                 //
                 // If this also happens to be exit BB, we would have intersected already earlier -- so no need to do it again!
 
-                if (!amExitBB) {
+                if (!basicBlock.isExitBB()) {
                     LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
                     java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
                     if (liveVars != null) {
@@ -319,7 +320,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                 Variable v = ((ResultInstr) i).getResult();
 
                 // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
-                if (v instanceof LocalVariable && !((LocalVariable) v).isSelf()) {
+                if (v instanceof LocalVariable && !v.isSelf()) {
                     LocalVariable lv = (LocalVariable) v;
                     dirtyVars.add(lv);
 
@@ -330,7 +331,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
         }
 
         // If this is the exit BB, add binding stores for all vars that are still dirty
-        if (amExitBB) {
+        if (basicBlock.isExitBB()) {
             // Last instr could be a return -- so, move iterator one position back
             if (instrs.hasPrevious()) instrs.previous();
             boolean f = addClosureExitStoreLocalVars(scope, instrs, dirtyVars, varRenameMap);

@@ -3,7 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.BooleanLiteral;
+import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
@@ -61,14 +61,14 @@ public class NotInstr extends Instr implements ResultInstr, FixedArityInstr {
         return new NotInstr(ii.getRenamedVariable(result), arg.cloneForInlining(ii));
     }
 
-    private Operand flipLogical(IRScope scope, BooleanLiteral value) {
+    private Operand flipLogical(IRScope scope, UnboxedBoolean value) {
         return value.isTrue() ? scope.getManager().getFalse() : scope.getManager().getTrue();
     }
 
     @Override
     public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
-        return arg instanceof BooleanLiteral ? flipLogical(scope, (BooleanLiteral) arg) : null;
+        return arg instanceof UnboxedBoolean ? flipLogical(scope, (UnboxedBoolean) arg) : null;
     }
 
     @Override

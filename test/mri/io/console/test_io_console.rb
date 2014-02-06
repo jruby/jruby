@@ -263,7 +263,7 @@ class TestIO_Console < Test::Unit::TestCase
       t2 = Tempfile.new("console")
       t2.close
       cmd = NOCTTY + [
-        '--disable=gems',
+        '--disable-gems',
         '-e', 'open(ARGV[0], "w") {|f|',
         '-e',   'STDOUT.reopen(f)',
         '-e',   'STDERR.reopen(f)',
@@ -289,13 +289,13 @@ end if defined?(IO.console)
 
 class TestIO_Console < Test::Unit::TestCase
   def test_stringio_getch
-    assert_separately %w"--disable=gems -rstringio -rio/console", %q{
+    assert_separately %w"--disable-gems -rstringio -rio/console", %q{
       assert_operator(StringIO, :method_defined?, :getch)
     }
-    assert_separately %w"--disable=gems -rio/console -rstringio", %q{
+    assert_separately %w"--disable-gems -rio/console -rstringio", %q{
       assert_operator(StringIO, :method_defined?, :getch)
     }
-    assert_separately %w"--disable=gems -rstringio", %q{
+    assert_separately %w"--disable-gems -rstringio", %q{
       assert_not_operator(StringIO, :method_defined?, :getch)
     }
   end

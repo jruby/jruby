@@ -36,16 +36,21 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 
 import org.jruby.Ruby;
+import org.jruby.RubyFile;
 
 import jnr.posix.JavaSecuredFile;
 import org.jruby.platform.Platform;
+import java.util.jar.JarFile;
+import java.util.jar.JarEntry;
+import java.util.zip.ZipEntry;
+import java.io.IOException;
 
 /**
  * <p>This file acts as an alternative to NormalizedFile, due to the problems with current working 
  * directory.</p>
  *
  */
-public class JRubyFile extends JavaSecuredFile implements FileResource {
+public class JRubyFile extends JavaSecuredFile {
     private static final long serialVersionUID = 435364547567567L;
 
     public static JRubyFile create(String cwd, String pathname) {
@@ -53,12 +58,13 @@ public class JRubyFile extends JavaSecuredFile implements FileResource {
     }
 
     public static FileResource createResource(String cwd, String pathname) {
-      if (pathname.indexOf('!') > 0) {
-        return JarFileResource.load(pathname);
-      } else {
-        // Regular file is fine
-        return create(cwd, pathname);
-      }
+        // Try as a jar resource first
+        FileResource jarResource = JarResource.create(pathname);
+        if (jarResource != null) {
+            return jarResource;
+        }
+
+        return new RegularFileResource(create(cwd, pathname));
     }
 
     public static String normalizeSeps(String path) {
@@ -96,27 +102,6 @@ public class JRubyFile extends JavaSecuredFile implements FileResource {
     }
 
     @Override
-    public String getAbsolutePath() {
-        return normalizeSeps(new File(super.getPath()).getAbsolutePath());
-    }
-
-    @Override
-    public String getCanonicalPath() throws IOException {
-        try {
-            return normalizeSeps(super.getCanonicalPath());
-        } catch (IOException e) {
-            // usually IOExceptions don't tell us anything about the path,
-            // so add an extra wrapper to give more debugging help.
-            throw (IOException) new IOException("Unable to canonicalize path: " + getAbsolutePath()).initCause(e);
-        }
-    }
-
-    @Override
-    public String getPath() {
-        return normalizeSeps(super.getPath());
-    }
-
-    @Override
     public String toString() {
         return normalizeSeps(super.toString());
     }
@@ -149,7 +134,7 @@ public class JRubyFile extends JavaSecuredFile implements FileResource {
             return new JRubyFile(par);
         }
     }
-    
+
     public static File[] listRoots() {
         File[] roots = File.listRoots();
         JRubyFile[] smartRoots = new JRubyFile[roots.length];
@@ -158,11 +143,11 @@ public class JRubyFile extends JavaSecuredFile implements FileResource {
         }
         return smartRoots;
     }
-    
+
     public static File createTempFile(String prefix, String suffix, File directory) throws IOException {
         return new JRubyFile(File.createTempFile(prefix, suffix,directory));
     }
-    
+
     public static File createTempFile(String prefix, String suffix) throws IOException {
         return new JRubyFile(File.createTempFile(prefix, suffix));
     }
@@ -173,7 +158,7 @@ public class JRubyFile extends JavaSecuredFile implements FileResource {
         if (files == null) {
             return null;
         }
-        
+
         String[] smartFiles = new String[files.length];
         for (int i = 0; i < files.length; i++) {
             smartFiles[i] = normalizeSeps(files[i]);

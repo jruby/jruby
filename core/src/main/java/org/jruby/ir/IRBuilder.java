@@ -60,11 +60,8 @@ import org.jruby.util.ByteList;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
+import java.util.*;
+
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.operands.TemporaryVariable;
 
@@ -146,7 +143,7 @@ public class IRBuilder {
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         } finally {
-            try { if (fis != null) fis.close(); } catch(Exception e) { }
+            try { if (fis != null) fis.close(); } catch(Exception ignored) { }
         }
     }
 
@@ -314,7 +311,6 @@ public class IRBuilder {
             // to run ensure blocks from the loops they are present in.
             if (loop != null && ebi.innermostLoop != loop) break;
 
-            Label retLabel = s.getNewLabel();
             if (ebi.savedGlobalException != null) {
                 addInstr(s, new PutGlobalVarInstr("$!", ebi.savedGlobalException));
             }
@@ -402,7 +398,7 @@ public class IRBuilder {
             case ROOTNODE:
                 throw new NotCompilableException("Use buildRoot(); Root node at: " + node.getPosition());
             case SCLASSNODE: return buildSClass((SClassNode) node, s);
-            case SELFNODE: return buildSelf((SelfNode) node, s);
+            case SELFNODE: return buildSelf(node, s);
             case SPLATNODE: return buildSplat((SplatNode) node, s);
             case STRNODE: return buildStr((StrNode) node, s);
             case SUPERNODE: return buildSuper((SuperNode) node, s);
@@ -710,7 +706,7 @@ public class IRBuilder {
                 break;
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
-                v = getBlockArgVariable((IRClosure)s, dynamicAsgn.getName(), dynamicAsgn.getDepth());
+                v = getBlockArgVariable(s, dynamicAsgn.getName(), dynamicAsgn.getDepth());
                 receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                 break;
             }
@@ -743,7 +739,7 @@ public class IRBuilder {
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
                 int depth = localVariable.getDepth();
-                v = getBlockArgVariable((IRClosure)s, localVariable.getName(), depth);
+                v = getBlockArgVariable(s, localVariable.getName(), depth);
                 receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                 break;
             }
@@ -921,7 +917,7 @@ public class IRBuilder {
             !(((WrappedIRClosure)block).getClosure()).hasBreakInstrs)
         {
             // No protection needed -- add the call and return
-            addInstr(s, (Instr)callInstr);
+            addInstr(s, callInstr);
             return;
         }
 
@@ -1951,13 +1947,12 @@ public class IRBuilder {
             // So, we generate an implicit arg name
             String argName = argsNode.getRestArgNode().getName();
             if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("rest", argName == null ? "" : argName);
-            argName = (argName == null || argName.equals("")) ? "%_arg_array" : argName;
+            argName = (argName == null || argName.equals("")) ? "*" : argName;
 
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning
             // because they have been accounted for already.
             addInstr(s, new ReceiveRestArgInstr(s.getNewLocalVariable(argName, 0), required + opt, argIndex));
-            argIndex++;
         }
 
         // Post(-opt and rest) required args
@@ -2034,7 +2029,6 @@ public class IRBuilder {
                 break;
             }
             case MULTIPLEASGN19NODE: {
-                Variable oldArgs = null;
                 MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
                 if (!isMasgnRoot) {
                     v = s.getNewTemporaryVariable();
@@ -2304,7 +2298,7 @@ public class IRBuilder {
 
         // Clone the ensure body and jump to the end.
         // Dont bother if the protected body ended in a return.
-        if (rv != U_NIL) {
+        if (rv != U_NIL && !(bodyNode instanceof RescueNode)) {
             ebi.cloneIntoHostScope(this, s);
             addInstr(s, new JumpInstr(ebi.end));
         }
@@ -2315,7 +2309,6 @@ public class IRBuilder {
         // ------------ Emit the ensure body alongwith dummy rescue block ------------
         // Now build the dummy rescue block that:
         // * catches all exceptions thrown by the body
-        Label rethrowExcLabel = s.getNewLabel();
         Variable exc = s.getNewTemporaryVariable();
         addInstr(s, new LabelInstr(ebi.dummyRescueBlockLabel));
         addInstr(s, new ReceiveJRubyExceptionInstr(exc));
@@ -2361,7 +2354,7 @@ public class IRBuilder {
 
         switch (node.getNodeType()) {
             case ITERNODE:
-                return build((IterNode)node, s);
+                return build(node, s);
             case BLOCKPASSNODE:
                 return build(((BlockPassNode)node).getBodyNode(), s);
             default:
@@ -2525,9 +2518,7 @@ public class IRBuilder {
         if (hashNode.getListNode() == null || hashNode.getListNode().size() == 0) {
             return copyAndReturnValue(s, new Hash(new ArrayList<KeyValuePair>()));
         } else {
-            int     i     = 0;
             Operand key   = null;
-            Operand value = null;
             List<KeyValuePair> args = new ArrayList<KeyValuePair>();
             for (Node nextNode : hashNode.getListNode().childNodes()) {
                 Operand v = build(nextNode, s);
@@ -3088,7 +3079,10 @@ public class IRBuilder {
     }
 
     public Operand buildPostExe(PostExeNode postExeNode, IRScope s) {
-        IRClosure endClosure = new IRClosure(manager, s, false, postExeNode.getPosition().getStartLine(), postExeNode.getScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType());
+        IRScope topLevel = s.getTopLevelScope();
+        IRScope nearestLVarScope = s.getNearestTopLocalVariableScope();
+
+        IRClosure endClosure = new IRClosure(manager, s, false, postExeNode.getPosition().getStartLine(), nearestLVarScope.getStaticScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType());
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
         IRBuilder closureBuilder = newIRBuilder(manager);
@@ -3098,13 +3092,16 @@ public class IRBuilder {
         closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentModuleVariable(), new ScopeModule(endClosure)));
         closureBuilder.build(postExeNode.getBodyNode(), endClosure);
 
-        // Add an instruction to record the end block at runtime
-        addInstr(s, new RecordEndBlockInstr(s, endClosure));
+        // Add an instruction in 's' to record the end block in the 'topLevel' scope.
+        // SSS FIXME: IR support for end-blocks that access vars in non-toplevel-scopes
+        // might be broken currently. We could either fix it or consider dropping support
+        // for END blocks altogether or only support them in the toplevel. Not worth the pain.
+        addInstr(s, new RecordEndBlockInstr(topLevel, endClosure));
         return manager.getNil();
     }
 
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
-        IRClosure beginClosure = new IRClosure(manager, s, false, preExeNode.getPosition().getStartLine(), preExeNode.getScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType());
+        IRClosure beginClosure = new IRClosure(manager, s, false, preExeNode.getPosition().getStartLine(), s.getTopLevelScope().getStaticScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType());
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
         IRBuilder closureBuilder = newIRBuilder(manager);
@@ -3156,7 +3153,7 @@ public class IRBuilder {
         addInstr(s, new GetGlobalVariableInstr(savedGlobalException, "$!"));
         if (ensure != null) ensure.savedGlobalException = savedGlobalException;
 
-        if (ensure == null) addInstr(s, new LabelInstr(rBeginLabel));
+        addInstr(s, new LabelInstr(rBeginLabel));
 
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
         addInstr(s, new ExceptionRegionStartMarkerInstr(rescueLabel));
@@ -3250,7 +3247,7 @@ public class IRBuilder {
         Label caughtLabel = s.getNewLabel();
         if (exceptionList != null) {
             if (exceptionList instanceof ListNode) {
-               for (Node excType : ((ListNode) exceptionList).childNodes()) {
+               for (Node excType : exceptionList.childNodes()) {
                    outputExceptionCheck(s, build(excType, s), exc, caughtLabel);
                }
             } else { // splatnode, catch
@@ -3294,10 +3291,11 @@ public class IRBuilder {
             // Set up node return value 'rv'
             addInstr(s, new CopyInstr(rv, x));
 
-            // If we dont have a matching ensure block, jump to the end of the rescue block.
-            if (activeEnsureBlockStack.empty() || rbi.rescueNode != activeEnsureBlockStack.peek().matchingRescueNode) {
-                addInstr(s, new JumpInstr(endLabel));
+            // If we have a matching ensure block, clone it so ensure block runs here
+            if (!activeEnsureBlockStack.empty() && rbi.rescueNode == activeEnsureBlockStack.peek().matchingRescueNode) {
+                activeEnsureBlockStack.peek().cloneIntoHostScope(this, s);
             }
+            addInstr(s, new JumpInstr(endLabel));
         }
     }
 
@@ -3605,9 +3603,38 @@ public class IRBuilder {
             // the super instr is going to get -- if there were no 'define_method'
             // for defining methods, we could guarantee that the super is going to
             // receive args from the nearest method the block is embedded in.  But,
-            // in the presence of 'define_method', all bets are off.
+            // in the presence of 'define_method' (and eval and aliasing), all bets
+            // are off because, any of the intervening block scopes could be a method
+            // via a define_method call.
+            //
+            // Instead, we can actually collect all arguments of all scopes from here
+            // till the nearest method scope and select the right set at runtime based
+            // on which one happened to be a method scope. This has the additional
+            // advantage of making explicit all used arguments.
             Variable ret = s.getNewTemporaryVariable();
-            receiveBreakException(s, block, new ZSuperInstr(ret, s.getSelf(), block));
+            List<Integer> argsCount = new ArrayList<Integer>();
+            List<Operand> allPossibleArgs = new ArrayList<Operand>();
+            IRScope superScope = s;
+            while (superScope instanceof IRClosure) {
+                Operand[] args = ((IRClosure)superScope).getBlockArgs();
+                int n = args.length;
+                // Accummulate the closure's args
+                Collections.addAll(allPossibleArgs, args);
+                // Record args count of the closure
+                argsCount.add(n);
+                superScope = superScope.getLexicalParent();
+            }
+
+            if (superScope instanceof IRMethod) {
+                Operand[] args = ((IRMethod)superScope).getCallArgs();
+                int n = args.length;
+                // Accummulate the method's args
+                Collections.addAll(allPossibleArgs, args);
+                // Record args count of the method
+                argsCount.add(n);
+            }
+
+            receiveBreakException(s, block, new ZSuperInstr(ret, s.getSelf(), block, allPossibleArgs.toArray(new Operand[allPossibleArgs.size()]), argsCount.toArray(new Integer[argsCount.size()])));
             return ret;
         }
     }

@@ -114,6 +114,7 @@ public class IREvalScript extends IRClosure {
         assert depth == nearestNonEvalScopeDepth: "Local variable depth in IREvalScript:getNewLocalVariable must be " + nearestNonEvalScopeDepth + ".  Got " + depth;
         LocalVariable lvar = new ClosureLocalVariable(this, name, 0, nearestNonEvalScope.evalScopeVars.size());
         nearestNonEvalScope.evalScopeVars.put(name, lvar);
+        // CON: unsure how to get static scope to reflect this name as in IRClosure and IRMethod
         return lvar;
     }
 

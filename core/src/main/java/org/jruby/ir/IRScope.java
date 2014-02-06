@@ -24,8 +24,10 @@ import org.jruby.ir.instructions.Specializeable;
 import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
+import org.jruby.ir.instructions.RecordEndBlockInstr;
 import org.jruby.ir.listeners.IRScopeListener;
-import org.jruby.ir.operands.BooleanLiteral;
+import org.jruby.ir.operands.UnboxedBoolean;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
@@ -35,6 +37,7 @@ import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.TemporaryCurrentModuleVariable;
 import org.jruby.ir.operands.TemporaryCurrentScopeVariable;
 import org.jruby.ir.operands.TemporaryBooleanVariable;
+import org.jruby.ir.operands.TemporaryFixnumVariable;
 import org.jruby.ir.operands.TemporaryFloatVariable;
 import org.jruby.ir.operands.TemporaryLocalReplacementVariable;
 import org.jruby.ir.operands.TemporaryLocalVariable;
@@ -139,6 +142,8 @@ public abstract class IRScope implements ParseResult {
     private Map<Integer, Integer> rescueMap;
     protected int temporaryVariableIndex;
     protected int floatVariableIndex;
+    protected int fixnumVariableIndex;
+    protected int booleanVariableIndex;
 
     /** Keeps track of types of prefix indexes for variables and labels */
     private Map<String, Integer> nextVarIndex;
@@ -147,7 +152,6 @@ public abstract class IRScope implements ParseResult {
     private IRReaderDecoder persistenceStore = null;
     private TemporaryLocalVariable currentModuleVariable;
     private TemporaryLocalVariable currentScopeVariable;
-    private HashMap<Label,Integer> labelIPCMap;
 
     Map<String, LocalVariable> localVars;
     Map<String, LocalVariable> evalScopeVars;
@@ -236,6 +240,9 @@ public abstract class IRScope implements ParseResult {
     /** # of thread poll instrs added to this scope */
     private int threadPollInstrsCount;
 
+    /** Does this method have end blocks? If so, all optimizations are turned off */
+    private boolean hasEndBlocks;
+
     /** Does this scope have explicit call protocol instructions?
      *  If yes, there are IR instructions for managing bindings/frames, etc.
      *  If not, this has to be managed implicitly as in the current runtime
@@ -278,6 +285,7 @@ public abstract class IRScope implements ParseResult {
         this.canReceiveBreaks = s.canReceiveBreaks;
         this.canReceiveNonlocalReturns = s.canReceiveNonlocalReturns;
         this.bindingHasEscaped = s.bindingHasEscaped;
+        this.hasEndBlocks = s.hasEndBlocks;
         this.usesEval = s.usesEval;
         this.usesBackrefOrLastline = s.usesBackrefOrLastline;
         this.usesZSuper = s.usesZSuper;
@@ -317,6 +325,7 @@ public abstract class IRScope implements ParseResult {
         this.hasNonlocalReturns = false;
         this.canReceiveBreaks = false;
         this.canReceiveNonlocalReturns = false;
+        this.hasEndBlocks = false;
 
         // These flags are true by default!
         this.canModifyCode = true;
@@ -357,9 +366,7 @@ public abstract class IRScope implements ParseResult {
 
     @Override
     public boolean equals(Object other) {
-        if (other == null || getClass() != other.getClass()) return false;
-
-        return scopeId == ((IRScope) other).scopeId;
+        return (other != null) && (getClass() == other.getClass()) && (scopeId == ((IRScope) other).scopeId);
     }
 
     protected void addChildScope(IRScope scope) {
@@ -399,6 +406,7 @@ public abstract class IRScope implements ParseResult {
         else if (i instanceof NonlocalReturnInstr) this.hasNonlocalReturns = true;
         else if (i instanceof DefineMetaClassInstr) this.canReceiveNonlocalReturns = true;
         else if (i instanceof ReceiveKeywordArgInstr || i instanceof ReceiveKeywordRestArgInstr) this.receivesKeywordArgs = true;
+        else if (i instanceof RecordEndBlockInstr) this.hasEndBlocks = true;
         if (hasListener()) {
             IRScopeListener listener = manager.getIRScopeListener();
             listener.addedInstr(this, i, instrList.size());
@@ -617,7 +625,7 @@ public abstract class IRScope implements ParseResult {
 
         // Set up IPCs
         List<Instr> newInstrs = new ArrayList<Instr>();
-        labelIPCMap = new HashMap<Label, Integer>();
+        HashMap<Label, Integer> labelIPCMap = new HashMap<Label, Integer>();
         int ipc = 0;
         for (BasicBlock b: linearizedBBList) {
             Label l = b.getLabel();
@@ -667,10 +675,11 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    private void runCompilerPasses() {
+    private void runCompilerPasses(List<CompilerPass> passes) {
         // SSS FIXME: Why is this again?  Document this weirdness!
         // Forcibly clear out the shared eval-scope variable allocator each time this method executes
         initEvalScopeVariableAllocator(true);
+
         // SSS FIXME: We should configure different optimization levels
         // and run different kinds of analysis depending on time budget.  Accordingly, we need to set
         // IR levels/states (basic, optimized, etc.) and the
@@ -678,7 +687,32 @@ public abstract class IRScope implements ParseResult {
         // while another thread is using it.  This may need to happen on a clone()
         // and we may need to update the method to return the new method.  Also,
         // if this scope is held in multiple locations how do we update all references?
-        CompilerPassScheduler scheduler = getManager().schedulePasses();
+
+        boolean unsafeScope = false;
+        if (this.hasEndBlocks || this.isBeginEndBlock()) {
+            unsafeScope = true;
+        } else {
+            List beginBlocks = this.getBeginBlocks();
+            // Ex: BEGIN {a = 1}; p a
+            if (beginBlocks == null || beginBlocks.isEmpty()) {
+                // Ex: eval("BEGIN {a = 1}; p a")
+                // Here, the BEGIN is added to the outer script scope.
+                beginBlocks = this.getNearestTopLocalVariableScope().getBeginBlocks();
+                unsafeScope = beginBlocks != null && !beginBlocks.isEmpty();
+            } else {
+                unsafeScope = true;
+            }
+        }
+
+        // All passes disabled in scopes where BEGIN and END scopes might
+        // screw around with escape variables. Optimizing for them is not
+        // worth the effort. Simple to just go fully safe in scopes influenced
+        // by their presence.
+        if (unsafeScope) {
+            passes = getManager().getSafePasses(this);
+        }
+
+        CompilerPassScheduler scheduler = getManager().schedulePasses(passes);
         for (CompilerPass pass: scheduler) {
             pass.run(this);
         }
@@ -689,10 +723,13 @@ public abstract class IRScope implements ParseResult {
             pass = new UnboxingPass();
             pass.run(this);
         }
+    }
 
+    private void runDeadCodeAndVarLoadStorePasses() {
         // For methods with unescaped bindings, inline the binding
         // by converting local var loads/store to tmp var loads/stores
-        if (this instanceof IRMethod && !this.bindingHasEscaped()) {
+        if (this instanceof IRMethod && !this.bindingHasEscaped() && !this.hasEndBlocks) {
+            CompilerPass pass;
             pass = new DeadCodeElimination();
             if (pass.previouslyRun(this) == null) {
                 pass.run(this);
@@ -719,7 +756,12 @@ public abstract class IRScope implements ParseResult {
         if (linearizedInstrArray != null) return linearizedInstrArray;
 
         // Build CFG and run compiler passes, if necessary
-        if (getCFG() == null) runCompilerPasses();
+        if (getCFG() == null) {
+            runCompilerPasses(getManager().getCompilerPasses(this));
+
+            // run DCE and var load/store
+            runDeadCodeAndVarLoadStorePasses();
+        }
 
         // Linearize CFG, etc.
         return prepareInstructionsForInterpretation();
@@ -728,9 +770,6 @@ public abstract class IRScope implements ParseResult {
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
     public Tuple<Instr[], Map<Integer,Label[]>> prepareForCompilation() {
-        // Build CFG and run compiler passes, if necessary
-        if (getCFG() == null) runCompilerPasses();
-
         // Add this always since we dont re-JIT a previously
         // JIT-ted closure.  But, check if there are other
         // smarts available to us and eliminate adding this
@@ -740,6 +779,16 @@ public abstract class IRScope implements ParseResult {
         // and throw a LocalJumpError.
         if (this instanceof IRClosure && ((IRClosure)this).addGEBForUncaughtBreaks()) {
             this.relinearizeCFG = true;
+        }
+
+        checkRelinearization();
+
+        // Build CFG and run compiler passes, if necessary
+        if (getCFG() == null) {
+            runCompilerPasses(getManager().getJITPasses(this));
+
+            // no DCE for now to stress-test JIT
+            //runDeadCodeAndVarLoadStorePasses();
         }
 
         prepareInstructionsForInterpretation();
@@ -1042,6 +1091,10 @@ public abstract class IRScope implements ParseResult {
                 floatVariableIndex++;
                 return new TemporaryFloatVariable(floatVariableIndex);
             }
+            case FIXNUM: {
+                fixnumVariableIndex++;
+                return new TemporaryFixnumVariable(fixnumVariableIndex);
+            }
             case BOOLEAN: {
                 // Shares var index with locals
                 temporaryVariableIndex++;
@@ -1064,7 +1117,9 @@ public abstract class IRScope implements ParseResult {
         TemporaryVariableType varType;
         if (type == Float.class) {
             varType = TemporaryVariableType.FLOAT;
-        } else if (type == BooleanLiteral.class) {
+        } else if (type == Fixnum.class) {
+            varType = TemporaryVariableType.FIXNUM;
+        } else if (type == UnboxedBoolean.class) {
             varType = TemporaryVariableType.BOOLEAN;
         } else {
             varType = TemporaryVariableType.LOCAL;
@@ -1075,6 +1130,8 @@ public abstract class IRScope implements ParseResult {
     public void resetTemporaryVariables() {
         temporaryVariableIndex = -1;
         floatVariableIndex = -1;
+        fixnumVariableIndex = -1;
+        booleanVariableIndex = -1;
     }
 
     public int getTemporaryVariablesCount() {
@@ -1083,6 +1140,14 @@ public abstract class IRScope implements ParseResult {
 
     public int getFloatVariablesCount() {
         return floatVariableIndex + 1;
+    }
+
+    public int getFixnumVariablesCount() {
+        return fixnumVariableIndex + 1;
+    }
+
+    public int getBooleanVariablesCount() {
+        return booleanVariableIndex + 1;
     }
 
     // Generate a new variable for inlined code
@@ -1175,6 +1240,13 @@ public abstract class IRScope implements ParseResult {
     }
 
     public Instr[] getInstrsForInterpretation() {
+        return linearizedInstrArray;
+    }
+
+    public Instr[] getInstrsForInterpretation(boolean isLambda) {
+        if (linearizedInstrArray == null) {
+            prepareForInterpretation(isLambda);
+        }
         return linearizedInstrArray;
     }
 
@@ -1272,6 +1344,14 @@ public abstract class IRScope implements ParseResult {
     /* Record an end block -- not all scope implementations can handle them */
     public void recordEndBlock(IRClosure endBlockClosure) {
         throw new RuntimeException("END blocks cannot be added to: " + this.getClass().getName());
+    }
+
+    public List<IRClosure> getBeginBlocks() {
+        return null;
+    }
+
+    public List<IRClosure> getEndBlocks() {
+        return null;
     }
 
     // Enebo: We should just make n primitive int and not take the hash hit

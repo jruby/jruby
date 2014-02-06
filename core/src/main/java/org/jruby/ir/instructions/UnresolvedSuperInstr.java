@@ -19,13 +19,13 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class UnresolvedSuperInstr extends CallInstr {
-	 // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
-    public UnresolvedSuperInstr(Variable result, Operand receiver, Operand[] args, Operand closure) {
-        super(Operation.UNRESOLVED_SUPER, CallType.SUPER, result, MethAddr.UNKNOWN_SUPER_TARGET, receiver, args, closure);
+    // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
+    public UnresolvedSuperInstr(Operation op, Variable result, Operand receiver, Operand[] args, Operand closure) {
+        super(op, CallType.SUPER, result, MethAddr.UNKNOWN_SUPER_TARGET, receiver, args, closure);
     }
 
-    public UnresolvedSuperInstr(Operation op, Variable result, Operand receiver, Operand closure) {
-        super(op, CallType.SUPER, result, MethAddr.UNKNOWN_SUPER_TARGET, receiver, EMPTY_OPERANDS, closure);
+    public UnresolvedSuperInstr(Variable result, Operand receiver, Operand[] args, Operand closure) {
+        this(Operation.UNRESOLVED_SUPER, result, receiver, args, closure);
     }
 
     @Override
@@ -70,7 +70,7 @@ public class UnresolvedSuperInstr extends CallInstr {
     protected static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule frameClass, String methodName) {
         // FIXME: super/zsuper in top-level script still seems to have a frameClass so it will not make it into this if
         if (frameClass == null) {
-            if (methodName == null || methodName != "") {
+            if (methodName == null || !methodName.equals("")) {
                 throw context.runtime.newNameError("superclass method '" + methodName + "' disabled", methodName);
             } else {
                 throw context.runtime.newNoMethodError("super called outside of method", null, context.runtime.getNil());

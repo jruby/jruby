@@ -116,6 +116,17 @@ public class RubyMethod {
         return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, intrinsicName, name, visibility, true, implementation);
     }
 
+    public boolean isVisibleTo(RubyBasicObject caller, RubyBasicObject receiver) {
+        if (caller == receiver.getRubyClass()){
+            return true;
+        }
+
+        if (caller == receiver){
+            return true;
+        }
+        return isVisibleTo(caller);
+    }
+
     public boolean isVisibleTo(RubyBasicObject caller) {
         if (caller instanceof RubyModule) {
             if (isVisibleTo((RubyModule) caller)) {

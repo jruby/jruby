@@ -451,7 +451,7 @@ public class InvocationLinker {
         return guardWithTest;
     }
 
-    private static int getNativeArgCount(DynamicMethod method, NativeCall nativeCall) {
+    public static int getNativeArgCount(DynamicMethod method, NativeCall nativeCall) {
         // if non-Java, must:
         // * exactly match arities or both are [] boxed
         // * 3 or fewer arguments

@@ -123,16 +123,16 @@ public abstract class CallBase extends Instr implements Specializeable {
     }
 
     public boolean isAllConstants() {
-        for (int i = 0; i < arguments.length; i++) {
-            if (!(arguments[i] instanceof ImmutableLiteral)) return false;
+        for (Operand argument : arguments) {
+            if (!(argument instanceof ImmutableLiteral)) return false;
         }
 
         return true;
     }
 
     public boolean isAllFixnums() {
-        for (int i = 0; i < arguments.length; i++) {
-            if (!(arguments[i] instanceof Fixnum)) return false;
+        for (Operand argument : arguments) {
+            if (!(argument instanceof Fixnum)) return false;
         }
 
         return true;
@@ -290,7 +290,7 @@ public abstract class CallBase extends Instr implements Specializeable {
         // Order important!
         flagsComputed = true;
         canBeEval = getEvalFlag();
-        targetRequiresCallersBinding = canBeEval ? true : computeRequiresCallersBindingFlag();
+        targetRequiresCallersBinding = canBeEval || computeRequiresCallersBindingFlag();
     }
 
     public boolean canBeEval() {
@@ -319,8 +319,8 @@ public abstract class CallBase extends Instr implements Specializeable {
     }
 
     protected static boolean containsSplat(Operand[] arguments) {
-        for (int i = 0; i < arguments.length; i++) {
-            if (arguments[i] instanceof Splat) return true;
+        for (Operand argument : arguments) {
+            if (argument instanceof Splat) return true;
         }
 
         return false;
@@ -382,10 +382,10 @@ public abstract class CallBase extends Instr implements Specializeable {
         // in the list.  So, this looping handles both these scenarios, although if we wanted to
         // optimize for CallInstr which has splats only in the first position, we could do that.
         List<IRubyObject> argList = new ArrayList<IRubyObject>();
-        for (int i = 0; i < args.length; i++) {
-            IRubyObject rArg = (IRubyObject)args[i].retrieve(context, self, currDynScope, temp);
-            if (args[i] instanceof Splat) {
-                argList.addAll(Arrays.asList(((RubyArray)rArg).toJavaArray()));
+        for (Operand arg : args) {
+            IRubyObject rArg = (IRubyObject) arg.retrieve(context, self, currDynScope, temp);
+            if (arg instanceof Splat) {
+                argList.addAll(Arrays.asList(((RubyArray) rArg).toJavaArray()));
             } else {
                 argList.add(rArg);
             }

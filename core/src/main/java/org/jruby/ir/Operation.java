@@ -166,8 +166,10 @@ public enum Operation {
     /* Boxing/Unboxing between Ruby <--> Java types */
     BOX_FIXNUM(0),
     BOX_FLOAT(0),
+    BOX_BOOLEAN(0),
     UNBOX_FIXNUM(0),
     UNBOX_FLOAT(0),
+    UNBOX_BOOLEAN(0),
 
     /* Unboxed ALU ops */
     IADD(OpFlags.f_is_alu_op),
@@ -204,6 +206,8 @@ public enum Operation {
 
         if (this.isArgReceive()) {
             this.opClass = OpClass.ARG_OP;
+        } else if ((flags & OpFlags.f_is_return) > 0) {
+            this.opClass = OpClass.RET_OP;
         } else if (this.isBranch()) {
             this.opClass = OpClass.BRANCH_OP;
         } else if (this.isBookKeepingOp()) {

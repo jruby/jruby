@@ -107,7 +107,6 @@ import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
 import org.jruby.ir.instructions.specialized.SpecializedInstType;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
-import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
@@ -142,8 +141,6 @@ public class IRInstructionFactory {
             return createPopBinding();
         case POP_FRAME:
             return createPopFrame();
-        case PUSH_FRAME:
-            return createPushFrame();
         default:
             throw new UnsupportedOperationException(operation.toString());
         }
@@ -163,10 +160,6 @@ public class IRInstructionFactory {
 
     private PopFrameInstr createPopFrame() {
         return new PopFrameInstr();
-    }
-
-    private PushFrameInstr createPushFrame() {
-        return new PushFrameInstr();
     }
 
     public Instr createInstrWithParams(final InstrWithParams instr) {
@@ -229,6 +222,8 @@ public class IRInstructionFactory {
         case PUT_CONST:
         case PUT_FIELD:
             return createPutInstrOtherThanGlobalVar(operation, paramsIterator);
+        case PUSH_FRAME:
+            return createPushFrame(paramsIterator);
         case RESTORE_ERROR_INFO:
             return createRestoreErrorInfo(paramsIterator);
         case RETURN:
@@ -237,6 +232,11 @@ public class IRInstructionFactory {
         default:
             throw new UnsupportedOperationException(operation.toString());
         }
+    }
+
+    public PushFrameInstr createPushFrame(final ParametersIterator paramsIterator) {
+        final MethAddr methAddr = (MethAddr) paramsIterator.next();
+        return new PushFrameInstr(methAddr);
     }
 
     private JumpInstr createJump(final ParametersIterator paramsIterator) {
@@ -1053,7 +1053,10 @@ public class IRInstructionFactory {
             closure = paramsIterator.nextOperand();
         }
 
-        return new ZSuperInstr(result, receiver, closure);
+        final Operand[] allPossibleArgs = paramsIterator.nextOperandArray();
+        final Integer[] argCounts = (Integer[])paramsIterator.nextList().toArray();
+
+        return new ZSuperInstr(result, receiver, closure, allPossibleArgs, argCounts);
     }
 
 

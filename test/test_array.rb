@@ -19,6 +19,16 @@ class TestArray < Test::Unit::TestCase
     }
   end
 
+  def test_uniq_with_block_after_slice
+    assert_equal [1], [1, 1, 1][1,2].uniq { |x| x }
+    assert_equal [1], [1, 1, 1][1,2].uniq! { |x| x }
+  end
+
+  def test_uniq_with_block_after_slice
+    assert_equal [1], [1, 1, 1][1,2].uniq { |x| x }
+    assert_equal [1], [1, 1, 1][1,2].uniq! { |x| x }
+  end
+
   # JRUBY-4157
   def test_shared_ary_slice
     assert_equal [4,5,6], [1,2,3,4,5,6].slice(1,5).slice!(2,3)

@@ -1,5 +1,9 @@
+#
+# This file is part of ruby-ffi.
+# For licensing, see LICENSE.SPECS
+#
+
 require 'ffi'
-require 'java'
 
 MemoryPointer = FFI::MemoryPointer
 
@@ -45,9 +49,10 @@ describe "MemoryPointer argument" do
   it "Data passed to native function" do
     p = MemoryPointer.new :int, 1
     p2 = MemoryPointer.new :int, 1
-    p2.put_int(0, 0xdeadbeef)
+    p2.put_int(0, 0x5eadbeef)
     Ptr.memcpy(p, p2, p.total)
     expect(p.get_int(0)).to eq p2.get_int(0)
+    expect(p2.get_int(0)).not_to eql 0
   end
 end
 describe "MemoryPointer return value" do

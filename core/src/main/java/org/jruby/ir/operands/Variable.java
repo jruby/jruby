@@ -32,6 +32,10 @@ public abstract class Variable extends Operand implements Comparable {
         return getName().equals(BLOCK);
     }
 
+    public boolean isSelf() {
+        return false;
+    }
+
     @Override
     public Operand getValue(Map<Operand, Operand> valueMap) {
         Operand v = valueMap.get(this);

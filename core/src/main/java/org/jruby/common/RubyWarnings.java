@@ -27,37 +27,37 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.common;
 
+import java.util.EnumSet;
+import java.util.Set;
 import org.joni.WarnCallback;
 import org.jruby.Ruby;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
-import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /** 
  *
  */
 public class RubyWarnings implements IRubyWarnings, WarnCallback {
     private final Ruby runtime;
-    private final Set<ID> oncelers = new HashSet<ID>();
+    private final Set<ID> oncelers = EnumSet.allOf(IRubyWarnings.ID.class);
 
     public RubyWarnings(Ruby runtime) {
         this.runtime = runtime;
     }
 
+    @Override
     public void warn(String message) {
         warn(ID.MISCELLANEOUS, message);
     }
 
+    @Override
     public Ruby getRuntime() {
         return runtime;
     }
 
+    @Override
     public boolean isVerbose() {
         return runtime.isVerbose();
     }
@@ -65,26 +65,29 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     /**
      * Prints a warning, unless $VERBOSE is nil.
      */
+    @Override
     public void warn(ID id, ISourcePosition position, String message) {
         if (!runtime.warningsEnabled()) return;
 
-        warn(id, position.getFile(), position.getStartLine(), message);
+        warn(id, position.getFile(), position.getStartLine() + 1, message);
     }
 
     /**
      * Prints a warning, unless $VERBOSE is nil.
      */
+    @Override
     public void warn(ID id, String fileName, int lineNumber, String message) {
         if (!runtime.warningsEnabled()) return;
 
         StringBuilder buffer = new StringBuilder(100);
 
-        buffer.append(fileName).append(':').append(lineNumber + 1).append(' ');
+        buffer.append(fileName).append(':').append(lineNumber).append(' ');
         buffer.append("warning: ").append(message).append('\n');
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
         errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer.toString()));
     }
 
+    @Override
     public void warn(ID id, String message) {
         if (!runtime.warningsEnabled()) return;
 
@@ -121,6 +124,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         warning(ID.MISCELLANEOUS, message);
     }
 
+    @Override
     public void warning(ID id, String message) {
         if (!runtime.warningsEnabled()) return;
 
@@ -142,15 +146,17 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     /**
      * Prints a warning, only in verbose mode.
      */
+    @Override
     public void warning(ID id, ISourcePosition position, String message) {
         if (!runtime.warningsEnabled()) return;
 
-        warning(id, position.getFile(), position.getStartLine(), message);
+        warning(id, position.getFile(), position.getStartLine() + 1, message);
     }
 
     /**
      * Prints a warning, only in verbose mode.
      */
+    @Override
     public void warning(ID id, String fileName, int lineNumber, String message) {
         assert isVerbose();
 
@@ -164,50 +170,5 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         RubyStackTraceElement[] stack = context.createWarningBacktrace(runtime);
 
         return stack;
-    }
-
-    @Deprecated
-    public void warn(ID id, ISourcePosition position, String message, Object... data) {
-        warn(id, position.getFile(), position.getStartLine(), message, data);
-    }
-
-    @Deprecated
-    public void warn(ID id, String fileName, int lineNumber, String message, Object... data) {
-        if (!runtime.warningsEnabled()) return; // TODO make an assert here
-
-        StringBuilder buffer = new StringBuilder(100);
-
-        buffer.append(fileName).append(':').append(lineNumber + 1).append(' ');
-        buffer.append("warning: ").append(message).append('\n');
-        IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
-        errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer.toString()));
-    }
-
-    @Deprecated
-    public void warn(ID id, String message, Object... data) {
-        ThreadContext context = runtime.getCurrentContext();
-        warn(id, context.getFile(), context.getLine(), message, data);
-    }
-
-    @Deprecated
-    public void warning(String message, Object... data) {
-        warning(ID.MISCELLANEOUS, message, data);
-    }
-
-    @Deprecated
-    public void warning(ID id, String message, Object... data) {
-        ThreadContext context = runtime.getCurrentContext();
-        warning(id, context.getFile(), context.getLine(), message, data);
-    }
-
-    @Deprecated
-    public void warning(ID id, ISourcePosition position, String message, Object... data) {
-        warning(id, position.getFile(), position.getStartLine(), message, data);
-    }
-
-    @Deprecated
-    public void warning(ID id, String fileName, int lineNumber, String message, Object... data) {
-        assert isVerbose(); 
-        warn(id, fileName, lineNumber, message, data);
     }
 }

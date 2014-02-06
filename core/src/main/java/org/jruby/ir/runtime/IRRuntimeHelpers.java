@@ -7,6 +7,8 @@ import org.jruby.RubyModule;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyNil;
+import org.jruby.RubyProc;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.IREvalScript;
@@ -195,11 +197,27 @@ public class IRRuntimeHelpers {
         }
     }
 
+    public static long unboxFixnum(IRubyObject val) {
+        if (val instanceof RubyFloat) {
+            return (long)((RubyFloat)val).getValue();
+        } else {
+            return ((RubyFixnum)val).getLongValue();
+        }
+    }
+
     public static boolean flt(double v1, double v2) {
         return v1 < v2;
     }
 
     public static boolean fgt(double v1, double v2) {
+        return v1 > v2;
+    }
+
+    public static boolean ilt(long v1, long v2) {
+        return v1 < v2;
+    }
+
+    public static boolean igt(long v1, long v2) {
         return v1 > v2;
     }
 
@@ -218,6 +236,12 @@ public class IRRuntimeHelpers {
     // SSS FIXME: Is this code effectively equivalent to Helpers.isJavaExceptionHandled?
     public static boolean exceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
         Ruby runtime = context.runtime;
+
+        // unwrap Ruby exceptions
+        if (excObj instanceof RaiseException) {
+            excObj = ((RaiseException)excObj).getException();
+        }
+
         if (excObj instanceof IRubyObject) {
             // regular ruby exception
             if (!(excType instanceof RubyModule)) throw runtime.newTypeError("class or module required for rescue clause. Found: " + excType);
@@ -245,7 +269,7 @@ public class IRRuntimeHelpers {
         if (excType instanceof RubyArray) {
             RubyArray testTypes = (RubyArray)excType;
             for (int i = 0, n = testTypes.getLength(); i < n; i++) {
-                IRubyObject testType = (IRubyObject)testTypes.eltInternal(i);
+                IRubyObject testType = testTypes.eltInternal(i);
                 boolean handled = isUndefExc ? testType.isTrue() : IRRuntimeHelpers.exceptionHandled(context, testType, excObj);
                 if (handled) return runtime.newBoolean(true);
             }
@@ -255,4 +279,23 @@ public class IRRuntimeHelpers {
             return isUndefExc ? excType : runtime.newBoolean(IRRuntimeHelpers.exceptionHandled(context, excType, excObj));
         }
     }
-};
+
+    public static IRubyObject newProc(Ruby runtime, Block block) {
+        return (block == Block.NULL_BLOCK) ? runtime.getNil() : runtime.newProc(Block.Type.PROC, block);
+    }
+
+    public static IRubyObject yield(ThreadContext context, Object blk, Object yieldArg, boolean unwrapArray) {
+        if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
+        if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
+        Block b = (Block)blk;
+        IRubyObject yieldVal = (IRubyObject)yieldArg;
+        return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null, null) : b.yield(context, yieldVal);
+    }
+
+    public static IRubyObject yieldSpecific(ThreadContext context, Object blk) {
+        if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
+        if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
+        Block b = (Block)blk;
+        return b.yieldSpecific(context);
+    }
+}

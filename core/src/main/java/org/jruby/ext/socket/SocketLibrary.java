@@ -28,5 +28,6 @@ public class SocketLibrary implements Library {
 
         Addrinfo.createAddrinfo(runtime);
         Option.createOption(runtime);
+        Ifaddr.createIfaddr(runtime);
     }
 }

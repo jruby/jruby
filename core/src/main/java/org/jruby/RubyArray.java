@@ -3008,8 +3008,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     private RubyHash makeHash(ThreadContext context, RubyHash hash, Block block) {
-        int myBegin = this.begin;
-        for (int i = myBegin; i < myBegin + realLength; i++) {
+        for (int i = 0; i < realLength; i++) {
             IRubyObject v = elt(i);
             IRubyObject k = block.yield(context, v);
             if (hash.fastARef(k) == null) hash.fastASet(k, v);

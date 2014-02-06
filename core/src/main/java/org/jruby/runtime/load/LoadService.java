@@ -1324,7 +1324,7 @@ public class LoadService {
             if (current.getJarEntry(canonicalEntry) != null) {
                 try {
                     URI resourceUri = new URI("jar", "file:" + jarFileName + "!/" + canonicalEntry, null);
-                    foundResource = new LoadServiceResource(resourceUri.toURL(), resourceUri.toString());
+                    foundResource = new LoadServiceResource(resourceUri.toURL(), resourceUri.getSchemeSpecificPart());
                     debugLogFound(foundResource);
                 } catch (URISyntaxException e) {
                     throw runtime.newIOError(e.getMessage());
@@ -1365,13 +1365,21 @@ public class LoadService {
     }
     
     private String[] splitJarUrl(String loadPathEntry) {
-        int idx = loadPathEntry.indexOf("!");
-        if (idx == -1) {
-            return new String[]{loadPathEntry, ""};
+        String unescaped = loadPathEntry;
+
+        try {
+            unescaped = new URI(loadPathEntry).getSchemeSpecificPart();
+        } catch (URISyntaxException e) {
+            // Fall back to using the original string
         }
 
-        String filename = loadPathEntry.substring(0, idx);
-        String entry = idx + 2 < loadPathEntry.length() ? loadPathEntry.substring(idx + 2) : "";
+        int idx = unescaped.indexOf("!");
+        if (idx == -1) {
+            return new String[]{unescaped, ""};
+        }
+
+        String filename = unescaped.substring(0, idx);
+        String entry = idx + 2 < unescaped.length() ? unescaped.substring(idx + 2) : "";
 
         if(filename.startsWith("jar:")) {
             filename = filename.substring(4);

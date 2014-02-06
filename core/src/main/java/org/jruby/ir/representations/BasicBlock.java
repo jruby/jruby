@@ -56,7 +56,15 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
 
     @Override
     public int hashCode() {
-        return label.hashCode();
+        return id;
+    }
+
+    public boolean isEntryBB() {
+        return cfg.getEntryBB() == this;
+    }
+
+    public boolean isExitBB() {
+        return cfg.getExitBB() == this;
     }
 
     public void markRescueEntryBB() {

@@ -111,13 +111,13 @@ public final class RubyArray extends RubyObject {
         return store.get(ArrayUtilities.normaliseIndex(store.size(), index));
     }
 
-    public Object getRangeInclusive(int begin, int inclusiveEnd) {
+    public RubyArray getRangeInclusive(int begin, int inclusiveEnd) {
         final int l = store.size();
         final int normalisedInclusiveEnd = ArrayUtilities.normaliseIndex(l, inclusiveEnd);
         return getRangeExclusive(begin, normalisedInclusiveEnd + 1);
     }
 
-    public Object getRangeExclusive(int begin, int exclusiveEnd) {
+    public RubyArray getRangeExclusive(int begin, int exclusiveEnd) {
         final int l = store.size();
         final int normalisedBegin = ArrayUtilities.normaliseIndex(l, begin);
         final int truncatedNormalisedExclusiveEnd = ArrayUtilities.truncateNormalisedExclusiveIndex(l, ArrayUtilities.normaliseExclusiveIndex(l, exclusiveEnd));

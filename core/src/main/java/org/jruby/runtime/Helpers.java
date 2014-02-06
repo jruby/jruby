@@ -289,7 +289,8 @@ public class Helpers {
     public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String rubyName, String javaName, StaticScope scope,
                                   int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
         // TODO: Need to have access to AST for recompilation. See #1395
-        return def(context, self, scriptObject, rubyName, javaName, scope, arity, filename, line, callConfig, parameterDesc, null);
+        final MethodNodes methodNodes = MethodNodes.lookup(javaName);
+        return def(context, self, scriptObject, rubyName, javaName, scope, arity, filename, line, callConfig, parameterDesc, methodNodes);
     }
 
     public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String rubyName, String javaName, StaticScope scope,
@@ -309,13 +310,20 @@ public class Helpers {
                 parameterDesc,
                 methodNodes);
 
+        // TODO(CS): The MethodNodes don't pass through to the method object correctly - bypass.
+
+        if (method instanceof CompiledMethod) {
+            ((CompiledMethod) method).unsafeSetMethodNodes(methodNodes);
+        }
+
         return addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
     }
 
     public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String rubyName, String javaName, StaticScope scope,
                                    int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
         // TODO: Need to have access to AST for recompilation. See #1395
-        return defs(context, self, receiver, scriptObject, rubyName, javaName, scope, arity, filename, line, callConfig, parameterDesc, null);
+        final MethodNodes methodNodes = MethodNodes.lookup(javaName);
+        return defs(context, self, receiver, scriptObject, rubyName, javaName, scope, arity, filename, line, callConfig, parameterDesc, methodNodes);
     }
 
     public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String rubyName, String javaName, StaticScope scope,
@@ -330,6 +338,12 @@ public class Helpers {
                 factory, rubyName, javaName, rubyClass,
                 new SimpleSourcePosition(filename, line), arity, scope,
                 scriptObject, callConfig, parameterDesc, methodNodes);
+
+        // TODO(CS): The MethodNodes don't pass through to the method object correctly - bypass.
+
+        if (method instanceof CompiledMethod) {
+            ((CompiledMethod) method).unsafeSetMethodNodes(methodNodes);
+        }
         
         rubyClass.addMethod(rubyName, method);
         
@@ -439,8 +453,18 @@ public class Helpers {
         return map;
     }
 
-    public static IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj) {
-        return nj.getValue() == null ? context.runtime.getNil() : (IRubyObject)nj.getValue();
+    /**
+     * Should be called on jumps out of blocks.  Inspects the jump, returning or rethrowing as appropriate
+     */
+    public static IRubyObject handleBlockJump(ThreadContext context, JumpException.FlowControlException jump, Block.Type type) {
+        // 'next' and Lambda 'return' are local returns from the block, ending the call or yield
+        if (jump instanceof JumpException.NextJump
+                || (jump instanceof JumpException.ReturnJump && type == Block.Type.LAMBDA)) {
+            return jump.getValue() == null ? context.runtime.getNil() : (IRubyObject)jump.getValue();
+        }
+
+        // other jumps propagate up
+        throw jump;
     }
 
     private static class MethodMissingMethod extends DynamicMethod {
@@ -3028,7 +3052,7 @@ public class Helpers {
         }
     }
 
-    public static IRubyObject irPostReqdArg(int argIndex, int preReqdArgsCount, int postReqdArgsCount, IRubyObject[] args) {
+    public static IRubyObject irLoadPostReqdArg(int argIndex, int preReqdArgsCount, int postReqdArgsCount, IRubyObject[] args) {
         // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
         int kwArgHashCount = 0;
         int n = args.length;

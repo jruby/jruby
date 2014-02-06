@@ -26,10 +26,6 @@ public final class ExceptionTranslator {
 
         CompilerAsserts.neverPartOfCompilation();
 
-        if (Options.TRUFFLE_PRINT_JAVA_EXCEPTIONS.load()) {
-            exception.printStackTrace();
-        }
-
         // RaiseException already includes the Ruby exception
 
         if (exception instanceof RaiseException) {
@@ -48,12 +44,16 @@ public final class ExceptionTranslator {
          * implementation.
          */
 
+        if (Options.TRUFFLE_PRINT_JAVA_EXCEPTIONS.load()) {
+            exception.printStackTrace();
+        }
+
         String message;
 
         if (exception.getMessage() == null) {
             message = exception.getClass().getSimpleName();
         } else {
-            message = exception.getMessage();
+            message = exception.getClass().getSimpleName() + ": " + exception.getMessage();
         }
 
         return new RubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), message);

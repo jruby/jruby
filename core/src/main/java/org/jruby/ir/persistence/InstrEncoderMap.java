@@ -632,15 +632,26 @@ public class InstrEncoderMap {
         e.encode(instr.isUnwrapArray());
     }
 
+    // FIXME: Verify
     private void encodeZSuperInstr(ZSuperInstr instr) {
         e.encode(instr.getReceiver());
         Operand closure = instr.getClosureArg(null);
-        
-        if (closure != null) {
-            e.encode(true);
+
+        boolean hasClosure = closure != null;
+        if (hasClosure) {
             e.encode(closure);
-        } else {
-            e.encode(false);
+        }
+
+        // FIXME: Correct?
+        e.encode(instr.getCallArgs().length);
+        for (Operand arg: instr.getCallArgs()) {
+            e.encode(arg);
+        }
+
+        // FIXME: Correct?
+        e.encode(instr.getArgCounts().length);
+        for (Integer i: instr.getArgCounts()) {
+            e.encode(i);
         }
     }
 

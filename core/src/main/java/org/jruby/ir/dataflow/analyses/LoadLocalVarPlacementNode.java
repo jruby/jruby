@@ -9,7 +9,6 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
-import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
@@ -25,8 +24,8 @@ import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.util.Edge;
 
-public class LoadLocalVarPlacementNode extends FlowGraphNode {
-    public LoadLocalVarPlacementNode(DataFlowProblem prob, BasicBlock n) {
+public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlacementProblem, LoadLocalVarPlacementNode> {
+    public LoadLocalVarPlacementNode(LoadLocalVarPlacementProblem prob, BasicBlock n) {
         super(prob, n);
     }
 
@@ -36,26 +35,28 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
         outRequiredLoads = new HashSet<LocalVariable>();
     }
 
+    @Override
     public void buildDataFlowVars(Instr i) {
         // Nothing to do -- because we are going to simply use non-closure, non-self, non-block LocalVariables as our data flow variables
         // rather than build a new data flow type for it
     }
 
+    @Override
     public void applyPreMeetHandler() {
-        if (basicBlock == problem.getScope().cfg().getExitBB()) {
-            inRequiredLoads = ((LoadLocalVarPlacementProblem) problem).getLoadsOnScopeExit();
-        }
+        if (basicBlock.isExitBB()) inRequiredLoads = problem.getLoadsOnScopeExit();
     }
 
-    public void compute_MEET(Edge e, BasicBlock source, FlowGraphNode pred) {
-        LoadLocalVarPlacementNode n = (LoadLocalVarPlacementNode) pred;
-        inRequiredLoads.addAll(n.outRequiredLoads);
-    }
+    @Override
+    public void compute_MEET(Edge e, LoadLocalVarPlacementNode pred) {
+        inRequiredLoads.addAll(pred.outRequiredLoads);
+    }   
 
+    @Override
     public void initSolution() {
         reqdLoads = new HashSet<LocalVariable>(inRequiredLoads);
     }
 
+    @Override
     public void applyTransferFunction(Instr i) {
         IRScope scope = problem.getScope();
         boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
@@ -112,26 +113,26 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
             // The variables used as arguments will need to be loaded
             // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
             for (Variable x : i.getUsedVariables()) {
-                if ((x instanceof LocalVariable) && !((LocalVariable)x).isSelf()) {
+                if (x instanceof LocalVariable && !x.isSelf()) {
                     reqdLoads.add((LocalVariable)x);
                 }
             }
         }
     }
 
+    @Override
     public boolean solutionChanged() {
         // At the beginning of the scope and rescue block entries, required loads can be discarded
         // since all these loads will be executed there.
-        if (basicBlock == problem.getScope().cfg().getEntryBB() || basicBlock.isRescueEntry()) {
-            reqdLoads.clear();
-        }
+        if (basicBlock.isEntryBB() || basicBlock.isRescueEntry()) reqdLoads.clear();
 
-        //System.out.println("\n For CFG " + problem.getCFG() + " BB " + _bb.getID());
+        //System.out.println("\n For CFG " + getCFG() + " BB " + _bb.getID());
         //System.out.println("\t--> IN reqd loads   : " + java.util.Arrays.toString(_inReqdLoads.toArray()));
         //System.out.println("\t--> OUT reqd loads  : " + java.util.Arrays.toString(_outReqdLoads.toArray()));
         return !outRequiredLoads.equals(reqdLoads);
     }
 
+    @Override
     public void finalizeSolution() {
 
         outRequiredLoads = reqdLoads;
@@ -152,9 +153,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
     }
 
     public void addLoads(Map<Operand, Operand> varRenameMap) {
-        LoadLocalVarPlacementProblem blp = (LoadLocalVarPlacementProblem) problem;
-
-        IRScope scope                  = blp.getScope();
+        IRScope scope                  = problem.getScope();
         boolean isEvalScript           = scope instanceof IREvalScript;
         boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
 
@@ -263,8 +262,8 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
         }
 
         // Load first use of variables in closures
-        if ((scope instanceof IRClosure) && (basicBlock == problem.getScope().cfg().getEntryBB())) {
-            // System.out.println("\n[In Entry BB] For CFG " + problem.getScope().cfg() + ":");
+        if (scope instanceof IRClosure && basicBlock.isEntryBB()) {
+            // System.out.println("\n[In Entry BB] For CFG " + getCFG() + ":");
             // System.out.println("\t--> Reqd loads   : " + java.util.Arrays.toString(reqdLoads.toArray()));
             for (LocalVariable v : reqdLoads) {
                 if (scope.usesLocalVariable(v) || scope.definesLocalVariable(v)) {

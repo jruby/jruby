@@ -105,7 +105,7 @@ import org.jruby.runtime.profile.ProfileOutput;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.truffle.JRubyTruffleBridge;
-import org.jruby.truffle.runtime.RubyParser;
+import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.IOInputStream;
@@ -819,7 +819,7 @@ public final class Ruby {
        try {
            if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
                assert parseResult instanceof RootNode;
-               return truffleBridge.toJRuby(truffleBridge.execute(RubyParser.ParserContext.TOP_LEVEL, truffleBridge.toTruffle(self), null, (RootNode) parseResult));
+               return truffleBridge.toJRuby(truffleBridge.execute(TranslatorDriver.ParserContext.TOP_LEVEL, truffleBridge.toTruffle(self), null, (RootNode) parseResult));
            } else if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
                return Interpreter.getInstance().execute(this, parseResult, self);
            } else {
@@ -838,7 +838,7 @@ public final class Ruby {
         try {
             if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
                 assert rootNode instanceof RootNode;
-                return truffleBridge.toJRuby(truffleBridge.execute(RubyParser.ParserContext.TOP_LEVEL, truffleBridge.toTruffle(self), null, (RootNode) rootNode));
+                return truffleBridge.toJRuby(truffleBridge.execute(TranslatorDriver.ParserContext.TOP_LEVEL, truffleBridge.toTruffle(self), null, (RootNode) rootNode));
             } else if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
                 // FIXME: retrieve from IRManager unless lifus does it later
                 return Interpreter.getInstance().execute(this, rootNode, self);

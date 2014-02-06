@@ -3,7 +3,6 @@ package org.jruby.ir.dataflow.analyses;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
-import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.StoreLocalVarInstr;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
@@ -21,7 +20,7 @@ import java.util.Set;
 // This problem tries to find places to insert binding stores -- for spilling local variables onto a heap store
 // It does better than spilling all local variables to the heap at all call sites.  This is similar to a
 // available expressions analysis in that it tries to propagate availability of stores through the flow graph.
-public class StoreLocalVarPlacementProblem extends DataFlowProblem {
+public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVarPlacementProblem, StoreLocalVarPlacementNode> {
     public static final String NAME = "Placement of local-var stores";
 
     private boolean scopeHasLocalVarStores;
@@ -31,11 +30,13 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem {
         super(DataFlowProblem.DF_Direction.FORWARD);
     }
 
+    @Override
     public String getName() {
         return "Binding Stores Placement Analysis";
     }
 
-    public FlowGraphNode buildFlowGraphNode(BasicBlock bb) {
+    @Override
+    public StoreLocalVarPlacementNode buildFlowGraphNode(BasicBlock bb) {
         return new StoreLocalVarPlacementNode(this, bb);
     }
 
@@ -65,10 +66,9 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem {
         boolean mightRequireGlobalEnsureBlock = false;
 
         Set<LocalVariable> dirtyVars = null;
-
-        CFG     cfg      = getScope().cfg();
-        IRScope cfgScope = cfg.getScope();
-
+        IRScope cfgScope = getScope();
+        CFG     cfg      = cfgScope.cfg();
+        
         this.scopeHasLocalVarStores      = false;
         this.scopeHasUnrescuedExceptions = false;
 
@@ -78,8 +78,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem {
         }
 
         // Add local-var stores
-        for (FlowGraphNode n : flowGraphNodes) {
-            StoreLocalVarPlacementNode bspn = (StoreLocalVarPlacementNode) n;
+        for (StoreLocalVarPlacementNode bspn: flowGraphNodes) {
             boolean bbAddedStores;
             // SSS: This is highly conservative.  If the bb has an exception raising instr.
             // and we dont have a rescuer, only then do we have unrescued exceptions.
@@ -96,11 +95,12 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem {
         }
 
         // Allocate global-ensure block, if necessary
-        BasicBlock geb;
         if ((mightRequireGlobalEnsureBlock == true) && !dirtyVars.isEmpty()) {
             Variable exc = cfgScope.getNewTemporaryVariable();
-            geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
+            BasicBlock geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
+            
             geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception handling
+            
             for (LocalVariable v : dirtyVars) {
                 Operand value = varRenameMap.get(v);
                 if (value == null) {
@@ -109,6 +109,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem {
                 }
                 geb.addInstr(new StoreLocalVarInstr(value, (IRClosure) cfgScope, v));
             }
+            
             geb.addInstr(new ThrowExceptionInstr(exc));
             cfg.addGlobalEnsureBB(geb);
         }

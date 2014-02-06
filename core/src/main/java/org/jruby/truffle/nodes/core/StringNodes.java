@@ -542,8 +542,42 @@ public abstract class StringNodes {
 
         @Specialization
         public RubySymbol toSym(RubyString string) {
-            return new RubySymbol(getContext().getCoreLibrary().getSymbolClass(), string.toString());
+            return RubySymbol.newSymbol(getContext(), string.toString());
         }
     }
 
+    @CoreMethod(names = "reverse", maxArgs = 0)
+    public abstract static class ReverseNode extends CoreMethodNode {
+
+        public ReverseNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ReverseNode(ReverseNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString reverse(RubyString string) {
+            return new RubyString(getContext().getCoreLibrary().getStringClass(), string.getReverseString());
+        }
+    }
+
+    @CoreMethod(names = "reverse!", maxArgs = 0)
+    public abstract static class ReverseBangNode extends CoreMethodNode {
+
+        public ReverseBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ReverseBangNode(ReverseBangNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString reverse(RubyString string) {
+            string.reverseStringValue();
+            return string;
+        }
+    }
 }

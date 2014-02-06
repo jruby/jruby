@@ -6,9 +6,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -25,7 +25,6 @@ import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.ir.util.DirectedGraph;
@@ -115,12 +114,12 @@ public class CFG {
         return postOrderList;
     }
 
-    public ListIterator<BasicBlock> getPostOrderTraverser() {
-        return postOrderList().listIterator();
+    public Iterator<BasicBlock> getPostOrderTraverser() {
+        return postOrderList().iterator();
     }
 
-    public ListIterator<BasicBlock> getReversePostOrderTraverser() {
-        return postOrderList().listIterator(size());
+    public Iterator<BasicBlock> getReversePostOrderTraverser() {
+        return postOrderList().descendingIterator();
     }
 
     public void resetState() {

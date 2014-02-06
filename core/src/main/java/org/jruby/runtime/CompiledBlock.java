@@ -112,9 +112,8 @@ public class CompiledBlock extends ContextAwareBlockBody {
 
         try {
             return callback.call(context, self, realArg, block);
-        } catch (JumpException.NextJump nj) {
-            // A 'next' is like a local return from the block, ending this call or yield.
-            return Helpers.handleNextJump(context, nj);
+        } catch (JumpException.FlowControlException jump) {
+            return Helpers.handleBlockJump(context, jump, type);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }
@@ -134,9 +133,8 @@ public class CompiledBlock extends ContextAwareBlockBody {
 
         try {
             return callback.call(context, self, realArg, block);
-        } catch (JumpException.NextJump nj) {
-            // A 'next' is like a local return from the block, ending this call or yield.
-            return Helpers.handleNextJump(context, nj);
+        } catch (JumpException.FlowControlException jump) {
+            return Helpers.handleBlockJump(context, jump, type);
         } finally {
             post(context, binding, oldVis, lastFrame);
         }

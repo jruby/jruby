@@ -9,6 +9,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -16,7 +17,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
-import org.jruby.ir.operands.BooleanLiteral;
+import org.jruby.ir.operands.UnboxedBoolean;
 
 public class YieldInstr extends Instr implements ResultInstr, FixedArityInstr {
     public final boolean unwrapArray;
@@ -63,7 +64,7 @@ public class YieldInstr extends Instr implements ResultInstr, FixedArityInstr {
     // if unwrapArray, maybe convert yieldArg into a CompoundArray operand?
     @Override
     public Operand[] getOperands() {
-        return new Operand[] {blockArg, yieldArg, new BooleanLiteral(unwrapArray) };
+        return new Operand[] {blockArg, yieldArg, new UnboxedBoolean(unwrapArray) };
     }
 
     @Override
@@ -89,16 +90,12 @@ public class YieldInstr extends Instr implements ResultInstr, FixedArityInstr {
     @Interp
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        Object resultValue;
-        Object blk = (Object) blockArg.retrieve(context, self, currDynScope, temp);
-        if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
-        if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
-        Block b = (Block)blk;
+        Object blk = blockArg.retrieve(context, self, currDynScope, temp);
         if (yieldArg == UndefinedValue.UNDEFINED) {
-            return b.yieldSpecific(context);
+            return IRRuntimeHelpers.yieldSpecific(context, blk);
         } else {
             IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(context, self, currDynScope, temp);
-            return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null, null) : b.yield(context, yieldVal);
+            return IRRuntimeHelpers.yield(context, blk, yieldVal, unwrapArray);
         }
     }
 

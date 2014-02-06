@@ -129,7 +129,7 @@
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>invokebinder</artifactId>
-      <version>1.2</version>
+      <version>1.3-SNAPSHOT</version>
       <type>jar</type>
     </dependency>
     <dependency>
@@ -204,7 +204,7 @@
     <dependency>
       <groupId>com.oracle</groupId>
       <artifactId>truffle</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
+      <version>0.1</version>
       <type>jar</type>
     </dependency>
   </dependencies>
@@ -214,9 +214,9 @@
     <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
     <build.date>${maven.build.timestamp}</build.date>
     <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
-    <jruby.compile.memory>1G</jruby.compile.memory>
-    <jruby.test.memory>1G</jruby.test.memory>
-    <jruby.test.memory.permgen>1G</jruby.test.memory.permgen>
+    <jruby.compile.memory>2G</jruby.compile.memory>
+    <jruby.test.memory>2G</jruby.test.memory>
+    <jruby.test.memory.permgen>2G</jruby.test.memory.permgen>
     <maven.test.skip>true</maven.test.skip>
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <!-- this one needs to match the version packed with joda-time -->

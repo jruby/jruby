@@ -28,22 +28,53 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.2</version>
-        <configuration>
-          <executable>java</executable> 
-          <arguments>
-            <argument>-jar</argument>
-            <argument>jruby-complete-@project.version@.jar</argument>
-            <argument>-e</argument>
-            <!-- make sure openssl loads -->
-            <argument>
-              puts 'hello world'
-              puts 'openssl loaded' if require 'openssl'
-	      p OpenSSL::VERSION
-              puts 'readline loaded' if require 'readline'
-	      p Java::jline.console.ConsoleReader
-            </argument>
-          </arguments>
-        </configuration>
+	<executions>
+	  <execution>
+	    <id>simple</id>
+	    <phase>process-resources</phase>
+	    <goals><goal>exec</goal></goals>
+            <configuration>
+              <executable>java</executable> 
+              <arguments>
+		<argument>-jar</argument>
+		<argument>jruby-complete-@project.version@.jar</argument>
+		<argument>-e</argument>
+		<!-- make sure openssl loads -->
+		<argument>
+		  puts 'hello world'
+		  puts 'openssl loaded' if require 'openssl'
+		  p OpenSSL::VERSION
+		  puts 'readline loaded' if require 'readline'
+		  p Java::jline.console.ConsoleReader
+		</argument>
+              </arguments>
+            </configuration>
+	  </execution>
+	  <execution>
+	    <id>load_path</id>
+	    <phase>process-resources</phase>
+	    <goals><goal>exec</goal></goals>
+            <configuration>
+              <executable>java</executable> 
+              <arguments>
+		<argument>-jar</argument>
+		<argument>jruby-complete-@project.version@.jar</argument>
+		<argument>-e</argument>
+		<!-- make sure openssl loads -->
+		<argument>
+		  orig = $LOAD_PATH.clone
+		  $LOAD_PATH.clear
+		  orig.each {|s| $LOAD_PATH.push s.gsub('%20', ' ')}
+		  puts 'hello world - 2'
+		  puts 'openssl loaded - 2' if require 'openssl'
+		  p OpenSSL::VERSION
+		  puts 'readline loaded - 2' if require 'readline'
+		  p Java::jline.console.ConsoleReader
+		</argument>
+              </arguments>
+            </configuration>
+	  </execution>
+	</executions>
       </plugin>
     </plugins>
   </build>

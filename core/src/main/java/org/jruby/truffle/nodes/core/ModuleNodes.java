@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -20,12 +20,11 @@ import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.instancevariables.*;
-import org.jruby.truffle.nodes.call.CallNode;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.RubyParser.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.*;
 import org.jruby.truffle.runtime.methods.*;
+import org.jruby.truffle.translator.TranslatorDriver;
 
 @CoreClass(name = "Module")
 public abstract class ModuleNodes {
@@ -137,7 +136,7 @@ public abstract class ModuleNodes {
             final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, Arity.ONE_ARG);
 
             final SelfNode self = new SelfNode(context, sourceSection);
-            final ReadPreArgumentNode readArgument = new ReadPreArgumentNode(context, sourceSection, 0, false);
+            final ReadPreArgumentNode readArgument = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
             final UninitializedWriteInstanceVariableNode writeInstanceVariable = new UninitializedWriteInstanceVariableNode(context, sourceSection, "@" + name, self, readArgument);
 
             final SequenceNode block = new SequenceNode(context, sourceSection, checkArity, writeInstanceVariable);
@@ -196,19 +195,19 @@ public abstract class ModuleNodes {
         @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line) {
             final Source source = getContext().getSourceManager().get("(eval)", code.toString());
-            return getContext().execute(getContext(), source, ParserContext.MODULE, module, frame.materialize());
+            return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize());
         }
 
         @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") UndefinedPlaceholder line) {
             final Source source = getContext().getSourceManager().get(file.toString(), code.toString());
-            return getContext().execute(getContext(), source, ParserContext.MODULE, module, frame.materialize());
+            return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize());
         }
 
         @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") int line) {
             final Source source = getContext().getSourceManager().get(file.toString(), code.toString());
-            return getContext().execute(getContext(), source, ParserContext.MODULE, module, frame.materialize());
+            return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize());
         }
 
     }
@@ -521,7 +520,7 @@ public abstract class ModuleNodes {
             return module;
         }
     }
-    @CoreMethod(names = "private_instance_methods", minArgs = 0, maxArgs = 1, isSplatted = true)
+    @CoreMethod(names = "private_instance_methods", minArgs = 0, maxArgs = 1)
     public abstract static class PrivateInstanceMethodsNode extends CoreMethodNode {
 
         public PrivateInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
@@ -533,10 +532,15 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray privateInstanceMethods(RubyModule module, Object argument) {
+        public RubyArray privateInstanceMethods(RubyModule module, UndefinedPlaceholder argument) {
+            return privateInstanceMethods(module, false);
+        }
+
+        @Specialization
+        public RubyArray privateInstanceMethods(RubyModule module, boolean includeAncestors) {
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            List<RubyMethod> methods = module.getDeclaredMethods();
-            if (argument instanceof RubyTrueClass) {
+            final List<RubyMethod> methods = module.getDeclaredMethods();
+            if (includeAncestors) {
                 RubyModule parent = module.getParentModule();
                 while(parent != null){
                     methods.addAll(parent.getDeclaredMethods());
@@ -545,14 +549,51 @@ public abstract class ModuleNodes {
             }
             for (RubyMethod method : methods) {
                 if (method.getVisibility() == Visibility.PRIVATE){
-                    RubySymbol m = new RubySymbol(getContext().getCoreLibrary().getSymbolClass(), method.getName());
+                    RubySymbol m = RubySymbol.newSymbol(getContext(), method.getName());
                     array.push(m);
                 }
             }
             return array;
         }
     }
-    
+
+    @CoreMethod(names = "instance_methods", minArgs = 0, maxArgs = 1)
+    public abstract static class InstanceMethodsNode extends CoreMethodNode {
+
+        public InstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InstanceMethodsNode(InstanceMethodsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray instanceMethods(RubyModule module, UndefinedPlaceholder argument) {
+            return instanceMethods(module, false);
+        }
+
+        @Specialization
+        public RubyArray instanceMethods(RubyModule module, boolean includeAncestors) {
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final List<RubyMethod> methods = module.getDeclaredMethods();
+            if (includeAncestors) {
+                RubyModule parent = module.getParentModule();
+                while(parent != null){
+                    methods.addAll(parent.getDeclaredMethods());
+                    parent = parent.getParentModule();
+                }
+            }
+            for (RubyMethod method : methods) {
+                if (method.getVisibility() != Visibility.PRIVATE){
+                    RubySymbol m = RubySymbol.newSymbol(getContext(), method.getName());
+                    array.push(m);
+                }
+            }
+            return array;
+        }
+    }
+
     @CoreMethod(names = "private_constant", appendCallNode = true, isSplatted = true)
     public abstract static class PrivateConstantNode extends CoreMethodNode {
 
