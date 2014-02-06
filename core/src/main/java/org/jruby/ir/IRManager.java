@@ -18,6 +18,7 @@ import org.jruby.ir.passes.CompilerPassScheduler;
 /**
  */
 public class IRManager {
+    public static String SAFE_COMPILER_PASSES = "LinearizeCFG";
     public static String DEFAULT_COMPILER_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,AddLocalVarLoadStoreInstructions,LinearizeCFG";
     public static String DEFAULT_JIT_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,AddLocalVarLoadStoreInstructions,AddCallProtocolInstructions,LinearizeCFG";
     public static String DEFAULT_INLINING_COMPILER_PASSES = "LocalOptimizationPass";
@@ -40,6 +41,7 @@ public class IRManager {
     private List<CompilerPass> compilerPasses = new ArrayList<CompilerPass>();
     private List<CompilerPass> inliningCompilerPasses = new ArrayList<CompilerPass>();
     private List<CompilerPass> jitPasses = new ArrayList<CompilerPass>();
+    private List<CompilerPass> safePasses = new ArrayList<CompilerPass>();
 
     // If true then code will not execute (see ir/ast tool)
     private boolean dryRun = false;
@@ -48,6 +50,7 @@ public class IRManager {
         compilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_COMPILER_PASSES);
         inliningCompilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_INLINING_COMPILER_PASSES);
         jitPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_JIT_PASSES);
+        safePasses = CompilerPass.getPassesFromString(null, SAFE_COMPILER_PASSES);
     }
 
     public boolean isDryRun() {
@@ -104,6 +107,10 @@ public class IRManager {
 
     public List<CompilerPass> getJITPasses(IRScope scope) {
         return jitPasses;
+    }
+
+    public List<CompilerPass> getSafePasses(IRScope scope) {
+        return safePasses;
     }
 
     public Set<CompilerPassListener> getListeners() {

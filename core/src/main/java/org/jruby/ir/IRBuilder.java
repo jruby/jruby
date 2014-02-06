@@ -3079,7 +3079,10 @@ public class IRBuilder {
     }
 
     public Operand buildPostExe(PostExeNode postExeNode, IRScope s) {
-        IRClosure endClosure = new IRClosure(manager, s, false, postExeNode.getPosition().getStartLine(), postExeNode.getScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType());
+        IRScope topLevel = s.getTopLevelScope();
+        IRScope nearestLVarScope = s.getNearestTopLocalVariableScope();
+
+        IRClosure endClosure = new IRClosure(manager, s, false, postExeNode.getPosition().getStartLine(), nearestLVarScope.getStaticScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType());
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
         IRBuilder closureBuilder = newIRBuilder(manager);
@@ -3089,13 +3092,16 @@ public class IRBuilder {
         closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentModuleVariable(), new ScopeModule(endClosure)));
         closureBuilder.build(postExeNode.getBodyNode(), endClosure);
 
-        // Add an instruction to record the end block at runtime
-        addInstr(s, new RecordEndBlockInstr(s, endClosure));
+        // Add an instruction in 's' to record the end block in the 'topLevel' scope.
+        // SSS FIXME: IR support for end-blocks that access vars in non-toplevel-scopes
+        // might be broken currently. We could either fix it or consider dropping support
+        // for END blocks altogether or only support them in the toplevel. Not worth the pain.
+        addInstr(s, new RecordEndBlockInstr(topLevel, endClosure));
         return manager.getNil();
     }
 
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
-        IRClosure beginClosure = new IRClosure(manager, s, false, preExeNode.getPosition().getStartLine(), preExeNode.getScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType());
+        IRClosure beginClosure = new IRClosure(manager, s, false, preExeNode.getPosition().getStartLine(), s.getTopLevelScope().getStaticScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType());
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
         IRBuilder closureBuilder = newIRBuilder(manager);
