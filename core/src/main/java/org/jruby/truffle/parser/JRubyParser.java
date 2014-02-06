@@ -27,6 +27,7 @@ import org.jruby.truffle.runtime.methods.*;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import org.jruby.util.cli.Options;
 
 import java.io.Reader;
 
@@ -35,8 +36,15 @@ public class JRubyParser implements RubyParser {
     private final Ruby jruby;
     private long nextReturnID = 0;
 
+    private final RubyNodeInstrumenter instrumenter;
+
     public JRubyParser(Ruby jruby) {
+        this(jruby, new DefaultRubyNodeInstrumenter(Options.TRUFFLE_TRACE_NODES.load()));
+    }
+
+    public JRubyParser(Ruby jruby, RubyNodeInstrumenter instrumenter) {
         this.jruby = jruby;
+        this.instrumenter = instrumenter;
     }
 
     @Override
@@ -127,7 +135,8 @@ public class JRubyParser implements RubyParser {
 
         RubyNode truffleNode;
 
-        final RubyDebugManager debugManager = context.getDebugManager();
+        final DebugManager debugManager = context.getDebugManager();
+
         try {
             if (debugManager != null) {
                 debugManager.notifyStartLoading(source);
@@ -206,6 +215,10 @@ public class JRubyParser implements RubyParser {
             final MaterializedFrame parent = frame.getArguments(RubyArguments.class).getDeclarationFrame();
             return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, new UniqueMethodIdentifier());
         }
+    }
+
+    public RubyNodeInstrumenter getNodeInstrumenter() {
+        return instrumenter;
     }
 
 }

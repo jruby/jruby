@@ -48,7 +48,6 @@ public abstract class CoreMethodNodeManager {
         getMethods(methods, ClassNodesFactory.getFactories());
         getMethods(methods, ContinuationNodesFactory.getFactories());
         getMethods(methods, ComparableNodesFactory.getFactories());
-        getMethods(methods, DebugNodesFactory.getFactories());
         getMethods(methods, DirNodesFactory.getFactories());
         getMethods(methods, ExceptionNodesFactory.getFactories());
         getMethods(methods, FalseClassNodesFactory.getFactories());

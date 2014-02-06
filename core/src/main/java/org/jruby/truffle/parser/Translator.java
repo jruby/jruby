@@ -53,6 +53,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     protected final RubyContext context;
     protected final TranslatorEnvironment environment;
     protected final Source source;
+    protected final RubyNodeInstrumenter instrumenter;
 
     private boolean translatingForStatement = false;
 
@@ -111,6 +112,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         this.parent = parent;
         this.environment = environment;
         this.source = source;
+        this.instrumenter = environment.getNodeInstrumenter();
     }
 
     @Override
@@ -305,18 +307,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         RubyNode translated = new CallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), argumentsAndBlock.getArguments());
 
-        if (Options.TRUFFLE_DEBUG_NODES.load()) {
-            final CallNode callNode = (CallNode) translated;
-            if (!debugIgnoredCalls.contains(callNode.getName())) {
-
-                final RubyProxyNode proxy = new RubyProxyNode(context, translated);
-                proxy.markAs(NodePhylum.CALL);
-                proxy.getProbeChain().appendProbe(new RubyCallProbe(context, node.getName()));
-                translated = proxy;
-            }
-        }
-
-        return translated;
+        return instrumenter.instrumentAsCall(translated, node.getName());
     }
 
     protected class ArgumentsAndBlockTranslation {
@@ -1175,21 +1166,9 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         RubyNode translated = ((ReadNode) lhs).makeWriteNode(rhs);
 
-        if (Options.TRUFFLE_DEBUG_NODES.load()) {
-            final UniqueMethodIdentifier methodIdentifier = environment.findMethodForLocalVar(node.getName());
+        final UniqueMethodIdentifier methodIdentifier = environment.findMethodForLocalVar(node.getName());
 
-            RubyProxyNode proxy;
-            if (translated instanceof RubyProxyNode) {
-                proxy = (RubyProxyNode) translated;
-            } else {
-                proxy = new RubyProxyNode(context, translated);
-            }
-            context.getDebugManager().registerLocalDebugProxy(methodIdentifier, node.getName(), proxy.getProbeChain());
-
-            translated = proxy;
-        }
-
-        return translated;
+        return instrumenter.instrumentAsLocalAssignment(translated, methodIdentifier, node.getName());
     }
 
     @Override

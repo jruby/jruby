@@ -13,6 +13,7 @@ import java.io.*;
 import java.math.*;
 import java.util.concurrent.atomic.*;
 
+import com.oracle.truffle.api.impl.DefaultDebugManager;
 import org.jruby.Ruby;
 import jnr.posix.*;
 
@@ -42,17 +43,23 @@ public class RubyContext implements ExecutionContext {
     private final ThreadManager threadManager;
     private final FiberManager fiberManager;
     private final AtExitManager atExitManager;
-    private final RubyDebugManager debugManager;
+    private final DebugManager debugManager;
+    private final ASTPrinter astPrinter;
     private final SourceManager sourceManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
 
     private AtomicLong nextObjectID = new AtomicLong(0);
 
     public RubyContext(Ruby runtime, RubyParser parser) {
+        this(runtime, parser, null);
+    }
+
+    public RubyContext(Ruby runtime, RubyParser parser, ASTPrinter astPrinter) {
         assert runtime != null;
 
         this.runtime = runtime;
         this.parser = parser;
+        this.astPrinter = astPrinter;
 
         objectSpaceManager = new ObjectSpaceManager(this);
         traceManager = new TraceManager(this);
@@ -65,7 +72,7 @@ public class RubyContext implements ExecutionContext {
         atExitManager = new AtExitManager();
         sourceManager = new SourceManager();
 
-        debugManager = Options.TRUFFLE_DEBUG_NODES.load() ? new RubyDebugManager(this) : null;
+        debugManager = new DefaultDebugManager(this);
 
         // Must initialize threads before fibers
 
@@ -77,13 +84,12 @@ public class RubyContext implements ExecutionContext {
         return "ruby";
     }
 
-    public RubyDebugManager getDebugManager() {
+    public DebugManager getDebugManager() {
         return debugManager;
     }
 
-    @Override
     public ASTPrinter getASTPrinter() {
-        throw new UnsupportedOperationException();
+        return astPrinter;
     }
 
     public void load(Source source) {
