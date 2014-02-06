@@ -2697,6 +2697,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         String mangledName = JavaNameMangler.mangleMethodName(name);
         String newMethodName = "method__" + script.getAndIncrementMethodIndex() + "$RUBY$" + mangledName;
 
+        MethodNodes.cache(newMethodName, methodNodes);
+
         // prepare to call "def" utility method to handle def logic
         loadThreadContext();
 

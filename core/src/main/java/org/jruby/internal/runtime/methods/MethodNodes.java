@@ -12,7 +12,13 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.Node;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class MethodNodes {
+
+    // TODO(CS): MethodNodes will never leave this cache
+    private final static Map<String, MethodNodes> cache = new ConcurrentHashMap<>();
 
     private final ArgsNode argsNode;
     private final Node bodyNode;
@@ -32,5 +38,14 @@ public class MethodNodes {
     public Node getBodyNode() {
         return bodyNode;
     }
+
+    public static void cache(String methodJavaName, MethodNodes nodes) {
+        cache.put(methodJavaName, nodes);
+    }
+
+    public static MethodNodes lookup(String methodJavaName) {
+        return cache.get(methodJavaName);
+    }
+
 
 }

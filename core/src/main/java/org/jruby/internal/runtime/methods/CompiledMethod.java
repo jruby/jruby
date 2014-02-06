@@ -43,7 +43,7 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
     protected Object $scriptObject;
     protected ISourcePosition position;
 
-    private final MethodNodes methodNodes;
+    private MethodNodes methodNodes;
     
     public static class LazyCompiledMethod extends DynamicMethod implements Cloneable, PositionAware, MethodArgs2 {
         private final String rubyName;
@@ -318,4 +318,8 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
         return methodNodes;
     }
 
-}// SimpleInvocationMethod
+    public void unsafeSetMethodNodes(MethodNodes methodNodes) {
+        this.methodNodes = methodNodes;
+    }
+
+}

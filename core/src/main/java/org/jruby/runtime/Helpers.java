@@ -289,7 +289,8 @@ public class Helpers {
     public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String rubyName, String javaName, StaticScope scope,
                                   int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
         // TODO: Need to have access to AST for recompilation. See #1395
-        return def(context, self, scriptObject, rubyName, javaName, scope, arity, filename, line, callConfig, parameterDesc, null);
+        final MethodNodes methodNodes = MethodNodes.lookup(javaName);
+        return def(context, self, scriptObject, rubyName, javaName, scope, arity, filename, line, callConfig, parameterDesc, methodNodes);
     }
 
     public static IRubyObject def(ThreadContext context, IRubyObject self, Object scriptObject, String rubyName, String javaName, StaticScope scope,
@@ -309,13 +310,20 @@ public class Helpers {
                 parameterDesc,
                 methodNodes);
 
+        // TODO(CS): The MethodNodes don't pass through to the method object correctly - bypass.
+
+        if (method instanceof CompiledMethod) {
+            ((CompiledMethod) method).unsafeSetMethodNodes(methodNodes);
+        }
+
         return addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
     }
 
     public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String rubyName, String javaName, StaticScope scope,
                                    int arity, String filename, int line, CallConfiguration callConfig, String parameterDesc) {
         // TODO: Need to have access to AST for recompilation. See #1395
-        return defs(context, self, receiver, scriptObject, rubyName, javaName, scope, arity, filename, line, callConfig, parameterDesc, null);
+        final MethodNodes methodNodes = MethodNodes.lookup(javaName);
+        return defs(context, self, receiver, scriptObject, rubyName, javaName, scope, arity, filename, line, callConfig, parameterDesc, methodNodes);
     }
 
     public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String rubyName, String javaName, StaticScope scope,
@@ -330,6 +338,12 @@ public class Helpers {
                 factory, rubyName, javaName, rubyClass,
                 new SimpleSourcePosition(filename, line), arity, scope,
                 scriptObject, callConfig, parameterDesc, methodNodes);
+
+        // TODO(CS): The MethodNodes don't pass through to the method object correctly - bypass.
+
+        if (method instanceof CompiledMethod) {
+            ((CompiledMethod) method).unsafeSetMethodNodes(methodNodes);
+        }
         
         rubyClass.addMethod(rubyName, method);
         
