@@ -1,13 +1,9 @@
 package org.jruby.util;
 
-import org.jruby.Ruby;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.jar.JarFile;
-import java.util.jar.JarEntry;
-import java.util.zip.ZipEntry;
 
 public abstract class JarResource implements FileResource {
     private static Pattern PREFIX_MATCH = Pattern.compile("^(?:jar:)?(?:file:)?(.*)$");
@@ -21,10 +17,13 @@ public abstract class JarResource implements FileResource {
             return null;
         }
 
-        String jarName = sanitized.substring(0, bang);
-        JarFile jar = Ruby.getGlobalRuntime().getCurrentContext().runtime.getLoadService().getJarFile(jarName);
-        if (jar == null) return null;
-
+        JarFile jar;
+        try {
+            jar = new JarFile(sanitized.substring(0, bang));
+        } catch (IOException e) {
+            return null;
+        }
+        
         String slashPath = sanitized.substring(bang + 1);
         if (!slashPath.startsWith("/")) {
             slashPath = "/" + slashPath;
