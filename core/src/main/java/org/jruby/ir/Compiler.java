@@ -42,7 +42,7 @@ public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
             @Override
             public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                 try {
-                    return (IRubyObject) compiled.getMethod("__script__0", ThreadContext.class,
+                    return (IRubyObject) compiled.getMethod("__script__", ThreadContext.class,
                             StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class).invoke(null,
                             runtime.getCurrentContext(), scope.getStaticScope(), runtimeTopSelf, IRubyObject.NULL_ARRAY, block);
                 } catch (InvocationTargetException ite) {

@@ -99,6 +99,7 @@ class ClassData {
         method().endMethod();
         methodStack.pop();
     }
+
     public ClassVisitor cls;
     public String clsName;
     Stack<MethodData> methodStack = new Stack();

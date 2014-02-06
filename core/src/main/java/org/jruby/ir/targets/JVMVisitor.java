@@ -199,13 +199,11 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public void codegen(IRScriptBody script) {
-        this.script = script;
         emit(script);
     }
 
-    public String emitScope(IRScope scope, String name, Signature signature) {
+    public void emitScope(IRScope scope, String name, Signature signature) {
         this.currentScope = scope;
-        name = name + scope.getLineNumber();
 
         boolean debug = false;
 
@@ -308,8 +306,6 @@ public class JVMVisitor extends IRVisitor {
         m.mark(allLabels[allLabels.length - 1]);
 
         jvm.popmethod();
-
-        return name;
     }
 
     private static final Signature METHOD_SIGNATURE = Signature
@@ -331,9 +327,10 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public Handle emit(IRMethod method) {
-        String name = emitScope(method, method.getName(), METHOD_SIGNATURE);
+        String name = method.getName() + "_" + methodIndex++;
 
-        // return array of class name and generated method name
+        emitScope(method, name, METHOD_SIGNATURE);
+
         return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(METHOD_SIGNATURE.type().returnType(), METHOD_SIGNATURE.type().parameterArray()));
     }
 
@@ -346,24 +343,22 @@ public class JVMVisitor extends IRVisitor {
 
     public Handle emit(IRClosure closure) {
         /* Compile the closure like a method */
-        String name = closure.getName() + "__" + closure.getLexicalParent().getName();
+        String name = closure.getName() + "__" + closure.getLexicalParent().getName() + "_" + methodIndex++;
 
-        name = emitScope(closure, name, CLOSURE_SIGNATURE);
+        emitScope(closure, name, CLOSURE_SIGNATURE);
 
-        // return array of class name and generated method name
         return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(CLOSURE_SIGNATURE.type().returnType(), CLOSURE_SIGNATURE.type().parameterArray()));
     }
 
-    public void emit(IRModuleBody method) {
-        String name = method.getName();
+    public Handle emit(IRModuleBody method) {
+        String name = method.getName() + "_" + methodIndex++;
         if (name.indexOf("DUMMY_MC") != -1) {
             name = "METACLASS";
         }
 
-        name = emitScope(method, name, METHOD_SIGNATURE);
+        emitScope(method, name, METHOD_SIGNATURE);
 
-        // push a method handle for binding purposes
-        jvm.method().pushHandle(jvm.clsData().clsName, name, method.getStaticScope().getRequiredArgs());
+        return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(METHOD_SIGNATURE.type().returnType(), METHOD_SIGNATURE.type().parameterArray()));
     }
 
     public void visit(Instr instr) {
@@ -821,7 +816,7 @@ public class JVMVisitor extends IRVisitor {
         a.dup();
 
         // emit method body and get handle
-        emit(newIRClassBody); // handle
+        a.ldc(emit(newIRClassBody)); // handle
 
         // add'l args for CompiledIRMethod constructor
         a.ldc(newIRClassBody.getName());
@@ -850,7 +845,7 @@ public class JVMVisitor extends IRVisitor {
 
         m.invokeHelper("newClassForIR", RubyClass.class, ThreadContext.class, String.class, IRubyObject.class, RubyModule.class, Object.class, boolean.class);
 
-        //// static scope
+        // static scope
         a.aload(0);
         a.aload(1);
         a.ldc(scopeString);
@@ -864,8 +859,11 @@ public class JVMVisitor extends IRVisitor {
         a.getstatic(p(Visibility.class), "PUBLIC", ci(Visibility.class));
         a.swap();
 
+        // no arguments
+        a.ldc("");
+
         // invoke constructor
-        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;)V");
+        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;Ljava/lang/String;)V");
 
         // store
         jvmStoreLocal(defineclassinstr.getResult());
@@ -922,7 +920,7 @@ public class JVMVisitor extends IRVisitor {
         a.dup();
 
         // emit method body and get handle
-        emit(metaClassBody); // handle
+        a.ldc(emit(metaClassBody)); // handle
 
         // add'l args for CompiledIRMethod constructor
         a.ldc(metaClassBody.getName());
@@ -947,8 +945,11 @@ public class JVMVisitor extends IRVisitor {
         a.getstatic(p(Visibility.class), "PUBLIC", ci(Visibility.class));
         a.swap();
 
+        // no arguments
+        a.ldc("");
+
         // invoke constructor
-        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;)V");
+        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;Ljava/lang/String;)V");
 
         // store
         jvmStoreLocal(definemetaclassinstr.getResult());
@@ -970,6 +971,9 @@ public class JVMVisitor extends IRVisitor {
         // new CompiledIRMethod
         a.newobj(p(CompiledIRMethod.class));
         a.dup();
+
+        // emit method body and get handle
+        a.ldc(emit(newIRModuleBody)); // handle
 
         // emit method body and get handle
         emit(newIRModuleBody); // handle
@@ -998,8 +1002,11 @@ public class JVMVisitor extends IRVisitor {
         a.getstatic(p(Visibility.class), "PUBLIC", ci(Visibility.class));
         a.swap();
 
+        // no arguments
+        a.ldc("");
+
         // invoke constructor
-        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;)V");
+        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;Ljava/lang/String;)V");
 
         // store
         jvmStoreLocal(definemoduleinstr.getResult());
@@ -1884,6 +1891,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private final JVM jvm;
-    private IRScriptBody script;
     private IRScope currentScope;
+    private int methodIndex = 0;
 }
