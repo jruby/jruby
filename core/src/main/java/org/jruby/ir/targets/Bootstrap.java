@@ -552,6 +552,7 @@ public class Bootstrap {
                     mh = binder
                             .permute("self", "context", "arg*", "block") // filter caller, move self
                             .castArg("self", nc.getNativeTarget())
+                            .castVirtual(nc.getNativeReturn(), nc.getNativeTarget(), nc.getNativeSignature())
                             .invokeVirtualQuiet(LOOKUP, nc.getNativeName())
                             .handle();
                 }
