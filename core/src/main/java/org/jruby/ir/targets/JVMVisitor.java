@@ -901,7 +901,31 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void DefineClassMethodInstr(DefineClassMethodInstr defineclassmethodinstr) {
-        super.DefineClassMethodInstr(defineclassmethodinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        IRMethod method = defineclassmethodinstr.getMethod();
+        StaticScope scope = method.getStaticScope();
+
+        String scopeString = Helpers.encodeScope(scope);
+
+        IRBytecodeAdapter   m = jvm.method();
+        SkinnyMethodAdapter a = m.adapter;
+        List<String[]> parameters = method.getArgDesc();
+
+        a.aload(0); // ThreadContext
+        visit(defineclassmethodinstr.getContainer());
+        jvm.method().pushHandle(emit(method)); // handle
+        a.ldc(method.getName());
+        a.aload(1);
+        a.ldc(scopeString);
+        a.ldc(method.getFileName());
+        a.ldc(method.getLineNumber());
+        a.ldc(Helpers.encodeParameterList(parameters));
+
+        // add method
+        a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledIRClassMethod",
+                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, java.lang.invoke.MethodHandle.class, String.class,
+                        StaticScope.class, String.class, String.class, int.class, String.class));
+
+        a.pop();
     }
 
     @Override

@@ -11,6 +11,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyNil;
 import org.jruby.RubyProc;
+import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.IREvalScript;
@@ -175,14 +176,33 @@ public class IRRuntimeHelpers {
         }
     }
 
-    /**
-     * Logic shared by both interpreter and JIT. Ensure both sides are happy with any changes made here.
-     */
     public static IRubyObject defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, StaticScope parentScope, String scopeDesc,
                                   String filename, int line, String parameterDesc) {
         Ruby runtime = context.runtime;
 
         RubyModule containingClass = context.getRubyClass();
+        Visibility currVisibility = context.getCurrentVisibility();
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
+
+        StaticScope scope = Helpers.decodeScope(context, parentScope, scopeDesc);
+
+        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, newVisibility, containingClass, parameterDesc);
+
+        return Helpers.addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
+    }
+
+    public static IRubyObject defCompiledIRClassMethod(ThreadContext context, IRubyObject obj, MethodHandle handle, String rubyName, StaticScope parentScope, String scopeDesc,
+                                                  String filename, int line, String parameterDesc) {
+        Ruby runtime = context.runtime;
+
+        if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {
+            throw runtime.newTypeError("can't define singleton method \"" + rubyName + "\" for " + obj.getMetaClass().getBaseName());
+        }
+
+        if (obj.isFrozen()) throw runtime.newFrozenError("object");
+
+        RubyClass containingClass = obj.getSingletonClass();
+
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
 
