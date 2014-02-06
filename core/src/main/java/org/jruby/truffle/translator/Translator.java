@@ -1891,7 +1891,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
     @Override
     public Object visitSymbolNode(org.jruby.ast.SymbolNode node) {
-        return new ObjectLiteralNode(context, translate(node.getPosition()), RubySymbol.newSymbol(context, node.getName()));
+        return new ObjectLiteralNode(context, translate(node.getPosition()), context.newSymbol(node.getName()));
     }
 
     @Override

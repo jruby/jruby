@@ -542,7 +542,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubySymbol toSym(RubyString string) {
-            return RubySymbol.newSymbol(getContext(), string.toString());
+            return getContext().newSymbol(string.toString());
         }
     }
 

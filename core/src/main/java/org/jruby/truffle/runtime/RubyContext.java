@@ -23,11 +23,18 @@ import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.source.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyBinding;
+import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.debug.*;
 import org.jruby.truffle.runtime.methods.*;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.objects.*;
+import org.jruby.truffle.runtime.objects.RubyBasicObject;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.translator.TranslatorDriver;
+import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
 /**
@@ -114,6 +121,14 @@ public class RubyContext implements ExecutionContext {
      */
     public void haltedAt(Node node, MaterializedFrame frame) {
         runShell(node, frame);
+    }
+
+    public RubySymbol newSymbol(String name) {
+        return symbolTable.getSymbol(name);
+    }
+
+    public RubySymbol newSymbol(ByteList name) {
+        return symbolTable.getSymbol(name);
     }
 
     public Object eval(String code) {
