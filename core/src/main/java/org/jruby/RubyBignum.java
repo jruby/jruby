@@ -33,9 +33,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -45,7 +42,13 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import static org.jruby.CompatVersion.*;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
+import static org.jruby.CompatVersion.RUBY1_8;
+import static org.jruby.CompatVersion.RUBY1_9;
 
 /**
  *
@@ -160,10 +163,6 @@ public class RubyBignum extends RubyInteger {
      */
     public static long big2ulong(RubyBignum value) {
         BigInteger big = value.getValue();
-
-        if (big.compareTo(LONG_MIN) <= 0 || big.compareTo(ULONG_MAX) > 0) {
-            throw value.getRuntime().newRangeError("bignum too big to convert into `ulong'");
-        }
         return value.getValue().longValue();
     }
 
