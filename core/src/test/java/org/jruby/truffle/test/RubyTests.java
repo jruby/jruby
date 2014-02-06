@@ -9,8 +9,6 @@
  */
 package org.jruby.truffle.test;
 
-import static org.junit.Assert.*;
-
 import java.io.*;
 import java.util.*;
 
@@ -19,7 +17,7 @@ import junit.framework.TestCase;
 
 import com.oracle.truffle.api.*;
 import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.parser.*;
+import org.jruby.truffle.translator.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -81,7 +79,7 @@ public class RubyTests extends TestCase {
         ruby.getInstanceConfig().setOutput(printStream);
         ruby.getInstanceConfig().setInput(new ByteArrayInputStream(input.getBytes()));
 
-        final RubyContext context = new RubyContext(ruby, new JRubyParser(ruby));
+        final RubyContext context = new RubyContext(ruby, new TranslatorDriver(ruby));
 
         CoreMethodNodeManager.addMethods(context.getCoreLibrary().getObjectClass());
         context.getCoreLibrary().initializeAfterMethodsAdded();
@@ -92,7 +90,7 @@ public class RubyTests extends TestCase {
 
         final Source source = context.getSourceManager().getFakeFile(fileName, code);
 
-        context.execute(context, source, RubyParser.ParserContext.TOP_LEVEL, context.getCoreLibrary().getMainObject(), null);
+        context.execute(context, source, TranslatorDriver.ParserContext.TOP_LEVEL, context.getCoreLibrary().getMainObject(), null);
         context.shutdown();
 
         assertEquals(expectedOutput, byteArray.toString().replaceAll("\r\n", "\n"));

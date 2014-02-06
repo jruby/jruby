@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.parser;
+package org.jruby.truffle.translator;
 
 import java.util.*;
 
@@ -20,7 +20,6 @@ import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.nodes.cast.ArrayCastNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
 import org.jruby.truffle.nodes.control.*;
-import org.jruby.truffle.nodes.core.ArrayGetTailNode;
 import org.jruby.truffle.nodes.core.ArrayGetTailNodeFactory;
 import org.jruby.truffle.nodes.core.ArrayIndexNode;
 import org.jruby.truffle.nodes.core.ArrayIndexNodeFactory;

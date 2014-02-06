@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.parser;
+package org.jruby.truffle.translator;
 
 import java.util.*;
 
@@ -38,7 +38,7 @@ public class TranslatorEnvironment {
 
     private FrameSlot blockParameter = null;
 
-    private JRubyParser parser;
+    private TranslatorDriver parser;
     private final long returnID;
 
     private final boolean ownScopeForAssignments;
@@ -51,7 +51,7 @@ public class TranslatorEnvironment {
 
     private int tempIndex;
 
-    public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, FrameDescriptor frameDescriptor, JRubyParser parser, long returnID, boolean ownScopeForAssignments,
+    public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, FrameDescriptor frameDescriptor, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments,
                     boolean neverAssignInParentScope, UniqueMethodIdentifier methodIdentifier) {
         this.context = context;
         this.parent = parent;
@@ -63,7 +63,7 @@ public class TranslatorEnvironment {
         this.methodIdentifier = methodIdentifier;
     }
 
-    public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, JRubyParser parser, long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
+    public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
                     UniqueMethodIdentifier methodIdentifier) {
         this(context, parent, new FrameDescriptor(RubyFrameTypeConversion.getInstance()), parser, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier);
     }
@@ -200,7 +200,7 @@ public class TranslatorEnvironment {
         return returnID;
     }
 
-    public JRubyParser getParser() {
+    public TranslatorDriver getParser() {
         return parser;
     }
 

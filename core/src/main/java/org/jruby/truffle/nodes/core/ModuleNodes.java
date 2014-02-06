@@ -20,12 +20,11 @@ import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.instancevariables.*;
-import org.jruby.truffle.nodes.call.CallNode;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.RubyParser.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.*;
 import org.jruby.truffle.runtime.methods.*;
+import org.jruby.truffle.translator.TranslatorDriver;
 
 @CoreClass(name = "Module")
 public abstract class ModuleNodes {
@@ -196,19 +195,19 @@ public abstract class ModuleNodes {
         @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line) {
             final Source source = getContext().getSourceManager().get("(eval)", code.toString());
-            return getContext().execute(getContext(), source, ParserContext.MODULE, module, frame.materialize());
+            return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize());
         }
 
         @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") UndefinedPlaceholder line) {
             final Source source = getContext().getSourceManager().get(file.toString(), code.toString());
-            return getContext().execute(getContext(), source, ParserContext.MODULE, module, frame.materialize());
+            return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize());
         }
 
         @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") int line) {
             final Source source = getContext().getSourceManager().get(file.toString(), code.toString());
-            return getContext().execute(getContext(), source, ParserContext.MODULE, module, frame.materialize());
+            return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize());
         }
 
     }

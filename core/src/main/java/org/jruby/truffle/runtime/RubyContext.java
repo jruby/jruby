@@ -27,6 +27,7 @@ import org.jruby.truffle.runtime.debug.*;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.runtime.objects.*;
 import org.jruby.truffle.runtime.subsystems.*;
+import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
 
 /**
@@ -35,7 +36,7 @@ import org.jruby.util.cli.Options;
 public class RubyContext implements ExecutionContext {
 
     private final Ruby runtime;
-    private final RubyParser parser;
+    private final TranslatorDriver translator;
     private final CoreLibrary coreLibrary;
     private final FeatureManager featureManager;
     private final ObjectSpaceManager objectSpaceManager;
@@ -50,15 +51,15 @@ public class RubyContext implements ExecutionContext {
 
     private AtomicLong nextObjectID = new AtomicLong(0);
 
-    public RubyContext(Ruby runtime, RubyParser parser) {
-        this(runtime, parser, null);
+    public RubyContext(Ruby runtime, TranslatorDriver translator) {
+        this(runtime, translator, null);
     }
 
-    public RubyContext(Ruby runtime, RubyParser parser, ASTPrinter astPrinter) {
+    public RubyContext(Ruby runtime, TranslatorDriver translator, ASTPrinter astPrinter) {
         assert runtime != null;
 
         this.runtime = runtime;
-        this.parser = parser;
+        this.translator = translator;
         this.astPrinter = astPrinter;
 
         objectSpaceManager = new ObjectSpaceManager(this);
@@ -93,7 +94,7 @@ public class RubyContext implements ExecutionContext {
     }
 
     public void load(Source source) {
-        execute(this, source, RubyParser.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
+        execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
     }
 
     public void loadFile(String fileName) {
@@ -102,7 +103,7 @@ public class RubyContext implements ExecutionContext {
         if (code == null) {
             throw new RuntimeException("Can't read file " + fileName);
         }
-        execute(this, source, RubyParser.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
+        execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
     }
 
     public RubySymbol.SymbolTable getSymbolTable() {
@@ -117,17 +118,17 @@ public class RubyContext implements ExecutionContext {
 
     public Object eval(String code) {
         final Source source = sourceManager.get("(eval)", code);
-        return execute(this, source, RubyParser.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
+        return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
     }
 
     public Object eval(String code, RubyModule module) {
         final Source source = sourceManager.get("(eval)", code);
-        return execute(this, source, RubyParser.ParserContext.MODULE, module, null);
+        return execute(this, source, TranslatorDriver.ParserContext.MODULE, module, null);
     }
 
     public Object eval(String code, RubyBinding binding) {
         final Source source = sourceManager.get("(eval)", code);
-        return execute(this, source, RubyParser.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame());
+        return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame());
     }
 
     public void runShell(Node node, MaterializedFrame frame) {
@@ -165,12 +166,12 @@ public class RubyContext implements ExecutionContext {
 
     public ShellResult evalShell(String code, MaterializedFrame existingLocals) {
         final Source source = sourceManager.get("(shell)", code);
-        return (ShellResult) execute(this, source, RubyParser.ParserContext.SHELL, coreLibrary.getMainObject(), existingLocals);
+        return (ShellResult) execute(this, source, TranslatorDriver.ParserContext.SHELL, coreLibrary.getMainObject(), existingLocals);
     }
 
-    public Object execute(RubyContext context, Source source, RubyParser.ParserContext parserContext, Object self, MaterializedFrame parentFrame) {
+    public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame) {
         try {
-            final RubyParserResult parseResult = parser.parse(context, source, parserContext, parentFrame);
+            final RubyParserResult parseResult = translator.parse(context, source, parserContext, parentFrame);
             final RubyArguments arguments = new RubyArguments(parentFrame, self, null);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
 
@@ -247,8 +248,8 @@ public class RubyContext implements ExecutionContext {
         return threadManager;
     }
 
-    public RubyParser getParser() {
-        return parser;
+    public TranslatorDriver getTranslator() {
+        return translator;
     }
 
     /**

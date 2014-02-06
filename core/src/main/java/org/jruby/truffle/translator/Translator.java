@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.parser;
+package org.jruby.truffle.translator;
 
 import java.math.*;
 import java.util.*;

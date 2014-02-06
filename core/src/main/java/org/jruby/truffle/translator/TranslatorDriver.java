@@ -7,47 +7,45 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.parser;
+package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
-import com.oracle.truffle.api.source.SourceManager;
 import org.jruby.truffle.JRubyTruffleBridge;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.control.*;
-import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.debug.*;
 import org.jruby.truffle.runtime.methods.*;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.cli.Options;
 
-import java.io.Reader;
+public class TranslatorDriver {
 
-public class JRubyParser implements RubyParser {
+    public static enum ParserContext {
+        TOP_LEVEL, SHELL, MODULE
+    }
 
     private final Ruby jruby;
     private long nextReturnID = 0;
 
     private final RubyNodeInstrumenter instrumenter;
 
-    public JRubyParser(Ruby jruby) {
+    public TranslatorDriver(Ruby jruby) {
         this(jruby, new DefaultRubyNodeInstrumenter(Options.TRUFFLE_TRACE_NODES.load()));
     }
 
-    public JRubyParser(Ruby jruby, RubyNodeInstrumenter instrumenter) {
+    public TranslatorDriver(Ruby jruby, RubyNodeInstrumenter instrumenter) {
         this.jruby = jruby;
         this.instrumenter = instrumenter;
     }
 
-    @Override
     public MethodDefinitionNode parse(RubyContext context, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
         // TODO(cs) should this get a new unique method identifier or not?
         final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, null), this, allocateReturnID(), true, true, new UniqueMethodIdentifier());
@@ -63,7 +61,6 @@ public class JRubyParser implements RubyParser {
         return translator.compileFunctionNode(JRubyTruffleBridge.DUMMY_SOURCE_SECTION, "(unknown)", argsNode, bodyNode);
     }
 
-    @Override
     public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame) {
         // Set up the JRuby parser
 
@@ -127,7 +124,7 @@ public class JRubyParser implements RubyParser {
 
         final Translator translator;
 
-        if (parserContext == RubyParser.ParserContext.MODULE) {
+        if (parserContext == TranslatorDriver.ParserContext.MODULE) {
             translator = new ModuleTranslator(context, null, environment, source);
         } else {
             translator = new Translator(context, null, environment, source);
@@ -164,7 +161,7 @@ public class JRubyParser implements RubyParser {
 
             // Shell result
 
-            if (parserContext == RubyParser.ParserContext.SHELL) {
+            if (parserContext == TranslatorDriver.ParserContext.SHELL) {
                 truffleNode = new ShellResultNode(context, truffleNode.getSourceSection(), truffleNode);
             }
 
