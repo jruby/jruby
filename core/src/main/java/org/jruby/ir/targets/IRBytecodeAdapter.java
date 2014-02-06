@@ -100,6 +100,10 @@ public class IRBytecodeAdapter {
         adapter.aload(2);
     }
 
+    public void loadArgs() {
+        adapter.aload(3);
+    }
+
     public void storeLocal(int i) {
         adapter.astore(i);
     }

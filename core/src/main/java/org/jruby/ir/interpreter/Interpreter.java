@@ -399,7 +399,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation, IRScope scope, int numArgs, int kwArgHashCount, IRubyObject self, Block block, RubyModule implClass, Visibility visibility)
+    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation, IRScope scope, IRubyObject[] args, IRubyObject self, Block block, RubyModule implClass, Visibility visibility)
     {
         switch(operation) {
         case PUSH_FRAME:
@@ -418,7 +418,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             context.callThreadPoll();
             break;
         case CHECK_ARITY:
-            ((CheckArityInstr)instr).checkArity(context.runtime, numArgs, kwArgHashCount);
+            ((CheckArityInstr)instr).checkArity(context, args);
             break;
         case LINE_NUM:
             context.setLine(((LineNumberInstr)instr).lineNumber);
@@ -558,7 +558,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         int      n              = instrs.length;
         int      ipc            = 0;
         Object   exception      = null;
-        int      kwArgHashCount = (scope.receivesKeywordArgs() && args.length > 0 && args[args.length - 1] instanceof RubyHash) ? 1 : 0;
         DynamicScope currDynScope = context.getCurrentScope();
 
         // Init profiling this scope
@@ -585,7 +584,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     computeResult((AluInstr)instr, operation, context, floats, fixnums, booleans, temp);
                     break;
                 case ARG_OP:
-                    receiveArg(context, instr, operation, args, kwArgHashCount, currDynScope, temp, exception, block);
+                    receiveArg(context, instr, operation, args, IRRuntimeHelpers.extractKwargsCount(args, scope.receivesKeywordArgs()), currDynScope, temp, exception, block);
                     break;
                 case CALL_OP:
                     if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);
@@ -608,7 +607,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                         currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope());
                         context.pushScope(currDynScope);
                     } else {
-                        processBookKeepingOp(context, instr, operation, scope, args.length, kwArgHashCount, self, block, implClass, visibility);
+                        processBookKeepingOp(context, instr, operation, scope, args, self, block, implClass, visibility);
                     }
                     break;
                 case OTHER_OP:

@@ -679,18 +679,20 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BreakInstr(BreakInstr breakInstr) {
-        IRBytecodeAdapter   m = jvm.method();
-        SkinnyMethodAdapter a = m.adapter;
-        m.loadLocal(0); // context
-        a.aload(1); // current scope
-        // FIXME: This can also be done in the helper itself
-        m.invokeVirtual(Type.getType(IRScope.class), Method.getMethod("org.jruby.ir.IRScope getIRScope()"));
-        a.ldc(breakInstr.getScopeToReturnTo().getScopeId());
-        visit(breakInstr.getReturnValue());
-        // FIXME: emit block-type for the scope that is currently executing
-        // For now, it is null
-        m.pushNil();
-        a.invokestatic(p(IRubyObject.class), "initiateBreak", sig(ThreadContext.class, IRScope.class, IRScope.class, IRubyObject.class, Block.Type.class));
+        super.BreakInstr(breakInstr);
+        // this is all wrong
+//        IRBytecodeAdapter   m = jvm.method();
+//        SkinnyMethodAdapter a = m.adapter;
+//        m.loadLocal(0); // context
+//        a.aload(1); // current scope
+//        // FIXME: This can also be done in the helper itself
+//        m.invokeVirtual(Type.getType(IRScope.class), Method.getMethod("org.jruby.ir.IRScope getIRScope()"));
+//        a.ldc(breakInstr.getScopeToReturnTo().getScopeId());
+//        visit(breakInstr.getReturnValue());
+//        // FIXME: emit block-type for the scope that is currently executing
+//        // For now, it is null
+//        m.pushNil();
+//        a.invokestatic(p(IRubyObject.class), "initiateBreak", sig(ThreadContext.class, IRScope.class, IRScope.class, IRubyObject.class, Block.Type.class));
     }
 
     @Override
@@ -729,7 +731,7 @@ public class JVMVisitor extends IRVisitor {
 
         Operand closure = callInstr.getClosureArg(null);
         boolean hasClosure = closure != null;
-        if (closure != null) {
+        if (hasClosure) {
             jvm.method().loadContext();
             visit(closure);
             jvm.method().invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
@@ -763,7 +765,13 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void CheckArityInstr(CheckArityInstr checkarityinstr) {
-        // no-op for now
+        jvm.method().loadContext();
+        jvm.method().loadArgs();
+        jvm.method().adapter.ldc(checkarityinstr.required);
+        jvm.method().adapter.ldc(checkarityinstr.opt);
+        jvm.method().adapter.ldc(checkarityinstr.rest);
+        jvm.method().adapter.ldc(checkarityinstr.receivesKwargs);
+        jvm.method().adapter.invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, Object[].class, int.class, int.class, int.class, boolean.class));
     }
 
     @Override

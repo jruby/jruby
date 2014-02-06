@@ -3,6 +3,7 @@ package org.jruby.ir.runtime;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyHash;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyFixnum;
@@ -353,5 +354,17 @@ public class IRRuntimeHelpers {
             throw new RuntimeException("Unhandled case in CallInstr:prepareBlock.  Got block arg: " + value);
         }
         return block;
+    }
+
+    public static void checkArity(ThreadContext context, Object[] args, int required, int opt, int rest, boolean receivesKwargs) {
+        int numArgs = args.length;
+        int kwArgHashCount = extractKwargsCount(args, receivesKwargs);
+        if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt + kwArgHashCount)))) {
+            Arity.raiseArgumentError(context.runtime, numArgs, required, required + opt);
+        }
+    }
+
+    public static int extractKwargsCount(Object[] args, boolean receivesKwargs) {
+        return (receivesKwargs && args.length > 0 && args[args.length - 1] instanceof RubyHash) ? 1 : 0;
     }
 }
