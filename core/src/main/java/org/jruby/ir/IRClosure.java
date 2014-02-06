@@ -31,6 +31,7 @@ import org.jruby.parser.IRStaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
+import org.objectweb.asm.Handle;
 
 public class IRClosure extends IRScope {
     public final Label startLabel; // Label for the start of the closure (used to implement redo)
@@ -54,6 +55,7 @@ public class IRClosure extends IRScope {
     private Arity arity;
     private int argumentType;
     public boolean addedGEBForUncaughtBreaks;
+    private Handle handle;
 
     /** Used by cloning code */
     private IRClosure(IRClosure c, IRScope lexicalParent) {
@@ -391,5 +393,13 @@ public class IRClosure extends IRScope {
 
     public int getArgumentType() {
         return argumentType;
+    }
+
+    public void setHandle(Handle handle) {
+        this.handle = handle;
+    }
+
+    public Handle getHandle() {
+        return handle;
     }
 }

@@ -1,5 +1,6 @@
 package org.jruby.ir.targets;
 
+import com.headius.invokebinder.Signature;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -70,6 +71,19 @@ public class JVM {
 
     public IRBytecodeAdapter method() {
         return clsData().method();
+    }
+
+    public void pushmethod(String name, Signature signature) {
+        clsData().pushmethod(name, signature);
+        method().startMethod();
+
+        // locals for ThreadContext and self
+        for (int i = 0; i < signature.argCount(); i++) {
+            methodData().local("$" + signature.argName(i), Type.getType(signature.argType(i)));
+        }
+
+        // TODO: this should go into the PushBinding instruction
+        methodData().local("$dynamicScope");
     }
 
     public void pushmethodVarargs(String name) {

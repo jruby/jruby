@@ -1,8 +1,6 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyArray;
-import org.jruby.RubyMethod;
-import org.jruby.RubyProc;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
@@ -11,6 +9,7 @@ import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StringLiteral;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -19,7 +18,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.TypeConverter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -399,20 +397,7 @@ public abstract class CallBase extends Instr implements Specializeable {
 
         Object value = closure.retrieve(context, self, currDynScope, temp);
 
-        Block block;
-        if (value instanceof Block) {
-            block = (Block) value;
-        } else if (value instanceof RubyProc) {
-            block = ((RubyProc) value).getBlock();
-        } else if (value instanceof RubyMethod) {
-            block = ((RubyProc)((RubyMethod)value).to_proc(context, null)).getBlock();
-        } else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil()) {
-            block = Block.NULL_BLOCK;
-        } else if (value instanceof IRubyObject) {
-            block = ((RubyProc)TypeConverter.convertToType((IRubyObject)value, context.runtime.getProc(), "to_proc", true)).getBlock();
-        } else {
-            throw new RuntimeException("Unhandled case in CallInstr:prepareBlock.  Got block arg: " + value);
-        }
+        Block block = IRRuntimeHelpers.getBlockFromObject(context, value);
 
         // ENEBO: This came from duplicated logic from SuperInstr....
         // Blocks passed in through calls are always normal blocks, no matter where they came from
@@ -420,4 +405,5 @@ public abstract class CallBase extends Instr implements Specializeable {
 
         return block;
     }
+
 }

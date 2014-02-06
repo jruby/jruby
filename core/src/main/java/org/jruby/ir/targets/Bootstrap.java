@@ -79,7 +79,7 @@ public class Bootstrap {
             this.name = name;
 
             // all signatures have (context, caller, self), so length, block, and arg before block indicates signature
-            int arity = -1;
+            int arity;
             if (type.parameterType(type.parameterCount() - 1) == Block.class) {
                 arity = type.parameterCount() - 4;
 
@@ -87,6 +87,7 @@ public class Bootstrap {
                 for (int i = 0; i < arity; i++) {
                     sig = sig.appendArg("arg" + i, IRubyObject.class);
                 }
+                sig = sig.appendArg("block", Block.class);
                 fullSignature = signature = sig;
             } else {
                 arity = type.parameterCount() - 3;
@@ -164,6 +165,7 @@ public class Bootstrap {
                     .invokeStaticQuiet(lookup, Bootstrap.class, "invokeSelf")
                     .handle();
         }
+
         site.setTarget(handle);
         return site;
     }

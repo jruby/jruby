@@ -4,6 +4,7 @@
  */
 package org.jruby.ir.targets;
 
+import com.headius.invokebinder.Signature;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.util.CodegenUtils;
 import org.objectweb.asm.ClassVisitor;
@@ -61,6 +62,14 @@ class ClassData {
     public static final String VARARGS_SIG =
             CodegenUtils.sig(JVM.OBJECT, JVM.THREADCONTEXT, JVM.STATICSCOPE, JVM.OBJECT, JVM.OBJECT_ARRAY, JVM.BLOCK);
 
+    private static final Type[] typesFromSignature(Signature signature) {
+        Type[] types = new Type[signature.argCount()];
+        for (int i = 0; i < signature.argCount(); i++) {
+            types[i] = Type.getType(signature.argType(i));
+        }
+        return types;
+    }
+
     public void pushmethod(String name, int arity) {
         Method m;
         switch (arity) {
@@ -78,6 +87,11 @@ class ClassData {
 
     public void pushmethodVarargs(String name) {
         Method m = new Method(name, JVM.OBJECT_TYPE, VARARGS);
+        methodStack.push(new MethodData(new SkinnyMethodAdapter(cls, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, m.getName(), m.getDescriptor(), null, null), -1));
+    }
+
+    public void pushmethod(String name, Signature signature) {
+        Method m = new Method(name, Type.getType(signature.type().returnType()), typesFromSignature(signature));
         methodStack.push(new MethodData(new SkinnyMethodAdapter(cls, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, m.getName(), m.getDescriptor(), null, null), -1));
     }
 

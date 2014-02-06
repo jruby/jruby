@@ -3,6 +3,7 @@ package org.jruby.ir.runtime;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -20,6 +21,7 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -27,6 +29,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -297,5 +300,58 @@ public class IRRuntimeHelpers {
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
         Block b = (Block)blk;
         return b.yieldSpecific(context);
+    }
+
+    public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value, Arity arity, boolean passArrayArg, boolean argIsArray) {
+        // SSS FIXME: This should not really happen -- so, some places in the runtime library are breaking this contract.
+        if (argIsArray && !(value instanceof RubyArray)) argIsArray = false;
+
+        int blockArity = arity.getValue();
+        switch (blockArity) {
+            case -1 : return argIsArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
+            case  0 : return new IRubyObject[] { value };
+            case  1 : {
+               if (argIsArray) {
+                   RubyArray valArray = ((RubyArray)value);
+                   if (valArray.size() == 0) {
+                       value = passArrayArg ? RubyArray.newEmptyArray(context.runtime) : context.nil;
+                   } else if (!passArrayArg) {
+                       value = valArray.eltInternal(0);
+                   }
+               }
+               return new IRubyObject[] { value };
+            }
+            default :
+                if (argIsArray) {
+                    RubyArray valArray = (RubyArray)value;
+                    if (valArray.size() == 1) value = valArray.eltInternal(0);
+                    value = Helpers.aryToAry(value);
+                    return (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
+                } else {
+                    IRubyObject val0 = Helpers.aryToAry(value);
+                    if (!(val0 instanceof RubyArray)) {
+                        throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
+                    }
+                    return ((RubyArray)val0).toJavaArray();
+                }
+        }
+    }
+
+    public static Block getBlockFromObject(ThreadContext context, Object value) {
+        Block block;
+        if (value instanceof Block) {
+            block = (Block) value;
+        } else if (value instanceof RubyProc) {
+            block = ((RubyProc) value).getBlock();
+        } else if (value instanceof RubyMethod) {
+            block = ((RubyProc)((RubyMethod)value).to_proc(context, null)).getBlock();
+        } else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil()) {
+            block = Block.NULL_BLOCK;
+        } else if (value instanceof IRubyObject) {
+            block = ((RubyProc) TypeConverter.convertToType((IRubyObject) value, context.runtime.getProc(), "to_proc", true)).getBlock();
+        } else {
+            throw new RuntimeException("Unhandled case in CallInstr:prepareBlock.  Got block arg: " + value);
+        }
+        return block;
     }
 }
