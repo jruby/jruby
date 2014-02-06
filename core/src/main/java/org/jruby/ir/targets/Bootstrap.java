@@ -15,6 +15,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
@@ -170,6 +171,16 @@ public class Bootstrap {
         return site;
     }
 
+    public static CallSite invokeSuper(Lookup lookup, String name, MethodType type) {
+        InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]));
+        MethodHandle handle = SmartBinder.from(site.signature)
+                .insert(0, "name", JavaNameMangler.demangleMethodName(name.split(":")[1]))
+                .invokeStaticQuiet(lookup, Bootstrap.class, "invokeSuper")
+                .handle();
+
+        return new ConstantCallSite(handle);
+    }
+
     public static CallSite ivar(Lookup lookup, String name, MethodType type) throws Throwable {
         String[] names = name.split(":");
         String operation = names[0];
@@ -229,6 +240,10 @@ public class Bootstrap {
 
     public static Handle invokeSelf() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeSelf", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+    }
+
+    public static Handle invokeSuper() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeSuper", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
     public static Handle invokeFixnumOp() {
@@ -468,6 +483,16 @@ public class Bootstrap {
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, block);
+    }
+
+    public static IRubyObject invokeSuper(String methodName, ThreadContext context, IRubyObject self, RubyModule definingModule, IRubyObject[] args, Block block) throws Throwable {
+        RubyClass superClass = definingModule.getMetaClass().getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
+
+        Object rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
+                : method.call(context, self, superClass, methodName, args, block);
+
+        return (IRubyObject)rVal;
     }
 
     public static IRubyObject attrAssign(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0) throws Throwable {
