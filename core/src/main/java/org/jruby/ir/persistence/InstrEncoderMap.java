@@ -293,6 +293,7 @@ public class InstrEncoderMap {
         e.encode(instr.required);
         e.encode(instr.opt);
         e.encode(instr.rest);
+        e.encode(instr.receivesKwargs);
     }
 
     private void encodeClassVarIsDefinedInstr(ClassVarIsDefinedInstr instr) {

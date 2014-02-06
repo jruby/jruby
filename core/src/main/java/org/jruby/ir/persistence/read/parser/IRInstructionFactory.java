@@ -376,8 +376,9 @@ public class IRInstructionFactory {
         final int required = paramsIterator.nextInt();
         final int opt = paramsIterator.nextInt();
         final int rest = paramsIterator.nextInt();
+        final boolean receivesKwargs = paramsIterator.nextBoolean();
 
-        return new CheckArityInstr(required, opt, rest);
+        return new CheckArityInstr(required, opt, rest, receivesKwargs);
     }
 
     private Instr createDefineMethod(final ParametersIterator paramsIterator, boolean isInstanceMethod) {
