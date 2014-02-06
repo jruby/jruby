@@ -1947,7 +1947,7 @@ public class IRBuilder {
             // So, we generate an implicit arg name
             String argName = argsNode.getRestArgNode().getName();
             if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("rest", argName == null ? "" : argName);
-            argName = (argName == null || argName.equals("")) ? "%_arg_array" : argName;
+            argName = (argName == null || argName.equals("")) ? "*" : argName;
 
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning

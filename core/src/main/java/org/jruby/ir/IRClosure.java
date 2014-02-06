@@ -224,7 +224,7 @@ public class IRClosure extends IRScope {
         if (isForLoopBody) return getLexicalParent().getNewLocalVariable(name, depth);
 
         if (depth == 0) {
-            LocalVariable lvar = new ClosureLocalVariable(this, name, 0, getStaticScope().addVariable(name));
+            LocalVariable lvar = new ClosureLocalVariable(this, name, 0, getStaticScope().addVariableThisScope(name));
             localVars.put(name, lvar);
             return lvar;
         } else {
