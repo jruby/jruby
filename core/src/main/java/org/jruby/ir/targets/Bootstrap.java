@@ -110,23 +110,17 @@ public class Bootstrap {
     public static CallSite invoke(Lookup lookup, String name, MethodType type) {
         InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]));
         MethodHandle handle;
-        if (site.arity > 0 && site.arity < 4) {
-            handle =
-                    insertArguments(
-                        findStatic(
-                                lookup,
-                                Bootstrap.class,
-                                "invoke",
-                                type.insertParameterTypes(0, InvokeSite.class)),
-                        0,
-                        site);
-        } else {
-            handle = SmartBinder.from(site.signature)
-                    .collect("args", "arg[0-9]+")
-                    .insert(0, "site", site)
-                    .invokeStaticQuiet(lookup, Bootstrap.class, "invoke")
-                    .handle();
+
+        SmartBinder binder = SmartBinder.from(site.signature)
+                .insert(0, "site", site);
+
+        if (site.arity > 3) {
+            binder = binder
+                    .collect("args", "arg[0-9]+");
         }
+
+        handle = binder.invokeStaticQuiet(lookup, Bootstrap.class, "invoke").handle();
+
         site.setTarget(handle);
         return site;
     }
@@ -149,34 +143,35 @@ public class Bootstrap {
     public static CallSite invokeSelf(Lookup lookup, String name, MethodType type) {
         InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]));
         MethodHandle handle;
-        if (site.arity > 0 && site.arity < 4) {
-            handle =
-                    insertArguments(
-                            findStatic(
-                                    lookup,
-                                    Bootstrap.class,
-                                    "invokeSelf",
-                                    type.insertParameterTypes(0, InvokeSite.class)),
-                            0,
-                            site);
-        } else {
-            handle = SmartBinder.from(site.signature)
-                    .collect("args", "arg[0-9]+")
-                    .insert(0, "site", site)
-                    .invokeStaticQuiet(lookup, Bootstrap.class, "invokeSelf")
-                    .handle();
+
+        SmartBinder binder = SmartBinder.from(site.signature)
+                .insert(0, "site", site);
+
+        if (site.arity > 3) {
+            binder = binder
+                    .collect("args", "arg[0-9]+");
         }
+
+        handle = binder.invokeStaticQuiet(lookup, Bootstrap.class, "invokeSelf").handle();
 
         site.setTarget(handle);
         return site;
     }
 
-    public static CallSite invokeSuper(Lookup lookup, String name, MethodType type) {
-        InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]));
-        MethodHandle handle = SmartBinder.from(site.signature)
-                .insert(0, "name", JavaNameMangler.demangleMethodName(name.split(":")[1]))
-                .invokeStaticQuiet(lookup, Bootstrap.class, "invokeSuper")
-                .handle();
+    public static CallSite invokeClassSuper(Lookup lookup, String name, MethodType type) {
+        MethodHandle handle = insertArguments(
+                findStatic(lookup, Bootstrap.class, "invokeClassSuper", type.insertParameterTypes(0, String.class)),
+                0,
+                JavaNameMangler.demangleMethodName(name.split(":")[1]));
+
+        return new ConstantCallSite(handle);
+    }
+
+    public static CallSite invokeInstanceSuper(Lookup lookup, String name, MethodType type) {
+        MethodHandle handle = insertArguments(
+                findStatic(lookup, Bootstrap.class, "invokeInstanceSuper", type.insertParameterTypes(0, String.class)),
+                0,
+                JavaNameMangler.demangleMethodName(name.split(":")[1]));
 
         return new ConstantCallSite(handle);
     }
@@ -242,8 +237,12 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeSelf", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
-    public static Handle invokeSuper() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeSuper", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+    public static Handle invokeClassSuper() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeClassSuper", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+    }
+
+    public static Handle invokeInstanceSuper() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeInstanceSuper", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
     public static Handle invokeFixnumOp() {
@@ -485,8 +484,18 @@ public class Bootstrap {
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, block);
     }
 
-    public static IRubyObject invokeSuper(String methodName, ThreadContext context, IRubyObject self, RubyModule definingModule, IRubyObject[] args, Block block) throws Throwable {
+    public static IRubyObject invokeClassSuper(String methodName, ThreadContext context, IRubyObject self, IRubyObject definingModule, IRubyObject[] args, Block block) throws Throwable {
         RubyClass superClass = definingModule.getMetaClass().getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
+
+        Object rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
+                : method.call(context, self, superClass, methodName, args, block);
+
+        return (IRubyObject)rVal;
+    }
+
+    public static IRubyObject invokeInstanceSuper(String methodName, ThreadContext context, IRubyObject self, IRubyObject definingModule, IRubyObject[] args, Block block) throws Throwable {
+        RubyClass superClass = ((RubyModule)definingModule).getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
 
         Object rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)

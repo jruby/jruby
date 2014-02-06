@@ -771,7 +771,6 @@ public class JVMVisitor extends IRVisitor {
         IRBytecodeAdapter m = jvm.method();
         String name = classsuperinstr.getMethodAddr().getName();
         Operand[] args = classsuperinstr.getCallArgs();
-        int numArgs = args.length;
 
         m.loadContext();
         m.loadSelf();
@@ -800,7 +799,7 @@ public class JVMVisitor extends IRVisitor {
             m.adapter.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
         }
 
-        m.invokeSuper(name);
+        m.invokeClassSuper(name);
 
         jvmStoreLocal(classsuperinstr.getResult());
     }
@@ -1104,7 +1103,40 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void InstanceSuperInstr(InstanceSuperInstr instancesuperinstr) {
-        super.InstanceSuperInstr(instancesuperinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        IRBytecodeAdapter m = jvm.method();
+        String name = instancesuperinstr.getMethodAddr().getName();
+        Operand[] args = instancesuperinstr.getCallArgs();
+
+        m.loadContext();
+        m.loadSelf();
+        visit(instancesuperinstr.getDefiningModule());
+
+        if (args.length == 0) {
+            m.adapter.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
+        } else {
+            m.adapter.ldc(args.length);
+            m.adapter.anewarray(p(IRubyObject.class));
+            m.adapter.dup();
+            for (int i = 0; i < args.length; i++) {
+                Operand operand = args[i];
+                if (i + 1 < args.length) m.adapter.dup();
+                visit(operand);
+            }
+        }
+
+        Operand closure = instancesuperinstr.getClosureArg(null);
+        boolean hasClosure = closure != null;
+        if (hasClosure) {
+            m.loadContext();
+            visit(closure);
+            m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
+        } else {
+            m.adapter.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+        }
+
+        m.invokeInstanceSuper(name);
+
+        jvmStoreLocal(instancesuperinstr.getResult());
     }
 
     @Override
