@@ -1119,6 +1119,7 @@ public class JVMVisitor extends IRVisitor {
                 m.pushNil();
                 m.adapter.invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, int.class, int.class, IRubyObject.class));
         }
+        jvmStoreLocal(loadlocalvarinstr.getResult());
     }
 
     @Override
@@ -1461,9 +1462,9 @@ public class JVMVisitor extends IRVisitor {
                         return;
                 }
             default:
-                m.adapter.pushInt(depth);
-                storeValue.visit(this);
                 m.adapter.pushInt(location);
+                storeValue.visit(this);
+                m.adapter.pushInt(depth);
                 m.adapter.invokevirtual(p(DynamicScope.class), "setValue", sig(IRubyObject.class, int.class, IRubyObject.class, int.class));
                 m.adapter.pop();
         }
