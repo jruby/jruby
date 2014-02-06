@@ -204,7 +204,7 @@ public class RubyNumeric extends RubyObject {
         } else if (arg instanceof RubyFloat) {
             return float2long((RubyFloat)arg);
         } else if (arg instanceof RubyBignum) {
-            return RubyBignum.big2long((RubyBignum) arg);
+            return ((RubyBignum) arg).getValue().longValue();
         }
         return arg.convertToInteger().getLongValue();
     }
