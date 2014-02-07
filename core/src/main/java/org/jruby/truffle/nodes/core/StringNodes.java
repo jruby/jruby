@@ -9,16 +9,21 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import java.util.*;
-import java.util.regex.*;
-
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import org.joni.Option;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.core.RubyRegexp;
+import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.core.StringFormatter;
+import org.jruby.truffle.runtime.core.array.RubyArray;
+
+import java.util.Arrays;
+import java.util.regex.Pattern;
 
 @CoreClass(name = "String")
 public abstract class StringNodes {
@@ -59,6 +64,11 @@ public abstract class StringNodes {
         @Specialization
         public boolean equal(RubyString a, RubyString b) {
             return a.toString().equals(b.toString());
+        }
+
+        @Specialization
+        public boolean equal(RubyString a, RubySymbol b) {
+            return a.toString().equals(b.inspect());
         }
     }
 
