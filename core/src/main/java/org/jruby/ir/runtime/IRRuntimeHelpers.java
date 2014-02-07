@@ -11,6 +11,8 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyNil;
 import org.jruby.RubyProc;
+import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
@@ -401,5 +403,13 @@ public class IRRuntimeHelpers {
 
     public static int extractKwargsCount(Object[] args, boolean receivesKwargs) {
         return (receivesKwargs && args.length > 0 && args[args.length - 1] instanceof RubyHash) ? 1 : 0;
+    }
+
+    public static IRubyObject match3(ThreadContext context, RubyRegexp regexp, IRubyObject argValue) {
+        if (argValue instanceof RubyString) {
+            return regexp.op_match19(context, argValue);
+        } else {
+            return argValue.callMethod(context, "=~", regexp);
+        }
     }
 }

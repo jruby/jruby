@@ -10,6 +10,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -76,11 +77,7 @@ public class Match3Instr extends Instr implements ResultInstr, FixedArityInstr {
         RubyRegexp regexp = (RubyRegexp) receiver.retrieve(context, self, currDynScope, temp);
         IRubyObject argValue = (IRubyObject) arg.retrieve(context, self, currDynScope, temp);
 
-        if (argValue instanceof RubyString) {
-            return regexp.op_match19(context, argValue);
-        } else {
-            return argValue.callMethod(context, "=~", regexp);
-        }
+        return IRRuntimeHelpers.match3(context, regexp, argValue);
     }
 
     @Override
