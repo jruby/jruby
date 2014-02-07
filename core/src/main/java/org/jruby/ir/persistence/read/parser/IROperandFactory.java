@@ -125,7 +125,7 @@ public class IROperandFactory {
             return createBacktickString(parametersIterator);
         case BIGNUM:
             return createBignum(parametersIterator);
-        case BOOLEAN_LITERAL:
+        case BOOLEAN:
             return createBooleanLiteral(parametersIterator);
         case COMPOUND_ARRAY:
             return createCompoundArray(parametersIterator);

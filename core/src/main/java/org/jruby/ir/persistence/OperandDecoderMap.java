@@ -34,7 +34,7 @@ class OperandDecoderMap {
             case BACKREF: return new Backref(d.decodeChar());
             case BACKTICK_STRING: return new BacktickString(d.decodeOperandList());
             case BIGNUM: return new Bignum(new BigInteger(d.decodeString()));
-            case BOOLEAN_LITERAL: return new UnboxedBoolean(d.decodeBoolean());
+            case BOOLEAN: return new UnboxedBoolean(d.decodeBoolean());
             case COMPOUND_ARRAY: return new CompoundArray(d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case COMPOUND_STRING: return decodeCompoundString();
             case CURRENT_SCOPE: return new CurrentScope(d.decodeScope());

@@ -29,12 +29,8 @@ public class UnboxedFixnum extends ImmutableLiteral {
     final public long value;
 
     public UnboxedFixnum(long val) {
-        super(OperandType.FIXNUM);
+        super(OperandType.UNBOXED_FIXNUM);
         value = val;
-    }
-
-    public UnboxedFixnum(BigInteger val) {
-        this(val.longValue());
     }
 
     @Override
