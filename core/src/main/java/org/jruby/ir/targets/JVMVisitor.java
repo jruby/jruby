@@ -68,7 +68,6 @@ import org.jruby.ir.instructions.ModuleVersionGuardInstr;
 import org.jruby.ir.instructions.NoResultCallInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.NopInstr;
-import org.jruby.ir.instructions.NotInstr;
 import org.jruby.ir.instructions.OptArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.PopBindingInstr;
 import org.jruby.ir.instructions.PopFrameInstr;
@@ -1311,13 +1310,6 @@ public class JVMVisitor extends IRVisitor {
         }
 
         m.adapter.pop();
-    }
-
-    @Override
-    public void NotInstr(NotInstr instr) {
-        visit(instr.getArg());
-        // SSS FIXME: Does this really require a helper rather than being inlined?
-        jvm.method().invokeHelper("irNot", IRubyObject.class, ThreadContext.class, IRubyObject.class);
     }
 
     @Override

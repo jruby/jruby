@@ -54,7 +54,6 @@ import org.jruby.ir.instructions.MatchInstr;
 import org.jruby.ir.instructions.MethodLookupInstr;
 import org.jruby.ir.instructions.NoResultCallInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
-import org.jruby.ir.instructions.NotInstr;
 import org.jruby.ir.instructions.OneOperandBranchInstr;
 import org.jruby.ir.instructions.OptArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.ProcessModuleBodyInstr;
@@ -179,7 +178,6 @@ public class InstrEncoderMap {
             case NONLOCAL_RETURN: encodeNonlocalReturnInstr((NonlocalReturnInstr) instr); break;
             case NOP: /* no state */ break;
             case NORESULT_CALL: encodeCallBaseInstr((NoResultCallInstr) instr); break;
-            case NOT: encodeNotInstr((NotInstr) instr); break;
             case POP_BINDING: /* no state */ break;
             case POP_FRAME: /* no state */ break;
             case PROCESS_MODULE_BODY: encodeProcessModuleBodyInstr((ProcessModuleBodyInstr) instr); break;
@@ -489,10 +487,6 @@ public class InstrEncoderMap {
         }
         
         if (hasClosure) e.encode(instr.getClosureArg(null));
-    }
-
-    private void encodeNotInstr(NotInstr instr) {
-        e.encode(instr.getArg());
     }
 
     private void encodeProcessModuleBodyInstr(ProcessModuleBodyInstr instr) {
