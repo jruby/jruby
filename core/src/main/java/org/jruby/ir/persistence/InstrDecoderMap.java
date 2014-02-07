@@ -54,7 +54,6 @@ import org.jruby.ir.instructions.MethodLookupInstr;
 import org.jruby.ir.instructions.NoResultCallInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.NopInstr;
-import org.jruby.ir.instructions.NotInstr;
 import org.jruby.ir.instructions.OptArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.PopBindingInstr;
 import org.jruby.ir.instructions.PopFrameInstr;
@@ -197,7 +196,6 @@ class InstrDecoderMap implements IRPersistenceValues {
             case NONLOCAL_RETURN: return decodeNonlocalReturnInstr();
             case NOP: return NopInstr.NOP;
             case NORESULT_CALL: return decodeNoResultCall();
-            case NOT: return new NotInstr(d.decodeVariable(), d.decodeOperand());
             case POP_BINDING: return new PopBindingInstr();
             case POP_FRAME: return new PopFrameInstr();
             case PROCESS_MODULE_BODY: return new ProcessModuleBodyInstr(d.decodeVariable(), d.decodeOperand());
