@@ -13,6 +13,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
@@ -33,6 +34,7 @@ import org.jruby.runtime.invokedynamic.MathLinker;
 import org.jruby.runtime.invokedynamic.VariableSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.RegexpOptions;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
@@ -81,6 +83,17 @@ public class Bootstrap {
         }
         ByteList byteList = new ByteList(value.getBytes(RubyEncoding.ISO), encoding);
         return new ConstantCallSite(constant(ByteList.class, byteList));
+    }
+
+    public static CallSite regexp(Lookup lookup, String name, MethodType type, int options) {
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle handle = Binder
+                .from(type)
+                .append(MutableCallSite.class, site)
+                .append(int.class, options)
+                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "regexp");
+        site.setTarget(handle);
+        return site;
     }
 
     public static CallSite array(Lookup lookup, String name, MethodType type) {
@@ -251,6 +264,10 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "bytelist", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
     }
 
+    public static Handle regexp() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "regexp", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
+    }
+
     public static Handle array() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "array", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
@@ -297,6 +314,16 @@ public class Bootstrap {
 
     public static IRubyObject array(ThreadContext context, IRubyObject[] elts) {
         return RubyArray.newArrayNoCopy(context.runtime, elts);
+    }
+
+    public static RubyRegexp regexp(ThreadContext context, RubyString pattern, MutableCallSite site, int options) {
+        RubyRegexp regexp = RubyRegexp.newRegexp(context.runtime, pattern.getByteList(), RegexpOptions.fromEmbeddedOptions(options));
+        regexp.setLiteral();
+        site.setTarget(
+                Binder.from(RubyRegexp.class, ThreadContext.class, RubyString.class)
+                        .drop(0, 2)
+                        .constant(regexp));
+        return regexp;
     }
 
     public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {

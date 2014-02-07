@@ -9,6 +9,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyModule;
+import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.operands.UndefinedValue;
@@ -74,6 +75,10 @@ public class IRBytecodeAdapter {
 
     public void pushByteList(ByteList bl) {
         adapter.invokedynamic("bytelist", sig(ByteList.class), Bootstrap.bytelist(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().getIndex());
+    }
+
+    public void pushRegexp(int options) {
+        adapter.invokedynamic("regexp", sig(RubyRegexp.class, ThreadContext.class, RubyString.class), Bootstrap.regexp(), options);
     }
 
     /**

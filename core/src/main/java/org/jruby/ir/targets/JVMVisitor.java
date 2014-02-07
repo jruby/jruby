@@ -7,6 +7,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyFloat;
+import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.internal.runtime.GlobalVariables;
@@ -1867,7 +1868,45 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Regexp(Regexp regexp) {
-        super.Regexp(regexp);    //To change body of overridden methods use File | Settings | File Templates.
+        if (!regexp.hasKnownValue() && !regexp.options.isOnce()) {
+            if (regexp.getRegexp() instanceof CompoundString) {
+                // FIXME: I don't like this custom logic for building CompoundString bits a different way :-\
+                jvm.method().loadRuntime();
+                { // negotiate RubyString pattern from parts
+                    jvm.method().loadRuntime();
+                    { // build RubyString[]
+                        List<Operand> operands = ((CompoundString)regexp.getRegexp()).getPieces();
+                        jvm.method().adapter.ldc(operands.size());
+                        jvm.method().adapter.anewarray(p(RubyString.class));
+                        for (int i = 0; i < operands.size(); i++) {
+                            Operand operand = operands.get(i);
+                            jvm.method().adapter.dup();
+                            jvm.method().adapter.ldc(i);
+                            visit(operand);
+                            jvm.method().adapter.aastore();
+                        }
+                    }
+                    jvm.method().adapter.ldc(regexp.options.toEmbeddedOptions());
+                    jvm.method().adapter.invokestatic(p(RubyRegexp.class), "preprocessDRegexp", sig(RubyString.class, Ruby.class, RubyString[].class, int.class));
+                }
+                jvm.method().adapter.ldc(regexp.options.toEmbeddedOptions());
+                jvm.method().adapter.invokestatic(p(RubyRegexp.class), "newDRegexp", sig(RubyRegexp.class, Ruby.class, RubyString.class, int.class));
+            } else {
+                jvm.method().loadRuntime();
+                visit(regexp.getRegexp());
+                jvm.method().adapter.invokevirtual(p(RubyString.class), "getByteList", sig(ByteList.class));
+                jvm.method().adapter.ldc(regexp.options.toEmbeddedOptions());
+                jvm.method().adapter.invokestatic(p(RubyRegexp.class), "newRegexp", sig(RubyRegexp.class, Ruby.class, RubyString.class, int.class));
+            }
+            jvm.method().adapter.dup();
+            jvm.method().adapter.invokevirtual(p(RubyRegexp.class), "setLiteral", sig(void.class));
+        } else {
+            // FIXME: need to check this on cached path
+            // context.runtime.getKCode() != rubyRegexp.getKCode()) {
+            jvm.method().loadContext();
+            visit(regexp.getRegexp());
+            jvm.method().pushRegexp(regexp.options.toEmbeddedOptions());
+        }
     }
 
     @Override

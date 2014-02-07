@@ -334,6 +334,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     // used only by the compiler/interpreter (will set the literal flag)
+    public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern, int options) {
+        return newRegexp(runtime, pattern, RegexpOptions.fromEmbeddedOptions(options));
+    }
+
+    // used only by the compiler/interpreter (will set the literal flag)
     public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern, RegexpOptions options) {
         try {
             return new RubyRegexp(runtime, pattern, (RegexpOptions)options.clone());
@@ -835,6 +840,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     public static void preprocessCheck(Ruby runtime, ByteList bytes) {
         preprocess(runtime, bytes, bytes.getEncoding(), new Encoding[]{null}, ErrorMode.RAISE);
+    }
+
+    public static RubyString preprocessDRegexp(Ruby runtime, RubyString[] strings, int embeddedOptions) {
+        return preprocessDRegexp(runtime, strings, RegexpOptions.fromEmbeddedOptions(embeddedOptions));
     }
     
     // rb_reg_preprocess_dregexp
