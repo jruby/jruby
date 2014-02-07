@@ -137,6 +137,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
+import org.jruby.util.ByteList;
 import org.jruby.util.JRubyClassLoader;
 
 import java.lang.invoke.*;
@@ -1720,7 +1721,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void AsString(AsString asstring) {
         visit(asstring.getSource());
-        jvm.method().adapter.invokevirtual(p(IRubyObject.class), "asString", sig(RubyString.class));
+        jvm.method().adapter.invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
     }
 
     @Override
@@ -1767,7 +1768,20 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void CompoundString(CompoundString compoundstring) {
-        super.CompoundString(compoundstring);    //To change body of overridden methods use File | Settings | File Templates.
+        ByteList csByteList = new ByteList();
+        csByteList.setEncoding(compoundstring.getEncoding());
+        jvm.method().pushString(csByteList);
+        for (Operand p : compoundstring.getPieces()) {
+            if ((p instanceof StringLiteral) && (compoundstring.isSameEncoding((StringLiteral)p))) {
+                jvm.method().adapter.dup();
+                jvm.method().adapter.invokevirtual(p(RubyString.class), "getByteList", sig(ByteList.class));
+                jvm.method().pushByteList(((StringLiteral)p).bytelist);
+                jvm.method().adapter.invokevirtual(p(ByteList.class), "append", sig(void.class, ByteList.class));
+            } else {
+                visit(p);
+                jvm.method().adapter.invokevirtual(p(RubyString.class), "append19", sig(RubyString.class, IRubyObject.class));
+            }
+        }
     }
 
     @Override

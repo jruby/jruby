@@ -3,6 +3,8 @@ package org.jruby.ir.targets;
 import com.headius.invokebinder.Binder;
 import com.headius.invokebinder.Signature;
 import com.headius.invokebinder.SmartBinder;
+import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -29,6 +31,7 @@ import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.runtime.invokedynamic.JRubyCallSite;
 import org.jruby.runtime.invokedynamic.MathLinker;
 import org.jruby.runtime.invokedynamic.VariableSite;
+import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
@@ -52,13 +55,32 @@ import static org.jruby.util.CodegenUtils.sig;
 public class Bootstrap {
     private static final Lookup LOOKUP = MethodHandles.lookup();
 
-    public static CallSite string(Lookup lookup, String name, MethodType type, String value, int encoding) {
+    public static CallSite string(Lookup lookup, String name, MethodType type, String value, int encodingIndex) {
+        Encoding encoding = null;
+        for (EncodingDB.Entry entry : EncodingDB.getEncodings()) {
+            if (entry.getIndex() == encodingIndex) {
+                encoding = entry.getEncoding();
+                break;
+            }
+        }
+        ByteList byteList = new ByteList(value.getBytes(RubyEncoding.ISO), encoding);
         MethodHandle handle = Binder
-                .from(IRubyObject.class, ThreadContext.class)
-                .insert(0, new Class[]{String.class, int.class}, value, encoding)
+                .from(RubyString.class, ThreadContext.class)
+                .insert(0, ByteList.class, byteList)
                 .invokeStaticQuiet(LOOKUP, Bootstrap.class, "string");
-        CallSite site = new ConstantCallSite(handle);
-        return site;
+        return new ConstantCallSite(handle);
+    }
+
+    public static CallSite bytelist(Lookup lookup, String name, MethodType type, String value, int encodingIndex) {
+        Encoding encoding = null;
+        for (EncodingDB.Entry entry : EncodingDB.getEncodings()) {
+            if (entry.getIndex() == encodingIndex) {
+                encoding = entry.getEncoding();
+                break;
+            }
+        }
+        ByteList byteList = new ByteList(value.getBytes(RubyEncoding.ISO), encoding);
+        return new ConstantCallSite(constant(ByteList.class, byteList));
     }
 
     public static CallSite array(Lookup lookup, String name, MethodType type) {
@@ -225,6 +247,10 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
     }
 
+    public static Handle bytelist() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "bytelist", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
+    }
+
     public static Handle array() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "array", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
@@ -265,9 +291,8 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "inheritanceSearchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
-    public static IRubyObject string(String value, int encoding, ThreadContext context) {
-        // obviously wrong: not caching bytelist, not using encoding
-        return RubyString.newStringNoCopy(context.runtime, value.getBytes(RubyEncoding.ISO));
+    public static RubyString string(ByteList value, ThreadContext context) {
+        return RubyString.newStringShared(context.runtime, value);
     }
 
     public static IRubyObject array(ThreadContext context, IRubyObject[] elts) {
