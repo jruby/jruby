@@ -1949,7 +1949,7 @@ public class JVMVisitor extends IRVisitor {
             jvm.method().adapter.ldc(encodedScope);
             jvm.method().adapter.invokestatic(p(Helpers.class), "decodeScopeAndDetermineModule", sig(StaticScope.class, ThreadContext.class, StaticScope.class, String.class));
 
-            jvm.method().adapter.ldc(String.join(",", closure.getParameterList()));
+            jvm.method().adapter.ldc(Helpers.stringJoin(",", closure.getParameterList()));
 
             jvm.method().adapter.ldc(closure.getFileName());
 

@@ -3177,4 +3177,14 @@ public class Helpers {
         // not reached
         return null;
     }
+
+    public static String stringJoin(String delimiter, String[] strings) {
+        if (strings.length == 0) return "";
+        StringBuilder sb = new StringBuilder(strings[0]);
+        for (int i = 1; i < strings.length; i++) {
+            sb.append(delimiter)
+                    .append(strings[i]);
+        }
+        return sb.toString();
+    }
 }
