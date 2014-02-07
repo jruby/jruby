@@ -10,7 +10,7 @@ public class UnboxedBoolean extends ImmutableLiteral {
     public static final UnboxedBoolean FALSE = new UnboxedBoolean(false);
 
     public UnboxedBoolean(boolean truthy) {
-        super(OperandType.BOOLEAN_LITERAL);
+        super(OperandType.UNBOXED_BOOLEAN);
 
         this.truthy = truthy;
     }

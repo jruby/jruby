@@ -8,12 +8,14 @@ import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Backref;
 import org.jruby.ir.operands.BacktickString;
 import org.jruby.ir.operands.Bignum;
+import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.CompoundArray;
 import org.jruby.ir.operands.CompoundString;
 import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.DynamicSymbol;
 import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.IRException;
@@ -35,10 +37,14 @@ import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StandardError;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
+import org.jruby.ir.operands.TemporaryBooleanVariable;
 import org.jruby.ir.operands.TemporaryClosureVariable;
+import org.jruby.ir.operands.TemporaryFloatVariable;
+import org.jruby.ir.operands.TemporaryFixnumVariable;
 import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.UnboxedFixnum;
+import org.jruby.ir.operands.UnboxedFloat;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.WrappedIRClosure;
@@ -82,9 +88,7 @@ class OperandEncoderMap extends IRVisitor {
     }
     @Override public void Bignum(Bignum bignum) { encoder.encode(bignum.value.toString()); }
 
-    @Override public void Boolean(org.jruby.ir.operands.Boolean booleanliteral) { encoder.encode(booleanliteral.isTrue()); }
-
-    @Override public void UnboxedBoolean(org.jruby.ir.operands.UnboxedBoolean booleanliteral) { encoder.encode(booleanliteral.isTrue()); }
+    @Override public void Boolean(Boolean booleanliteral) { encoder.encode(booleanliteral.isTrue()); }
 
     @Override public void ClosureLocalVariable(ClosureLocalVariable variable) {
         // We can refigure out closure scope it is in.
@@ -123,11 +127,7 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void Fixnum(Fixnum fixnum) { encoder.encode(fixnum.value); }
 
-    @Override public void Float(org.jruby.ir.operands.Float flote) { encoder.encode(flote.value); }
-
-    @Override public void UnboxedFixnum(UnboxedFixnum fixnum) { encoder.encode(fixnum.value); }
-
-    @Override public void UnboxedFloat(org.jruby.ir.operands.UnboxedFloat flote) { encoder.encode(flote.value); }
+    @Override public void Float(Float flote) { encoder.encode(flote.value); }
 
     @Override public void GlobalVariable(GlobalVariable variable) { encoder.encode(variable.getName()); }
 
@@ -190,21 +190,33 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void Symbol(Symbol symbol) { encoder.encode(symbol.getName()); }
 
+    @Override public void TemporaryBooleanVariable(TemporaryBooleanVariable variable) {
+        encoder.encode((byte) variable.getType().ordinal());
+        encoder.encode(((TemporaryLocalVariable) variable).getOffset());
+    }
+
+    @Override public void TemporaryFixnumVariable(TemporaryFixnumVariable variable) {
+        encoder.encode((byte) variable.getType().ordinal());
+        encoder.encode(variable.getOffset());
+    }
+
+    @Override public void TemporaryFloatVariable(TemporaryFloatVariable variable) {
+        encoder.encode((byte) variable.getType().ordinal());
+        encoder.encode(variable.getOffset());
+    }
+
     @Override public void TemporaryLocalVariable(TemporaryLocalVariable variable) {
-        TemporaryVariable(variable);
+        encoder.encode((byte) variable.getType().ordinal());
+        encoder.encode(variable.getOffset());
     }
 
     @Override public void TemporaryVariable(TemporaryVariable variable) {
-        encoder.encode((byte) variable.getType().ordinal());
-        
         switch(variable.getType()) {
             case CLOSURE:
                 encoder.encode(((TemporaryClosureVariable) variable).getClosureId());
                 encoder.encode(((TemporaryClosureVariable) variable).getOffset());
                 break;
                 
-            case FLOAT:
-            case FIXNUM:
             case LOCAL:
             case CURRENT_MODULE:
             case CURRENT_SCOPE:
@@ -212,6 +224,12 @@ class OperandEncoderMap extends IRVisitor {
                 break;
         }
     }
+
+    @Override public void UnboxedBoolean(org.jruby.ir.operands.UnboxedBoolean booleanliteral) { encoder.encode(booleanliteral.isTrue()); }
+
+    @Override public void UnboxedFixnum(UnboxedFixnum fixnum) { encoder.encode(fixnum.value); }
+
+    @Override public void UnboxedFloat(UnboxedFloat flote) { encoder.encode(flote.value); }
     
     @Override public void UndefinedValue(UndefinedValue undefinedvalue) {} // No data
 
