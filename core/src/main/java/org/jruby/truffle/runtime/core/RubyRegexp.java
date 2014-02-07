@@ -9,21 +9,21 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameSlot;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.joni.*;
 import org.joni.exception.ValueException;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.objects.*;
+import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.objects.RubyBasicObject;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 
 /**
  * Represents the Ruby {@code Regexp} class.
@@ -197,7 +197,7 @@ public class RubyRegexp extends RubyObject {
     public RubyString[] scan(RubyString string) {
         final RubyContext context = getRubyClass().getContext();
 
-        final byte[] stringBytes = string.getBytes();
+        final byte[] stringBytes = string.getBytes().bytes();
         final Matcher matcher = regex.matcher(stringBytes);
 
         final ArrayList<RubyString> strings = new ArrayList<>();

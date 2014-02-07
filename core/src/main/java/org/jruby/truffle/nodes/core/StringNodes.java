@@ -63,12 +63,12 @@ public abstract class StringNodes {
 
         @Specialization
         public boolean equal(RubyString a, RubyString b) {
-            return a.toString().equals(b.toString());
+            return a.equals(b.toString());
         }
 
         @Specialization
         public boolean equal(RubyString a, RubySymbol b) {
-            return a.toString().equals(b.toString());
+            return equal(a, b.toRubyString());
         }
     }
 

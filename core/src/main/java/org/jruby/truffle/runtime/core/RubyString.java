@@ -9,17 +9,14 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.math.*;
-import java.nio.*;
-import java.nio.charset.*;
-import java.util.*;
-import java.util.regex.*;
+import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.array.ArrayUtilities;
+import org.jruby.truffle.runtime.core.range.FixnumRange;
+import org.jruby.truffle.runtime.objects.RubyBasicObject;
+import org.jruby.util.ByteList;
 
-import org.joni.Regex;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.*;
-import org.jruby.truffle.runtime.core.range.*;
-import org.jruby.truffle.runtime.objects.*;
+import java.math.BigInteger;
 
 /**
  * Represents the Ruby {@code String} class.
@@ -45,10 +42,7 @@ public class RubyString extends RubyObject {
     }
 
     private boolean fromJavaString;
-
-    private Charset encoding;
-    private byte[] bytes;
-
+    private ByteList bytes;
     private String cachedStringValue;
 
     /**
@@ -57,40 +51,27 @@ public class RubyString extends RubyObject {
     public RubyString(RubyClass stringClass, String value) {
         super(stringClass);
         fromJavaString = true;
-        encoding = null;
-        bytes = null;
+        bytes = org.jruby.RubySymbol.symbolBytesFromString(getRubyClass().getContext().getRuntime(), value);
         cachedStringValue = value;
     }
 
     public RubyString(RubyClass stringClass, org.jruby.RubyString value) {
         super(stringClass);
         fromJavaString = true;
-        encoding = null;
-        bytes = null;
+        bytes = org.jruby.RubySymbol.symbolBytesFromString(getRubyClass().getContext().getRuntime(), value.toString());
         cachedStringValue = value.asJavaString();
     }
     /**
      * Construct a string from bytes representing characters in an encoding, lazily converting to a
      * Java {@link String} as needed.
      */
-    public RubyString(RubyClass stringClass, Charset encoding, byte[] bytes) {
-        super(stringClass);
-        fromJavaString = false;
-        this.encoding = encoding;
-        this.bytes = bytes;
-        cachedStringValue = null;
-    }
+
 
     public RubyString(RubyString copyOf) {
         super(copyOf.getRubyClass().getContext().getCoreLibrary().getStringClass());
         fromJavaString = copyOf.fromJavaString;
-        encoding = copyOf.encoding;
+        bytes = copyOf.getBytes();
 
-        if (copyOf.bytes != null) {
-            bytes = Arrays.copyOf(copyOf.bytes, copyOf.bytes.length);
-        } else {
-            bytes = null;
-        }
 
         cachedStringValue = copyOf.cachedStringValue;
     }
@@ -99,17 +80,12 @@ public class RubyString extends RubyObject {
         return fromJavaString;
     }
 
-    public byte[] getBytes() {
-        if (bytes == null) {
-            bytes = cachedStringValue.getBytes(StandardCharsets.UTF_8);
-        }
-
+    public ByteList getBytes() {
         return bytes;
     }
 
     public void replace(String value) {
         fromJavaString = true;
-        encoding = null;
         bytes = null;
         cachedStringValue = value;
     }
@@ -117,7 +93,7 @@ public class RubyString extends RubyObject {
     @Override
     public String toString() {
         if (cachedStringValue == null) {
-            cachedStringValue = encoding.decode(ByteBuffer.wrap(bytes)).toString();
+            cachedStringValue = bytes.toString();
         }
 
         return cachedStringValue;
@@ -140,14 +116,17 @@ public class RubyString extends RubyObject {
 
             // If we both came from Java strings, use them to compare
 
-            if (fromJavaString && otherString.fromJavaString) {
+            if (isFromJavaString() && fromJavaString && otherString.fromJavaString) {
                 return toString().equals(other.toString());
             }
 
+            if (otherString.cachedStringValue == this.cachedStringValue) {
+                return true;
+            }
             // If we both have the same encoding, compare bytes
 
-            if (encoding == otherString.encoding) {
-                return Arrays.equals(bytes, otherString.bytes);
+            if (getBytes().getEncoding() == otherString.getBytes().getEncoding()) {
+                return getBytes().equals(getBytes());
             }
 
             // If we don't have the same encoding, we need some more advanced logic
@@ -213,7 +192,6 @@ public class RubyString extends RubyObject {
     public void concat(RubyString other) {
         if (fromJavaString && other.fromJavaString) {
             cachedStringValue += other.cachedStringValue;
-            encoding = null;
             bytes = null;
         } else {
             throw new UnsupportedOperationException("Don't know how to append strings with encodings");

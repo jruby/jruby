@@ -466,7 +466,7 @@ public abstract class KernelNodes {
 
                     if (arg instanceof RubyString && !((RubyString) arg).isFromJavaString()) {
                         try {
-                            getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) arg).getBytes());
+                            getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) arg).getBytes().bytes());
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
