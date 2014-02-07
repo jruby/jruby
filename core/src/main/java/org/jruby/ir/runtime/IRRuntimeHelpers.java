@@ -412,4 +412,9 @@ public class IRRuntimeHelpers {
             return argValue.callMethod(context, "=~", regexp);
         }
     }
+
+    public static IRubyObject extractOptionalArgument(RubyArray rubyArray, int minArgsLength, int index) {
+        int n = rubyArray.getLength();
+        return minArgsLength < n ? rubyArray.entry(index) : UndefinedValue.UNDEFINED;
+    }
 }

@@ -1322,7 +1322,11 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void OptArgMultipleAsgnInstr(OptArgMultipleAsgnInstr optargmultipleasgninstr) {
-        super.OptArgMultipleAsgnInstr(optargmultipleasgninstr);    //To change body of overridden methods use File | Settings | File Templates.
+        visit(optargmultipleasgninstr.getArrayArg());
+        jvm.method().adapter.ldc(optargmultipleasgninstr.getMinArgsLength());
+        jvm.method().adapter.ldc(optargmultipleasgninstr.getIndex());
+        jvm.method().adapter.invokestatic(p(IRRuntimeHelpers.class), "extractOptionalArgument", sig(IRubyObject.class, RubyArray.class, int.class, int.class));
+        jvmStoreLocal(optargmultipleasgninstr.getResult());
     }
 
     @Override
