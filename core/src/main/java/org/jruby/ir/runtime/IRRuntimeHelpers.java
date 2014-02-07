@@ -2,6 +2,7 @@ package org.jruby.ir.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyMethod;
@@ -16,6 +17,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
@@ -27,6 +29,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -416,5 +419,32 @@ public class IRRuntimeHelpers {
     public static IRubyObject extractOptionalArgument(RubyArray rubyArray, int minArgsLength, int index) {
         int n = rubyArray.getLength();
         return minArgsLength < n ? rubyArray.entry(index) : UndefinedValue.UNDEFINED;
+    }
+
+    public static IRubyObject unresolvedSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        RubyBasicObject objClass = context.runtime.getObject();
+        // We have to rely on the frame stack to find the implementation class
+        RubyModule klazz = context.getFrameKlazz();
+        String methodName = context.getCurrentFrame().getName();
+
+        checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
+        RubyClass superClass = Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
+
+        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
+                : method.call(context, self, superClass, methodName, args, block);
+
+        return rVal;
+    }
+
+    protected static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule frameClass, String methodName) {
+        // FIXME: super/zsuper in top-level script still seems to have a frameClass so it will not make it into this if
+        if (frameClass == null) {
+            if (methodName == null || !methodName.equals("")) {
+                throw context.runtime.newNameError("superclass method '" + methodName + "' disabled", methodName);
+            } else {
+                throw context.runtime.newNoMethodError("super called outside of method", null, context.runtime.getNil());
+            }
+        }
     }
 }

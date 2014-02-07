@@ -1363,7 +1363,8 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void PutClassVariableInstr(PutClassVariableInstr putclassvariableinstr) {
-        super.PutClassVariableInstr(putclassvariableinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        // Does it make sense to try to implement this without GetClassVarContainerModuleInstr working?
+        super.PutClassVariableInstr(putclassvariableinstr);
     }
 
     @Override
@@ -1399,7 +1400,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void RaiseArgumentErrorInstr(RaiseArgumentErrorInstr raiseargumenterrorinstr) {
-        super.RaiseArgumentErrorInstr(raiseargumenterrorinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        super.RaiseArgumentErrorInstr(raiseargumenterrorinstr);
     }
 
     @Override
@@ -1616,12 +1617,38 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void UndefMethodInstr(UndefMethodInstr undefmethodinstr) {
-        super.UndefMethodInstr(undefmethodinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        jvm.method().loadContext();
+        visit(undefmethodinstr.getMethodName());
+        jvm.method().adapter.invokestatic(p(Helpers.class), "undefMethod", sig(IRubyObject.class, ThreadContext.class, Object.class));
+        jvmStoreLocal(undefmethodinstr.getResult());
     }
 
     @Override
     public void UnresolvedSuperInstr(UnresolvedSuperInstr unresolvedsuperinstr) {
-        super.UnresolvedSuperInstr(unresolvedsuperinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        IRBytecodeAdapter m = jvm.method();
+        m.loadLocal(0); // tc
+        m.loadSelf();
+
+        if (unresolvedsuperinstr.getCallArgs().length > 0) {
+            for (Operand operand : unresolvedsuperinstr.getCallArgs()) {
+                visit(operand);
+            }
+            m.objectArray(unresolvedsuperinstr.getCallArgs().length);
+        } else {
+            m.adapter.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
+        }
+
+        Operand closure = unresolvedsuperinstr.getClosureArg(null);
+        boolean hasClosure = closure != null;
+        if (hasClosure) {
+            jvm.method().loadContext();
+            visit(closure);
+            jvm.method().invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
+        }
+
+        m.adapter.invokestatic(p(IRRuntimeHelpers.class), "unresolvedSuper", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class));
+
+        jvmStoreLocal(unresolvedsuperinstr.getResult());
     }
 
     @Override

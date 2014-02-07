@@ -105,6 +105,14 @@ public class Bootstrap {
         return site;
     }
 
+    public static CallSite objectArray(Lookup lookup, String name, MethodType type) {
+        MethodHandle handle = Binder
+                .from(type)
+                .collect(0, IRubyObject[].class)
+                .identity();
+        return new ConstantCallSite(handle);
+    }
+
     private static class InvokeSite extends MutableCallSite {
         final Signature signature;
         final Signature fullSignature;
@@ -270,6 +278,10 @@ public class Bootstrap {
 
     public static Handle array() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "array", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+    }
+
+    public static Handle objectArray() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "objectArray", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
     public static Handle invoke() {

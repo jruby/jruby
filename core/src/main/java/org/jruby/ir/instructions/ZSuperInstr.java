@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -68,7 +69,7 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
         Block block = prepareBlock(context, self, currDynScope, temp);
         if (block == null || !block.isGiven()) block = context.getFrameBlock();
 
-        return interpretSuper(context, self, args, block);
+        return IRRuntimeHelpers.unresolvedSuper(context, self, args, block);
     }
 
     public Integer[] getArgCounts() {

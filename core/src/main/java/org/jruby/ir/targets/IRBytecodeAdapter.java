@@ -256,6 +256,10 @@ public class IRBytecodeAdapter {
         adapter.invokedynamic("array", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length)), Bootstrap.array());
     }
 
+    public void objectArray(int length) {
+        adapter.invokedynamic("objectArray", sig(JVM.OBJECT_ARRAY, params(JVM.OBJECT, length)), Bootstrap.objectArray());
+    }
+
     public int newLocal(String name, Type type) {
         int index = variableCount++;
         if (type == Type.DOUBLE_TYPE || type == Type.LONG_TYPE) {
