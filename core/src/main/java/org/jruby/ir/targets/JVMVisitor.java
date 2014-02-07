@@ -1089,12 +1089,15 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetClassVarContainerModuleInstr(GetClassVarContainerModuleInstr getclassvarcontainermoduleinstr) {
-        super.GetClassVarContainerModuleInstr(getclassvarcontainermoduleinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        // This appears to require a reference to a StaticScope from...somewhere. It's not clear what scope this is
+        // nor how we would get access to it from the compiled code.
+        super.GetClassVarContainerModuleInstr(getclassvarcontainermoduleinstr);
     }
 
     @Override
     public void GetClassVariableInstr(GetClassVariableInstr getclassvariableinstr) {
-        super.GetClassVariableInstr(getclassvariableinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        // Does it make sense to try to implement this without GetClassVarContainerModuleInstr working?
+        super.GetClassVariableInstr(getclassvariableinstr);
     }
 
     @Override
@@ -1118,7 +1121,13 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GVarAliasInstr(GVarAliasInstr gvaraliasinstr) {
-        super.GVarAliasInstr(gvaraliasinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        jvm.method().loadRuntime();
+        jvm.method().adapter.invokevirtual(p(Ruby.class), "getGlobalVariables", sig(GlobalVariables.class));
+        visit(gvaraliasinstr.getNewName());
+        jvm.method().adapter.invokevirtual(p(Object.class), "toString", sig(String.class));
+        visit(gvaraliasinstr.getOldName());
+        jvm.method().adapter.invokevirtual(p(Object.class), "toString", sig(String.class));
+        jvm.method().adapter.invokevirtual(p(GlobalVariables.class), "alias", sig(void.class, String.class, String.class));
     }
 
     @Override
