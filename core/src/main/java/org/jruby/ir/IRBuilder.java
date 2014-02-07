@@ -380,7 +380,6 @@ public class IRBuilder {
             case NEXTNODE: return buildNext((NextNode) node, s);
             case NTHREFNODE: return buildNthRef((NthRefNode) node, s);
             case NILNODE: return buildNil(node, s);
-            case NOTNODE: return buildNot((NotNode) node, s);
             case OPASGNANDNODE: return buildOpAsgnAnd((OpAsgnAndNode) node, s);
             case OPASGNNODE: return buildOpAsgn((OpAsgnNode) node, s);
             case OPASGNORNODE: return buildOpAsgnOr((OpAsgnOrNode) node, s);
@@ -1355,15 +1354,6 @@ public class IRBuilder {
                 Variable tmpVar = getValueInTemporaryVariable(s, v);
                 addInstr(s, BNEInstr.create(tmpVar, manager.getNil(), doneLabel));
                 addInstr(s, new CopyInstr(tmpVar, new StringLiteral("expression")));
-                addInstr(s, new LabelInstr(doneLabel));
-                return tmpVar;
-            }
-            case NOTNODE: {
-                Operand v = buildGetDefinitionBase(((NotNode)node).getConditionNode(), s);
-                Label doneLabel = s.getNewLabel();
-                Variable tmpVar = getValueInTemporaryVariable(s, v);
-                addInstr(s, BEQInstr.create(tmpVar, manager.getNil(), doneLabel));
-                addInstr(s, new CopyInstr(tmpVar, new StringLiteral("method")));
                 addInstr(s, new LabelInstr(doneLabel));
                 return tmpVar;
             }
@@ -2834,12 +2824,6 @@ public class IRBuilder {
 
     public Operand buildNil(Node node, IRScope s) {
         return manager.getNil();
-    }
-
-    public Operand buildNot(NotNode node, IRScope s) {
-        Variable ret = s.getNewTemporaryVariable();
-        addInstr(s, new NotInstr(ret, build(node.getConditionNode(), s)));
-        return ret;
     }
 
     public Operand buildOpAsgn(OpAsgnNode opAsgnNode, IRScope s) {

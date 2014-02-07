@@ -86,7 +86,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         nodeDefinedNames.put(org.jruby.ast.HashNode.class, "expression");
         nodeDefinedNames.put(org.jruby.ast.SymbolNode.class, "expression");
         nodeDefinedNames.put(org.jruby.ast.DotNode.class, "expression");
-        nodeDefinedNames.put(org.jruby.ast.NotNode.class, "expression");
         nodeDefinedNames.put(org.jruby.ast.AndNode.class, "expression");
         nodeDefinedNames.put(org.jruby.ast.OrNode.class, "expression");
         nodeDefinedNames.put(org.jruby.ast.LocalVarNode.class, "local-variable");
@@ -1524,15 +1523,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     @Override
     public Object visitNilNode(org.jruby.ast.NilNode node) {
         return new NilNode(context, translate(node.getPosition()));
-    }
-
-    @Override
-    public Object visitNotNode(org.jruby.ast.NotNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
-
-        final BooleanCastNode booleanCastNode = BooleanCastNodeFactory.create(context, sourceSection, (RubyNode) node.getConditionNode().accept(this));
-
-        return new NotNode(context, sourceSection, booleanCastNode);
     }
 
     @Override

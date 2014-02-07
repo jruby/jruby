@@ -97,7 +97,6 @@ import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NextNode;
 import org.jruby.ast.NilNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.NotNode;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnNode;
@@ -483,11 +482,6 @@ public class AbstractNodeVisitor implements NodeVisitor {
 
     @Override
     public Object visitNilNode(NilNode iVisited) {
-        return defaultVisit(iVisited);
-    }
-
-    @Override
-    public Object visitNotNode(NotNode iVisited) {
         return defaultVisit(iVisited);
     }
 

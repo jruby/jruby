@@ -99,7 +99,6 @@ import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NextNode;
 import org.jruby.ast.NilNode;
-import org.jruby.ast.NotNode;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnNode;
@@ -215,7 +214,6 @@ public interface NodeVisitor {
     public Object visitNewlineNode(NewlineNode iVisited);
     public Object visitNextNode(NextNode iVisited);
     public Object visitNilNode(NilNode iVisited);
-    public Object visitNotNode(NotNode iVisited);
     public Object visitNthRefNode(NthRefNode iVisited);
     public Object visitOpElementAsgnNode(OpElementAsgnNode iVisited);
     public Object visitOpAsgnNode(OpAsgnNode iVisited);

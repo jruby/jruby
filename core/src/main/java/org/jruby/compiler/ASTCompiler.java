@@ -257,9 +257,6 @@ public class ASTCompiler {
             case NILNODE:
                 compileNil(node, context, expr);
                 break;
-            case NOTNODE:
-                compileNot(node, context, expr);
-                break;
             case OPASGNANDNODE:
                 compileOpAsgnAnd(node, context, expr);
                 break;
@@ -3104,16 +3101,6 @@ public class ASTCompiler {
         if (expr) {
             context.loadNil();
         }
-    }
-
-    public void compileNot(Node node, BodyCompiler context, boolean expr) {
-        NotNode notNode = (NotNode) node;
-
-        compile(notNode.getConditionNode(), context, true);
-
-        context.negateCurrentValue();
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
     }
 
     public void compileOpAsgnAnd(Node node, BodyCompiler context, boolean expr) {
