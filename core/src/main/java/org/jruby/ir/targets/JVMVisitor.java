@@ -1241,17 +1241,28 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Match2Instr(Match2Instr match2instr) {
-        super.Match2Instr(match2instr);    //To change body of overridden methods use File | Settings | File Templates.
+        visit(match2instr.getReceiver());
+        jvm.method().loadContext();
+        visit(match2instr.getArg());
+        jvm.method().adapter.invokevirtual(p(RubyRegexp.class), "op_match19", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
+        jvmStoreLocal(match2instr.getResult());
     }
 
     @Override
     public void Match3Instr(Match3Instr match3instr) {
-        super.Match3Instr(match3instr);    //To change body of overridden methods use File | Settings | File Templates.
+        jvm.method().loadContext();
+        visit(match3instr.getReceiver());
+        visit(match3instr.getArg());
+        jvm.method().adapter.invokestatic(p(IRRuntimeHelpers.class), "match3", sig(IRubyObject.class, ThreadContext.class, RubyRegexp.class, IRubyObject.class));
+        jvmStoreLocal(match3instr.getResult());
     }
 
     @Override
     public void MatchInstr(MatchInstr matchinstr) {
-        super.MatchInstr(matchinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        visit(matchinstr.getReceiver());
+        jvm.method().loadContext();
+        jvm.method().adapter.invokevirtual(p(RubyRegexp.class), "op_match2_19", sig(IRubyObject.class, ThreadContext.class));
+        jvmStoreLocal(matchinstr.getResult());
     }
 
     @Override
