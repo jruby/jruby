@@ -304,6 +304,21 @@ public class IRRuntimeHelpers {
         }
     }
 
+    public static IRubyObject isEQQ(ThreadContext context, IRubyObject receiver, IRubyObject value) {
+        boolean isUndefValue = value == UndefinedValue.UNDEFINED;
+        if (receiver instanceof RubyArray) {
+            RubyArray testVals = (RubyArray)receiver;
+            for (int i = 0, n = testVals.getLength(); i < n; i++) {
+                IRubyObject v = testVals.eltInternal(i);
+                IRubyObject eqqVal = isUndefValue ? v : v.callMethod(context, "===", value);
+                if (eqqVal.isTrue()) return eqqVal;
+            }
+            return context.runtime.newBoolean(false);
+        } else {
+            return isUndefValue ? receiver : receiver.callMethod(context, "===", value);
+        }
+    }
+
     public static IRubyObject newProc(Ruby runtime, Block block) {
         return (block == Block.NULL_BLOCK) ? runtime.getNil() : runtime.newProc(Block.Type.PROC, block);
     }

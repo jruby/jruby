@@ -6,6 +6,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -75,18 +76,7 @@ public class EQQInstr extends Instr implements ResultInstr, FixedArityInstr {
         IRubyObject receiver = (IRubyObject) arg1.retrieve(context, self, currDynScope, temp);
         IRubyObject value = (IRubyObject) arg2.retrieve(context, self, currDynScope, temp);
 
-        boolean isUndefValue = value == UndefinedValue.UNDEFINED;
-        if (receiver instanceof RubyArray) {
-            RubyArray testVals = (RubyArray)receiver;
-            for (int i = 0, n = testVals.getLength(); i < n; i++) {
-                IRubyObject v = testVals.eltInternal(i);
-                IRubyObject eqqVal = isUndefValue ? v : v.callMethod(context, "===", value);
-                if (eqqVal.isTrue()) return eqqVal;
-            }
-            return context.runtime.newBoolean(false);
-        } else {
-            return isUndefValue ? receiver : receiver.callMethod(context, "===", value);
-        }
+        return IRRuntimeHelpers.isEQQ(context, receiver, value);
     }
 
     @Override

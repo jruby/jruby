@@ -1070,7 +1070,11 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void EQQInstr(EQQInstr eqqinstr) {
-        super.EQQInstr(eqqinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        jvm.method().loadContext();
+        visit(eqqinstr.getArg1());
+        visit(eqqinstr.getArg2());
+        jvm.method().invokeIRHelper("isEQQ", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+        jvmStoreLocal(eqqinstr.getResult());
     }
 
     @Override
