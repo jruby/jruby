@@ -585,9 +585,6 @@ public class ASTInspector {
             break;
         case NILNODE:
             break;
-        case NOTNODE:
-            inspect(((NotNode)node).getConditionNode());
-            break;
         case NTHREFNODE:
             break;
         case OPASGNANDNODE:
