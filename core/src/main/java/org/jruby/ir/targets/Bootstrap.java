@@ -57,14 +57,12 @@ import static org.jruby.util.CodegenUtils.sig;
 public class Bootstrap {
     private static final Lookup LOOKUP = MethodHandles.lookup();
 
-    public static CallSite string(Lookup lookup, String name, MethodType type, String value, int encodingIndex) {
-        Encoding encoding = null;
-        for (EncodingDB.Entry entry : EncodingDB.getEncodings()) {
-            if (entry.getIndex() == encodingIndex) {
-                encoding = entry.getEncoding();
-                break;
-            }
-        }
+    public static CallSite string(Lookup lookup, String name, MethodType type, String value, String encodingName) {
+        Encoding encoding;
+        EncodingDB.Entry entry = EncodingDB.getEncodings().get(encodingName.getBytes());
+        if (entry == null) entry = EncodingDB.getAliases().get(encodingName.getBytes());
+        if (entry == null) throw new RuntimeException("could not find encoding: " + encodingName);
+        encoding = entry.getEncoding();
         ByteList byteList = new ByteList(value.getBytes(RubyEncoding.ISO), encoding);
         MethodHandle handle = Binder
                 .from(RubyString.class, ThreadContext.class)
@@ -73,14 +71,12 @@ public class Bootstrap {
         return new ConstantCallSite(handle);
     }
 
-    public static CallSite bytelist(Lookup lookup, String name, MethodType type, String value, int encodingIndex) {
-        Encoding encoding = null;
-        for (EncodingDB.Entry entry : EncodingDB.getEncodings()) {
-            if (entry.getIndex() == encodingIndex) {
-                encoding = entry.getEncoding();
-                break;
-            }
-        }
+    public static CallSite bytelist(Lookup lookup, String name, MethodType type, String value, String encodingName) {
+        Encoding encoding;
+        EncodingDB.Entry entry = EncodingDB.getEncodings().get(encodingName.getBytes());
+        if (entry == null) entry = EncodingDB.getAliases().get(encodingName.getBytes());
+        if (entry == null) throw new RuntimeException("could not find encoding: " + encodingName);
+        encoding = entry.getEncoding();
         ByteList byteList = new ByteList(value.getBytes(RubyEncoding.ISO), encoding);
         return new ConstantCallSite(constant(ByteList.class, byteList));
     }
@@ -265,11 +261,11 @@ public class Bootstrap {
     }
 
     public static Handle string() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class));
     }
 
     public static Handle bytelist() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "bytelist", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "bytelist", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class));
     }
 
     public static Handle regexp() {
