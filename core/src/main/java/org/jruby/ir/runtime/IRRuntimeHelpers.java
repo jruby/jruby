@@ -242,12 +242,20 @@ public class IRRuntimeHelpers {
         return v1 > v2;
     }
 
+    public static boolean feq(double v1, double v2) {
+        return v1 == v2;
+    }
+
     public static boolean ilt(long v1, long v2) {
         return v1 < v2;
     }
 
     public static boolean igt(long v1, long v2) {
         return v1 > v2;
+    }
+
+    public static boolean ieq(long v1, long v2) {
+        return v1 == v2;
     }
 
     public static Object unwrapRubyException(Object excObj) {

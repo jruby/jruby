@@ -66,23 +66,40 @@ public class MethAddr extends Reference {
 
     public Operation getUnboxedOp(Class unboxedType) {
         String n = getName();
-        if (unboxedType == Float.class && n.length() == 1) {
-            switch (n.charAt(0)) {
-            case '+' : return Operation.FADD;
-            case '-' : return Operation.FSUB;
-            case '*' : return Operation.FMUL;
-            case '/' : return Operation.FDIV;
-            case '>' : return Operation.FGT;
-            case '<' : return Operation.FLT;
+        if (unboxedType == Float.class) {
+            if (n.length() == 1) {
+                switch (n.charAt(0)) {
+                    case '+' : return Operation.FADD;
+                    case '-' : return Operation.FSUB;
+                    case '*' : return Operation.FMUL;
+                    case '/' : return Operation.FDIV;
+                    case '>' : return Operation.FGT;
+                    case '<' : return Operation.FLT;
+                }
+            } else if (n.length() == 2) {
+                if (n.equals("==")) return Operation.FEQ;
+            } else if (n.equals("===")) {
+                return Operation.FEQ;
             }
-        } else if (unboxedType == Fixnum.class && n.length() == 1) {
-            switch (n.charAt(0)) {
-                case '+' : return Operation.IADD;
-                case '-' : return Operation.ISUB;
-                case '*' : return Operation.IMUL;
-                case '/' : return Operation.IDIV;
-                case '>' : return Operation.IGT;
-                case '<' : return Operation.ILT;
+        } else if (unboxedType == Fixnum.class) {
+            if (n.length() == 1) {
+                switch (n.charAt(0)) {
+                    case '+' : return Operation.IADD;
+                    case '-' : return Operation.ISUB;
+                    case '*' : return Operation.IMUL;
+                    case '/' : return Operation.IDIV;
+                    case '>' : return Operation.IGT;
+                    case '<' : return Operation.ILT;
+                    case '|' : return Operation.IOR;
+                    case '&' : return Operation.IAND;
+                    case '^' : return Operation.IXOR;
+                }
+            } else if (n.length() == 2) {
+                if (n.equals(">>")) return Operation.ISHR;
+                if (n.equals("<<")) return Operation.ISHL;
+                if (n.equals("==")) return Operation.IEQ;
+            } else if (n.equals("===")) {
+                return Operation.IEQ;
             }
         }
         return null;

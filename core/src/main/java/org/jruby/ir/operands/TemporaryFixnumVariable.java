@@ -46,7 +46,7 @@ public class TemporaryFixnumVariable extends TemporaryLocalVariable {
 
     @Override
     public String getPrefix() {
-        return "%f_";
+        return "%i_";
     }
 
     @Override

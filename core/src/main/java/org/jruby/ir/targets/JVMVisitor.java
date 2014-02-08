@@ -140,7 +140,6 @@ import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyClassLoader;
 
-import java.lang.invoke.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -644,12 +643,19 @@ public class JVMVisitor extends IRVisitor {
             case FDIV: a.ddiv(); break;
             case FLT: m.invokeIRHelper("flt", sig(boolean.class, double.class, double.class)); break; // annoying to have to do it in a method
             case FGT: m.invokeIRHelper("fgt", sig(boolean.class, double.class, double.class)); break; // annoying to have to do it in a method
+            case FEQ: m.invokeIRHelper("feq", sig(boolean.class, double.class, double.class)); break; // annoying to have to do it in a method
             case IADD: a.ladd(); break;
             case ISUB: a.lsub(); break;
             case IMUL: a.lmul(); break;
             case IDIV: a.ldiv(); break;
             case ILT: m.invokeIRHelper("ilt", sig(boolean.class, long.class, long.class)); break; // annoying to have to do it in a method
             case IGT: m.invokeIRHelper("igt", sig(boolean.class, long.class, long.class)); break; // annoying to have to do it in a method
+            case IOR: a.lor(); break;
+            case IAND: a.land(); break;
+            case IXOR: a.lxor(); break;
+            case ISHL: a.lshl(); break;
+            case ISHR: a.lshr(); break;
+            case IEQ: m.invokeIRHelper("ilt", sig(boolean.class, long.class, long.class)); break; // annoying to have to do it in a method
             default: throw new RuntimeException("UNHANDLED!");
         }
 

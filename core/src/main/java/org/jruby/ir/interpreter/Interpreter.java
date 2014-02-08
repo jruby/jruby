@@ -7,7 +7,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFloat;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
@@ -297,6 +296,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     case FDIV: setFloatVar(floats, dst, a1 / a2); break;
                     case FLT : setBooleanVar(context, booleans, dst, a1 < a2); break;
                     case FGT : setBooleanVar(context, booleans, dst, a1 > a2); break;
+                    case FEQ : setBooleanVar(context, booleans, dst, a1 == a2); break;
                 }
                 break;
             case IADD: case ISUB: case IMUL: case IDIV: case ILT: case IGT:
@@ -307,8 +307,14 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     case ISUB: setFixnumVar(fixnums, dst, i1 - i2); break;
                     case IMUL: setFixnumVar(fixnums, dst, i1 * i2); break;
                     case IDIV: setFixnumVar(fixnums, dst, i1 / i2); break;
+                    case IOR: setFixnumVar(fixnums, dst, i1 | i2); break;
+                    case IAND: setFixnumVar(fixnums, dst, i1 & i2); break;
+                    case IXOR: setFixnumVar(fixnums, dst, i1 ^ i2); break;
+                    case ISHL: setFixnumVar(fixnums, dst, i1 << i2); break;
+                    case ISHR: setFixnumVar(fixnums, dst, i1 >> i2); break;
                     case ILT : setBooleanVar(context, booleans, dst, i1 < i2); break;
                     case IGT : setBooleanVar(context, booleans, dst, i1 > i2); break;
+                    case IEQ : setBooleanVar(context, booleans, dst, i1 == i2); break;
                 }
                 break;
         }

@@ -178,12 +178,19 @@ public enum Operation {
     IDIV(OpFlags.f_is_alu_op),
     ILT(OpFlags.f_is_alu_op),
     IGT(OpFlags.f_is_alu_op),
+    IOR(OpFlags.f_is_alu_op),
+    IAND(OpFlags.f_is_alu_op),
+    IXOR(OpFlags.f_is_alu_op),
+    ISHL(OpFlags.f_is_alu_op),
+    ISHR(OpFlags.f_is_alu_op),
+    IEQ(OpFlags.f_is_alu_op),
     FADD(OpFlags.f_is_alu_op),
     FSUB(OpFlags.f_is_alu_op),
     FMUL(OpFlags.f_is_alu_op),
     FDIV(OpFlags.f_is_alu_op),
     FLT(OpFlags.f_is_alu_op),
     FGT(OpFlags.f_is_alu_op),
+    FEQ(OpFlags.f_is_alu_op),
 
     /** Other JRuby internal primitives for optimizations */
     MODULE_GUARD(OpFlags.f_is_jump_or_branch), /* a guard acts as a branch */
