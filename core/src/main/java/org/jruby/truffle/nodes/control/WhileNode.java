@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -39,24 +39,45 @@ public class WhileNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        outer: while (condition.executeBoolean(frame)) {
-            while (true) {
-                try {
-                    body.execute(frame);
-                    continue outer;
-                } catch (BreakException e) {
-                    breakProfile.enter();
-                    return e.getResult();
-                } catch (NextException e) {
-                    nextProfile.enter();
-                    continue outer;
-                } catch (RedoException e) {
-                    redoProfile.enter();
+        int count = 0;
+
+        try {
+            outer: while (condition.executeBoolean(frame)) {
+                while (true) {
+                    try {
+                        body.execute(frame);
+
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        continue outer;
+                    } catch (BreakException e) {
+                        breakProfile.enter();
+                        return e.getResult();
+                    } catch (NextException e) {
+                        nextProfile.enter();
+                        continue outer;
+                    } catch (RedoException e) {
+                        redoProfile.enter();
+                    }
                 }
+            }
+        } finally {
+            if (CompilerDirectives.inInterpreter()) {
+                reportLoopCount(count);
             }
         }
 
         return NilPlaceholder.INSTANCE;
+    }
+
+    private void reportLoopCount(int count) {
+        CompilerAsserts.neverPartOfCompilation();
+        RootNode root = NodeUtil.findOutermostRootNode(this);
+        if (root != null) {
+            root.reportLoopCount(count);
+        }
     }
 
 }
