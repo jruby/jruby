@@ -446,6 +446,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void AttrAssignInstr(AttrAssignInstr attrAssignInstr) {
         jvm.method().loadLocal(0);
+        jvm.method().loadSelf();
         visit(attrAssignInstr.getReceiver());
         for (Operand operand : attrAssignInstr.getCallArgs()) {
             visit(operand);
