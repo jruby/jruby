@@ -43,12 +43,6 @@ public class WhenOneArgNode extends WhenNode {
     public IRubyObject when(IRubyObject test, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
         // No actual test, so do 'when' if when expression is not nil
         if (test == null) return whenNoTest(context, runtime, self, aBlock);
-        if (!(expressionNodes instanceof IEqlNode)) return whenSlowTest(test, context, runtime, self, aBlock);
-
-        if (((IEqlNode) expressionNodes).eql(test, context, runtime, self, aBlock)) {
-            return bodyNode.interpret(runtime, context, self, aBlock);
-        }
-
-        return null;
+        return whenSlowTest(test, context, runtime, self, aBlock);
     }
 }
