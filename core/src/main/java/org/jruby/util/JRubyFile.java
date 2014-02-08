@@ -62,6 +62,11 @@ public class JRubyFile extends JavaSecuredFile {
     }
 
     public static FileResource createResource(String cwd, String pathname) {
+        if (pathname == null) {
+            // null pathnames do not exist
+            return new RegularFileResource(JRubyNonExistentFile.NOT_EXIST);
+        }
+
         // Try as a jar resource first
         FileResource jarResource = JarResource.create(pathname);
         if (jarResource != null) {
