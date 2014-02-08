@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.jruby.RubyBoolean;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.array.ArrayUtilities;
@@ -106,32 +108,18 @@ public class RubyString extends RubyObject {
         }
 
         // If the other value is a Java string, use our Java string representation to compare
-
         if (other instanceof String) {
             return toString().equals(other);
         }
 
         if (other instanceof RubyString) {
             final RubyString otherString = (RubyString) other;
+            IRubyObject resp =  this.toJRubyString().op_equal(getRubyClass().getContext().getRuntime().getCurrentContext(),
+                    otherString.toJRubyString());
 
-            // If we both came from Java strings, use them to compare
-
-            if (isFromJavaString() && fromJavaString && otherString.fromJavaString) {
-                return toString().equals(other.toString());
+            if (resp instanceof RubyBoolean){
+                return resp.isTrue();
             }
-
-            if (otherString.cachedStringValue == this.cachedStringValue) {
-                return true;
-            }
-            // If we both have the same encoding, compare bytes
-
-            if (getBytes().getEncoding() == otherString.getBytes().getEncoding()) {
-                return getBytes().equals(getBytes());
-            }
-
-            // If we don't have the same encoding, we need some more advanced logic
-
-            throw new UnsupportedOperationException("Can't compare strings in different encodings yet");
         }
 
         return false;
@@ -187,6 +175,10 @@ public class RubyString extends RubyObject {
     @Override
     public Object dup() {
         return new RubyString(this);
+    }
+
+    public org.jruby.RubyString toJRubyString() {
+        return getRubyClass().getContext().getRuntime().newString(bytes);
     }
 
     public void concat(RubyString other) {
