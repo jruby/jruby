@@ -115,6 +115,23 @@ class Gem::TestCase < MiniTest::Unit::TestCase
     assert File.exist?(path), msg
   end
 
+  ##
+  # Sets the ENABLE_SHARED entry in RbConfig::CONFIG to +value+ and restores
+  # the original value when the block ends
+
+  def enable_shared value
+    enable_shared = RbConfig::CONFIG['ENABLE_SHARED']
+    RbConfig::CONFIG['ENABLE_SHARED'] = value
+
+    yield
+  ensure
+    if enable_shared then
+      RbConfig::CONFIG['enable_shared'] = enable_shared
+    else
+      RbConfig::CONFIG.delete 'enable_shared'
+    end
+  end
+
   # TODO: move to minitest
   def refute_path_exists path, msg = nil
     msg = message(msg) { "Expected path '#{path}' to not exist" }
@@ -315,7 +332,11 @@ class Gem::TestCase < MiniTest::Unit::TestCase
   def teardown
     $LOAD_PATH.replace @orig_LOAD_PATH if @orig_LOAD_PATH
 
-    RbConfig::CONFIG['BASERUBY'] = @orig_BASERUBY
+    if @orig_BASERUBY
+      RbConfig::CONFIG['BASERUBY'] = @orig_BASERUBY
+    else
+      RbConfig::CONFIG.delete('BASERUBY')
+    end
     RbConfig::CONFIG['arch'] = @orig_arch
 
     if defined? Gem::RemoteFetcher then
@@ -1245,10 +1266,17 @@ Also, a list:
   class StaticSet
 
     ##
+    # A StaticSet ignores remote because it has a fixed set of gems.
+
+    attr_accessor :remote
+
+    ##
     # Creates a new StaticSet for the given +specs+
 
     def initialize(specs)
       @specs = specs
+
+      @remote = true
     end
 
     ##
