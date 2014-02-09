@@ -4,21 +4,22 @@ package org.jruby.ir;
 
 // that would be awesome, but I cannot nest this class in an Enum class.
 class OpFlags {
-    final static int f_has_side_effect     = 0x0001;
-    final static int f_can_raise_exception = 0x0002;
-    final static int f_is_marker_op        = 0x0004;
-    final static int f_is_jump_or_branch   = 0x0008;
-    final static int f_is_return           = 0x0010;
-    final static int f_is_exception        = 0x0020;
-    final static int f_is_debug_op         = 0x0040;
-    final static int f_is_load             = 0x0080;
-    final static int f_is_store            = 0x0100;
-    final static int f_is_call             = 0x0200;
-    final static int f_is_arg_receive      = 0x0400;
-    final static int f_modifies_code       = 0x0800;
-    final static int f_inline_unfriendly   = 0x1000;
-    final static int f_is_book_keeping_op  = 0x2000;
-    final static int f_is_alu_op           = 0x4000;
+    final static int f_has_side_effect     = 0x00001;
+    final static int f_can_raise_exception = 0x00002;
+    final static int f_is_marker_op        = 0x00004;
+    final static int f_is_jump_or_branch   = 0x00008;
+    final static int f_is_return           = 0x00010;
+    final static int f_is_exception        = 0x00020;
+    final static int f_is_debug_op         = 0x00040;
+    final static int f_is_load             = 0x00080;
+    final static int f_is_store            = 0x00100;
+    final static int f_is_call             = 0x00200;
+    final static int f_is_arg_receive      = 0x00400;
+    final static int f_modifies_code       = 0x00800;
+    final static int f_inline_unfriendly   = 0x01000;
+    final static int f_is_book_keeping_op  = 0x02000;
+    final static int f_is_float_op         = 0x04000;
+    final static int f_is_int_op           = 0x08000;
 }
 
 public enum Operation {
@@ -172,25 +173,25 @@ public enum Operation {
     UNBOX_BOOLEAN(0),
 
     /* Unboxed ALU ops */
-    IADD(OpFlags.f_is_alu_op),
-    ISUB(OpFlags.f_is_alu_op),
-    IMUL(OpFlags.f_is_alu_op),
-    IDIV(OpFlags.f_is_alu_op),
-    ILT(OpFlags.f_is_alu_op),
-    IGT(OpFlags.f_is_alu_op),
-    IOR(OpFlags.f_is_alu_op),
-    IAND(OpFlags.f_is_alu_op),
-    IXOR(OpFlags.f_is_alu_op),
-    ISHL(OpFlags.f_is_alu_op),
-    ISHR(OpFlags.f_is_alu_op),
-    IEQ(OpFlags.f_is_alu_op),
-    FADD(OpFlags.f_is_alu_op),
-    FSUB(OpFlags.f_is_alu_op),
-    FMUL(OpFlags.f_is_alu_op),
-    FDIV(OpFlags.f_is_alu_op),
-    FLT(OpFlags.f_is_alu_op),
-    FGT(OpFlags.f_is_alu_op),
-    FEQ(OpFlags.f_is_alu_op),
+    IADD(OpFlags.f_is_int_op),
+    ISUB(OpFlags.f_is_int_op),
+    IMUL(OpFlags.f_is_int_op),
+    IDIV(OpFlags.f_is_int_op),
+    ILT(OpFlags.f_is_int_op),
+    IGT(OpFlags.f_is_int_op),
+    IOR(OpFlags.f_is_int_op),
+    IAND(OpFlags.f_is_int_op),
+    IXOR(OpFlags.f_is_int_op),
+    ISHL(OpFlags.f_is_int_op),
+    ISHR(OpFlags.f_is_int_op),
+    IEQ(OpFlags.f_is_float_op),
+    FADD(OpFlags.f_is_float_op),
+    FSUB(OpFlags.f_is_float_op),
+    FMUL(OpFlags.f_is_float_op),
+    FDIV(OpFlags.f_is_float_op),
+    FLT(OpFlags.f_is_float_op),
+    FGT(OpFlags.f_is_float_op),
+    FEQ(OpFlags.f_is_float_op),
 
     /** Other JRuby internal primitives for optimizations */
     MODULE_GUARD(OpFlags.f_is_jump_or_branch), /* a guard acts as a branch */
@@ -221,8 +222,10 @@ public enum Operation {
             this.opClass = OpClass.BOOK_KEEPING_OP;
         } else if (this.isCall()) {
             this.opClass = OpClass.CALL_OP;
-        } else if ((flags & OpFlags.f_is_alu_op) > 0) {
-            this.opClass = OpClass.ALU_OP;
+        } else if ((flags & OpFlags.f_is_int_op) > 0) {
+            this.opClass = OpClass.INT_OP;
+        } else if ((flags & OpFlags.f_is_float_op) > 0) {
+            this.opClass = OpClass.FLOAT_OP;
         } else {
             this.opClass = OpClass.OTHER_OP;
         }

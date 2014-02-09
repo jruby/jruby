@@ -243,7 +243,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         } else if (arg instanceof TemporaryLocalVariable) {
             return floats[((TemporaryLocalVariable)arg).offset];
         } else {
-            return 0.0/0.0;
+            throw new RuntimeException("invalid float operand: " + arg);
         }
     }
 
@@ -283,40 +283,40 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         booleans[var.offset] = val;
     }
 
-    private static void computeResult(AluInstr instr, Operation op, ThreadContext context, double[] floats, long[] fixnums, boolean[] booleans, Object[] temp) {
+    private static void intepretIntOp(AluInstr instr, Operation op, ThreadContext context, long[] fixnums, boolean[] booleans, Object[] temp) {
         TemporaryLocalVariable dst = (TemporaryLocalVariable)instr.getResult();
+        long i1 = getFixnumArg(fixnums, instr.getArg1());
+        long i2 = getFixnumArg(fixnums, instr.getArg2());
         switch (op) {
-            case FADD: case FSUB: case FMUL: case FDIV: case FLT: case FGT:
-                double a1 = getFloatArg(floats, instr.getArg1());
-                double a2 = getFloatArg(floats, instr.getArg2());
-                switch (op) {
-                    case FADD: setFloatVar(floats, dst, a1 + a2); break;
-                    case FSUB: setFloatVar(floats, dst, a1 - a2); break;
-                    case FMUL: setFloatVar(floats, dst, a1 * a2); break;
-                    case FDIV: setFloatVar(floats, dst, a1 / a2); break;
-                    case FLT : setBooleanVar(context, booleans, dst, a1 < a2); break;
-                    case FGT : setBooleanVar(context, booleans, dst, a1 > a2); break;
-                    case FEQ : setBooleanVar(context, booleans, dst, a1 == a2); break;
-                }
-                break;
-            case IADD: case ISUB: case IMUL: case IDIV: case ILT: case IGT:
-                long i1 = getFixnumArg(fixnums, instr.getArg1());
-                long i2 = getFixnumArg(fixnums, instr.getArg2());
-                switch (op) {
-                    case IADD: setFixnumVar(fixnums, dst, i1 + i2); break;
-                    case ISUB: setFixnumVar(fixnums, dst, i1 - i2); break;
-                    case IMUL: setFixnumVar(fixnums, dst, i1 * i2); break;
-                    case IDIV: setFixnumVar(fixnums, dst, i1 / i2); break;
-                    case IOR: setFixnumVar(fixnums, dst, i1 | i2); break;
-                    case IAND: setFixnumVar(fixnums, dst, i1 & i2); break;
-                    case IXOR: setFixnumVar(fixnums, dst, i1 ^ i2); break;
-                    case ISHL: setFixnumVar(fixnums, dst, i1 << i2); break;
-                    case ISHR: setFixnumVar(fixnums, dst, i1 >> i2); break;
-                    case ILT : setBooleanVar(context, booleans, dst, i1 < i2); break;
-                    case IGT : setBooleanVar(context, booleans, dst, i1 > i2); break;
-                    case IEQ : setBooleanVar(context, booleans, dst, i1 == i2); break;
-                }
-                break;
+            case IADD: setFixnumVar(fixnums, dst, i1 + i2); break;
+            case ISUB: setFixnumVar(fixnums, dst, i1 - i2); break;
+            case IMUL: setFixnumVar(fixnums, dst, i1 * i2); break;
+            case IDIV: setFixnumVar(fixnums, dst, i1 / i2); break;
+            case IOR : setFixnumVar(fixnums, dst, i1 | i2); break;
+            case IAND: setFixnumVar(fixnums, dst, i1 & i2); break;
+            case IXOR: setFixnumVar(fixnums, dst, i1 ^ i2); break;
+            case ISHL: setFixnumVar(fixnums, dst, i1 << i2); break;
+            case ISHR: setFixnumVar(fixnums, dst, i1 >> i2); break;
+            case ILT : setBooleanVar(context, booleans, dst, i1 < i2); break;
+            case IGT : setBooleanVar(context, booleans, dst, i1 > i2); break;
+            case IEQ : setBooleanVar(context, booleans, dst, i1 == i2); break;
+            default: throw new RuntimeException("Unhandled int op: " + op + " for instr " + instr);
+        }
+    }
+
+    private static void interpretFloatOp(AluInstr instr, Operation op, ThreadContext context, double[] floats, boolean[] booleans, Object[] temp) {
+        TemporaryLocalVariable dst = (TemporaryLocalVariable)instr.getResult();
+        double a1 = getFloatArg(floats, instr.getArg1());
+        double a2 = getFloatArg(floats, instr.getArg2());
+        switch (op) {
+            case FADD: setFloatVar(floats, dst, a1 + a2); break;
+            case FSUB: setFloatVar(floats, dst, a1 - a2); break;
+            case FMUL: setFloatVar(floats, dst, a1 * a2); break;
+            case FDIV: setFloatVar(floats, dst, a1 / a2); break;
+            case FLT : setBooleanVar(context, booleans, dst, a1 < a2); break;
+            case FGT : setBooleanVar(context, booleans, dst, a1 > a2); break;
+            case FEQ : setBooleanVar(context, booleans, dst, a1 == a2); break;
+            default: throw new RuntimeException("Unhandled float op: " + op + " for instr " + instr);
         }
     }
 
@@ -586,8 +586,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
             try {
                 switch (operation.opClass) {
-                case ALU_OP:
-                    computeResult((AluInstr)instr, operation, context, floats, fixnums, booleans, temp);
+                case INT_OP:
+                    intepretIntOp((AluInstr)instr, operation, context, fixnums, booleans, temp);
+                    break;
+                case FLOAT_OP:
+                    interpretFloatOp((AluInstr)instr, operation, context, floats, booleans, temp);
                     break;
                 case ARG_OP:
                     receiveArg(context, instr, operation, args, IRRuntimeHelpers.extractKwargsCount(args, scope.receivesKeywordArgs()), currDynScope, temp, exception, block);
