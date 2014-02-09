@@ -1470,39 +1470,8 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
     @Override
     public Object visitNewlineNode(org.jruby.ast.NewlineNode node) {
-        RubyNode translated = (RubyNode) node.getNextNode().accept(this);
-
-        if (Options.TRUFFLE_DEBUG_NODES.load()) {
-            RubyProxyNode proxy;
-            if (translated instanceof RubyProxyNode) {
-                proxy = (RubyProxyNode) translated;
-                if (proxy.getChild() instanceof CallNode) {
-                    // Special case; replace proxy with one registered by line, merge in information
-                    final CallNode callNode = (CallNode) proxy.getChild();
-                    final ProbeChain probeChain = proxy.getProbeChain();
-
-                    proxy = new RubyProxyNode(context, callNode, probeChain);
-                }
-            } else {
-                proxy = new RubyProxyNode(context, translated);
-            }
-            proxy.markAs(NodePhylum.STATEMENT);
-            translated = proxy;
-        }
-
-        if (Options.TRUFFLE_TRACE_NODES.load()) {
-            RubyProxyNode proxy;
-            if (translated instanceof RubyProxyNode) {
-                proxy = (RubyProxyNode) translated;
-            } else {
-                proxy = new RubyProxyNode(context, translated);
-            }
-            proxy.getProbeChain().appendProbe(new RubyTraceProbe(context));
-
-            translated = proxy;
-        }
-
-        return translated;
+        final RubyNode translated = (RubyNode) node.getNextNode().accept(this);
+        return instrumenter.instrumentAsStatement(translated);
     }
 
     @Override
