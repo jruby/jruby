@@ -125,6 +125,7 @@ public class IRClosure extends IRScope {
 
     public void setParameterList(String[] parameterList) {
         this.parameterList = parameterList;
+        ((InterpretedIRBlockBody)this.body).setParameterList(parameterList);
     }
 
     public String[] getParameterList() {

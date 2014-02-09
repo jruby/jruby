@@ -12,7 +12,7 @@ import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class IRBlockBody extends ContextAwareBlockBody {
-    protected final String[] parameterList;
+    protected String[] parameterList;
     protected final String fileName;
     protected final int lineNumber;
 
@@ -26,6 +26,10 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     @Override
     public String[] getParameterList() {
         return parameterList;
+    }
+
+    public void setParameterList(String[] parameterList) {
+        this.parameterList = parameterList;
     }
 
     @Override
