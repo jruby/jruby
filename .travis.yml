@@ -19,10 +19,10 @@ env:
 matrix:
   include:
     - env: ''
-      script: mvn test -Ptest
+      script: mvn test -Ptest | grep -v ^Down
       jdk: oraclejdk7
     - env: ''
-      script: mvn test -Ptest
+      script: mvn test -Ptest | grep -v ^Down
       jdk: oraclejdk8
   fast_finish: true
   allow_failures:
@@ -39,7 +39,8 @@ branches:
 before_install:
   - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
 
-script: "mvn -Pbootstrap -q && ant $TARGET"
+# run the bootstrap twice due to https://github.com/jruby/jruby/issues/1497
+script: "(mvn -Pbootstrap || mvn -Pbootstrap ) | grep -v ^Down && ant $TARGET"
 install: /bin/true
 notifications:
   irc:
