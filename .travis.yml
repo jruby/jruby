@@ -19,11 +19,17 @@ env:
 matrix:
   include:
     - env: ''
-      script: mvn test -Ptest | grep -v ^Down
+      script: mvn test -Ptest -Pmain
       jdk: oraclejdk7
     - env: ''
-      script: mvn test -Ptest | grep -v ^Down
+      script: mvn test -Ptest -Pcomplete
       jdk: oraclejdk8
+    - env: ''
+      script: mvn -Pdist
+      jdk: oraclejdk8
+    - env: ''
+      script: mvn -Pjruby-jars
+      jdk: oraclejdk7
   fast_finish: true
   allow_failures:
     - env: TARGET='spec:ci_interpreted_ir_travis'
@@ -40,7 +46,7 @@ before_install:
   - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
 
 # run the bootstrap twice due to https://github.com/jruby/jruby/issues/1497
-script: "(mvn -Pbootstrap || mvn -Pbootstrap ) | grep -v ^Down && ant $TARGET"
+script: "mvn -Pbootstrap && ant $TARGET"
 install: /bin/true
 notifications:
   irc:
@@ -55,5 +61,6 @@ notifications:
   webhooks:
     urls:
       - "https://rubies.travis-ci.org/rebuild/jruby-head"
-    on_success: always
+# we are on a branch
+    #on_success: always
     on_failure: never
