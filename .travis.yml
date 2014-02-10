@@ -18,18 +18,19 @@ env:
 
 matrix:
   include:
-    - env: PROFILE='main'
-      script: mvn -Ptest -P $PROFILE
-      jdk: oraclejdk7
-    - env: PROFILE='complete'
-      script: mvn -Ptest -P $PROFILE
-      jdk: oraclejdk8
     - env: PROFILE='dist'
       script: mvn -P $PROFILE
       jdk: oraclejdk8
     - env: PROFILE='jruby-jars'
       script: mvn -P $PROFILE
       jdk: oraclejdk7
+# combine the junit test with a profile
+    - env: PROFILE='main'
+      script: mvn -Ptest -P $PROFILE
+      jdk: oraclejdk7
+    - env: PROFILE='complete'
+      script: mvn -Ptest -P $PROFILE
+      jdk: oraclejdk8
   fast_finish: true
   allow_failures:
     - env: TARGET='spec:ci_interpreted_ir_travis'
@@ -45,8 +46,7 @@ branches:
 before_install:
   - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
 
-# run the bootstrap twice due to https://github.com/jruby/jruby/issues/1497
-script: echo 'travis_fold:start:bootstrap' && mvn -Pbootstrap && echo 'travis_fold:end:bootstrap' && ant $TARGET"
+script: mvn -Pbootstrap -q && ant $TARGET"
 install: /bin/true
 notifications:
   irc:
