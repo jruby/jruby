@@ -17,6 +17,14 @@
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <tesla.version>0.0.9</tesla.version>
   </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-stdlib-complete</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
   <build>
     <plugins>
       <plugin>
