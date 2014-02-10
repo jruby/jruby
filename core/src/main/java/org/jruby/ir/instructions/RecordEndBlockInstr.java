@@ -18,7 +18,7 @@ public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
         this.declaringScope = declaringScope;
         this.endBlockClosure = endBlockClosure;
     }
-    
+
     public IRScope getDeclaringScope() {
         return declaringScope;
     }

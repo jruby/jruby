@@ -227,7 +227,7 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
             if (found) buf.append(", ");
             buf.append("<[");
             List<Edge<T>> e = new ArrayList<Edge<T>>(edges);
-            Collections.sort(e, new SourceCompare());            
+            Collections.sort(e, new SourceCompare());
 
             for (int i = 0; i < size - 1; i++) {
                 buf.append(e.get(i).getSource().getID()).append(",");
@@ -245,26 +245,26 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
         if (getID() < that.getID()) return -1;
         return 1;
     }
-    
+
     class SourceCompare implements Comparator<Edge<T>> {
         @Override
         public int compare(Edge<T> o1, Edge<T> o2) {
             int i1 = o1.getSource().getID();
             int i2 = o2.getSource().getID();
-            
+
             if (i1 == i2) return 0;
             return i1 < i2 ? -1 : 1;
         }
     }
-    
+
     class DestinationCompare implements Comparator<Edge<T>> {
         @Override
         public int compare(Edge<T> o1, Edge<T> o2) {
             int i1 = o1.getDestination().getID();
             int i2 = o2.getDestination().getID();
-            
+
             if (i1 == i2) return 0;
             return i1 < i2 ? -1 : 1;
         }
-    }    
+    }
 }

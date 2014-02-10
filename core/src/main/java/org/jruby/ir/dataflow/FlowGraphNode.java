@@ -115,7 +115,7 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
             computeDataFlowInfoBackward(workList, bbSet);
         }
     }
-    
+
     public void computeDataFlowInfoBackward(List<U> workList, BitSet bbSet) {
         for (Edge<BasicBlock> e: getCFG().getOutgoingEdges(basicBlock)) {
             compute_MEET(e, problem.getFlowGraphNode(e.getDestination().getData()));

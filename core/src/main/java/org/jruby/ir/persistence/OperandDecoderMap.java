@@ -147,7 +147,7 @@ class OperandDecoderMap {
         }
 
         Label newLabel = new Label(prefix, id);
-        
+
         // Add to context for future reuse
         d.getVars().put(fullLabel, newLabel);
 
@@ -164,7 +164,7 @@ class OperandDecoderMap {
 
     private Operand decodeTemporaryVariable() {
         TemporaryVariableType type = d.decodeTemporaryVariableType();
-        
+
         switch(type) {
             case CLOSURE:
                 return new TemporaryClosureVariable(d.decodeInt(), d.decodeInt());

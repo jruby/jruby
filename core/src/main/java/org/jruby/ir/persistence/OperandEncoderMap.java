@@ -141,7 +141,7 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void IRException(IRException irexception) { encoder.encode((byte) irexception.getType().ordinal()); }
 
-    @Override public void Label(Label label) { 
+    @Override public void Label(Label label) {
         encoder.encode(label.prefix);
         encoder.encode(label.id);
     }
@@ -216,7 +216,7 @@ class OperandEncoderMap extends IRVisitor {
                 encoder.encode(((TemporaryClosureVariable) variable).getClosureId());
                 encoder.encode(((TemporaryClosureVariable) variable).getOffset());
                 break;
-                
+
             case LOCAL:
             case CURRENT_MODULE:
             case CURRENT_SCOPE:
@@ -230,13 +230,13 @@ class OperandEncoderMap extends IRVisitor {
     @Override public void UnboxedFixnum(UnboxedFixnum fixnum) { encoder.encode(fixnum.value); }
 
     @Override public void UnboxedFloat(UnboxedFloat flote) { encoder.encode(flote.value); }
-    
+
     @Override public void UndefinedValue(UndefinedValue undefinedvalue) {} // No data
 
     @Override public void UnexecutableNil(UnexecutableNil unexecutablenil) {} // No data
 
-    @Override public void WrappedIRClosure(WrappedIRClosure scope) { 
+    @Override public void WrappedIRClosure(WrappedIRClosure scope) {
         encoder.encode(scope.getSelf());
-        encoder.encode(scope.getClosure()); 
+        encoder.encode(scope.getClosure());
     }
 }

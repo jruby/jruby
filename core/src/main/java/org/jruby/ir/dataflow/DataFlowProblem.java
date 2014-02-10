@@ -70,7 +70,7 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
         LinkedList<U> wl = new LinkedList<U>();
         Iterator<BasicBlock> it = direction == DF_Direction.FORWARD ?
                 scope.cfg().getReversePostOrderTraverser() : scope.cfg().getPostOrderTraverser();
- 
+
         while (it.hasNext()) {
             wl.add(getFlowGraphNode(it.next()));
         }

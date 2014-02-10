@@ -10,7 +10,7 @@ public class TemporaryLocalReplacementVariable extends TemporaryLocalVariable {
 
     public TemporaryLocalReplacementVariable(String oldName, int offset) {
         super(offset);
-        
+
         this.oldName = oldName;
     }
 

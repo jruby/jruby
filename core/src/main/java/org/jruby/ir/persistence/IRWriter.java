@@ -79,7 +79,7 @@ public class IRWriter {
         file.encode(scope.getTemporaryVariablesCount());
 
         persistScopeLabelIndices(scope, file);
-        
+
         if (!(scope instanceof IRScriptBody)) file.encode(scope.getLexicalParent());
 
         if (scope instanceof IRClosure) {

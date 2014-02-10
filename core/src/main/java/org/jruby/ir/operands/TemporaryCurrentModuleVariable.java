@@ -23,5 +23,5 @@ public class TemporaryCurrentModuleVariable extends TemporaryLocalVariable {
     @Override
     public Variable clone(InlinerInfo ii) {
         return this;
-    }    
+    }
 }

@@ -64,7 +64,7 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
         int strLength = decodeInt();
         byte[] bytes = new byte[strLength]; // FIXME: This seems really innefficient
         buf.get(bytes);
-        
+
         return new String(bytes).intern();
     }
 
@@ -125,7 +125,7 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     public TemporaryVariableType decodeTemporaryVariableType() {
         return TemporaryVariableType.fromOrdinal(decodeInt());
     }
-    
+
     @Override
     public StaticScope.Type decodeStaticScopeType() {
         return StaticScope.Type.fromOrdinal(decodeInt());

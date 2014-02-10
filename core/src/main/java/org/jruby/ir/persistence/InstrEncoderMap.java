@@ -119,7 +119,7 @@ public class InstrEncoderMap {
         if (instr instanceof ResultInstr) {
             e.encode(((ResultInstr) instr).getResult());
         }
-        
+
         switch(instr.getOperation()) {
             case ALIAS: encodeAliasInstr((AliasInstr) instr); break;
             case ATTR_ASSIGN: encodeAttrAssignInstr((AttrAssignInstr) instr); break;
@@ -215,8 +215,8 @@ public class InstrEncoderMap {
             case YIELD: encodeYieldInstr((YieldInstr) instr); break;
             case ZSUPER: encodeZSuperInstr((ZSuperInstr) instr); break;
             default: throw new IllegalArgumentException("Whoa what am I encoding: " + instr);
-        }        
-    }   
+        }
+    }
 
     private void encodeAliasInstr(AliasInstr instr) {
         e.encode(instr.getReceiver());
@@ -228,9 +228,9 @@ public class InstrEncoderMap {
         e.encode(instr.getReceiver());
         e.encode(instr.getMethodAddr().getName());
         Operand[] args = instr.getCallArgs();
-        
+
         e.encode(args.length);
-        
+
         for (int i = 0; i < args.length; i++) {
             e.encode(args[i]);
         }
@@ -465,7 +465,7 @@ public class InstrEncoderMap {
     private void encodeNonlocalReturnInstr(NonlocalReturnInstr instr) {
         e.encode(instr.getReturnValue());
         IRMethod method = instr.methodToReturnFrom;
-        
+
         if (method == null) {
             e.encode(false);
         } else {
@@ -476,16 +476,16 @@ public class InstrEncoderMap {
 
     private void encodeCallBaseInstr(CallBase instr) {
         boolean hasClosure = instr.getClosureArg(null) != null;
-        
+
         e.encode(instr.getCallType().ordinal());
         e.encode(instr.getMethodAddr().getName());
         e.encode(instr.getReceiver());
         e.encode(calculateArity(instr.getCallArgs(), hasClosure));
-        
+
         for (Operand arg: instr.getCallArgs()) {
             e.encode(arg);
         }
-        
+
         if (hasClosure) e.encode(instr.getClosureArg(null));
     }
 
@@ -589,15 +589,15 @@ public class InstrEncoderMap {
 
     private void encodeUnresolvedSuperInstr(UnresolvedSuperInstr instr) {
         boolean hasClosure = instr.getClosureArg(null) != null;
-        
+
         e.encode(instr.getCallType().ordinal());
         e.encode(instr.getReceiver());
         e.encode(calculateArity(instr.getCallArgs(), hasClosure));
-        
+
         for (Operand arg: instr.getCallArgs()) {
             e.encode(arg);
         }
-        
+
         if (hasClosure) e.encode(instr.getClosureArg(null));
     }
 
@@ -676,7 +676,7 @@ public class InstrEncoderMap {
         e.encode(instr.getRef());
         e.encode(instr.getValue());
     }
- 
+
     // -0 is not possible so we add 1 to arguments with closure so we get a valid negative value.
     private int calculateArity(Operand[] arguments, boolean hasClosure) {
         return hasClosure ? -1*(arguments.length + 1) : arguments.length;

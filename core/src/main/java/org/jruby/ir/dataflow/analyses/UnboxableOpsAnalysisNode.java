@@ -483,7 +483,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             return arg;
         }
     }
-    
+
     private void markLocalVariables(Collection<Variable> varsToBox, Set<Variable> varsToCheck) {
         for (Variable v: varsToCheck) {
             if (v instanceof LocalVariable) varsToBox.add(v);

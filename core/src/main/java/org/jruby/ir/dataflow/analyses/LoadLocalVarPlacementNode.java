@@ -49,7 +49,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
     @Override
     public void compute_MEET(Edge e, LoadLocalVarPlacementNode pred) {
         inRequiredLoads.addAll(pred.outRequiredLoads);
-    }   
+    }
 
     @Override
     public void initSolution() {

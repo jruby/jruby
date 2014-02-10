@@ -153,7 +153,7 @@ public class IRClosure extends IRScope {
             temporaryVariableIndex++;
             return new TemporaryClosureVariable(closureId, temporaryVariableIndex);
         }
-        
+
         return super.getNewTemporaryVariable(type);
     }
 

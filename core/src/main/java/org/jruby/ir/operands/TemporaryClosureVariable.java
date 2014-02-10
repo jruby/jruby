@@ -7,14 +7,14 @@ public class TemporaryClosureVariable extends TemporaryLocalVariable {
 
     public TemporaryClosureVariable(int closureId, int offset) {
         super(offset);
-        
+
         this.closureId = closureId;
     }
-    
+
     public int getClosureId() {
         return closureId;
     }
-    
+
     @Override
     public TemporaryVariableType getType() {
         return TemporaryVariableType.CLOSURE;
@@ -23,7 +23,7 @@ public class TemporaryClosureVariable extends TemporaryLocalVariable {
     @Override
     public Variable clone(InlinerInfo ii) {
         return new TemporaryClosureVariable(closureId, offset);
-    }  
+    }
 
     @Override
     public String getPrefix() {

@@ -60,7 +60,7 @@ public class IRReader {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("LINE = " + line);
         int tempVarsCount = decoder.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("# of Temp Vars = " + tempVarsCount);
-        Map<String, Integer> indices = decodeScopeLabelIndices(decoder);        
+        Map<String, Integer> indices = decodeScopeLabelIndices(decoder);
 
         IRScope parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
         boolean isForLoopBody = type == IRScopeType.CLOSURE ? decoder.decodeBoolean() : false;
@@ -71,11 +71,11 @@ public class IRReader {
         // and offsets?
         StaticScope staticScope = decodeStaticScope(decoder, parentScope);
         IRScope scope = createScope(manager, type, name, line, parent, isForLoopBody, arity, argumentType, staticScope);
-       
+
         scope.setTemporaryVariableCount(tempVarsCount);
         // FIXME: Replace since we are defining this...perhaps even make a persistence constructor
         scope.setLabelIndices(indices);
-        
+
         // FIXME: This is odd, but ClosureLocalVariable wants it's defining closure...feels wrong.
         // But because of this we have to push decoding lvars to the end of the scope info.
         scope.setLocalVariables(decodeScopeLocalVariables(decoder, scope));
@@ -86,7 +86,7 @@ public class IRReader {
 
         return scope;
     }
-    
+
     private static Map<String, LocalVariable> decodeScopeLocalVariables(IRReaderDecoder decoder, IRScope scope) {
         int size = decoder.decodeInt();
         Map<String, LocalVariable> localVariables = new HashMap(size);
@@ -97,7 +97,7 @@ public class IRReader {
             localVariables.put(name, scope instanceof IRClosure ?
                     new ClosureLocalVariable((IRClosure) scope, name, 0, offset) : new LocalVariable(name, 0, offset));
         }
-        
+
         return localVariables;
     }
 

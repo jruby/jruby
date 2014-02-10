@@ -15,7 +15,7 @@ public class TemporaryLocalVariable extends TemporaryVariable {
 
     public TemporaryLocalVariable(int offset) {
         super();
-        
+
         this.offset = offset;
     }
 
@@ -36,7 +36,7 @@ public class TemporaryLocalVariable extends TemporaryVariable {
     @Override
     public boolean equals(Object other) {
         if (other == null || !(other instanceof TemporaryLocalVariable)) return false;
-        
+
         return super.equals(other) && getOffset() == ((TemporaryLocalVariable) other).getOffset();
     }
 

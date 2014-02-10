@@ -52,7 +52,7 @@ public class LocalVariable extends Variable {
     public String toString() {
         return isSelf() ? name : name + "(" + scopeDepth + ":" + offset + ")";
     }
-    
+
     @Override
     public int hashCode() {
         return name.hashCode();

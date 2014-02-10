@@ -135,7 +135,7 @@ class InstrDecoderMap implements IRPersistenceValues {
         }
         return instr;
     }
-    
+
     public Instr decodeInner(Operation operation) {
         switch(operation) {
             case ALIAS: return new AliasInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
@@ -279,7 +279,7 @@ class InstrDecoderMap implements IRPersistenceValues {
         String methAddr = d.decodeString();
         return new PushFrameInstr(new MethAddr(methAddr));
     }
-    
+
     private Instr decodeConstMissingInstr() {
         return new ConstMissingInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
     }
@@ -319,21 +319,21 @@ class InstrDecoderMap implements IRPersistenceValues {
     private Instr decodeLineNumber() {
         return new LineNumberInstr(d.decodeScope(), d.decodeInt());
     }
-    
+
     private Instr decodeReceiveRestArgInstr() {
         return new ReceiveRestArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt());
     }
-    
+
     private Instr decodeRuntimeHelperCall() {
         Variable result = d.decodeVariable();
         String name = d.decodeString();
         int size = d.decodeInt();
         Operand[] args = new Operand[size];
-        
+
         for (int i = 0; i < size; i++) {
             args[i] = d.decodeOperand();
         }
-        
+
         return new RuntimeHelperCall(result, name, args);
     }
 
@@ -390,12 +390,12 @@ class InstrDecoderMap implements IRPersistenceValues {
         }
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
-        
+
         if (operation == Operation.CLASS_SUPER) return new ClassSuperInstr(result, receiver, methAddr, args, closure);
-                
+
         return new InstanceSuperInstr(result, receiver, methAddr, args, closure);
     }
-    
+
     public Instr decodeUnresolvedSuperInstr() {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding un. super");
         Variable result = d.decodeVariable();
@@ -414,7 +414,7 @@ class InstrDecoderMap implements IRPersistenceValues {
         }
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
-        
+
         return new UnresolvedSuperInstr(result, receiver, args, closure);
     }
 
@@ -445,9 +445,9 @@ class InstrDecoderMap implements IRPersistenceValues {
     private Instr decodeNonlocalReturnInstr() {
         Operand returnValue = d.decodeOperand();
         boolean hasMethod = d.decodeBoolean();
-        
+
         if (hasMethod) return new NonlocalReturnInstr(returnValue, (IRMethod) d.decodeScope());
-        
+
         return new NonlocalReturnInstr(returnValue);
     }
  }
