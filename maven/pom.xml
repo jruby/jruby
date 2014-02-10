@@ -86,16 +86,17 @@
       </modules>
     </profile>
     <profile>
+      <id>dist</id>
+      <modules>
+        <module>jruby-stdlib</module>
+        <module>jruby-dist</module>
+      </modules>
+    </profile>
+    <profile>
       <id>jruby-jars</id>
       <modules>
         <module>jruby-stdlib</module>
         <module>jruby-jars</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>dist</id>
-      <modules>
-        <module>jruby-dist</module>
       </modules>
     </profile>
     <profile>
