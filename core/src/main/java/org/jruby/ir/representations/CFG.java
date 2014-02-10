@@ -110,6 +110,8 @@ public class CFG {
     }
 
     public LinkedList<BasicBlock> postOrderList() {
+        // SSS FIXME: This caching is fragile -- requires invalidation
+        // on change of CFG state. We need a better setup than this.
         if (postOrderList == null) postOrderList = buildPostOrderList();
         return postOrderList;
     }
@@ -215,8 +217,7 @@ public class CFG {
     public void addGlobalEnsureBB(BasicBlock geb) {
         assert globalEnsureBB == null: "CFG for scope " + getScope() + " already has a global ensure block.";
 
-        globalEnsureBB = geb;
-
+        addBasicBlock(geb);
         addEdge(geb, getExitBB(), EdgeType.EXIT);
 
         for (BasicBlock b: getBasicBlocks()) {
@@ -226,11 +227,7 @@ public class CFG {
             }
         }
 
-        // We are not creating a global exception region and adding it to the list of
-        // exc. regions because in graph form, we dont know what the "last BB" is.
-        // That requires a linearized form of the CFG's bbs.  So, the JIT can add
-        // a special case for this global exception block since it has access to the
-        // linearized form.
+        globalEnsureBB = geb;
     }
 
     public void setRescuerBB(BasicBlock block, BasicBlock rescuerBlock) {
@@ -437,6 +434,9 @@ public class CFG {
     public void addBasicBlock(BasicBlock bb) {
         graph.findOrCreateVertexFor(bb); // adds vertex to graph
         bbMap.put(bb.getLabel(), bb);
+
+        // Reset so later dataflow analyses get all basic blocks
+        postOrderList = null;
     }
 
     public void removeEdge(Edge edge) {

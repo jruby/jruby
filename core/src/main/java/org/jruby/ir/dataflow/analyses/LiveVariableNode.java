@@ -257,14 +257,14 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
         boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
 
         if (in == null) {
-           // 'in' cannot be null for reachable bbs
-           // This bb is unreachable! (or we have a mighty bug!)
-           // Mark everything dead in here!
-           for (Instr i: basicBlock.getInstrs()) {
-               i.markDead();
-           }
+            // 'in' cannot be null for reachable bbs
+            // This bb is unreachable! (or we have a mighty bug!)
+            // Mark everything dead in here!
+            for (Instr i: basicBlock.getInstrs()) {
+                i.markDead();
+            }
 
-           return;
+            return;
         }
 
         initSolution();
