@@ -2,6 +2,7 @@ language: java
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC
   - "export PATH=`pwd`/bin:$PATH"
+  - mvn -Pbootstrap
 
 jdk:
   - oraclejdk7
@@ -10,13 +11,16 @@ jdk:
 env:
   matrix:
     - TARGET='test-extended'
-    - TARGET='spec:ci_interpreted_travis'
-    - TARGET='spec:ci_interpreted_ir_travis'
-    - TARGET='spec:ir'
-    - TARGET='spec:truffle'
-    - TARGET='test-dist'
+#    - TARGET='spec:ci_interpreted_travis'
+#    - TARGET='spec:ci_interpreted_ir_travis'
+#    - TARGET='spec:ir'
+#    - TARGET='spec:truffle'
+#    - TARGET='test-dist'
 
 matrix:
+  include:
+    - env: ''
+      script: mvn test -Ptest
   fast_finish: true
   allow_failures:
     - env: TARGET='spec:ci_interpreted_ir_travis'
