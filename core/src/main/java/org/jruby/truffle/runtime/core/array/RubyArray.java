@@ -9,18 +9,18 @@
  */
 package org.jruby.truffle.runtime.core.array;
 
-import java.util.*;
-
-import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
-import com.oracle.truffle.api.frame.*;
-import org.jruby.common.IRubyWarnings;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.methods.*;
-import org.jruby.truffle.runtime.objects.*;
+import org.jruby.truffle.runtime.core.GeneralConversions;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyFixnum;
+import org.jruby.truffle.runtime.core.RubyObject;
+import org.jruby.truffle.runtime.objects.RubyBasicObject;
+
+import java.util.AbstractList;
+import java.util.List;
 
 /**
  * Implements the Ruby {@code Array} class.
@@ -364,8 +364,13 @@ public final class RubyArray extends RubyObject {
 
     @Override
     public int hashCode() {
-        getRubyClass().getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "Array#hash returns nonsense");
-        return 0;
+        int hash = 0;
+
+        for (Object value : asList()) {
+            hash = hash + value.hashCode();
+        }
+
+        return hash;
     }
 
     public RubyArray relativeComplement(RubyArray other) {

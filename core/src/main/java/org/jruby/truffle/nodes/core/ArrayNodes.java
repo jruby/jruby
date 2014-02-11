@@ -9,20 +9,25 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import java.util.*;
-
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
-import com.oracle.truffle.api.utilities.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.control.*;
+import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.control.BreakException;
+import org.jruby.truffle.runtime.control.NextException;
+import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.*;
-import org.jruby.truffle.runtime.core.range.*;
-import org.jruby.truffle.runtime.objects.*;
+import org.jruby.truffle.runtime.core.range.FixnumRange;
+import org.jruby.truffle.runtime.objects.RubyBasicObject;
+
+import java.util.Arrays;
+import java.util.Comparator;
 
 @CoreClass(name = "Array")
 public abstract class ArrayNodes {
@@ -1086,4 +1091,21 @@ public abstract class ArrayNodes {
 
     }
 
+    @CoreMethod(names = "hash", maxArgs = 0)
+    public abstract static class HashNode extends CoreMethodNode {
+
+        public HashNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public HashNode(HashNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyFixnum hashNumber(RubyArray array) {
+            return new RubyFixnum(array.getRubyClass().getContext().getCoreLibrary().getFixnumClass(), array.hashCode());
+        }
+
+    }
 }
