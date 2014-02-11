@@ -150,7 +150,7 @@ public class CoreLibrary {
         rubyTruffleErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RubyTruffleError");
         runtimeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RuntimeError");
         stringClass = new RubyString.RubyStringClass(objectClass);
-        encodingClass = new RubyEncoding.RubyStringClass(objectClass);
+        encodingClass = new RubyEncoding.RubyEncodingClass(objectClass);
         structClass = new RubyClass(null, ioClass, "Struct");
         signalModule = new RubyModule(moduleClass, null, "Signal");
         symbolClass = new RubyClass(null, objectClass, "Symbol");
@@ -247,6 +247,7 @@ public class CoreLibrary {
                         signalModule, //
                         standardErrorClass, //
                         stringClass, //
+                        encodingClass, //
                         structClass, //
                         symbolClass, //
                         syntaxErrorClass, //
@@ -646,6 +647,8 @@ public class CoreLibrary {
     public RubyTrueClass getTrueObject() {
         return trueObject;
     }
+
+    public RubyEncoding getDefaultEncoding() { return RubyEncoding.findEncodingByName(context.makeString("US-ASCII")); }
 
     public RubyHash getEnv() {
         final RubyHash hash = new RubyHash(context.getCoreLibrary().getHashClass());

@@ -9,37 +9,43 @@
  */
 package org.jruby.truffle.translator;
 
-import java.math.*;
-import java.util.*;
-
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.nodes.instrument.*;
-import com.oracle.truffle.api.nodes.instrument.InstrumentationProbeNode.ProbeChain;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.impl.*;
+import com.oracle.truffle.api.Source;
+import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.impl.DefaultSourceSection;
 import org.joni.Regex;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.call.*;
+import org.jruby.truffle.nodes.DefinedNode;
+import org.jruby.truffle.nodes.ReadNode;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.WriteNode;
+import org.jruby.truffle.nodes.call.CallNode;
 import org.jruby.truffle.nodes.cast.*;
-import org.jruby.truffle.nodes.constants.*;
+import org.jruby.truffle.nodes.constants.EncodingConstantNode;
+import org.jruby.truffle.nodes.constants.UninitializedReadConstantNode;
+import org.jruby.truffle.nodes.constants.WriteConstantNode;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.nodes.debug.*;
 import org.jruby.truffle.nodes.literal.*;
-import org.jruby.truffle.nodes.literal.array.*;
-import org.jruby.truffle.nodes.methods.*;
+import org.jruby.truffle.nodes.literal.array.UninitialisedArrayLiteralNode;
+import org.jruby.truffle.nodes.methods.AddMethodNode;
+import org.jruby.truffle.nodes.methods.AliasNode;
+import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.objects.*;
-import org.jruby.truffle.nodes.objects.instancevariables.*;
-import org.jruby.truffle.nodes.yield.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.range.*;
-import org.jruby.truffle.runtime.debug.*;
-import org.jruby.truffle.runtime.methods.*;
-import org.jruby.util.cli.Options;
+import org.jruby.truffle.nodes.objects.instancevariables.UninitializedReadInstanceVariableNode;
+import org.jruby.truffle.nodes.objects.instancevariables.UninitializedWriteInstanceVariableNode;
+import org.jruby.truffle.nodes.objects.instancevariables.WriteInstanceVariableNode;
+import org.jruby.truffle.nodes.yield.YieldNode;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyFixnum;
+import org.jruby.truffle.runtime.core.RubyRegexp;
+import org.jruby.truffle.runtime.core.range.FixnumRange;
+import org.jruby.truffle.runtime.methods.UniqueMethodIdentifier;
+
+import java.math.BigInteger;
+import java.util.*;
 
 /**
  * A JRuby parser node visitor which translates JRuby AST nodes into our Ruby nodes, implementing a
@@ -766,7 +772,8 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
     @Override
     public Object visitEncodingNode(org.jruby.ast.EncodingNode node) {
-        return unimplemented(node);
+        SourceSection sourceSection = translate(node.getPosition());
+        return new EncodingConstantNode(context, sourceSection);
     }
 
     @Override
