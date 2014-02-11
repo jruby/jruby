@@ -9,15 +9,17 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.io.*;
-import java.math.*;
-import java.util.*;
-
-import com.oracle.truffle.api.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.*;
+import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.array.ObjectArrayStore;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.hash.RubyHash;
-import org.jruby.truffle.runtime.objects.*;
+import org.jruby.truffle.runtime.objects.RubyBasicObject;
+
+import java.io.File;
+import java.math.BigInteger;
+import java.util.Map;
 
 public class CoreLibrary {
 
@@ -68,6 +70,7 @@ public class CoreLibrary {
     private RubyClass trueClass;
     private RubyClass typeErrorClass;
     private RubyClass zeroDivisionErrorClass;
+    private RubyClass encodingClass;
 
     private RubyModule comparableModule;
     private RubyModule configModule;
@@ -147,6 +150,7 @@ public class CoreLibrary {
         rubyTruffleErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RubyTruffleError");
         runtimeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RuntimeError");
         stringClass = new RubyString.RubyStringClass(objectClass);
+        encodingClass = new RubyEncoding.RubyStringClass(objectClass);
         structClass = new RubyClass(null, ioClass, "Struct");
         signalModule = new RubyModule(moduleClass, null, "Signal");
         symbolClass = new RubyClass(null, objectClass, "Symbol");
@@ -564,6 +568,8 @@ public class CoreLibrary {
     public RubyClass getStringClass() {
         return stringClass;
     }
+
+    public RubyClass getEncodingClass(){ return encodingClass; }
 
     public RubyClass getStructClass() {
         return structClass;
