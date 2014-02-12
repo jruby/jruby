@@ -41,10 +41,10 @@ public class IfNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         if (condition.executeBoolean(frame)) {
-            thenProfile.enter();
+            //thenProfile.enter();
             return thenBody.execute(frame);
         } else {
-            elseProfile.enter();
+            //elseProfile.enter();
             return elseBody.execute(frame);
         }
     }

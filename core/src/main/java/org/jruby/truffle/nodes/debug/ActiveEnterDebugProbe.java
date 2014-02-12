@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.debug;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -23,6 +24,8 @@ public abstract class ActiveEnterDebugProbe extends RubyProbe {
     private final InlinableMethodImplementation inlinable;
     private final RubyRootNode inlinedRoot;
 
+    private final BranchProfile profile = new BranchProfile();
+
     public ActiveEnterDebugProbe(RubyContext context, Assumption activeAssumption, RubyProc proc) {
         super(context, false);
         this.activeAssumption = activeAssumption;
@@ -32,6 +35,8 @@ public abstract class ActiveEnterDebugProbe extends RubyProbe {
 
     @Override
     public void enter(Node astNode, VirtualFrame frame) {
+        profile.enter();
+
         try {
             activeAssumption.check();
         } catch (InvalidAssumptionException e) {

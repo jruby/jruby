@@ -43,7 +43,7 @@ final class DefaultRubyNodeInstrumenter implements RubyNodeInstrumenter {
         }
 
         if (Options.TRUFFLE_TRACE_NODES.load()) {
-            proxy.getProbeChain().appendProbe(new RubyTraceProbe(context));
+            proxy.getProbeChain().appendProbe(new InactiveTraceProbe(context, context.getTraceManager().getTracingAssumption().getAssumption()));
         }
 
         if (Options.TRUFFLE_DEBUG_NODES.load()) {
