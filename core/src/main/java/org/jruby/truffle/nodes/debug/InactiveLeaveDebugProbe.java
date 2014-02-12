@@ -34,6 +34,46 @@ public abstract class InactiveLeaveDebugProbe extends RubyProbe {
         }
     }
 
+    @Override
+    public void leave(Node astNode, VirtualFrame frame, boolean result) {
+        leave(astNode, frame, (Object) result);
+    }
+
+    @Override
+    public void leave(Node astNode, VirtualFrame frame, byte result) {
+        leave(astNode, frame, (Object) result);
+    }
+
+    @Override
+    public void leave(Node astNode, VirtualFrame frame, short result) {
+        leave(astNode, frame, (Object) result);
+    }
+
+    @Override
+    public void leave(Node astNode, VirtualFrame frame, int result) {
+        leave(astNode, frame, (Object) result);
+    }
+
+    @Override
+    public void leave(Node astNode, VirtualFrame frame, long result) {
+        leave(astNode, frame, (Object) result);
+    }
+
+    @Override
+    public void leave(Node astNode, VirtualFrame frame, char result) {
+        leave(astNode, frame, (Object) result);
+    }
+
+    @Override
+    public void leave(Node astNode, VirtualFrame frame, float result) {
+        leave(astNode, frame, (Object) result);
+    }
+
+    @Override
+    public void leave(Node astNode, VirtualFrame frame, double result) {
+        leave(astNode, frame, (Object) result);
+    }
+
     protected abstract ActiveLeaveDebugProbe createActive();
 
 }
