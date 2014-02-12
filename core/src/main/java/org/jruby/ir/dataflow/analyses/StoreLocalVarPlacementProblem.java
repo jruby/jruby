@@ -1,20 +1,25 @@
 package org.jruby.ir.dataflow.analyses;
 
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
+import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.StoreLocalVarInstr;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
 import org.jruby.ir.operands.Label;
+import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 
-import java.util.Map;
+import java.util.ListIterator;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 // This problem tries to find places to insert binding stores -- for spilling local variables onto a heap store
@@ -51,6 +56,28 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
 
     public boolean scopeHasUnrescuedExceptions() {
         return scopeHasUnrescuedExceptions;
+    }
+
+    TemporaryLocalVariable getLocalVarReplacement(LocalVariable v, Map<Operand, Operand> varRenameMap) {
+         TemporaryLocalVariable value = (TemporaryLocalVariable)varRenameMap.get(v);
+         if (value == null) {
+             value = getScope().getNewTemporaryVariableFor(v);
+             varRenameMap.put(v, value);
+         }
+         return value;
+    }
+
+    boolean addClosureExitStoreLocalVars(ListIterator<Instr> instrs, Set<LocalVariable> dirtyVars, Map<Operand, Operand> varRenameMap) {
+        IRScope scope        = getScope();
+        boolean addedStores  = false;
+        boolean isEvalScript = scope instanceof IREvalScript;
+        for (LocalVariable v : dirtyVars) {
+            if (isEvalScript || !(v instanceof ClosureLocalVariable) || (scope != ((ClosureLocalVariable)v).definingScope)) {
+                addedStores = true;
+                instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, varRenameMap), scope, v));
+            }
+        }
+        return addedStores;
     }
 
     public void addStores(Map<Operand, Operand> varRenameMap) {
@@ -99,18 +126,12 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
             Variable exc = cfgScope.getNewTemporaryVariable();
             BasicBlock geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
 
-            geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception handling
+            ListIterator instrs = geb.getInstrs().listIterator();
 
-            for (LocalVariable v : dirtyVars) {
-                Operand value = varRenameMap.get(v);
-                if (value == null) {
-                    value = cfgScope.getNewTemporaryVariableFor(v);
-                    varRenameMap.put(v, value);
-                }
-                geb.addInstr(new StoreLocalVarInstr(value, (IRClosure) cfgScope, v));
-            }
+            instrs.add(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception handling
+            addClosureExitStoreLocalVars(instrs, dirtyVars, varRenameMap);
+            instrs.add(new ThrowExceptionInstr(exc));
 
-            geb.addInstr(new ThrowExceptionInstr(exc));
             cfg.addGlobalEnsureBB(geb);
         }
     }
