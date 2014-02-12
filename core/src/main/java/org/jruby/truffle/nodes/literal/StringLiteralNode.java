@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.core.RubyString;
 
 @NodeInfo(shortName = "string")
 public class StringLiteralNode extends RubyNode {
@@ -29,7 +30,12 @@ public class StringLiteralNode extends RubyNode {
     }
 
     @Override
-    public Object execute(VirtualFrame frame) {
+    public RubyString execute(VirtualFrame frame) {
+        return makeString();
+    }
+
+    @CompilerDirectives.SlowPath
+    private RubyString makeString() {
         return getContext().makeString(string);
     }
 
