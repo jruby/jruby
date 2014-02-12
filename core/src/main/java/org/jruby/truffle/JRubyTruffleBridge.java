@@ -80,16 +80,14 @@ public class JRubyTruffleBridge {
 
     public Object execute(TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
         try {
-            final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, DUMMY_SOURCE, parserContext, parentFrame, rootNode);
+            final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, truffleContext.getSourceManager().get(rootNode.getPosition().getFile()), parserContext, parentFrame, rootNode);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
 
             final RubyArguments arguments = new RubyArguments(parentFrame, self, null);
             return callTarget.call(null, arguments);
-        } catch (RaiseException e) {
-            throw e;
         } catch (ThrowException e) {
             throw new RaiseException(truffleContext.getCoreLibrary().nameErrorUncaughtThrow(e.getTag()));
-        } catch (BreakShellException | QuitException e) {
+        } catch (RaiseException | BreakShellException | QuitException e) {
             throw e;
         } catch (Throwable e) {
             e.printStackTrace();
@@ -144,99 +142,5 @@ public class JRubyTruffleBridge {
     public void shutdown() {
         truffleContext.shutdown();
     }
-
-    public final static Source DUMMY_SOURCE = new Source() {
-        @Override
-        public String getName() {
-            return "(name)";
-        }
-
-        @Override
-        public String getPath() {
-            return "(reader)";
-        }
-
-        @Override
-        public Reader getReader() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public InputStream getInputStream() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String getCode() {
-            return "(code)";
-        }
-
-        @Override
-        public String getCode(int i) {
-            return "(code)";
-        }
-
-        @Override
-        public int getLineCount() {
-            return 0;
-        }
-
-        @Override
-        public int getLineNumber(int i) {
-            return 0;
-        }
-
-        @Override
-        public int getLineStartOffset(int i) {
-            return 0;
-        }
-
-        @Override
-        public int getLineLength(int i) {
-            return 0;
-        }
-    };
-
-    public static final SourceSection DUMMY_SOURCE_SECTION = new SourceSection() {
-        @Override
-        public Source getSource() {
-            return DUMMY_SOURCE;
-        }
-
-        @Override
-        public int getStartLine() {
-            return 0;
-        }
-
-        @Override
-        public int getStartColumn() {
-            return 0;
-        }
-
-        @Override
-        public int getCharIndex() {
-            return 0;
-        }
-
-        @Override
-        public int getCharLength() {
-            return 0;
-        }
-
-        @Override
-        public int getCharEndIndex() {
-            return 0;
-        }
-
-        @Override
-        public String getIdentifier() {
-            return "(unknown)";
-        }
-
-        @Override
-        public String getCode() {
-            return "(code)";
-        }
-    };
 
 }

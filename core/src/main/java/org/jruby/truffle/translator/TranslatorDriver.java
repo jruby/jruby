@@ -11,6 +11,7 @@ package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.impl.DefaultSourceSection;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.JRubyTruffleBridge;
 import org.jruby.truffle.nodes.*;
@@ -38,7 +39,7 @@ public class TranslatorDriver {
     private final RubyNodeInstrumenter instrumenter;
 
     public TranslatorDriver(Ruby jruby) {
-        this(jruby, new DefaultRubyNodeInstrumenter(Options.TRUFFLE_TRACE_NODES.load()));
+        this(jruby, new DefaultRubyNodeInstrumenter());
     }
 
     public TranslatorDriver(Ruby jruby, RubyNodeInstrumenter instrumenter) {
@@ -56,9 +57,9 @@ public class TranslatorDriver {
 
         // Translate to Ruby Truffle nodes
 
-        final MethodTranslator translator = new MethodTranslator(context, null, environment, false, JRubyTruffleBridge.DUMMY_SOURCE);
+        final MethodTranslator translator = new MethodTranslator(context, null, environment, false, context.getSourceManager().get(bodyNode.getPosition().getFile()));
 
-        return translator.compileFunctionNode(JRubyTruffleBridge.DUMMY_SOURCE_SECTION, "(unknown)", argsNode, bodyNode);
+        return translator.compileFunctionNode(new DefaultSourceSection(context.getSourceManager().get(bodyNode.getPosition().getFile()), "(unknown)", bodyNode.getPosition().getStartLine() + 1, -1, -1, -1), "(unknown)", argsNode, bodyNode);
     }
 
     public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame) {

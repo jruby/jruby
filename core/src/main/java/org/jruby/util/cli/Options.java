@@ -116,7 +116,7 @@ public class Options {
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
 
     public static final Option<Boolean> TRUFFLE_PRINT_RUNTIME = bool(TRUFFLE, "truffle.printRuntime", false, "Print the Truffle runtime class on startup.");
-    public static final Option<Boolean> TRUFFLE_DEBUG_NODES = bool(TRUFFLE, "truffle.debugNodes", false, "Add debug nodes.");
+    public static final Option<Boolean> TRUFFLE_DEBUG_NODES = bool(TRUFFLE, "truffle.debugNodes", true, "Add debug nodes.");
     public static final Option<Boolean> TRUFFLE_TRACE_NODES = bool(TRUFFLE, "truffle.traceNodes", true, "Add trace nodes.");
     public static final Option<Boolean> TRUFFLE_PRINT_JAVA_EXCEPTIONS = bool(TRUFFLE, "truffle.printJavaExceptions", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
 

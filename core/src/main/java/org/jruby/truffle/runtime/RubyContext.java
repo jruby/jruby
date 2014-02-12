@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.*;
 
 import com.oracle.truffle.api.impl.DefaultDebugManager;
 import org.jruby.Ruby;
-import jnr.posix.*;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
@@ -27,15 +26,12 @@ import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.debug.*;
-import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.objects.*;
 import org.jruby.truffle.runtime.objects.RubyBasicObject;
 import org.jruby.truffle.runtime.subsystems.*;
+import org.jruby.truffle.runtime.debug.RubyDebugManager;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
-import org.jruby.util.cli.Options;
 
 /**
  * The global state of a running Ruby system.
@@ -52,6 +48,7 @@ public class RubyContext implements ExecutionContext {
     private final FiberManager fiberManager;
     private final AtExitManager atExitManager;
     private final DebugManager debugManager;
+    private final RubyDebugManager rubyDebugManager;
     private final ASTPrinter astPrinter;
     private final SourceManager sourceManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
@@ -81,6 +78,7 @@ public class RubyContext implements ExecutionContext {
         sourceManager = new SourceManager();
 
         debugManager = new DefaultDebugManager(this);
+        rubyDebugManager = new RubyDebugManager();
 
         // Must initialize threads before fibers
 
@@ -302,6 +300,10 @@ public class RubyContext implements ExecutionContext {
 
     public SourceManager getSourceManager() {
         return sourceManager;
+    }
+
+    public RubyDebugManager getRubyDebugManager() {
+        return rubyDebugManager;
     }
 
 }
