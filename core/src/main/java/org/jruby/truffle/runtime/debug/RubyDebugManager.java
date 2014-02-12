@@ -30,7 +30,6 @@ public final class RubyDebugManager {
         if (assumption == null) {
             throw new RuntimeException("Breakpoint " + sourceLine + " not found");
         } else {
-            System.err.println("invalidating " + assumption.getAssumption());
             lineBreakpoints.put(sourceLine, proc);
             assumption.invalidate();
         }
