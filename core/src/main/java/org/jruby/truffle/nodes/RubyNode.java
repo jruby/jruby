@@ -9,22 +9,27 @@
  */
 package org.jruby.truffle.nodes;
 
-import java.math.*;
-
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.nodes.call.*;
-import org.jruby.truffle.nodes.debug.*;
-import org.jruby.truffle.nodes.yield.*;
-import org.jruby.truffle.runtime.*;
+import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.dsl.TypeSystemReference;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import org.jruby.truffle.nodes.call.DispatchNode;
+import org.jruby.truffle.nodes.debug.RubyProxyNode;
+import org.jruby.truffle.nodes.yield.YieldDispatchNode;
+import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.hash.RubyHash;
-import org.jruby.truffle.runtime.core.range.*;
-import org.jruby.truffle.runtime.methods.*;
-import org.jruby.truffle.runtime.objects.*;
+import org.jruby.truffle.runtime.core.range.FixnumRange;
+import org.jruby.truffle.runtime.core.range.ObjectRange;
+import org.jruby.truffle.runtime.core.range.RubyRange;
+import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.objects.RubyBasicObject;
+
+import java.math.BigInteger;
 
 /**
  * Base class for most nodes in Ruby.
@@ -191,6 +196,9 @@ public abstract class RubyNode extends Node {
 
     public RubyString executeString(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectRubyString(execute(frame));
+    }
+    public RubyEncoding executeRubyEncoding(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectRubyEncoding(execute(frame));
     }
 
     public UndefinedPlaceholder executeUndefinedPlaceholder(VirtualFrame frame) throws UnexpectedResultException {

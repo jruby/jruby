@@ -10,6 +10,9 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.array.ObjectArrayStore;
@@ -275,6 +278,8 @@ public class CoreLibrary {
         globalVariablesObject = new RubyBasicObject(objectClass);
         globalVariablesObject.switchToPrivateLayout();
         globalVariablesObject.setInstanceVariable("$:", new RubyArray(arrayClass, new ObjectArrayStore()));
+
+        initializeEncodingConstants();
     }
 
     public void initializeAfterMethodsAdded() {
@@ -286,6 +291,13 @@ public class CoreLibrary {
         nilClass.getSingletonClass().undefMethod("new");
         numericClass.getSingletonClass().undefMethod("new");
         trueClass.getSingletonClass().undefMethod("new");
+        encodingClass.getSingletonClass().undefMethod("new");
+    }
+
+    public void initializeEncodingConstants() {
+        encodingClass.setConstant("US_ASCII", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
+        encodingClass.setConstant("ASCII-8BIT", new RubyEncoding(encodingClass, ASCIIEncoding.INSTANCE));
+        encodingClass.setConstant("UTF-8", new RubyEncoding(encodingClass, UTF8Encoding.INSTANCE));
     }
 
     public RubyBasicObject box(Object object) {

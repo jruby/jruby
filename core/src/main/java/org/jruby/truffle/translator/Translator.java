@@ -22,7 +22,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.WriteNode;
 import org.jruby.truffle.nodes.call.CallNode;
 import org.jruby.truffle.nodes.cast.*;
-import org.jruby.truffle.nodes.constants.EncodingConstantNode;
+import org.jruby.truffle.nodes.constants.EncodingPseudoVariableNode;
 import org.jruby.truffle.nodes.constants.UninitializedReadConstantNode;
 import org.jruby.truffle.nodes.constants.WriteConstantNode;
 import org.jruby.truffle.nodes.control.*;
@@ -773,7 +773,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     @Override
     public Object visitEncodingNode(org.jruby.ast.EncodingNode node) {
         SourceSection sourceSection = translate(node.getPosition());
-        return new EncodingConstantNode(context, sourceSection);
+        return new EncodingPseudoVariableNode(context, sourceSection);
     }
 
     @Override

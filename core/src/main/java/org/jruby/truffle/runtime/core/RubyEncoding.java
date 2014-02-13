@@ -9,7 +9,7 @@ import org.jruby.truffle.runtime.objects.RubyBasicObject;
  */
 public class RubyEncoding extends RubyObject{
 
-    private final org.jruby.RubyEncoding rubyEncoding;
+    private org.jruby.RubyEncoding rubyEncoding;
 
     /**
      * The class from which we create the object that is {@code Encoding}. A subclass of
@@ -45,13 +45,15 @@ public class RubyEncoding extends RubyObject{
     }
 
     public static RubyEncoding findEncodingByName(RubyString name) {
-        org.jruby.RubyString string = org.jruby.RubyString.newString(name.getJRubyRuntime(), name.toString());
-        org.jruby.RubyEncoding enc = (org.jruby.RubyEncoding) name.getJRubyRuntime().getEncodingService().rubyEncodingFromObject(string);
+        org.jruby.RubyEncoding enc = findJRubyEncoding(name);
 
         return new RubyEncoding(name.getRubyClass().getContext().getCoreLibrary().getEncodingClass(), enc);
     }
 
-
+    public static org.jruby.RubyEncoding findJRubyEncoding(RubyString name) {
+        org.jruby.RubyString string = org.jruby.RubyString.newString(name.getJRubyRuntime(), name.toString());
+        return (org.jruby.RubyEncoding) name.getJRubyRuntime().getEncodingService().rubyEncodingFromObject(string);
+    }
     public String toString(){
         return rubyEncoding.to_s(getJRubyRuntime().getCurrentContext()).asJavaString();
     }
@@ -60,4 +62,11 @@ public class RubyEncoding extends RubyObject{
         return rubyEncoding.inspect(getJRubyRuntime().getCurrentContext()).asJavaString();
     }
 
+    public org.jruby.RubyEncoding getRubyEncoding() {
+        return rubyEncoding;
+    }
+
+    public boolean compareTo(RubyEncoding other) {
+        return getRubyEncoding().getEncoding().equals(other.getRubyEncoding().getEncoding());
+    }
 }

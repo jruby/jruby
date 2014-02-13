@@ -6,9 +6,9 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 
-public class EncodingConstantNode extends RubyNode {
+public class EncodingPseudoVariableNode extends RubyNode {
 
-    public EncodingConstantNode(RubyContext context, SourceSection sourceSection) {
+    public EncodingPseudoVariableNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
 
     }
