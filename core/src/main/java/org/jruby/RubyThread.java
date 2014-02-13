@@ -38,6 +38,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.util.Vector;
 import java.util.WeakHashMap;
 import java.util.HashMap;
 import java.util.List;
@@ -152,7 +153,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private volatile BlockingTask currentBlockingTask;
 
     /** The list of locks this thread currently holds, so they can be released on exit */
-    private final List<Lock> heldLocks = Collections.synchronizedList(new ArrayList<Lock>());
+    private final List<Lock> heldLocks = new Vector<Lock>();
 
     /** Whether or not this thread has been disposed of */
     private volatile boolean disposed = false;

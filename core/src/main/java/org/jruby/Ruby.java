@@ -1159,6 +1159,14 @@ public final class Ruby {
                 TimeUnit.SECONDS,
                 new SynchronousQueue<Runnable>(),
                 new DaemonThreadFactory("JRubyWorker"));
+
+        fiberExecutor = new ThreadPoolExecutor(
+                0,
+                Integer.MAX_VALUE,
+                RubyInstanceConfig.FIBER_POOL_TTL,
+                TimeUnit.SECONDS,
+                new SynchronousQueue<Runnable>(),
+                new DaemonThreadFactory("JRubyFiber"));
         
         // initialize the root of the class hierarchy completely
         initRoot();
@@ -4263,6 +4271,10 @@ public final class Ruby {
         return executor;
     }
 
+    public ExecutorService getFiberExecutor() {
+        return fiberExecutor;
+    }
+
     public Map<String, DateTimeZone> getTimezoneCache() {
         return timeZoneCache;
     }
@@ -4803,6 +4815,9 @@ public final class Ruby {
     
     // A thread pool to use for executing this runtime's Ruby threads
     private ExecutorService executor;
+
+    // A thread pool to use for running fibers
+    private ExecutorService fiberExecutor;
 
     // A global object lock for class hierarchy mutations
     private final Object hierarchyLock = new Object();
