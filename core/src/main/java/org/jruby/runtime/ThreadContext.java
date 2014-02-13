@@ -95,7 +95,8 @@ public final class ThreadContext {
     
     private RubyThread thread;
     private RubyThread rootThread; // thread for fiber purposes
-    private WeakReference<ThreadFiber> fiber = new WeakReference<ThreadFiber>(null);
+    private static final WeakReference<ThreadFiber> NULL_FIBER_REF = new WeakReference<ThreadFiber>(null);
+    private WeakReference<ThreadFiber> fiber = NULL_FIBER_REF;
     private ThreadFiber rootFiber; // hard anchor for root threads' fibers
     // Cache format string because it is expensive to create on demand
     private RubyDateFormatter dateFormatter;
