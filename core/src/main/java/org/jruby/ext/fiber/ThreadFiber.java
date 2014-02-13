@@ -183,7 +183,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     }
     
     boolean alive() {
-        return thread != null && thread.isAlive();
+        return thread != null && thread.isAlive() && !data.queue.isShutdown();
     }
     
     static RubyThread createThread(final Ruby runtime, final FiberData data, final SizedQueue queue, final Block block) {
