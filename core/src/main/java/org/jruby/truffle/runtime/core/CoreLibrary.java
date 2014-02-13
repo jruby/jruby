@@ -296,7 +296,7 @@ public class CoreLibrary {
 
     public void initializeEncodingConstants() {
         encodingClass.setConstant("US_ASCII", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
-        encodingClass.setConstant("ASCII-8BIT", new RubyEncoding(encodingClass, ASCIIEncoding.INSTANCE));
+        encodingClass.setConstant("ASCII_8BIT", new RubyEncoding(encodingClass, ASCIIEncoding.INSTANCE));
         encodingClass.setConstant("UTF-8", new RubyEncoding(encodingClass, UTF8Encoding.INSTANCE));
     }
 
