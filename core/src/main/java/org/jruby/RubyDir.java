@@ -628,7 +628,7 @@ public class RubyDir extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = {"exists?", "exist?"}, meta = true)
+    @JRubyMethod(name = "exist?", meta = true)
     public static IRubyObject exist(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         // Capture previous exception if any.
         IRubyObject exception = context.runtime.getGlobalVariables().get("$!");
@@ -640,6 +640,15 @@ public class RubyDir extends RubyObject {
             context.runtime.getGlobalVariables().set("$!", exception);
             return context.runtime.newBoolean(false);
         }
+    }
+
+    @JRubyMethod(name = "exists?", meta = true)
+    public static IRubyObject exists_p(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        if (context.runtime.warningsEnabled()) {
+            context.runtime.getWarnings().warn("Dir.exists? is a deprecated name, use Dir.exist? instead");
+        }
+
+        return exist(context, recv, arg);
     }
 
 // ----- Helper Methods --------------------------------------------------------
