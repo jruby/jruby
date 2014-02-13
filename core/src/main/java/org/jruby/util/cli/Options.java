@@ -119,7 +119,8 @@ public class Options {
     public static final Option<Integer> THREADPOOL_MIN = integer(THREADPOOL, "thread.pool.min", 0, "The minimum number of threads to keep alive in the pool.");
     public static final Option<Integer> THREADPOOL_MAX = integer(THREADPOOL, "thread.pool.max", Integer.MAX_VALUE, "The maximum number of threads to allow in the pool.");
     public static final Option<Integer> THREADPOOL_TTL = integer(THREADPOOL, "thread.pool.ttl", 60, "The maximum number of seconds to keep alive an idle thread.");
-    
+    public static final Option<Integer> FIBER_THREADPOOL_TTL = integer(THREADPOOL, "fiber.thread.pool.ttl", 60, "The maximum number of seconds to keep alive a pooled fiber thread.");
+
     public static final Option<String> COMPAT_VERSION = string(MISCELLANEOUS, "compat.version", new String[]{"1.8","1.9","2.0"}, Constants.DEFAULT_RUBY_VERSION, "Specify the major Ruby version to be compatible with.");
     public static final Option<Boolean> OBJECTSPACE_ENABLED = bool(MISCELLANEOUS, "objectspace.enabled", false, "Enable or disable ObjectSpace.each_object.");
     public static final Option<Boolean> SIPHASH_ENABLED = bool(MISCELLANEOUS, "siphash.enabled", false, "Enable or disable SipHash for String hash function.");

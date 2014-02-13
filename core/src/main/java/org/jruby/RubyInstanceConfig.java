@@ -1674,6 +1674,12 @@ public class RubyInstanceConfig {
      * Set with the <tt>jruby.thread.pool.max</tt> system property.
      */
     public static final int POOL_TTL = Options.THREADPOOL_TTL.load();
+    /**
+     * Fiber thread pool time-to-live in seconds.
+     *
+     * Set with the <tt>jruby.fiber.thread.pool.max</tt> system property.
+     */
+    public static final int FIBER_POOL_TTL = Options.FIBER_THREADPOOL_TTL.load();
 
     /**
      * Enable use of the native Java version of the 'net/protocol' library.
