@@ -87,11 +87,12 @@ public class IRClosure extends IRScope {
             this.body = null;
         } else {
             this.body = new InterpretedIRBlockBody(this, arity, argumentType);
-            if ((staticScope != null) && !isForLoopBody) ((IRStaticScope)staticScope).setIRScope(this);
+            // SSS FIXME: Hmm .. Ugly. This one still remains because the same static-scope
+            // object is used for the parent scope and the for-loop closure scope.
+            if (staticScope != null && !isForLoopBody) ((IRStaticScope)staticScope).setIRScope(this);
         }
 
-        // increase nesting depth if needed after isForLoopBody value is set
-        if (!isForLoopBody) this.nestingDepth++;
+        this.nestingDepth++;
     }
 
     // Used by IREvalScript
@@ -110,7 +111,7 @@ public class IRClosure extends IRScope {
         int n = 0;
         IRScope s = this.getLexicalParent();
         while (s instanceof IRClosure) {
-            if (!s.isForLoopBody()) n++;
+            n++;
             s = s.getLexicalParent();
         }
         this.nestingDepth = n;
@@ -221,14 +222,12 @@ public class IRClosure extends IRScope {
         LocalVariable lvar = localVars.get(name);
         if (lvar != null) return lvar;
 
-        int newDepth = isForLoopBody ? scopeDepth : scopeDepth - 1;
+        int newDepth = scopeDepth - 1;
 
         return newDepth >= 0 ? getLexicalParent().findExistingLocalVariable(name, newDepth) : null;
     }
 
     public LocalVariable getNewLocalVariable(String name, int depth) {
-        if (isForLoopBody) return getLexicalParent().getNewLocalVariable(name, depth);
-
         if (depth == 0) {
             LocalVariable lvar = new ClosureLocalVariable(this, name, 0, getStaticScope().addVariableThisScope(name));
             localVars.put(name, lvar);
@@ -240,8 +239,6 @@ public class IRClosure extends IRScope {
 
     @Override
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
-        if (isForLoopBody) return getLexicalParent().getLocalVariable(name, scopeDepth);
-
         // AST doesn't seem to be implementing shadowing properly and sometimes
         // has the wrong depths which screws up variable access. So, we implement
         // shadowing here by searching for an existing local var from depth 0 and upwards.
@@ -259,9 +256,6 @@ public class IRClosure extends IRScope {
         // lexical scope nesting depth when AST has this information
         // incorrect, as above.
         while (scope != null && lvar == null && d < scopeDepth) {
-            // skip for-loop bodies
-            while (scope.isForLoopBody()) scope = scope.getLexicalParent();
-
             // lookup
             lvar = scope.lookupExistingLVar(name);
 
@@ -272,11 +266,12 @@ public class IRClosure extends IRScope {
 
         if (lvar == null) {
             // Create a new var at requested depth
-            lvar = getNewLocalVariable(name, scopeDepth);
-        } else {
-            // Create a copy of the variable usable at the right depth
-            if (lvar.getScopeDepth() != d) lvar = lvar.cloneForDepth(d);
+            d = scopeDepth;
+            lvar = getNewLocalVariable(name, d);
         }
+
+        // Create a copy of the variable usable at the right depth
+        if (lvar.getScopeDepth() != d) lvar = lvar.cloneForDepth(d);
 
         return lvar;
     }

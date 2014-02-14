@@ -1061,16 +1061,17 @@ public abstract class IRScope implements ParseResult {
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) {
-            assert scopeDepth == 0: "Scope depth is non-zero for new-var request " + name + " in " + this;
-            lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(name));
-            localVars.put(name, lvar);
+            lvar = getNewLocalVariable(name, scopeDepth);
         }
 
         return lvar;
     }
 
-    public LocalVariable getNewLocalVariable(String name, int depth) {
-        throw new RuntimeException("getNewLocalVariable should be called for: " + this.getClass().getName());
+    public LocalVariable getNewLocalVariable(String name, int scopeDepth) {
+        assert scopeDepth == 0: "Scope depth is non-zero for new-var request " + name + " in " + this;
+        LocalVariable lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(name));
+        localVars.put(name, lvar);
+        return lvar;
     }
 
     protected void initEvalScopeVariableAllocator(boolean reset) {

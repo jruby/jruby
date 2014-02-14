@@ -299,6 +299,14 @@ public class IRBuilder {
         }
     }
 
+    public LocalVariable getLocalVariable(IRScope s, String name, int depth) {
+        return s.getLocalVariable(name, s.isForLoopBody() ? depth + 1 : depth);
+    }
+
+    public LocalVariable getNewLocalVariable(IRScope s, String name, int depth) {
+        return s.getNewLocalVariable(name, s.isForLoopBody() ? depth + 1 : depth);
+    }
+
     // Emit cloned ensure bodies by walking up the ensure block stack.
     // If we have been passed a loop value, only emit bodies that are nested within that loop.
     private void emitEnsureBlocks(IRScope s, IRLoop loop) {
@@ -627,7 +635,7 @@ public class IRBuilder {
             case DASGNNODE: {
                 DAsgnNode variable = (DAsgnNode) node;
                 int depth = variable.getDepth();
-                addInstr(s, new CopyInstr(s.getLocalVariable(variable.getName(), depth), rhsVal));
+                addInstr(s, new CopyInstr(getLocalVariable(s, variable.getName(), depth), rhsVal));
                 break;
             }
             case GLOBALASGNNODE:
@@ -640,7 +648,7 @@ public class IRBuilder {
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
                 int depth = localVariable.getDepth();
-                addInstr(s, new CopyInstr(s.getLocalVariable(localVariable.getName(), depth), rhsVal));
+                addInstr(s, new CopyInstr(getLocalVariable(s, localVariable.getName(), depth), rhsVal));
                 break;
             }
             case ZEROARGNODE:
@@ -653,7 +661,7 @@ public class IRBuilder {
     protected LocalVariable getBlockArgVariable(IRScope s, String name, int depth) {
         IRClosure cl = (IRClosure)s;
         if (cl.isForLoopBody()) {
-            return cl.getLocalVariable(name, depth);
+            return getLocalVariable(cl, name, depth);
         } else {
             throw new NotCompilableException("Cannot ask for block-arg variable in 1.9 mode");
         }
@@ -1743,7 +1751,7 @@ public class IRBuilder {
         // assignments to block variables within a block.  As far as the IR is concerned,
         // this is just a simple copy
         int depth = dasgnNode.getDepth();
-        Variable arg = s.getLocalVariable(dasgnNode.getName(), depth);
+        Variable arg = getLocalVariable(s, dasgnNode.getName(), depth);
         Operand  value = build(dasgnNode.getValueNode(), s);
         addInstr(s, new CopyInstr(arg, value));
         return value;
@@ -1823,7 +1831,7 @@ public class IRBuilder {
             Label l = s.getNewLabel();
             LocalAsgnNode n = (LocalAsgnNode)optArgs.get(j);
             String argName = n.getName();
-            Variable av = s.getLocalVariable(argName, 0);
+            Variable av = getLocalVariable(s, argName, 0);
             if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("opt", argName);
             addInstr(s, new ReceiveOptArgInstr(av, argIndex-j, argIndex-j, j));
             addInstr(s, BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
@@ -1835,7 +1843,7 @@ public class IRBuilder {
 
     protected LocalVariable getArgVariable(IRScope s, String name, int depth) {
         // For non-loops, this name will override any name that exists in outer scopes
-        return s.isForLoopBody() ? s.getLocalVariable(name, depth) : s.getNewLocalVariable(name, 0);
+        return s.isForLoopBody() ? getLocalVariable(s, name, depth) : getNewLocalVariable(s, name, 0);
     }
 
     private void addArgReceiveInstr(IRScope s, Variable v, int argIndex, boolean post, int numPreReqd, int numPostRead) {
@@ -1849,7 +1857,7 @@ public class IRBuilder {
                 ArgumentNode a = (ArgumentNode)node;
                 String argName = a.getName();
                 if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("req", argName);
-                addArgReceiveInstr(s, s.getNewLocalVariable(argName, 0), argIndex, post, numPreReqd, numPostRead);
+                addArgReceiveInstr(s, getNewLocalVariable(s, argName, 0), argIndex, post, numPreReqd, numPostRead);
                 break;
             }
             case MULTIPLEASGN19NODE: {
@@ -1869,7 +1877,7 @@ public class IRBuilder {
         Variable blockVar = null;
         if (blockVarNode != null) {
             String blockArgName = blockVarNode.getName();
-            blockVar = s.getNewLocalVariable(blockArgName, 0);
+            blockVar = getNewLocalVariable(s, blockArgName, 0);
             if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("block", blockArgName);
             addInstr(s, new ReceiveClosureInstr(blockVar));
         }
@@ -1920,7 +1928,7 @@ public class IRBuilder {
                 Label l = s.getNewLabel();
                 OptArgNode n = (OptArgNode)optArgs.get(j);
                 String argName = n.getName();
-                Variable av = s.getNewLocalVariable(argName, 0);
+                Variable av = getNewLocalVariable(s, argName, 0);
                 if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("opt", argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
                 addInstr(s, new ReceiveOptArgInstr(av, required, numPreReqd, j));
@@ -1942,7 +1950,7 @@ public class IRBuilder {
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning
             // because they have been accounted for already.
-            addInstr(s, new ReceiveRestArgInstr(s.getNewLocalVariable(argName, 0), required + opt, argIndex));
+            addInstr(s, new ReceiveRestArgInstr(getNewLocalVariable(s, argName, 0), required + opt, argIndex));
         }
 
         // Post(-opt and rest) required args
@@ -1971,7 +1979,7 @@ public class IRBuilder {
                 KeywordArgNode kwarg = (KeywordArgNode)knode;
                 AssignableNode kasgn = kwarg.getAssignable();
                 String argName = ((INameNode) kasgn).getName();
-                Variable av = s.getNewLocalVariable(argName, 0);
+                Variable av = getNewLocalVariable(s, argName, 0);
                 Label l = s.getNewLabel();
                 if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("key", argName);
                 addInstr(s, new ReceiveKeywordArgInstr(av, argName, required));
@@ -1985,7 +1993,7 @@ public class IRBuilder {
         KeywordRestArgNode keyRest = argsNode.getKeyRest();
         if (keyRest != null) {
             String argName = keyRest.getName();
-            Variable av = s.getNewLocalVariable(argName, 0);
+            Variable av = getNewLocalVariable(s, argName, 0);
             if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("keyrest", argName);
             addInstr(s, new ReceiveKeywordRestArgInstr(av, required));
         }
@@ -2127,7 +2135,7 @@ public class IRBuilder {
         Variable blockVar = null;
         if (argsNode.getBlock() != null) {
             String blockArgName = argsNode.getBlock().getName();
-            blockVar = s.getLocalVariable(blockArgName, 0);
+            blockVar = getLocalVariable(s, blockArgName, 0);
             if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("block", blockArgName);
             addInstr(s, new ReceiveClosureInstr(blockVar));
         }
@@ -2203,7 +2211,7 @@ public class IRBuilder {
     }
 
     public Operand buildDVar(DVarNode node, IRScope s) {
-        return s.getLocalVariable(node.getName(), node.getDepth());
+        return getLocalVariable(s, node.getName(), node.getDepth());
     }
 
     public Operand buildDXStr(final DXStrNode dstrNode, IRScope s) {
@@ -2392,7 +2400,7 @@ public class IRBuilder {
             int n = 0;
             IRScope x = s;
             while (!x.isFlipScope()) {
-                if (!x.isForLoopBody()) n++;
+                n++;
                 x = x.getLexicalParent();
             }
             if (n > 0) flipState = ((LocalVariable)flipState).cloneForDepth(n);
@@ -2648,7 +2656,7 @@ public class IRBuilder {
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode, IRScope s) {
-        Variable var  = s.getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
+        Variable var  = getLocalVariable(s, localAsgnNode.getName(), localAsgnNode.getDepth());
         Operand value = build(localAsgnNode.getValueNode(), s);
         addInstr(s, new CopyInstr(var, value));
         return value;
@@ -2677,7 +2685,7 @@ public class IRBuilder {
     }
 
     public Operand buildLocalVar(LocalVarNode node, IRScope s) {
-        return s.getLocalVariable(node.getName(), node.getDepth());
+        return getLocalVariable(s, node.getName(), node.getDepth());
     }
 
     public Operand buildMatch(MatchNode matchNode, IRScope s) {
