@@ -1061,7 +1061,8 @@ public abstract class IRScope implements ParseResult {
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) {
-            lvar = new LocalVariable(name, scopeDepth, localVars.size());
+            assert scopeDepth == 0: "Scope depth is non-zero for new-var request " + name + " in " + this;
+            lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(name));
             localVars.put(name, lvar);
         }
 
