@@ -627,23 +627,21 @@ public class InstrEncoderMap {
         e.encode(instr.isUnwrapArray());
     }
 
-    // FIXME: Verify
     private void encodeZSuperInstr(ZSuperInstr instr) {
         e.encode(instr.getReceiver());
         Operand closure = instr.getClosureArg(null);
 
         boolean hasClosure = closure != null;
+        e.encode(hasClosure);
         if (hasClosure) {
             e.encode(closure);
         }
 
-        // FIXME: Correct?
         e.encode(instr.getCallArgs().length);
         for (Operand arg: instr.getCallArgs()) {
             e.encode(arg);
         }
 
-        // FIXME: Correct?
         e.encode(instr.getArgCounts().length);
         for (Integer i: instr.getArgCounts()) {
             e.encode(i);

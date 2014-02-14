@@ -419,8 +419,7 @@ class InstrDecoderMap implements IRPersistenceValues {
         return new UnresolvedSuperInstr(result, receiver, args, closure);
     }
 
-    // FIXME: Verify
-    public Instr decodeZSuperInstr() {
+        public Instr decodeZSuperInstr() {
         Variable result = d.decodeVariable();
         Operand receiver = d.decodeOperand();
         boolean hasClosure = d.decodeBoolean();
