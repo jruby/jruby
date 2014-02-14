@@ -1,5 +1,8 @@
 package org.jruby.util;
 
+import jnr.posix.FileStat;
+import jnr.posix.POSIX;
+import jnr.posix.POSIXFactory;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
@@ -20,7 +23,7 @@ import java.io.IOException;
  */
 class RegularFileResource implements FileResource {
     private final JRubyFile file;
-    private static final long serialVersionUID = 435364547567567L;
+    private final POSIX symlinkPosix = POSIXFactory.getPOSIX();
 
     RegularFileResource(File file) {
         this(file.getAbsolutePath());
@@ -47,7 +50,8 @@ class RegularFileResource implements FileResource {
 
     @Override
     public boolean exists() {
-        return file.exists();
+        // MRI behavior: Even broken symlinks should return true.
+        return file.exists() || isSymLink();
     }
 
     @Override
@@ -62,23 +66,11 @@ class RegularFileResource implements FileResource {
 
     @Override
     public boolean isSymLink() {
-        // java.io.File doesn't readily tells whether a file is a symlink,
-        // so rely on getCanonicalFile to expand symbolic links behavior to judge
         try {
-            File canon;
-            if (file.getParent() == null) {
-                canon = file;
-            } else {
-                File canonDir;
-                canonDir = file.getParentFile().getCanonicalFile();
-
-                canon = new File(canonDir, file.getName());
-            }
-            return !canon.getCanonicalFile().equals(canon.getAbsoluteFile());
-        } catch (IOException e) {
+            return symlinkPosix.lstat(absolutePath()).isSymlink();
+        } catch (Throwable t) {
             return false;
         }
-
     }
 
     @Override
@@ -97,7 +89,22 @@ class RegularFileResource implements FileResource {
     }
 
     @Override
+    public FileStat stat(POSIX posix) {
+        return posix.stat(absolutePath());
+    }
+
+    @Override
+    public FileStat lstat(POSIX posix) {
+        return posix.lstat(absolutePath());
+    }
+
+    @Override
     public String toString() {
         return file.toString();
+    }
+
+    @Override
+    public JRubyFile hackyGetJRubyFile() {
+      return file;
     }
 }

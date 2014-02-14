@@ -48,6 +48,7 @@ import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.TemporaryVariableType;
 import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.UnboxedFixnum;
+import org.jruby.ir.operands.UnboxedFloat;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.persistence.read.parser.NonIRObjectFactory;
@@ -80,9 +81,7 @@ class OperandDecoderMap {
             case CURRENT_SCOPE: return new CurrentScope(d.decodeScope());
             case DYNAMIC_SYMBOL: return new DynamicSymbol((CompoundString) d.decodeOperand());
             case FIXNUM: return new Fixnum(d.decodeLong());
-            case UNBOXED_FIXNUM: return new UnboxedFixnum(d.decodeLong());
             case FLOAT: return new org.jruby.ir.operands.Float(d.decodeDouble());
-            case UNBOXED_FLOAT: return new org.jruby.ir.operands.UnboxedFloat(d.decodeDouble());
             case GLOBAL_VARIABLE: return new GlobalVariable(d.decodeString());
             case HASH: return decodeHash();
             case IR_EXCEPTION: return IRException.getExceptionFromOrdinal(d.decodeByte());
@@ -103,6 +102,9 @@ class OperandDecoderMap {
             case SVALUE: return new SValue(d.decodeOperand());
             case SYMBOL: return new Symbol(d.decodeString());
             case TEMPORARY_VARIABLE: return decodeTemporaryVariable();
+            case UNBOXED_BOOLEAN: return new UnboxedBoolean(d.decodeBoolean());
+            case UNBOXED_FIXNUM: return new UnboxedFixnum(d.decodeLong());
+            case UNBOXED_FLOAT: return new UnboxedFloat(d.decodeDouble());
             case UNDEFINED_VALUE: return UndefinedValue.UNDEFINED;
             case UNEXECUTABLE_NIL: return U_NIL;
             case WRAPPED_IR_CLOSURE: return new WrappedIRClosure(d.decodeVariable(), (IRClosure) d.decodeScope());

@@ -267,7 +267,7 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject column(ThreadContext context) {
-        if (!parser.hasStarted()) context.runtime.newArgumentError("method called for uninitialized object");
+        if (!parser.hasStarted()) throw context.runtime.newArgumentError("method called for uninitialized object");
             
         if (!parseStarted) return context.runtime.getNil();
         
