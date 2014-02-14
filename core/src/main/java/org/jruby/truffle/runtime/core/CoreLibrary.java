@@ -10,6 +10,8 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import org.jcodings.specific.EUCJPEncoding;
+import org.jcodings.specific.SJISEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
@@ -296,6 +298,9 @@ public class CoreLibrary {
         encodingClass.setConstant("US_ASCII", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
         encodingClass.setConstant("ASCII_8BIT", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
         encodingClass.setConstant("UTF_8", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
+        encodingClass.setConstant("EUC_JP", new RubyEncoding(encodingClass, EUCJPEncoding.INSTANCE));
+        encodingClass.setConstant("Windows_31J", new RubyEncoding(encodingClass, SJISEncoding.INSTANCE));
+
     }
 
     public RubyBasicObject box(Object object) {
