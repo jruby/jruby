@@ -345,7 +345,7 @@ public class CFG {
             // When this exception region represents an unrescued region
             // from a copied ensure block, we have a dummy label
             Label rescueLabel = rr.getFirstRescueBlockLabel();
-            if (Label.UNRESCUED_REGION_LABEL.equals(rescueLabel)) {
+            if (!Label.UNRESCUED_REGION_LABEL.equals(rescueLabel)) {
                 BasicBlock firstRescueBB = bbMap.get(rescueLabel);
                 // Mark the BB as a rescue entry BB
                 firstRescueBB.markRescueEntryBB();
