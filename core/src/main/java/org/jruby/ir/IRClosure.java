@@ -71,6 +71,7 @@ public class IRClosure extends IRScope {
         }
         this.addedGEBForUncaughtBreaks = false;
         this.blockArgs = new ArrayList<Operand>();
+        this.arity = c.arity;
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, boolean isForLoopBody,
