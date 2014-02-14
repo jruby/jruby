@@ -1,4 +1,3 @@
-fails:The __ENCODING__ pseudo-variable is the evaluated strings's one inside an eval
 fails:The __ENCODING__ pseudo-variable is the encoding specified by a magic comment inside an eval
 fails:The __ENCODING__ pseudo-variable is the encoding specified by a magic comment in the file
 fails:The __ENCODING__ pseudo-variable is Encoding::ASCII_8BIT when the interpreter is invoked with -Ka
