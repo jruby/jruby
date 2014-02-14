@@ -132,6 +132,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             instr = decodeInner(operation);
         } catch (Exception e) {
             System.out.println("Got: " + instr + ", :" + d.getCurrentScope().getClass().getName());
+            e.printStackTrace();
         }
         return instr;
     }
