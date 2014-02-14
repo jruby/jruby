@@ -139,7 +139,7 @@ public class InlinerInfo {
 
     public Label getRenamedLabel(Label l) {
         // Special case -- is there a way to avoid this?
-        if (l == Label.UNRESCUED_REGION_LABEL) return l;
+        if (Label.UNRESCUED_REGION_LABEL.equals(l)) return l;
 
         Label newLbl = this.lblRenameMap.get(l);
         if (newLbl == null) {
