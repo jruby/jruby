@@ -2488,7 +2488,7 @@ public class IRBuilder {
 
     public Operand buildForIter(final ForNode forNode, IRScope s) {
             // Create a new closure context
-        IRClosure closure = new IRClosure(manager, s, true, forNode.getPosition().getStartLine(), forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
+        IRClosure closure = new IRFor(manager, s, forNode.getPosition().getStartLine(), forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
