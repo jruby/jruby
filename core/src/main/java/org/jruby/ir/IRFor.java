@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 
@@ -14,5 +15,23 @@ public class IRFor extends IRClosure {
     @Override
     public IRScopeType getScopeType() {
         return IRScopeType.FOR;
+    }
+
+    /**
+     * For scopes never store their own local variables but since they are scopes we
+     * add an extra scope Depth to account for navigating through it.
+     */
+    @Override
+    public LocalVariable getLocalVariable(String name, int scopeDepth) {
+        return super.getLocalVariable(name, scopeDepth + 1);
+    }
+
+    /**
+     * For scopes never store their own local variables but since they are scopes we
+     * add an extra scope Depth to account for navigating through it.
+     */
+    @Override
+    public LocalVariable getNewLocalVariable(String name, int scopeDepth) {
+        return super.getNewLocalVariable(name, scopeDepth + 1);
     }
 }
