@@ -3587,6 +3587,8 @@ public class IRBuilder {
         Operand block = setupCallClosure(zsuperNode.getIterNode(), s);
         if (block == null) block = s.getImplicitBlockArg();
 
+        // Enebo:ZSuper in for (or nested for) can be statically resolved like method but it needs
+        // to fixup depth.
         if (s instanceof IRMethod) {
             Operand[] args = ((IRMethod)s).getCallArgs();
             return buildSuperInstr(s, block, args);
@@ -3607,27 +3609,51 @@ public class IRBuilder {
             List<Integer> argsCount = new ArrayList<Integer>();
             List<Operand> allPossibleArgs = new ArrayList<Operand>();
             IRScope superScope = s;
+            int depthFromSuper = 0;
             while (superScope instanceof IRClosure) {
                 Operand[] args = ((IRClosure)superScope).getBlockArgs();
-                int n = args.length;
+
                 // Accummulate the closure's args
-                Collections.addAll(allPossibleArgs, args);
+                Collections.addAll(allPossibleArgs, adjustVariableDepth(args, depthFromSuper));
                 // Record args count of the closure
-                argsCount.add(n);
+                argsCount.add(args.length);
                 superScope = superScope.getLexicalParent();
+                depthFromSuper++;
             }
 
             if (superScope instanceof IRMethod) {
                 Operand[] args = ((IRMethod)superScope).getCallArgs();
-                int n = args.length;
+
                 // Accummulate the method's args
-                Collections.addAll(allPossibleArgs, args);
+                Collections.addAll(allPossibleArgs, adjustVariableDepth(args, depthFromSuper));
                 // Record args count of the method
-                argsCount.add(n);
+                argsCount.add(args.length);
             }
 
-            receiveBreakException(s, block, new ZSuperInstr(ret, s.getSelf(), block, allPossibleArgs.toArray(new Operand[allPossibleArgs.size()]), argsCount.toArray(new Integer[argsCount.size()])));
+            receiveBreakException(s, block, new ZSuperInstr(ret, s.getSelf(), block,
+                    allPossibleArgs.toArray(new Operand[allPossibleArgs.size()]),
+                    argsCount.toArray(new Integer[argsCount.size()])));
             return ret;
         }
+    }
+
+    // FIXME: How is this fixup supposed to be done?  Or does somehow this happen by zsuper?
+    private Operand[] adjustVariableDepth(Operand[] args, int depthFromSuper) {
+        Operand[] newArgs = new Operand[args.length];
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] instanceof LocalVariable) {
+                newArgs[i] = ((LocalVariable) args[i]).cloneForDepth(depthFromSuper);
+            } else if (args[i] instanceof Splat) {
+                Operand array = ((Splat) args[i]).getArray();
+
+                if (array instanceof LocalVariable) {
+                    newArgs[i] = new Splat(((LocalVariable) array).cloneForDepth(depthFromSuper));
+                } else {
+                    newArgs[i] = args[i];
+                }
+            }
+        }
+
+        return newArgs;
     }
 }
