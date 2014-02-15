@@ -147,6 +147,27 @@ public class IRBuilder {
         }
     }
 
+    private static class IRLoop {
+        public final IRScope  container;
+        public final IRLoop   parentLoop;
+        public final Label    loopStartLabel;
+        public final Label    loopEndLabel;
+        public final Label    iterStartLabel;
+        public final Label    iterEndLabel;
+        public final Variable loopResult;
+
+        public IRLoop(IRScope s, IRLoop outerLoop) {
+            container = s;
+            parentLoop = outerLoop;
+            loopStartLabel = s.getNewLabel("_LOOP_BEGIN");
+            loopEndLabel   = s.getNewLabel("_LOOP_END");
+            iterStartLabel = s.getNewLabel("_ITER_BEGIN");
+            iterEndLabel   = s.getNewLabel("_ITER_END");
+            loopResult     = s.getNewTemporaryVariable();
+            s.setHasLoopsFlag(true);
+        }
+    }
+
     private static class RescueBlockInfo {
         RescueNode rescueNode;             // Rescue node for which we are tracking info
         Label      entryLabel;             // Entry of the rescue block
