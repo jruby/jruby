@@ -25,7 +25,6 @@ import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
 import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
 import org.jruby.ir.instructions.RecordEndBlockInstr;
-import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Float;
@@ -391,10 +390,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void addInstrAtBeginning(Instr i) {
-        if (hasListener()) {
-            IRScopeListener listener = manager.getIRScopeListener();
-            listener.addedInstr(this, i, 0);
-        }
+        if (hasListener()) manager.getIRScopeListener().addedInstr(this, i, 0);
+
         instrList.add(0, i);
     }
 
@@ -408,10 +405,9 @@ public abstract class IRScope implements ParseResult {
         else if (i instanceof DefineMetaClassInstr) this.canReceiveNonlocalReturns = true;
         else if (i instanceof ReceiveKeywordArgInstr || i instanceof ReceiveKeywordRestArgInstr) this.receivesKeywordArgs = true;
         else if (i instanceof RecordEndBlockInstr) this.hasEndBlocks = true;
-        if (hasListener()) {
-            IRScopeListener listener = manager.getIRScopeListener();
-            listener.addedInstr(this, i, instrList.size());
-        }
+
+        if (hasListener()) manager.getIRScopeListener().addedInstr(this, i, instrList.size());
+
         instrList.add(i);
     }
 
