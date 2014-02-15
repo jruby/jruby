@@ -43,9 +43,6 @@ public class IRClosure extends IRScope {
 
     private BlockBody body;
 
-    // for-loop body closures are special in that they dont really define a new variable scope.
-    // They just silently reuse the parent scope.  This changes how variables are allocated (see IRMethod.java).
-    private boolean isForLoopBody;
     private boolean isBeginEndBlock;
 
     // Block parameters
@@ -75,12 +72,14 @@ public class IRClosure extends IRScope {
         this.arity = c.arity;
     }
 
-    public IRClosure(IRManager manager, IRScope lexicalParent, boolean isForLoopBody,
-            int lineNumber, StaticScope staticScope, Arity arity, int argumentType) {
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType) {
+        this(manager, lexicalParent, lineNumber, staticScope, arity, argumentType, "_CLOSURE_");
+    }
+
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, String prefix) {
         // SSS FIXME: This one still remains because AST generates the same static-scope
         // object for the parent scope and the for-loop closure scope.
-        this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, isForLoopBody ? IRStaticScopeFactory.newIRBlockScope(staticScope) : staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
-        this.isForLoopBody = isForLoopBody;
+        this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, prefix);
         this.blockArgs = new ArrayList<Operand>();
         this.argumentType = argumentType;
         this.arity = arity;
@@ -103,7 +102,6 @@ public class IRClosure extends IRScope {
     protected IRClosure(IRManager manager, IRScope lexicalParent, String fileName, int lineNumber, StaticScope staticScope, String prefix) {
         super(manager, lexicalParent, null, fileName, lineNumber, staticScope);
 
-        this.isForLoopBody = false;
         this.startLabel = getNewLabel(prefix + "START");
         this.endLabel = getNewLabel(prefix + "END");
         this.closureId = lexicalParent.getNextClosureId();
@@ -173,11 +171,6 @@ public class IRClosure extends IRScope {
     @Override
     public IRScopeType getScopeType() {
         return IRScopeType.CLOSURE;
-    }
-
-    @Override
-    public boolean isForLoopBody() {
-        return isForLoopBody;
     }
 
     @Override
@@ -318,7 +311,6 @@ public class IRClosure extends IRScope {
         // FIXME: This is buggy! Is this not dependent on clone-mode??
         IRClosure clonedClosure = new IRClosure(this, ii.getNewLexicalParentForClosure());
 
-        clonedClosure.isForLoopBody = this.isForLoopBody;
         clonedClosure.nestingDepth  = this.nestingDepth;
         clonedClosure.parameterList = this.parameterList;
 

@@ -1396,10 +1396,6 @@ public abstract class IRScope implements ParseResult {
         return nextClosureIndex;
     }
 
-    public boolean isForLoopBody() {
-        return false;
-    }
-
     public boolean isBeginEndBlock() {
         return false;
     }

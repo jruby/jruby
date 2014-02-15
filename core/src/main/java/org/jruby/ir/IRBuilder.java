@@ -484,7 +484,7 @@ public class IRBuilder {
     }
 
     public Operand buildLambda(LambdaNode node, IRScope s) {
-        IRClosure closure = new IRClosure(manager, s, false, node.getPosition().getStartLine(), node.getScope(), Arity.procArityOf(node.getArgs()), node.getArgumentType());
+        IRClosure closure = new IRClosure(manager, s, node.getPosition().getStartLine(), node.getScope(), Arity.procArityOf(node.getArgs()), node.getArgumentType());
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
@@ -672,12 +672,9 @@ public class IRBuilder {
     }
 
     protected LocalVariable getBlockArgVariable(IRScope s, String name, int depth) {
-        IRClosure cl = (IRClosure)s;
-        if (cl.isForLoopBody()) {
-            return cl.getLocalVariable(name, depth);
-        } else {
-            throw new NotCompilableException("Cannot ask for block-arg variable in 1.9 mode");
-        }
+        if (!(s instanceof IRFor)) throw new NotCompilableException("Cannot ask for block-arg variable in 1.9 mode");
+
+        return s.getLocalVariable(name, depth);
     }
 
     protected void receiveBlockArg(IRScope s, Variable v, Operand argsArray, int argIndex, boolean isClosureArg, boolean isSplat) {
@@ -694,9 +691,7 @@ public class IRBuilder {
     }
 
     public void buildVersionSpecificBlockArgsAssignment(Node node, IRScope s, Operand argsArray, int argIndex, boolean isMasgnRoot, boolean isClosureArg, boolean isSplat) {
-        IRClosure cl = (IRClosure)s;
-        if (!cl.isForLoopBody())
-            throw new NotCompilableException("Should not have come here for block args assignment in 1.9 mode: " + node);
+        if (s instanceof IRFor) throw new NotCompilableException("Should not have come here for block args assignment in 1.9 mode: " + node);
 
         // Argh!  For-loop bodies and regular iterators are different in terms of block-args!
         switch (node.getNodeType()) {
@@ -1856,7 +1851,7 @@ public class IRBuilder {
 
     protected LocalVariable getArgVariable(IRScope s, String name, int depth) {
         // For non-loops, this name will override any name that exists in outer scopes
-        return s.isForLoopBody() ? s.getLocalVariable(name, depth) : s.getNewLocalVariable(name, 0);
+        return s instanceof IRFor ? s.getLocalVariable(name, depth) : s.getNewLocalVariable(name, 0);
     }
 
     private void addArgReceiveInstr(IRScope s, Variable v, int argIndex, boolean post, int numPreReqd, int numPostRead) {
@@ -2629,7 +2624,7 @@ public class IRBuilder {
     }
 
     public Operand buildIter(final IterNode iterNode, IRScope s) {
-        IRClosure closure = new IRClosure(manager, s, false, iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType());
+        IRClosure closure = new IRClosure(manager, s, iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType());
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
@@ -3087,7 +3082,7 @@ public class IRBuilder {
         IRScope topLevel = s.getTopLevelScope();
         IRScope nearestLVarScope = s.getNearestTopLocalVariableScope();
 
-        IRClosure endClosure = new IRClosure(manager, s, false, postExeNode.getPosition().getStartLine(), nearestLVarScope.getStaticScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType());
+        IRClosure endClosure = new IRClosure(manager, s, postExeNode.getPosition().getStartLine(), nearestLVarScope.getStaticScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType());
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
         IRBuilder closureBuilder = newIRBuilder(manager);
@@ -3106,7 +3101,7 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
-        IRClosure beginClosure = new IRClosure(manager, s, false, preExeNode.getPosition().getStartLine(), s.getTopLevelScope().getStaticScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType());
+        IRClosure beginClosure = new IRClosure(manager, s, preExeNode.getPosition().getStartLine(), s.getTopLevelScope().getStaticScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType());
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
         IRBuilder closureBuilder = newIRBuilder(manager);

@@ -1,6 +1,7 @@
 package org.jruby.ir;
 
 import org.jruby.ir.operands.LocalVariable;
+import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 
@@ -9,7 +10,7 @@ import org.jruby.runtime.Arity;
  */
 public class IRFor extends IRClosure {
     public IRFor(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType) {
-        super(manager, lexicalParent, true, lineNumber, staticScope, arity, argumentType);
+        super(manager, lexicalParent, lineNumber, IRStaticScopeFactory.newIRBlockScope(staticScope), arity, argumentType, "_FOR_LOOP_");
     }
 
     @Override

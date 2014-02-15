@@ -13,6 +13,7 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.ir.IRClassBody;
+import org.jruby.ir.IRFor;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRClosure;
@@ -2058,7 +2059,7 @@ public class JVMVisitor extends IRVisitor {
 
             jvm.method().adapter.ldc(closure.getLineNumber());
 
-            jvm.method().adapter.ldc(closure.isForLoopBody() || closure.isBeginEndBlock());
+            jvm.method().adapter.ldc(closure instanceof IRFor || closure.isBeginEndBlock());
 
             jvm.method().adapter.ldc(closure.getHandle());
 
