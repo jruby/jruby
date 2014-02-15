@@ -292,6 +292,7 @@ public abstract class IRScope implements ParseResult {
         this.hasExplicitCallProtocol = s.hasExplicitCallProtocol;
 
         this.localVars = new HashMap<String, LocalVariable>(s.localVars);
+        synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
         this.relinearizeCFG = false;
 
         setupLexicalContainment();

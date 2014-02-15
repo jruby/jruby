@@ -57,6 +57,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.IRStaticScope;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.backtrace.TraceType.Gather;
 import org.jruby.runtime.backtrace.BacktraceElement;
@@ -577,14 +578,14 @@ public final class ThreadContext {
      * @return true if it exists
      *         false if not
      **/
-    public boolean scopeExistsOnCallStack(StaticScope s) {
+    public boolean scopeExistsOnCallStack(int scopeId) {
         DynamicScope[] stack = scopeStack;
         for (int i = scopeIndex; i >= 0; i--) {
-           if (stack[i].getStaticScope() == s) return true;
+           if (((IRStaticScope)stack[i].getStaticScope()).getScopeId() == scopeId) return true;
         }
         return false;
     }
-    
+
     public String getFrameName() {
         return getCurrentFrame().getName();
     }

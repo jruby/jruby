@@ -147,7 +147,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case BINDING_STORE:return new StoreLocalVarInstr(d.decodeOperand(), d.decodeScope(), (LocalVariable) d.decodeOperand());
             case BLOCK_GIVEN: return new BlockGivenInstr(d.decodeVariable(), d.decodeOperand());
             case BNE: return new BNEInstr(d.decodeOperand(), d.decodeOperand(), (Label) d.decodeOperand());
-            case BREAK: return new BreakInstr(d.decodeOperand(), d.decodeScope());
+            case BREAK: return new BreakInstr(d.decodeOperand(), d.decodeString(), d.decodeInt());
             case B_FALSE: return createBFalse();
             case B_NIL: return createBNil();
             case B_TRUE: return createBTrue();
@@ -194,7 +194,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case METHOD_DEFINED: return new MethodDefinedInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
             case METHOD_IS_PUBLIC: return new MethodIsPublicInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
             case METHOD_LOOKUP: return new MethodLookupInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
-            case NONLOCAL_RETURN: return decodeNonlocalReturnInstr();
+            case NONLOCAL_RETURN: return new NonlocalReturnInstr(d.decodeOperand(), d.decodeString(), d.decodeInt());
             case NOP: return NopInstr.NOP;
             case NORESULT_CALL: return decodeNoResultCall();
             case POP_BINDING: return new PopBindingInstr();
@@ -440,14 +440,5 @@ class InstrDecoderMap implements IRPersistenceValues {
         }
 
         return new ZSuperInstr(result, receiver, closure, args, argCounts);
-    }
-
-    private Instr decodeNonlocalReturnInstr() {
-        Operand returnValue = d.decodeOperand();
-        boolean hasMethod = d.decodeBoolean();
-
-        if (hasMethod) return new NonlocalReturnInstr(returnValue, (IRMethod) d.decodeScope());
-
-        return new NonlocalReturnInstr(returnValue);
     }
  }

@@ -9,6 +9,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.IRStaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -82,7 +83,7 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
 
     public IRubyObject callHelper(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block.Type blockType) {
         Object exc = args[0].retrieve(context, self, currDynScope, temp);
-        IRScope scope = ((IRStaticScope)currDynScope.getStaticScope()).getIRScope();
+        IRStaticScope scope = (IRStaticScope)currDynScope.getStaticScope();
         if (helperMethod.equals("handlePropagatedBreak")) {
             return IRRuntimeHelpers.handlePropagatedBreak(context, scope, exc, blockType);
         } else if (helperMethod.equals("handleNonlocalReturn")) {

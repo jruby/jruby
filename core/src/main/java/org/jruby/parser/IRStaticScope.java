@@ -8,8 +8,11 @@ import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.VCallNode;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScopeType;
 import org.jruby.lexer.yacc.ISourcePosition;
 
+// SSS FIXME: At some point, we should merge StaticScope and IRStaticScope.
+// This should be done in conjuction with RubyClass stack removal.
 public class IRStaticScope extends StaticScope {
     private static final long serialVersionUID = 3423852552352498148L;
 
@@ -18,7 +21,9 @@ public class IRStaticScope extends StaticScope {
     private Type type;
     private boolean isBlockOrEval;
     private boolean isArgumentScope; // Is this block and argument scope of a define_method (for the purposes of zsuper).
-    
+
+    private int scopeId;
+    private IRScopeType scopeType;
     private IRScope irScope; // Method/Closure that this static scope corresponds to
 
     protected IRStaticScope(Type type, StaticScope enclosingScope) {
@@ -130,8 +135,24 @@ public class IRStaticScope extends StaticScope {
         return irScope;
     }
 
+    public int getScopeId() {
+        return scopeId;
+    }
+
+    public IRScopeType getScopeType() {
+        return scopeType;
+    }
+
+    public void setIRScope(IRScope irScope, boolean isForLoopBody) {
+        if (!isForLoopBody) {
+            this.irScope = irScope;
+        }
+        this.scopeId = irScope.getScopeId();
+        this.scopeType = irScope.getScopeType();
+    }
+
     public void setIRScope(IRScope irScope) {
-        this.irScope = irScope;
+        setIRScope(irScope, false);
     }
 
     @Override

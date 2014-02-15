@@ -690,7 +690,7 @@ public class JVMVisitor extends IRVisitor {
 //        a.aload(1); // current scope
 //        // FIXME: This can also be done in the helper itself
 //        m.invokeVirtual(Type.getType(IRScope.class), Method.getMethod("org.jruby.ir.IRScope getIRScope()"));
-//        a.ldc(breakInstr.getScopeToReturnTo().getScopeId());
+//        a.ldc(breakInstr.getScopeIdToReturnTo().getScopeId());
 //        visit(breakInstr.getReturnValue());
 //        // FIXME: emit block-type for the scope that is currently executing
 //        // For now, it is null
@@ -1525,16 +1525,12 @@ public class JVMVisitor extends IRVisitor {
             SkinnyMethodAdapter a = jvm.method().adapter;
             a.aload(0); // 1. ThreadContext
             a.aload(1); // 2. current scope
-            // 3. ref. to returnInstr.methodToReturnFrom
+            // 3. ref. to returnInstr.methodIdToReturnFrom
             visit(returninstr.getReturnValue()); // 4. return value
             // boolean about whether we are in a closure or not
             // call to handle non-local return
-        } else if (returninstr.methodToReturnFrom != null) {
-            // methodtoReturnFrom will not be null for explicit returns from class/module/sclass bodies
-            /* throw IR-return-jump */
         } else {
-            visit(returninstr.getReturnValue());
-            jvm.method().returnValue();
+            /* throw IR-return-jump */
         }
     }
 

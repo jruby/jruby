@@ -28,6 +28,7 @@ import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
+import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
@@ -76,7 +77,9 @@ public class IRClosure extends IRScope {
 
     public IRClosure(IRManager manager, IRScope lexicalParent, boolean isForLoopBody,
             int lineNumber, StaticScope staticScope, Arity arity, int argumentType) {
-        this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
+        // SSS FIXME: This one still remains because AST generates the same static-scope
+        // object for the parent scope and the for-loop closure scope.
+        this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, isForLoopBody ? IRStaticScopeFactory.newIRBlockScope(staticScope) : staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
         this.isForLoopBody = isForLoopBody;
         this.blockArgs = new ArrayList<Operand>();
         this.argumentType = argumentType;
@@ -87,9 +90,10 @@ public class IRClosure extends IRScope {
             this.body = null;
         } else {
             this.body = new InterpretedIRBlockBody(this, arity, argumentType);
-            // SSS FIXME: Hmm .. Ugly. This one still remains because the same static-scope
-            // object is used for the parent scope and the for-loop closure scope.
-            if (staticScope != null && !isForLoopBody) ((IRStaticScope)staticScope).setIRScope(this);
+            if (staticScope != null) {
+                staticScope = getStaticScope();
+                ((IRStaticScope)staticScope).setIRScope(this);
+            }
         }
 
         this.nestingDepth++;
