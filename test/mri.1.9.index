@@ -240,6 +240,7 @@ externals/ruby1.9/openssl/test_pkey_rsa
 externals/ruby1.9/openssl/test_ssl
 # OpenSSL::SSL::Session not defined
 #externals/ruby1.9/openssl/test_ssl_session
+externals/ruby1.9/openssl/test_partial_record_read
 externals/ruby1.9/openssl/test_x509cert
 externals/ruby1.9/openssl/test_x509crl
 externals/ruby1.9/openssl/test_x509ext
