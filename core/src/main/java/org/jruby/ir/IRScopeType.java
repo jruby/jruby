@@ -6,4 +6,8 @@ public enum IRScopeType {
     public static IRScopeType fromOrdinal(int value) {
         return value < 0 || value >= values().length ? null : values()[value];
     }
+
+    public boolean isClosureType() {
+        return this == CLOSURE || this == FOR || this == EVAL_SCRIPT;
+    }
 }

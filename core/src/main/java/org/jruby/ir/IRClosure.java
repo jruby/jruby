@@ -55,50 +55,7 @@ public class IRClosure extends IRScope {
     public boolean addedGEBForUncaughtBreaks;
     private Handle handle;
 
-    /** Used by cloning code */
-    private IRClosure(IRClosure c, IRScope lexicalParent) {
-        super(c, lexicalParent);
-        this.closureId = lexicalParent.getNextClosureId();
-        setName("_CLOSURE_CLONE_" + closureId);
-        this.startLabel = getNewLabel(getName() + "_START");
-        this.endLabel = getNewLabel(getName() + "_END");
-        if (getManager().isDryRun()) {
-            this.body = null;
-        } else {
-            this.body = new InterpretedIRBlockBody(this, c.body.arity(), c.body.getArgumentType());
-        }
-        this.addedGEBForUncaughtBreaks = false;
-        this.blockArgs = new ArrayList<Operand>();
-        this.arity = c.arity;
-    }
-
-    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType) {
-        this(manager, lexicalParent, lineNumber, staticScope, arity, argumentType, "_CLOSURE_");
-    }
-
-    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, String prefix) {
-        // SSS FIXME: This one still remains because AST generates the same static-scope
-        // object for the parent scope and the for-loop closure scope.
-        this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, prefix);
-        this.blockArgs = new ArrayList<Operand>();
-        this.argumentType = argumentType;
-        this.arity = arity;
-        lexicalParent.addClosure(this);
-
-        if (getManager().isDryRun()) {
-            this.body = null;
-        } else {
-            this.body = new InterpretedIRBlockBody(this, arity, argumentType);
-            if (staticScope != null) {
-                staticScope = getStaticScope();
-                ((IRStaticScope)staticScope).setIRScope(this);
-            }
-        }
-
-        this.nestingDepth++;
-    }
-
-    // Used by IREvalScript
+    // Used by IREvalScript as well
     protected IRClosure(IRManager manager, IRScope lexicalParent, String fileName, int lineNumber, StaticScope staticScope, String prefix) {
         super(manager, lexicalParent, null, fileName, lineNumber, staticScope);
 
@@ -117,6 +74,47 @@ public class IRClosure extends IRScope {
             s = s.getLexicalParent();
         }
         this.nestingDepth = n;
+    }
+
+    /** Used by cloning code */
+    protected IRClosure(IRClosure c, IRScope lexicalParent, String prefix) {
+        super(c, lexicalParent);
+        this.closureId = lexicalParent.getNextClosureId();
+        setName(prefix + closureId);
+        this.startLabel = getNewLabel(getName() + "_START");
+        this.endLabel = getNewLabel(getName() + "_END");
+        if (getManager().isDryRun()) {
+            this.body = null;
+        } else {
+            this.body = new InterpretedIRBlockBody(this, c.body.arity(), c.body.getArgumentType());
+        }
+        this.addedGEBForUncaughtBreaks = false;
+        this.blockArgs = new ArrayList<Operand>();
+        this.arity = c.arity;
+    }
+
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType) {
+        this(manager, lexicalParent, lineNumber, staticScope, arity, argumentType, "_CLOSURE_");
+    }
+
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, String prefix) {
+        this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, prefix);
+        this.blockArgs = new ArrayList<Operand>();
+        this.argumentType = argumentType;
+        this.arity = arity;
+        lexicalParent.addClosure(this);
+
+        if (getManager().isDryRun()) {
+            this.body = null;
+        } else {
+            this.body = new InterpretedIRBlockBody(this, arity, argumentType);
+            if (staticScope != null) {
+                staticScope = getStaticScope();
+                ((IRStaticScope)staticScope).setIRScope(this);
+            }
+        }
+
+        this.nestingDepth++;
     }
 
     public void setBeginEndBlock() {
@@ -216,7 +214,7 @@ public class IRClosure extends IRScope {
 
     @Override
     public LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
-        LocalVariable lvar = localVars.get(name);
+        LocalVariable lvar = lookupExistingLVar(name);
         if (lvar != null) return lvar;
 
         int newDepth = scopeDepth - 1;
@@ -225,17 +223,31 @@ public class IRClosure extends IRScope {
     }
 
     public LocalVariable getNewLocalVariable(String name, int depth) {
-        if (depth == 0) {
+        if (depth == 0 && !(this instanceof IRFor)) {
             LocalVariable lvar = new ClosureLocalVariable(this, name, 0, getStaticScope().addVariableThisScope(name));
             localVars.put(name, lvar);
             return lvar;
         } else {
-            return getLexicalParent().getNewLocalVariable(name, depth-1);
+            IRScope s = this;
+            int     d = depth;
+            do {
+                // account for for-loops
+                while (s instanceof IRFor) {
+                    depth++;
+                    s = s.getLexicalParent();
+                }
+
+                // walk up
+                d--;
+                if (d >= 0) s = s.getLexicalParent();
+            } while (d >= 0);
+
+            return s.getNewLocalVariable(name, 0).cloneForDepth(depth);
         }
     }
 
     @Override
-    public LocalVariable getLocalVariable(String name, int scopeDepth) {
+    public LocalVariable getLocalVariable(String name, int depth) {
         // AST doesn't seem to be implementing shadowing properly and sometimes
         // has the wrong depths which screws up variable access. So, we implement
         // shadowing here by searching for an existing local var from depth 0 and upwards.
@@ -245,30 +257,34 @@ public class IRClosure extends IRScope {
         //   "a = 1; foo(1) { |(a)| a }"
         //
         // In "(a)", it is 0 (correct), but in the body, it is 1 (incorrect)
-        LocalVariable lvar = null;
-        IRScope scope = this;
-        int d = -1;
 
-        // 'scope' can be null because scopeDepth can exceed the
-        // lexical scope nesting depth when AST has this information
-        // incorrect, as above.
-        while (scope != null && lvar == null && d < scopeDepth) {
+        LocalVariable lvar = null;
+        IRScope s = this;
+        int d = depth;
+        do {
+            // account for for-loops
+            while (s instanceof IRFor) {
+                depth++;
+                s = s.getLexicalParent();
+            }
+
             // lookup
-            lvar = scope.lookupExistingLVar(name);
+            lvar = s.lookupExistingLVar(name);
 
             // walk up
-            d++;
-            scope = scope.getLexicalParent();
-        }
+            d--;
+            if (d >= 0) s = s.getLexicalParent();
+        } while (lvar == null && d >= 0);
 
         if (lvar == null) {
-            // Create a new var at requested depth
-            d = scopeDepth;
-            lvar = getNewLocalVariable(name, d);
+            // Create a new var at requested/adjusted depth
+            lvar = s.getNewLocalVariable(name, 0).cloneForDepth(depth);
+        } else {
+            // Find # of lexical scopes we walked up to find 'lvar'.
+            // We need a copy of 'lvar' usable at that depth
+            int lvarDepth = depth - (d + 1);
+            if (lvar.getScopeDepth() != lvarDepth) lvar = lvar.cloneForDepth(lvarDepth);
         }
-
-        // Create a copy of the variable usable at the right depth
-        if (lvar.getScopeDepth() != d) lvar = lvar.cloneForDepth(d);
 
         return lvar;
     }
@@ -307,21 +323,18 @@ public class IRClosure extends IRScope {
         return blockVar;
     }
 
-    public IRClosure cloneForInlining(InlinerInfo ii) {
-        // FIXME: This is buggy! Is this not dependent on clone-mode??
-        IRClosure clonedClosure = new IRClosure(this, ii.getNewLexicalParentForClosure());
-
-        clonedClosure.nestingDepth  = this.nestingDepth;
-        clonedClosure.parameterList = this.parameterList;
+    protected IRClosure cloneForInlining(InlinerInfo ii, IRClosure clone) {
+        clone.nestingDepth  = this.nestingDepth;
+        clone.parameterList = this.parameterList;
 
         // Create a new inliner info object
-        InlinerInfo clonedII = ii.cloneForCloningClosure(clonedClosure);
+        InlinerInfo clonedII = ii.cloneForCloningClosure(clone);
 
         if (getCFG() != null) {
             // Clone the cfg
-            CFG clonedCFG = new CFG(clonedClosure);
-            clonedClosure.setCFG(clonedCFG);
-            clonedCFG.cloneForCloningClosure(getCFG(), clonedClosure, clonedII);
+            CFG clonedCFG = new CFG(clone);
+            clone.setCFG(clonedCFG);
+            clonedCFG.cloneForCloningClosure(getCFG(), clone, clonedII);
         } else {
             // Clone the instruction list
             for (Instr i: getInstrs()) {
@@ -329,13 +342,20 @@ public class IRClosure extends IRScope {
                 if (clonedInstr instanceof CallBase) {
                     CallBase call = (CallBase)clonedInstr;
                     Operand block = call.getClosureArg(null);
-                    if (block instanceof WrappedIRClosure) clonedClosure.addClosure(((WrappedIRClosure)block).getClosure());
+                    if (block instanceof WrappedIRClosure) clone.addClosure(((WrappedIRClosure)block).getClosure());
                 }
-                clonedClosure.addInstr(clonedInstr);
+                clone.addInstr(clonedInstr);
             }
         }
 
-        return clonedClosure;
+        return clone;
+    }
+
+    public IRClosure cloneForInlining(InlinerInfo ii) {
+        // FIXME: This is buggy! Is this not dependent on clone-mode??
+        IRClosure clonedClosure = new IRClosure(this, ii.getNewLexicalParentForClosure(), "_CLOSURE_CLONE_");
+
+        return cloneForInlining(ii, clonedClosure);
     }
 
     // Add a global-ensure-block to catch uncaught breaks

@@ -73,7 +73,7 @@ public class IRRuntimeHelpers {
      */
     public static void initiateNonLocalReturn(ThreadContext context, IRStaticScope scope, int methodToReturnFrom, IRubyObject returnValue) {
         IRScopeType scopeType = scope.getScopeType();
-        if (scopeType == IRScopeType.CLOSURE || scopeType == IRScopeType.EVAL_SCRIPT) {
+        if (scopeType.isClosureType()) {
             if (methodToReturnFrom == -1) {
                 // SSS FIXME: As Tom correctly pointed out, this is not correct.  The example that breaks this code is:
                 //
@@ -125,7 +125,7 @@ public class IRRuntimeHelpers {
             return breakValue;
         } else {
             IRScopeType scopeType = scope.getScopeType();
-            if (scopeType != IRScopeType.CLOSURE && scopeType != IRScopeType.EVAL_SCRIPT) {
+            if (!scopeType.isClosureType()) {
                 // Error -- breaks can only be initiated in closures
                 throw IRException.BREAK_LocalJumpError.getException(context.runtime);
             }
@@ -161,7 +161,7 @@ public class IRRuntimeHelpers {
         if (bj.breakInEval) {
             // If the break was in an eval, we pretend as if it was in the containing scope
             IRScopeType scopeType = scope.getScopeType();
-            if (scopeType != IRScopeType.CLOSURE && scopeType != IRScopeType.EVAL_SCRIPT) {
+            if (!scopeType.isClosureType()) {
                 // Error -- breaks can only be initiated in closures
                 throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
             } else {

@@ -1063,6 +1063,8 @@ public abstract class IRScope implements ParseResult {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) {
             lvar = getNewLocalVariable(name, scopeDepth);
+        } else if (lvar.getScopeDepth() != scopeDepth) {
+            lvar = lvar.cloneForDepth(scopeDepth);
         }
 
         return lvar;

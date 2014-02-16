@@ -691,7 +691,7 @@ public class IRBuilder {
     }
 
     public void buildVersionSpecificBlockArgsAssignment(Node node, IRScope s, Operand argsArray, int argIndex, boolean isMasgnRoot, boolean isClosureArg, boolean isSplat) {
-        if (s instanceof IRFor) throw new NotCompilableException("Should not have come here for block args assignment in 1.9 mode: " + node);
+        if (!(s instanceof IRFor)) throw new NotCompilableException("Should not have come here for block args assignment in 1.9 mode: " + node);
 
         // Argh!  For-loop bodies and regular iterators are different in terms of block-args!
         switch (node.getNodeType()) {
