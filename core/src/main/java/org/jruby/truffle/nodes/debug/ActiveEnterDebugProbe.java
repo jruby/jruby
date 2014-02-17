@@ -21,16 +21,18 @@ public abstract class ActiveEnterDebugProbe extends RubyProbe {
 
     private final Assumption activeAssumption;
 
-    private final InlinableMethodImplementation inlinable;
-    private final RubyRootNode inlinedRoot;
+    private final RubyProc proc;
+    //private final InlinableMethodImplementation inlinable;
+    //private final RubyRootNode inlinedRoot;
 
     private final BranchProfile profile = new BranchProfile();
 
     public ActiveEnterDebugProbe(RubyContext context, Assumption activeAssumption, RubyProc proc) {
         super(context, false);
         this.activeAssumption = activeAssumption;
-        inlinable = ((InlinableMethodImplementation) proc.getMethod().getImplementation());
-        inlinedRoot = inlinable.getCloneOfPristineRootNode();
+        //inlinable = ((InlinableMethodImplementation) proc.getMethod().getImplementation());
+        //inlinedRoot = inlinable.getCloneOfPristineRootNode();
+        this.proc = proc;
     }
 
     @Override
@@ -44,9 +46,14 @@ public abstract class ActiveEnterDebugProbe extends RubyProbe {
             return;
         }
 
-        final RubyArguments arguments = new RubyArguments(inlinable.getDeclarationFrame(), NilPlaceholder.INSTANCE, null, 14);
-        final VirtualFrame inlinedFrame = Truffle.getRuntime().createVirtualFrame(frame.pack(), arguments, inlinable.getFrameDescriptor());
-        inlinedRoot.execute(inlinedFrame);
+        final MaterializedFrame materializedFrame = frame.materialize();
+
+        final RubyBinding binding = new RubyBinding(context.getCoreLibrary().getBindingClass(), frame.getArguments(RubyArguments.class).getSelf(), materializedFrame);
+
+        //final RubyArguments arguments = new RubyArguments(inlinable.getDeclarationFrame(), NilPlaceholder.INSTANCE, null, binding);
+        //final VirtualFrame inlinedFrame = Truffle.getRuntime().createVirtualFrame(frame.pack(), arguments, inlinable.getFrameDescriptor());
+        //inlinedRoot.execute(inlinedFrame);
+        proc.call(frame.pack(), binding);
     }
 
     protected abstract InactiveEnterDebugProbe createInactive();

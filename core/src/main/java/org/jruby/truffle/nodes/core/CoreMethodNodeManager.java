@@ -57,6 +57,7 @@ public abstract class CoreMethodNodeManager {
         final List<MethodDetails> methods = new ArrayList<>();
         getMethods(methods, ArrayNodesFactory.getFactories());
         getMethods(methods, BasicObjectNodesFactory.getFactories());
+        getMethods(methods, BindingNodesFactory.getFactories());
         getMethods(methods, BignumNodesFactory.getFactories());
         getMethods(methods, ClassNodesFactory.getFactories());
         getMethods(methods, ContinuationNodesFactory.getFactories());
