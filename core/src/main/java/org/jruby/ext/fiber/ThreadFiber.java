@@ -161,6 +161,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         if (currentFiberData.parent == null) throw runtime.newFiberError("can't yield from root fiber");
 
         if (currentFiberData.prev == null) throw runtime.newFiberError("BUG: yield occured with null previous fiber. Report this at http://bugs.jruby.org");
+
+        if (currentFiberData.queue.isShutdown()) throw runtime.newFiberError("dead fiber yielded");
         
         FiberData prevFiberData = currentFiberData.prev.data;
 

@@ -62,7 +62,7 @@ class TestBacktraces < Test::Unit::TestCase
   rescue NativeException => ex
     backtrace = ex.backtrace.join("\r\n")
 
-    if (!backtrace.include?("throwTestHelperException"))
+    if (!backtrace.include?("test_java_backtrace"))
       flunk("test_java_backtrace not in backtrace")
     end
   end
