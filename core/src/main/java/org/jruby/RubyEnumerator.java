@@ -619,7 +619,7 @@ public class RubyEnumerator extends RubyObject {
         }
         
         private void ensureStarted() {
-            if (thread == null) future = runtime.getExecutor().submit(this);
+            if (thread == null) future = runtime.getFiberExecutor().submit(this);
         }
         
         private IRubyObject peekTake() {
