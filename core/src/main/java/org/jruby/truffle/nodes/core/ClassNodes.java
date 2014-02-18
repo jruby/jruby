@@ -9,13 +9,18 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
-import org.jruby.truffle.nodes.call.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.objects.*;
+import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.objects.RubyBasicObject;
 
 @CoreClass(name = "Class")
 public abstract class ClassNodes {
@@ -84,6 +89,28 @@ public abstract class ClassNodes {
         @Specialization
         public RubyString toS(RubyClass rubyClass) {
             return getContext().makeString(rubyClass.getName());
+        }
+    }
+
+    @CoreMethod(names = "class_variables", maxArgs = 0)
+    public abstract static class ClassVariablesNode extends CoreMethodNode {
+
+        public ClassVariablesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ClassVariablesNode(ClassVariablesNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray getClassVariables(RubyClass rubyClass) {
+            final RubyArray array = new RubyArray(rubyClass.getContext().getCoreLibrary().getArrayClass());
+
+            for (String variable : rubyClass.getClassVariables()) {
+                array.push(RubySymbol.newSymbol(rubyClass.getContext(), variable));
+            }
+            return array;
         }
     }
 
