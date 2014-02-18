@@ -268,36 +268,6 @@
     </pluginManagement>
   </build>
   <profiles>
-<!--
-    <profile>
-      <id>rake</id>
-      <build>
-	<plugins>
-	  <plugin>
-            <groupId>de.saumya.mojo</groupId>
-            <artifactId>gem-maven-plugin</artifactId>
-            <version>${jruby.plugins.version}</version>
-            <executions>
-	      <execution>
-		<id>rake</id>
-		<phase>validate</phase>
-		<goals><goal>exec</goal></goals>
-		<configuration>
-		  <gemPath>${gem.home}</gemPath>
-		  <gemHome>${gem.home}</gemHome>
-		  <binDirectory>${jruby.home}/bin</binDirectory>
-		  <includeRubygemsInTestResources>false</includeRubygemsInTestResources>
-		  <libDirectory>${jruby.home}/lib</libDirectory>
-		  <jrubyJvmArgs>-Djruby.home=${jruby.home}</jrubyJvmArgs>
-		  <execArgs>-S rake ${task}</execArgs>
-		</configuration>
-	      </execution>
-            </executions>
-	  </plugin>
-	</plugins>
-      </build>
-    </profile>
--->
     <profile>
       <id>rake</id>
       <build>

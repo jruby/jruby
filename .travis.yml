@@ -29,7 +29,7 @@ matrix:
       jdk: oraclejdk8
   fast_finish: true
   allow_failures:
-    - env: TARGET='spec:ci_interpreted_ir_travis'
+    - env: TARGET='-Prake -Dtask=spec:ci_interpreted_ir_travis'
     - env: TARGET='-Pcomplete'
     - env: TARGET='-Pmain'
     - env: TARGET='-Pdist'
