@@ -231,8 +231,6 @@ public final class Ruby {
         }
 
         reinitialize(false);
-
-        truffleBridge = new JRubyTruffleBridge(this);
     }
 
     void reinitialize(boolean reinitCore) {
@@ -1252,6 +1250,8 @@ public final class Ruby {
         for (String scriptName : config.getRequiredLibraries()) {
             topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
         }
+
+        truffleBridge = new JRubyTruffleBridge(this);
 
         truffleBridge.init();
     }
@@ -4747,7 +4747,7 @@ public final class Ruby {
     // Compilation
     private final JITCompiler jitCompiler;
 
-    private final JRubyTruffleBridge truffleBridge;
+    private JRubyTruffleBridge truffleBridge;
 
     // Note: this field and the following static initializer
     // must be located be in this order!
