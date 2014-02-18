@@ -10,10 +10,10 @@ jdk:
 env:
   matrix:
     - TARGET='-Ptest'
-    - TARGET='-Prake -Dtest:extended'
-    - TARGET='-Prake -Dspec:ci_interpreted_travis'
-    - TARGET='-Prake -Dspec:ci_interpreted_ir_travis'
-    - TARGET='-Prake -Dspec:ir'
+    - TARGET='-Prake -Dtask=test:extended'
+    - TARGET='-Prake -Dtask=spec:ci_interpreted_travis'
+    - TARGET='-Prake -Dtask=spec:ci_interpreted_ir_travis'
+    - TARGET='-Prake -Dtask=spec:ir'
     - TARGET='-Ptruffle'
 
 matrix:
