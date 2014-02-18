@@ -44,6 +44,8 @@ branches:
 before_install:
   - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
 
+# the install stores the artifact in the localrepo for 
+# the second maven run with $TARGET
 script: ( mvn install -Pbootstrap | grep -v Down ) && mvn $TARGET
 install: /bin/true
 notifications:
