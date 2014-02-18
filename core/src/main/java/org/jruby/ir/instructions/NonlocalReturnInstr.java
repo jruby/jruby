@@ -1,44 +1,38 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.ScopeModule;
+import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
-    public final IRMethod methodToReturnFrom;
+    public final String methodName;
+    public final int methodIdToReturnFrom;
 
-    public NonlocalReturnInstr(Operand returnValue, IRMethod methodToReturnFrom) {
+    public NonlocalReturnInstr(Operand returnValue, String methodName, int methodIdToReturnFrom) {
         super(Operation.NONLOCAL_RETURN, returnValue);
-        this.methodToReturnFrom = methodToReturnFrom;
-    }
-
-    public NonlocalReturnInstr(Operand returnValue) {
-        this(returnValue, null);
-    }
-
-    public String getMethodToReturnFrom() {
-        return methodToReturnFrom.getName();
+        this.methodName = methodName;
+        this.methodIdToReturnFrom = methodIdToReturnFrom;
     }
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { returnValue, new ScopeModule(methodToReturnFrom) };
+        return new Operand[] { returnValue, new StringLiteral(methodName), new Fixnum(methodIdToReturnFrom) };
     }
 
     @Override
     public String toString() {
-        return getOperation() + "(" + returnValue + ", <" + (methodToReturnFrom == null ? "-NULL-" : methodToReturnFrom.getName()) + ">" + ")";
+        return getOperation() + "(" + returnValue + ", <" + methodName + ":" + methodIdToReturnFrom + ">" + ")";
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         switch (ii.getCloneMode()) {
             case CLOSURE_INLINE:
-                if (ii.getInlineHostScope() == methodToReturnFrom) {
+                if (ii.getInlineHostScope().getScopeId() == methodIdToReturnFrom) {
                     // Treat like inlining of a regular method-return
                     Variable v = ii.getCallResultVariable();
                     return v == null ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
@@ -46,7 +40,7 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
                 // fall through
             case ENSURE_BLOCK_CLONE:
             case NORMAL_CLONE:
-                return new NonlocalReturnInstr(returnValue.cloneForInlining(ii), methodToReturnFrom);
+                return new NonlocalReturnInstr(returnValue.cloneForInlining(ii), methodName, methodIdToReturnFrom);
             default:
                 return super.cloneForInlining(ii);
         }

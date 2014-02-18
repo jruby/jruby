@@ -65,7 +65,11 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
         byte[] bytes = new byte[strLength]; // FIXME: This seems really innefficient
         buf.get(bytes);
 
-        return new String(bytes).intern();
+        String newString = new String(bytes).intern();
+
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("STR<" + newString + ">");
+
+        return newString;
     }
 
     @Override
@@ -97,15 +101,20 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
 
     @Override
     public List<Instr> decodeInstructionsAt(IRScope scope, int offset) {
-        this.currentScope = scope;
+        currentScope = scope;
         vars = new HashMap<String, Operand>();
         buf.position(offset);
+
         int numberOfInstructions = decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("Number of Instructions: " + numberOfInstructions);
         List<Instr> instrs = new ArrayList(numberOfInstructions);
 
         for (int i = 0; i < numberOfInstructions; i++) {
-            instrs.add(decodeInstr());
+            Instr decodedInstr = decodeInstr();
+
+            if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println(">INSTR = " + decodedInstr);
+
+            instrs.add(decodedInstr);
         }
 
         return instrs;
@@ -134,13 +143,21 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public Operation decodeOperation() {
         Operation operation = Operation.fromOrdinal(decodeInt());
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("INSTR OP: " + operation);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("INSTR<" + operation);
         return operation;
     }
 
     @Override
     public Operand decodeOperand() {
-        return operandDecoderMap.decode(decodeOperandType());
+        OperandType operandType = decodeOperandType();
+
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("OP<" + operandType);
+
+        Operand decodedOperand = operandDecoderMap.decode(operandType);
+
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println(">OP = " + decodedOperand);
+
+        return decodedOperand;
     }
 
     @Override

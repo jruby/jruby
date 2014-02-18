@@ -9,19 +9,24 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import java.math.*;
-import java.util.*;
-
-import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
-import org.jruby.truffle.runtime.methods.*;
-import org.jruby.truffle.runtime.objects.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.Visibility;
+import org.jruby.truffle.runtime.objects.RubyBasicObject;
+
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 @CoreClass(name = "Object")
 public abstract class ObjectNodes {
@@ -512,5 +517,4 @@ public abstract class ObjectNodes {
         }
 
     }
-
 }

@@ -39,7 +39,7 @@ public class OpenModuleNode extends RubyNode {
         final RubyModule module = (RubyModule) definingModule.execute(frame);
         definitionMethod.executeMethod(frame).call(frame.pack(), module, null);
 
-        return NilPlaceholder.INSTANCE;
+        return module;
     }
 
 }

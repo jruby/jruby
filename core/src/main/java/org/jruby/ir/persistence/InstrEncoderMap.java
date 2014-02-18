@@ -7,7 +7,6 @@
 package org.jruby.ir.persistence;
 
 import org.jruby.RubyInstanceConfig;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.instructions.AliasInstr;
 import org.jruby.ir.instructions.AttrAssignInstr;
 import org.jruby.ir.instructions.BEQInstr;
@@ -261,7 +260,8 @@ public class InstrEncoderMap {
 
     private void encodeBreakInstr(BreakInstr instr) {
         e.encode(instr.getReturnValue());
-        e.encode(instr.getScopeToReturnTo());
+        e.encode(instr.getScopeName());
+        e.encode(instr.getScopeIdToReturnTo());
     }
 
     private void encodeBFalseInstr(BFalseInstr instr) {
@@ -464,14 +464,8 @@ public class InstrEncoderMap {
 
     private void encodeNonlocalReturnInstr(NonlocalReturnInstr instr) {
         e.encode(instr.getReturnValue());
-        IRMethod method = instr.methodToReturnFrom;
-
-        if (method == null) {
-            e.encode(false);
-        } else {
-            e.encode(true);
-            e.encode(method);
-        }
+        e.encode(instr.methodName);
+        e.encode(instr.methodIdToReturnFrom);
     }
 
     private void encodeCallBaseInstr(CallBase instr) {
@@ -627,23 +621,21 @@ public class InstrEncoderMap {
         e.encode(instr.isUnwrapArray());
     }
 
-    // FIXME: Verify
     private void encodeZSuperInstr(ZSuperInstr instr) {
         e.encode(instr.getReceiver());
         Operand closure = instr.getClosureArg(null);
 
         boolean hasClosure = closure != null;
+        e.encode(hasClosure);
         if (hasClosure) {
             e.encode(closure);
         }
 
-        // FIXME: Correct?
         e.encode(instr.getCallArgs().length);
         for (Operand arg: instr.getCallArgs()) {
             e.encode(arg);
         }
 
-        // FIXME: Correct?
         e.encode(instr.getArgCounts().length);
         for (Integer i: instr.getArgCounts()) {
             e.encode(i);

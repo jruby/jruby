@@ -148,27 +148,6 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
         return "";
     }
 
-    private TemporaryLocalVariable getLocalVarReplacement(LocalVariable v, IRScope scope, Map<Operand, Operand> varRenameMap) {
-         TemporaryLocalVariable value = (TemporaryLocalVariable)varRenameMap.get(v);
-         if (value == null) {
-             value = scope.getNewTemporaryVariableFor(v);
-             varRenameMap.put(v, value);
-         }
-         return value;
-    }
-
-    private boolean addClosureExitStoreLocalVars(IRScope scope, ListIterator<Instr> instrs, Set<LocalVariable> dirtyVars, Map<Operand, Operand> varRenameMap) {
-        boolean addedStores  = false;
-        boolean isEvalScript = scope instanceof IREvalScript;
-        for (LocalVariable v : dirtyVars) {
-            if (isEvalScript || !(v instanceof ClosureLocalVariable) || (scope != ((ClosureLocalVariable)v).definingScope)) {
-                addedStores = true;
-                instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
-            }
-        }
-        return addedStores;
-    }
-
     public boolean addStores(Map<Operand, Operand> varRenameMap, Set<LocalVariable> excTargetDirtyVars) {
         IRScope scope = problem.getScope();
 
@@ -222,7 +201,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                         // we'll be in trouble in that scenario!
                         if (spillAllVars || cl.usesLocalVariable(v) || cl.definesLocalVariable(v)) {
                             addedStores = true;
-                            instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
+                            instrs.add(new StoreLocalVarInstr(problem.getLocalVarReplacement(v, varRenameMap), scope, v));
                             newDirtyVars.remove(v);
                         }
                     }
@@ -233,7 +212,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                     instrs.previous();
                     for (LocalVariable v : dirtyVars) {
                         addedStores = true;
-                        instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
+                        instrs.add(new StoreLocalVarInstr(problem.getLocalVarReplacement(v, varRenameMap), scope, v));
                     }
                     instrs.next();
                     dirtyVars.clear();
@@ -248,7 +227,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                     for (LocalVariable v : dirtyVars) {
                         if ((v instanceof ClosureLocalVariable) && ((ClosureLocalVariable)v).definingScope != scope) {
                             addedStores = true;
-                            instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
+                            instrs.add(new StoreLocalVarInstr(problem.getLocalVarReplacement(v, varRenameMap), scope, v));
                             newDirtyVars.remove(v);
                         }
                     }
@@ -279,7 +258,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
 
                 // Add before call
                 instrs.previous();
-                boolean f = addClosureExitStoreLocalVars(scope, instrs, dirtyVars, varRenameMap);
+                boolean f = problem.addClosureExitStoreLocalVars(instrs, dirtyVars, varRenameMap);
                 addedStores = addedStores || f;
                 instrs.next();
 
@@ -293,7 +272,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                 instrs.previous();
                 for (LocalVariable v : dirtyVars) {
                     addedStores = true;
-                    instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
+                    instrs.add(new StoreLocalVarInstr(problem.getLocalVarReplacement(v, varRenameMap), scope, v));
                 }
                 instrs.next();
                 dirtyVars.clear();
@@ -306,7 +285,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                     instrs.previous();
                     for (LocalVariable v : dirtyVars) {
                         addedStores = true;
-                        instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
+                        instrs.add(new StoreLocalVarInstr(problem.getLocalVarReplacement(v, varRenameMap), scope, v));
                     }
                     instrs.next();
                     dirtyVars.clear();
@@ -325,7 +304,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                     dirtyVars.add(lv);
 
                     // Make sure there is a replacement tmp-var allocated for lv
-                    getLocalVarReplacement(lv, scope, varRenameMap);
+                    problem.getLocalVarReplacement(lv, varRenameMap);
                 }
             }
         }
@@ -334,7 +313,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
         if (basicBlock.isExitBB()) {
             // Last instr could be a return -- so, move iterator one position back
             if (instrs.hasPrevious()) instrs.previous();
-            boolean f = addClosureExitStoreLocalVars(scope, instrs, dirtyVars, varRenameMap);
+            boolean f = problem.addClosureExitStoreLocalVars(instrs, dirtyVars, varRenameMap);
             addedStores = addedStores || f;
         }
 

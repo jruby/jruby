@@ -9,10 +9,11 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import com.oracle.truffle.api.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.objects.*;
+import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.Ruby;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.objects.RubyBasicObject;
 
 /**
  * Represents the Ruby {@code Object} class.
@@ -44,6 +45,10 @@ public class RubyObject extends RubyBasicObject {
         }
 
         return name;
+    }
+
+    public Ruby getJRubyRuntime(){
+        return getRubyClass().getContext().getRuntime();
     }
 
 }

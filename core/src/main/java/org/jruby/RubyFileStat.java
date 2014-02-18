@@ -35,18 +35,18 @@ package org.jruby;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import jnr.posix.FileStat;
+import jnr.posix.POSIX;
 import jnr.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.JRubyNonExistentFile;
 
@@ -61,7 +61,7 @@ public class RubyFileStat extends RubyObject {
     private static final int S_IWUGO = (FileStat.S_IWUSR | FileStat.S_IWGRP | FileStat.S_IWOTH);
     private static final int S_IXUGO = (FileStat.S_IXUSR | FileStat.S_IXGRP | FileStat.S_IXOTH);
 
-    private JRubyFile file;
+    private FileResource file;
     private FileStat stat;
 
     private static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
@@ -113,257 +113,14 @@ public class RubyFileStat extends RubyObject {
             filename += "/";
         }
 
-        if (filename.startsWith("file:") ) {
-            if (filename.indexOf('!') != -1) {
-                // file: URL handling
-                String zipFileEntry = filename.substring(filename.indexOf("!") + 1);
-                if (zipFileEntry.length() > 0) {
-                    if (zipFileEntry.charAt(0) == '/') {
-                        if (zipFileEntry.length() > 1) {
-                            zipFileEntry = zipFileEntry.substring(1);
-                        } else {
-                            throw getRuntime().newErrnoENOENTError("invalid jar/file URL: " + filename);
-                        }
-                    }
-                } else {
-                    throw getRuntime().newErrnoENOENTError("invalid jar/file URL: " + filename);
-                }
-                String zipfilename = filename.substring(5, filename.indexOf("!"));
+        file = JRubyFile.createResource(getRuntime().getCurrentDirectory(), filename);
 
-                try {
-                    ZipFile zipFile = new ZipFile(zipfilename);
-                    ZipEntry zipEntry = RubyFile.getFileEntry(zipFile, zipFileEntry);
-
-                    if (zipEntry == null) {
-                        throw getRuntime().newErrnoENOENTError("invalid jar/file URL: " + filename);
-                    }
-                    stat = new ZipFileStat(zipEntry);
-                    return;
-                } catch (IOException ioe) {
-                    // fall through and use the zip file as the file to stat
-                }
-
-                filename = zipfilename;
-            } else {
-                throw getRuntime().newErrnoENOENTError("invalid jar/file URL: " + filename);
-            }
-        }
-
-        file = JRubyFile.create(getRuntime().getCurrentDirectory(), filename);
-
-        if (file instanceof JRubyNonExistentFile) {
+        if (!file.exists()) {
             throw getRuntime().newErrnoENOENTError("No such file or directory - " + filename);
         }
 
-        if (lstat) {
-            stat = getRuntime().getPosix().lstat(file.getAbsolutePath());
-        } else {
-            stat = getRuntime().getPosix().stat(file.getAbsolutePath());
-        }
-    }
-
-    public static class ZipFileStat implements FileStat {
-        private final ZipEntry zipEntry;
-
-        public ZipFileStat(ZipEntry zipEntry) {
-            this.zipEntry = zipEntry;
-        }
-        
-        @Override
-        public long atime() {
-            return zipEntry.getTime();
-        }
-
-        @Override
-        public long blocks() {
-            return zipEntry.getSize();
-        }
-
-        @Override
-        public long blockSize() {
-            return 1L;
-        }
-
-        @Override
-        public long ctime() {
-            return zipEntry.getTime();
-        }
-
-        @Override
-        public long dev() {
-            return -1;
-        }
-
-        @Override
-        public String ftype() {
-            return "zip file entry";
-        }
-
-        @Override
-        public int gid() {
-            return -1;
-        }
-
-        @Override
-        public boolean groupMember(int i) {
-            return false;
-        }
-
-        @Override
-        public long ino() {
-            return -1;
-        }
-
-        @Override
-        public boolean isBlockDev() {
-            return false;
-        }
-
-        @Override
-        public boolean isCharDev() {
-            return false;
-        }
-
-        @Override
-        public boolean isDirectory() {
-            return zipEntry.isDirectory();
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return zipEntry.getSize() == 0;
-        }
-
-        @Override
-        public boolean isExecutable() {
-            return false;
-        }
-
-        @Override
-        public boolean isExecutableReal() {
-            return false;
-        }
-
-        @Override
-        public boolean isFifo() {
-            return false;
-        }
-
-        @Override
-        public boolean isFile() {
-            return !zipEntry.isDirectory();
-        }
-
-        @Override
-        public boolean isGroupOwned() {
-            return false;
-        }
-
-        @Override
-        public boolean isIdentical(FileStat fs) {
-            return fs instanceof ZipFileStat && ((ZipFileStat)fs).zipEntry.equals(zipEntry);
-        }
-
-        @Override
-        public boolean isNamedPipe() {
-            return false;
-        }
-
-        @Override
-        public boolean isOwned() {
-            return false;
-        }
-
-        @Override
-        public boolean isROwned() {
-            return false;
-        }
-
-        @Override
-        public boolean isReadable() {
-            return true;
-        }
-
-        @Override
-        public boolean isReadableReal() {
-            return true;
-        }
-
-        @Override
-        public boolean isWritable() {
-            return false;
-        }
-
-        @Override
-        public boolean isWritableReal() {
-            return false;
-        }
-
-        @Override
-        public boolean isSetgid() {
-            return false;
-        }
-
-        @Override
-        public boolean isSetuid() {
-            return false;
-        }
-
-        @Override
-        public boolean isSocket() {
-            return false;
-        }
-
-        @Override
-        public boolean isSticky() {
-            return false;
-        }
-
-        @Override
-        public boolean isSymlink() {
-            return false;
-        }
-
-        @Override
-        public int major(long l) {
-            return -1;
-        }
-
-        @Override
-        public int minor(long l) {
-            return -1;
-        }
-
-        @Override
-        public int mode() {
-            return -1;
-        }
-
-        @Override
-        public long mtime() {
-            return zipEntry.getTime();
-        }
-
-        @Override
-        public int nlink() {
-            return -1;
-        }
-
-        @Override
-        public long rdev() {
-            return -1;
-        }
-
-        @Override
-        public long st_size() {
-            return zipEntry.getSize();
-        }
-
-        @Override
-        public int uid() {
-            return 0;
-        }
-
+        POSIX posix = getRuntime().getPosix();
+        stat = lstat ? file.lstat(posix) : file.stat(posix);
     }
 
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {

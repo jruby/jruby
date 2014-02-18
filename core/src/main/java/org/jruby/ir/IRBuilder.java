@@ -147,6 +147,27 @@ public class IRBuilder {
         }
     }
 
+    private static class IRLoop {
+        public final IRScope  container;
+        public final IRLoop   parentLoop;
+        public final Label    loopStartLabel;
+        public final Label    loopEndLabel;
+        public final Label    iterStartLabel;
+        public final Label    iterEndLabel;
+        public final Variable loopResult;
+
+        public IRLoop(IRScope s, IRLoop outerLoop) {
+            container = s;
+            parentLoop = outerLoop;
+            loopStartLabel = s.getNewLabel("_LOOP_BEGIN");
+            loopEndLabel   = s.getNewLabel("_LOOP_END");
+            iterStartLabel = s.getNewLabel("_ITER_BEGIN");
+            iterEndLabel   = s.getNewLabel("_ITER_END");
+            loopResult     = s.getNewTemporaryVariable();
+            s.setHasLoopsFlag(true);
+        }
+    }
+
     private static class RescueBlockInfo {
         RescueNode rescueNode;             // Rescue node for which we are tracking info
         Label      entryLabel;             // Entry of the rescue block
@@ -463,7 +484,7 @@ public class IRBuilder {
     }
 
     public Operand buildLambda(LambdaNode node, IRScope s) {
-        IRClosure closure = new IRClosure(manager, s, false, node.getPosition().getStartLine(), node.getScope(), Arity.procArityOf(node.getArgs()), node.getArgumentType());
+        IRClosure closure = new IRClosure(manager, s, node.getPosition().getStartLine(), node.getScope(), Arity.procArityOf(node.getArgs()), node.getArgumentType());
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
@@ -482,7 +503,7 @@ public class IRBuilder {
         if (closureRetVal != U_NIL) closureBuilder.addInstr(closure, new ReturnInstr(closureRetVal));
 
         // Added as part of 'prepareForInterpretation' code.
-        // catchUncaughtBreakInLambdas(closure);
+        // handleBreakAndReturnsInLambdas(closure);
 
         Variable lambda = s.getNewTemporaryVariable();
         // SSS FIXME: Is this the right self here?
@@ -651,12 +672,9 @@ public class IRBuilder {
     }
 
     protected LocalVariable getBlockArgVariable(IRScope s, String name, int depth) {
-        IRClosure cl = (IRClosure)s;
-        if (cl.isForLoopBody()) {
-            return cl.getLocalVariable(name, depth);
-        } else {
-            throw new NotCompilableException("Cannot ask for block-arg variable in 1.9 mode");
-        }
+        if (!(s instanceof IRFor)) throw new NotCompilableException("Cannot ask for block-arg variable in 1.9 mode");
+
+        return s.getLocalVariable(name, depth);
     }
 
     protected void receiveBlockArg(IRScope s, Variable v, Operand argsArray, int argIndex, boolean isClosureArg, boolean isSplat) {
@@ -673,9 +691,7 @@ public class IRBuilder {
     }
 
     public void buildVersionSpecificBlockArgsAssignment(Node node, IRScope s, Operand argsArray, int argIndex, boolean isMasgnRoot, boolean isClosureArg, boolean isSplat) {
-        IRClosure cl = (IRClosure)s;
-        if (!cl.isForLoopBody())
-            throw new NotCompilableException("Should not have come here for block args assignment in 1.9 mode: " + node);
+        if (!(s instanceof IRFor)) throw new NotCompilableException("Should not have come here for block args assignment in 1.9 mode: " + node);
 
         // Argh!  For-loop bodies and regular iterators are different in terms of block-args!
         switch (node.getNodeType()) {
@@ -868,8 +884,8 @@ public class IRBuilder {
                 // If this instruction is executed in a Proc or Lambda context, the lexical scope value is useless.
                 IRScope returnScope = s.getLexicalParent();
                 // In 1.9 and later modes, no breaks from evals
-                if (s instanceof IREvalScript) addInstr(s, new ThrowExceptionInstr(IRException.BREAK_LocalJumpError));
-                else addInstr(s, new BreakInstr(rv, returnScope));
+                if (s instanceof IREvalScript || returnScope == null) addInstr(s, new ThrowExceptionInstr(IRException.BREAK_LocalJumpError));
+                else addInstr(s, new BreakInstr(rv, returnScope.getName(), returnScope.getScopeId()));
             } else {
                 // We are not in a closure or a loop => bad break instr!
                 addInstr(s, new ThrowExceptionInstr(IRException.BREAK_LocalJumpError));
@@ -1835,7 +1851,7 @@ public class IRBuilder {
 
     protected LocalVariable getArgVariable(IRScope s, String name, int depth) {
         // For non-loops, this name will override any name that exists in outer scopes
-        return s.isForLoopBody() ? s.getLocalVariable(name, depth) : s.getNewLocalVariable(name, 0);
+        return s instanceof IRFor ? s.getLocalVariable(name, depth) : s.getNewLocalVariable(name, 0);
     }
 
     private void addArgReceiveInstr(IRScope s, Variable v, int argIndex, boolean post, int numPreReqd, int numPostRead) {
@@ -2096,7 +2112,7 @@ public class IRBuilder {
 
     // These two methods could have been DRY-ed out if we had closures.
     // For now, just duplicating code.
-    private void catchUncaughtBreakInLambdas(IRClosure s) {
+    private void handleBreakAndReturnsInLambdas(IRClosure s) {
         Label rBeginLabel = s.getNewLabel();
         Label rEndLabel   = s.getNewLabel();
         Label rescueLabel = s.getNewLabel();
@@ -2111,8 +2127,10 @@ public class IRBuilder {
         addInstr(s, new ReceiveJRubyExceptionInstr(exc));
 
         // Handle break using runtime helper
-        // --> IRRuntimeHelpers.catchUncaughtBreakInLambdas(context, scope, bj, blockType)
-        addInstr(s, new RuntimeHelperCall(null, "catchUncaughtBreakInLambdas", new Operand[]{exc} ));
+        // --> IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, scope, bj, blockType)
+        Variable ret = getNewTemporaryVariable();
+        addInstr(s, new RuntimeHelperCall(ret, "handleBreakAndReturnsInLambdas", new Operand[]{exc} ));
+        addInstr(s, new ReturnInstr(ret));
 
         // End
         addInstr(s, new LabelInstr(rEndLabel));
@@ -2392,7 +2410,7 @@ public class IRBuilder {
             int n = 0;
             IRScope x = s;
             while (!x.isFlipScope()) {
-                if (!x.isForLoopBody()) n++;
+                n++;
                 x = x.getLexicalParent();
             }
             if (n > 0) flipState = ((LocalVariable)flipState).cloneForDepth(n);
@@ -2459,7 +2477,7 @@ public class IRBuilder {
 
     public Operand buildForIter(final ForNode forNode, IRScope s) {
             // Create a new closure context
-        IRClosure closure = new IRClosure(manager, s, true, forNode.getPosition().getStartLine(), forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
+        IRClosure closure = new IRFor(manager, s, forNode.getPosition().getStartLine(), forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
@@ -2608,7 +2626,7 @@ public class IRBuilder {
     }
 
     public Operand buildIter(final IterNode iterNode, IRScope s) {
-        IRClosure closure = new IRClosure(manager, s, false, iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType());
+        IRClosure closure = new IRClosure(manager, s, iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType());
 
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
@@ -3066,7 +3084,7 @@ public class IRBuilder {
         IRScope topLevel = s.getTopLevelScope();
         IRScope nearestLVarScope = s.getNearestTopLocalVariableScope();
 
-        IRClosure endClosure = new IRClosure(manager, s, false, postExeNode.getPosition().getStartLine(), nearestLVarScope.getStaticScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType());
+        IRClosure endClosure = new IRClosure(manager, s, postExeNode.getPosition().getStartLine(), nearestLVarScope.getStaticScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType());
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
         IRBuilder closureBuilder = newIRBuilder(manager);
@@ -3085,7 +3103,7 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
-        IRClosure beginClosure = new IRClosure(manager, s, false, preExeNode.getPosition().getStartLine(), s.getTopLevelScope().getStaticScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType());
+        IRClosure beginClosure = new IRClosure(manager, s, preExeNode.getPosition().getStartLine(), s.getTopLevelScope().getStaticScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType());
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
         IRBuilder closureBuilder = newIRBuilder(manager);
@@ -3322,15 +3340,16 @@ public class IRBuilder {
         if (s instanceof IRClosure) {
             // If 'm' is a block scope, a return returns from the closest enclosing method.
             // If this happens to be a module body, the runtime throws a local jump error if
-            // the closure is a proc.  If the closure is a lambda, then this is just a normal
-            // return and the static methodToReturnFrom value is ignored
-            addInstr(s, new NonlocalReturnInstr(retVal, s.getNearestMethod()));
+            // the closure is a proc. If the closure is a lambda, then this is just a normal
+            // return and the static methodIdToReturnFrom value is ignored
+            IRMethod m = s.getNearestMethod();
+            addInstr(s, new NonlocalReturnInstr(retVal, m == null ? "--none--" : m.getName(), m == null ? -1 : m.getScopeId()));
         } else if (s.isModuleBody()) {
             IRMethod sm = s.getNearestMethod();
 
             // Cannot return from top-level module bodies!
             if (sm == null) addInstr(s, new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
-            else addInstr(s, new NonlocalReturnInstr(retVal, sm));
+            else addInstr(s, new NonlocalReturnInstr(retVal, sm.getName(), sm.getScopeId()));
         } else {
             addInstr(s, new ReturnInstr(retVal));
         }
@@ -3579,6 +3598,8 @@ public class IRBuilder {
         Operand block = setupCallClosure(zsuperNode.getIterNode(), s);
         if (block == null) block = s.getImplicitBlockArg();
 
+        // Enebo:ZSuper in for (or nested for) can be statically resolved like method but it needs
+        // to fixup depth.
         if (s instanceof IRMethod) {
             Operand[] args = ((IRMethod)s).getCallArgs();
             return buildSuperInstr(s, block, args);
@@ -3599,27 +3620,51 @@ public class IRBuilder {
             List<Integer> argsCount = new ArrayList<Integer>();
             List<Operand> allPossibleArgs = new ArrayList<Operand>();
             IRScope superScope = s;
+            int depthFromSuper = 0;
             while (superScope instanceof IRClosure) {
                 Operand[] args = ((IRClosure)superScope).getBlockArgs();
-                int n = args.length;
+
                 // Accummulate the closure's args
-                Collections.addAll(allPossibleArgs, args);
+                Collections.addAll(allPossibleArgs, adjustVariableDepth(args, depthFromSuper));
                 // Record args count of the closure
-                argsCount.add(n);
+                argsCount.add(args.length);
                 superScope = superScope.getLexicalParent();
+                depthFromSuper++;
             }
 
             if (superScope instanceof IRMethod) {
                 Operand[] args = ((IRMethod)superScope).getCallArgs();
-                int n = args.length;
+
                 // Accummulate the method's args
-                Collections.addAll(allPossibleArgs, args);
+                Collections.addAll(allPossibleArgs, adjustVariableDepth(args, depthFromSuper));
                 // Record args count of the method
-                argsCount.add(n);
+                argsCount.add(args.length);
             }
 
-            receiveBreakException(s, block, new ZSuperInstr(ret, s.getSelf(), block, allPossibleArgs.toArray(new Operand[allPossibleArgs.size()]), argsCount.toArray(new Integer[argsCount.size()])));
+            receiveBreakException(s, block, new ZSuperInstr(ret, s.getSelf(), block,
+                    allPossibleArgs.toArray(new Operand[allPossibleArgs.size()]),
+                    argsCount.toArray(new Integer[argsCount.size()])));
             return ret;
         }
+    }
+
+    // FIXME: How is this fixup supposed to be done?  Or does somehow this happen by zsuper?
+    private Operand[] adjustVariableDepth(Operand[] args, int depthFromSuper) {
+        Operand[] newArgs = new Operand[args.length];
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] instanceof LocalVariable) {
+                newArgs[i] = ((LocalVariable) args[i]).cloneForDepth(depthFromSuper);
+            } else if (args[i] instanceof Splat) {
+                Operand array = ((Splat) args[i]).getArray();
+
+                if (array instanceof LocalVariable) {
+                    newArgs[i] = new Splat(((LocalVariable) array).cloneForDepth(depthFromSuper));
+                } else {
+                    newArgs[i] = args[i];
+                }
+            }
+        }
+
+        return newArgs;
     }
 }

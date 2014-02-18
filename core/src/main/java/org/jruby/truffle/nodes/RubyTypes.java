@@ -9,17 +9,21 @@
  */
 package org.jruby.truffle.nodes;
 
-import java.math.*;
-
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.runtime.*;
+import com.oracle.truffle.api.dsl.ImplicitCast;
+import com.oracle.truffle.api.dsl.TypeSystem;
+import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.hash.RubyHash;
-import org.jruby.truffle.runtime.core.range.*;
-import org.jruby.truffle.runtime.methods.*;
-import org.jruby.truffle.runtime.objects.*;
+import org.jruby.truffle.runtime.core.range.FixnumRange;
+import org.jruby.truffle.runtime.core.range.ObjectRange;
+import org.jruby.truffle.runtime.core.range.RubyRange;
+import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.objects.RubyBasicObject;
+
+import java.math.BigInteger;
 
 /**
  * The list of types and type conversions that the AST interpreter knows about and can specialise
@@ -52,6 +56,7 @@ import org.jruby.truffle.runtime.objects.*;
                 RubyRange.class, //
                 RubyRegexp.class, //
                 RubyString.class, //
+                RubyEncoding.class, //
                 RubySymbol.class, //
                 RubyThread.class, //
                 RubyTime.class, //

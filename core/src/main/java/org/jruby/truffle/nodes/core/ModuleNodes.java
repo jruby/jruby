@@ -10,21 +10,35 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
-import java.util.List;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.control.*;
-import org.jruby.truffle.nodes.methods.arguments.*;
-import org.jruby.truffle.nodes.objects.*;
-import org.jruby.truffle.nodes.objects.instancevariables.*;
-import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.nodes.InlinableMethodImplementation;
+import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.control.SequenceNode;
+import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
+import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.nodes.objects.SelfNode;
+import org.jruby.truffle.nodes.objects.instancevariables.UninitializedReadInstanceVariableNode;
+import org.jruby.truffle.nodes.objects.instancevariables.UninitializedWriteInstanceVariableNode;
+import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
-import org.jruby.truffle.runtime.methods.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.methods.Arity;
+import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.UniqueMethodIdentifier;
+import org.jruby.truffle.runtime.methods.Visibility;
 import org.jruby.truffle.translator.TranslatorDriver;
+
+import java.util.List;
 
 @CoreClass(name = "Module")
 public abstract class ModuleNodes {
@@ -181,7 +195,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "class_eval", minArgs = 1, maxArgs = 3)
+    @CoreMethod(names = "class_eval", maxArgs = 3, minArgs = 0, needsBlock = true)
     public abstract static class ClassEvalNode extends CoreMethodNode {
 
         public ClassEvalNode(RubyContext context, SourceSection sourceSection) {
@@ -192,22 +206,27 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line) {
+        @Specialization(order = 1)
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             final Source source = getContext().getSourceManager().get("(eval)", code.toString());
             return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize());
         }
 
-        @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") UndefinedPlaceholder line) {
+        @Specialization(order = 2)
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             final Source source = getContext().getSourceManager().get(file.toString(), code.toString());
             return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize());
         }
 
-        @Specialization
-        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") int line) {
+        @Specialization(order = 3)
+        public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") int line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             final Source source = getContext().getSourceManager().get(file.toString(), code.toString());
             return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize());
+        }
+
+        @Specialization(order = 4)
+        public Object classEval(VirtualFrame frame, RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
+            return block.call(frame.pack(), self);
         }
 
     }

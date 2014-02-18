@@ -3,11 +3,10 @@ package org.jruby.ir.runtime;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 
-import org.jruby.ir.IRMethod;
 import org.jruby.exceptions.Unrescuable;
 
 public class IRReturnJump extends RuntimeException implements Unrescuable {
-    public IRMethod methodToReturnFrom;
+    public int methodToReturnFrom;
     public Object returnValue;
 
     private IRReturnJump() {}
@@ -18,7 +17,7 @@ public class IRReturnJump extends RuntimeException implements Unrescuable {
 
     private static ThreadLocal<Reference<IRReturnJump>> threadLocalRJ = new ThreadLocal<Reference<IRReturnJump>>();
 
-    public static IRReturnJump create(IRMethod m, Object rv) {
+    public static IRReturnJump create(int scopeId, Object rv) {
         IRReturnJump rj;
         Reference<IRReturnJump> rjRef = threadLocalRJ.get();
         if (rjRef != null) {
@@ -27,8 +26,13 @@ public class IRReturnJump extends RuntimeException implements Unrescuable {
             rj = new IRReturnJump();
             threadLocalRJ.set(new SoftReference<IRReturnJump>(rj));
         }
-        rj.methodToReturnFrom = m;
+        rj.methodToReturnFrom = scopeId;
         rj.returnValue = rv;
         return rj;
+    }
+
+    @Override
+    public String toString() {
+        return "IRReturnJump:<" + methodToReturnFrom + ":" + returnValue + ">";
     }
 }

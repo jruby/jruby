@@ -9,15 +9,22 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.util.*;
+import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.PackedFrame;
+import com.oracle.truffle.api.utilities.CyclicAssumption;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.lookup.LookupFork;
+import org.jruby.truffle.runtime.lookup.LookupNode;
+import org.jruby.truffle.runtime.lookup.LookupTerminal;
+import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.Visibility;
+import org.jruby.truffle.runtime.objects.RubyBasicObject;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.utilities.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.lookup.*;
-import org.jruby.truffle.runtime.methods.*;
-import org.jruby.truffle.runtime.objects.*;
+import java.util.*;
 
 /**
  * Represents the Ruby {@code Module} class.
@@ -202,7 +209,7 @@ public class RubyModule extends RubyObject implements LookupNode {
 
         if (method == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RuntimeException("Couldn't alias as coudln't find " + oldName);
+            throw new RaiseException(getRubyClass().getContext().getCoreLibrary().noMethodError(oldName, toString()));
         }
 
         addMethod(method.withNewName(newName));

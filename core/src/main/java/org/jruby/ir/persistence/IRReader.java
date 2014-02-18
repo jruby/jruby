@@ -13,6 +13,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
+import org.jruby.ir.IRFor;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRMethod;
@@ -63,14 +64,13 @@ public class IRReader {
         Map<String, Integer> indices = decodeScopeLabelIndices(decoder);
 
         IRScope parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
-        boolean isForLoopBody = type == IRScopeType.CLOSURE ? decoder.decodeBoolean() : false;
-        int arity = type == IRScopeType.CLOSURE ? decoder.decodeInt() : -1;
+        int arity = type == IRScopeType.CLOSURE || type == IRScopeType.FOR ? decoder.decodeInt() : -1;
         int argumentType = type == IRScopeType.CLOSURE ? decoder.decodeInt() : -1;
         StaticScope parentScope = parent == null ? null : parent.getStaticScope();
         // FIXME: It seems wrong we have static scope + local vars both being persisted.  They must have the same values
         // and offsets?
         StaticScope staticScope = decodeStaticScope(decoder, parentScope);
-        IRScope scope = createScope(manager, type, name, line, parent, isForLoopBody, arity, argumentType, staticScope);
+        IRScope scope = createScope(manager, type, name, line, parent, arity, argumentType, staticScope);
 
         scope.setTemporaryVariableCount(tempVarsCount);
         // FIXME: Replace since we are defining this...perhaps even make a persistence constructor
@@ -119,7 +119,7 @@ public class IRReader {
     }
 
     public static IRScope createScope(IRManager manager, IRScopeType type, String name, int line,
-            IRScope lexicalParent, boolean isForLoopBody, int arity, int argumentType,
+            IRScope lexicalParent, int arity, int argumentType,
             StaticScope staticScope) {
 
         switch (type) {
@@ -135,8 +135,10 @@ public class IRReader {
             return new IRModuleBody(manager, lexicalParent, name, line, staticScope);
         case SCRIPT_BODY:
             return new IRScriptBody(manager, "__file__", name, staticScope);
+        case FOR:
+            return new IRFor(manager, lexicalParent, line, staticScope, Arity.createArity(arity), argumentType);
         case CLOSURE:
-            return new IRClosure(manager, lexicalParent, isForLoopBody, line, staticScope, Arity.createArity(arity), argumentType);
+            return new IRClosure(manager, lexicalParent, line, staticScope, Arity.createArity(arity), argumentType);
         case EVAL_SCRIPT:
             return new IREvalScript(manager, lexicalParent, lexicalParent.getFileName(), line, staticScope);
         }

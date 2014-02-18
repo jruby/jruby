@@ -9,15 +9,20 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.io.*;
-import java.math.*;
-import java.util.*;
-
-import com.oracle.truffle.api.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.*;
+import com.oracle.truffle.api.CompilerDirectives;
+import org.jcodings.specific.EUCJPEncoding;
+import org.jcodings.specific.SJISEncoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.array.ObjectArrayStore;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.hash.RubyHash;
-import org.jruby.truffle.runtime.objects.*;
+import org.jruby.truffle.runtime.objects.RubyBasicObject;
+
+import java.io.File;
+import java.math.BigInteger;
+import java.util.Map;
 
 public class CoreLibrary {
 
@@ -68,6 +73,7 @@ public class CoreLibrary {
     private RubyClass trueClass;
     private RubyClass typeErrorClass;
     private RubyClass zeroDivisionErrorClass;
+    private RubyClass encodingClass;
 
     private RubyModule comparableModule;
     private RubyModule configModule;
@@ -147,6 +153,7 @@ public class CoreLibrary {
         rubyTruffleErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RubyTruffleError");
         runtimeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RuntimeError");
         stringClass = new RubyString.RubyStringClass(objectClass);
+        encodingClass = new RubyEncoding.RubyEncodingClass(objectClass);
         structClass = new RubyClass(null, ioClass, "Struct");
         signalModule = new RubyModule(moduleClass, null, "Signal");
         symbolClass = new RubyClass(null, objectClass, "Symbol");
@@ -243,6 +250,7 @@ public class CoreLibrary {
                         signalModule, //
                         standardErrorClass, //
                         stringClass, //
+                        encodingClass, //
                         structClass, //
                         symbolClass, //
                         syntaxErrorClass, //
@@ -270,6 +278,8 @@ public class CoreLibrary {
         globalVariablesObject = new RubyBasicObject(objectClass);
         globalVariablesObject.switchToPrivateLayout();
         globalVariablesObject.setInstanceVariable("$:", new RubyArray(arrayClass, new ObjectArrayStore()));
+
+        initializeEncodingConstants();
     }
 
     public void initializeAfterMethodsAdded() {
@@ -281,6 +291,16 @@ public class CoreLibrary {
         nilClass.getSingletonClass().undefMethod("new");
         numericClass.getSingletonClass().undefMethod("new");
         trueClass.getSingletonClass().undefMethod("new");
+        encodingClass.getSingletonClass().undefMethod("new");
+    }
+
+    public void initializeEncodingConstants() {
+        encodingClass.setConstant("US_ASCII", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
+        encodingClass.setConstant("ASCII_8BIT", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
+        encodingClass.setConstant("UTF_8", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
+        encodingClass.setConstant("EUC_JP", new RubyEncoding(encodingClass, EUCJPEncoding.INSTANCE));
+        encodingClass.setConstant("Windows_31J", new RubyEncoding(encodingClass, SJISEncoding.INSTANCE));
+
     }
 
     public RubyBasicObject box(Object object) {
@@ -565,6 +585,8 @@ public class CoreLibrary {
         return stringClass;
     }
 
+    public RubyClass getEncodingClass(){ return encodingClass; }
+
     public RubyClass getStructClass() {
         return structClass;
     }
@@ -640,6 +662,8 @@ public class CoreLibrary {
     public RubyTrueClass getTrueObject() {
         return trueObject;
     }
+
+    public RubyEncoding getDefaultEncoding() { return RubyEncoding.findEncodingByName(context.makeString("US-ASCII")); }
 
     public RubyHash getEnv() {
         final RubyHash hash = new RubyHash(context.getCoreLibrary().getHashClass());

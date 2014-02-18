@@ -443,7 +443,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             BreakInstr bi = (BreakInstr)instr;
             IRubyObject rv = (IRubyObject)bi.getReturnValue().retrieve(context, self, currDynScope, temp);
             // This also handles breaks in lambdas -- by converting them to a return
-            return IRRuntimeHelpers.initiateBreak(context, scope, bi.getScopeToReturnTo().getScopeId(), rv, blockType);
+            //
+            // SSS FIXME: Assumes that scopes with break instr. have a frame / dynamic scope pushed so that we can get to its static scope
+            // Discovered that for-loops don't leave any information on the runtime stack -- hmm ... that sucks! So, we need to figure out
+            // a way of pushing a scope onto the stack and exploit that info.
+            return IRRuntimeHelpers.initiateBreak(context, (IRStaticScope)currDynScope.getStaticScope(), bi.getScopeIdToReturnTo(), rv, blockType);
         }
         case RETURN: {
             return (IRubyObject)retrieveOp(((ReturnBase)instr).getReturnValue(), context, self, currDynScope, temp);
@@ -453,7 +457,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, temp);
             // If not in a lambda, check if this was a non-local return
             if (!IRRuntimeHelpers.inLambda(blockType)) {
-                IRRuntimeHelpers.initiateNonLocalReturn(context, scope, ri.methodToReturnFrom, rv);
+                IRRuntimeHelpers.initiateNonLocalReturn(context, (IRStaticScope)currDynScope.getStaticScope(), ri.methodIdToReturnFrom, rv);
             }
             return rv;
         }

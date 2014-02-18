@@ -16,10 +16,7 @@ import org.joni.Option;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
-import org.jruby.truffle.runtime.core.RubyRegexp;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.core.StringFormatter;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 
 import java.util.Arrays;
@@ -589,5 +586,26 @@ public abstract class StringNodes {
             string.reverseStringValue();
             return string;
         }
+    }
+
+    @CoreMethod(names = "force_encoding", minArgs = 1, maxArgs = 1)
+    public abstract static class ForceEncodingNode extends CoreMethodNode {
+
+        public ForceEncodingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ForceEncodingNode(ForceEncodingNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString forceEncoding(RubyString string, RubyString encodingName) {
+            RubyEncoding encoding = RubyEncoding.findEncodingByName(encodingName);
+            string.forceEncoding(encoding.getRubyEncoding().getEncoding());
+
+            return string;
+        }
+
     }
 }

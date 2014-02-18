@@ -183,12 +183,12 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     }
     
     boolean alive() {
-        return thread != null && thread.isAlive();
+        return thread != null && thread.isAlive() && !data.queue.isShutdown();
     }
     
     static RubyThread createThread(final Ruby runtime, final FiberData data, final SizedQueue queue, final Block block) {
         final AtomicReference<RubyThread> fiberThread = new AtomicReference();
-        Thread thread = new Thread() {
+        runtime.getFiberExecutor().execute(new Runnable() {
             public void run() {
                 ThreadContext context = runtime.getCurrentContext();
                 context.setFiber(data.fiber.get());
@@ -221,14 +221,12 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                     }
                 } finally {
                     data.queue.shutdown();
+                    runtime.getThreadService().disposeCurrentThread();
                 }
             }
-        };
-        thread.setDaemon(true);
-        thread.setName("FiberThread#" + data.fiber.get().id());
-        thread.start();
+        });
         
-        while (fiberThread.get() == null) {}
+        while (fiberThread.get() == null) {Thread.yield();}
         
         return fiberThread.get();
     }

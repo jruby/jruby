@@ -1,14 +1,14 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 import java.util.Map;
-import org.jruby.ir.operands.ScopeModule;
 
 // NOTE: breaks that jump out of while/until loops would have
 // been transformed by the IR building into an ordinary jump.
@@ -30,17 +30,23 @@ import org.jruby.ir.operands.ScopeModule;
 // def foo(n); break if n > 5; end; foo(100) will throw an exception
 //
 public class BreakInstr extends Instr implements FixedArityInstr {
-    private final IRScope scopeToReturnTo;
+    private final String scopeName;
+    private final int scopeIdToReturnTo;
     private Operand returnValue;
 
-    public BreakInstr(Operand rv, IRScope s) {
+    public BreakInstr(Operand rv, String scopeName, int scopeIdToReturnTo) {
         super(Operation.BREAK);
-        this.scopeToReturnTo = s;
+        this.scopeName = scopeName;
+        this.scopeIdToReturnTo = scopeIdToReturnTo;
         this.returnValue = rv;
     }
 
-    public IRScope getScopeToReturnTo() {
-        return scopeToReturnTo;
+    public String getScopeName() {
+        return scopeName;
+    }
+
+    public int getScopeIdToReturnTo() {
+        return scopeIdToReturnTo;
     }
 
     public Operand getReturnValue() {
@@ -49,7 +55,7 @@ public class BreakInstr extends Instr implements FixedArityInstr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { new ScopeModule(scopeToReturnTo), returnValue };
+        return new Operand[] { new StringLiteral(scopeName), new Fixnum(scopeIdToReturnTo), returnValue };
     }
 
     @Override
@@ -58,11 +64,11 @@ public class BreakInstr extends Instr implements FixedArityInstr {
             case CLOSURE_INLINE:
                 // SSS FIXME: This is buggy!
                 //
-                // If scopeToReturnTo is a closure, it could have
+                // If scopeIdToReturnTo is a closure, it could have
                 // been cloned as well!! This is only an issue if we
                 // inline in closures. But, if we always inline in methods,
                 // this will continue to work.
-                if (ii.getInlineHostScope() == scopeToReturnTo) {
+                if (ii.getInlineHostScope().getScopeId() == scopeIdToReturnTo) {
                     // If the break got inlined into the scope we had to break to, replace the break
                     // with a COPY of the break-value into the call's result var.
                     // Ex: v = foo { ..; break n; ..}.  So, "break n" is replaced with "v = n"
@@ -75,7 +81,7 @@ public class BreakInstr extends Instr implements FixedArityInstr {
                 // fall through
             case ENSURE_BLOCK_CLONE:
             case NORMAL_CLONE:
-                return new BreakInstr(returnValue.cloneForInlining(ii), scopeToReturnTo);
+                return new BreakInstr(returnValue.cloneForInlining(ii), scopeName, scopeIdToReturnTo);
             default:
                 return super.cloneForInlining(ii);
         }
@@ -83,7 +89,7 @@ public class BreakInstr extends Instr implements FixedArityInstr {
 
     @Override
     public String toString() {
-        return getOperation() + "(" + returnValue + (scopeToReturnTo == null ? "" : ", " + scopeToReturnTo) + ")";
+        return getOperation() + "(" + returnValue + ", " + scopeName + ":" + scopeIdToReturnTo + ")";
     }
 
     @Override

@@ -43,6 +43,7 @@ import org.jruby.ir.operands.TemporaryFloatVariable;
 import org.jruby.ir.operands.TemporaryFixnumVariable;
 import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.TemporaryVariable;
+import org.jruby.ir.operands.TemporaryVariableType;
 import org.jruby.ir.operands.UnboxedFixnum;
 import org.jruby.ir.operands.UnboxedFloat;
 import org.jruby.ir.operands.UndefinedValue;
@@ -192,7 +193,7 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void TemporaryBooleanVariable(TemporaryBooleanVariable variable) {
         encoder.encode((byte) variable.getType().ordinal());
-        encoder.encode(((TemporaryLocalVariable) variable).getOffset());
+        encoder.encode(variable.getOffset());
     }
 
     @Override public void TemporaryFixnumVariable(TemporaryFixnumVariable variable) {
@@ -207,22 +208,17 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void TemporaryLocalVariable(TemporaryLocalVariable variable) {
         encoder.encode((byte) variable.getType().ordinal());
+
+        if (variable.getType() == TemporaryVariableType.CLOSURE) {
+            encoder.encode(((TemporaryClosureVariable) variable).getClosureId());
+        }
         encoder.encode(variable.getOffset());
     }
 
+    // Only for CURRENT_SCOPE and CURRENT_MODULE now which is weird
     @Override public void TemporaryVariable(TemporaryVariable variable) {
-        switch(variable.getType()) {
-            case CLOSURE:
-                encoder.encode(((TemporaryClosureVariable) variable).getClosureId());
-                encoder.encode(((TemporaryClosureVariable) variable).getOffset());
-                break;
-
-            case LOCAL:
-            case CURRENT_MODULE:
-            case CURRENT_SCOPE:
-                encoder.encode(((TemporaryLocalVariable) variable).getOffset());
-                break;
-        }
+        encoder.encode((byte) variable.getType().ordinal());
+        encoder.encode(((TemporaryLocalVariable) variable).getOffset());
     }
 
     @Override public void UnboxedBoolean(org.jruby.ir.operands.UnboxedBoolean booleanliteral) { encoder.encode(booleanliteral.isTrue()); }

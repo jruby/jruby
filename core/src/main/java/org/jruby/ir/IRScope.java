@@ -292,6 +292,7 @@ public abstract class IRScope implements ParseResult {
         this.hasExplicitCallProtocol = s.hasExplicitCallProtocol;
 
         this.localVars = new HashMap<String, LocalVariable>(s.localVars);
+        synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
         this.relinearizeCFG = false;
 
         setupLexicalContainment();
@@ -584,17 +585,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     public boolean canReceiveNonlocalReturns() {
-        if (this.canReceiveNonlocalReturns) {
-            return true;
-        }
-
-        boolean canReceiveNonlocalReturns = false;
-        for (IRClosure cl : getClosures()) {
-            if (cl.hasNonlocalReturns || cl.canReceiveNonlocalReturns()) {
-                canReceiveNonlocalReturns = true;
-            }
-        }
-        return canReceiveNonlocalReturns;
+        computeScopeFlags();
+        return this.canReceiveNonlocalReturns;
     }
 
     public CFG buildCFG() {
@@ -949,14 +941,20 @@ public abstract class IRScope implements ParseResult {
         // Compute flags for nested closures (recursively) and set derived flags.
         for (IRClosure cl : getClosures()) {
             cl.computeScopeFlags();
-            if (cl.hasBreakInstrs || cl.canReceiveBreaks) {
+            if (cl.usesEval()) {
                 canReceiveBreaks = true;
-            }
-            if (cl.hasNonlocalReturns || cl.canReceiveNonlocalReturns) {
                 canReceiveNonlocalReturns = true;
-            }
-            if (cl.usesZSuper()) {
                 usesZSuper = true;
+            } else {
+                if (cl.hasBreakInstrs || cl.canReceiveBreaks) {
+                    canReceiveBreaks = true;
+                }
+                if (cl.hasNonlocalReturns || cl.canReceiveNonlocalReturns) {
+                    canReceiveNonlocalReturns = true;
+                }
+                if (cl.usesZSuper()) {
+                    usesZSuper = true;
+                }
             }
         }
 
@@ -1061,15 +1059,19 @@ public abstract class IRScope implements ParseResult {
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) {
-            lvar = new LocalVariable(name, scopeDepth, localVars.size());
-            localVars.put(name, lvar);
+            lvar = getNewLocalVariable(name, scopeDepth);
+        } else if (lvar.getScopeDepth() != scopeDepth) {
+            lvar = lvar.cloneForDepth(scopeDepth);
         }
 
         return lvar;
     }
 
-    public LocalVariable getNewLocalVariable(String name, int depth) {
-        throw new RuntimeException("getNewLocalVariable should be called for: " + this.getClass().getName());
+    public LocalVariable getNewLocalVariable(String name, int scopeDepth) {
+        assert scopeDepth == 0: "Scope depth is non-zero for new-var request " + name + " in " + this;
+        LocalVariable lvar = new LocalVariable(name, scopeDepth, getStaticScope().addVariable(name));
+        localVars.put(name, lvar);
+        return lvar;
     }
 
     protected void initEvalScopeVariableAllocator(boolean reset) {
@@ -1391,10 +1393,6 @@ public abstract class IRScope implements ParseResult {
         nextClosureIndex++;
 
         return nextClosureIndex;
-    }
-
-    public boolean isForLoopBody() {
-        return false;
     }
 
     public boolean isBeginEndBlock() {

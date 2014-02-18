@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.jcodings.Encoding;
 import org.jruby.RubyBoolean;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.runtime.NilPlaceholder;
@@ -76,6 +77,10 @@ public class RubyString extends RubyObject {
 
 
         cachedStringValue = copyOf.cachedStringValue;
+    }
+
+    public void forceEncoding(Encoding encoding) {
+        this.bytes.setEncoding(encoding);
     }
 
     public boolean isFromJavaString() {

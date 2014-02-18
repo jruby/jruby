@@ -57,7 +57,16 @@ public class JRubyFile extends JavaSecuredFile {
         return createNoUnicodeConversion(cwd, pathname);
     }
 
+    public static FileResource createResource(Ruby runtime, String pathname) {
+      return createResource(runtime.getCurrentDirectory(), pathname);
+    }
+
     public static FileResource createResource(String cwd, String pathname) {
+        if (pathname == null) {
+            // null pathnames do not exist
+            return new RegularFileResource(JRubyNonExistentFile.NOT_EXIST);
+        }
+
         // Try as a jar resource first
         FileResource jarResource = JarResource.create(pathname);
         if (jarResource != null) {
@@ -101,6 +110,27 @@ public class JRubyFile extends JavaSecuredFile {
         super(filename);
     }
 
+    @Override
+    public String getAbsolutePath() {
+	return normalizeSeps(new File(super.getPath()).getAbsolutePath());
+    }
+ 
+    @Override
+    public String getCanonicalPath() throws IOException {
+	try {
+	    return normalizeSeps(super.getCanonicalPath());
+	} catch (IOException e) {
+	    // usually IOExceptions don't tell us anything about the path,
+	    // so add an extra wrapper to give more debugging help.
+	    throw (IOException) new IOException("Unable to canonicalize path: " + getAbsolutePath()).initCause(e);
+	}
+    }
+ 
+    @Override
+    public String getPath() {
+	return normalizeSeps(super.getPath());
+    }
+ 
     @Override
     public String toString() {
         return normalizeSeps(super.toString());

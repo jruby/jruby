@@ -74,13 +74,14 @@ import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.util.ByteList;
+import org.jruby.util.FileResource;
+import org.jruby.util.JRubyFile;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.io.DirectoryAsFileException;
 import org.jruby.util.io.PermissionDeniedException;
 import org.jruby.util.io.Stream;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.IOOptions;
-import org.jruby.util.JRubyFile;
-import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.InvalidValueException;
@@ -1375,17 +1376,18 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     
     private static final ByteList FILE_URL_START = ByteList.create("file:");
 
+
     /**
      * Get the fully-qualified JRubyFile object for the path, taking into
      * account the runtime's current directory.
      */
-    public static JRubyFile file(IRubyObject pathOrFile) {
+    public static FileResource fileResource(IRubyObject pathOrFile) {
         Ruby runtime = pathOrFile.getRuntime();
 
         if (pathOrFile instanceof RubyFile) {
-            return JRubyFile.create(runtime.getCurrentDirectory(), ((RubyFile) pathOrFile).getPath());
+            return JRubyFile.createResource(runtime, ((RubyFile) pathOrFile).getPath());
         } else if (pathOrFile instanceof RubyIO) {
-            return JRubyFile.create(runtime.getCurrentDirectory(), ((RubyIO) pathOrFile).openFile.getPath());
+            return JRubyFile.createResource(runtime, ((RubyIO) pathOrFile).openFile.getPath());
         } else {
             RubyString pathStr = get_path(runtime.getCurrentContext(), pathOrFile);
             ByteList pathByteList = pathStr.getByteList();
@@ -1397,11 +1399,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     path = pathParts[1];
                 }
 
-                return JRubyFile.create(runtime.getCurrentDirectory(), path);
+                return JRubyFile.createResource(runtime, path);
             }
 
-            return JRubyFile.create(runtime.getCurrentDirectory(), pathStr.toString());
+            return JRubyFile.createResource(runtime, pathStr.toString());
         }
+    }
+
+    @Deprecated // Use fileResource instead
+    public static JRubyFile file(IRubyObject pathOrFile) {
+      return fileResource(pathOrFile).hackyGetJRubyFile();
     }
 
     @Override
