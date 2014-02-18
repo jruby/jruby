@@ -45,7 +45,7 @@ before_install:
   - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
 
 # run a second time in case of failures to see the maven output
-script: ( mvn -Pbootstrap -q || mvn -Pbootstrap ) && mvn $TARGET"
+script: ( mvn -Pbootstrap | grep -v Down ) && mvn $TARGET
 install: /bin/true
 notifications:
   irc:
