@@ -30,4 +30,9 @@ public class IRReturnJump extends RuntimeException implements Unrescuable {
         rj.returnValue = rv;
         return rj;
     }
+
+    @Override
+    public String toString() {
+        return "IRReturnJump:<" + methodToReturnFrom + ":" + returnValue + ">";
+    }
 }

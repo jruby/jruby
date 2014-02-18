@@ -585,17 +585,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     public boolean canReceiveNonlocalReturns() {
-        if (this.canReceiveNonlocalReturns) {
-            return true;
-        }
-
-        boolean canReceiveNonlocalReturns = false;
-        for (IRClosure cl : getClosures()) {
-            if (cl.hasNonlocalReturns || cl.canReceiveNonlocalReturns()) {
-                canReceiveNonlocalReturns = true;
-            }
-        }
-        return canReceiveNonlocalReturns;
+        computeScopeFlags();
+        return this.canReceiveNonlocalReturns;
     }
 
     public CFG buildCFG() {
@@ -950,14 +941,20 @@ public abstract class IRScope implements ParseResult {
         // Compute flags for nested closures (recursively) and set derived flags.
         for (IRClosure cl : getClosures()) {
             cl.computeScopeFlags();
-            if (cl.hasBreakInstrs || cl.canReceiveBreaks) {
+            if (cl.usesEval()) {
                 canReceiveBreaks = true;
-            }
-            if (cl.hasNonlocalReturns || cl.canReceiveNonlocalReturns) {
                 canReceiveNonlocalReturns = true;
-            }
-            if (cl.usesZSuper()) {
                 usesZSuper = true;
+            } else {
+                if (cl.hasBreakInstrs || cl.canReceiveBreaks) {
+                    canReceiveBreaks = true;
+                }
+                if (cl.hasNonlocalReturns || cl.canReceiveNonlocalReturns) {
+                    canReceiveNonlocalReturns = true;
+                }
+                if (cl.usesZSuper()) {
+                    usesZSuper = true;
+                }
             }
         }
 

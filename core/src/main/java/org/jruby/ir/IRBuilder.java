@@ -503,7 +503,7 @@ public class IRBuilder {
         if (closureRetVal != U_NIL) closureBuilder.addInstr(closure, new ReturnInstr(closureRetVal));
 
         // Added as part of 'prepareForInterpretation' code.
-        // catchUncaughtBreakInLambdas(closure);
+        // handleBreakAndReturnsInLambdas(closure);
 
         Variable lambda = s.getNewTemporaryVariable();
         // SSS FIXME: Is this the right self here?
@@ -2112,7 +2112,7 @@ public class IRBuilder {
 
     // These two methods could have been DRY-ed out if we had closures.
     // For now, just duplicating code.
-    private void catchUncaughtBreakInLambdas(IRClosure s) {
+    private void handleBreakAndReturnsInLambdas(IRClosure s) {
         Label rBeginLabel = s.getNewLabel();
         Label rEndLabel   = s.getNewLabel();
         Label rescueLabel = s.getNewLabel();
@@ -2127,8 +2127,10 @@ public class IRBuilder {
         addInstr(s, new ReceiveJRubyExceptionInstr(exc));
 
         // Handle break using runtime helper
-        // --> IRRuntimeHelpers.catchUncaughtBreakInLambdas(context, scope, bj, blockType)
-        addInstr(s, new RuntimeHelperCall(null, "catchUncaughtBreakInLambdas", new Operand[]{exc} ));
+        // --> IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, scope, bj, blockType)
+        Variable ret = getNewTemporaryVariable();
+        addInstr(s, new RuntimeHelperCall(ret, "handleBreakAndReturnsInLambdas", new Operand[]{exc} ));
+        addInstr(s, new ReturnInstr(ret));
 
         // End
         addInstr(s, new LabelInstr(rEndLabel));
@@ -3338,7 +3340,7 @@ public class IRBuilder {
         if (s instanceof IRClosure) {
             // If 'm' is a block scope, a return returns from the closest enclosing method.
             // If this happens to be a module body, the runtime throws a local jump error if
-            // the closure is a proc.  If the closure is a lambda, then this is just a normal
+            // the closure is a proc. If the closure is a lambda, then this is just a normal
             // return and the static methodIdToReturnFrom value is ignored
             IRMethod m = s.getNearestMethod();
             addInstr(s, new NonlocalReturnInstr(retVal, m == null ? "--none--" : m.getName(), m == null ? -1 : m.getScopeId()));
