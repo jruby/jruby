@@ -9,32 +9,30 @@ jdk:
 
 env:
   matrix:
-    - TARGET='test-extended'
-#    - TARGET='spec:ci_interpreted_travis'
-#    - TARGET='spec:ci_interpreted_ir_travis'
-#    - TARGET='spec:ir'
-#    - TARGET='spec:truffle'
-#    - TARGET='test-dist'
+    - TARGET='-Ptest'
+    - TARGET='-Prake -Dtest:extended'
+    - TARGET='-Prake -Dspec:ci_interpreted_travis'
+    - TARGET='-Prake -Dspec:ci_interpreted_ir_travis'
+    - TARGET='-Prake -Dspec:ir'
+    - TARGET='-Ptruffle'
 
 matrix:
   include:
-    - env: PROFILE='dist'
-      script: mvn -P $PROFILE
+    # these profile do no need to run for all JDKs
+    - env: TARGET='-Pdist'
       jdk: oraclejdk8
-    - env: PROFILE='jruby-jars'
-      script: mvn -P $PROFILE
+    - env: TARGET='-Pjruby-jars'
       jdk: oraclejdk7
-# combine the junit test with a profile
-    - env: PROFILE='main'
-      script: mvn -Ptest -P $PROFILE
+    - env: TARGET='-Pmain'
       jdk: oraclejdk7
-    - env: PROFILE='complete'
-      script: mvn -Ptest -P $PROFILE
+    - env: TARGET='-Pcomplete'
       jdk: oraclejdk8
   fast_finish: true
   allow_failures:
     - env: TARGET='spec:ci_interpreted_ir_travis'
-    - env: TARGET='test-dist'
+    - env: TARGET='-Pcomplete'
+    - env: TARGET='-Pmain'
+    - env: TARGET='-Pdist'
     - jdk: oraclejdk8
 
 branches:
@@ -46,7 +44,8 @@ branches:
 before_install:
   - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
 
-script: mvn -Pbootstrap -q && ant $TARGET"
+# run a second time in case of failures to see the maven output
+script: ( mvn -Pbootstrap -q || mvn -Pbootstrap ) && mvn $TARGET"
 install: /bin/true
 notifications:
   irc:

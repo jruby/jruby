@@ -421,6 +421,33 @@
 
   <profiles>
     <profile>
+      <id>rake</id>
+      <build>
+	<defaultGoal>validate</defaultGoal>
+      </build>
+      <modules>
+	<module>test</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>exec</id>
+      <build>
+	<defaultGoal>validate</defaultGoal>
+      </build>
+      <modules>
+	<module>test</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>truffle</id>
+      <build>
+	<defaultGoal>validate</defaultGoal>
+      </build>
+      <modules>
+	<module>test</module>
+      </modules>
+    </profile>
+    <profile>
       <id>bootstrap</id>
       <modules>
         <module>test</module>
