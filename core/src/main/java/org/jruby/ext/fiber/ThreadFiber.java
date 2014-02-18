@@ -93,7 +93,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                 if (result == NEVER) result = context.nil;
                 return result;
             } catch (RaiseException re) {
-                if (targetFiberData.queue.isShutdown()) {
+                if (currentFiberData.queue.isShutdown()) {
                     throw re;
                 }
 
