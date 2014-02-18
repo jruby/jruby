@@ -51,8 +51,6 @@ public abstract class DynamicScope {
     // been called.
     protected DynamicScope evalScope;
 
-    protected static final Object[] NULL_ARRAY = new Object[0];
-
     protected DynamicScope(StaticScope staticScope, DynamicScope parent) {
         this.staticScope = staticScope;
         this.parent = parent;
@@ -181,17 +179,9 @@ public abstract class DynamicScope {
 
     public abstract void growIfNeeded();
 
-    protected void errorOnInvalidGrow(int size, String message) {
-        if (staticScope.getNumberOfVariables() != size) {
-            throw new RuntimeException(message);
-        }
-    }
-
     public abstract DynamicScope cloneScope();
 
     public abstract IRubyObject[] getValues();
-
-    public abstract Object[] getObjectValues();
 
     /**
      * Get value from current scope or one of its captured scopes.
@@ -208,9 +198,7 @@ public abstract class DynamicScope {
     /**
      * Variation of getValue that checks for nulls, returning and setting the given value (presumably nil)
      */
-    public IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil) {
-        return (IRubyObject)getObjectValueOrDefault(offset, depth, nil);
-    }
+    public abstract IRubyObject getValueOrNil(int offset, int depth, IRubyObject nil);
 
     /**
      * getValueOrNil for depth 0
@@ -238,54 +226,6 @@ public abstract class DynamicScope {
     public abstract IRubyObject getValueThreeDepthZeroOrNil(IRubyObject nil);
 
     /**
-     * Get value from current scope or one of its captured scopes.
-     *
-     * FIXME: block variables are not getting primed to nil so we need to null check those
-     *  until we prime them properly.  Also add assert back in.
-     *
-     * @param offset zero-indexed value that represents where variable lives
-     * @param depth how many captured scopes down this variable should be set
-     * @return the value here
-     */
-    public abstract Object getObjectValue(int offset, int depth);
-
-    /**
-     * Variation of getValue that checks for nulls, returning and setting the given value
-     */
-    public Object getObjectValueOrDefault(int offset, int depth, Object defval) {
-        if (depth > 0) {
-            return parent.getObjectValueOrDefault(offset, depth - 1, defval);
-        } else {
-            return getObjectValueDepthZeroOrDefault(offset, defval);
-        }
-    }
-
-    /**
-     * getValueOrDefault for depth 0
-     */
-    public abstract Object getObjectValueDepthZeroOrDefault(int offset, Object defval);
-
-    /**
-     * getValueOrDefault for index 0, depth 0
-     */
-    public abstract Object getObjectValueZeroDepthZeroOrDefault(Object defval);
-
-    /**
-     * getValueOrDefault for index 1, depth 0
-     */
-    public abstract Object getObjectValueOneDepthZeroOrDefault(Object defval);
-
-    /**
-     * getValueOrDefault for index 2, depth 0
-     */
-    public abstract Object getObjectValueTwoDepthZeroOrDefault(Object defval);
-
-    /**
-     * getValueOrDefault for index 3, depth 0
-     */
-    public abstract Object getObjectValueThreeDepthZeroOrDefault(Object defval);
-
-    /**
      * Set value in current dynamic scope or one of its captured scopes.
      *
      * @param offset zero-indexed value that represents where variable lives
@@ -310,6 +250,7 @@ public abstract class DynamicScope {
      *
      * @param offset zero-indexed value that represents where variable lives
      * @param value to set
+     * @param depth how many captured scopes down this variable should be set
      */
     public abstract IRubyObject setValueDepthZero(IRubyObject value, int offset);
 
@@ -332,54 +273,6 @@ public abstract class DynamicScope {
      * Set value three in this scope.
      */
     public abstract IRubyObject setValueThreeDepthZero(IRubyObject value);
-
-    /**
-     * Set value in current dynamic scope or one of its captured scopes.
-     *
-     * @param offset zero-indexed value that represents where variable lives
-     * @param value to set
-     * @param depth how many captured scopes down this variable should be set
-     */
-    public abstract Object setObjectValue(int offset, Object value, int depth);
-
-    /**
-     * Set value in current dynamic scope or one of its captured scopes.
-     *
-     * @param offset zero-indexed value that represents where variable lives
-     * @param value to set
-     * @param depth how many captured scopes down this variable should be set
-     */
-    public Object setObjectValue(Object value, int offset, int depth) {
-        return setObjectValue(offset, value, depth);
-    }
-
-    /**
-     * setValue for depth zero
-     *
-     * @param offset zero-indexed value that represents where variable lives
-     * @param value to set
-     */
-    public abstract Object setObjectValueDepthZero(Object value, int offset);
-
-    /**
-     * Set value zero in this scope;
-     */
-    public abstract Object setObjectValueZeroDepthZero(Object value);
-
-    /**
-     * Set value one in this scope.
-     */
-    public abstract Object setObjectValueOneDepthZero(Object value);
-
-    /**
-     * Set value two in this scope.
-     */
-    public abstract Object setObjectValueTwoDepthZero(Object value);
-
-    /**
-     * Set value three in this scope.
-     */
-    public abstract Object setObjectValueThreeDepthZero(Object value);
 
     /**
      * Set all values which represent 'normal' parameters in a call list to this dynamic
@@ -406,31 +299,26 @@ public abstract class DynamicScope {
     public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         setArgValues(new IRubyObject[] {arg0, arg1, arg2}, 3);
     }
-    
-    /**
-     * Set all values which represent 'normal' parameters in a call list to this dynamic
-     * scope.  Function calls bind to local scopes by assuming that the indexes or the
-     * arg list correspond to that of the local scope (plus 2 since $_ and $~ always take
-     * the first two slots).  We pass in a second argument because we sometimes get more
-     * values than we are expecting.  The rest get compacted by original caller into
-     * rest args.
-     *
-     * @param values up to size specified to be mapped as ordinary parm values
-     * @param size is the number of values to assign as ordinary parm values
-     */
-    public abstract void setArgObjectValues(Object[] values, int size);
-
-    public void setArgObjectValues() {
-        setArgObjectValues(NULL_ARRAY, 0);
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3}, 4);
     }
-    public void setArgObjectValues(Object arg0) {
-        setArgObjectValues(new Object[] {arg0}, 1);
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4) {
+        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4}, 5);
     }
-    public void setArgObjectValues(Object arg0, Object arg1) {
-        setArgObjectValues(new Object[] {arg0, arg1}, 2);
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5) {
+        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5}, 6);
     }
-    public void setArgObjectValues(Object arg0, Object arg1, Object arg2) {
-        setArgObjectValues(new Object[] {arg0, arg1, arg2}, 3);
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6) {
+        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6}, 7);
+    }
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7) {
+        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7}, 8);
+    }
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8) {
+        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8}, 9);
+    }
+    public void setArgValues(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, IRubyObject arg9) {
+        setArgValues(new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9}, 10);
     }
 
 
@@ -440,12 +328,11 @@ public abstract class DynamicScope {
      * @param index index in the dynamic scope to start setting these values
      * @param size which of the last size arguments of values parameter to set
      */
-    public abstract void setEndArgObjectValues(Object[] values, int index, int size);
+    public abstract void setEndArgValues(IRubyObject[] values, int index, int size);
 
     /**
      * Copy variable values back for ZSuper call.
      */
-    @Deprecated
     public abstract IRubyObject[] getArgValues();
 
     @Override
@@ -458,7 +345,7 @@ public abstract class DynamicScope {
         buf.append(indent).append("Static Type[" + hashCode() + "]: " +
                 (staticScope.isBlockScope() ? "block" : "local")+" [");
         int size = staticScope.getNumberOfVariables();
-        Object[] variableValues = getObjectValues();
+        IRubyObject[] variableValues = getValues();
 
         if (size != 0) {
             String names[] = staticScope.getVariables();

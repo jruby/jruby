@@ -62,4 +62,10 @@ public class ArgsPreOneArgNode extends ArgsNode {
             IRubyObject arg1, IRubyObject arg2, Block block) {
         throw runtime.newArgumentError(3, 1);
     }
+
+    @Override
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0,
+            IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        throw runtime.newArgumentError(4, 1);
+    }
 }

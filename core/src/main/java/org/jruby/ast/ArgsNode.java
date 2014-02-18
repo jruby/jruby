@@ -271,7 +271,7 @@ public class ArgsNode extends Node {
         if (!hasMasgnArgs) {
             // no arg grouping, just use bulk assignment methods
             if (preCount > 0) scope.setArgValues(args, Math.min(args.length, preCount));
-            if (postCount > 0 && args.length > preCount) scope.setEndArgObjectValues(args, postIndex, Math.min(args.length - preCount, postCount));
+            if (postCount > 0 && args.length > preCount) scope.setEndArgValues(args, postIndex, Math.min(args.length - preCount, postCount));
         } else {
             masgnAwareArgAssign(context, runtime, self, args, block, scope);
         }
@@ -370,6 +370,76 @@ public class ArgsNode extends Node {
             scope.setArgValues(arg0, arg1, arg2);
         } else {
             prepare(context, runtime, self, new IRubyObject[] {arg0, arg1, arg2}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0, arg1, arg2, arg3);
+        } else {
+            prepare(context, runtime, self, new IRubyObject[] {arg0, arg1, arg2, arg3}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block block) {
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0, arg1, arg2, arg3, arg4);
+        } else {
+            prepare(context, runtime, self, new IRubyObject[] {arg0, arg1, arg2, arg3, arg4}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, Block block) {
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0, arg1, arg2, arg3, arg4, arg5);
+        } else {
+            prepare(context, runtime, self, new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, Block block) {
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+        } else {
+            prepare(context, runtime, self, new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, Block block) {
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+        } else {
+            prepare(context, runtime, self, new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, Block block) {
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+        } else {
+            prepare(context, runtime, self, new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8}, block);
+        }
+        if (getBlock() != null) processBlockArg(scope, runtime, block);
+    }
+    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7, IRubyObject arg8, IRubyObject arg9, Block block) {
+        DynamicScope scope = context.getCurrentScope();
+
+        if (isSimple) {
+            scope.setArgValues(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+        } else {
+            prepare(context, runtime, self, new IRubyObject[] {arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9}, block);
         }
         if (getBlock() != null) processBlockArg(scope, runtime, block);
     }

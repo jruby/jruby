@@ -24,7 +24,13 @@ public class DummyDynamicScope extends NoVarsDynamicScope {
     }
     
     public void growIfNeeded() {
-        errorOnInvalidGrow(SIZE, GROW_ERROR);
+        growIfNeeded(SIZE, GROW_ERROR);
+    }
+
+    protected void growIfNeeded(int size, String message) {
+        if (staticScope.getNumberOfVariables() != size) {
+            throw new RuntimeException(message);
+        }
     }
     
     public DynamicScope cloneScope() {
