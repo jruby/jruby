@@ -55,56 +55,26 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.ByteList;
-import org.jruby.util.encoding.Transcoder;
-import org.jruby.util.ConvertBytes;
-import org.jruby.util.Numeric;
-import org.jruby.util.Pack;
-import org.jruby.util.PerlHash;
-import org.jruby.util.RegexpOptions;
-import org.jruby.util.SipHashInline;
-import org.jruby.util.Sprintf;
-import org.jruby.util.StringSupport;
-import org.jruby.util.TypeConverter;
+import org.jruby.util.*;
+import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.string.JavaCrypt;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Locale;
 
-import static org.jruby.CompatVersion.RUBY1_8;
-import static org.jruby.CompatVersion.RUBY1_9;
-import static org.jruby.CompatVersion.RUBY2_0;
+import static org.jruby.CompatVersion.*;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
-import static org.jruby.util.StringSupport.CR_7BIT;
-import static org.jruby.util.StringSupport.CR_BROKEN;
-import static org.jruby.util.StringSupport.CR_MASK;
-import static org.jruby.util.StringSupport.CR_UNKNOWN;
-import static org.jruby.util.StringSupport.CR_VALID;
-import static org.jruby.util.StringSupport.codeLength;
-import static org.jruby.util.StringSupport.codePoint;
-import static org.jruby.util.StringSupport.codeRangeScan;
-import static org.jruby.util.StringSupport.searchNonAscii;
-import static org.jruby.util.StringSupport.strLengthWithCodeRange;
-import static org.jruby.util.StringSupport.toLower;
-import static org.jruby.util.StringSupport.toUpper;
-import static org.jruby.util.StringSupport.unpackArg;
-import static org.jruby.util.StringSupport.unpackResult;
-import org.jruby.util.io.EncodingUtils;
+import static org.jruby.util.StringSupport.*;
 
 /**
  * Implementation of Ruby String class
@@ -1241,6 +1211,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyString str = newString(context.runtime, out);
 
         str.setTaint(tainted || isTaint());
+        str.getByteList().setEncoding(value.getEncoding());
+        
         return str;
     }
 
