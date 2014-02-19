@@ -27,7 +27,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyParserResult;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
-import org.jruby.truffle.runtime.objects.RubyBasicObject;
 import org.jruby.truffle.translator.TranslatorDriver;
 
 public class JRubyTruffleBridge {
@@ -94,7 +93,7 @@ public class JRubyTruffleBridge {
     }
 
     public IRubyObject toJRuby(Object object) {
-        if (object instanceof NilPlaceholder || object instanceof RubyBasicObject) {
+        if (object instanceof NilPlaceholder) {
             return runtime.getNil();
         } else if (object == truffleContext.getCoreLibrary().getKernelModule()) {
             return runtime.getKernel();
@@ -107,7 +106,7 @@ public class JRubyTruffleBridge {
         } else if (object instanceof Double) {
             return runtime.newFloat((double) object);
         } else {
-            throw new UnsupportedOperationException("can't convert " + object.getClass() + " to JRuby");
+            return runtime.getTopSelf();
         }
     }
 
