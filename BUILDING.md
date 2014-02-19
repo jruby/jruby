@@ -28,7 +28,6 @@ This will do all of the following:
 
 * Compile JRuby
 * Build `lib/jruby.jar`, needed for running at command line
-* Install the jruby-launcher gem to provide a native 'jruby' executable.
 
 The environment is now suitable for running Ruby applications.
 
@@ -122,7 +121,15 @@ And if you are making changes that would affect JRuby's core runtime
 or embedding APIs, you should run JRuby's Java-based unit tests via
 
 ```
-mvn -Ptest test
+mvn -Ptest
+```
+
+There are some maven integration tests (i.e. consistency test if all gems are included, osgi test, etc) for the various distributions of JRuby which can be invoked with
+
+```
+mvn -Pmain -Dinvoker.skip=false
+mvn -Pcomplete -Dinvoker.skip=false
+mvn -Pdist -Dinvoker.skip=false
 ```
 
 ### Just Like CI

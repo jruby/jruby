@@ -46,7 +46,7 @@ before_install:
 
 # the install stores the artifact in the localrepo for 
 # the second maven run with $TARGET
-script: ( mvn install -Pbootstrap | grep -v Down ) && mvn $TARGET
+script: ( mvn install -Pbootstrap | grep -v Down ) && mvn -Dinvoker.skip=false $TARGET
 install: /bin/true
 notifications:
   irc:

@@ -94,8 +94,7 @@
     <jruby.home>${project.basedir}</jruby.home>
     <main.basedir>${project.basedir}</main.basedir>
     <github.global.server>github</github.global.server>
-    <bundle.name>JRuby</bundle.name>
-    <bundle.symbolic_name>org.jruby.jruby</bundle.symbolic_name>
+    <invoker.skip>true</invoker.skip>
   </properties>
 
     <mailingLists>
