@@ -517,6 +517,9 @@
       <modules>
         <module>maven</module>
       </modules>
+      <build>
+        <defaultGoal>install</defaultGoal>
+      </build>
     </profile>
     <profile>
       <id>all</id>
