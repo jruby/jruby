@@ -28,11 +28,14 @@ This will do all of the following:
 
 * Compile JRuby
 * Build `lib/jruby.jar`, needed for running at command line
+* It will install the default gems specifications `lib/ruby/gems/shared/specifications/default/` and the ruby files of those gems in `lib/ruby/shared/` and `lib/ruby/2.1/`.
 
 The environment is now suitable for running Ruby applications.
 
 Bootstrapping only needs to be done once at first entry into a JRuby
 source dump or if you are updating JRuby from a git repository.
+
+The list of the default gems can be found at the beginning of `lib/pom.rb`.
 
 Running JRuby
 -------------
