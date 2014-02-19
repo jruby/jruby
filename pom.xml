@@ -86,7 +86,7 @@
     <ant.version>1.9.2</ant.version>
     <joda.time.version>2.3</joda.time.version>
     <jffi.version>1.2.7</jffi.version>
-    <asm.version>4.0</asm.version>
+    <asm.version>4.2</asm.version>
     <base.java.version>1.7</base.java.version>
     <base.javac.version>1.7</base.javac.version>
     <version.jruby>${project.version}</version.jruby>
