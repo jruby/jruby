@@ -94,12 +94,6 @@
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>jruby-launcher</artifactId>
-      <version>${jruby-launcher.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>rspec</artifactId>
       <version>${rspec.version}</version>
       <type>gem</type>
@@ -137,8 +131,8 @@
     </dependency>
   </dependencies>
   <properties>
-    <jruby.basedir>${basedir}/..</jruby.basedir>
-    <gem.home>${jruby.basedir}/lib/ruby/gems/shared</gem.home>
+    <jruby.home>${basedir}/..</jruby.home>
+    <gem.home>${jruby.home}/lib/ruby/gems/shared</gem.home>
   </properties>
   <build>
     <testSourceDirectory>.</testSourceDirectory>
@@ -155,10 +149,10 @@
             <configuration>
               <gemPath>${gem.home}</gemPath>
               <gemHome>${gem.home}</gemHome>
-              <binDirectory>${jruby.basedir}/bin</binDirectory>
+              <binDirectory>${jruby.home}/bin</binDirectory>
               <includeRubygemsInTestResources>false</includeRubygemsInTestResources>
-              <libDirectory>${jruby.basedir}/lib</libDirectory>
-              <jrubyJvmArgs>-Djruby.home=${jruby.basedir}</jrubyJvmArgs>
+              <libDirectory>${jruby.home}/lib</libDirectory>
+              <jrubyJvmArgs>-Djruby.home=${jruby.home}</jrubyJvmArgs>
             </configuration>
           </execution>
         </executions>
@@ -267,4 +261,79 @@
     	</plugins>
     </pluginManagement>
   </build>
+  <profiles>
+    <profile>
+      <id>bootstrap</id>
+      <dependencies>
+	<dependency>
+	  <groupId>rubygems</groupId>
+	  <artifactId>jruby-launcher</artifactId>
+	  <version>${jruby-launcher.version}</version>
+	  <type>gem</type>
+	</dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>rake</id>
+      <build>
+	<plugins>
+	  <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+	      <execution>
+		<id>rake</id>
+		<phase>validate</phase>
+		<goals><goal>run</goal></goals>
+		<configuration>
+		  <target> 
+		    <exec executable="${jruby.home}/bin/jruby" dir="${jruby.home}" failonerror="true">
+		      <arg value="-S"/>
+		      <arg value="rake"/>
+		      <arg value="${task}"/>
+		    </exec>
+		  </target>
+		</configuration>
+	      </execution>
+            </executions>
+	  </plugin>
+	</plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>truffle</id>
+      <build>
+	<plugins>
+	  <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+	      <execution>
+		<id>rake</id>
+		<phase>validate</phase>
+		<goals><goal>run</goal></goals>
+		<configuration>
+		  <target> 
+		    <exec executable="${jruby.home}/bin/jruby" dir="${jruby.home}" failonerror="true">
+		      <arg value="-X+T"/>
+		      <arg value="spec/mspec/bin/mspec"/>
+		      <arg value="run"/>
+		      <arg value="-t"/>
+		      <arg value="bin/jruby"/>
+		      <arg value="-T"/>
+		      <arg value="-X+T"/>
+		      <arg value="--config"/>
+		      <arg value="spec/truffle/truffle.mspec"/>
+		      <arg value="--excl-tag"/>
+		      <arg value="fails"/>
+		    </exec>
+		  </target>
+		</configuration>
+	      </execution>
+            </executions>
+	  </plugin>
+	</plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

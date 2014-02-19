@@ -10,7 +10,7 @@ default_gems = {
   'bouncy-castle-java' => 'bc.version'
 }
 
-only_specs = ['rdoc', 'json', 'jruby-openssl' ]
+only_specs = [ 'rdoc', 'json', 'jruby-openssl' ]
 
 project 'JRuby Lib Setup' do
 
@@ -103,7 +103,7 @@ project 'JRuby Lib Setup' do
         bin = File.join( gems, "#{name}-#{version}", 'bin' )
         if File.exists? bin
           Dir[ File.join( bin, '*' ) ].each do |f|
-            puts "copy bin-stub #{File.basename( f )}"
+            puts "copy bin file #{File.basename( f )}"
             target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
             FileUtils.mkdir_p( File.dirname( target ) )
             FileUtils.cp_r( f, target )

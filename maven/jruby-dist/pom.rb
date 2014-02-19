@@ -19,7 +19,7 @@ project 'JRuby Dist' do
                      :id => 'unpack jruby-stdlib',
                      'stripVersion' =>  'true',
                      'artifactItems' => [ { 'groupId' =>  'org.jruby',
-                                            'artifactId' =>  'jruby-stdlib-complete',
+                                            'artifactId' =>  'jruby-stdlib',
                                             'version' =>  '${project.version}',
                                             'type' =>  'jar',
                                             'overWrite' =>  'false',

@@ -33,7 +33,7 @@
               <artifactItems>
                 <artifactItem>
                   <groupId>org.jruby</groupId>
-                  <artifactId>jruby-stdlib-complete</artifactId>
+                  <artifactId>jruby-stdlib</artifactId>
                   <version>${project.version}</version>
                   <type>jar</type>
                   <overWrite>false</overWrite>

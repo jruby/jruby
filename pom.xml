@@ -86,7 +86,7 @@
     <ant.version>1.9.2</ant.version>
     <joda.time.version>2.3</joda.time.version>
     <jffi.version>1.2.7</jffi.version>
-    <asm.version>4.0</asm.version>
+    <asm.version>4.2</asm.version>
     <base.java.version>1.7</base.java.version>
     <base.javac.version>1.7</base.javac.version>
     <version.jruby>${project.version}</version.jruby>
@@ -94,8 +94,7 @@
     <jruby.home>${project.basedir}</jruby.home>
     <main.basedir>${project.basedir}</main.basedir>
     <github.global.server>github</github.global.server>
-    <bundle.name>JRuby</bundle.name>
-    <bundle.symbolic_name>org.jruby.jruby</bundle.symbolic_name>
+    <invoker.skip>true</invoker.skip>
   </properties>
 
     <mailingLists>
@@ -300,6 +299,15 @@
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
           <version>2.4</version>
+	  <dependencies>
+	    <!-- fixes a problem regarding user and file attributes
+	    managed by ldaps -->
+	    <dependency>
+	      <groupId>org.codehaus.plexus</groupId>
+	      <artifactId>plexus-io</artifactId>
+	      <version>2.0.5</version>
+	    </dependency>
+	  </dependencies>
         </plugin>
 
         <plugin>
@@ -421,7 +429,40 @@
 
   <profiles>
     <profile>
+      <id>rake</id>
+      <build>
+	<defaultGoal>validate</defaultGoal>
+      </build>
+      <modules>
+	<module>test</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>exec</id>
+      <build>
+	<defaultGoal>validate</defaultGoal>
+      </build>
+      <modules>
+	<module>test</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>truffle</id>
+      <build>
+	<defaultGoal>validate</defaultGoal>
+      </build>
+      <modules>
+	<module>test</module>
+      </modules>
+    </profile>
+    <profile>
       <id>bootstrap</id>
+      <modules>
+        <module>test</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>bootstrap-no-launcher</id>
       <modules>
         <module>test</module>
       </modules>
@@ -476,6 +517,9 @@
       <modules>
         <module>maven</module>
       </modules>
+      <build>
+        <defaultGoal>install</defaultGoal>
+      </build>
     </profile>
     <profile>
       <id>all</id>

@@ -170,7 +170,7 @@ public class ObjectSpace {
         while (current != null) {
             Object obj = current.get();
             if (obj instanceof IRubyObject) {
-                IRubyObject rubyObject = (IRubyObject)current.get();
+                IRubyObject rubyObject = (IRubyObject)obj;
                 if (rubyObject != null && rubyClass.isInstance(rubyObject)) {
                     objList.add(current);
                 }

@@ -88,13 +88,11 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
             return IRRuntimeHelpers.handlePropagatedBreak(context, scope, exc, blockType);
         } else if (helperMethod.equals("handleNonlocalReturn")) {
             return IRRuntimeHelpers.handleNonlocalReturn(scope, exc, blockType);
-        } else if (helperMethod.equals("catchUncaughtBreakInLambdas")) {
-            IRRuntimeHelpers.catchUncaughtBreakInLambdas(context, scope, exc, blockType);
-            // should not get here
-            return null;
+        } else if (helperMethod.equals("handleBreakAndReturnsInLambdas")) {
+            return IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, scope, exc, blockType);
         } else {
             // Unknown helper method!
-            return null;
+            throw new RuntimeException("Unknown IR runtime helper method: " + helperMethod + "; INSTR: " + this);
         }
     }
 

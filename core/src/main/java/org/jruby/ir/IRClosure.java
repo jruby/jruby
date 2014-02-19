@@ -21,6 +21,7 @@ import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceiveExceptionBase;
 import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
+import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.operands.TemporaryVariableType;
 import org.jruby.ir.representations.BasicBlock;
@@ -374,19 +375,22 @@ public class IRClosure extends IRScope {
             geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
             Variable exc = getNewTemporaryVariable();
             geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception
-            // Handle uncaught break using runtime helper
-            // --> IRRuntimeHelpers.catchUncaughtBreakInLambdas(context, scope, bj, blockType)
-            geb.addInstr(new RuntimeHelperCall(null, "catchUncaughtBreakInLambdas", new Operand[]{exc} ));
+            // Handle uncaught break and non-local returns using runtime helpers
+            Variable ret = getNewTemporaryVariable();
+            geb.addInstr(new RuntimeHelperCall(ret, "handleBreakAndReturnsInLambdas", new Operand[]{exc} ));
+            geb.addInstr(new ReturnInstr(ret));
             cfg.addGlobalEnsureBB(geb);
         } else {
             // SSS FIXME: Assumptions:
             //
             // First instr is a 'ReceiveExceptionBase'
-            // Last instr is a 'ThrowExceptionInstr'
+            // Last instr is a 'ThrowExceptionInstr' -- replaced by handleBreakAndReturnsInLambdas
 
             List<Instr> instrs = geb.getInstrs();
             Variable exc = ((ReceiveExceptionBase)instrs.get(0)).getResult();
-            instrs.set(instrs.size()-1, new RuntimeHelperCall(null, "catchUncaughtBreakInLambdas", new Operand[]{exc} ));
+            Variable ret = getNewTemporaryVariable();
+            instrs.set(instrs.size()-1, new RuntimeHelperCall(ret, "handleBreakAndReturnsInLambdas", new Operand[]{exc} ));
+            geb.addInstr(new ReturnInstr(ret));
         }
 
         // Update scope

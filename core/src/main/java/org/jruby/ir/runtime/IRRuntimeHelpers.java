@@ -73,7 +73,7 @@ public class IRRuntimeHelpers {
      */
     public static void initiateNonLocalReturn(ThreadContext context, IRStaticScope scope, int methodToReturnFrom, IRubyObject returnValue) {
         IRScopeType scopeType = scope.getScopeType();
-        if (scopeType.isClosureType()) {
+        if (scopeType.isClosureType() && scopeType != IRScopeType.EVAL_SCRIPT) {
             if (methodToReturnFrom == -1) {
                 // SSS FIXME: As Tom correctly pointed out, this is not correct.  The example that breaks this code is:
                 //
@@ -98,7 +98,7 @@ public class IRRuntimeHelpers {
             }
         }
 
-        // methodtoReturnFrom will not be null for explicit returns from class/module/sclass bodies
+        // methodtoReturnFrom will not be -1 for explicit returns from class/module/sclass bodies
         throw IRReturnJump.create(methodToReturnFrom, returnValue);
     }
 
@@ -141,13 +141,17 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static void catchUncaughtBreakInLambdas(ThreadContext context, IRStaticScope scope, Object exc, Block.Type blockType) throws RuntimeException {
+    public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, IRStaticScope scope, Object exc, Block.Type blockType) throws RuntimeException {
         if ((exc instanceof IRBreakJump) && inNonMethodBodyLambda(scope, blockType)) {
             // We just unwound all the way up because of a non-local break
             throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
+        } else if (exc instanceof IRReturnJump) {
+            return handleNonlocalReturn(scope, exc, blockType);
         } else {
             // Propagate
             Helpers.throwException((Throwable)exc);
+            // should not get here
+            return null;
         }
     }
 

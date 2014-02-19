@@ -9,18 +9,27 @@ jdk:
 
 env:
   matrix:
-    - TARGET='test-extended'
-    - TARGET='spec:ci_interpreted_travis'
-    - TARGET='spec:ci_interpreted_ir_travis'
-    - TARGET='spec:ir'
-    - TARGET='spec:truffle'
-    - TARGET='test-dist'
+    - TARGET='-Ptest'
+    - TARGET='-Prake -Dtask=test:extended'
+    - TARGET='-Prake -Dtask=spec:ci_interpreted_travis'
+    - TARGET='-Prake -Dtask=spec:ci_interpreted_ir_travis'
+    - TARGET='-Prake -Dtask=spec:ir'
+    - TARGET='-Ptruffle'
 
 matrix:
+  include:
+    # these profile do no need to run for all JDKs
+    - env: TARGET='-Pdist'
+      jdk: oraclejdk8
+    - env: TARGET='-Pjruby-jars'
+      jdk: oraclejdk7
+    - env: TARGET='-Pmain'
+      jdk: oraclejdk7
+    - env: TARGET='-Pcomplete'
+      jdk: oraclejdk8
   fast_finish: true
   allow_failures:
-    - env: TARGET='spec:ci_interpreted_ir_travis'
-    - env: TARGET='test-dist'
+    - env: TARGET='-Prake -Dtask=spec:ci_interpreted_ir_travis'
     - jdk: oraclejdk8
 
 branches:
@@ -32,7 +41,9 @@ branches:
 before_install:
   - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
 
-script: "ant $TARGET"
+# the install stores the artifact in the localrepo for 
+# the second maven run with $TARGET
+script: ( mvn install -Pbootstrap | grep -v Down ) && mvn -Dinvoker.skip=false $TARGET
 install: /bin/true
 notifications:
   irc:
@@ -47,5 +58,6 @@ notifications:
   webhooks:
     urls:
       - "https://rubies.travis-ci.org/rebuild/jruby-head"
-    on_success: always
+# we are on a branch
+    #on_success: always
     on_failure: never

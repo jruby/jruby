@@ -23,7 +23,7 @@ project 'JRuby Artifacts' do
   end
 
   map = { 'jruby' => [ :release, :main ],
-    'jruby-stdlib' => [ :release, :main, :complete, 'jruby-jars' ],
+    'jruby-stdlib' => [ :release, :main, :complete, :dist, 'jruby-jars' ],
     'jruby-complete' => [ :release, :complete ],
     'jruby-dist' => [ :release, :dist ],
     'jruby-jars' => [ :release, 'jruby-jars' ],

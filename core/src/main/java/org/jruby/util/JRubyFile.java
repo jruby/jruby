@@ -111,6 +111,27 @@ public class JRubyFile extends JavaSecuredFile {
     }
 
     @Override
+    public String getAbsolutePath() {
+	return normalizeSeps(new File(super.getPath()).getAbsolutePath());
+    }
+ 
+    @Override
+    public String getCanonicalPath() throws IOException {
+	try {
+	    return normalizeSeps(super.getCanonicalPath());
+	} catch (IOException e) {
+	    // usually IOExceptions don't tell us anything about the path,
+	    // so add an extra wrapper to give more debugging help.
+	    throw (IOException) new IOException("Unable to canonicalize path: " + getAbsolutePath()).initCause(e);
+	}
+    }
+ 
+    @Override
+    public String getPath() {
+	return normalizeSeps(super.getPath());
+    }
+ 
+    @Override
     public String toString() {
         return normalizeSeps(super.toString());
     }

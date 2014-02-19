@@ -93,7 +93,13 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                 if (result == NEVER) result = context.nil;
                 return result;
             } catch (RaiseException re) {
-                if (targetFiberData.queue.isShutdown()) {
+                // re-raise flow control exceptions
+                if (context.runtime.getLocalJumpError().isInstance(re.getException())) {
+                    throw re;
+                }
+
+                // re-raise if this fiber has been shut down
+                if (currentFiberData.queue.isShutdown()) {
                     throw re;
                 }
 
@@ -161,6 +167,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         if (currentFiberData.parent == null) throw runtime.newFiberError("can't yield from root fiber");
 
         if (currentFiberData.prev == null) throw runtime.newFiberError("BUG: yield occured with null previous fiber. Report this at http://bugs.jruby.org");
+
+        if (currentFiberData.queue.isShutdown()) throw runtime.newFiberError("dead fiber yielded");
         
         FiberData prevFiberData = currentFiberData.prev.data;
 
