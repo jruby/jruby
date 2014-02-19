@@ -54,7 +54,7 @@
       <plugin>
         <groupId>de.saumya.mojo</groupId>
         <artifactId>gem-maven-plugin</artifactId>
-        <version>1.0.0-beta-1-SNAPSHOT</version>
+        <version>1.0.0-rc4</version>
         <executions>
           <execution>
             <goals><goal>initialize</goal></goals>
