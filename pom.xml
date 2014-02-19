@@ -453,6 +453,12 @@
       </modules>
     </profile>
     <profile>
+      <id>bootstrap-no-launcher</id>
+      <modules>
+        <module>test</module>
+      </modules>
+    </profile>
+    <profile>
       <id>gems</id>
       <modules>
         <module>maven</module>

@@ -94,12 +94,6 @@
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>jruby-launcher</artifactId>
-      <version>${jruby-launcher.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>rspec</artifactId>
       <version>${rspec.version}</version>
       <type>gem</type>
@@ -268,6 +262,17 @@
     </pluginManagement>
   </build>
   <profiles>
+    <profile>
+      <id>bootstrap</id>
+      <dependencies>
+	<dependency>
+	  <groupId>rubygems</groupId>
+	  <artifactId>jruby-launcher</artifactId>
+	  <version>${jruby-launcher.version}</version>
+	  <type>gem</type>
+	</dependency>
+      </dependencies>
+    </profile>
     <profile>
       <id>rake</id>
       <build>

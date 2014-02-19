@@ -89,6 +89,13 @@ environment. This will do the following:
 mvn -Pbootstrap
 ```
 
+In case there is a problem with installing the jruby-launcher (due to missing compiler or so) use
+
+```
+mvn -Pbootstrap-no-launcher
+```
+
+
 This only needs to be run once to install these gems or if you update
 one of the gems to a newer version or clean out all installed gems.
 
