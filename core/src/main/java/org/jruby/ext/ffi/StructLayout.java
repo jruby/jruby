@@ -908,7 +908,7 @@ public final class StructLayout extends Type {
             super(runtime, klass, DefaultFieldIO.INSTANCE);
         }
 
-        @JRubyMethod(required = 4)
+        @JRubyMethod(required = 4, visibility = PRIVATE)
         public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
             if (!(args[2] instanceof MappedType)) {
                 throw context.runtime.newTypeError(args[2],

@@ -65,6 +65,7 @@ import org.jruby.ext.openssl.x509store.PEMInputOutput;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 
 import org.jruby.ext.openssl.impl.PKCS10Request;
 
@@ -106,7 +107,7 @@ public class Request extends RubyObject {
         req = new PKCS10Request((X500Name) null, (PublicKey) null, null);
     }
 
-    @JRubyMethod(name="initialize", rest=true)
+    @JRubyMethod(name="initialize", rest=true, visibility = Visibility.PRIVATE)
     public IRubyObject _initialize(IRubyObject[] args, Block block) {
         if (org.jruby.runtime.Arity.checkArgumentCount(getRuntime(),args,0,1) == 0) {
             return this;
@@ -194,7 +195,7 @@ public class Request extends RubyObject {
     }
 
     @Override
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject obj) {
         System.err.println("WARNING: unimplemented method called: init_copy");
         if (this == obj) {

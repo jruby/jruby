@@ -46,6 +46,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyClass;
 import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.exceptions.RaiseException;
 
@@ -71,7 +72,7 @@ public class NetProtocolBufferedIO {
         mNativeImpl.defineAnnotatedMethods(NativeImpl.class);
     }    
 
-    @JRubyMethod(required = 1)
+    @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
     public static IRubyObject initialize(IRubyObject recv, IRubyObject io) {
         try {
             if (io instanceof RubyIO) {

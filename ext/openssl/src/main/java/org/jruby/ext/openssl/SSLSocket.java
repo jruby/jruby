@@ -67,6 +67,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.runtime.Visibility;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -125,7 +126,7 @@ public class SSLSocket extends RubyObject {
 
     int verifyResult;
     
-    @JRubyMethod(name = "initialize", rest = true, frame = true)
+    @JRubyMethod(name = "initialize", rest = true, frame = true, visibility = Visibility.PRIVATE)
     public IRubyObject _initialize(IRubyObject[] args, Block unused) {
         if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 1) {
             RubyClass sslContext = Utils.getClassFromPath(getRuntime(), "OpenSSL::SSL::SSLContext");

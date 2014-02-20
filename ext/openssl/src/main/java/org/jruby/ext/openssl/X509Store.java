@@ -44,6 +44,7 @@ import org.jruby.ext.openssl.x509store.X509Utils;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -90,7 +91,7 @@ public class X509Store extends RubyObject {
         throw new RaiseException(getRuntime(),cStoreError, msg, true);
     }
 
-    @JRubyMethod(name="initialize", rest=true)
+    @JRubyMethod(name="initialize", rest=true, visibility = Visibility.PRIVATE)
     public IRubyObject _initialize(IRubyObject[] args, Block block) {
         store.setVerifyCallbackFunction(ossl_verify_cb);
         this.set_verify_callback(getRuntime().getNil());

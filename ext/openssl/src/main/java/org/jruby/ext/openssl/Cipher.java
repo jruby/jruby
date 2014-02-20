@@ -50,6 +50,7 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
 
 /**
@@ -354,7 +355,7 @@ public class Cipher extends RubyObject {
         System.out.println("*******************************");
     }
 
-    @JRubyMethod(required = 1)
+    @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject str) {
         name = str.toString();
         if (!CipherModule.isSupportedCipher(name)) {
@@ -368,7 +369,7 @@ public class Cipher extends RubyObject {
     }
 
     @Override
-    @JRubyMethod(required = 1)
+    @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject obj) {
         if (this == obj) {
             return this;
