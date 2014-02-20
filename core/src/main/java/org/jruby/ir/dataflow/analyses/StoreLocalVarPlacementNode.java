@@ -225,7 +225,13 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                     // Allocate a new hash-set and modify it to get around ConcurrentModificationException on dirtyVars
                     Set<LocalVariable> newDirtyVars = new HashSet<LocalVariable>(dirtyVars);
                     for (LocalVariable v : dirtyVars) {
-                        if ((v instanceof ClosureLocalVariable) && ((ClosureLocalVariable)v).definingScope != scope) {
+                        // SSS FIXME: I guess we cannot use v.getScopeDepth() > 0 because the variable could be a cloned
+                        // instance from a different depth and that could mislead us. See if there is a way to fix this.
+                        // If we introduced 'definingScope' in all local variables, we could simply check for scope match
+                        // without the instanceof check here.
+                        if (   (v instanceof ClosureLocalVariable && ((ClosureLocalVariable)v).definingScope != scope)
+                            || (!(v instanceof ClosureLocalVariable) && scope.getScopeType().isClosureType()))
+                        {
                             addedStores = true;
                             instrs.add(new StoreLocalVarInstr(problem.getLocalVarReplacement(v, varRenameMap), scope, v));
                             newDirtyVars.remove(v);
