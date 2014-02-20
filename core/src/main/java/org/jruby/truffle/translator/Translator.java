@@ -562,12 +562,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         RubyNode superClass;
 
-        for(Node chilNode : node.getCPath().childNodes()){
-            if (chilNode != null && chilNode.isNil()) {
-                throw new RaiseException(context.getCoreLibrary().typeError("No outer class"));
-            }
-        }
-
         if (node.getSuperNode() != null) {
             superClass = (RubyNode) node.getSuperNode().accept(this);
         } else {
