@@ -152,6 +152,7 @@ import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
+import org.jruby.util.JavaNameMangler;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -328,7 +329,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public Handle emit(IRMethod method) {
-        String name = method.getName() + "_" + methodIndex++;
+        String name = JavaNameMangler.mangleMethodName(method.getName() + "_" + methodIndex++);
 
         emitScope(method, name, METHOD_SIGNATURE);
 
@@ -344,7 +345,7 @@ public class JVMVisitor extends IRVisitor {
 
     public Handle emit(IRClosure closure) {
         /* Compile the closure like a method */
-        String name = closure.getName() + "__" + closure.getLexicalParent().getName() + "_" + methodIndex++;
+        String name = JavaNameMangler.mangleMethodName(closure.getName() + "__" + closure.getLexicalParent().getName() + "_" + methodIndex++);
 
         emitScope(closure, name, CLOSURE_SIGNATURE);
 
