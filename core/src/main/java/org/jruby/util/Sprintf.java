@@ -273,15 +273,11 @@ public class Sprintf {
             int begin = list.begin(); 
             offset = begin;
             length = begin + list.length();
-            start = begin;
-            mark = begin;
             encoding = list.getEncoding();
         } else {
             format = stringToBytes(charFormat, false);
             offset = 0;
             length = charFormat.length();
-            start = 0;
-            mark = 0;
             encoding = UTF8Encoding.INSTANCE;
         }
 
