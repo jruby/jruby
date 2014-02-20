@@ -80,7 +80,7 @@
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>bytelist</artifactId>
-      <version>1.0.11-SNAPSHOT</version>
+      <version>1.0.11</version>
       <type>jar</type>
     </dependency>
     <dependency>
