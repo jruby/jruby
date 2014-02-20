@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.impl.DefaultSourceSection;
 import org.joni.Regex;
 import org.jruby.ast.MultipleAsgn19Node;
+import org.jruby.ast.Node;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.DefinedNode;
 import org.jruby.truffle.nodes.ReadNode;
@@ -39,6 +40,7 @@ import org.jruby.truffle.nodes.objects.instancevariables.UninitializedWriteInsta
 import org.jruby.truffle.nodes.objects.instancevariables.WriteInstanceVariableNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.range.FixnumRange;
@@ -560,12 +562,17 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         RubyNode superClass;
 
+        for(Node chilNode : node.getCPath().childNodes()){
+            if (chilNode != null && chilNode.isNil()) {
+                throw new RaiseException(context.getCoreLibrary().typeError("No outer class"));
+            }
+        }
+
         if (node.getSuperNode() != null) {
             superClass = (RubyNode) node.getSuperNode().accept(this);
         } else {
             superClass = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         }
-
         final DefineOrGetClassNode defineOrGetClass = new DefineOrGetClassNode(context, sourceSection, name, getModuleToDefineModulesIn(sourceSection), superClass);
 
         return new OpenModuleNode(context, sourceSection, defineOrGetClass, definitionMethod);
