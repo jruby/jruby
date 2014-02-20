@@ -271,6 +271,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return getCodeRange() == CR_7BIT || enc.isSingleByte();
     }
 
+    // rb_enc_compatible
     private Encoding isCompatibleWith(RubyString other) { 
         Encoding enc1 = value.getEncoding();
         Encoding enc2 = other.value.getEncoding();
@@ -278,7 +279,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (enc1 == enc2) return enc1;
 
         if (other.value.getRealSize() == 0) return enc1;
-        if (value.getRealSize() == 0) return enc2;
+        if (value.getRealSize() == 0) {
+            return (enc1.isAsciiCompatible() && other.isAsciiOnly()) ? enc1 : enc2;
+        }
 
         if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
 
@@ -298,6 +301,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return null;
     }
 
+    // rb_enc_check
     public final Encoding checkEncoding(RubyString other) {
         Encoding enc = isCompatibleWith(other);
         if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " + 

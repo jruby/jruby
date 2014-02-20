@@ -167,6 +167,7 @@ public class RubyEncoding extends RubyObject {
         return null;
     }
 
+    // last block in rb_enc_compatible
     static Encoding areCompatible(Encoding enc1, int cr1, Encoding enc2, int cr2) {
         if (cr1 != cr2) {
             /* may need to handle ENC_CODERANGE_BROKEN */
