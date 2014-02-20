@@ -11,9 +11,13 @@ package org.jruby.truffle.nodes.objects;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.Node;
+import org.jruby.ast.Colon3Node;
+import org.jruby.ast.NilNode;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 
 /**
@@ -23,6 +27,7 @@ public class OpenModuleNode extends RubyNode {
 
     @Child protected RubyNode definingModule;
     @Child protected MethodDefinitionNode definitionMethod;
+    protected Colon3Node colon3Node;
 
     public OpenModuleNode(RubyContext context, SourceSection sourceSection, RubyNode definingModule, MethodDefinitionNode definitionMethod) {
         super(context, sourceSection);
@@ -30,11 +35,25 @@ public class OpenModuleNode extends RubyNode {
         this.definitionMethod = adoptChild(definitionMethod);
     }
 
+    public OpenModuleNode(RubyContext context, SourceSection sourceSection, RubyNode definingModule, MethodDefinitionNode definitionMethod, Colon3Node colon) {
+        super(context, sourceSection);
+        this.definingModule = adoptChild(definingModule);
+        this.definitionMethod = adoptChild(definitionMethod);
+        this.colon3Node = colon;
+    }
+
     @Override
     public Object execute(VirtualFrame frame) {
         CompilerAsserts.neverPartOfCompilation();
 
         // Call the definition method with the module as self - there's no return value
+        if (colon3Node != null) {
+            for(org.jruby.ast.Node node : colon3Node.childNodes()){
+                if (node instanceof NilNode){
+                    throw new RaiseException(getContext().getCoreLibrary().typeError("No outer class"));
+                }
+            }
+        }
 
         final RubyModule module = (RubyModule) definingModule.execute(frame);
         definitionMethod.executeMethod(frame).call(frame.pack(), module, null);

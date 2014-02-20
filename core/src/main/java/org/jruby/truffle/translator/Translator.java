@@ -569,7 +569,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         }
         final DefineOrGetClassNode defineOrGetClass = new DefineOrGetClassNode(context, sourceSection, name, getModuleToDefineModulesIn(sourceSection), superClass);
 
-        return new OpenModuleNode(context, sourceSection, defineOrGetClass, definitionMethod);
+        return new OpenModuleNode(context, sourceSection, defineOrGetClass, definitionMethod, node.getCPath());
     }
 
     protected RubyNode getModuleToDefineModulesIn(SourceSection sourceSection) {
