@@ -73,29 +73,18 @@ public class IRRuntimeHelpers {
      */
     public static void initiateNonLocalReturn(ThreadContext context, IRStaticScope scope, int methodToReturnFrom, IRubyObject returnValue) {
         IRScopeType scopeType = scope.getScopeType();
-        if (scopeType.isClosureType() && scopeType != IRScopeType.EVAL_SCRIPT) {
-            if (methodToReturnFrom == -1) {
-                // SSS FIXME: As Tom correctly pointed out, this is not correct.  The example that breaks this code is:
-                //
-                //      jruby -X-CIR -e "Thread.new { Proc.new { return }.call }.join"
-                //
-                // This should report a LocalJumpError, not a ThreadError.
-                //
-                // The right fix would involve checking the closure to see who it is associated with.
-                // If it is a thread-body, it would be a ThreadError.  If not, it would be a local-jump-error
-                // This requires having access to the block -- same requirement as in handleBreakJump.
-                if (context.getThread() == context.runtime.getThreadService().getMainThread()) {
-                    throw IRException.RETURN_LocalJumpError.getException(context.runtime);
-                } else {
-                    throw context.runtime.newThreadError("return can't jump across threads");
-                }
-            }
 
+        // SSS FIXME: Why is scopeType empty? Looks like this static-scope
+        // was not associated with the AST scope that got converted to IR.
+        //
+        // Ruby code: lambda { Thread.new { return }.join }.call
+        //
+        // To be investigated.
+        if (   (scopeType == null || (scopeType.isClosureType() && scopeType != IRScopeType.EVAL_SCRIPT))
+            && (methodToReturnFrom == -1 || !context.scopeExistsOnCallStack(methodToReturnFrom)))
+        {
             // Cannot return from the call that we have long since exited.
-            if (!context.scopeExistsOnCallStack(methodToReturnFrom)) {
-                if (isDebug()) LOG.info("in scope: " + scope + ", raising unexpected return local jump error");
-                throw IRException.RETURN_LocalJumpError.getException(context.runtime);
-            }
+            throw IRException.RETURN_LocalJumpError.getException(context.runtime);
         }
 
         // methodtoReturnFrom will not be -1 for explicit returns from class/module/sclass bodies
