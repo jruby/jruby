@@ -4,7 +4,7 @@ raise  LoadError.new("Win32API only supported on win32") unless RbConfig::CONFIG
 require 'ffi-internal.so'
 
 class Win32API
-  if RUBY_VERSION =~ /1\.9/
+  if RUBY_VERSION >= "1.9"
     SUFFIXES = Encoding.default_internal == Encoding::UTF_8 ? [ '', 'W', 'A' ] : [ '', 'A', 'W' ]
   else
     SUFFIXES = $KCODE == 'UTF8' ? [ '', 'W', 'A' ] : [ '', 'A', 'W' ]
