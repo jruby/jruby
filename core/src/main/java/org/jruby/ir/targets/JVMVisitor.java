@@ -9,6 +9,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyFloat;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
@@ -1844,7 +1845,10 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void DynamicSymbol(DynamicSymbol dynamicsymbol) {
-        super.DynamicSymbol(dynamicsymbol);    //To change body of overridden methods use File | Settings | File Templates.
+        jvm.method().loadRuntime();
+        visit(dynamicsymbol.getSymbolName());
+        jvm.method().adapter.invokeinterface(p(IRubyObject.class), "asJavaString", sig(String.class));
+        jvm.method().adapter.invokevirtual(p(Ruby.class), "newSymbol", sig(RubySymbol.class, String.class));
     }
 
     @Override
