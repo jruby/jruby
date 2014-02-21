@@ -43,13 +43,17 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
     @Override
     public Object execute(IRScope scope, Object... data) {
+        // IRScriptBody do not get explicit call protocol instructions right now.
+        // They dont push/pop a frame and do other special things like run begin/end blocks.
+        // So, for now, they go through the runtime stub in IRScriptBody.
+        //
         // SSS FIXME: Right now, we always add push/pop frame instrs -- in the future, we may skip them
         // for certain scopes.
         //
         // Add explicit frame and binding push/pop instrs ONLY for methods -- we cannot handle this in closures and evals yet
         // If the scope uses $_ or $~ family of vars, has local load/stores, or if its binding has escaped, we have
         // to allocate a dynamic scope for it and add binding push/pop instructions.
-        if (scope instanceof IRMethod || scope instanceof IRScriptBody || scope instanceof IRModuleBody) {
+        if (scope instanceof IRMethod || scope instanceof IRModuleBody) {
             StoreLocalVarPlacementProblem slvpp = (StoreLocalVarPlacementProblem)scope.getDataFlowSolution(StoreLocalVarPlacementProblem.NAME);
 
             boolean scopeHasLocalVarStores      = false;

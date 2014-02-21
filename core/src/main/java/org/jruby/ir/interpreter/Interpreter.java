@@ -49,7 +49,6 @@ import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Self;
@@ -60,9 +59,7 @@ import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.parser.IRStaticScope;
-import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -92,6 +89,17 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     public static Interpreter getInstance() {
         return InterpreterHolder.instance;
+    }
+
+    public static void dumpStats() {
+        if ((IRRuntimeHelpers.isDebug() || IRRuntimeHelpers.inProfileMode()) && interpInstrsCount > 10000) {
+            LOG.info("-- Interpreted instructions: {}", interpInstrsCount);
+            /*
+            for (Operation o: opStats.keySet()) {
+                System.out.println(o + " = " + opStats.get(o).count);
+            }
+            */
+        }
     }
 
     private static IRScope getEvalContainerScope(StaticScope evalScope) {
@@ -159,40 +167,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     @Override
     protected IRubyObject execute(Ruby runtime, IRScope scope, IRubyObject self) {
-        IRScriptBody root = (IRScriptBody) scope;
-
-        // FIXME: Removed as part of merge...likely broken at this point in merge.
-    //    IRScriptBody root = (IRScriptBody) IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildRoot((RootNode) rootNode);
-
-        // We get the live object ball rolling here.  This give a valid value for the top
-        // of this lexical tree.  All new scope can then retrieve and set based on lexical parent.
-        if (root.getStaticScope().getModule() == null) { // If an eval this may already be setup.
-            root.getStaticScope().setModule(runtime.getObject());
-        }
-
-        RubyModule currModule = root.getStaticScope().getModule();
-
-        // Scope state for root?
-        IRStaticScopeFactory.newIRLocalScope(null).setModule(currModule);
-        ThreadContext context = runtime.getCurrentContext();
-
-        try {
-            runBeginEndBlocks(root.getBeginBlocks(), context, self, null); // FIXME: No temp vars yet...not needed?
-            InterpretedIRMethod method = new InterpretedIRMethod(root, currModule);
-            IRubyObject rv =  method.call(context, self, currModule, "(root)", IRubyObject.NULL_ARRAY);
-            runBeginEndBlocks(root.getEndBlocks(), context, self, null); // FIXME: No temp vars yet...not needed?
-            if ((IRRuntimeHelpers.isDebug() || IRRuntimeHelpers.inProfileMode()) && interpInstrsCount > 10000) {
-                LOG.info("-- Interpreted instructions: {}", interpInstrsCount);
-                /*
-                for (Operation o: opStats.keySet()) {
-                    System.out.println(o + " = " + opStats.get(o).count);
-                }
-                */
-            }
-            return rv;
-        } catch (IRBreakJump bj) {
-            throw IRException.BREAK_LocalJumpError.getException(context.runtime);
-        }
+        return ((IRScriptBody)scope).interpret(runtime.getCurrentContext(), self);
     }
 
     private static void setResult(Object[] temp, DynamicScope currDynScope, Variable resultVar, Object result) {
@@ -643,6 +618,16 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // Control should never get here!
         // SSS FIXME: But looks like BEGIN/END blocks get here -- needs fixing
         return null;
+    }
+
+    public static IRubyObject INTERPRET_SCRIPT(ThreadContext context, IRubyObject self,
+            IRScope scope, RubyModule clazz, String name) {
+        try {
+            ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
+            return interpret(context, self, scope, null, clazz, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, null);
+        } finally {
+            ThreadContext.popBacktrace(context);
+        }
     }
 
     public static IRubyObject INTERPRET_EVAL(ThreadContext context, IRubyObject self,
