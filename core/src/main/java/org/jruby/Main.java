@@ -400,7 +400,7 @@ public class Main {
 
             runtime.runFromMain(in, filename);
 
-            runtime.getTruffleBridge().shutdown();
+            runtime.shutdownTruffleBridge();
 
         } catch (RaiseException rj) {
             return new Status(handleRaiseException(rj));

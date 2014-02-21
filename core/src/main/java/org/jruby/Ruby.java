@@ -817,7 +817,7 @@ public final class Ruby {
        try {
            if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
                assert parseResult instanceof RootNode;
-               return truffleBridge.toJRuby(truffleBridge.execute(TranslatorDriver.ParserContext.TOP_LEVEL, truffleBridge.toTruffle(self), null, (RootNode) parseResult));
+               return getTruffleBridge().toJRuby(getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) parseResult));
            } else if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
                return Interpreter.getInstance().execute(this, parseResult, self);
            } else {
@@ -836,7 +836,7 @@ public final class Ruby {
         try {
             if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
                 assert rootNode instanceof RootNode;
-                return truffleBridge.toJRuby(truffleBridge.execute(TranslatorDriver.ParserContext.TOP_LEVEL, truffleBridge.toTruffle(self), null, (RootNode) rootNode));
+                return getTruffleBridge().toJRuby(getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) rootNode));
             } else if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
                 // FIXME: retrieve from IRManager unless lifus does it later
                 return Interpreter.getInstance().execute(this, rootNode, self);
@@ -879,8 +879,20 @@ public final class Ruby {
         return jitCompiler;
     }
 
-    public JRubyTruffleBridge getTruffleBridge() {
+    public synchronized JRubyTruffleBridge getTruffleBridge() {
+        if (truffleBridge == null) {
+            System.err.println("allocating it");
+            truffleBridge = new JRubyTruffleBridge(this);
+            truffleBridge.init();
+        }
+
         return truffleBridge;
+    }
+
+    public synchronized void shutdownTruffleBridge() {
+        if (truffleBridge != null) {
+            truffleBridge.shutdown();
+        }
     }
 
     /**
@@ -1250,10 +1262,6 @@ public final class Ruby {
         for (String scriptName : config.getRequiredLibraries()) {
             topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
         }
-
-        truffleBridge = new JRubyTruffleBridge(this);
-
-        truffleBridge.init();
     }
 
     private void bootstrap() {
