@@ -16,7 +16,6 @@ env:
     - TARGET='test-extended'
     - TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.8'
     - TARGET='spec:ci_interpreted_via_env' RUBYSPEC_LANG_VER='1.9'
-    - TARGET='spec:ir'
 
 matrix:
   fast_finish: true
