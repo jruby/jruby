@@ -11,6 +11,7 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
@@ -97,6 +98,15 @@ public class Bootstrap {
                 .from(type)
                 .collect(1, IRubyObject[].class)
                 .invokeStaticQuiet(LOOKUP, Bootstrap.class, "array");
+        CallSite site = new ConstantCallSite(handle);
+        return site;
+    }
+
+    public static CallSite hash(Lookup lookup, String name, MethodType type) {
+        MethodHandle handle = Binder
+                .from(type)
+                .collect(1, IRubyObject[].class)
+                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "hash");
         CallSite site = new ConstantCallSite(handle);
         return site;
     }
@@ -276,6 +286,10 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "array", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
+    public static Handle hash() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "hash", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+    }
+
     public static Handle objectArray() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "objectArray", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
@@ -322,6 +336,15 @@ public class Bootstrap {
 
     public static IRubyObject array(ThreadContext context, IRubyObject[] elts) {
         return RubyArray.newArrayNoCopy(context.runtime, elts);
+    }
+
+    public static IRubyObject hash(ThreadContext context, IRubyObject[] pairs) {
+        Ruby runtime = context.runtime;
+        RubyHash hash = RubyHash.newHash(runtime);
+        for (int i = 0; i < pairs.length;) {
+            hash.fastASetCheckString(runtime, pairs[i++], pairs[i++]);
+        }
+        return hash;
     }
 
     public static RubyRegexp regexp(ThreadContext context, RubyString pattern, MutableCallSite site, int options) {

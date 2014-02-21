@@ -1874,7 +1874,12 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Hash(Hash hash) {
-        super.Hash(hash);    //To change body of overridden methods use File | Settings | File Templates.
+        jvm.method().loadContext();
+        for (KeyValuePair pair: hash.getPairs()) {
+            visit(pair.getKey());
+            visit(pair.getValue());
+        }
+        jvm.method().hash(hash.getPairs().size());
     }
 
     @Override

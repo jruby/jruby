@@ -111,4 +111,8 @@ public class Hash extends Operand {
         builder.append("}");
         return builder.toString();
     }
+
+    public List<KeyValuePair> getPairs() {
+        return pairs;
+    }
 }
