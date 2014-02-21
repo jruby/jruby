@@ -237,7 +237,8 @@ public class RipperLexer {
     public boolean commandStart;
 
     // Give a name to a value.  Enebo: This should be used more.
-    static final int EOF = -1;
+    static final int EOF = -1; // 0 in MRI
+    static final int ERROR = -2; // -1 in MRI
 
     // ruby constants for strings (should this be moved somewhere else?)
     static final int STR_FUNC_ESCAPE=0x01;
@@ -443,27 +444,13 @@ public class RipperLexer {
     // FIXME: This is our main lexer code mangled into here...
     // Super slow codepoint reader when we detect non-asci chars
     public int readCodepoint(int first, Encoding encoding) throws IOException {
-        int count = 0;
-        byte[] value = new byte[6];
-
-        // We know this will never be EOF
-        value[0] = (byte) first;
-
-        for (count = 1; count < 6; count++) {
-            int c = nextc();
-            if (c == EOF) break; // Maybe we have enough bytes read to mbc at EOF.
-            value[count] = (byte) c;
-        }
-
-        int length = encoding.length(value, 0, count);
+        int length = encoding.length(lexb.getUnsafeBytes(), lex_p - 1, lex_pend);
         if (length < 0) {
-            return -2; // TODO: Hack
+            return -2;
         }
-
-        int codepoint = encoding.mbcToCode(value, 0, length);
-        for (int i = count - 1; i >= length; i--) {
-            pushback(value[i]);
-        }
+        int codepoint = encoding.mbcToCode(lexb.getUnsafeBytes(), lex_p - 1, length);
+        
+        lex_p += length - 1;
 
         return codepoint;
     }
@@ -2736,7 +2723,7 @@ public class RipperLexer {
     public int tokenAddMBC(int codepoint, ByteList buffer) {
         int length = buffer.getEncoding().codeToMbc(codepoint, mbcBuf, 0);
 
-        if (length <= 0) return EOF;
+        if (length <= 0) return ERROR;
 
         buffer.append(mbcBuf, 0, length);
 

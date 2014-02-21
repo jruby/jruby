@@ -126,12 +126,12 @@ public class StringTerm extends StrTerm {
         Encoding enc[] = new Encoding[1];
         enc[0] = lexer.getEncoding();
         
-        if (parseStringIntoBuffer(lexer, src, buffer, enc) == RipperLexer.EOF) {
+        if (parseStringIntoBuffer(lexer, src, buffer, enc) == RipperLexer.ERROR) {
             if ((flags & RipperLexer.STR_FUNC_REGEXP) != 0) {
-                lexer.compile_error("unterminated regexp meets end of file");
+                if (lexer.eofp) lexer.compile_error("unterminated regexp meets end of file");
                 return Tokens.tREGEXP_END;
             } else {
-                lexer.compile_error("unterminated string meets end of file");
+                if (lexer.eofp) lexer.compile_error("unterminated string meets end of file");
                 return Tokens.tSTRING_END;
             }
         }
@@ -229,7 +229,28 @@ public class StringTerm extends StrTerm {
 
                     continue;
                 default:
+                    if (c == RipperLexer.EOF) return RipperLexer.EOF;
+                    
+                    if (!Encoding.isAscii(c)) {
+                        if (expand) buffer.append('\\');
+                        
+                        // goto non_ascii
+                        hasNonAscii = true;
+                        if (buffer.getEncoding() != enc[0]) {
+                            mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                            continue;
+                        }
+                        
+                        if (lexer.tokenAddMBC(c, buffer) == RipperLexer.ERROR) return RipperLexer.ERROR;
+
+                        continue;
+                        // end of goto non_ascii
+                    }
                     if (regexp) {
+                        if (c == end && !simple_re_meta(c)) {
+                            buffer.append(c);
+                            continue;
+                        }
                         lexer.pushback(c);
                         parseEscapeIntoBuffer(lexer, src, buffer);
 
@@ -251,10 +272,12 @@ public class StringTerm extends StrTerm {
             } else if (!Encoding.isAscii((byte) c)) {
                 if (buffer.getEncoding() != enc[0]) {
                     mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                    continue;
                 }
                 c = lexer.readCodepoint(c, enc[0]);
                 if (c == -2) { // FIXME: Hack
                     lexer.compile_error("invalid multibyte char (" + enc[0] + ")");
+                    continue;
                 }
 
                 // FIXME: We basically go from bytes to codepoint back to bytes to append them...fix this
@@ -283,6 +306,15 @@ public class StringTerm extends StrTerm {
         enc[0] = buffer.getEncoding();
         
         return c;
+    }
+
+    private boolean simple_re_meta(int c) {
+        switch(c) {
+            case '$': case '*': case '+': case '.': case '?': case '^': case '|': case ')': case ']': case '}': case '>':
+                return true;
+        }
+
+        return false;
     }
 
     // Was a goto in original ruby lexer
