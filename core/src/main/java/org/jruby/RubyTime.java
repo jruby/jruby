@@ -1154,9 +1154,6 @@ public class RubyTime extends RubyObject {
         }
     }
 
-    private static final int[] time_min = {1, 0, 0, 0, Integer.MIN_VALUE};
-    private static final int[] time_max = {31, 23, 59, 60, Integer.MAX_VALUE};
-
     private static final int ARG_SIZE = 7;
 
     private static RubyTime createTime(IRubyObject recv, IRubyObject[] args, boolean gmt) {
@@ -1244,12 +1241,19 @@ public class RubyTime extends RubyObject {
                     }
                 }
 
-                long value = RubyNumeric.num2long(args[i + 2]);
-                if (time_min[i] > value || value > time_max[i]) {
-                    throw runtime.newArgumentError("argument out of range.");
-                }
-                int_args[i] = (int) value;
+                int_args[i] = RubyNumeric.num2int(args[i + 2]);
             }
+        }
+
+        // Validate the times
+        // Complying with MRI behavior makes it a little bit complicated. Logic copied from:
+        // https://github.com/ruby/ruby/blob/trunk/time.c#L2609
+        if (   (int_args[0] < 1 || int_args[0] > 31)
+            || (int_args[1] < 0 || int_args[1] > 24)
+            || (int_args[1] == 24 && (int_args[2] > 0 || int_args[3] > 0))
+            || (int_args[2] < 0 || int_args[2] > 59)
+            || (int_args[3] < 0 || int_args[3] > 60)) {
+            throw runtime.newArgumentError("argument out of range.");
         }
 
         DateTime dt;
