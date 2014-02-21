@@ -1142,7 +1142,7 @@ public final class Ruby {
                 RubyInstanceConfig.POOL_TTL,
                 TimeUnit.SECONDS,
                 new SynchronousQueue<Runnable>(),
-                new DaemonThreadFactory("JRubyWorker"));
+                new DaemonThreadFactory("Ruby-" + getRuntimeNumber() + "-Worker"));
 
         fiberExecutor = new ThreadPoolExecutor(
                 0,
@@ -1150,7 +1150,7 @@ public final class Ruby {
                 RubyInstanceConfig.FIBER_POOL_TTL,
                 TimeUnit.SECONDS,
                 new SynchronousQueue<Runnable>(),
-                new DaemonThreadFactory("JRubyFiber"));
+                new DaemonThreadFactory("Ruby-" + getRuntimeNumber() + "-Fiber"));
         
         // initialize the root of the class hierarchy completely
         initRoot();
@@ -4535,6 +4535,10 @@ public final class Ruby {
     public RubyString getThreadStatus(RubyThread.Status status) {
         return threadStatuses.get(status);
     }
+
+    public int getRuntimeNumber() {
+        return runtimeNumber;
+    }
     
     private void setNetworkStack() {
         try {
@@ -4858,4 +4862,7 @@ public final class Ruby {
     }
     
     private RubyArray emptyFrozenArray;
+
+    private static final AtomicInteger RUNTIME_NUMBER = new AtomicInteger(0);
+    private final int runtimeNumber = RUNTIME_NUMBER.getAndIncrement();
 }
