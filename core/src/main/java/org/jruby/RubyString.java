@@ -232,11 +232,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public final boolean isCodeRangeValid() {
-        return (flags & CR_VALID) != 0;
+        return (flags & CR_MASK) == CR_VALID;
     }
 
     public final boolean isCodeRangeBroken() {
-        return (flags & CR_BROKEN) == CR_BROKEN;
+        return (flags & CR_MASK) == CR_BROKEN;
     }
 
     static int codeRangeAnd(int cr1, int cr2) {
