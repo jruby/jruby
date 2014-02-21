@@ -264,12 +264,24 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             super.finalize();
         }
     }
+
+    public FiberData getData() {
+        return data;
+    }
+
+    public RubyThread getThread() {
+        return thread;
+    }
     
-    private static class FiberData {
+    public static class FiberData {
         FiberData(SizedQueue queue, RubyThread parent, ThreadFiber fiber) {
             this.queue = queue;
             this.parent = parent;
             this.fiber = new WeakReference<ThreadFiber>(fiber);
+        }
+
+        public ThreadFiber getPrev() {
+            return prev;
         }
         
         final SizedQueue queue;
