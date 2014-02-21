@@ -1313,11 +1313,13 @@ public class RubyTime extends RubyObject {
             throw runtime.newArgumentError("argument out of range.");
         }
 
-        if (!runtime.is1_9()) {
+        if (runtime.is1_8()) {
             if (0 <= year && year < 39) {
                 year += 2000;
+                runtime.getWarnings().warn("2 digits year is used");
             } else if (69 <= year && year < 139) {
                 year += 1900;
+                runtime.getWarnings().warn("2 or 3 digits year is used");
             }
         }
 
