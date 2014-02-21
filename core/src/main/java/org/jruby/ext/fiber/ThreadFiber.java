@@ -98,8 +98,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                     throw re;
                 }
 
-                // re-raise if this fiber has been shut down
-                if (currentFiberData.queue.isShutdown()) {
+                // re-raise if the target fiber has been shut down
+                if (targetFiberData.queue.isShutdown()) {
                     throw re;
                 }
 
