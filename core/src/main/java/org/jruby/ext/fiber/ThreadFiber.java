@@ -204,17 +204,22 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                 fiberThread.set(context.getThread());
                 
                 IRubyObject init = data.queue.pop(context);
-                
+
                 try {
-                    IRubyObject result;
-                    
-                    if (init == NEVER) {
-                        result = block.yieldSpecific(context);
-                    } else {
-                        result = block.yieldArray(context, init, null, null);
+                    try {
+                        IRubyObject result;
+
+                        if (init == NEVER) {
+                            result = block.yieldSpecific(context);
+                        } else {
+                            result = block.yieldArray(context, init, null, null);
+                        }
+
+                        data.prev.data.queue.push(context, result);
+                    } finally {
+                        data.queue.shutdown();
+                        runtime.getThreadService().disposeCurrentThread();
                     }
-                    
-                    data.prev.data.queue.push(context, result);
                 } catch (JumpException.FlowControlException fce) {
                     if (data.prev != null) {
                         data.prev.thread.raise(fce.buildException(runtime).getException());
@@ -227,9 +232,6 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                     if (data.prev != null) {
                         data.prev.thread.raise(JavaUtil.convertJavaToUsableRubyObject(runtime, t));
                     }
-                } finally {
-                    data.queue.shutdown();
-                    runtime.getThreadService().disposeCurrentThread();
                 }
             }
         });
