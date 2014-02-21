@@ -5772,7 +5772,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             int n = is7bit ? 1 : StringSupport.length(enc, bytes, p, end);
             RubyString str;
             if (n == 1 && isUSASCII) {
-                str = newStringShared(runtime, RubyFixnum.SINGLE_CHAR_BYTELISTS19[bytes[p]], StringSupport.CR_7BIT);
+                str = newStringShared(runtime, RubyFixnum.SINGLE_CHAR_BYTELISTS19[bytes[p] & 0xFF], StringSupport.CR_7BIT);
             } else {
                 str = makeShared19(runtime, val, p-value.getBegin(), n);
             }
