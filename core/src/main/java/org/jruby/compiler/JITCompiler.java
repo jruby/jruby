@@ -115,13 +115,7 @@ public class JITCompiler implements JITCompilerMBean {
     }
 
     private final JITCounts counts = new JITCounts();
-    private final ExecutorService executor = new ThreadPoolExecutor(
-                    2, // always two threads
-                    2,
-                    0, // never stop
-                    TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<Runnable>(),
-                    new DaemonThreadFactory("JRubyJIT", Thread.MIN_PRIORITY));
+    private final ExecutorService executor;
     
     private final Ruby runtime;
     private final RubyInstanceConfig config;
@@ -129,6 +123,14 @@ public class JITCompiler implements JITCompilerMBean {
     public JITCompiler(Ruby runtime) {
         this.runtime = runtime;
         this.config = runtime.getInstanceConfig();
+
+        this.executor = new ThreadPoolExecutor(
+                2, // always two threads
+                2,
+                0, // never stop
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>(),
+                new DaemonThreadFactory("Ruby-" + runtime.getRuntimeNumber() + "-JIT", Thread.MIN_PRIORITY));
         
         runtime.getBeanManager().register(this);
     }

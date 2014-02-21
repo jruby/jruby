@@ -24,7 +24,7 @@ public class BeanManagerImpl implements BeanManager {
     
     public BeanManagerImpl(Ruby ruby, boolean managementEnabled) {
         this.managementEnabled = managementEnabled;
-        this.base = "org.jruby:type=Runtime,name=" + ruby.hashCode() + ",";
+        this.base = "org.jruby:type=Runtime,name=" + ruby.getRuntimeNumber() + ",";
     }
     
     public void register(JITCompilerMBean jitCompiler) {

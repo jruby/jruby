@@ -391,6 +391,14 @@ public final class ThreadContext {
             Continuation c = catchStack[i];
             if (c.tag == tag) return c;
         }
+
+        // if this is a fiber, search prev for tag
+        ThreadFiber fiber = getFiber();
+        ThreadFiber prev;
+        if (fiber != null && (prev = fiber.getData().getPrev()) != null) {
+            return prev.getThread().getContext().getActiveCatch(tag);
+        }
+
         return null;
     }
     
