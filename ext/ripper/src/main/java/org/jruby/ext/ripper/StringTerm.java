@@ -29,7 +29,6 @@ package org.jruby.ext.ripper;
 
 import java.io.IOException;
 import org.jcodings.Encoding;
-import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
 
 public class StringTerm extends StrTerm {
@@ -125,8 +124,8 @@ public class StringTerm extends StrTerm {
         
         Encoding enc[] = new Encoding[1];
         enc[0] = lexer.getEncoding();
-        
-        if (parseStringIntoBuffer(lexer, src, buffer, enc) == RipperLexer.ERROR) {
+
+        if (parseStringIntoBuffer(lexer, src, buffer, enc) == RipperLexer.EOF) {
             if ((flags & RipperLexer.STR_FUNC_REGEXP) != 0) {
                 if (lexer.eofp) lexer.compile_error("unterminated regexp meets end of file");
                 return Tokens.tREGEXP_END;
@@ -241,7 +240,7 @@ public class StringTerm extends StrTerm {
                             continue;
                         }
                         
-                        if (lexer.tokenAddMBC(c, buffer) == RipperLexer.ERROR) return RipperLexer.ERROR;
+                        if (lexer.tokenAddMBC(c, buffer) == RipperLexer.EOF) return RipperLexer.EOF;
 
                         continue;
                         // end of goto non_ascii
@@ -304,7 +303,7 @@ public class StringTerm extends StrTerm {
         }
         
         enc[0] = buffer.getEncoding();
-        
+
         return c;
     }
 

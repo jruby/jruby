@@ -238,7 +238,6 @@ public class RipperLexer {
 
     // Give a name to a value.  Enebo: This should be used more.
     static final int EOF = -1; // 0 in MRI
-    static final int ERROR = -2; // -1 in MRI
 
     // ruby constants for strings (should this be moved somewhere else?)
     static final int STR_FUNC_ESCAPE=0x01;
@@ -1124,7 +1123,7 @@ public class RipperLexer {
             case Tokens.tLABEL: return "tLABEL("+ ((Token) value()).getValue() +":),";
             case '\n': return "NL";
             case EOF: return "EOF";
-            default: return "'" + (char)token + "',";
+            default: return "'" + (char)token + " [" + (int) token + "',";
         }
     }
     
@@ -1370,7 +1369,7 @@ public class RipperLexer {
             case '\004': /* ^D */
             case '\032': /* ^Z */
             case EOF:	 /* end of script. */
-                return EOF;
+                return 0;
            
                 /* white spaces */
             case ' ': case '\t': case '\f': case '\r':
@@ -2720,10 +2719,11 @@ public class RipperLexer {
     // to grow by 6 (which may be wasteful).  Another idea is to make Encoding accept an interface
     // for populating bytes and then make ByteList implement that interface.  I like this last idea
     // since it would not leak bytelist impl details all over the place.
+    // mri: parser_tokadd_mbchar
     public int tokenAddMBC(int codepoint, ByteList buffer) {
         int length = buffer.getEncoding().codeToMbc(codepoint, mbcBuf, 0);
 
-        if (length <= 0) return ERROR;
+        if (length <= 0) return EOF;
 
         buffer.append(mbcBuf, 0, length);
 
