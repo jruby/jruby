@@ -37,6 +37,7 @@ package org.jruby;
 
 import org.jruby.runtime.Helpers;
 import org.jruby.util.StringSupport;
+import org.jruby.util.encoding.EncodingConverter;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.SelectBlob;
@@ -102,7 +103,6 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.internal.runtime.ThreadedRunnable;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.EncodingService;
-import org.jruby.util.encoding.Transcoder;
 import org.jruby.util.ShellLauncher.POpenProcess;
 import org.jruby.util.io.IOEncodable;
 import static org.jruby.util.StringSupport.isIncompleteChar;
@@ -529,7 +529,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (separator.getRealSize() == 0) return Stream.PARAGRAPH_DELIMETER;
 
             if (separator.getEncoding() != getEnc()) {
-                separator = Transcoder.strConvEncOpts(runtime.getCurrentContext(), separator,
+                separator = EncodingConverter.strConvEncOpts(runtime.getCurrentContext(), separator,
                         getEnc2(), getEnc(), 0, runtime.getNil());
             }
         }
@@ -622,7 +622,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 // match the pre-transcoded encoding.  This is gross and we should
                 // mimick MRI.
                 if (separator != null && separator.getEncoding() != getInputEncoding()) {
-                    separator = Transcoder.strConvEncOpts(runtime.getCurrentContext(), separator, separator.getEncoding(), getInputEncoding(), 0, context.nil);
+                    separator = EncodingConverter.strConvEncOpts(runtime.getCurrentContext(), separator, separator.getEncoding(), getInputEncoding(), 0, context.nil);
                     newline = separator.get(separator.length() - 1) & 0xFF;
                 }
 
@@ -5011,9 +5011,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return getline(runtime.getCurrentContext(), separator, limit, null);
     }
     
-    protected Transcoder readconv = null;
+    protected EncodingConverter readconv = null;
     protected boolean writeconvInitialized = false;
-    protected Transcoder writeconv = null;
+    protected EncodingConverter writeconv = null;
     protected OpenFile openFile;
     protected List<RubyThread> blockingThreads;
     

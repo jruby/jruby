@@ -26,7 +26,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
-import org.jruby.util.encoding.Transcoder;
+import org.jruby.util.encoding.EncodingConverter;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.encoding.RubyCoderResult;
@@ -547,7 +547,7 @@ public class EncodingUtils {
     }
     
     // rb_econv_open_opts
-    public static Transcoder econvOpenOpts(ThreadContext context, byte[] sourceEncoding, byte[] destinationEncoding, int ecflags, IRubyObject opthash) {
+    public static EncodingConverter econvOpenOpts(ThreadContext context, byte[] sourceEncoding, byte[] destinationEncoding, int ecflags, IRubyObject opthash) {
         Ruby runtime = context.runtime;
         IRubyObject replacement;
         
@@ -560,7 +560,7 @@ public class EncodingUtils {
             replacement = ((RubyHash)opthash).op_aref(context, runtime.newSymbol("replace"));
         }
         
-        return Transcoder.open(context, sourceEncoding, destinationEncoding, ecflags, replacement);
+        return EncodingConverter.open(context, sourceEncoding, destinationEncoding, ecflags, replacement);
         // missing logic for checking replacement encoding, may live in CharsetTranscoder
         // already...
     }
@@ -861,7 +861,7 @@ public class EncodingUtils {
     
     // transcode_loop
     public static void transcodeLoop(ThreadContext context, ByteList fromp, ByteList dest, byte[] sname, byte[] dname, int ecflags, IRubyObject ecopts) {
-        Transcoder ec;
+        EncodingConverter ec;
         
         ec = econvOpenOpts(context, sname, dname, ecflags, ecopts);
         

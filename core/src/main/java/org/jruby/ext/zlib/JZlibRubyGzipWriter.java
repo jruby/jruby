@@ -50,7 +50,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.encoding.Transcoder;
+import org.jruby.util.encoding.EncodingConverter;
 
 import java.io.IOException;
 
@@ -361,7 +361,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
         if (enc2 != null
                 && enc2 != ASCIIEncoding.INSTANCE) {
-            bytes = Transcoder.strConvEncOpts(runtime.getCurrentContext(), bytes, bytes.getEncoding(),
+            bytes = EncodingConverter.strConvEncOpts(runtime.getCurrentContext(), bytes, bytes.getEncoding(),
                     enc2, 0, runtime.getNil());
         
         }

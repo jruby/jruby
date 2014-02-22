@@ -62,7 +62,7 @@ import org.jruby.util.unsafe.UnsafeHolder;
  * facilities.
  */
 // FIXME: Originally this was meant to capture invariant state.  Use specialization to make this much more efficient.
-public class CharsetTranscoder extends Transcoder {
+public class CharsetTranscoder extends EncodingConverter {
     // Java seems to find these specific Java charsets but they seem to trancode
     // some strings a little differently than MRI.  Since Java Charset transcoding
     // is a temporary implementation for us, having this gruesome hack is ok
@@ -314,7 +314,7 @@ public class CharsetTranscoder extends Transcoder {
             createTranscoder(inEncoding, outEncoding, actions, is7BitASCII);
         }
         
-        TranscoderEngine.TranscoderState state = transcoder.new TranscoderState(inBytes, outBytes, growable);
+        TranscoderState state = new TranscoderState(inBytes, outBytes, growable);
         
         lastResult = transcoder.transcode(state, flags);
         
@@ -788,23 +788,7 @@ public class CharsetTranscoder extends Transcoder {
             
             return inChars;
         }
-    
-        public class TranscoderState {
-            public final ByteBuffer inBytes;
-            public ByteBuffer outBytes;
-            public boolean growable;
 
-            public TranscoderState(ByteBuffer inBytes, ByteBuffer outBytes, boolean growable) {
-                this.growable = growable;
-                this.inBytes = inBytes;
-                this.outBytes = outBytes;
-            }
-
-            // unused but may be someday
-            public TranscoderState(ByteBuffer inBytes, boolean growable) {
-                this(inBytes, ByteBuffer.allocate((int)(inBytes.remaining() * averageByteRatio())), growable);
-            }
-        }
     }
     
     public static final String[] XMLTextCharacterTranslator = new String[128];
@@ -1026,4 +1010,5 @@ public class CharsetTranscoder extends Transcoder {
 
         return from;
     }
+
 }

@@ -41,7 +41,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.encoding.Transcoder;
+import org.jruby.util.encoding.EncodingConverter;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
 
@@ -160,7 +160,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
             return RubyString.newString(runtime, value, getEnc());
         }
 
-        value = Transcoder.strConvEncOpts(runtime.getCurrentContext(), value, enc2, enc, ecflags, ecopts);
+        value = EncodingConverter.strConvEncOpts(runtime.getCurrentContext(), value, enc2, enc, ecflags, ecopts);
         return RubyString.newString(runtime, value);
     }
 
@@ -292,8 +292,8 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
     protected Encoding enc2;
     protected int ecflags;
     protected IRubyObject ecopts;
-    protected Transcoder ec;
+    protected EncodingConverter ec;
     protected boolean sync = false;
-    protected Transcoder readTranscoder = null;
-    protected Transcoder writeTranscoder = null;    
+    protected EncodingConverter readTranscoder = null;
+    protected EncodingConverter writeTranscoder = null;
 }

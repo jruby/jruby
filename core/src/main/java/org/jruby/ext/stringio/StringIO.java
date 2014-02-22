@@ -53,7 +53,7 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.encoding.Transcoder;
+import org.jruby.util.encoding.EncodingConverter;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
@@ -1131,7 +1131,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         if (enc != enc2 && enc != EncodingUtils.ascii8bitEncoding(runtime)
                 // this is a hack because we don't seem to handle incoming ASCII-8BIT properly in transcoder
                 && enc2 != ASCIIEncoding.INSTANCE) {
-            str = runtime.newString(Transcoder.strConvEnc(context, str.getByteList(), enc2, enc));
+            str = runtime.newString(EncodingConverter.strConvEnc(context, str.getByteList(), enc2, enc));
         }
         len = str.size();
         if (len == 0) return RubyFixnum.zero(runtime);

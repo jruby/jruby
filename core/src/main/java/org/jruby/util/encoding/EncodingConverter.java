@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.encoding;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashSet;
@@ -49,28 +50,28 @@ import org.jruby.util.io.EncodingUtils;
  * 
  * This and its implementations are roughly equivalent to rb_econv_t in MRI.
  */
-public abstract class Transcoder {
+public abstract class EncodingConverter {
     protected final Ruby runtime;
     public final Encoding outEncoding;
     public final Encoding inEncoding;
     public RubyCoderResult lastResult;
     private RaiseException lastError;
     
-    public Transcoder(ThreadContext context, Encoding outEncoding, Encoding inEncoding) {
+    public EncodingConverter(ThreadContext context, Encoding outEncoding, Encoding inEncoding) {
         this.runtime = context.runtime;
         this.outEncoding = outEncoding;
         this.inEncoding = inEncoding;
     }
     
     // rb_econv_open
-    public static Transcoder open(ThreadContext context, byte[] sourceEncoding, byte[] destinationEncoding, int ecflags, IRubyObject replacement) {
+    public static EncodingConverter open(ThreadContext context, byte[] sourceEncoding, byte[] destinationEncoding, int ecflags, IRubyObject replacement) {
         // TODO: decorator finish logic
         
         // TODO: lighter-weight pass for non-transcoding with decorators (NullTranscoder)
         
         // TODO: set error handler mask for decorator logic
-//        Transcoder transcoder = open0(ThreadContext context, sourceEncoding, destinationEncoding, ecflags & EncodingUtils.ECONV_ERROR_HANDLER_MASK);
-        Transcoder transcoder = open0(context, sourceEncoding, destinationEncoding, ecflags, replacement);
+//        EncodingConverter transcoder = open0(ThreadContext context, sourceEncoding, destinationEncoding, ecflags & EncodingUtils.ECONV_ERROR_HANDLER_MASK);
+        EncodingConverter transcoder = open0(context, sourceEncoding, destinationEncoding, ecflags, replacement);
         
         if (transcoder == null) return null;
         
@@ -81,7 +82,7 @@ public abstract class Transcoder {
         return transcoder;
     }
     
-    public static Transcoder open0(ThreadContext context, byte[] sourceEncoding, byte[] destinationEncoding, int ecflags, IRubyObject replacement) {
+    public static EncodingConverter open0(ThreadContext context, byte[] sourceEncoding, byte[] destinationEncoding, int ecflags, IRubyObject replacement) {
         Encoding senc, denc;
         
         senc = null;
@@ -147,7 +148,7 @@ public abstract class Transcoder {
             return value;
         }
         
-        Transcoder ec = EncodingUtils.econvOpenOpts(context, fromEncoding.getName(), toEncoding.getName(), ecflags, ecopts);
+        EncodingConverter ec = EncodingUtils.econvOpenOpts(context, fromEncoding.getName(), toEncoding.getName(), ecflags, ecopts);
         if (ec == null) return value;
         
         ByteList ret = ec.convert(context, value, false);
@@ -244,5 +245,17 @@ public abstract class Transcoder {
         charsets.add(Charset.forName("UTF-32LE"));
         
         UNICODE_CHARSETS = Collections.unmodifiableSet(charsets);
+    }
+
+    public static class TranscoderState {
+        public final ByteBuffer inBytes;
+        public ByteBuffer outBytes;
+        public boolean growable;
+
+        public TranscoderState(ByteBuffer inBytes, ByteBuffer outBytes, boolean growable) {
+            this.growable = growable;
+            this.inBytes = inBytes;
+            this.outBytes = outBytes;
+        }
     }
 }
