@@ -10,4 +10,4 @@ describe "Proc#curry" do
       expect(l1.curry.call(2,3)).to eq 6
     end
   end
-end
+end unless RUBY_VERSION < '1.9'
