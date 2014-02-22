@@ -16,28 +16,33 @@ class Proc
       end
     end
 
-    f = Proc.__make_curry_proc__(self, [], arity)
-
-    f.singleton_class.send(:define_method, :binding) {
-      raise ArgumentError, "cannot create binding from f proc"
-    }
-
-    f.singleton_class.send(:define_method, :parameters) {
-      [[:rest]]
-    }
-
-    f.singleton_class.send(:define_method, :source_location) {
-      nil
-    }
-
-    f
+    Proc.__make_curry_proc__(self, [], arity)
   end
 
-  def self.__make_curry_proc__(proc, passed, arity)
-    is_lambda = proc.lambda?
-    passed.freeze
+  # Create a singleton class based on Proc that re-defines these methods but
+  # otherwise looks just like Proc in every way. This allows us to override
+  # the methods with different behavior without constructing a singleton every
+  # time a proc is curried by using some JRuby-specific tricks below.
+  curried_prototype = proc{}
+  curried_prototype.instance_eval do
+    def binding
+      raise ArgumentError, "cannot create binding from f proc"
+    end
 
-    __send__((is_lambda ? :lambda : :proc)) do |*argv, &passed_proc|
+    def parameters
+      [[:rest]]
+    end
+
+    def source_location
+      nil
+    end
+  end
+
+  # Yank the singleton class out of the curried prototype object.
+  Curried = JRuby.reference(curried_prototype).meta_class
+
+  def self.__make_curry_proc__(proc, passed, arity)
+    f = __send__((proc.lambda? ? :lambda : :proc)) do |*argv, &passed_proc|
       my_passed = passed + argv
       if my_passed.length < arity
         if !passed_proc.nil?
@@ -48,5 +53,10 @@ class Proc
         proc.call(*my_passed)
       end
     end
+
+    # Replace the curried proc's class with our prototype singleton class
+    JRuby.reference(f).meta_class = Curried
+
+    f
   end
 end
