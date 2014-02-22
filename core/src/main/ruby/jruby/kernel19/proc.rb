@@ -16,19 +16,7 @@ class Proc
       end
     end
 
-    args = []
-
-    my_self = self
-    m = lambda? ? :lambda : :proc
-    f = __send__(m) {|*x|
-      call_args = args + x
-      if call_args.length >= my_self.arity
-        my_self[*call_args]
-      else
-        args = call_args
-        f
-      end
-    }
+    f = Proc.__make_curry_proc__(self, [], arity)
 
     f.singleton_class.send(:define_method, :binding) {
       raise ArgumentError, "cannot create binding from f proc"
@@ -43,5 +31,22 @@ class Proc
     }
 
     f
+  end
+
+  def self.__make_curry_proc__(proc, passed, arity)
+    is_lambda = proc.lambda?
+    passed.freeze
+
+    __send__((is_lambda ? :lambda : :proc)) do |*argv, &passed_proc|
+      my_passed = passed + argv
+      if my_passed.length < arity
+        if !passed_proc.nil?
+          warn "#{caller[0]}: given block not used"
+        end
+        __make_curry_proc__(proc, my_passed, arity)
+      else
+        proc.call(*my_passed)
+      end
+    end
   end
 end
