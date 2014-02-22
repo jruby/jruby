@@ -93,8 +93,14 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                 if (result == NEVER) result = context.nil;
                 return result;
             } catch (RaiseException re) {
-                // re-raise flow control exceptions
+                // If we received a LJC we need to bubble it out
                 if (context.runtime.getLocalJumpError().isInstance(re.getException())) {
+                    throw re;
+                }
+
+                // If we were trying to yield but our queue has been shut down,
+                // let the exception bubble out and (ideally) kill us.
+                if (currentFiberData.queue.isShutdown()) {
                     throw re;
                 }
 
@@ -103,7 +109,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                     throw re;
                 }
 
-                // forward external exception to the fiber and try again
+                // Otherwise, we want to forward the exception to the target fiber
+                // since it has the ball
                 targetFiberData.fiber.get().thread.raise(re.getException());
             }
         }
