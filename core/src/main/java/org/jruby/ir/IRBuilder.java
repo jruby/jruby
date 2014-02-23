@@ -3327,13 +3327,19 @@ public class IRBuilder {
         // Before we return,
         // - have to go execute all the ensure blocks if there are any.
         //   this code also takes care of resetting "$!"
-        // - if we dont have any ensure blocks, we have to clear "$!"
+        // - if we have a rescue block, reset "$!".
+        // - if we dont have any ensure or blocks, clear "$!" since the
+        //   new uncaught exception will override the old exception.
         if (!activeEnsureBlockStack.empty()) {
             Variable ret = s.getNewTemporaryVariable();
             addInstr(s, new CopyInstr(ret, retVal));
             retVal = ret;
             emitEnsureBlocks(s, null);
         } else if (!activeRescueBlockStack.empty()) {
+            // Restore $! and jump back to the entry of the rescue block
+            RescueBlockInfo rbi = activeRescueBlockStack.peek();
+            addInstr(s, new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
+        } else {
             addInstr(s, new PutGlobalVarInstr("$!", manager.getNil()));
         }
 
