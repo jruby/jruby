@@ -881,7 +881,6 @@ public final class Ruby {
 
     public synchronized JRubyTruffleBridge getTruffleBridge() {
         if (truffleBridge == null) {
-            System.err.println("allocating it");
             truffleBridge = new JRubyTruffleBridge(this);
             truffleBridge.init();
         }
