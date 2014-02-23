@@ -117,7 +117,7 @@ public class IRScriptBody extends IRScope {
             context.setCurrentVisibility(Visibility.PRIVATE);
 
             Interpreter.runBeginEndBlocks(getBeginBlocks(), context, self, null);
-            retVal = Interpreter.INTERPRET_SCRIPT(context, self, this, currModule, name);
+            retVal = Interpreter.INTERPRET_ROOT(context, self, this, currModule, name);
             Interpreter.runBeginEndBlocks(getEndBlocks(), context, self, null);
 
             Interpreter.dumpStats();

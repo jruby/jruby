@@ -620,7 +620,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         return null;
     }
 
-    public static IRubyObject INTERPRET_SCRIPT(ThreadContext context, IRubyObject self,
+    public static IRubyObject INTERPRET_ROOT(ThreadContext context, IRubyObject self,
             IRScope scope, RubyModule clazz, String name) {
         try {
             ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
