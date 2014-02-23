@@ -129,12 +129,12 @@ public class RubyDir extends RubyObject {
      * must be created to reflect changes to the underlying file system.
      */
     @JRubyMethod(compat = RUBY1_8)
-    public IRubyObject initialize(IRubyObject arg) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject arg) {
         RubyString newPath = arg.convertToString();
         path = newPath;
         pos = 0;
 
-        String adjustedPath = RubyFile.adjustRootPathOnWindows(getRuntime(), newPath.toString(), null);
+        String adjustedPath = RubyFile.adjustRootPathOnWindows(context.runtime, newPath.toString(), null);
         checkDirIsTwoSlashesOnWindows(getRuntime(), adjustedPath);
 
         dir = JRubyFile.create(getRuntime().getCurrentDirectory(), adjustedPath);
@@ -145,8 +145,8 @@ public class RubyDir extends RubyObject {
     }
 
     @JRubyMethod(name = "initialize", compat = RUBY1_9)
-    public IRubyObject initialize19(IRubyObject arg) {
-        return initialize(RubyFile.get_path(getRuntime().getCurrentContext(), arg));
+    public IRubyObject initialize19(ThreadContext context, IRubyObject arg) {
+        return initialize(context, RubyFile.get_path(context, arg));
     }
 
 // ----- Ruby Class Methods ----------------------------------------------------
