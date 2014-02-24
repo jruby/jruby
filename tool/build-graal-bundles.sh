@@ -42,26 +42,24 @@ rm jruby-9000.dev/bin/jruby.backup
 
 chmod +x jruby-9000.dev/bin/jruby
 
-# Combine with Graal for Linux
+function pack {
+    # $1 ... platform (linux, ...)
+    # $2 ... jdk-release (b122, ...)
+    # $3 ... graal-release (0.1, ...)
 
-if [ ! -e openjdk-8-graalvm-b122-linux-x86_64-0.1.tar.gz ]
-then
-  wget http://lafo.ssw.uni-linz.ac.at/graalvm/openjdk-8-graalvm-b122-linux-x86_64-0.1.tar.gz || exit $?
-fi
+    buildname=openjdk-8-graalvm-$2-$1-x86_64-$3.tar.gz
+    if [ ! -e $buildname ]
+    then
+      wget http://lafo.ssw.uni-linz.ac.at/graalvm/$buildname || exit $?
+    fi
 
-tar -zxf openjdk-8-graalvm-b122-linux-x86_64-0.1.tar.gz || exit $?
-cp -r graalvm-jdk1.8.0 jruby-9000.dev || exit $?
-rm -rf jruby-9000.dev/graalvm-jdk1.8.0/src.zip jruby-9000.dev/graalvm-jdk1.8.0/demo jruby-9000.dev/graalvm-jdk1.8.0/include jruby-9000.dev/graalvm-jdk1.8.0/sample
-tar -zcf jruby-dist-9000+graal-linux-x86_64.dev-bin.tar.gz jruby-9000.dev || exit $?
+    tar -zxf $buildname || exit $?
+    cp -r graalvm-jdk1.8.0 jruby-9000.dev || exit $?
+    rm -rf jruby-9000.dev/graalvm-jdk1.8.0/src.zip jruby-9000.dev/graalvm-jdk1.8.0/demo jruby-9000.dev/graalvm-jdk1.8.0/include jruby-9000.dev/graalvm-jdk1.8.0/sample
+    targetname=jruby-dist-9000+graal-$1-x86_64.dev-bin.tar.gz
+    tar -zcf $targetname jruby-9000.dev || exit $?
+    shasum -a 1 $targetname > $targetname.sha1
+}
 
-# Combine with Graal for Mac
-
-if [ ! -e openjdk-8-graalvm-b122-macosx-x86_64-0.1.tar.gz ]
-then
-  wget http://lafo.ssw.uni-linz.ac.at/graalvm/openjdk-8-graalvm-b122-macosx-x86_64-0.1.tar.gz || exit $?
-fi
-
-tar -zxf openjdk-8-graalvm-b122-macosx-x86_64-0.1.tar.gz || exit $?
-cp -r graalvm-jdk1.8.0 jruby-9000.dev || exit $?
-rm -rf jruby-9000.dev/graalvm-jdk1.8.0/src.zip jruby-9000.dev/graalvm-jdk1.8.0/demo jruby-9000.dev/graalvm-jdk1.8.0/include jruby-9000.dev/graalvm-jdk1.8.0/sample
-tar -zcf jruby-dist-9000+graal-macosx-x86_64.dev-bin.tar.gz jruby-9000.dev || exit $?
+pack "linux" "b122" "0.1"
+pack "macosx" "b122" "0.1"
