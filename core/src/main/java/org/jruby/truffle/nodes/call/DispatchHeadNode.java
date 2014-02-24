@@ -13,11 +13,9 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.methods.*;
-import org.jruby.truffle.runtime.objects.*;
 
 /**
- * The head of a chain of dispatch nodes. Can be used with {@link CallNode} or on its own.
+ * The head of a chain of dispatch nodes. Can be used with {@link RubyCallNode} or on its own.
  */
 public class DispatchHeadNode extends DispatchNode {
 

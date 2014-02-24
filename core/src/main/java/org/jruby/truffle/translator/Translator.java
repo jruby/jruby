@@ -15,13 +15,12 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.impl.DefaultSourceSection;
 import org.joni.Regex;
 import org.jruby.ast.MultipleAsgn19Node;
-import org.jruby.ast.Node;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.DefinedNode;
 import org.jruby.truffle.nodes.ReadNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.WriteNode;
-import org.jruby.truffle.nodes.call.CallNode;
+import org.jruby.truffle.nodes.call.RubyCallNode;
 import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.constants.EncodingPseudoVariableNode;
 import org.jruby.truffle.nodes.constants.UninitializedReadConstantNode;
@@ -40,7 +39,6 @@ import org.jruby.truffle.nodes.objects.instancevariables.UninitializedWriteInsta
 import org.jruby.truffle.nodes.objects.instancevariables.WriteInstanceVariableNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.range.FixnumRange;
@@ -312,7 +310,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, block, args, extraArgument);
 
-        RubyNode translated = new CallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), argumentsAndBlock.getArguments());
+        RubyNode translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), argumentsAndBlock.getArguments());
 
         return instrumenter.instrumentAsCall(translated, node.getName());
     }
@@ -461,7 +459,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
                 for (org.jruby.ast.Node expressionNode : expressions) {
                     final RubyNode rubyExpression = (RubyNode) expressionNode.accept(this);
 
-                    final CallNode comparison = new CallNode(context, sourceSection, "===", rubyExpression, null, false, new RubyNode[]{environment.findLocalVarNode(tempName, sourceSection)});
+                    final RubyCallNode comparison = new RubyCallNode(context, sourceSection, "===", rubyExpression, null, false, new RubyNode[]{environment.findLocalVarNode(tempName, sourceSection)});
 
                     comparisons.add(comparison);
                 }

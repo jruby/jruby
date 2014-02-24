@@ -22,7 +22,6 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.*;
-import org.jruby.truffle.nodes.call.CallNode;
 
 @CoreClass(name = "Dir")
 public abstract class DirNodes {

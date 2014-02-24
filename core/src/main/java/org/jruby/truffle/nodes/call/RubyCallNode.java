@@ -22,7 +22,7 @@ import org.jruby.truffle.runtime.objects.*;
 /**
  * A call node that has a chain of dispatch nodes.
  * <p>
- * The dispatch chain starts as {@link CallNode} -&gt; {@link DispatchHeadNode} -&gt;
+ * The dispatch chain starts as {@link RubyCallNode} -&gt; {@link DispatchHeadNode} -&gt;
  * {@link UninitializedBoxingDispatchNode} -&gt; {@link UninitializedDispatchNode}.
  * <p>
  * When the {@link UninitializedDispatchNode} is reached a new node is inserted into the chain. If
@@ -34,7 +34,7 @@ import org.jruby.truffle.runtime.objects.*;
  * The {@link UninitializedBoxingDispatchNode} becomes a {@link BoxingDispatchNode} when we find
  * that the boxing has to be done on the fast path - when there is some boxed dispatch node.
  * <p>
- * So the general format is {@link CallNode} -&gt; {@link DispatchHeadNode} -&gt; zero or more
+ * So the general format is {@link RubyCallNode} -&gt; {@link DispatchHeadNode} -&gt; zero or more
  * unboxed dispatches -&gt; {@link UninitializedBoxingDispatchNode} | {@link BoxingDispatchNode}
  * -&gt; zero or more boxed dispatches -&gt; {@link UninitializedDispatchNode}.
  * <p>
@@ -49,7 +49,7 @@ import org.jruby.truffle.runtime.objects.*;
  * as a math call which may work on Fixnum or Float to work as just a couple of applications of
  * {@code instanceof} and assumption checks.
  */
-public class CallNode extends RubyNode {
+public class RubyCallNode extends RubyNode {
 
     @Child protected RubyNode receiver;
     @Child protected ProcOrNullNode block;
@@ -60,7 +60,7 @@ public class CallNode extends RubyNode {
 
     @Child protected DispatchHeadNode dispatchHead;
 
-    public CallNode(RubyContext context, SourceSection section, String name, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode[] arguments) {
+    public RubyCallNode(RubyContext context, SourceSection section, String name, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode[] arguments) {
         super(context, section);
 
         assert receiver != null;

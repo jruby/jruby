@@ -17,7 +17,7 @@ import org.jruby.util.DefinedMessage;
 
 /**
  * Represents a constant path which ends in a method (e.g. Foo::bar).  Note: methods with
- * explicit parameters (e.g. Foo::bar()) will be a CallNode.
+ * explicit parameters (e.g. Foo::bar()) will be a RubyCallNode.
  */
 public class Colon2MethodNode extends Colon2Node {
     public Colon2MethodNode(ISourcePosition position, Node leftNode, String name) {

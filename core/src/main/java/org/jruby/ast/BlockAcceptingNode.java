@@ -31,7 +31,7 @@ package org.jruby.ast;
 
 /**
  *  Any thing which implements this represents a Callable-like node which can have a block 
- *  associated with it as part of that call.  The calls which can be this are: CallNode, FCallNode,
+ *  associated with it as part of that call.  The calls which can be this are: RubyCallNode, FCallNode,
  *  VCallNode, and SuperNode.  Blocks (the IterNode that this interface refers to can be either
  *  an IterNode ( {...} or do ... end ) or a BlockPassNode (&block).
  *  
