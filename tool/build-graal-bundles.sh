@@ -27,7 +27,7 @@ rm jruby-9000.dev/bin/*.bat jruby-9000.dev/bin/*.sh jruby-9000.dev/bin/*.bash jr
 
 # Patch the jruby bash script to set JAVACMD and JRUBY_OPTS
 
-sed -i .backup 's|if \[ -z "\$JAVACMD" \] ; then|# Modifications for distribution with Graal\
+sed -i.backup 's|if \[ -z "\$JAVACMD" \] ; then|# Modifications for distribution with Graal\
 JAVACMD=\"\$JRUBY_HOME/graalvm-jdk1.8.0/bin/java\"\
 JRUBY_OPTS=\"-J-server -J-d64 \$JRUBY_OPTS\"\
 \
