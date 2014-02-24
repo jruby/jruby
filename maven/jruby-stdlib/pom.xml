@@ -77,12 +77,23 @@
         <executions>
           <execution>
             <id>fix shebang on gem bin files and add *.bat files</id>
-            <phase>process-resources</phase>
+            <phase>initialize</phase>
             <goals>
               <goal>execute</goal>
             </goals>
             <configuration>
               <taskId>fix shebang on gem bin files and add *.bat files</taskId>
+              <nativePom>pom.rb</nativePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy bin/jruby.bash to bin/jruby</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <taskId>copy bin/jruby.bash to bin/jruby</taskId>
               <nativePom>pom.rb</nativePom>
             </configuration>
           </execution>

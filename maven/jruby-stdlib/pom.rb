@@ -19,7 +19,7 @@ project 'JRuby Stdlib' do
               'jruby.complete.gems' => '${jruby.complete.home}/lib/ruby/gems/shared' )
 
   execute( 'fix shebang on gem bin files and add *.bat files',
-           'process-resources' ) do |ctx|
+           'initialize' ) do |ctx|
     
     puts 'fix the gem stub files'
     jruby_home = ctx.project.properties.get_property( 'jruby.home' )
@@ -32,11 +32,24 @@ project 'JRuby Stdlib' do
     end
     
     puts 'generate the missing bat files'
-    RbConfig::CONFIG['bindir'] = bindir
-    require "#{jruby_home}/core/src/main/ruby/jruby/commands.rb"
-    JRuby::Commands.generate_bat_stubs
-    
-    puts 'copy jruby.bash to jruby'
+    Dir[File.join( jruby_home, 'bin', '*' )].each do |fn|
+      next unless File.file?(fn)
+      next if fn =~ /.bat$/
+      next if File.exist?("#{fn}.bat")
+      next unless File.open(fn, 'r', :internal_encoding => 'ASCII-8BIT') do |io|
+        line = io.readline rescue ""
+        line =~ /^#!.*ruby/
+      end
+      puts "Generating #{File.basename(fn)}.bat"
+      File.open("#{fn}.bat", "wb") do |f|
+        f.print "@ECHO OFF\r\n"
+        f.print "@\"%~dp0jruby.exe\" -S #{File.basename(fn)} %*\r\n"
+      end
+    end
+  end
+  
+  execute( 'copy bin/jruby.bash to bin/jruby',
+           'process-resources' ) do |ctx|
     require 'fileutils'
     jruby_complete = ctx.project.properties.get_property( 'jruby.complete.home' )
     FileUtils.cp( File.join( jruby_complete, 'bin', 'jruby.bash' ), 
