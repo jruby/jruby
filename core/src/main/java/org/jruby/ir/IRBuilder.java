@@ -522,8 +522,9 @@ public class IRBuilder {
     public Operand buildMultipleAsgn19(MultipleAsgn19Node multipleAsgnNode, IRScope s) {
         Operand  values = build(multipleAsgnNode.getValueNode(), s);
         Variable ret = getValueInTemporaryVariable(s, values);
-        addInstr(s, new ToAryInstr(ret, ret)); // FIXME: SSA-violating
-        buildMultipleAsgn19Assignment(multipleAsgnNode, s, null, ret);
+        Variable tmp = s.getNewTemporaryVariable();
+        addInstr(s, new ToAryInstr(tmp, ret));
+        buildMultipleAsgn19Assignment(multipleAsgnNode, s, null, tmp);
         return ret;
     }
 
@@ -621,8 +622,9 @@ public class IRBuilder {
     public void buildVersionSpecificAssignment(Node node, IRScope s, Variable v) {
         switch (node.getNodeType()) {
         case MULTIPLEASGN19NODE: {
-            addInstr(s, new ToAryInstr(v, v)); // FIXME: SSA-violating
-            buildMultipleAsgn19Assignment((MultipleAsgn19Node)node, s, null, v);
+            Variable tmp = s.getNewTemporaryVariable();
+            addInstr(s, new ToAryInstr(tmp, v));
+            buildMultipleAsgn19Assignment((MultipleAsgn19Node)node, s, null, tmp);
             break;
         }
         default:
@@ -1873,8 +1875,9 @@ public class IRBuilder {
                 Variable v = s.getNewTemporaryVariable();
                 addArgReceiveInstr(s, v, argIndex, post, numPreReqd, numPostRead);
                 if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("rest", "");
-                addInstr(s, new ToAryInstr(v, v)); // FIXME: SSA-violating
-                buildMultipleAsgn19Assignment(childNode, s, v, null);
+                Variable tmp = s.getNewTemporaryVariable();
+                addInstr(s, new ToAryInstr(tmp, v));
+                buildMultipleAsgn19Assignment(childNode, s, tmp, null);
                 break;
             }
             default: throw new NotCompilableException("Can't build assignment node: " + node);
@@ -2040,8 +2043,9 @@ public class IRBuilder {
                     v = s.getNewTemporaryVariable();
                     if (isSplat) addInstr(s, new RestArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
                     else addInstr(s, new ReqdArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
-                    addInstr(s, new ToAryInstr(v, v)); // FIXME: SSA-violating
-                    argsArray = v;
+                    Variable tmp = s.getNewTemporaryVariable();
+                    addInstr(s, new ToAryInstr(tmp, v));
+                    argsArray = tmp;
                 }
                 // Build
                 buildMultipleAsgn19Assignment(childNode, s, argsArray, null);
