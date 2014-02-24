@@ -102,7 +102,7 @@
         <executions>
           <execution>
             <id>fix shebang on gem bin files and add *.bat files</id>
-            <phase>process-resources</phase>
+            <phase>initialize</phase>
             <goals>
               <goal>exec</goal>
             </goals>
@@ -117,10 +117,31 @@
 		end
 	
 		puts 'generate the missing bat files'
-		RbConfig::CONFIG['bindir'] = File.join( '${jruby.basedir}', 'bin' )
-		require '${jruby.basedir}/core/src/main/ruby/jruby/commands.rb'
-		JRuby::Commands.generate_bat_stubs
-
+		Dir[File.join( '${jruby.basedir}', 'bin', '*' )].each do |fn|
+                  next unless File.file?(fn)
+		  next if fn =~ /.bat$/
+		  next if File.exist?("#{fn}.bat")
+		  next unless File.open(fn, 'r', :internal_encoding => 'ASCII-8BIT') do |io|
+		    line = io.readline rescue ""
+		    line =~ /^#!.*ruby/
+		  end
+		  puts "Generating #{File.basename(fn)}.bat"
+		  File.open("#{fn}.bat", "wb") do |f|
+                    f.print "@ECHO OFF\r\n"
+		    f.print "@\"%~dp0jruby.exe\" -S #{File.basename(fn)} %*\r\n"
+                  end
+		end
+	      </script>
+	    </configuration>
+          </execution>
+          <execution>
+            <id>copy bin/jruby.bash to bin/jruby</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+	      <script>		
 		puts 'copy jruby.bash to jruby'
 		require 'fileutils'
 		FileUtils.cp( File.join( '${jruby.complete.home}', 'bin', 'jruby.bash' ), File.join( '${jruby.complete.home}', 'bin', 'jruby' ) )
