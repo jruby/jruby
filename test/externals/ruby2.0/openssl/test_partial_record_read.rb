@@ -17,7 +17,7 @@ if defined?(OpenSSL)
         ssl.connect
         sleep 3  # wait is required for the (incomplete) TLS record to arrive at the client socket
 
-        # Should raise a IO::WaitReadable since a full TLS record is not available for reading.
+        # Should raise a IO::WaitReadable since a full TLS record is not available for reading
         assert_raise(IO::WaitReadable) { ssl.read_nonblock(1) }
       end
     end
