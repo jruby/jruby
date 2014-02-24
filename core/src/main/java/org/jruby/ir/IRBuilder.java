@@ -3328,8 +3328,6 @@ public class IRBuilder {
         // - have to go execute all the ensure blocks if there are any.
         //   this code also takes care of resetting "$!"
         // - if we have a rescue block, reset "$!".
-        // - if we dont have any ensure or blocks, clear "$!" since the
-        //   new uncaught exception will override the old exception.
         if (!activeEnsureBlockStack.empty()) {
             Variable ret = s.getNewTemporaryVariable();
             addInstr(s, new CopyInstr(ret, retVal));
@@ -3339,8 +3337,6 @@ public class IRBuilder {
             // Restore $! and jump back to the entry of the rescue block
             RescueBlockInfo rbi = activeRescueBlockStack.peek();
             addInstr(s, new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
-        } else {
-            addInstr(s, new PutGlobalVarInstr("$!", manager.getNil()));
         }
 
         if (s instanceof IRClosure) {
