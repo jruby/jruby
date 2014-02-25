@@ -115,5 +115,12 @@ project 'JRuby Lib Setup' do
         FileUtils.cp( spec, default_specs )
       end
     end
+    
+    # crude HACK to maybe fix the bouncy-castle loading problems
+    File.open( File.join( shared, 'bouncy-castle-java.rb' ), 'w' ) do |f|
+      f.puts "require File.expand_path('bcpkix-jdk15on-147.jar', File.dirname(__FILE__))"
+      f.puts "require File.expand_path('bcprov-jdk15on-147.jar', File.dirname(__FILE__))"
+    end
+
   end
 end
