@@ -215,10 +215,6 @@ public class Main {
 
     public Status run(String[] args) {
         try {
-            if (Options.TRUFFLE_PRINT_RUNTIME.load()) {
-                config.getError().println("jruby: using " + Truffle.getRuntime().getName());
-            }
-
             config.processArguments(args);
             return internalRun();
         } catch (MainExitException mee) {
