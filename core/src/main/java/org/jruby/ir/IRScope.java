@@ -1,6 +1,7 @@
 package org.jruby.ir;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,8 @@ import org.jruby.ir.transformations.inlining.CFGInliner;
 import org.jruby.parser.StaticScope;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import static org.jruby.ir.IRFlags.*;
 
 /**
  * Right now, this class abstracts the following execution scopes:
@@ -130,9 +133,6 @@ public abstract class IRScope implements ParseResult {
     /** Local variables used in this scope */
     private Set<Variable> usedLocalVars;
 
-    /** Is %block implicit block arg unused? */
-    private boolean hasUnusedImplicitBlockArg;
-
     /** Map of name -> dataflow problem */
     private Map<String, DataFlowProblem> dfProbs;
 
@@ -155,99 +155,13 @@ public abstract class IRScope implements ParseResult {
     Map<String, LocalVariable> localVars;
     Map<String, LocalVariable> evalScopeVars;
 
+    EnumSet<IRFlags> flags = EnumSet.noneOf(IRFlags.class);
+
     /** Have scope flags been computed? */
     private boolean flagsComputed;
 
-    /* *****************************************************************************************************
-     * Does this execution scope (applicable only to methods) receive a block and use it in such a way that
-     * all of the caller's local variables need to be materialized into a heap binding?
-     * Ex:
-     *    def foo(&b)
-     *      eval 'puts a', b
-     *    end
-     *
-     *    def bar
-     *      a = 1
-     *      foo {} # prints out '1'
-     *    end
-     *
-     * Here, 'foo' can access all of bar's variables because it captures the caller's closure.
-     *
-     * There are 2 scenarios when this can happen (even this is conservative -- but, good enough for now)
-     * 1. This method receives an explicit block argument (in this case, the block can be stored, passed around,
-     *    eval'ed against, called, etc.).
-     *    CAVEAT: This is conservative ... it may not actually be stored & passed around, evaled, called, ...
-     * 2. This method has a 'super' call (ZSuper AST node -- ZSuperInstr IR instruction)
-     *    In this case, the parent (in the inheritance hierarchy) can access the block and store it, etc.  So, in reality,
-     *    rather than assume that the parent will always do this, we can query the parent, if we can precisely identify
-     *    the parent method (which in the face of Ruby's dynamic hierarchy, we cannot).  So, be pessimistic.
-     *
-     * This logic was extracted from an email thread on the JRuby mailing list -- Yehuda Katz & Charles Nutter
-     * contributed this analysis above.
-     * ********************************************************************************************************/
-    private boolean canCaptureCallersBinding;
-
-    /* ****************************************************************************
-     * Does this scope define code, i.e. does it (or anybody in the downward call chain)
-     * do class_eval, module_eval? In the absence of any other information, we default
-     * to yes -- which basically leads to pessimistic but safe optimizations.  But, for
-     * library and internal methods, this might be false.
-     * **************************************************************************** */
-    private boolean canModifyCode;
-
-    /* ****************************************************************************
-     * Does this scope require a binding to be materialized?
-     * Yes if any of the following holds true:
-     * - calls 'Proc.new'
-     * - calls 'eval'
-     * - calls 'call' (could be a call on a stored block which could be local!)
-     * - calls 'send' and we cannot resolve the message (method name) that is being sent!
-     * - calls methods that can access the caller's binding
-     * - calls a method which we cannot resolve now!
-     * - has a call whose closure requires a binding
-     * **************************************************************************** */
-    private boolean bindingHasEscaped;
-
-    /** Does this scope call any eval */
-    private boolean usesEval;
-
-    /** Does this scope receive keyword args? */
-    private boolean receivesKeywordArgs;
-
-    /** Does this scope have a break instr? */
-    protected boolean hasBreakInstrs;
-
-    /** Can this scope receive breaks */
-    protected boolean canReceiveBreaks;
-
-    /** Does this scope have a non-local return instr? */
-    protected boolean hasNonlocalReturns;
-
-    /** Can this scope receive a non-local return? */
-    public boolean canReceiveNonlocalReturns;
-
-    /** Since backref ($~) and lastline ($_) vars are allocated space on the dynamic scope,
-     * this is an useful flag to compute. */
-    private boolean usesBackrefOrLastline;
-
-    /** Does this scope call any zsuper */
-    private boolean usesZSuper;
-
-    /** Does this scope have loops? */
-    private boolean hasLoops;
-
     /** # of thread poll instrs added to this scope */
     private int threadPollInstrsCount;
-
-    /** Does this method have end blocks? If so, all optimizations are turned off */
-    private boolean hasEndBlocks;
-
-    /** Does this scope have explicit call protocol instructions?
-     *  If yes, there are IR instructions for managing bindings/frames, etc.
-     *  If not, this has to be managed implicitly as in the current runtime
-     *  For now, only dyn-scopes are managed explicitly.
-     *  Others will come in time */
-    private boolean hasExplicitCallProtocol;
 
     /** Should we re-run compiler passes -- yes after we've inlined, for example */
     private boolean relinearizeCFG;
@@ -265,8 +179,6 @@ public abstract class IRScope implements ParseResult {
         this.nextClosureIndex = s.nextClosureIndex;
         this.temporaryVariableIndex = s.temporaryVariableIndex;
         this.floatVariableIndex = s.floatVariableIndex;
-        this.hasLoops = s.hasLoops;
-        this.hasUnusedImplicitBlockArg = s.hasUnusedImplicitBlockArg;
         this.instrList = new ArrayList<Instr>();
         this.nestedClosures = new ArrayList<IRClosure>();
         this.dfProbs = new HashMap<String, DataFlowProblem>();
@@ -276,19 +188,7 @@ public abstract class IRScope implements ParseResult {
         this.linearizedBBList = null;
 
         this.flagsComputed = s.flagsComputed;
-        this.canModifyCode = s.canModifyCode;
-        this.canCaptureCallersBinding = s.canCaptureCallersBinding;
-        this.receivesKeywordArgs = s.receivesKeywordArgs;
-        this.hasBreakInstrs = s.hasBreakInstrs;
-        this.hasNonlocalReturns = s.hasNonlocalReturns;
-        this.canReceiveBreaks = s.canReceiveBreaks;
-        this.canReceiveNonlocalReturns = s.canReceiveNonlocalReturns;
-        this.bindingHasEscaped = s.bindingHasEscaped;
-        this.hasEndBlocks = s.hasEndBlocks;
-        this.usesEval = s.usesEval;
-        this.usesBackrefOrLastline = s.usesBackrefOrLastline;
-        this.usesZSuper = s.usesZSuper;
-        this.hasExplicitCallProtocol = s.hasExplicitCallProtocol;
+        this.flags = s.flags.clone();
 
         this.localVars = new HashMap<String, LocalVariable>(s.localVars);
         synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
@@ -316,26 +216,23 @@ public abstract class IRScope implements ParseResult {
         this.cfg = null;
         this.linearizedInstrArray = null;
         this.linearizedBBList = null;
-        this.hasLoops = false;
-        this.hasUnusedImplicitBlockArg = false;
-
         this.flagsComputed = false;
-        this.receivesKeywordArgs = false;
-        this.hasBreakInstrs = false;
-        this.hasNonlocalReturns = false;
-        this.canReceiveBreaks = false;
-        this.canReceiveNonlocalReturns = false;
-        this.hasEndBlocks = false;
+        flags.remove(HAS_LOOPS);
+        flags.remove(HAS_UNUSED_IMPLICT_BLOCK_ARG);
+        flags.remove(RECEIVES_KEYWORD_ARGS);
+        flags.remove(CAN_RECEIVE_BREAKS);
+        flags.remove(HAS_BREAK_INSTRS);
+        flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
+        flags.remove(HAS_NONLOCAL_RETURNS);
+        flags.remove(HAS_END_BLOCKS);
+        flags.remove(HAS_EXPLICIT_CALL_PROTOCOL);
 
         // These flags are true by default!
-        this.canModifyCode = true;
-        this.canCaptureCallersBinding = true;
-        this.bindingHasEscaped = true;
-        this.usesEval = true;
-        this.usesBackrefOrLastline = true;
-        this.usesZSuper = true;
-
-        this.hasExplicitCallProtocol = false;
+        flags.add(CAN_CAPTURE_CALLERS_BINDING);
+        flags.add(BINDING_HAS_ESCAPED);
+        flags.add(USES_EVAL);
+        flags.add(USES_BACKREF_OR_LASTLINE);
+        flags.add(USES_ZSUPER);
 
         this.localVars = new HashMap<String, LocalVariable>();
         synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
@@ -400,11 +297,11 @@ public abstract class IRScope implements ParseResult {
         // a better way to do this by encoding flags in its own object
         // and letting every instruction update it.
         if (i instanceof ThreadPollInstr) threadPollInstrsCount++;
-        else if (i instanceof BreakInstr) this.hasBreakInstrs = true;
-        else if (i instanceof NonlocalReturnInstr) this.hasNonlocalReturns = true;
-        else if (i instanceof DefineMetaClassInstr) this.canReceiveNonlocalReturns = true;
-        else if (i instanceof ReceiveKeywordArgInstr || i instanceof ReceiveKeywordRestArgInstr) this.receivesKeywordArgs = true;
-        else if (i instanceof RecordEndBlockInstr) this.hasEndBlocks = true;
+        else if (i instanceof BreakInstr) flags.add(HAS_BREAK_INSTRS);
+        else if (i instanceof NonlocalReturnInstr) flags.add(HAS_NONLOCAL_RETURNS);
+        else if (i instanceof DefineMetaClassInstr) flags.add(CAN_RECEIVE_NONLOCAL_RETURNS);
+        else if (i instanceof ReceiveKeywordArgInstr || i instanceof ReceiveKeywordRestArgInstr) flags.remove(RECEIVES_KEYWORD_ARGS);
+        else if (i instanceof RecordEndBlockInstr) flags.add(HAS_END_BLOCKS);
 
         if (hasListener()) manager.getIRScopeListener().addedInstr(this, i, instrList.size());
 
@@ -532,57 +429,45 @@ public abstract class IRScope implements ParseResult {
         return false;
     }
 
-    public void setHasLoopsFlag(boolean f) {
-        hasLoops = true;
+    public void setHasLoopsFlag() {
+        flags.add(HAS_LOOPS);
     }
 
     public boolean hasLoops() {
-        return hasLoops;
+        return flags.contains(HAS_LOOPS);
     }
 
     public boolean hasExplicitCallProtocol() {
-        return hasExplicitCallProtocol;
+        return flags.contains(HAS_EXPLICIT_CALL_PROTOCOL);
     }
 
-    public void setExplicitCallProtocolFlag(boolean flag) {
-        this.hasExplicitCallProtocol = flag;
-    }
-
-    public void setCodeModificationFlag(boolean f) {
-        canModifyCode = f;
+    public void setExplicitCallProtocolFlag() {
+        flags.add(HAS_EXPLICIT_CALL_PROTOCOL);
     }
 
     public boolean receivesKeywordArgs() {
-        return this.receivesKeywordArgs;
-    }
-
-    public boolean modifiesCode() {
-        return canModifyCode;
+        return flags.contains(RECEIVES_KEYWORD_ARGS);
     }
 
     public boolean bindingHasEscaped() {
-        return bindingHasEscaped;
+        return flags.contains(BINDING_HAS_ESCAPED);
     }
 
     public boolean usesBackrefOrLastline() {
-        return usesBackrefOrLastline;
+        return flags.contains(USES_BACKREF_OR_LASTLINE);
     }
 
     public boolean usesEval() {
-        return usesEval;
+        return flags.contains(USES_EVAL);
     }
 
     public boolean usesZSuper() {
-        return usesZSuper;
-    }
-
-    public boolean canCaptureCallersBinding() {
-        return canCaptureCallersBinding;
+        return flags.contains(USES_ZSUPER);
     }
 
     public boolean canReceiveNonlocalReturns() {
         computeScopeFlags();
-        return this.canReceiveNonlocalReturns;
+        return flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS);
     }
 
     public CFG buildCFG() {
@@ -677,7 +562,7 @@ public abstract class IRScope implements ParseResult {
         // if this scope is held in multiple locations how do we update all references?
 
         boolean unsafeScope = false;
-        if (this.hasEndBlocks || this.isBeginEndBlock()) {
+        if (flags.contains(HAS_END_BLOCKS) || this.isBeginEndBlock()) {
             unsafeScope = true;
         } else {
             List beginBlocks = this.getBeginBlocks();
@@ -716,7 +601,7 @@ public abstract class IRScope implements ParseResult {
     private void runDeadCodeAndVarLoadStorePasses() {
         // For methods with unescaped bindings, inline the binding
         // by converting local var loads/store to tmp var loads/stores
-        if (this instanceof IRMethod && !this.bindingHasEscaped() && !this.hasEndBlocks) {
+        if (this instanceof IRMethod && !this.bindingHasEscaped() && !flags.contains(HAS_END_BLOCKS)) {
             CompilerPass pass;
             pass = new DeadCodeElimination();
             if (pass.previouslyRun(this) == null) {
@@ -843,21 +728,21 @@ public abstract class IRScope implements ParseResult {
             if (op == Operation.RECV_CLOSURE) {
                 receivesClosureArg = true;
             } else if (op == Operation.ZSUPER) {
-                this.canCaptureCallersBinding = true;
-                this.usesZSuper = true;
+                flags.add(CAN_CAPTURE_CALLERS_BINDING);
+                flags.add(USES_ZSUPER);
             } else if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
 
-                if (call.targetRequiresCallersBinding()) this.bindingHasEscaped = true;
+                if (call.targetRequiresCallersBinding()) flags.add(BINDING_HAS_ESCAPED);
 
                 if (call.canBeEval()) {
-                    this.usesEval = true;
+                    flags.add(USES_EVAL);
 
                     // If this method receives a closure arg, and this call is an eval that has more than 1 argument,
                     // it could be using the closure as a binding -- which means it could be using pretty much any
                     // variable from the caller's binding!
                     if (receivesClosureArg && (call.getCallArgs().length > 1)) {
-                        this.canCaptureCallersBinding = true;
+                        flags.add(CAN_CAPTURE_CALLERS_BINDING);
                     }
                 }
             } else if (op == Operation.GET_GLOBAL_VAR) {
@@ -874,25 +759,25 @@ public abstract class IRScope implements ParseResult {
                     gvName.equals("$POSTMATCH") ||
                     gvName.equals("$LAST_PAREN_MATCH"))
                 {
-                    this.usesBackrefOrLastline = true;
+                    flags.add(USES_BACKREF_OR_LASTLINE);
                 }
             } else if (op == Operation.PUT_GLOBAL_VAR) {
                 GlobalVariable gv = (GlobalVariable)((PutGlobalVarInstr)i).getTarget();
                 String gvName = gv.getName();
-                if (gvName.equals("$_") || gvName.equals("$~")) usesBackrefOrLastline = true;
+                if (gvName.equals("$_") || gvName.equals("$~")) flags.add(USES_BACKREF_OR_LASTLINE);
             } else if (op == Operation.MATCH || op == Operation.MATCH2 || op == Operation.MATCH3) {
-                this.usesBackrefOrLastline = true;
+                flags.add(USES_BACKREF_OR_LASTLINE);
             } else if (op == Operation.BREAK) {
-                this.hasBreakInstrs = true;
+                flags.add(HAS_BREAK_INSTRS);
             } else if (i instanceof NonlocalReturnInstr) {
-                this.hasNonlocalReturns = true;
+                flags.add(HAS_NONLOCAL_RETURNS);
             } else if (i instanceof DefineMetaClassInstr) {
                 // SSS: Inner-classes are defined with closures and
                 // a return in the closure can force a return from this method
                 // For now conservatively assume that a scope with inner-classes
                 // can receive non-local returns. (Alternatively, have to inspect
                 // all lexically nested scopes, not just closures in computeScopeFlags())
-                this.canReceiveNonlocalReturns = true;
+                flags.add(CAN_RECEIVE_NONLOCAL_RETURNS);
             }
         }
 
@@ -903,24 +788,25 @@ public abstract class IRScope implements ParseResult {
     // This can help use eliminate writes to %block that are not used since this is
     // a special local-variable, not programmer-defined local-variable
     public void computeScopeFlags() {
-        if (flagsComputed) {
-            return;
-        }
+        if (flagsComputed) return;
 
         // init
-        canModifyCode = true;
-        canCaptureCallersBinding = false;
-        usesZSuper = false;
-        usesEval = false;
-        usesBackrefOrLastline = false;
+        flags.remove(CAN_CAPTURE_CALLERS_BINDING);
+        flags.remove(USES_ZSUPER);
+        flags.remove(USES_EVAL);
+        flags.remove(USES_BACKREF_OR_LASTLINE);
         // NOTE: bindingHasEscaped is the crucial flag and it effectively is
         // unconditionally true whenever it has a call that receives a closure.
         // See CallInstr.computeRequiresCallersBindingFlag
-        bindingHasEscaped = (this instanceof IREvalScript); // for eval scopes, bindings are considered escaped ...
-        hasBreakInstrs = false;
-        hasNonlocalReturns = false;
-        canReceiveBreaks = false;
-        canReceiveNonlocalReturns = false;
+        if (this instanceof IREvalScript) { // for eval scopes, bindings are considered escaped ...
+            flags.add(BINDING_HAS_ESCAPED);
+        } else {
+            flags.remove(BINDING_HAS_ESCAPED);
+        }
+        flags.remove(HAS_BREAK_INSTRS);
+        flags.remove(HAS_NONLOCAL_RETURNS);
+        flags.remove(CAN_RECEIVE_BREAKS);
+        flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
 
         // recompute flags -- we could be calling this method different times
         // definitely once after ir generation and local optimizations propagates constants locally
@@ -938,18 +824,18 @@ public abstract class IRScope implements ParseResult {
         for (IRClosure cl : getClosures()) {
             cl.computeScopeFlags();
             if (cl.usesEval()) {
-                canReceiveBreaks = true;
-                canReceiveNonlocalReturns = true;
-                usesZSuper = true;
+                flags.add(CAN_RECEIVE_BREAKS);
+                flags.add(CAN_RECEIVE_NONLOCAL_RETURNS);
+                flags.add(USES_ZSUPER);
             } else {
-                if (cl.hasBreakInstrs || cl.canReceiveBreaks) {
-                    canReceiveBreaks = true;
+                if (cl.flags.contains(HAS_BREAK_INSTRS) || cl.flags.contains(CAN_RECEIVE_BREAKS)) {
+                    flags.add(CAN_RECEIVE_BREAKS);
                 }
-                if (cl.hasNonlocalReturns || cl.canReceiveNonlocalReturns) {
-                    canReceiveNonlocalReturns = true;
+                if (cl.flags.contains(HAS_NONLOCAL_RETURNS) || cl.flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS)) {
+                    flags.add(CAN_RECEIVE_NONLOCAL_RETURNS);
                 }
                 if (cl.usesZSuper()) {
-                    usesZSuper = true;
+                    flags.add(USES_ZSUPER);
                 }
             }
         }
@@ -1015,7 +901,7 @@ public abstract class IRScope implements ParseResult {
     public abstract LocalVariable getImplicitBlockArg();
 
     public void markUnusedImplicitBlockArg() {
-        hasUnusedImplicitBlockArg = true;
+        flags.add(HAS_UNUSED_IMPLICT_BLOCK_ARG);
     }
 
     /**
@@ -1301,15 +1187,15 @@ public abstract class IRScope implements ParseResult {
 
         // reset flags
         flagsComputed = false;
-        canModifyCode = true;
-        canCaptureCallersBinding = true;
-        bindingHasEscaped = true;
-        usesEval = true;
-        usesZSuper = true;
-        hasBreakInstrs = false;
-        hasNonlocalReturns = false;
-        canReceiveBreaks = false;
-        canReceiveNonlocalReturns = false;
+        flags.add(CAN_CAPTURE_CALLERS_BINDING);
+        flags.add(BINDING_HAS_ESCAPED);
+        flags.add(USES_EVAL);
+        flags.add(USES_ZSUPER);
+
+        flags.remove(HAS_BREAK_INSTRS);
+        flags.remove(HAS_NONLOCAL_RETURNS);
+        flags.remove(CAN_RECEIVE_BREAKS);
+        flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
         rescueMap = null;
 
         // Reset dataflow problems state

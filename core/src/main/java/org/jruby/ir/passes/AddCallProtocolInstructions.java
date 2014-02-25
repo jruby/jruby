@@ -134,7 +134,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
             }
 
             // This scope has an explicit call protocol flag now
-            scope.setExplicitCallProtocolFlag(true);
+            scope.setExplicitCallProtocolFlag();
         }
 
         // FIXME: Useless for now

@@ -164,7 +164,7 @@ public class IRBuilder {
             iterStartLabel = s.getNewLabel("_ITER_BEGIN");
             iterEndLabel   = s.getNewLabel("_ITER_END");
             loopResult     = s.getNewTemporaryVariable();
-            s.setHasLoopsFlag(true);
+            s.setHasLoopsFlag();
         }
     }
 
@@ -931,8 +931,7 @@ public class IRBuilder {
         // Check if we have to handle a break
         if (block == null ||
             !(block instanceof WrappedIRClosure) ||
-            !(((WrappedIRClosure)block).getClosure()).hasBreakInstrs)
-        {
+            !(((WrappedIRClosure)block).getClosure()).flags.contains(IRFlags.HAS_BREAK_INSTRS)) {
             // No protection needed -- add the call and return
             addInstr(s, callInstr);
             return;
@@ -3320,7 +3319,7 @@ public class IRBuilder {
             addInstr(s, new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
             addInstr(s, new JumpInstr(rbi.entryLabel));
             // Retries effectively create a loop
-            s.setHasLoopsFlag(true);
+            s.setHasLoopsFlag();
         }
         return manager.getNil();
     }
