@@ -214,15 +214,15 @@ public abstract class IRScope implements ParseResult {
         this.linearizedInstrArray = null;
         this.linearizedBBList = null;
         this.flagsComputed = false;
-        flags.remove(HAS_LOOPS);
-        flags.remove(HAS_UNUSED_IMPLICT_BLOCK_ARG);
-        flags.remove(RECEIVES_KEYWORD_ARGS);
         flags.remove(CAN_RECEIVE_BREAKS);
-        flags.remove(HAS_BREAK_INSTRS);
         flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
-        flags.remove(HAS_NONLOCAL_RETURNS);
+        flags.remove(HAS_BREAK_INSTRS);
         flags.remove(HAS_END_BLOCKS);
         flags.remove(HAS_EXPLICIT_CALL_PROTOCOL);
+        flags.remove(HAS_LOOPS);
+        flags.remove(HAS_NONLOCAL_RETURNS);
+        flags.remove(HAS_UNUSED_IMPLICT_BLOCK_ARG);
+        flags.remove(RECEIVES_KEYWORD_ARGS);
 
         // These flags are true by default!
         flags.add(CAN_CAPTURE_CALLERS_BINDING);
@@ -727,6 +727,10 @@ public abstract class IRScope implements ParseResult {
 
         // init
         flags.remove(CAN_CAPTURE_CALLERS_BINDING);
+        flags.remove(CAN_RECEIVE_BREAKS);
+        flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
+        flags.remove(HAS_BREAK_INSTRS);
+        flags.remove(HAS_NONLOCAL_RETURNS);
         flags.remove(USES_ZSUPER);
         flags.remove(USES_EVAL);
         flags.remove(USES_BACKREF_OR_LASTLINE);
@@ -738,10 +742,6 @@ public abstract class IRScope implements ParseResult {
         } else {
             flags.remove(BINDING_HAS_ESCAPED);
         }
-        flags.remove(HAS_BREAK_INSTRS);
-        flags.remove(HAS_NONLOCAL_RETURNS);
-        flags.remove(CAN_RECEIVE_BREAKS);
-        flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
 
         // recompute flags -- we could be calling this method different times
         // definitely once after ir generation and local optimizations propagates constants locally
