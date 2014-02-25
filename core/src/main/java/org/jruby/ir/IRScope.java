@@ -221,7 +221,7 @@ public abstract class IRScope implements ParseResult {
         flags.remove(HAS_EXPLICIT_CALL_PROTOCOL);
         flags.remove(HAS_LOOPS);
         flags.remove(HAS_NONLOCAL_RETURNS);
-        flags.remove(HAS_UNUSED_IMPLICT_BLOCK_ARG);
+        flags.remove(HAS_UNUSED_IMPLICIT_BLOCK_ARG);
         flags.remove(RECEIVES_KEYWORD_ARGS);
 
         // These flags are true by default!
@@ -288,7 +288,7 @@ public abstract class IRScope implements ParseResult {
 
         if (hasListener()) manager.getIRScopeListener().addedInstr(this, instr, 0);
 
-        instrList.add(0, i);
+        instrList.add(0, instr);
     }
 
     public void addInstr(Instr instr) {

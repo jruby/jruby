@@ -37,7 +37,7 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
 
     @Override
     public boolean computeScopeFlags(IRScope scope) {
-        scope.getFlags().add(IRFlags.HAS_UNUSED_IMPLICT_BLOCK_ARG);
+        scope.getFlags().add(IRFlags.HAS_UNUSED_IMPLICIT_BLOCK_ARG);
         return true;
     }
 
