@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
@@ -35,6 +36,12 @@ public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
     @Override
     public String toString() {
         return getOperation().toString() + "(" + endBlockClosure.getName() + ")";
+    }
+
+    @Override
+    public boolean computeScopeFlags(IRScope scope) {
+        scope.getFlags().add(IRFlags.HAS_END_BLOCKS);
+        return true;
     }
 
     @Override

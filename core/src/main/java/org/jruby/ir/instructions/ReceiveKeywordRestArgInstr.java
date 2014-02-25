@@ -1,5 +1,7 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.Operation;
 import org.jruby.runtime.ThreadContext;
@@ -25,6 +27,12 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
     @Override
     public String toString() {
         return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + numUsedArgs + ")";
+    }
+
+    @Override
+    public boolean computeScopeFlags(IRScope scope) {
+        scope.getFlags().add(IRFlags.HAS_UNUSED_IMPLICT_BLOCK_ARG);
+        return true;
     }
 
     @Override

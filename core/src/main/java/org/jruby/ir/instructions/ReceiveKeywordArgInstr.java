@@ -1,5 +1,7 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
@@ -31,6 +33,12 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
     @Override
     public String toString() {
         return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + numUsedArgs + ", " + argName + ")";
+    }
+
+    @Override
+    public boolean computeScopeFlags(IRScope scope) {
+        scope.getFlags().add(IRFlags.HAS_UNUSED_IMPLICT_BLOCK_ARG);
+        return true;
     }
 
     @Override

@@ -15,10 +15,8 @@ import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.DefineMetaClassInstr;
-import org.jruby.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
-import org.jruby.ir.instructions.PutGlobalVarInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.Specializeable;
@@ -29,7 +27,6 @@ import org.jruby.ir.instructions.RecordEndBlockInstr;
 import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
@@ -286,26 +283,22 @@ public abstract class IRScope implements ParseResult {
         return instrList.get(instrList.size() - 1);
     }
 
-    public void addInstrAtBeginning(Instr i) {
-        if (hasListener()) manager.getIRScopeListener().addedInstr(this, i, 0);
+    public void addInstrAtBeginning(Instr instr) {
+        instr.computeScopeFlags(this);
+
+        if (hasListener()) manager.getIRScopeListener().addedInstr(this, instr, 0);
 
         instrList.add(0, i);
     }
 
-    public void addInstr(Instr i) {
-        // SSS FIXME: If more instructions set these flags, there may be
-        // a better way to do this by encoding flags in its own object
-        // and letting every instruction update it.
-        if (i instanceof ThreadPollInstr) threadPollInstrsCount++;
-        else if (i instanceof BreakInstr) flags.add(HAS_BREAK_INSTRS);
-        else if (i instanceof NonlocalReturnInstr) flags.add(HAS_NONLOCAL_RETURNS);
-        else if (i instanceof DefineMetaClassInstr) flags.add(CAN_RECEIVE_NONLOCAL_RETURNS);
-        else if (i instanceof ReceiveKeywordArgInstr || i instanceof ReceiveKeywordRestArgInstr) flags.remove(RECEIVES_KEYWORD_ARGS);
-        else if (i instanceof RecordEndBlockInstr) flags.add(HAS_END_BLOCKS);
+    public void addInstr(Instr instr) {
+        if (instr instanceof ThreadPollInstr) threadPollInstrsCount++;
 
-        if (hasListener()) manager.getIRScopeListener().addedInstr(this, i, instrList.size());
+        instr.computeScopeFlags(this);
 
-        instrList.add(i);
+        if (hasListener()) manager.getIRScopeListener().addedInstr(this, instr, instrList.size());
+
+        instrList.add(instr);
     }
 
     public LocalVariable getNewFlipStateVariable() {
