@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubyArray;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.ImmutableLiteral;
@@ -24,6 +25,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.jruby.ir.IRFlags.BINDING_HAS_ESCAPED;
+import static org.jruby.ir.IRFlags.CAN_CAPTURE_CALLERS_BINDING;
+import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
+import static org.jruby.ir.IRFlags.USES_EVAL;
 
 public abstract class CallBase extends Instr implements Specializeable {
     private static long callSiteCounter = 1;
@@ -136,6 +142,29 @@ public abstract class CallBase extends Instr implements Specializeable {
         return true;
     }
 
+    @Override
+    public boolean computeScopeFlags(IRScope scope) {
+        boolean modifiedScope = false;
+
+        if (targetRequiresCallersBinding()) {
+            modifiedScope = true;
+            scope.getFlags().add(BINDING_HAS_ESCAPED);
+        }
+
+        if (canBeEval()) {
+            modifiedScope = true;
+            scope.getFlags().add(USES_EVAL);
+
+            // If this method receives a closure arg, and this call is an eval that has more than 1 argument,
+            // it could be using the closure as a binding -- which means it could be using pretty much any
+            // variable from the caller's binding!
+            if (scope.getFlags().contains(RECEIVES_CLOSURE_ARG) && (getCallArgs().length > 1)) {
+                scope.getFlags().add(CAN_CAPTURE_CALLERS_BINDING);
+            }
+        }
+
+        return modifiedScope;
+    }
     /**
      * Interpreter can ask the instruction if it knows how to make a more
      * efficient instruction for direct interpretation.

@@ -1,5 +1,7 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -22,6 +24,13 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
         super(Operation.ZSUPER, result, receiver, allPossibleArgs, closure);
         this.allPossibleArgs = allPossibleArgs;
         this.argCounts = argCounts;
+    }
+
+    @Override
+    public boolean computeScopeFlags(IRScope scope) {
+        scope.getFlags().add(IRFlags.USES_ZSUPER);
+        scope.getFlags().add(IRFlags.CAN_CAPTURE_CALLERS_BINDING);
+        return true;
     }
 
     @Override

@@ -722,66 +722,8 @@ public abstract class IRScope implements ParseResult {
         return newLabels;
     }
 
-    private boolean computeScopeFlags(boolean receivesClosureArg, List<Instr> instrs) {
-        for (Instr i: instrs) {
-            Operation op = i.getOperation();
-            if (op == Operation.RECV_CLOSURE) {
-                receivesClosureArg = true;
-            } else if (op == Operation.ZSUPER) {
-                flags.add(CAN_CAPTURE_CALLERS_BINDING);
-                flags.add(USES_ZSUPER);
-            } else if (i instanceof CallBase) {
-                CallBase call = (CallBase) i;
-
-                if (call.targetRequiresCallersBinding()) flags.add(BINDING_HAS_ESCAPED);
-
-                if (call.canBeEval()) {
-                    flags.add(USES_EVAL);
-
-                    // If this method receives a closure arg, and this call is an eval that has more than 1 argument,
-                    // it could be using the closure as a binding -- which means it could be using pretty much any
-                    // variable from the caller's binding!
-                    if (receivesClosureArg && (call.getCallArgs().length > 1)) {
-                        flags.add(CAN_CAPTURE_CALLERS_BINDING);
-                    }
-                }
-            } else if (op == Operation.GET_GLOBAL_VAR) {
-                GlobalVariable gv = (GlobalVariable)((GetGlobalVariableInstr)i).getSource();
-                String gvName = gv.getName();
-                if (gvName.equals("$_") ||
-                    gvName.equals("$~") ||
-                    gvName.equals("$`") ||
-                    gvName.equals("$'") ||
-                    gvName.equals("$+") ||
-                    gvName.equals("$LAST_READ_LINE") ||
-                    gvName.equals("$LAST_MATCH_INFO") ||
-                    gvName.equals("$PREMATCH") ||
-                    gvName.equals("$POSTMATCH") ||
-                    gvName.equals("$LAST_PAREN_MATCH"))
-                {
-                    flags.add(USES_BACKREF_OR_LASTLINE);
-                }
-            } else if (op == Operation.PUT_GLOBAL_VAR) {
-                GlobalVariable gv = (GlobalVariable)((PutGlobalVarInstr)i).getTarget();
-                String gvName = gv.getName();
-                if (gvName.equals("$_") || gvName.equals("$~")) flags.add(USES_BACKREF_OR_LASTLINE);
-            } else if (op == Operation.MATCH || op == Operation.MATCH2 || op == Operation.MATCH3) {
-                flags.add(USES_BACKREF_OR_LASTLINE);
-            } else if (op == Operation.BREAK) {
-                flags.add(HAS_BREAK_INSTRS);
-            } else if (i instanceof NonlocalReturnInstr) {
-                flags.add(HAS_NONLOCAL_RETURNS);
-            } else if (i instanceof DefineMetaClassInstr) {
-                // SSS: Inner-classes are defined with closures and
-                // a return in the closure can force a return from this method
-                // For now conservatively assume that a scope with inner-classes
-                // can receive non-local returns. (Alternatively, have to inspect
-                // all lexically nested scopes, not just closures in computeScopeFlags())
-                flags.add(CAN_RECEIVE_NONLOCAL_RETURNS);
-            }
-        }
-
-        return receivesClosureArg;
+    public EnumSet<IRFlags> getFlags() {
+        return flags;
     }
 
     //
@@ -812,11 +754,14 @@ public abstract class IRScope implements ParseResult {
         // definitely once after ir generation and local optimizations propagates constants locally
         // but potentially at a later time after doing ssa generation and constant propagation
         if (cfg == null) {
-            computeScopeFlags(false, getInstrs());
+            for (Instr i: getInstrs()) {
+                i.computeScopeFlags(this);
+            }
         } else {
-            boolean receivesClosureArg = false;
             for (BasicBlock b: cfg.getBasicBlocks()) {
-                receivesClosureArg = computeScopeFlags(receivesClosureArg, b.getInstrs());
+                for (Instr i: b.getInstrs()) {
+                    i.computeScopeFlags(this);
+                }
             }
         }
 
@@ -899,10 +844,6 @@ public abstract class IRScope implements ParseResult {
     }
 
     public abstract LocalVariable getImplicitBlockArg();
-
-    public void markUnusedImplicitBlockArg() {
-        flags.add(HAS_UNUSED_IMPLICT_BLOCK_ARG);
-    }
 
     /**
      * Get the local variables for this scope.

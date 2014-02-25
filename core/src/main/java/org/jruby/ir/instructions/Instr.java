@@ -77,6 +77,14 @@ public abstract class Instr {
         return operation.transfersControl();
     }
 
+    /**
+     * Does this instruction do anything the scope is interested in?
+     * @return true if it modified the scope.
+     */
+    public boolean computeScopeFlags(IRScope scope) {
+        return false;
+    }
+
     public boolean canBeDeleted(IRScope s) {
          if (hasSideEffects() || getOperation().isDebugOp() || getOperation().canRaiseException() || transfersControl()) {
              return false;

@@ -49,4 +49,5 @@ public enum IRFlags {
     HAS_END_BLOCKS,               // has an end block. big de-opt flag
     HAS_EXPLICIT_CALL_PROTOCOL,   // contains call protocol instrs.  if so we don't need to manage bindings frame implicitly.
     HAS_UNUSED_IMPLICT_BLOCK_ARG, // Is %block implicit block arg unused?
+    RECEIVES_CLOSURE_ARG,         // This scope (or parent receives a closure
 }

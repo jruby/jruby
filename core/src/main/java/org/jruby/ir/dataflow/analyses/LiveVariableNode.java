@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowConstants;
 import org.jruby.ir.dataflow.FlowGraphNode;
@@ -289,7 +290,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                     // System.out.println("YES!");
                     i.markDead();
                     it.remove();
-                    if (v.isImplicitBlockArg()) problem.getScope().markUnusedImplicitBlockArg();
+                    if (v.isImplicitBlockArg()) problem.getScope().getFlags().add(IRFlags.HAS_UNUSED_IMPLICT_BLOCK_ARG);
                 } else {
                     // System.out.println("NO! has side effects! Op is: " + i.getOperation());
                 }

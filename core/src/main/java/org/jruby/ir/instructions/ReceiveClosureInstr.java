@@ -1,5 +1,7 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -32,6 +34,12 @@ public class ReceiveClosureInstr extends Instr implements ResultInstr, FixedArit
     @Override
     public void updateResult(Variable v) {
         this.result = v;
+    }
+
+    @Override
+    public boolean computeScopeFlags(IRScope scope) {
+        scope.getFlags().add(IRFlags.RECEIVES_CLOSURE_ARG);
+        return true;
     }
 
     @Override

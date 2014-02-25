@@ -1,5 +1,7 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRFlags;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
@@ -56,6 +58,12 @@ public class BreakInstr extends Instr implements FixedArityInstr {
     @Override
     public Operand[] getOperands() {
         return new Operand[] { new StringLiteral(scopeName), new Fixnum(scopeIdToReturnTo), returnValue };
+    }
+
+    @Override
+    public boolean computeScopeFlags(IRScope scope) {
+        scope.getFlags().add(IRFlags.HAS_BREAK_INSTRS);
+        return true;
     }
 
     @Override
