@@ -104,7 +104,7 @@ import org.jruby.runtime.profile.ProfiledMethod;
 import org.jruby.runtime.profile.ProfileOutput;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.threading.DaemonThreadFactory;
-import org.jruby.truffle.JRubyTruffleBridge;
+import org.jruby.truffle.TruffleBridgeImpl;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
@@ -125,7 +125,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -149,7 +148,6 @@ import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.ir.persistence.IRReader;
-import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRReaderFile;
 
 /**
@@ -879,10 +877,19 @@ public final class Ruby {
         return jitCompiler;
     }
 
-    public synchronized JRubyTruffleBridge getTruffleBridge() {
+    public synchronized TruffleBridge getTruffleBridge() {
         if (truffleBridge == null) {
-            truffleBridge = new JRubyTruffleBridge(this);
-            truffleBridge.init();
+            /*
+             * It's possible to remove Truffle classes from the JRuby distribution, so we provide a sensible
+             * explanation when the classes are not found.
+             */
+
+            try {
+                truffleBridge = new TruffleBridgeImpl(this);
+                truffleBridge.init();
+            } catch (NoClassDefFoundError e) {
+                throw new UnsupportedOperationException("Support for Truffle has been removed from this distribution", e);
+            }
         }
 
         return truffleBridge;
@@ -4758,7 +4765,7 @@ public final class Ruby {
     // Compilation
     private final JITCompiler jitCompiler;
 
-    private JRubyTruffleBridge truffleBridge;
+    private TruffleBridge truffleBridge;
 
     // Note: this field and the following static initializer
     // must be located be in this order!

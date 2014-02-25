@@ -12,13 +12,12 @@ package org.jruby.truffle;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
-import org.jruby.Ruby;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyNil;
+import org.jruby.*;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.Node;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.TruffleBridge;
 import org.jruby.truffle.nodes.core.CoreMethodNodeManager;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
@@ -29,12 +28,12 @@ import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.translator.TranslatorDriver;
 
-public class JRubyTruffleBridge {
+public class TruffleBridgeImpl implements TruffleBridge {
 
     private final Ruby runtime;
     private final RubyContext truffleContext;
 
-    public JRubyTruffleBridge(Ruby runtime) {
+    public TruffleBridgeImpl(Ruby runtime) {
         assert runtime != null;
 
         this.runtime = runtime;
@@ -44,7 +43,7 @@ public class JRubyTruffleBridge {
         truffleContext = new RubyContext(runtime, new TranslatorDriver(runtime));
     }
 
-    public void init() {
+    @Override public void init() {
         // Bring in core method nodes
 
         CoreMethodNodeManager.addMethods(truffleContext.getCoreLibrary().getObjectClass());
@@ -70,12 +69,12 @@ public class JRubyTruffleBridge {
         }
     }
 
-    public TruffleMethod truffelize(DynamicMethod originalMethod, ArgsNode argsNode, Node bodyNode) {
+    @Override public TruffleMethod truffelize(DynamicMethod originalMethod, ArgsNode argsNode, Node bodyNode) {
         final MethodDefinitionNode methodDefinitionNode = truffleContext.getTranslator().parse(truffleContext, argsNode, bodyNode);
         return new TruffleMethod(originalMethod, methodDefinitionNode.getCallTarget());
     }
 
-    public Object execute(TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
+    @Override public Object execute(TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
         try {
             final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, truffleContext.getSourceManager().get(rootNode.getPosition().getFile()), parserContext, parentFrame, rootNode);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
@@ -92,7 +91,7 @@ public class JRubyTruffleBridge {
         }
     }
 
-    public IRubyObject toJRuby(Object object) {
+    @Override public IRubyObject toJRuby(Object object) {
         if (object instanceof NilPlaceholder) {
             return runtime.getNil();
         } else if (object == truffleContext.getCoreLibrary().getKernelModule()) {
@@ -110,7 +109,7 @@ public class JRubyTruffleBridge {
         }
     }
 
-    public Object toTruffle(IRubyObject object) {
+    @Override public Object toTruffle(IRubyObject object) {
         if (object == runtime.getTopSelf()) {
             return truffleContext.getCoreLibrary().getMainObject();
         } else if (object == runtime.getKernel()) {
@@ -121,22 +120,22 @@ public class JRubyTruffleBridge {
             return true;
         } else if (object instanceof RubyBoolean.False) {
             return false;
-        } else if (object instanceof org.jruby.RubyFixnum) {
-            final long value = ((org.jruby.RubyFixnum) object).getLongValue();
+        } else if (object instanceof RubyFixnum) {
+            final long value = ((RubyFixnum) object).getLongValue();
 
             if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
                 throw new UnsupportedOperationException();
             }
 
             return (int) value;
-        } else if (object instanceof org.jruby.RubyFloat) {
-            return ((org.jruby.RubyFloat) object).getDoubleValue();
+        } else if (object instanceof RubyFloat) {
+            return ((RubyFloat) object).getDoubleValue();
         } else {
             throw object.getRuntime().newRuntimeError("cannot pass " + object.inspect() + " to Truffle");
         }
     }
 
-    public void shutdown() {
+    @Override public void shutdown() {
         truffleContext.shutdown();
     }
 

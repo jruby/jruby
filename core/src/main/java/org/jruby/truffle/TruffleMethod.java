@@ -12,6 +12,7 @@ package org.jruby.truffle;
 import com.oracle.truffle.api.*;
 
 import org.jruby.RubyModule;
+import org.jruby.TruffleBridge;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -32,7 +33,7 @@ public class TruffleMethod extends DynamicMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        final JRubyTruffleBridge bridge = context.getRuntime().getTruffleBridge();
+        final TruffleBridge bridge = context.getRuntime().getTruffleBridge();
 
         final Object[] truffleArgumentsObjects = new Object[args.length];
 

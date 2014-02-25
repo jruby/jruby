@@ -13,7 +13,6 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.impl.DefaultSourceSection;
 import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.JRubyTruffleBridge;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.literal.*;
@@ -25,7 +24,6 @@ import org.jruby.truffle.runtime.methods.*;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
-import org.jruby.util.cli.Options;
 
 public class TranslatorDriver {
 
