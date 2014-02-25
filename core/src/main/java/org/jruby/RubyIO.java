@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jcodings.transcode.EConv;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.StringSupport;
 import org.jruby.util.encoding.EncodingConverter;
@@ -690,7 +691,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                         }
                     }
                     
-                    if (readconv != null) buf = readconv.transcode(context, buf);
+                    if (readconv != null) buf = EncodingUtils.econvStrConvert(context, readconv, buf, 0);
                     
                     if (isParagraph && c != -1) swallow('\n');
                     if (!update) return runtime.getNil();
@@ -2539,7 +2540,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             r = StringSupport.preciseLength(read, bytes.getUnsafeBytes(), 0, bytes.getRealSize());
             if (!StringSupport.MBCLEN_NEEDMORE_P(r)) {
                 // logic from fill_buf, which transcodes while buffering from IO
-                bytes = readconv.econvStrConvert(context, bytes, false);
+                bytes = EncodingUtils.econvStrConvert(context, readconv, bytes, 0);
             
                 if (bytes.length() == 0) continue;
                 
@@ -3146,7 +3147,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             // TODO: handle writing into original buffer better
             ByteList buf = readAllCommon(runtime);
 
-            if (readconv != null) buf = readconv.transcode(runtime.getCurrentContext(), buf);
+            if (readconv != null) buf = EncodingUtils.econvStrConvert(runtime.getCurrentContext(), readconv, buf, 0);
             
             clearReadConversion();
             return ioEncStr(runtime.newString(buf));
@@ -4816,7 +4817,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
         
         if (writeconv != null) {
-            str = runtime.newString(writeconv.econvStrConvert(context, ((RubyString)str).getByteList(), false));
+            str = runtime.newString(EncodingUtils.econvStrConvert(context, writeconv, ((RubyString)str).getByteList(), 0));
         }
         
         // TODO: win32 logic
@@ -5011,9 +5012,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return getline(runtime.getCurrentContext(), separator, limit, null);
     }
     
-    protected EncodingConverter readconv = null;
+    protected EConv readconv = null;
     protected boolean writeconvInitialized = false;
-    protected EncodingConverter writeconv = null;
+    protected EConv writeconv = null;
     protected OpenFile openFile;
     protected List<RubyThread> blockingThreads;
     

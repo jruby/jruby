@@ -2,12 +2,17 @@ package org.jruby.util.io;
 
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
+import org.jcodings.Ptr;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
 import org.jcodings.specific.UTF32LEEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.transcode.EConv;
+import org.jcodings.transcode.EConvResult;
+import org.jcodings.transcode.TranscoderDB;
+import org.jcodings.transcode.Transcoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -30,6 +35,8 @@ import org.jruby.util.encoding.EncodingConverter;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.encoding.RubyCoderResult;
+
+import java.util.Arrays;
 
 public class EncodingUtils {    
     public static final int ECONV_ERROR_HANDLER_MASK               = 0x000000ff;
@@ -409,6 +416,66 @@ public class EncodingUtils {
 
         ioExtIntToEncs(context, ioEncodable, extEnc, intEnc, fmode_p[0]);
     }
+
+    // rb_econv_str_convert
+    public static ByteList econvStrConvert(ThreadContext context, EConv ec, ByteList src, int flags) {
+        return econvSubstrAppend(context, ec, src, null, flags);
+    }
+
+    // rb_econv_substr_append
+    public static ByteList econvSubstrAppend(ThreadContext context, EConv ec, ByteList src, ByteList dst, int flags) {
+        return econvAppend(context, ec, src, dst, flags);
+    }
+
+    // rb_econv_append
+    public static ByteList econvAppend(ThreadContext context, EConv ec, ByteList ss, ByteList dst, int flags) {
+        int len = ss.getRealSize();
+
+        Ptr sp = new Ptr(0);
+        int se = 0;
+        byte[] ds;
+        Ptr dp = new Ptr(0);
+        int de = 0;
+        EConvResult res;
+        int maxOutput;
+
+        if (dst == null) {
+            dst = new ByteList(len);
+            if (ec.destinationEncoding != null) {
+                dst.setEncoding(ec.destinationEncoding);
+            }
+        }
+
+        if (ec.lastTranscoding != null) {
+            maxOutput = ec.lastTranscoding.transcoder.maxOutput;
+        } else {
+            maxOutput = 1;
+        }
+
+        do {
+            int dlen = dst.getRealSize();
+            if (dst.getUnsafeBytes().length - dst.getBegin() < len + maxOutput) {
+                long newCapa = dlen + len + maxOutput;
+                if (Integer.MAX_VALUE < newCapa) {
+                    throw context.runtime.newArgumentError("too long string");
+                }
+                dst.ensure((int)newCapa);
+                dst.setRealSize(dlen);
+            }
+            sp.p = ss.begin();
+            se = sp.p + len;
+            ds = dst.getUnsafeBytes();
+            de = ds.length;
+            dp.p = dst.begin() + dlen;
+            res = ec.convert(ss.getUnsafeBytes(), sp, se, ds, dp, de, flags);
+            len -= sp.p - ss.begin();
+            ss.setBegin(sp.p);
+            dst.setRealSize(dlen + (dp.p - dst.begin()));
+//            econvCheckError(context, ec);
+        } while (res == EConvResult.DestinationBufferFull);
+
+        return dst;
+    }
     
     // rb_econv_prepare_opts
     public static int econvPrepareOpts(ThreadContext context, IRubyObject opthash, IRubyObject[] opts) {
@@ -547,7 +614,7 @@ public class EncodingUtils {
     }
     
     // rb_econv_open_opts
-    public static EncodingConverter econvOpenOpts(ThreadContext context, byte[] sourceEncoding, byte[] destinationEncoding, int ecflags, IRubyObject opthash) {
+    public static EConv econvOpenOpts(ThreadContext context, byte[] sourceEncoding, byte[] destinationEncoding, int ecflags, IRubyObject opthash) {
         Ruby runtime = context.runtime;
         IRubyObject replacement;
         
@@ -560,7 +627,7 @@ public class EncodingUtils {
             replacement = ((RubyHash)opthash).op_aref(context, runtime.newSymbol("replace"));
         }
         
-        return EncodingConverter.open(context, sourceEncoding, destinationEncoding, ecflags, replacement);
+        return TranscoderDB.open(sourceEncoding, destinationEncoding, ecflags);
         // missing logic for checking replacement encoding, may live in CharsetTranscoder
         // already...
     }
@@ -764,6 +831,8 @@ public class EncodingUtils {
         
         arg2 = argc <= 1 ? context.nil : args[1];
         dencindex = strTranscodeEncArgs(context, str, arg1, arg2, sname_p, senc_p, dname_p, denc_p);
+
+        RubyString dest;
         
         if ((ecflags & (EncodingUtils.ECONV_NEWLINE_DECORATOR_MASK
                 | EncodingUtils.ECONV_XML_TEXT_DECORATOR
@@ -773,12 +842,12 @@ public class EncodingUtils {
                 // TODO: Ruby 2.0 or 2.1 use String#scrub here
                 if ((ecflags & EncodingUtils.ECONV_INVALID_MASK) != 0) {
                     // TODO: scrub with replacement
-                    str = str.dup();
+                    dest = (RubyString)str.dup();
                 } else {
                     // TODO: scrub without replacement
-                    str = str.dup();
+                    dest = (RubyString)str.dup();
                 }
-                self_p[0] = str;
+                self_p[0] = dest;
                 return dencindex;
             } else if (senc_p[0] != null && denc_p[0] != null && senc_p[0].isAsciiCompatible() && denc_p[0].isAsciiCompatible()) {
                 if (((RubyString)str).scanForCodeRange() == StringSupport.CR_7BIT) {
@@ -794,12 +863,24 @@ public class EncodingUtils {
                 dname_p[0] = NULL_BYTE_ARRAY;
             }
         }
-        
-        ByteList fromp = ((RubyString)str).getByteList().shallowDup();
-        RubyString dest = runtime.newString();
+
+        ByteList sp = ((RubyString)str).getByteList();
+        ByteList fromp = sp.shallowDup();
+        int slen = ((RubyString)str).size();
+        int blen = slen + 30;
+        dest = RubyString.newStringLight(runtime, blen);
         ByteList destp = dest.getByteList();
-        
-        transcodeLoop(context, fromp, destp, sname_p[0], dname_p[0], ecflags, ecopts);
+
+        byte[] frompBytes = fromp.unsafeBytes();
+        byte[] destpBytes = destp.unsafeBytes();
+        Ptr frompPos = new Ptr(fromp.getBegin());
+        Ptr destpPos = new Ptr(destp.getBegin());
+        transcodeLoop(context, frompBytes, frompPos, destpBytes, destpPos, frompPos.p + slen, destpPos.p + blen, destp, strTranscodingResize, sname_p[0], dname_p[0], ecflags, ecopts);
+
+        if (frompPos.p != slen) {
+            throw runtime.newArgumentError("not fully converted, " + (slen - frompPos.p) + " bytes left");
+        }
+        destp.setRealSize(destpPos.p);
         
         if (denc_p[0] == null) {
             dencindex = defineDummyEncoding(context, dname_p[0]);
@@ -858,10 +939,30 @@ public class EncodingUtils {
         // TODO: set dummy on encoding; this probably should live in jcodings
         return dummy;
     }
+
+    public interface ResizeFunction {
+        /**
+         * Resize the destination, returning the new begin offset.
+         *
+         * @param destination
+         * @param len
+         * @param new_len
+         * @return
+         */
+        int resize(ByteList destination, int len, int new_len);
+    }
+
+    public static final ResizeFunction strTranscodingResize = new ResizeFunction() {
+        @Override
+        public int resize(ByteList destination, int len, int new_len) {
+            destination.ensure(new_len);
+            return destination.getBegin();
+        }
+    };
     
     // transcode_loop
-    public static void transcodeLoop(ThreadContext context, ByteList fromp, ByteList dest, byte[] sname, byte[] dname, int ecflags, IRubyObject ecopts) {
-        EncodingConverter ec;
+    public static void transcodeLoop(ThreadContext context, byte[] inBytes, Ptr inPos, byte[] outBytes, Ptr outPos, int inStop, int outStop, ByteList destination, ResizeFunction resizeFunction, byte[] sname, byte[] dname, int ecflags, IRubyObject ecopts) {
+        EConv ec;
         
         ec = econvOpenOpts(context, sname, dname, ecflags, ecopts);
         
@@ -870,8 +971,76 @@ public class EncodingUtils {
         }
         
         // TODO: fallback function
-        
-        RubyCoderResult result = ec.transcode(context, fromp, dest);
+
+        Transcoding lastTC = ec.lastTranscoding;
+        int maxOutput = lastTC != null ? lastTC.transcoder.maxOutput : 1;
+
+        int outStart = outPos.p;
+
+        // resume:
+        while (true) {
+            EConvResult ret = ec.convert(inBytes, inPos, inStop, outBytes, outPos, outStop, 0);
+
+            // TODO: call fallback on error
+
+            if (ret == EConvResult.InvalidByteSequence ||
+                    ret == EConvResult.IncompleteInput ||
+                    ret == EConvResult.UndefinedConversion) {
+                throw makeEconvException(context, ec);
+            }
+
+            if (ret == EConvResult.DestinationBufferFull) {
+                moreOutputBuffer(destination, resizeFunction, maxOutput, outPos.p, outStart, outStop);
+                continue;
+            }
+
+            // rb_conv_close(ec);
+            return;
+        }
+    }
+
+    static RaiseException makeEconvException(ThreadContext context, EConv ec) {
+        // TODO: match MRI's exception logic
+
+        RaiseException exc = context.runtime.newInvalidByteSequenceError("boo hoo");
+        exc.getException().dataWrapStruct(ec.lastError);
+
+        return exc;
+//        String mesg;
+//        RaiseException exc;
+//
+//        if (ec.lastError.result == EConvResult.InvalidByteSequence ||
+//                ec.lastError.result == EConvResult.IncompleteInput) {
+//            byte[] errBytes = ec.lastError.errorBytes;
+//            int errBytesP = ec.lastError.errorBytesP;
+//            int errorLen = ec.lastError.errorBytesEnd;
+//            ByteList _bytes = new ByteList(errBytes, errBytesP, errorLen - errBytesP);
+//            RubyString bytes = RubyString.newString(context.runtime, _bytes);
+//            RubyString dumped = (RubyString)bytes.dump();
+//            int readagainLen = ec.lastError.readAgainLength;
+//            IRubyObject bytes2 = context.nil;
+//            IRubyObject dumped2;
+//            int idx;
+//            if (ec.lastError.result == EConvResult.IncompleteInput) {
+//                mesg = "incomplete " + dumped + " on " + new String(ec.lastError.source);
+//            } else if (readagainLen != 0) {
+//                bytes2 = RubyString.newString(context.runtime, new ByteList(errBytes, errorLen + errBytesP, ec.lastError.readAgainLength));
+//                dumped2 = ((RubyString)bytes2).dump();
+//                mesg = dumped + " followed by " + dumped2 + " on " + new String(ec.lastError.source);
+//            } else {
+//                mesg = dumped + " on " + new String(ec.lastError.source);
+//            }
+//
+//            exc = context.runtime.newInvalidByteSequenceError(mesg);
+//        }
+    }
+
+    // more_output_buffer
+    static int moreOutputBuffer(ByteList destination, ResizeFunction resizeDestination, int maxOutput, int outPos, int outStart, int outStop) {
+        int len = outPos - outStart;
+        int newLen = (len + maxOutput) * 2;
+        outStart = resizeDestination.resize(destination, len, newLen);
+        return outStart + newLen;
     }
     
     // io_set_encoding_by_bom

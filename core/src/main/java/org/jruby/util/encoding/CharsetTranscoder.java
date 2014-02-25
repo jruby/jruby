@@ -265,17 +265,6 @@ public class CharsetTranscoder extends EncodingConverter {
         return result;
     }
     
-    public ByteList econvStrConvert(ThreadContext context, ByteList value, boolean finish) {
-        Encoding fromEncoding = this.inEncoding != null ? this.inEncoding : value.getEncoding();
-        
-        ByteList result = new ByteList();
-        transcode(context, value, result, fromEncoding, false, finish);
-        
-        lastResult = new RubyCoderResult("finished", fromEncoding, outEncoding, null, null);
-        
-        return result;
-    }
-    
     private RubyCoderResult transcode(ThreadContext context, ByteList inBuffer, ByteList outBuffer, Encoding inEncoding, boolean is7BitASCII, boolean finish) {
         primitiveConvert(context, inBuffer.shallowDup(), outBuffer, 0, -1, inEncoding, is7BitASCII, actions.ecflags);
         

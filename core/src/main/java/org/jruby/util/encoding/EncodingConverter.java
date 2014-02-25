@@ -35,7 +35,10 @@ import java.util.HashSet;
 import java.util.Set;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
+import org.jcodings.Ptr;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.transcode.EConv;
+import org.jcodings.transcode.EConvResult;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
@@ -62,23 +65,23 @@ public abstract class EncodingConverter {
         this.outEncoding = outEncoding;
         this.inEncoding = inEncoding;
     }
-    
+
     // rb_econv_open
     public static EncodingConverter open(ThreadContext context, byte[] sourceEncoding, byte[] destinationEncoding, int ecflags, IRubyObject replacement) {
         // TODO: decorator finish logic
-        
+
         // TODO: lighter-weight pass for non-transcoding with decorators (NullTranscoder)
-        
+
         // TODO: set error handler mask for decorator logic
 //        EncodingConverter transcoder = open0(ThreadContext context, sourceEncoding, destinationEncoding, ecflags & EncodingUtils.ECONV_ERROR_HANDLER_MASK);
         EncodingConverter transcoder = open0(context, sourceEncoding, destinationEncoding, ecflags, replacement);
-        
+
         if (transcoder == null) return null;
-        
+
         // TODO: decorator finish logic
-        
+
         // TODO: clear error handler mask
-        
+
         return transcoder;
     }
     
@@ -130,32 +133,70 @@ public abstract class EncodingConverter {
      * 
      * c: rb_str_conv_enc_opts
      */
-    public static ByteList strConvEncOpts(ThreadContext context, ByteList value, Encoding fromEncoding,
+    public static ByteList strConvEncOpts(ThreadContext context, ByteList str, Encoding fromEncoding,
             Encoding toEncoding, int ecflags, IRubyObject ecopts) {
-        if (toEncoding == null) return value;
-        if (fromEncoding == null) fromEncoding = value.getEncoding();
-        if (fromEncoding == toEncoding) return value;
+
+        if (toEncoding == null) return str;
+        if (fromEncoding == null) fromEncoding = str.getEncoding();
+        if (fromEncoding == toEncoding) return str;
         
         // This logic appears to not work like in MRI; following code will not
         // properly decode the string:
         // "\x00a".force_encoding("ASCII-8BIT").encode("UTF-8", "UTF-16BE")
-        if ((toEncoding.isAsciiCompatible() && StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT) ||
+        if ((toEncoding.isAsciiCompatible() && StringSupport.codeRangeScan(str.getEncoding(), str) == StringSupport.CR_7BIT) ||
                 toEncoding == ASCIIEncoding.INSTANCE) {
-            if (value.getEncoding() != toEncoding) {
-                value = value.shallowDup();
-                value.setEncoding(toEncoding);
+            if (str.getEncoding() != toEncoding) {
+                str = str.shallowDup();
+                str.setEncoding(toEncoding);
             }
-            return value;
+            return str;
         }
+
+        int len = str.getRealSize();
+        ByteList newStr = new ByteList(len);
+        int olen = len;
         
-        EncodingConverter ec = EncodingUtils.econvOpenOpts(context, fromEncoding.getName(), toEncoding.getName(), ecflags, ecopts);
-        if (ec == null) return value;
-        
-        ByteList ret = ec.convert(context, value, false);
-        
-        ret.setEncoding(toEncoding);
-        
-        return ret;
+        EConv ec = EncodingUtils.econvOpenOpts(context, fromEncoding.getName(), toEncoding.getName(), ecflags, ecopts);
+        if (ec == null) return str;
+
+        byte[] sbytes = str.getUnsafeBytes();
+        Ptr sp = new Ptr(str.getBegin());
+        int start = sp.p;
+
+        byte[] destbytes;
+        Ptr dp = new Ptr(0);
+        EConvResult ret;
+        int convertedOutput = 0;
+
+        destbytes = newStr.getUnsafeBytes();
+        dp.p = newStr.begin() + convertedOutput;
+        ret = ec.convert(sbytes, sp, sp.p + len, destbytes, dp, dp.p + olen, 0);
+        while (ret == EConvResult.DestinationBufferFull) {
+            int convertedInput = sp.p - start;
+            int rest = len - convertedInput;
+            convertedOutput = dp.p;
+            newStr.setRealSize(convertedOutput);
+            if (convertedInput != 0 && convertedOutput != 0 &&
+                    rest < (Integer.MAX_VALUE / convertedOutput)) {
+                rest = (rest * convertedOutput) / convertedInput;
+            } else {
+                rest = olen;
+            }
+            olen *= rest < 2 ? 2 : rest;
+            newStr.ensure(olen);
+        }
+
+        switch (ret) {
+            case Finished:
+                len = dp.p;
+                newStr.setRealSize(len);
+                newStr.setEncoding(toEncoding);
+                return newStr;
+
+            default:
+                // some error, return original
+                return str;
+        }
     }
     
     // rb_str_conv_enc
@@ -195,8 +236,6 @@ public abstract class EncodingConverter {
     
     // from Converter#convert
     public abstract ByteList convert(ThreadContext context, ByteList value, boolean is7BitASCII);
-    
-    public abstract ByteList econvStrConvert(ThreadContext context, ByteList value, boolean finish);
     
     public abstract RubyCoderResult primitiveConvert(ThreadContext context, ByteList inBuffer, ByteList outBuffer, int outOffset, int outLimit, Encoding inEncoding, boolean is7BitASCII, int flags);
     

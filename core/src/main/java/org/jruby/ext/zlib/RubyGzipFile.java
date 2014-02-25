@@ -27,6 +27,7 @@
 package org.jruby.ext.zlib;
 
 import org.jcodings.Encoding;
+import org.jcodings.transcode.EConv;
 import org.joda.time.DateTime;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
@@ -156,7 +157,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         }
 
         if (ec != null && enc2.isDummy()) {
-            value = ec.convert(runtime.getCurrentContext(), value, false);
+            value = EncodingUtils.econvStrConvert(runtime.getCurrentContext(), ec, value, 0);
             return RubyString.newString(runtime, value, getEnc());
         }
 
@@ -292,8 +293,8 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
     protected Encoding enc2;
     protected int ecflags;
     protected IRubyObject ecopts;
-    protected EncodingConverter ec;
+    protected EConv ec;
     protected boolean sync = false;
-    protected EncodingConverter readTranscoder = null;
-    protected EncodingConverter writeTranscoder = null;
+    protected EConv readTranscoder = null;
+    protected EConv writeTranscoder = null;
 }

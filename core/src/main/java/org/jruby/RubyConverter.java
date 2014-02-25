@@ -35,6 +35,8 @@ import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
 import org.jcodings.specific.UTF32LEEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.transcode.EConv;
+import org.jcodings.transcode.EConvResult;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ClassIndex;
@@ -455,11 +457,11 @@ public class RubyConverter extends RubyObject {
     public static class EncodingErrorMethods {
         @JRubyMethod
         public static IRubyObject error_char(ThreadContext context, IRubyObject self) {
-            RubyCoderResult result = (RubyCoderResult)self.dataGetStruct();
+            EConv.LastError result = (EConv.LastError)self.dataGetStruct();
             
-            if (result != null && result.isError() && result.errorBytes != null) {
+            if (result != null && result.errorBytes != null) {
                 // FIXME: do this elsewhere and cache it
-                ByteList errorBytes = new ByteList(result.errorBytes, result.inEncoding, true);
+                ByteList errorBytes = new ByteList(result.errorBytes, ASCIIEncoding.INSTANCE, true);
                 return RubyString.newString(context.runtime, errorBytes);
             }
         
@@ -468,11 +470,11 @@ public class RubyConverter extends RubyObject {
         
         @JRubyMethod
         public static IRubyObject readagain_bytes(ThreadContext context, IRubyObject self) {
-            RubyCoderResult result = (RubyCoderResult)self.dataGetStruct();
+            EConv.LastError result = (EConv.LastError)self.dataGetStruct();
             
-            if (result != null && result.isError() && result.readagainBytes != null) {
+            if (result != null && result.readAgainLength > 0) {
                 // FIXME: do this elsewhere and cache it
-                ByteList errorBytes = new ByteList(result.readagainBytes, ASCIIEncoding.INSTANCE, true);
+                ByteList errorBytes = new ByteList(result.errorBytes, result.errorBytesEnd, result.readAgainLength, ASCIIEncoding.INSTANCE, true);
                 return RubyString.newString(context.runtime, errorBytes);
             }
         
@@ -481,10 +483,10 @@ public class RubyConverter extends RubyObject {
         
         @JRubyMethod(name = "incomplete_input?")
         public static IRubyObject incomplete_input_p(ThreadContext context, IRubyObject self) {
-            RubyCoderResult result = (RubyCoderResult)self.dataGetStruct();
+            EConv.LastError result = (EConv.LastError)self.dataGetStruct();
             
             if (result != null) {
-                if (result.isInvalid()) {
+                if (result.result.isInvalidByteSequence()) {
                     return context.runtime.getTrue();
                 } else {
                     return context.runtime.getFalse();
@@ -496,30 +498,32 @@ public class RubyConverter extends RubyObject {
         
         @JRubyMethod
         public static IRubyObject source_encoding(ThreadContext context, IRubyObject self) {
-            RubyCoderResult result = (RubyCoderResult)self.dataGetStruct();
-            
-            return context.runtime.getEncodingService().convertEncodingToRubyEncoding(result.inEncoding);
+            EConv.LastError result = (EConv.LastError)self.dataGetStruct();
+
+            Encoding encoding = context.runtime.getEncodingService().findEncodingOrAliasEntry(result.source).getEncoding();
+            return context.runtime.getEncodingService().convertEncodingToRubyEncoding(encoding);
         }
         
         @JRubyMethod
         public static IRubyObject source_encoding_name(ThreadContext context, IRubyObject self) {
-            RubyCoderResult result = (RubyCoderResult)self.dataGetStruct();
+            EConv.LastError result = (EConv.LastError)self.dataGetStruct();
             
-            return RubyString.newString(context.runtime, result.inEncoding.getName());
+            return RubyString.newString(context.runtime, result.source);
         }
         
         @JRubyMethod
         public static IRubyObject destination_encoding(ThreadContext context, IRubyObject self) {
-            RubyCoderResult result = (RubyCoderResult)self.dataGetStruct();
-            
-            return context.runtime.getEncodingService().convertEncodingToRubyEncoding(result.outEncoding);
+            EConv.LastError result = (EConv.LastError)self.dataGetStruct();
+
+            Encoding encoding = context.runtime.getEncodingService().findEncodingOrAliasEntry(result.destination).getEncoding();
+            return context.runtime.getEncodingService().convertEncodingToRubyEncoding(encoding);
         }
         
         @JRubyMethod
         public static IRubyObject destination_encoding_name(ThreadContext context, IRubyObject self) {
-            RubyCoderResult result = (RubyCoderResult)self.dataGetStruct();
+            EConv.LastError result = (EConv.LastError)self.dataGetStruct();
             
-            return RubyString.newString(context.runtime, result.outEncoding.getName());
+            return RubyString.newString(context.runtime, result.destination);
         }
     }
 }
