@@ -1369,7 +1369,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return replace19(other);
     }
 
-    @JRubyMethod(name = {"replace", "initialize_copy"}, required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
+    @Override
+    public RubyString initialize_copy(IRubyObject other) {
+        return replace19(other);
+    }
+
+    @JRubyMethod(name = "replace", required = 1)
     public RubyString replace19(IRubyObject other) {
         modifyCheck();
         if (this == other) return this;
