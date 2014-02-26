@@ -1,6 +1,5 @@
 module Krypt
   class HMAC
-    include Krypt::Helper::XOR
 
     def initialize(digest, key)
       @digest = digest
