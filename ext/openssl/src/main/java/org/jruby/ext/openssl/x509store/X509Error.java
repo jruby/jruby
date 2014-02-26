@@ -29,33 +29,19 @@ package org.jruby.ext.openssl.x509store;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Used to handle OpenSSL errors in a sane way. These are not safe for
- * multi runtimes at the moments.
+ * Provide a dynamically-growing list of X509 error messages.
  * 
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class X509Error {
-    private static ThreadLocal<List<ErrorException>> errors = new ThreadLocal<List<ErrorException>>();
+    private static ThreadLocal<Map<Integer, String>> errors = new ThreadLocal<Map<Integer, String>>();
 
-    public static class ErrorException extends Exception {
-        private static final long serialVersionUID = -3214495184277468063L;
-
-        private int reason;
-
-        public ErrorException(int reason) {
-            super();
-            this.reason = reason;
-        }
-
-        public int getReason() {
-            return reason;
-        }
-
-        @Override
-        public String getMessage() {
-            switch (reason) {
+    public static String getMessage(int reason) {
+        switch (reason) {
             case X509Utils.X509_R_BAD_X509_FILETYPE:
                 return "bad x509 filetype";
             case X509Utils.X509_R_BASE64_DECODE_ERROR:
@@ -111,35 +97,32 @@ public class X509Error {
 
             default:
                 return "(unknown X509 error)";
-            }
         }
     }
 
     public static void addError(int reason) {
-        synchronized (errors) {
-            List<ErrorException> errs = errors.get();
-            if (errs == null) {
-                errs = new ArrayList<ErrorException>();
-                errors.set(errs);
-            }
-            errs.add(new ErrorException(reason));
+        Map<Integer, String> errs = errors.get();
+        if (errs == null) {
+            errs = new ConcurrentHashMap<Integer, String>(40, 0.75f, 1);
+            errors.set(errs);
         }
+        errs.put(reason, getMessage(reason));
     }
 
     public static void clearErrors() {
         synchronized (errors) {
-            List<ErrorException> errs = errors.get();
+            Map<Integer, String> errs = errors.get();
             if (errs != null) {
                 errs.clear();
             }
         }
     }
     
-    public static List<ErrorException> getErrors() {
+    public static Map<Integer, String> getErrors() {
         synchronized (errors) {
-            List<ErrorException> errs = errors.get();
+            Map<Integer, String> errs = errors.get();
             if (errs == null) {
-                errs = new ArrayList<ErrorException>();
+                errs = new ConcurrentHashMap<Integer, String>(40, 0.75f, 1);
                 errors.set(errs);
             }
             return errs;
