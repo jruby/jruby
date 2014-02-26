@@ -13,6 +13,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.Sprintf;
@@ -54,7 +55,7 @@ public class Option extends RubyObject {
         this.data = Pack.packInt_i(result, data);
     }
     
-    @JRubyMethod(required = 4)
+    @JRubyMethod(required = 4, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         family = ProtocolFamily.valueOf(args[0].convertToInteger().getLongValue());
         level = SocketLevel.valueOf(args[1].convertToInteger().getLongValue());

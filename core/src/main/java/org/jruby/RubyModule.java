@@ -1588,7 +1588,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_init_copy
      * 
      */
-    @JRubyMethod(name = "initialize_copy", required = 1)
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original) {
         super.initialize_copy(original);

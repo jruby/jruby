@@ -31,6 +31,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 
 @JRubyClass(name="NoMethodError", parent="NameError")
 public class RubyNoMethodError extends RubyNameError {
@@ -61,7 +62,7 @@ public class RubyNoMethodError extends RubyNameError {
         this.args = args;
     }    
 
-    @JRubyMethod(optional = 3)
+    @JRubyMethod(optional = 3, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         if (args.length > 2) {

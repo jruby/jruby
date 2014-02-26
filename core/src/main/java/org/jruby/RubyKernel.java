@@ -1715,12 +1715,12 @@ public class RubyKernel {
         return ((RubyBasicObject)self).initialize_copy(original);
     }
 
-    @JRubyMethod(name = "initialize_clone", required = 1)
+    @JRubyMethod(name = "initialize_clone", required = 1, visibility = Visibility.PRIVATE)
     public static IRubyObject initialize_clone(ThreadContext context, IRubyObject self, IRubyObject original) {
         return self.callMethod(context, "initialize_copy", original);
     }
 
-    @JRubyMethod(name = "initialize_dup", required = 1)
+    @JRubyMethod(name = "initialize_dup", required = 1, visibility = Visibility.PRIVATE)
     public static IRubyObject initialize_dup(ThreadContext context, IRubyObject self, IRubyObject original) {
         return self.callMethod(context, "initialize_copy", original);
     }

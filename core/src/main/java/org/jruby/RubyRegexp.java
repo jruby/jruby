@@ -1222,7 +1222,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     /** rb_reg_init_copy
      */
-    @JRubyMethod(required = 1)
+    @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject re) {
         if (this == re) return this;

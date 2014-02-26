@@ -50,6 +50,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.runtime.Visibility;
 
 /**
  * OpenSSL::PKey::DH implementation.
@@ -119,7 +120,7 @@ public class PKeyDH extends PKey {
         super(runtime, clazz);
     }
 
-    @JRubyMethod(name="initialize", rest=true)
+    @JRubyMethod(name="initialize", rest=true, visibility = Visibility.PRIVATE)
     public synchronized IRubyObject dh_initialize(IRubyObject[] args) {
         Ruby runtime = getRuntime();
         if (this.dh_p != null || this.dh_g != null || this.dh_pub_key != null || this.dh_priv_key != null) {
