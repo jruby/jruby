@@ -31,12 +31,20 @@ package org.jruby.ext.ffi;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import org.jcodings.util.IntHash;
-import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
+import org.jruby.RubyInteger;
+import org.jruby.RubyModule;
+import org.jruby.RubyObject;
+import org.jruby.RubySymbol;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 
 /**
