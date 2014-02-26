@@ -33,6 +33,7 @@ import java.security.NoSuchProviderException;
 import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.crypto.SecretKeyFactory;
 import org.jruby.Ruby;
@@ -140,8 +141,8 @@ public class OpenSSLReal {
         public static IRubyObject errors(IRubyObject recv) {
             Ruby runtime = recv.getRuntime();
             RubyArray result = runtime.newArray();
-            for (X509Error.ErrorException e : X509Error.getErrors()) {
-                result.add(runtime.newString(e.getMessage()));
+            for (Map.Entry<Integer, String> e : X509Error.getErrors().entrySet()) {
+                result.add(runtime.newString(e.getValue()));
             }
             return result;
         }
