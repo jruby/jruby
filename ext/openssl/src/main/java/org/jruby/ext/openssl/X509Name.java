@@ -68,6 +68,7 @@ import org.jruby.ext.openssl.x509store.Name;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 
 /**
  * 
@@ -190,12 +191,12 @@ public class X509Name extends RubyObject {
         types.add(getRuntime().newFixnum(ASN1.idForClass(typeAndValue.getObjectAt(1).getClass())));
     }
     
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context) {
         return this;
     }
 
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject str_or_dn) {
         return initialize(
                 context,
@@ -203,7 +204,7 @@ public class X509Name extends RubyObject {
                 context.nil);
     }
 
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject dn, IRubyObject template) {
         Ruby runtime = context.runtime;
 

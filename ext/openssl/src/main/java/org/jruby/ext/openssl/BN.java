@@ -45,6 +45,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.runtime.Visibility;
 
 /**
  * OpenSSL::BN implementation. Wraps java.math.BigInteger, which provides
@@ -116,7 +117,7 @@ public class BN extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name="initialize", required=1, optional=1)
+    @JRubyMethod(name="initialize", required=1, optional=1, visibility = Visibility.PRIVATE)
     public synchronized IRubyObject bn_initialize(IRubyObject[] args) {
         Ruby runtime = getRuntime();
         if (this.value != BigInteger.ZERO) { // already initialized

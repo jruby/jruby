@@ -41,6 +41,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.runtime.Visibility;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -108,7 +109,7 @@ public class HMAC extends RubyObject {
     private byte[] key;
     private StringBuffer data = new StringBuffer();
 
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject kay, IRubyObject digest) {
         String algoName = getDigestAlgorithmName(digest);
         try {
@@ -123,7 +124,7 @@ public class HMAC extends RubyObject {
     }
 
     @Override
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject obj) {
         if(this == obj) {
             return this;

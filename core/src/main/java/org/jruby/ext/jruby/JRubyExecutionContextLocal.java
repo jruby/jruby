@@ -36,6 +36,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 
 public abstract class JRubyExecutionContextLocal extends RubyObject {
     private IRubyObject default_value;
@@ -47,7 +48,7 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
         default_proc = null;
     }
 
-    @JRubyMethod(name = "initialize", required = 0, optional = 1)
+    @JRubyMethod(name = "initialize", required = 0, optional = 1, visibility = Visibility.PRIVATE)
     public IRubyObject rubyInitialize(ThreadContext context, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
             if (args.length != 0) {

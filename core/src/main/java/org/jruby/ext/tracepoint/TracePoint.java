@@ -16,6 +16,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 
 public class TracePoint extends RubyObject {
     public static void createTracePointClass(Ruby runtime) {
@@ -41,7 +42,7 @@ public class TracePoint extends RubyObject {
         this.returnValue = runtime.getNil();
     }
     
-    @JRubyMethod(rest = true)
+    @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] _events, final Block block) {
         final Ruby runtime = context.runtime;
         

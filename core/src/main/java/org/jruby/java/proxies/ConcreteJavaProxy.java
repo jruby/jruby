@@ -37,7 +37,7 @@ public class ConcreteJavaProxy extends JavaProxy {
     }
 
     protected static void initialize(RubyClass concreteJavaProxy) {
-        concreteJavaProxy.addMethod("initialize", new org.jruby.internal.runtime.methods.JavaMethod(concreteJavaProxy, Visibility.PUBLIC) {
+        concreteJavaProxy.addMethod("initialize", new org.jruby.internal.runtime.methods.JavaMethod(concreteJavaProxy, Visibility.PRIVATE) {
             private final CallSite jcreateSite = MethodIndex.getFunctionalCallSite("__jcreate!");
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {

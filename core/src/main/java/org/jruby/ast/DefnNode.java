@@ -98,7 +98,7 @@ public class DefnNode extends MethodDefNode implements INameNode {
         }
 
         Visibility visibility = context.getCurrentVisibility();
-        if (name == "initialize" || name == "initialize_copy" || visibility == Visibility.MODULE_FUNCTION) {
+        if (name == "initialize" || name == "initialize_copy" || name == "initialize_dup" || name == "initialize_clone" || name == "respond_to_missing?" || visibility == Visibility.MODULE_FUNCTION) {
             visibility = Visibility.PRIVATE;
         }
         

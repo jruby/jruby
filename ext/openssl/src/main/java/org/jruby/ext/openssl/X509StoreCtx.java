@@ -49,6 +49,7 @@ import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -85,7 +86,7 @@ public class X509StoreCtx extends RubyObject {
         cX509Cert = Utils.getClassFromPath(runtime, "OpenSSL::X509::Certificate");
     }
 
-    @JRubyMethod(name="initialize", rest=true)
+    @JRubyMethod(name="initialize", rest=true, visibility = Visibility.PRIVATE)
     public IRubyObject _initialize(IRubyObject[] args, Block block) {
         IRubyObject store;
         IRubyObject cert = getRuntime().getNil();
