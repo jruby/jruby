@@ -54,6 +54,9 @@ import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.WindowsFFI.kernel32;
 import static org.jruby.util.WindowsFFI.Kernel32.*;
 
+import java.lang.management.ThreadMXBean;
+import java.lang.management.ManagementFactory;
+
 /**
  */
 
@@ -1030,21 +1033,31 @@ public class RubyProcess {
 
     public static IRubyObject times(Ruby runtime) {
         Times tms = runtime.getPosix().times();
+        double utime = 0.0d, stime = 0.0d, cutime = 0.0d, cstime = 0.0d;
         if (tms == null) {
-            throw runtime.newErrnoFromLastPOSIXErrno();
+            ThreadMXBean bean = ManagementFactory.getThreadMXBean();
+            if(bean.isCurrentThreadCpuTimeSupported()) {
+                cutime = utime = bean.getCurrentThreadUserTime();
+                cstime = stime = bean.getCurrentThreadCpuTime() - bean.getCurrentThreadUserTime();
+            }
+        } else {
+            utime = (double)tms.utime();
+            stime = (double)tms.stime();
+            cutime = (double)tms.cutime();
+            cstime = (double)tms.cstime();
         }
 
         long hz = runtime.getPosix().sysconf(Sysconf._SC_CLK_TCK);
         if (hz == -1) {
-            throw runtime.newErrnoFromLastPOSIXErrno();
+            hz = 60; //https://github.com/ruby/ruby/blob/trunk/process.c#L6616
         }
 
         return RubyStruct.newStruct(runtime.getTmsStruct(),
                 new IRubyObject[] {
-                        runtime.newFloat((double) tms.utime() / (double) hz),
-                        runtime.newFloat((double) tms.stime() / (double) hz),
-                        runtime.newFloat((double) tms.cutime() / (double) hz),
-                        runtime.newFloat((double) tms.cstime() / (double) hz)
+                        runtime.newFloat(utime / (double) hz),
+                        runtime.newFloat(stime / (double) hz),
+                        runtime.newFloat(cutime / (double) hz),
+                        runtime.newFloat(cstime / (double) hz)
                 },
                 Block.NULL_BLOCK);
     }

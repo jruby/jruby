@@ -246,6 +246,7 @@ mri/openssl/test_ns_spki
 #mri/openssl/test_ocsp
 mri/openssl/test_parse_certificate
 mri/openssl/test_pair
+mri/openssl/test_partial_record_read
 mri/openssl/test_pkcs12
 mri/openssl/test_pkcs7
 mri/openssl/test_pkey_dh
