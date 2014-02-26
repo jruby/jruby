@@ -154,6 +154,10 @@ public class ArgsNode extends Node {
         return Arity.createArity(getRequiredArgsCount());
     }
 
+    public boolean hasKwargs() {
+        return hasKwargs;
+    }
+
     protected boolean hasMasgnArgs() {
         if (preCount > 0) for (Node node : pre.childNodes()) {
             if (node instanceof AssignableNode) return true;

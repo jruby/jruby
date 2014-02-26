@@ -1914,7 +1914,7 @@ public class IRBuilder {
             // (a) on inlining, we'll be able to get rid of these checks in almost every case.
             // (b) compiler to bytecode will anyway generate this and this is explicit.
             // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?
-            addInstr(s, new CheckArityInstr(required, opt, rest, s.receivesKeywordArgs()));
+            addInstr(s, new CheckArityInstr(required, opt, rest, argsNode.hasKwargs()));
         }
 
         // Other args begin at index 0
