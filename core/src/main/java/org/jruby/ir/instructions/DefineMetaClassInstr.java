@@ -55,7 +55,7 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr, FixedAri
     public boolean computeScopeFlags(IRScope scope) {
         // SSS: Inner-classes are defined with closures and
         // a return in the closure can force a return from this method
-        // For now conservatively assume that a scope with inner-classes
+        // For now, conservatively assume that a scope with inner-classes
         // can receive non-local returns. (Alternatively, have to inspect
         // all lexically nested scopes, not just closures in computeScopeFlags())
         scope.getFlags().add(IRFlags.CAN_RECEIVE_NONLOCAL_RETURNS);

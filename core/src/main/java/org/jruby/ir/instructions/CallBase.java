@@ -213,16 +213,23 @@ public abstract class CallBase extends Instr implements Specializeable {
         return false;
     }
 
-    // SSS: Unused method
+    // SSS FIXME: Unused currently.
     // Can this call lead to ruby code getting modified?
     // If we don't know what method we are calling, we assume it can (pessimistic, but safe!)
     public boolean canModifyCode() {
         return true;
     }
 
+    // SSS FIXME: Unused currently.
+    // Regexp and IO calls can do this -- and since we do not know at IR-build time
+    // what the call target is, we have to conservatively assume yes
+    public boolean canSetDollarVars() {
+        return true;
+    }
+
     // SSS FIXME: Are all bases covered?
     // How about aliasing of 'call', 'eval', 'send', 'module_eval', 'class_eval', 'instance_eval'?
-    private boolean getEvalFlag() {
+    private boolean computeEvalFlag() {
         // ENEBO: This could be made into a recursive two-method thing so then: send(:send, :send, :send, :send, :eval, "Hosed") works
         String mname = getMethodAddr().getName();
         // checking for "call" is conservative.  It can be eval only if the receiver is a Method
@@ -256,6 +263,32 @@ public abstract class CallBase extends Instr implements Specializeable {
         // and use it at a later point.
         if (closure != null) return true;
 
+        String mname = getMethodAddr().getName();
+        if (mname.equals("lambda") ||
+            mname.equals("binding") ||
+            mname.equals("nesting") ||
+            mname.equals("local_variables"))
+        {
+            return true;
+        } else if (mname.equals("send") || mname.equals("__send__")) {
+            Operand[] args = getCallArgs();
+            if (args.length >= 1) {
+                Operand meth = args[0];
+                if (!(meth instanceof StringLiteral)) return true; // We don't know -- could be anything
+
+                String name = ((StringLiteral) meth).string;
+                if (name.equals("send") ||
+                    name.equals("__send__") ||
+                    name.equals("lambda") ||
+                    name.equals("binding") ||
+                    name.equals("nesting") ||
+                    name.equals("local_variables"))
+                {
+                    return true;
+                }
+            }
+        }
+
         /* -------------------------------------------------------------
          * SSS FIXME: What about aliased accesses to these same methods?
          * See problem snippet below
@@ -283,40 +316,14 @@ public abstract class CallBase extends Instr implements Specializeable {
          * Y. Nesting is: [Y]
          * ------------------------------------------------------------- */
 
-        String mname = getMethodAddr().getName();
-        if (mname.equals("lambda") ||
-            mname.equals("binding") ||
-            mname.equals("nesting") ||
-            mname.equals("local_variables"))
-        {
-            return true;
-        } else if (mname.equals("send") || mname.equals("__send__")) {
-            Operand[] args = getCallArgs();
-            if (args.length >= 1) {
-                Operand meth = args[0];
-                if (!(meth instanceof StringLiteral)) return true; // We don't know -- could be anything
-
-                String name = ((StringLiteral) meth).string;
-                if (name.equals("send") ||
-                    name.equals("__send__") ||
-                    name.equals("lambda") ||
-                    name.equals("binding") ||
-                    name.equals("nesting") ||
-                    name.equals("local_variables"))
-                {
-                    return true;
-                }
-            }
-        }
-
-        // SSS FIXME: Are all bases covered?  What about aliases?
+        // SSS FIXME: Are all bases covered?
         return false;  // All checks done -- dont need one
     }
 
     private void computeFlags() {
         // Order important!
         flagsComputed = true;
-        canBeEval = getEvalFlag();
+        canBeEval = computeEvalFlag();
         targetRequiresCallersBinding = canBeEval || computeRequiresCallersBindingFlag();
     }
 
@@ -330,12 +337,6 @@ public abstract class CallBase extends Instr implements Specializeable {
         if (!flagsComputed) computeFlags();
 
         return targetRequiresCallersBinding;
-    }
-
-    // Regexp and IO calls can do this -- and since we do not know at IR-build time
-    // what the call target is, we have to conservatively assume yes
-    public boolean canSetDollarVars() {
-        return true;
     }
 
     @Override

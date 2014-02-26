@@ -11,19 +11,13 @@ import org.jruby.RubyInstanceConfig;
 
 import org.jruby.RubyModule;
 import org.jruby.ir.dataflow.DataFlowProblem;
-import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.DefineMetaClassInstr;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.Specializeable;
 import org.jruby.ir.instructions.ThreadPollInstr;
-import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
-import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
-import org.jruby.ir.instructions.RecordEndBlockInstr;
 import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Float;
@@ -547,8 +541,8 @@ public abstract class IRScope implements ParseResult {
         initEvalScopeVariableAllocator(true);
 
         // SSS FIXME: We should configure different optimization levels
-        // and run different kinds of analysis depending on time budget.  Accordingly, we need to set
-        // IR levels/states (basic, optimized, etc.) and the
+        // and run different kinds of analysis depending on time budget.
+        // Accordingly, we need to set IR levels/states (basic, optimized, etc.)
         // ENEBO: If we use a MT optimization mechanism we cannot mutate CFG
         // while another thread is using it.  This may need to happen on a clone()
         // and we may need to update the method to return the new method.  Also,
@@ -570,9 +564,9 @@ public abstract class IRScope implements ParseResult {
             }
         }
 
-        // All passes disabled in scopes where BEGIN and END scopes might
-        // screw around with escape variables. Optimizing for them is not
-        // worth the effort. Simple to just go fully safe in scopes influenced
+        // All passes are disabled in scopes where BEGIN and END scopes might
+        // screw around with escaped variables. Optimizing for them is not
+        // worth the effort. It is simpler to just go fully safe in scopes influenced
         // by their presence.
         if (unsafeScope) {
             passes = getManager().getSafePasses(this);
@@ -719,7 +713,6 @@ public abstract class IRScope implements ParseResult {
         return flags;
     }
 
-    //
     // This can help use eliminate writes to %block that are not used since this is
     // a special local-variable, not programmer-defined local-variable
     public void computeScopeFlags() {
@@ -736,16 +729,16 @@ public abstract class IRScope implements ParseResult {
         flags.remove(USES_BACKREF_OR_LASTLINE);
         // NOTE: bindingHasEscaped is the crucial flag and it effectively is
         // unconditionally true whenever it has a call that receives a closure.
-        // See CallInstr.computeRequiresCallersBindingFlag
+        // See CallBase.computeRequiresCallersBindingFlag
         if (this instanceof IREvalScript) { // for eval scopes, bindings are considered escaped ...
             flags.add(BINDING_HAS_ESCAPED);
         } else {
             flags.remove(BINDING_HAS_ESCAPED);
         }
 
-        // recompute flags -- we could be calling this method different times
-        // definitely once after ir generation and local optimizations propagates constants locally
-        // but potentially at a later time after doing ssa generation and constant propagation
+        // Recompute flags -- we could be calling this method different times.
+        // * once after IR generation and local optimizations propagates constants locally
+        // * also potentially at later times after other opt passes
         if (cfg == null) {
             for (Instr i: getInstrs()) {
                 i.computeScopeFlags(this);
