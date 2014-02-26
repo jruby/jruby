@@ -1740,9 +1740,7 @@ public class RubyLexer {
         if (isLabelPossible(commandState)) {
             int c2 = src.read();
             if (c2 == ':' && !src.peek(':')) {
-                src.unread(c2);
                 setState(LexState.EXPR_BEG);
-                src.read();
                 yaccValue = new Token(tempVal, Tokens.tLABEL, getPosition());
                 return Tokens.tLABEL;
             }
