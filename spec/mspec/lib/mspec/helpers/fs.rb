@@ -37,7 +37,11 @@ class Object
         raise ArgumentError, "#{path} is not prefixed by #{prefix}"
       end
 
-      if File.directory? path
+      # File.symlink? needs to be checked first as
+      # File.exists? returns false for dangling symlinks
+      if File.symlink? path
+        File.unlink path
+      elsif File.directory? path
         Dir.entries(path).each { |x| rm_r "#{path}/#{x}" unless x =~ /^\.\.?$/ }
         Dir.rmdir path
       elsif File.exists? path

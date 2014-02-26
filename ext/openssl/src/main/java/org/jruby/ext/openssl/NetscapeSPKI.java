@@ -49,6 +49,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.impl.Base64;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -80,7 +81,7 @@ public class NetscapeSPKI extends RubyObject {
 
     private NetscapeCertRequest cert;
 
-    @JRubyMethod(name = "initialize", rest = true)
+    @JRubyMethod(name = "initialize", rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject _initialize(IRubyObject[] args) {
         if (args.length > 0) {
             byte[] b = args[0].convertToString().getBytes();

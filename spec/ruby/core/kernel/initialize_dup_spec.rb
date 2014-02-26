@@ -16,7 +16,7 @@ ruby_version_is "1.9" do
     it "calls initialize_copy by default" do
       obj = KernelSpecs::Duplicate.new(1, :a)
       other = KernelSpecs::Duplicate.new(2, :a)
-      obj.initialize_clone(other)
+      obj.send(:initialize_dup, other)
       ScratchPad.recorded.should == obj.object_id
     end
   end

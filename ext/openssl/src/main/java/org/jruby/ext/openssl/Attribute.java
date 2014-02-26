@@ -39,6 +39,7 @@ import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -90,7 +91,7 @@ public class Attribute extends RubyObject {
         return new DLSequence(v1);
     }
 
-    @JRubyMethod(name="initialize", required=1, optional=1)
+    @JRubyMethod(name="initialize", required=1, optional=1, visibility = Visibility.PRIVATE)
     public IRubyObject _initialize(IRubyObject[] str) {
         if(org.jruby.runtime.Arity.checkArgumentCount(getRuntime(),str,1,2) == 1) {
             IRubyObject _oid = OpenSSLImpl.to_der_if_possible(str[0]);

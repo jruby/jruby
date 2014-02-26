@@ -71,11 +71,12 @@ class MSpecRun < MSpecScript
     options.doc "\n     $ mspec --spec-debug -S 'this crashes' path/to/the_file_spec.rb"
     options.doc "\n   4. To run some specs matching 'this crashes'"
     options.doc "\n     $ mspec -e 'this crashes' path/to/the_file_spec.rb"
-    
+
     options.doc ""
 
     patterns = options.parse argv
     patterns = config[:files] if patterns.empty?
+    patterns = ["spec/"] if patterns.empty? and File.directory? "./spec"
     if patterns.empty?
       puts options
       puts "No files specified."
@@ -85,6 +86,8 @@ class MSpecRun < MSpecScript
   end
 
   def run
+    MSpec.register_mode :no_ruby_bug
+
     MSpec.register_tags_patterns config[:tags_patterns]
     MSpec.register_files @files
 

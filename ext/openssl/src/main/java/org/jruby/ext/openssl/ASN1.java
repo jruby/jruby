@@ -75,6 +75,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
 
 /**
@@ -632,7 +633,7 @@ public class ASN1 {
             throw Utils.newError(getRuntime(), "OpenSSL::ASN1::ASN1Error", msg);
         }
 
-        @JRubyMethod
+        @JRubyMethod(visibility = Visibility.PRIVATE)
         public IRubyObject initialize(IRubyObject value, IRubyObject tag, IRubyObject tag_class) {
             if(!(tag_class instanceof RubySymbol)) {
                 asn1Error("invalid tag class");
@@ -732,7 +733,7 @@ public class ASN1 {
             return super.to_der();
         }
 
-        @JRubyMethod(required=1, optional=4)
+        @JRubyMethod(required=1, optional=4, visibility = Visibility.PRIVATE)
         public IRubyObject initialize(IRubyObject[] args) {
             IRubyObject value = args[0];
             IRubyObject tag = getRuntime().getNil();
@@ -867,7 +868,7 @@ public class ASN1 {
             return super.to_der();
         }
 
-        @JRubyMethod(required=1, optional=3)
+        @JRubyMethod(required=1, optional=3, visibility = Visibility.PRIVATE)
         public IRubyObject initialize(IRubyObject[] args) {
             IRubyObject value = args[0];
             IRubyObject tag = getRuntime().getNil();

@@ -59,6 +59,7 @@ import org.jruby.ext.openssl.impl.CipherSpec;
 import org.jruby.ext.openssl.x509store.PEMInputOutput;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -151,7 +152,7 @@ public class PKeyDSA extends PKey {
         }
     }
 
-    @JRubyMethod(rest = true)
+    @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args) {
         IRubyObject arg;
         IRubyObject pass = null;

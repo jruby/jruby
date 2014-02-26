@@ -86,6 +86,8 @@ class Object
         "bin/jruby"
       when 'maglev'
         "maglev-ruby"
+      when 'topaz'
+        "topaz"
       when 'ironruby'
         "ir"
       end
@@ -106,7 +108,7 @@ class Object
 
       # It has been reported that File.executable is not reliable
       # on Windows platforms (see commit 56bc555c). So, we check the
-      # platform. 
+      # platform.
       if File.exists?(exe) and (PlatformGuard.windows? or File.executable?(exe))
         return [File.expand_path(exe), *rest].join(" ")
       end

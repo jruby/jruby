@@ -64,6 +64,7 @@ import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
 
 /**
@@ -283,7 +284,7 @@ public class PKCS7 extends RubyObject {
         return getInstanceVariable("@data");
     }
     
-    @JRubyMethod(name="initialize", rest=true)
+    @JRubyMethod(name="initialize", rest=true, visibility = Visibility.PRIVATE)
     public IRubyObject _initialize(IRubyObject[] args) {
         IRubyObject arg = null;
         if(Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 0) {
@@ -314,7 +315,7 @@ public class PKCS7 extends RubyObject {
     }
 
     @Override
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject obj) {
         System.err.println("WARNING: unimplemented method called PKCS7#init_copy");
         return this;
@@ -700,7 +701,7 @@ public class PKCS7 extends RubyObject {
             return info;
         }
 
-        @JRubyMethod
+        @JRubyMethod(visibility = Visibility.PRIVATE)
         public IRubyObject initialize(IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
             System.err.println("WARNING: unimplemented method called SignerInfo#initialize");
             return this;
@@ -756,7 +757,7 @@ public class PKCS7 extends RubyObject {
             this.info = info;
         }
 
-        @JRubyMethod
+        @JRubyMethod(visibility = Visibility.PRIVATE)
         public IRubyObject initialize(IRubyObject arg) {
             System.err.println("WARNING: unimplemented method called RecipientInfo#initialize");
             return this;

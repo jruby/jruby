@@ -63,6 +63,7 @@ import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -153,7 +154,7 @@ public class SSLContext extends RubyObject {
 
     private InternalContext internalCtx = null;
 
-    @JRubyMethod(rest=true)
+    @JRubyMethod(rest=true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args) {
         return this;
     }

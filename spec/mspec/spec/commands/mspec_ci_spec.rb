@@ -88,11 +88,6 @@ describe MSpecCI, "#options" do
     @script.options
   end
 
-  it "enables the debug option" do
-    @options.should_receive(:debug)
-    @script.options @argv
-  end
-
   it "calls #custom_options" do
     @script.should_receive(:custom_options).with(@options)
     @script.options

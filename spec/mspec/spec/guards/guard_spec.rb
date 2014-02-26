@@ -211,6 +211,11 @@ describe SpecGuard, "#implementation?" do
     @guard.implementation?(:maglev).should == true
   end
 
+  it "returns true if passed :topaz and RUBY_NAME == 'topaz'" do
+    Object.const_set :RUBY_NAME, 'topaz'
+    @guard.implementation?(:topaz).should == true
+  end
+
   it "returns true if passed :ruby and RUBY_NAME matches /^ruby/" do
     Object.const_set :RUBY_NAME, 'ruby'
     @guard.implementation?(:ruby).should == true

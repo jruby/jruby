@@ -1,5 +1,5 @@
 require 'mspec/guards/feature'
-require 'mspec/helpers/fmode'
+require 'mspec/helpers/io'
 
 class HaveDataMatcher
   def initialize(data, mode="rb:binary")

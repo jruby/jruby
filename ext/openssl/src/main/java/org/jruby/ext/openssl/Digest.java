@@ -41,6 +41,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
 
 /**
@@ -113,7 +114,7 @@ public class Digest extends RubyObject {
         return name;
     }
 
-    @JRubyMethod(required = 1, optional = 1)
+    @JRubyMethod(required = 1, optional = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args) {
         IRubyObject type = args[0];
         IRubyObject data = getRuntime().getNil();
@@ -129,7 +130,7 @@ public class Digest extends RubyObject {
     }
 
     @Override
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject obj) {
         checkFrozen();
         if(this == obj) {

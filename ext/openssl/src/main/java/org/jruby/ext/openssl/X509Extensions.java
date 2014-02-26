@@ -62,6 +62,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
 
 /**
@@ -96,7 +97,7 @@ public class X509Extensions {
             super(runtime,type);
         }
 
-        @JRubyMethod(rest=true)
+        @JRubyMethod(rest=true, visibility = Visibility.PRIVATE)
         public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
             org.jruby.runtime.Arity.checkArgumentCount(getRuntime(),args,0,4);
             if(args.length > 0 && !args[0].isNil()) {
@@ -557,7 +558,7 @@ public class X509Extensions {
             return val2;
         }
 
-        @JRubyMethod(name = "initialize", rest = true)
+        @JRubyMethod(name = "initialize", rest = true, visibility = Visibility.PRIVATE)
         public IRubyObject _initialize(IRubyObject[] args) {
             byte[] octets = null;
             if (args.length == 1) {

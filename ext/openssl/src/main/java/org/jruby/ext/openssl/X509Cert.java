@@ -71,6 +71,7 @@ import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -138,7 +139,7 @@ public class X509Cert extends RubyObject {
         return cr.callMethod(runtime.getCurrentContext(), "new", RubyString.newString(runtime, c.getEncoded()));
     }
 
-    @JRubyMethod(name="initialize", optional = 1)
+    @JRubyMethod(name="initialize", optional = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block unusedBlock) {
         Ruby runtime = context.runtime;
         extensions = new ArrayList<IRubyObject>();
@@ -222,7 +223,7 @@ public class X509Cert extends RubyObject {
     }
 
     @Override
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject obj) {
         if(this == obj) {
             return this;

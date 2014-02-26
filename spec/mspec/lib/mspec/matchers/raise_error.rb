@@ -6,7 +6,7 @@ class RaiseErrorMatcher
   end
 
   def matches?(proc)
-    proc.call
+    @result = proc.call
     return false
   rescue Exception => @actual
     return false unless @exception === @actual
@@ -30,7 +30,7 @@ class RaiseErrorMatcher
     if @actual then
       message << "but got #{@actual.class}#{%[ (#{@actual.message})] if @actual.message}"
     else
-      message << "but no exception was raised"
+      message << "but no exception was raised (#@result was returned)"
     end
 
     message

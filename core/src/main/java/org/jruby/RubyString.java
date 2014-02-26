@@ -60,6 +60,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
@@ -1368,7 +1369,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return replace19(other);
     }
 
-    @JRubyMethod(name = {"replace", "initialize_copy"}, required = 1)
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
+    @Override
+    public RubyString initialize_copy(IRubyObject other) {
+        return replace19(other);
+    }
+
+    @JRubyMethod(name = "replace", required = 1)
     public RubyString replace19(IRubyObject other) {
         modifyCheck();
         if (this == other) return this;

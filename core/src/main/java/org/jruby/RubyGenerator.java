@@ -79,7 +79,7 @@ public class RubyGenerator extends RubyObject {
     }
 
     // generator_init_copy
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
         if (!(other instanceof RubyGenerator)) {
             throw context.runtime.newTypeError(other, context.runtime.getGenerator());
