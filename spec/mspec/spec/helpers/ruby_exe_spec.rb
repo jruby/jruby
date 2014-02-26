@@ -47,6 +47,11 @@ describe "#ruby_exe_options" do
     @script.ruby_exe_options(:engine).should == 'maglev-ruby'
   end
 
+  it "returns 'topaz' when passed :engine and RUBY_NAME is 'topaz'" do
+    Object.const_set :RUBY_NAME, 'topaz'
+    @script.ruby_exe_options(:engine).should == 'topaz'
+  end
+
   it "returns RUBY_NAME + $(EXEEXT) when passed :name" do
     bin = RUBY_NAME + (RbConfig::CONFIG['EXEEXT'] || RbConfig::CONFIG['exeext'] || '')
     name = File.join ".", bin

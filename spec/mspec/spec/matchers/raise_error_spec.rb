@@ -51,6 +51,14 @@ describe RaiseErrorMatcher do
       ["Expected ExpectedException (expected)", "but got UnexpectedException (unexpected)"]
   end
 
+  it "provides a useful failure message when no exception is raised" do
+    proc = Proc.new { 120 }
+    matcher = RaiseErrorMatcher.new(ExpectedException, "expected")
+    matcher.matches?(proc)
+    matcher.failure_message.should ==
+      ["Expected ExpectedException (expected)", "but no exception was raised (120 was returned)"]
+  end
+
   it "provides a useful negative failure message" do
     proc = Proc.new { raise ExpectedException, "expected" }
     matcher = RaiseErrorMatcher.new(ExpectedException, "expected")

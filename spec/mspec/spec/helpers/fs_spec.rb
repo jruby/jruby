@@ -113,7 +113,7 @@ describe Object, "#rm_r" do
   end
 
   after :each do
-    File.delete @link if File.exists? @link
+    File.delete @link if File.exists? @link or File.symlink? @link
     File.delete @socket if File.exists? @socket
     File.delete @subfile if File.exists? @subfile
     File.delete @topfile if File.exists? @topfile
@@ -139,10 +139,27 @@ describe Object, "#rm_r" do
   end
 
   platform_is_not :windows do
-    it "removes a symlink" do
+    it "removes a symlink to a file" do
       File.symlink @topfile, @link
       rm_r @link
       File.exists?(@link).should be_false
+    end
+
+    it "removes a symlink to a directory" do
+      File.symlink @subdir1, @link
+      rm_r @link
+      lambda do
+        File.lstat(@link)
+      end.should raise_error(Errno::ENOENT)
+      File.exists?(@subdir1).should be_true
+    end
+
+    it "removes a dangling symlink" do
+      File.symlink "non_existent_file", @link
+      rm_r @link
+      lambda do
+        File.lstat(@link)
+      end.should raise_error(Errno::ENOENT)
     end
 
     it "removes a socket" do

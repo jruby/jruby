@@ -215,8 +215,12 @@ class MSpecOptions
         config[:target] = 'ruby1.9'
       when 'x', 'rubinius'
         config[:target] = './bin/rbx'
+      when 'x18', 'rubinius18'
+        config[:target] = './bin/rbx -X18'
       when 'x19', 'rubinius19'
         config[:target] = './bin/rbx -X19'
+      when 'x20', 'rubinius20'
+        config[:target] = './bin/rbx -X20'
       when 'X', 'rbx'
         config[:target] = 'rbx'
       when 'j', 'jruby'
@@ -225,20 +229,26 @@ class MSpecOptions
         config[:target] = 'ir'
       when 'm','maglev'
         config[:target] = 'maglev-ruby'
+      when 't','topaz'
+        config[:target] = 'topaz'
       else
         config[:target] = t
       end
     end
 
     doc ""
-    doc "     r or ruby        invokes ruby in PATH"
-    doc "     r19, ruby19      invokes ruby1.9 in PATH"
-    doc "     x or rubinius    invokes ./bin/rbx"
-    doc "     X or rbx         invokes rbx in PATH"
-    doc "     j or jruby       invokes jruby in PATH"
-    doc "     i or ironruby    invokes ir in PATH"
-    doc "     m or maglev      invokes maglev-ruby in PATH"
-    doc "     full path to EXE invokes EXE directly\n"
+    doc "     r or ruby         invokes ruby in PATH"
+    doc "     r19, ruby19       invokes ruby1.9 in PATH"
+    doc "     x or rubinius     invokes ./bin/rbx"
+    doc "     x18 or rubinius18 invokes ./bin/rbx -X18"
+    doc "     x19 or rubinius19 invokes ./bin/rbx -X19"
+    doc "     x20 or rubinius20 invokes ./bin/rbx -X20"
+    doc "     X or rbx          invokes rbx in PATH"
+    doc "     j or jruby        invokes jruby in PATH"
+    doc "     i or ironruby     invokes ir in PATH"
+    doc "     m or maglev       invokes maglev-ruby in PATH"
+    doc "     t or topaz       invokes topaz in PATH"
+    doc "     full path to EXE  invokes EXE directly\n"
 
     on("-T", "--target-opt", "OPT",
        "Pass OPT as a flag to the target implementation") do |t|

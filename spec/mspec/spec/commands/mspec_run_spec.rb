@@ -118,16 +118,19 @@ describe MSpecRun, "#options" do
     @script.options @argv
   end
 
-  it "enables the debug option" do
-    @options.should_receive(:debug)
-    @script.options @argv
-  end
-
-  it "exits if there are no files to process" do
+  it "exits if there are no files to process and './spec' is not a directory" do
+    File.should_receive(:directory?).with("./spec").and_return(false)
     @options.should_receive(:parse).and_return([])
     @script.should_receive(:exit)
     @script.options
     $stdout.should =~ /No files specified/
+  end
+
+  it "process 'spec/' if it is a directory and no files were specified" do
+    File.should_receive(:directory?).with("./spec").and_return(true)
+    @options.should_receive(:parse).and_return([])
+    @script.should_receive(:files).with(["spec/"])
+    @script.options
   end
 
   it "calls #custom_options" do

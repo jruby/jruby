@@ -50,7 +50,7 @@ describe Object, "#new_fd" do
   end
 
   after :each do
-    @io.close unless @io.closed?
+    @io.close if @io and not @io.closed?
     rm_r @name
   end
 
@@ -63,6 +63,23 @@ describe Object, "#new_fd" do
     @io.print "io data"
 
     IO.read(@name).should == "io data"
+  end
+
+  it "accepts an options Hash" do
+    FeatureGuard.stub!(:enabled?).and_return(true)
+    fd = new_fd @name, { :mode => 'w:utf-8' }
+    fd.should be_an_instance_of(Fixnum)
+
+    @io = IO.new fd, fmode('w:utf-8')
+    @io.sync = true
+    @io.print "io data"
+
+    IO.read(@name).should == "io data"
+  end
+
+  it "raises an ArgumentError if the options Hash does not include :mode" do
+    FeatureGuard.stub!(:enabled?).and_return(true)
+    lambda { new_fd @name, { :encoding => "utf-8" } }.should raise_error(ArgumentError)
   end
 end
 
@@ -94,5 +111,58 @@ describe Object, "#new_io" do
 
     @io.print "io data"
     IO.read(@name).should == "io data"
+  end
+
+  it "opens the IO for reading if passed { :mode => 'r' }" do
+    touch(@name) { |f| f.print "io data" }
+    @io = new_io @name, { :mode => "r" }
+    @io.read.should == "io data"
+    lambda { @io.puts "more data" }.should raise_error(IOError)
+  end
+
+  it "opens the IO for writing if passed { :mode => 'w' }" do
+    @io = new_io @name, { :mode => "w" }
+    @io.sync = true
+
+    @io.print "io data"
+    IO.read(@name).should == "io data"
+  end
+end
+
+describe Object, "#fmode" do
+  it "returns the argument unmodified if :encoding feature is enabled" do
+    FeatureGuard.should_receive(:enabled?).with(:encoding).and_return(true)
+    fmode("rb:binary:utf-8").should == "rb:binary:utf-8"
+  end
+
+  it "returns only the file access mode if :encoding feature is not enabled" do
+    FeatureGuard.should_receive(:enabled?).with(:encoding).and_return(false)
+    fmode("rb:binary:utf-8").should == "rb"
+  end
+end
+
+describe Object, "#options_or_mode" do
+  describe "if passed a Hash" do
+    it "returns a mode string if :encoding feature is not enabled" do
+      FeatureGuard.should_receive(:enabled?).with(:encoding).twice.and_return(false)
+      options_or_mode(:mode => "rb:binary").should == "rb"
+    end
+
+    it "returns a Hash if :encoding feature is enabled" do
+      FeatureGuard.should_receive(:enabled?).with(:encoding).and_return(true)
+      options_or_mode(:mode => "rb:utf-8").should == { :mode => "rb:utf-8" }
+    end
+  end
+
+  describe "if passed a String" do
+    it "returns only the file access mode if :encoding feature is not enabled" do
+      FeatureGuard.should_receive(:enabled?).with(:encoding).and_return(false)
+      options_or_mode("rb:binary:utf-8").should == "rb"
+    end
+
+    it "returns the argument unmodified if :encoding feature is enabled" do
+      FeatureGuard.should_receive(:enabled?).with(:encoding).and_return(true)
+      options_or_mode("rb:binary:utf-8").should == "rb:binary:utf-8"
+    end
   end
 end

@@ -43,12 +43,12 @@ module Mock
     stubs.delete key
   end
 
-  def self.mock_respond_to?(obj, sym)
+  def self.mock_respond_to?(obj, sym, include_private = false)
     name = replaced_name(obj, :respond_to?)
     if replaced? name
-      obj.__send__ name, sym
+      obj.__send__ name, sym, include_private
     else
-      obj.respond_to? sym
+      obj.respond_to? sym, include_private
     end
   end
 
@@ -58,7 +58,7 @@ module Mock
     key = replaced_key obj, sym
     sym = sym.to_sym
 
-    if (sym == :respond_to? or mock_respond_to?(obj, sym)) and !replaced?(key.first)
+    if (sym == :respond_to? or mock_respond_to?(obj, sym, true)) and !replaced?(key.first)
       meta.__send__ :alias_method, key.first, sym
     end
 
@@ -186,7 +186,7 @@ module Mock
       sym = key.last
       meta = obj.singleton_class
 
-      if mock_respond_to? obj, replaced
+      if mock_respond_to? obj, replaced, true
         meta.__send__ :alias_method, sym, replaced
         meta.__send__ :remove_method, replaced
       else

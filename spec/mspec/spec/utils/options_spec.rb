@@ -604,6 +604,16 @@ describe "The -t, --target TARGET option" do
     end
   end
 
+  it "sets the target to 'topaz' with TARGET 't' or 'topaz'" do
+    ["-t", "--target"].each do |opt|
+      ["t", "topaz"].each do |t|
+        @config[:target] = nil
+        @options.parse [opt, t]
+        @config[:target].should == "topaz"
+      end
+    end
+  end
+
   it "sets the target to TARGET" do
     ["-t", "--target"].each do |opt|
       @config[:target] = nil
@@ -1296,28 +1306,6 @@ describe "The -S, --action-string STR option" do
       @options.parse [opt, "action-str"]
       @config[:astrings].should include("action-str")
     end
-  end
-end
-
-describe "The --spec-debug option" do
-  before :each do
-    @options, @config = new_option
-    @options.actions
-  end
-
-  it "is enabled with #actions" do
-    @options.stub!(:on)
-    @options.should_receive(:on).with("--spec-debug", an_instance_of(String))
-    @options.actions
-  end
-
-  it "enables the triggering the ruby debugger" do
-    @options.action_filters
-    @options.parse ["-S", "some spec"]
-
-    @config[:debugger] = nil
-    @options.parse "--spec-debug"
-    @config[:debugger].should == true
   end
 end
 
