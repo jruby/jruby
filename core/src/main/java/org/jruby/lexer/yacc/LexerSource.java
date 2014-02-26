@@ -228,7 +228,7 @@ public abstract class LexerSource {
 
         for (count = 1; count < 6; count++) {
             int c = read();
-            if (c == RubyYaccLexer.EOF) break; // Maybe we have enough bytes read to mbc at EOF.
+            if (c == RubyLexer.EOF) break; // Maybe we have enough bytes read to mbc at EOF.
             value[count] = (byte) c;
         }
 

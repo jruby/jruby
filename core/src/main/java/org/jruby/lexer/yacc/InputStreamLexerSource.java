@@ -31,7 +31,7 @@ public class InputStreamLexerSource extends LexerSource {
      * Create our food-source for the lexer
      * 
      * @param sourceName is the file we are reading
-     * @param reader is what represents the contents of file sourceName
+     * @param in is what represents the contents of file sourceName
      * @param line starting line number for source (used by eval)
      * @param extraPositionInformation will gives us extra information that an IDE may want
      */
@@ -56,7 +56,7 @@ public class InputStreamLexerSource extends LexerSource {
         } else {
             c = wrappedRead();
             
-            if (c == -1) return RubyYaccLexer.EOF;
+            if (c == -1) return RubyLexer.EOF;
         }
         
         advance(c);
@@ -70,11 +70,11 @@ public class InputStreamLexerSource extends LexerSource {
      * Pushes char back onto this source.  Note, this also
      * allows us to push whatever is passes back into the source.
      * 
-     * @param  to be put back onto the source
+     * @param c to be put back onto the source
      */
     @Override
     public void unread(int c) {
-        if (c == RubyYaccLexer.EOF) return;
+        if (c == RubyLexer.EOF) return;
         
         retreat();
             
@@ -162,7 +162,7 @@ public class InputStreamLexerSource extends LexerSource {
     public ByteList readLineBytes() throws IOException {
         ByteList bytelist = new ByteList(80);
 
-        for (int c = read(); c != '\n' && c != RubyYaccLexer.EOF; c = read()) {
+        for (int c = read(); c != '\n' && c != RubyLexer.EOF; c = read()) {
             bytelist.append(c);
         }
         
@@ -172,7 +172,7 @@ public class InputStreamLexerSource extends LexerSource {
     @Override
     public int skipUntil(int marker) throws IOException {
         int c;
-        for (c = read(); c != marker && c != RubyYaccLexer.EOF; c = read()) {}
+        for (c = read(); c != marker && c != RubyLexer.EOF; c = read()) {}
         return c;
     }
 
@@ -200,7 +200,7 @@ public class InputStreamLexerSource extends LexerSource {
 
     private void indentLoop(ByteList buffer) throws IOException {
         int c;
-        while ((c = read()) != RubyYaccLexer.EOF) {
+        while ((c = read()) != RubyLexer.EOF) {
             if (!Character.isWhitespace(c) || c == '\n') {
                 unread(c);
                 break;
@@ -229,7 +229,7 @@ public class InputStreamLexerSource extends LexerSource {
         }
         int c = read();
 
-        if (c == RubyYaccLexer.EOF || c == '\n') {
+        if (c == RubyLexer.EOF || c == '\n') {
             return true;
         }
         buffer.append(c);
@@ -306,11 +306,11 @@ public class InputStreamLexerSource extends LexerSource {
         ByteList list = new ByteList(20);
         int c;
         
-        for (c = read(); c != marker && c != RubyYaccLexer.EOF; c = read()) {
+        for (c = read(); c != marker && c != RubyLexer.EOF; c = read()) {
             list.append(c);
         }
         
-        if (c == RubyYaccLexer.EOF) return null;
+        if (c == RubyLexer.EOF) return null;
         
         unread(c);
         

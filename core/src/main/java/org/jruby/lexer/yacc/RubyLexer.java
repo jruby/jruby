@@ -69,7 +69,7 @@ import org.jruby.util.StringSupport;
 
 /** This is a port of the MRI lexer to Java it is compatible to Ruby 1.8.1.
  */
-public class RubyYaccLexer {
+public class RubyLexer {
     public static final Encoding UTF8_ENCODING = UTF8Encoding.INSTANCE;
     public static final Encoding USASCII_ENCODING = USASCIIEncoding.INSTANCE;
     public static final Encoding ASCII8BIT_ENCODING = ASCIIEncoding.INSTANCE;
@@ -353,7 +353,7 @@ public class RubyYaccLexer {
         leftParenBegin = value;
     }
 
-    public RubyYaccLexer() {
+    public RubyLexer() {
         reset();
     }
     
@@ -599,13 +599,13 @@ public class RubyYaccLexer {
         Encoding bufferEncoding = buffer.getEncoding();
         int codeRange = StringSupport.codeRangeScan(bufferEncoding, buffer);
 
-        if ((flags & RubyYaccLexer.STR_FUNC_REGEXP) == 0 && bufferEncoding.isAsciiCompatible()) {
+        if ((flags & RubyLexer.STR_FUNC_REGEXP) == 0 && bufferEncoding.isAsciiCompatible()) {
             // If we have characters outside 7-bit range and we are still ascii then change to ascii-8bit
             if (codeRange == StringSupport.CR_7BIT) {
                 // Do nothing like MRI
-            } else if (getEncoding() == RubyYaccLexer.USASCII_ENCODING &&
-                    bufferEncoding != RubyYaccLexer.UTF8_ENCODING) {
-                codeRange = ParserSupport.associateEncoding(buffer, RubyYaccLexer.ASCII8BIT_ENCODING, codeRange);
+            } else if (getEncoding() == RubyLexer.USASCII_ENCODING &&
+                    bufferEncoding != RubyLexer.UTF8_ENCODING) {
+                codeRange = ParserSupport.associateEncoding(buffer, RubyLexer.ASCII8BIT_ENCODING, codeRange);
             }
         }
 

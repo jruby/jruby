@@ -31,7 +31,7 @@ public class ByteArrayLexerSource extends LexerSource {
         int matchPos = 0;
         if (indent) {
             for (int c = readCursor.at(matchPos);
-                 c != RubyYaccLexer.EOF && Character.isWhitespace(c) && c != '\n';
+                 c != RubyLexer.EOF && Character.isWhitespace(c) && c != '\n';
                  c = readCursor.at(++matchPos));
         }
         for (int i = 0; i < marker.length(); i++) {
@@ -46,7 +46,7 @@ public class ByteArrayLexerSource extends LexerSource {
                 // skip
                 c = readCursor.at(matchPos);
             }
-            if (c != '\n' && c != RubyYaccLexer.EOF) {
+            if (c != '\n' && c != RubyLexer.EOF) {
                 return false;
             }
         }
@@ -69,11 +69,11 @@ public class ByteArrayLexerSource extends LexerSource {
     private ByteList readUntil(char marker, boolean nullIfEnd) throws IOException {
         ByteList result = new ByteList(128);
         int c;
-        while ((c = readCursor.read()) != marker && c != RubyYaccLexer.EOF) {
+        while ((c = readCursor.read()) != marker && c != RubyLexer.EOF) {
             result.append(c);
         }
 
-        if (nullIfEnd && c == RubyYaccLexer.EOF) {
+        if (nullIfEnd && c == RubyLexer.EOF) {
             return null;
         }
 
@@ -90,13 +90,13 @@ public class ByteArrayLexerSource extends LexerSource {
         int c;
         do {
             c = readCursor.read();
-        } while (c != marker && c != RubyYaccLexer.EOF);
+        } while (c != marker && c != RubyLexer.EOF);
         return c;
     }
 
     @Override
     public void unread(int c) {
-        if (c == RubyYaccLexer.EOF) {
+        if (c == RubyLexer.EOF) {
             return;
         }
         if (captureSource) {
@@ -120,25 +120,25 @@ public class ByteArrayLexerSource extends LexerSource {
     @Override
     public boolean lastWasBeginOfLine() {
         int c = readCursor.at(-1);
-        return c == '\n' || c == RubyYaccLexer.EOF;
+        return c == '\n' || c == RubyLexer.EOF;
     }
 
     @Override
     public boolean wasBeginOfLine() {
         final int c = readCursor.at(-2);
-        return c == '\n' || (c == RubyYaccLexer.EOF && c != readCursor.at(-1));
+        return c == '\n' || (c == RubyLexer.EOF && c != readCursor.at(-1));
     }
 
     @Override
     public String getCurrentLine() {
         int lineOffset = 0;
         int c;
-        while ((c = readCursor.at(lineOffset - 1)) != '\n' && c != RubyYaccLexer.EOF) {
+        while ((c = readCursor.at(lineOffset - 1)) != '\n' && c != RubyLexer.EOF) {
             lineOffset--;
         }
         String ptr = makePointer(-(lineOffset + 1));
         StringBuilder lineBuilder = new StringBuilder();
-        for (c = readCursor.at(lineOffset); c != '\n' && c != RubyYaccLexer.EOF; c = readCursor.at(++lineOffset)) {
+        for (c = readCursor.at(lineOffset); c != '\n' && c != RubyLexer.EOF; c = readCursor.at(++lineOffset)) {
             lineBuilder.append((char) c);
         }
         lineBuilder.append('\n').append(ptr);
@@ -149,14 +149,14 @@ public class ByteArrayLexerSource extends LexerSource {
     public InputStream getRemainingAsStream() {
         ByteList buf = new ByteList(128);
         int c;
-        while ((c = read()) != RubyYaccLexer.EOF) {
+        while ((c = read()) != RubyLexer.EOF) {
             buf.append(c);
         }
         return new ByteArrayInputStream(buf.getUnsafeBytes(), 0, buf.length());
     }
 
     private int forward(int c) {
-        if (c != RubyYaccLexer.EOF) {
+        if (c != RubyLexer.EOF) {
             offset++;
             switch (c) {
                 case '\n':
@@ -213,7 +213,7 @@ public class ByteArrayLexerSource extends LexerSource {
         }
         public int read() {
             if (index >= region.length) {
-                return forward(RubyYaccLexer.EOF);
+                return forward(RubyLexer.EOF);
             }
             return 0xff & forward(region[index++]);
         }
@@ -229,7 +229,7 @@ public class ByteArrayLexerSource extends LexerSource {
         public int at(int offset) {
             int location = index + offset;
             if (location >= region.length || location < 0) {
-                return RubyYaccLexer.EOF;
+                return RubyLexer.EOF;
             }
             return 0xff & region[location];
         }

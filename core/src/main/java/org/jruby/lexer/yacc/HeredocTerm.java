@@ -65,10 +65,10 @@ public class HeredocTerm extends StrTerm {
         this.lastLine = lastLine;
     }
     
-    public int parseString(RubyYaccLexer lexer, LexerSource src) throws java.io.IOException {
-        boolean indent = (flags & RubyYaccLexer.STR_FUNC_INDENT) != 0;
+    public int parseString(RubyLexer lexer, LexerSource src) throws java.io.IOException {
+        boolean indent = (flags & RubyLexer.STR_FUNC_INDENT) != 0;
 
-        if (src.peek(RubyYaccLexer.EOF)) syntaxError(src);
+        if (src.peek(RubyLexer.EOF)) syntaxError(src);
 
         // Found end marker for this heredoc
         if (src.lastWasBeginOfLine() && src.matchMarker(marker, indent, true)) {
@@ -85,11 +85,11 @@ public class HeredocTerm extends StrTerm {
         str.setEncoding(lexer.getEncoding());
         ISourcePosition position;
         
-        if ((flags & RubyYaccLexer.STR_FUNC_EXPAND) == 0) {
+        if ((flags & RubyLexer.STR_FUNC_EXPAND) == 0) {
             do {
                 str.append(src.readLineBytes());
                 str.append('\n');
-                if (src.peek(RubyYaccLexer.EOF)) syntaxError(src);
+                if (src.peek(RubyLexer.EOF)) syntaxError(src);
                 position = lexer.getPosition();
             } while (!src.matchMarker(marker, indent, true));
         } else {
@@ -114,7 +114,7 @@ public class HeredocTerm extends StrTerm {
             // more strange in
             // comparison
             do {
-                if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, src, str)) == RubyYaccLexer.EOF) {
+                if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, src, str)) == RubyLexer.EOF) {
                     syntaxError(src);
                 }
                 if (c != '\n') {
@@ -123,7 +123,7 @@ public class HeredocTerm extends StrTerm {
                 }
                 str.append(src.read());
                 
-                if (src.peek(RubyYaccLexer.EOF)) syntaxError(src);
+                if (src.peek(RubyLexer.EOF)) syntaxError(src);
                 position = lexer.getPosition();
             } while (!src.matchMarker(marker, indent, true));
         }

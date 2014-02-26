@@ -1,6 +1,6 @@
 package org.jruby.lexer.yacc;
 
-import org.jruby.lexer.yacc.RubyYaccLexer.Keyword;
+import org.jruby.lexer.yacc.RubyLexer.Keyword;
 
 public class KeywordMatch {
     public static Keyword match(byte[] words) {

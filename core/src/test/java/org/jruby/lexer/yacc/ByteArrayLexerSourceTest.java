@@ -114,7 +114,7 @@ public class ByteArrayLexerSourceTest extends TestCase {
 
     public void testSkipUntilNonExistentMarkerShouldReturnEOF() throws IOException {
         final LexerSource src = newSource("abcd\n1234");
-        assertEquals(RubyYaccLexer.EOF, src.skipUntil('z'));
+        assertEquals(RubyLexer.EOF, src.skipUntil('z'));
     }
 
     public void testMatchMarkerShouldMatchAStringInTheInput() throws IOException {
@@ -200,7 +200,7 @@ public class ByteArrayLexerSourceTest extends TestCase {
     @SuppressWarnings("empty-statement")
     public void testLinesAndOffsetsAreReported() throws IOException {
         LexerSource src = newSource("a\nb\nc\nd\n");
-        while (src.read() != RubyYaccLexer.EOF);
+        while (src.read() != RubyLexer.EOF);
         assertEquals(4, src.getLine());
         assertEquals(8, src.getOffset());
     }
@@ -217,7 +217,7 @@ public class ByteArrayLexerSourceTest extends TestCase {
     public void testCaptureLines() throws IOException {
         List<String> lines = new ArrayList<String>();
         LexerSource src = newSource("111111\n222222\n333333", lines);
-        while (src.read() != RubyYaccLexer.EOF);
+        while (src.read() != RubyLexer.EOF);
         assertEquals(3, lines.size());
         assertEquals("111111\n", lines.get(0));
         assertEquals("222222\n", lines.get(1));
@@ -227,7 +227,7 @@ public class ByteArrayLexerSourceTest extends TestCase {
     public void testCaptureLinesWithCarriageReturn() throws IOException {
         List<String> lines = new ArrayList<String>();
         LexerSource src = newSource("1\r\n2\r\n3", lines);
-        while (src.read() != RubyYaccLexer.EOF);
+        while (src.read() != RubyLexer.EOF);
         assertEquals(3, lines.size());
         assertEquals("1\r\n", lines.get(0));
         assertEquals("2\r\n", lines.get(1));
@@ -284,7 +284,7 @@ public class ByteArrayLexerSourceTest extends TestCase {
         for (int i = 0; i < expected.length(); i++) {
             try {
                 int c = src.read();
-                if (c == RubyYaccLexer.EOF) {
+                if (c == RubyLexer.EOF) {
                     break;
                 }
                 actual.append(c);

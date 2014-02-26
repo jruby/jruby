@@ -104,7 +104,7 @@ t
 .      @param yydebug debug message writer implementing <tt>yyDebug</tt>, or <tt>null</tt>.
 .      @return result of the last reduction, if any.
 .    */
-.  public Object yyparse (RubyYaccLexer yyLex, Object ayydebug)
+.  public Object yyparse (RubyLexer yyLex, Object ayydebug)
 .				throws java.io.IOException {
 t    this.yydebug = (org.jruby.parser.YYDebug) ayydebug;
 .    return yyparse(yyLex);
@@ -131,7 +131,7 @@ t    this.yydebug = (org.jruby.parser.YYDebug) ayydebug;
 .      @param yyLex scanner.
 .      @return result of the last reduction, if any.
 .    */
-.  public Object yyparse (RubyYaccLexer yyLex) throws java.io.IOException {
+.  public Object yyparse (RubyLexer yyLex) throws java.io.IOException {
 .    if (yyMax <= 0) yyMax = 256;			// initial size
 .    int yyState = 0, yyStates[] = new int[yyMax];	// state stack
 .    Object yyVal = null, yyVals[] = new Object[yyMax];	// value stack

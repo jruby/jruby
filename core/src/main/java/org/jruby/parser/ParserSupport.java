@@ -48,7 +48,7 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
-import org.jruby.lexer.yacc.RubyYaccLexer;
+import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.lexer.yacc.SyntaxException.PID;
@@ -65,7 +65,7 @@ public class ParserSupport {
     // Parser states:
     protected StaticScope currentScope;
 
-    protected RubyYaccLexer lexer;
+    protected RubyLexer lexer;
     
     // Is the parser current within a singleton (value is number of nested singletons)
     private int inSingleton;
@@ -1148,7 +1148,7 @@ public class ParserSupport {
         this.warnings = warnings;
     }
 
-    public void setLexer(RubyYaccLexer lexer) {
+    public void setLexer(RubyLexer lexer) {
         this.lexer = lexer;
     }
 
@@ -1527,7 +1527,7 @@ public class ParserSupport {
         for (int i = 0; i < length; i++) {
             // TODO: Pass by non-local-varnamed things but make sure consistent with list we get from regexp
             
-            if (RubyYaccLexer.getKeyword(names[i]) == null) {
+            if (RubyLexer.getKeyword(names[i]) == null) {
                 int slot = scope.isDefined(names[i]);
                 if (slot >= 0) {
                     locals.add(slot);
@@ -1546,10 +1546,10 @@ public class ParserSupport {
 
     // TODO: Put somewhere more consolidated (similiar
     private char optionsEncodingChar(Encoding optionEncoding) {
-        if (optionEncoding == RubyYaccLexer.USASCII_ENCODING) return 'n';
+        if (optionEncoding == RubyLexer.USASCII_ENCODING) return 'n';
         if (optionEncoding == org.jcodings.specific.EUCJPEncoding.INSTANCE) return 'e';
         if (optionEncoding == org.jcodings.specific.SJISEncoding.INSTANCE) return 's';
-        if (optionEncoding == RubyYaccLexer.UTF8_ENCODING) return 'u';
+        if (optionEncoding == RubyLexer.UTF8_ENCODING) return 'u';
 
         return ' ';
     }
@@ -1573,15 +1573,15 @@ public class ParserSupport {
 
             value.setEncoding(optionsEncoding);
         } else if (options.isEncodingNone()) {
-            if (value.getEncoding() == RubyYaccLexer.ASCII8BIT_ENCODING && !is7BitASCII(value)) {
+            if (value.getEncoding() == RubyLexer.ASCII8BIT_ENCODING && !is7BitASCII(value)) {
                 compileError(optionsEncoding, value.getEncoding());
             }
-            value.setEncoding(RubyYaccLexer.ASCII8BIT_ENCODING);
-        } else if (lexer.getEncoding() == RubyYaccLexer.USASCII_ENCODING) {
+            value.setEncoding(RubyLexer.ASCII8BIT_ENCODING);
+        } else if (lexer.getEncoding() == RubyLexer.USASCII_ENCODING) {
             if (!is7BitASCII(value)) {
-                value.setEncoding(RubyYaccLexer.USASCII_ENCODING); // This will raise later
+                value.setEncoding(RubyLexer.USASCII_ENCODING); // This will raise later
             } else {
-                value.setEncoding(RubyYaccLexer.ASCII8BIT_ENCODING);
+                value.setEncoding(RubyLexer.ASCII8BIT_ENCODING);
             }
         }
     }    

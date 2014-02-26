@@ -107,8 +107,8 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.yacc.LexerSource;
-import org.jruby.lexer.yacc.RubyYaccLexer;
-import org.jruby.lexer.yacc.RubyYaccLexer.LexState;
+import org.jruby.lexer.yacc.RubyLexer;
+import org.jruby.lexer.yacc.RubyLexer.LexState;
 import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
@@ -117,7 +117,7 @@ import org.jruby.util.ByteList;
 
 public class RubyParser {
     protected ParserSupport support;
-    protected RubyYaccLexer lexer;
+    protected RubyLexer lexer;
 
     public RubyParser() {
         this(new ParserSupport());
@@ -125,7 +125,7 @@ public class RubyParser {
 
     public RubyParser(ParserSupport support) {
         this.support = support;
-        lexer = new RubyYaccLexer();
+        lexer = new RubyLexer();
         lexer.setParserSupport(support);
         support.setLexer(lexer);
     }
