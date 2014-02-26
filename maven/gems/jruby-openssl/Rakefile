@@ -1,7 +1,13 @@
 #-*- mode: ruby -*-
 
 require 'maven/ruby/tasks'
+require 'jar_installer'
 
 # the actual build configuration is inside the Mavenfile
 
 task :default => :build
+
+# overwrite empty tasks
+task :maven do
+  JarInstaller.install_jars
+end

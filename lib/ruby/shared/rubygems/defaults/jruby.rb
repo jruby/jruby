@@ -1,11 +1,16 @@
 require 'rubygems/config_file'
 require 'rbconfig'
 require 'jruby/util'
+require 'jar_installer'
 
 module Gem
 
   ConfigFile::PLATFORM_DEFAULTS['install'] = '--no-rdoc --no-ri --env-shebang'
   ConfigFile::PLATFORM_DEFAULTS['update']  = '--no-rdoc --no-ri --env-shebang'
+
+  post_install do |gem_installer|
+    ::JarInstaller.new( gem_installer.spec ).vendor_jars
+  end
 
   class << self
     alias_method :original_ruby, :ruby
