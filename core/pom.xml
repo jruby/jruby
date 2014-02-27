@@ -215,7 +215,7 @@
     <build.date>${maven.build.timestamp}</build.date>
     <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
     <jruby.compile.memory>2G</jruby.compile.memory>
-    <jruby.test.memory>2G</jruby.test.memory>
+    <jruby.test.memory>3G</jruby.test.memory>
     <jruby.test.memory.permgen>2G</jruby.test.memory.permgen>
     <maven.test.skip>true</maven.test.skip>
     <jruby.basedir>${basedir}/..</jruby.basedir>
@@ -479,7 +479,7 @@
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <forkCount>1C</forkCount>
+          <forkCount>1</forkCount>
           <reuseForks>false</reuseForks>
           <systemProperties>
             <jruby.compat.version>1.9</jruby.compat.version>
