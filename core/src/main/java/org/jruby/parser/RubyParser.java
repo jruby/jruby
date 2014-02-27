@@ -85,6 +85,7 @@ import org.jruby.ast.PreExe19Node;
 import org.jruby.ast.RationalNode;
 import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
+import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.RescueBodyNode;
 import org.jruby.ast.RescueNode;
 import org.jruby.ast.RestArgNode;
@@ -137,7 +138,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 141 "-"
+					// line 142 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -2448,7 +2449,7 @@ states[343] = new ParserState() {
 };
 states[540] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.keyword_arg(((Token)yyVals[0+yyTop]).getPosition(), support.assignable(((Token)yyVals[0+yyTop]), null));
+                    yyVal = support.keyword_arg(((Token)yyVals[0+yyTop]).getPosition(), support.assignable(((Token)yyVals[0+yyTop]), new RequiredKeywordArgumentValueNode()));
     return yyVal;
   }
 };
@@ -4667,7 +4668,7 @@ states[523] = new ParserState() {
   }
 };
 }
-					// line 2238 "RubyParser.y"
+					// line 2239 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4686,4 +4687,4 @@ states[523] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 8693 "-"
+					// line 8694 "-"

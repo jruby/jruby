@@ -111,6 +111,7 @@ import org.jruby.ast.PreExeNode;
 import org.jruby.ast.RationalNode;
 import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
+import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.RescueBodyNode;
 import org.jruby.ast.RescueNode;
 import org.jruby.ast.RestArgNode;
@@ -141,8 +142,7 @@ import org.jruby.ast.ZSuperNode;
  * Visitor interface to be implemented by visitors of the jRuby AST.
  * each node will call the visit method appropriate to its type.
  * @see org.jruby.ast.Node
- * @see org.jruby.ast.visitor.AbstractVisitor
- * 
+  *
  * @author Benoit Cerrina
  **/
 public interface NodeVisitor {
@@ -226,6 +226,7 @@ public interface NodeVisitor {
     public Object visitRationalNode(RationalNode iVisited);
     public Object visitRedoNode(RedoNode iVisited);
     public Object visitRegexpNode(RegexpNode iVisited);
+    public Object visitRequiredKeywordArgumentValueNode(RequiredKeywordArgumentValueNode iVisited);
     public Object visitRescueBodyNode(RescueBodyNode iVisited);
     public Object visitRescueNode(RescueNode iVisited);
     public Object visitRestArgNode(RestArgNode iVisited);

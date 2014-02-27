@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.impl.DefaultSourceSection;
 import org.joni.Regex;
 import org.jruby.ast.MultipleAsgn19Node;
+import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.DefinedNode;
 import org.jruby.truffle.nodes.ReadNode;
@@ -1988,6 +1989,10 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     }
 
     public Object visitKeywordArgNode(org.jruby.ast.KeywordArgNode node) {
+        return unimplemented(node);
+    }
+
+    public Object visitRequiredKeywordArgumentValueNode(RequiredKeywordArgumentValueNode node) {
         return unimplemented(node);
     }
 

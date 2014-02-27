@@ -26,8 +26,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast.visitor;
 
-import java.util.HashSet;
-import java.util.Set;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
@@ -109,6 +107,7 @@ import org.jruby.ast.PreExeNode;
 import org.jruby.ast.RationalNode;
 import org.jruby.ast.RedoNode;
 import org.jruby.ast.RegexpNode;
+import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.RescueBodyNode;
 import org.jruby.ast.RescueNode;
 import org.jruby.ast.RestArgNode;
@@ -542,6 +541,11 @@ public class AbstractNodeVisitor implements NodeVisitor {
 
     @Override
     public Object visitRegexpNode(RegexpNode iVisited) {
+        return defaultVisit(iVisited);
+    }
+
+    @Override
+    public Object visitRequiredKeywordArgumentValueNode(RequiredKeywordArgumentValueNode iVisited) {
         return defaultVisit(iVisited);
     }
 
