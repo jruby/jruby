@@ -11,6 +11,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.io.IOException;
@@ -78,28 +79,28 @@ public class Addrinfo extends RubyObject {
         return port;
     }
 
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject _sockaddr) {
         initializeCommon(context.runtime, _sockaddr, null, null, null);
 
         return context.nil;
     }
 
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject _sockaddr, IRubyObject _family) {
         initializeCommon(context.runtime, _sockaddr, _family, null, null);
 
         return context.nil;
     }
 
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject _sockaddr, IRubyObject _family, IRubyObject _socktype) {
         initializeCommon(context.runtime, _sockaddr, _family, _socktype, null);
 
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, optional = 4)
+    @JRubyMethod(required = 1, optional = 4, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
             case 1: return initialize(context, args[0]);

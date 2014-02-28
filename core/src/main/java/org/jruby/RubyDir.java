@@ -57,6 +57,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 import org.jruby.util.Dir;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
@@ -130,7 +131,7 @@ public class RubyDir extends RubyObject {
      * <code>Dir</code> object returned, so a new <code>Dir</code> instance
      * must be created to reflect changes to the underlying file system.
      */
-    @JRubyMethod(compat = RUBY1_8)
+    @JRubyMethod(compat = RUBY1_8, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg) {
         RubyString newPath = arg.convertToString();
         path = newPath;
@@ -151,7 +152,7 @@ public class RubyDir extends RubyObject {
         return initialize19(getRuntime().getCurrentContext(), arg);
     }
 
-    @JRubyMethod(name = "initialize", compat = RUBY1_9)
+    @JRubyMethod(name = "initialize", compat = RUBY1_9, visibility = Visibility.PRIVATE)
     public IRubyObject initialize19(ThreadContext context, IRubyObject arg) {
         return initialize(context, RubyFile.get_path(context, arg));
     }

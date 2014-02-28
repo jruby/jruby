@@ -13,6 +13,7 @@ import org.jruby.javasupport.JavaClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -43,7 +44,7 @@ public class InterfaceJavaProxy extends JavaProxy {
     }
 
     public static class JavaInterfaceExtender {
-        @JRubyMethod
+        @JRubyMethod(visibility = Visibility.PRIVATE)
         public static IRubyObject initialize(ThreadContext context, IRubyObject self, IRubyObject javaClassName, Block block) {
             Ruby runtime = context.runtime;
             

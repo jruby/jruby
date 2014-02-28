@@ -34,6 +34,7 @@ import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -64,7 +65,7 @@ public class X509Revoked extends RubyObject {
         super(runtime,type);
     }
 
-    @JRubyMethod(name="initialize",rest=true)
+    @JRubyMethod(name="initialize",rest=true, visibility = Visibility.PRIVATE)
     public IRubyObject _initialize(IRubyObject[] args, Block unusedBlock) {
         serial = getRuntime().getNil();
         time = getRuntime().getNil();

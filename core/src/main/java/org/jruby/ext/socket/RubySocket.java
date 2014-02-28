@@ -49,6 +49,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
@@ -155,7 +156,7 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    @JRubyMethod(compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(compat = CompatVersion.RUBY1_8, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
         Ruby runtime = context.runtime;
 
@@ -168,7 +169,7 @@ public class RubySocket extends RubyBasicSocket {
         return this;
     }
 
-    @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_9, visibility = Visibility.PRIVATE)
     public IRubyObject initialize19(ThreadContext context, IRubyObject domain, IRubyObject type) {
         Ruby runtime = context.runtime;
 
@@ -181,7 +182,7 @@ public class RubySocket extends RubyBasicSocket {
         return this;
     }
 
-    @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "initialize", compat = CompatVersion.RUBY1_9, visibility = Visibility.PRIVATE)
     public IRubyObject initialize19(ThreadContext context, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
         Ruby runtime = context.runtime;
 

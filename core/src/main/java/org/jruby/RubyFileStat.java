@@ -230,7 +230,7 @@ public class RubyFileStat extends RubyObject {
         return getRuntime().newBoolean(stat.isGroupOwned());
     }
     
-    @JRubyMethod(name = "initialize_copy", required = 1)
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject original) {
         if (!(original instanceof RubyFileStat)) {
             throw getRuntime().newTypeError("wrong argument class");

@@ -1616,7 +1616,7 @@ public class RubyModule extends RubyObject {
     /** rb_mod_init_copy
      * 
      */
-    @JRubyMethod(name = "initialize_copy", required = 1)
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original) {
         super.initialize_copy(original);
@@ -3938,15 +3938,31 @@ public class RubyModule extends RubyObject {
 
     @Deprecated
     public void defineMethod(String name, org.jruby.runtime.callback.Callback method) {
-        Visibility visibility = name.equals("initialize") ?
-                PRIVATE : PUBLIC;
+        final Ruby runtime = getRuntime();
+        Visibility visibility = null;
+        if ("initialize".equals(name) || "initialize_copy".equals(name) || "method_missing".equals(name) || visibility == Visibility.MODULE_FUNCTION) {
+            visibility = Visibility.PRIVATE;
+        } else if (!runtime.is1_8() && "respond_to_missing?".equals(name)){
+            visibility = Visibility.PRIVATE;
+        } else if (runtime.is2_0() && ("initialize_clone".equals(name) || "initialize_dup".equals(name))) {
+            visibility = Visibility.PRIVATE;
+        }
+        
         addMethod(name, new org.jruby.internal.runtime.methods.FullFunctionCallbackMethod(this, method, visibility));
     }
 
     @Deprecated
     public void defineFastMethod(String name, org.jruby.runtime.callback.Callback method) {
-        Visibility visibility = name.equals("initialize") ?
-                PRIVATE : PUBLIC;
+        final Ruby runtime = getRuntime();
+        Visibility visibility = null;
+        if ("initialize".equals(name) || "initialize_copy".equals(name) || "method_missing".equals(name) || visibility == Visibility.MODULE_FUNCTION) {
+            visibility = Visibility.PRIVATE;
+        } else if (!runtime.is1_8() && "respond_to_missing?".equals(name)){
+            visibility = Visibility.PRIVATE;
+        } else if (runtime.is2_0() && ("initialize_clone".equals(name) || "initialize_dup".equals(name))) {
+            visibility = Visibility.PRIVATE;
+        }
+        
         addMethod(name, new org.jruby.internal.runtime.methods.SimpleCallbackMethod(this, method, visibility));
     }
 

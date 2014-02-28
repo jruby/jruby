@@ -247,17 +247,17 @@ public class RubyRipper extends RubyObject {
         super(runtime, klazz);
     }
     
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject src) {
         return initialize(context, src, null, null);
     }
 
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject src, IRubyObject file) {
         return initialize(context, src, file, null);
     }
     
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject src,IRubyObject file, IRubyObject line) {
         filename = filenameAsString(context, file);
         parser = new Ripper19Parser(context, this, source(context, src, filename.asJavaString(), lineAsInt(context, line)));

@@ -66,6 +66,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -179,7 +180,7 @@ public class PKeyRSA extends PKey {
         }
     }
 
-    @JRubyMethod(rest = true)
+    @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         IRubyObject arg;
         IRubyObject pass = null;

@@ -49,6 +49,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import static org.jruby.CompatVersion.*;
@@ -637,7 +638,7 @@ public class RubyMatchData extends RubyObject {
         return str; //str is frozen
     }
 
-    @JRubyMethod(name = "initialize_copy", required = 1)
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original) {
         if (this == original) return this;
