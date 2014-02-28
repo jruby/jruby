@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.methods.Visibility;
-import org.jruby.truffle.runtime.objects.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -219,12 +219,12 @@ public abstract class ObjectNodes {
 
         @Specialization
         public boolean isInstanceVariableDefined(RubyBasicObject object, RubyString name) {
-            return object.isInstanceVariableDefined(RubyObject.checkInstanceVariableName(getContext(), name.toString()));
+            return object.isFieldDefined(RubyObject.checkInstanceVariableName(getContext(), name.toString()));
         }
 
         @Specialization
         public boolean isInstanceVariableDefined(RubyBasicObject object, RubySymbol name) {
-            return object.isInstanceVariableDefined(RubyObject.checkInstanceVariableName(getContext(), name.toString()));
+            return object.isFieldDefined(RubyObject.checkInstanceVariableName(getContext(), name.toString()));
         }
 
     }
@@ -290,7 +290,7 @@ public abstract class ObjectNodes {
 
         @Specialization
         public RubyArray instanceVariables(RubyObject self) {
-            final String[] instanceVariableNames = self.getInstanceVariableNames();
+            final String[] instanceVariableNames = self.getFieldNames();
 
             Arrays.sort(instanceVariableNames);
 

@@ -16,7 +16,6 @@ import com.oracle.truffle.api.utilities.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.objects.*;
 
 /**
  * Represents a constant read from some object and cached, with the assumption that the object it

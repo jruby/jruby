@@ -18,7 +18,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.objects.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
  * A node that calls {@code #method_missing} because at the point of lookup no method was found. We have a full dispatch

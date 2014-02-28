@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.objects;
+package org.jruby.truffle.runtime.objectstorage;
 
 /**
  * A storage location that abstracts the method for reading and writing values.
@@ -20,11 +20,11 @@ public abstract class StorageLocation {
         this.objectLayout = objectLayout;
     }
 
-    public abstract boolean isSet(RubyBasicObject object);
+    public abstract boolean isSet(ObjectStorage object);
 
-    public abstract Object read(RubyBasicObject object, boolean condition);
+    public abstract Object read(ObjectStorage object, boolean condition);
 
-    public abstract void write(RubyBasicObject object, Object value) throws GeneralizeStorageLocationException;
+    public abstract void write(ObjectStorage object, Object value) throws GeneralizeStorageLocationException;
 
     public abstract Class getStoredClass();
 

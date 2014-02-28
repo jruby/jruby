@@ -18,7 +18,6 @@ import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.*;
 import org.jruby.truffle.runtime.methods.*;
-import org.jruby.truffle.runtime.objects.*;
 
 /**
  * Represents a super call - that is a call with self as the receiver, but the superclass of self

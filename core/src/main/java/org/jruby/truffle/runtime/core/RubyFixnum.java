@@ -11,8 +11,6 @@ package org.jruby.truffle.runtime.core;
 
 import java.math.*;
 
-import org.jruby.truffle.runtime.objects.*;
-
 /**
  * Represents the Ruby {@code Fixnum} class.
  */

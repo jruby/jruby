@@ -9,8 +9,6 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import org.jruby.truffle.runtime.objects.*;
-
 /**
  * Represents the Ruby {@code FalseClass} class.
  */

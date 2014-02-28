@@ -16,7 +16,6 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
-import org.jruby.truffle.runtime.objects.*;
 
 /**
  * A node in the dispatch chain that does no caching and looks up methods from scratch each time it

@@ -17,7 +17,7 @@ import org.jruby.truffle.runtime.core.GeneralConversions;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyObject;
-import org.jruby.truffle.runtime.objects.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.AbstractList;
 import java.util.List;

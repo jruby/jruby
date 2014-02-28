@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.Ruby;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.objects.RubyBasicObject;
 
 /**
  * Represents the Ruby {@code Object} class.
@@ -35,7 +34,7 @@ public class RubyObject extends RubyBasicObject {
 
     public Object dup() {
         final RubyObject newObject = new RubyObject(rubyClass);
-        newObject.setInstanceVariables(getInstanceVariables());
+        newObject.setInstanceVariables(getFields());
         return newObject;
     }
 

@@ -15,7 +15,6 @@ import junit.framework.TestSuite;
 import org.jruby.truffle.test.core.*;
 import org.jruby.truffle.test.debug.*;
 import org.jruby.truffle.test.language.*;
-import org.jruby.truffle.test.runtime.*;
 
 public class TruffleTestSuite extends TestSuite {
 
@@ -67,8 +66,6 @@ public class TruffleTestSuite extends TestSuite {
         suite.addTestSuite(SpecialVariableTests.class);
         suite.addTestSuite(UntilTests.class);
         suite.addTestSuite(WhileTests.class);
-
-        suite.addTestSuite(ObjectLayoutTests.class);
 
         return suite;
     }

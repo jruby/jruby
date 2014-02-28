@@ -2,7 +2,6 @@ package org.jruby.truffle.runtime.core;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
-import org.jruby.truffle.runtime.objects.RubyBasicObject;
 
 /**
  * This is a bridge between JRuby encoding and Truffle encoding
@@ -14,7 +13,7 @@ public class RubyEncoding extends RubyObject{
     /**
      * The class from which we create the object that is {@code Encoding}. A subclass of
      * {@link RubyClass} so that we can override {@link #newInstance} and allocate a
-     * {@link RubyEncoding} rather than a normal {@link org.jruby.truffle.runtime.objects.RubyBasicObject}.
+     * {@link RubyEncoding} rather than a normal {@link RubyBasicObject}.
      */
     public static class RubyEncodingClass extends RubyClass {
 

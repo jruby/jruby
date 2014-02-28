@@ -12,8 +12,6 @@ package org.jruby.truffle.runtime.core;
 import java.text.*;
 import java.util.*;
 
-import org.jruby.truffle.runtime.objects.*;
-
 /**
  * Represents the Ruby {@code Time} class. This is a very rough implementation and is only really
  * enough to run benchmark harnesses.

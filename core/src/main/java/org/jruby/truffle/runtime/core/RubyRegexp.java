@@ -19,7 +19,6 @@ import org.joni.*;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.objects.RubyBasicObject;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

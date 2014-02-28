@@ -14,7 +14,7 @@ import java.util.*;
 import com.oracle.truffle.api.CompilerDirectives.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.lookup.*;
-import org.jruby.truffle.runtime.objects.*;
+import org.jruby.truffle.runtime.objectstorage.*;
 
 /**
  * Represents the Ruby {@code Class} class. Note that most of the functionality you might associate
@@ -114,7 +114,7 @@ public class RubyClass extends RubyModule {
 
         include(superclass);
 
-        objectLayoutForInstances = new ObjectLayout(getName(), getContext(), superclass.objectLayoutForInstances);
+        objectLayoutForInstances = new ObjectLayout(superclass.objectLayoutForInstances);
     }
 
     public RubyBasicObject newInstance() {
@@ -157,7 +157,7 @@ public class RubyClass extends RubyModule {
     }
 
     private void renewObjectLayoutForInstances() {
-        objectLayoutForInstances = objectLayoutForInstances.renew(getContext(), superclass.objectLayoutForInstances);
+        objectLayoutForInstances = objectLayoutForInstances.withNewParent(superclass.objectLayoutForInstances);
 
         for (RubyClass subClass : subClasses) {
             subClass.renewObjectLayoutForInstances();

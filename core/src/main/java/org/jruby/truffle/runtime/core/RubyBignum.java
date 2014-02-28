@@ -13,7 +13,6 @@ import java.math.*;
 
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.array.*;
-import org.jruby.truffle.runtime.objects.*;
 
 /**
  * Represents the Ruby {@code Bignum} class.

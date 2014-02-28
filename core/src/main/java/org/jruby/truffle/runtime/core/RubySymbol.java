@@ -15,7 +15,6 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.methods.*;
-import org.jruby.truffle.runtime.objects.*;
 import org.jruby.util.ByteList;
 
 /**

@@ -29,7 +29,6 @@ import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.*;
 import org.jruby.truffle.runtime.core.hash.RubyHash;
-import org.jruby.truffle.runtime.objects.*;
 import org.jruby.truffle.runtime.subsystems.*;
 
 @CoreClass(name = "Kernel")

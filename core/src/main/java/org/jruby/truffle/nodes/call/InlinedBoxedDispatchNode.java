@@ -18,7 +18,6 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.lookup.*;
-import org.jruby.truffle.runtime.objects.*;
 
 /**
  * A node in the dispatch chain that comes after the boxing point and caches a method on a full

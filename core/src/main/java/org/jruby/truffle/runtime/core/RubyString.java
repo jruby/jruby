@@ -16,7 +16,6 @@ import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.array.ArrayUtilities;
 import org.jruby.truffle.runtime.core.range.FixnumRange;
-import org.jruby.truffle.runtime.objects.RubyBasicObject;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;

@@ -17,7 +17,6 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.*;
 import org.jruby.truffle.runtime.methods.*;
-import org.jruby.truffle.runtime.objects.*;
 
 /**
  * A call node that has a chain of dispatch nodes.

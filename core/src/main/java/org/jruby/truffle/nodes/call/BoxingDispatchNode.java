@@ -14,7 +14,6 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.objects.*;
 
 /**
  * A node in the dispatch chain that boxes the receiver into a full Ruby {@link RubyBasicObject}.

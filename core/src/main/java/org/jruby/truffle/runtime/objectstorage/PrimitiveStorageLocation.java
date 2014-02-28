@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.objects;
+package org.jruby.truffle.runtime.objectstorage;
 
 /**
  * A storage location that uses one of the primitive fields in {@code RubyBasObject}.
@@ -24,15 +24,15 @@ public abstract class PrimitiveStorageLocation extends StorageLocation {
     }
 
     @Override
-    public boolean isSet(RubyBasicObject object) {
+    public boolean isSet(ObjectStorage object) {
         return (object.primitiveSetMap & mask) != 0;
     }
 
-    protected void markAsSet(RubyBasicObject object) {
+    protected void markAsSet(ObjectStorage object) {
         object.primitiveSetMap |= mask;
     }
 
-    protected void markAsUnset(RubyBasicObject object) {
+    protected void markAsUnset(ObjectStorage object) {
         object.primitiveSetMap &= ~mask;
     }
 

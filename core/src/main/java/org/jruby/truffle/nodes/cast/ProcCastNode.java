@@ -17,7 +17,6 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.objects.*;
 
 /**
  * Casts an object to a Ruby Proc object.

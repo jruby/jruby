@@ -16,7 +16,6 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
-import org.jruby.truffle.runtime.objects.*;
 
 /**
  * Any node in the dispatch chain.

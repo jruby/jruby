@@ -12,7 +12,6 @@ package org.jruby.truffle.runtime.core;
 import java.util.*;
 import java.util.concurrent.*;
 
-import org.jruby.truffle.runtime.objects.*;
 import org.jruby.truffle.runtime.subsystems.*;
 
 /**

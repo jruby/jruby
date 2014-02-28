@@ -24,9 +24,9 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.SelfNode;
-import org.jruby.truffle.nodes.objects.instancevariables.UninitializedReadInstanceVariableNode;
-import org.jruby.truffle.nodes.objects.instancevariables.UninitializedWriteInstanceVariableNode;
+import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -108,7 +108,7 @@ public abstract class ModuleNodes {
             final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, Arity.NO_ARGS);
 
             final SelfNode self = new SelfNode(context, sourceSection);
-            final UninitializedReadInstanceVariableNode readInstanceVariable = new UninitializedReadInstanceVariableNode(context, sourceSection, "@" + name, self);
+            final ReadInstanceVariableNode readInstanceVariable = new ReadInstanceVariableNode(context, sourceSection, "@" + name, self);
 
             final SequenceNode block = new SequenceNode(context, sourceSection, checkArity, readInstanceVariable);
 
@@ -151,7 +151,7 @@ public abstract class ModuleNodes {
 
             final SelfNode self = new SelfNode(context, sourceSection);
             final ReadPreArgumentNode readArgument = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
-            final UninitializedWriteInstanceVariableNode writeInstanceVariable = new UninitializedWriteInstanceVariableNode(context, sourceSection, "@" + name, self, readArgument);
+            final WriteInstanceVariableNode writeInstanceVariable = new WriteInstanceVariableNode(context, sourceSection, "@" + name, self, readArgument);
 
             final SequenceNode block = new SequenceNode(context, sourceSection, checkArity, writeInstanceVariable);
 

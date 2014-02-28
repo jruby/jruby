@@ -7,50 +7,49 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.objects;
+package org.jruby.truffle.runtime.objectstorage;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.runtime.*;
 
 /**
- * A storage location for Floats.
+ * A storage location for doubles.
  */
-public class FloatStorageLocation extends PrimitiveStorageLocation {
+public class DoubleStorageLocation extends PrimitiveStorageLocation {
 
-    public FloatStorageLocation(ObjectLayout objectLayout, long offset, int mask) {
+    public DoubleStorageLocation(ObjectLayout objectLayout, long offset, int mask) {
         super(objectLayout, offset, mask);
     }
 
     @Override
-    public Object read(RubyBasicObject object, boolean condition) {
+    public Object read(ObjectStorage object, boolean condition) {
         try {
-            return readFloat(object, condition);
+            return readDouble(object, condition);
         } catch (UnexpectedResultException e) {
             return e.getResult();
         }
     }
 
-    public double readFloat(RubyBasicObject object, boolean condition) throws UnexpectedResultException {
+    public double readDouble(ObjectStorage object, boolean condition) throws UnexpectedResultException {
         if (isSet(object)) {
             return CompilerDirectives.unsafeGetDouble(object, offset, condition, this);
         } else {
-            throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+            throw new UnexpectedResultException(null);
         }
     }
 
     @Override
-    public void write(RubyBasicObject object, Object value) throws GeneralizeStorageLocationException {
+    public void write(ObjectStorage object, Object value) throws GeneralizeStorageLocationException {
         if (value instanceof Double) {
-            writeFloat(object, (double) value);
-        } else if (value instanceof NilPlaceholder) {
+            writeDouble(object, (double) value);
+        } else if (value == null) {
             markAsUnset(object);
         } else {
             throw new GeneralizeStorageLocationException();
         }
     }
 
-    public void writeFloat(RubyBasicObject object, Double value) {
+    public void writeDouble(ObjectStorage object, Double value) {
         CompilerDirectives.unsafePutDouble(object, offset, value, null);
         markAsSet(object);
     }

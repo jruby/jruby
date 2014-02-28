@@ -18,7 +18,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.array.ObjectArrayStore;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.hash.RubyHash;
-import org.jruby.truffle.runtime.objects.RubyBasicObject;
 
 import java.io.File;
 import java.math.BigInteger;

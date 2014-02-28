@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.runtime.control;
 
-import org.jruby.truffle.runtime.objects.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
  * Ruby exceptions are just Ruby objects, so they cannot also be exceptions unless we made all Ruby

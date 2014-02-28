@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.objects;
+package org.jruby.truffle.runtime.core;
 
 /**
  * An object that can be losslessly unboxed back to a more primitive value.

@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.*;
 import org.jruby.truffle.runtime.core.range.FixnumRange;
-import org.jruby.truffle.runtime.objects.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.util.Arrays;
 import java.util.Comparator;

@@ -7,50 +7,49 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.objects;
+package org.jruby.truffle.runtime.objectstorage;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.runtime.*;
 
 /**
- * A storage location for Fixnums.
+ * A storage location for integers.
  */
-public class FixnumStorageLocation extends PrimitiveStorageLocation {
+public class IntegerStorageLocation extends PrimitiveStorageLocation {
 
-    public FixnumStorageLocation(ObjectLayout objectLayout, long offset, int mask) {
+    public IntegerStorageLocation(ObjectLayout objectLayout, long offset, int mask) {
         super(objectLayout, offset, mask);
     }
 
     @Override
-    public Object read(RubyBasicObject object, boolean condition) {
+    public Object read(ObjectStorage object, boolean condition) {
         try {
-            return readFixnum(object, condition);
+            return readInteger(object, condition);
         } catch (UnexpectedResultException e) {
             return e.getResult();
         }
     }
 
-    public int readFixnum(RubyBasicObject object, boolean condition) throws UnexpectedResultException {
+    public int readInteger(ObjectStorage object, boolean condition) throws UnexpectedResultException {
         if (isSet(object)) {
             return CompilerDirectives.unsafeGetInt(object, offset, condition, this);
         } else {
-            throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+            throw new UnexpectedResultException(null);
         }
     }
 
     @Override
-    public void write(RubyBasicObject object, Object value) throws GeneralizeStorageLocationException {
+    public void write(ObjectStorage object, Object value) throws GeneralizeStorageLocationException {
         if (value instanceof Integer) {
-            writeFixnum(object, (int) value);
-        } else if (value instanceof NilPlaceholder) {
+            writeInteger(object, (int) value);
+        } else if (value == null) {
             markAsUnset(object);
         } else {
             throw new GeneralizeStorageLocationException();
         }
     }
 
-    public void writeFixnum(RubyBasicObject object, int value) {
+    public void writeInteger(ObjectStorage object, int value) {
         CompilerDirectives.unsafePutInt(object, offset, value, null);
         markAsSet(object);
     }

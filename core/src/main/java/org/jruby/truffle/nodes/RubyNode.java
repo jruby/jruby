@@ -27,7 +27,7 @@ import org.jruby.truffle.runtime.core.range.FixnumRange;
 import org.jruby.truffle.runtime.core.range.ObjectRange;
 import org.jruby.truffle.runtime.core.range.RubyRange;
 import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.objects.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.math.BigInteger;
 

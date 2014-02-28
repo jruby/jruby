@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.objects;
+package org.jruby.truffle.runtime.objectstorage;
 
 /**
  * Indicates that a storage location cannot store the type of value that you asked it to.

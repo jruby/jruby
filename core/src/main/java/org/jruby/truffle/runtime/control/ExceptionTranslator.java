@@ -12,7 +12,6 @@ package org.jruby.truffle.runtime.control;
 import com.oracle.truffle.api.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.objects.*;
 import org.jruby.util.cli.Options;
 
 public final class ExceptionTranslator {

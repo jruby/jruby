@@ -16,7 +16,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.objects.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
  * Reads the singleton (meta, eigen) class of an object.

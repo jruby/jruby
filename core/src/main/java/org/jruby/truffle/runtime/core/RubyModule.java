@@ -22,7 +22,6 @@ import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.lookup.LookupTerminal;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.methods.Visibility;
-import org.jruby.truffle.runtime.objects.RubyBasicObject;
 
 import java.util.*;
 

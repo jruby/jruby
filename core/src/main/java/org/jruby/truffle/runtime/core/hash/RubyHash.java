@@ -13,11 +13,7 @@ import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyObject;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.objects.*;
+import org.jruby.truffle.runtime.core.*;
 
 /**
  * Represents the Ruby {@code Hash} class.
@@ -27,7 +23,7 @@ public class RubyHash extends RubyObject {
     /**
      * The class from which we create the object that is {@code Hash}. A subclass of
      * {@link org.jruby.truffle.runtime.core.RubyClass} so that we can override {@link #newInstance} and allocate a
-     * {@link RubyHash} rather than a normal {@link RubyBasicObject}.
+     * {@link RubyHash} rather than a normal {@link org.jruby.truffle.runtime.core.RubyBasicObject}.
      */
     public static class RubyHashClass extends RubyClass {
 
@@ -64,7 +60,7 @@ public class RubyHash extends RubyObject {
     @Override
     public Object dup() {
         final RubyHash newHash = new RubyHash(rubyClass);
-        newHash.setInstanceVariables(getInstanceVariables());
+        newHash.setInstanceVariables(getFields());
         newHash.storage.putAll(storage);
         return newHash;
     }

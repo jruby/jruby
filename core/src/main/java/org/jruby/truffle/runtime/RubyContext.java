@@ -27,7 +27,7 @@ import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.objects.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.runtime.debug.RubyDebugManager;
 import org.jruby.truffle.translator.TranslatorDriver;

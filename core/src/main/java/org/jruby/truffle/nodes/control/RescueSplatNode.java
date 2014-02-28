@@ -16,7 +16,6 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.*;
-import org.jruby.truffle.runtime.objects.*;
 
 /**
  * Rescue any of several classes, that we get from an expression that evaluates to an array of

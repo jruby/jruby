@@ -7,17 +7,17 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.objects;
+package org.jruby.truffle.runtime.objectstorage;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
-import sun.misc.*;
+import sun.misc.Unsafe;
 
-import com.oracle.truffle.api.nodes.*;
-import com.oracle.truffle.api.nodes.NodeUtil.*;
-import org.jruby.truffle.runtime.*;
+import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.nodes.NodeUtil.FieldOffsetProvider;
 
 /**
  * Maps names of instance variables to storage locations, which are either the offset of a primitive
@@ -29,9 +29,7 @@ import org.jruby.truffle.runtime.*;
  */
 public class ObjectLayout {
 
-    public static final ObjectLayout EMPTY = new ObjectLayout("(empty)");
-
-    private final String originHint;
+    public static final ObjectLayout EMPTY = new ObjectLayout();
 
     private final ObjectLayout parent;
 
@@ -42,19 +40,17 @@ public class ObjectLayout {
 
     public static final long FIRST_OFFSET = getFirstOffset();
 
-    private ObjectLayout(String originHint) {
-        this.originHint = originHint;
+    private ObjectLayout() {
         this.parent = null;
         primitiveStorageLocationsUsed = 0;
         objectStorageLocationsUsed = 0;
     }
 
-    public ObjectLayout(String originHint, RubyContext context, ObjectLayout parent) {
-        this(originHint, context, parent, new HashMap<String, Class>());
+    public ObjectLayout(ObjectLayout parent) {
+        this(parent, new HashMap<String, Class>());
     }
 
-    public ObjectLayout(String originHint, RubyContext context, ObjectLayout parent, Map<String, Class> storageTypes) {
-        this.originHint = originHint;
+    public ObjectLayout(ObjectLayout parent, Map<String, Class> storageTypes) {
         this.parent = parent;
 
         // Start our offsets from where the parent ends
@@ -90,16 +86,16 @@ public class ObjectLayout {
                     primitivesNeeded = 2;
                 }
 
-                if (canStoreInPrimitive && primitiveStorageLocationIndex + primitivesNeeded <= RubyBasicObject.PRIMITIVE_STORAGE_LOCATIONS_COUNT) {
+                if (canStoreInPrimitive && primitiveStorageLocationIndex + primitivesNeeded <= ObjectStorage.PRIMITIVE_STORAGE_LOCATIONS_COUNT) {
                     final long offset = FIRST_OFFSET + Unsafe.ARRAY_INT_INDEX_SCALE * primitiveStorageLocationIndex;
                     final int mask = 1 << primitiveStorageLocationIndex;
 
                     StorageLocation newStorageLocation = null;
 
                     if (type == Integer.class) {
-                        newStorageLocation = new FixnumStorageLocation(this, offset, mask);
+                        newStorageLocation = new IntegerStorageLocation(this, offset, mask);
                     } else if (type == Double.class) {
-                        newStorageLocation = new FloatStorageLocation(this, offset, mask);
+                        newStorageLocation = new DoubleStorageLocation(this, offset, mask);
                     }
 
                     storageLocations.put(entry.getKey(), newStorageLocation);
@@ -121,25 +117,25 @@ public class ObjectLayout {
      * comes from the same Ruby class as it did, but it's a new layout because layouts are
      * immutable, so modifications to the superclass yields a new layout.
      */
-    public ObjectLayout renew(RubyContext context, ObjectLayout newParent) {
-        return new ObjectLayout(originHint + ".renewed", context, newParent, getStorageTypes());
+    public ObjectLayout withNewParent(ObjectLayout newParent) {
+        return new ObjectLayout(newParent, getStorageTypes());
     }
 
     /**
      * Create a new version of this layout but with a new variable.
      */
-    public ObjectLayout withNewVariable(RubyContext context, String name, Class type) {
+    public ObjectLayout withNewVariable(String name, Class type) {
         final Map<String, Class> storageTypes = getStorageTypes();
         storageTypes.put(name, type);
-        return new ObjectLayout(originHint + ".withnew", context, parent, storageTypes);
+        return new ObjectLayout(parent, storageTypes);
     }
 
     /**
      * Create a new version of this layout but with an existing variable generalized to support any
      * type.
      */
-    public ObjectLayout withGeneralisedVariable(RubyContext context, String name) {
-        return withNewVariable(context, name, Object.class);
+    public ObjectLayout withGeneralisedVariable(String name) {
+        return withNewVariable(name, Object.class);
     }
 
     /**
@@ -216,17 +212,13 @@ public class ObjectLayout {
         return false;
     }
 
-    public String getOriginHint() {
-        return originHint;
-    }
-
     private static long getFirstOffset() {
         try {
             final Field fieldOffsetProviderField = NodeUtil.class.getDeclaredField("unsafeFieldOffsetProvider");
             fieldOffsetProviderField.setAccessible(true);
             final FieldOffsetProvider fieldOffsetProvider = (FieldOffsetProvider) fieldOffsetProviderField.get(null);
 
-            final Field firstPrimitiveField = RubyBasicObject.class.getDeclaredField("primitiveStorageLocation01");
+            final Field firstPrimitiveField = ObjectStorage.class.getDeclaredField("primitiveStorageLocation01");
             return fieldOffsetProvider.objectFieldOffset(firstPrimitiveField);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);

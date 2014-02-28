@@ -7,9 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.objects;
-
-import org.jruby.truffle.runtime.*;
+package org.jruby.truffle.runtime.objectstorage;
 
 /**
  * A storage location for any object.
@@ -24,23 +22,17 @@ public class ObjectStorageLocation extends StorageLocation {
     }
 
     @Override
-    public boolean isSet(RubyBasicObject object) {
+    public boolean isSet(ObjectStorage object) {
         return object.objectStorageLocations[index] != null;
     }
 
     @Override
-    public Object read(RubyBasicObject object, boolean condition) {
-        final Object result = object.objectStorageLocations[index];
-
-        if (result == null) {
-            return NilPlaceholder.INSTANCE;
-        } else {
-            return result;
-        }
+    public Object read(ObjectStorage object, boolean condition) {
+        return object.objectStorageLocations[index];
     }
 
     @Override
-    public void write(RubyBasicObject object, Object value) {
+    public void write(ObjectStorage object, Object value) {
         object.objectStorageLocations[index] = value;
     }
 

@@ -34,9 +34,7 @@ import org.jruby.truffle.nodes.methods.AliasNode;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.objects.*;
-import org.jruby.truffle.nodes.objects.instancevariables.UninitializedReadInstanceVariableNode;
-import org.jruby.truffle.nodes.objects.instancevariables.UninitializedWriteInstanceVariableNode;
-import org.jruby.truffle.nodes.objects.instancevariables.WriteInstanceVariableNode;
+import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyFixnum;
@@ -977,7 +975,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         } else {
             final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
 
-            return new UninitializedWriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs);
+            return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs);
         }
     }
 
@@ -997,7 +995,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         } else {
             final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
 
-            return new UninitializedReadInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode);
+            return new ReadInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode);
         }
     }
 
@@ -1078,7 +1076,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
             rhs = (RubyNode) node.getValueNode().accept(this);
         }
 
-        return new UninitializedWriteInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver, rhs);
+        return new WriteInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver, rhs);
     }
 
     @Override
@@ -1088,7 +1086,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         final RubyNode receiver = new SelfNode(context, sourceSection);
 
-        return new UninitializedReadInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver);
+        return new ReadInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver);
     }
 
     @Override
@@ -1447,7 +1445,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
              */
 
             final WriteInstanceVariableNode dummyTranslated = (WriteInstanceVariableNode) dummyAssignment.accept(this);
-            translated = dummyTranslated.makeReadNode().makeWriteNode(rhs);
+            translated = ((ReadNode) dummyTranslated.makeReadNode()).makeWriteNode(rhs);
         } else if (dummyAssignment instanceof org.jruby.ast.AttrAssignNode) {
             /*
              * They've given us an AttrAssignNode with the final argument, the assigned value,

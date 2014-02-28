@@ -17,7 +17,6 @@ import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.objects.*;
 
 @CoreClass(name = "BasicObject")
 public abstract class BasicObjectNodes {

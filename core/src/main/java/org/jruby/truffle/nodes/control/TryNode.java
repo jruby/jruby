@@ -16,7 +16,7 @@ import com.oracle.truffle.api.utilities.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.objects.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
  * Represents a block of code run with exception handlers. There's no {@code try} keyword in Ruby -
