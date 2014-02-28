@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -28,27 +28,17 @@
 package org.jruby.ext.openssl;
 
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.List;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.PublicKey;
 import java.security.PrivateKey;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
-import org.bouncycastle.asn1.DLSequence;
-import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.jruby.Ruby;
@@ -56,7 +46,6 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -70,9 +59,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.ext.openssl.impl.PKCS10Request;
 
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -85,7 +71,7 @@ public class Request extends RubyObject {
             return new Request(runtime, klass);
         }
     };
-    
+
     public static void createRequest(Ruby runtime, RubyModule mX509) {
         RubyClass cRequest = mX509.defineClassUnder("Request",runtime.getObject(),REQUEST_ALLOCATOR);
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
@@ -151,25 +137,25 @@ public class Request extends RubyObject {
         } catch (IOException ex) {
             throw newX509ReqError(getRuntime(), ex.getMessage());
         }
-          
+
         return this;
     }
 
-    private IRubyObject makeRubyAttr(ASN1ObjectIdentifier type, ASN1Set values) 
-      throws IOException 
+    private IRubyObject makeRubyAttr(ASN1ObjectIdentifier type, ASN1Set values)
+      throws IOException
     {
         IRubyObject rubyType = getRuntime().newString(
             ASN1.getSymLookup(getRuntime()).get(type)
         );
         IRubyObject rubyValue = ASN1.decode(
-            getRuntime().getClassFromPath("OpenSSL::ASN1"), 
+            getRuntime().getClassFromPath("OpenSSL::ASN1"),
             RubyString.newString(
                 getRuntime(), ((ASN1Object) values).getEncoded()
             )
         );
         return Utils.newRubyInstance(
-            getRuntime(), 
-            "OpenSSL::X509::Attribute", 
+            getRuntime(),
+            "OpenSSL::X509::Attribute",
             new IRubyObject[] { rubyType, rubyValue }
         );
     }
@@ -178,7 +164,7 @@ public class Request extends RubyObject {
         if (name == null) return getRuntime().getNil();
 
         IRubyObject newName = Utils.newRubyInstance(getRuntime(), "OpenSSL::X509::Name");
-        
+
         for (RDN rdn: name.getRDNs()) {
             for(AttributeTypeAndValue tv : rdn.getTypesAndValues()) {
                 ASN1ObjectIdentifier oid = tv.getType();
@@ -288,7 +274,7 @@ public class Request extends RubyObject {
 
     @JRubyMethod
     public IRubyObject sign(final IRubyObject key, final IRubyObject digest) {
-        
+
         PublicKey publicKey = ((PKey) public_key).getPublicKey();
         PrivateKey privateKey = ((PKey) key).getPrivateKey();
 
@@ -313,7 +299,7 @@ public class Request extends RubyObject {
     }
 
     private List<org.bouncycastle.asn1.pkcs.Attribute> makeAttrList(List<IRubyObject> list) {
-        List<org.bouncycastle.asn1.pkcs.Attribute> realList = 
+        List<org.bouncycastle.asn1.pkcs.Attribute> realList =
           new ArrayList<org.bouncycastle.asn1.pkcs.Attribute>(list.size());
 
         for(IRubyObject attr : list) {
@@ -366,7 +352,7 @@ public class Request extends RubyObject {
         attrs.add(val);
 
         if (req != null) {
-            req.addAttribute( makeAttr(val) );    
+            req.addAttribute( makeAttr(val) );
         }
         return val;
     }

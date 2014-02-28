@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -38,24 +38,45 @@ import java.io.ByteArrayOutputStream;
 
 import java.math.BigInteger;
 
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.cert.X509CRL;
-import java.security.cert.CertificateEncodingException;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DHParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
-import org.jruby.ext.openssl.OpenSSLReal;
-import org.jruby.ext.openssl.impl.PKCS10Request;
-
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
+import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -70,7 +91,6 @@ import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.x509.DSAParameter;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.pkcs.EncryptionScheme;
 import org.bouncycastle.asn1.pkcs.PBES2Parameters;
@@ -78,6 +98,8 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.DSAParameter;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -93,37 +115,11 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.cms.CMSSignedData;
-import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
-import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.CertificateFactory;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.RSAPublicKeySpec;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.StringTokenizer;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.PBEParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
-import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.jruby.ext.openssl.Cipher.CipherModule;
 import org.jruby.ext.openssl.impl.ASN1Registry;
 import org.jruby.ext.openssl.impl.CipherSpec;
+import org.jruby.ext.openssl.impl.PKCS10Request;
 
 /**
  * Helper class to read and write PEM files correctly.
@@ -157,7 +153,7 @@ public class PEMInputOutput {
     public static final String PEM_STRING_ECDSA_PUBLIC="ECDSA PUBLIC KEY";
     public static final String PEM_STRING_ECPARAMETERS="EC PARAMETERS";
     public static final String PEM_STRING_ECPRIVATEKEY="EC PRIVATE KEY";
-    
+
     private static final Pattern DH_PARAM_PATTERN = Pattern.compile(
             "(-----BEGIN DH PARAMETERS-----)(.*)(-----END DH PARAMETERS-----)",
             Pattern.MULTILINE);
@@ -234,7 +230,7 @@ public class PEMInputOutput {
                 }
             }
         }
-        return null; 
+        return null;
     }
 
     public static byte[] readX509PEM(Reader in) throws IOException {
@@ -335,7 +331,7 @@ public class PEMInputOutput {
         PBEParameterSpec pbeParams = new PBEParameterSpec(
           pkcs12Params.getIV(), pkcs12Params.getIterations().intValue()
         );
-        
+
         //String algorithm = algId.getAlgorithm().getId();
         String algorithm = ASN1Registry.o2a(algId.getAlgorithm());
         algorithm = (algorithm.split("-"))[0];
@@ -451,7 +447,7 @@ public class PEMInputOutput {
                 }
             }
         }
-        return null; 
+        return null;
     }
 
     /*
@@ -469,7 +465,7 @@ public class PEMInputOutput {
                 }
             }
         }
-        return null; 
+        return null;
     }
 
     /**
@@ -494,7 +490,7 @@ public class PEMInputOutput {
                 }
             }
         }
-        return null; 
+        return null;
     }
 
     /**
@@ -519,7 +515,7 @@ public class PEMInputOutput {
                 }
             }
         }
-        return null; 
+        return null;
     }
 
     /**
@@ -656,7 +652,7 @@ public class PEMInputOutput {
         }
         return null;
     }
-    
+
     private static byte[] getEncoded(java.security.Key key) {
         if (key != null) {
             return key.getEncoded();
@@ -770,7 +766,7 @@ public class PEMInputOutput {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 byte[] ymp = obj.getEncoded();
                 baos.write(ymp,0,ymp.length);
-            
+
                 X509Aux aux = obj.getAux();
                 ASN1EncodableVector a1 = new ASN1EncodableVector();
                 if(aux.trust.size()>0) {
@@ -929,7 +925,7 @@ public class PEMInputOutput {
         out.write(BEF_E + pemHeader + AFT);
         out.flush();
     }
-    
+
     public static void writeDHParameters(Writer _out, DHParameterSpec params) throws IOException {
         BufferedWriter out = makeBuffered(_out);
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
@@ -967,7 +963,7 @@ public class PEMInputOutput {
     private static byte[] readBytes(BufferedReader in, String endMarker) throws IOException {
         String          line;
         StringBuffer    buf = new StringBuffer();
-  
+
         while ((line = in.readLine()) != null) {
             if (line.indexOf(endMarker) != -1) {
                 break;
@@ -987,15 +983,15 @@ public class PEMInputOutput {
         ASN1Sequence sequence = (ASN1Sequence) asnObject;
         org.bouncycastle.asn1.pkcs.RSAPublicKey rsaPubStructure = org.bouncycastle.asn1.pkcs.RSAPublicKey.getInstance(sequence);
         RSAPublicKeySpec keySpec = new RSAPublicKeySpec(
-                    rsaPubStructure.getModulus(), 
+                    rsaPubStructure.getModulus(),
                     rsaPubStructure.getPublicExponent());
 
         try {
             KeyFactory keyFact = KeyFactory.getInstance("RSA");
             return (RSAPublicKey) keyFact.generatePublic(keySpec);
-        } catch (NoSuchAlgorithmException e) { 
+        } catch (NoSuchAlgorithmException e) {
                 // ignore
-        } catch (InvalidKeySpecException e) { 
+        } catch (InvalidKeySpecException e) {
                 // ignore
         }
 
@@ -1124,7 +1120,7 @@ public class PEMInputOutput {
     private static X509AuxCertificate readAuxCertificate(BufferedReader in,String  endMarker) throws IOException {
         String          line;
         StringBuilder    buf = new StringBuilder();
-  
+
         while ((line = in.readLine()) != null) {
             if (line.indexOf(endMarker) != -1) {
                 break;
@@ -1248,7 +1244,7 @@ public class PEMInputOutput {
         bytes = Base64.encode(bytes);
         for (int i = 0; i < bytes.length; i += buf.length) {
             int index = 0;
-            
+
             while (index != buf.length) {
                 if ((i + index) >= bytes.length) {
                     break;

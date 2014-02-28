@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -45,7 +45,6 @@ import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DLSequence;
-import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.jruby.Ruby;
@@ -73,7 +72,7 @@ public class X509Extensions {
         RubyClass cX509ExtFactory = mX509.defineClassUnder("ExtensionFactory",runtime.getObject(),ExtensionFactory.ALLOCATOR);
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
         mX509.defineClassUnder("ExtensionError",openSSLError,openSSLError.getAllocator());
-        
+
         cX509ExtFactory.attr_reader(runtime.getCurrentContext(), new IRubyObject[]{runtime.newString("issuer_certificate"),runtime.newString("subject_certificate"),
                                                                                    runtime.newString("subject_request"),runtime.newString("crl"),
                                                                                    runtime.newString("config")});
@@ -157,7 +156,7 @@ public class X509Extensions {
         private static boolean isHexDigit(char c) {
             return ('0'<=c && c<='9') || ('A'<= c && c <= 'F') || ('a'<= c && c <= 'f');
         }
-        
+
         private boolean isHexString(String str ){
         	for(int i = 0; i< str.length(); i++) {
         		if (!isHexDigit(str.charAt(i))) return false;
@@ -182,7 +181,7 @@ public class X509Extensions {
             } catch(IllegalArgumentException e) {
                  throw newX509ExtError(getRuntime(), "unknown OID `" + oid + "'");
             }
-            
+
             Extension ext = (Extension) Utils.newRubyInstance(getRuntime(), "OpenSSL::X509::Extension");
 
             if(valuex.startsWith("critical,")) {
@@ -522,7 +521,7 @@ public class X509Extensions {
         void setRealCritical(boolean critical) {
             this.critical = critical;
         }
-        
+
         ASN1ObjectIdentifier getRealOid() {
             return oid;
         }
