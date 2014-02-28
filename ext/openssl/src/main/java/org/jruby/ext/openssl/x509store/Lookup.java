@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -38,13 +38,16 @@ import java.io.InputStreamReader;
 
 import java.math.BigInteger;
 
-import java.security.cert.CertificateFactory;
+import java.security.KeyStore;
+import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.security.cert.CRL;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.util.io.ChannelDescriptor;
@@ -53,9 +56,7 @@ import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
 
-import java.security.KeyStore;
-import java.security.cert.PKIXParameters;
-import java.security.cert.TrustAnchor;
+import static org.jruby.ext.openssl.OpenSSLReal.getCertificateFactory;
 
 /**
  * X509_LOOKUP
@@ -100,14 +101,14 @@ public class Lookup {
     /**
      * c: X509_LOOKUP_hash_dir
      */
-    public static LookupMethod hashDirLookup() { 
+    public static LookupMethod hashDirLookup() {
         return x509DirectoryLookup;
-    } 
+    }
 
     /**
      * c: X509_LOOKUP_file
      */
-    public static LookupMethod fileLookup() { 
+    public static LookupMethod fileLookup() {
         return x509FileLookup;
     }
 
@@ -154,8 +155,9 @@ public class Lookup {
                 }
                 ret = count;
             } else if (type == X509Utils.X509_FILETYPE_ASN1) {
-                CertificateFactory cf = CertificateFactory.getInstance("X.509");
-                x = StoreContext.ensureAux((X509Certificate) cf.generateCertificate(in));
+                X509Certificate cert = (X509Certificate)
+                    getCertificateFactory("X.509").generateCertificate(in);
+                x = StoreContext.ensureAux(cert);
                 if (x == null) {
                     X509Error.addError(13);
                     return ret;
@@ -208,8 +210,7 @@ public class Lookup {
                 }
                 ret = count;
             } else if (type == X509Utils.X509_FILETYPE_ASN1) {
-                CertificateFactory cf = CertificateFactory.getInstance("X.509");
-                x = cf.generateCRL(in);
+                x = getCertificateFactory("X.509").generateCRL(in);
                 if (x == null) {
                     X509Error.addError(13);
                     return ret;
@@ -266,7 +267,7 @@ public class Lookup {
                 }
             }
         }
-        return count; 
+        return count;
     }
 
     public int loadDefaultJavaCACertsFile() throws Exception {
@@ -282,7 +283,7 @@ public class Lookup {
                 X509Certificate certificate = trustAnchor.getTrustedCert();
                 store.addCertificate(certificate);
                 count++;
-            }    
+            }
         } finally {
             if (fin != null) {
                 try {
@@ -324,7 +325,7 @@ public class Lookup {
     /**
      * c: X509_LOOKUP_init
      */
-    public int init() throws Exception { 
+    public int init() throws Exception {
         if(method == null) {
             return 0;
         }
@@ -337,7 +338,7 @@ public class Lookup {
     /**
      * c: X509_LOOKUP_by_subject
      */
-    public int bySubject(int type, Name name,X509Object[] ret) throws Exception { 
+    public int bySubject(int type, Name name,X509Object[] ret) throws Exception {
         if(method == null || method.getBySubject == null || method.getBySubject == Function4.EMPTY) {
             return X509Utils.X509_LU_FAIL;
         }
@@ -350,37 +351,37 @@ public class Lookup {
     /**
      * c: X509_LOOKUP_by_issuer_serial
      */
-    public int byIssuerSerialNumber(int type, Name name,BigInteger serial, X509Object[] ret) throws Exception { 
+    public int byIssuerSerialNumber(int type, Name name,BigInteger serial, X509Object[] ret) throws Exception {
         if(method == null || method.getByIssuerSerialNumber == null || method.getByIssuerSerialNumber == Function5.EMPTY) {
             return X509Utils.X509_LU_FAIL;
         }
         return method.getByIssuerSerialNumber.call(this,new Integer(type),name,serial,ret);
-    } 
+    }
 
     /**
      * c: X509_LOOKUP_by_fingerprint
      */
-    public int byFingerprint(int type,String bytes, X509Object[] ret) throws Exception { 
+    public int byFingerprint(int type,String bytes, X509Object[] ret) throws Exception {
         if(method == null || method.getByFingerprint == null || method.getByFingerprint == Function4.EMPTY) {
             return X509Utils.X509_LU_FAIL;
         }
         return method.getByFingerprint.call(this,new Integer(type),bytes,ret);
-    } 
+    }
 
     /**
      * c: X509_LOOKUP_by_alias
      */
-    public int byAlias(int type, String str, X509Object[] ret) throws Exception { 
+    public int byAlias(int type, String str, X509Object[] ret) throws Exception {
         if(method == null || method.getByAlias == null || method.getByAlias == Function4.EMPTY) {
             return X509Utils.X509_LU_FAIL;
         }
         return method.getByAlias.call(this,new Integer(type),str,ret);
-    } 
+    }
 
     /**
      * c: X509_LOOKUP_shutdown
      */
-    public int shutdown() throws Exception { 
+    public int shutdown() throws Exception {
         if(method == null) {
             return 0;
         }
@@ -410,7 +411,7 @@ public class Lookup {
         x509DirectoryLookup.control = new LookupDirControl();
         x509DirectoryLookup.getBySubject = new GetCertificateBySubject();
     }
-    
+
     /**
      * c: by_file_ctrl
      */
@@ -423,7 +424,7 @@ public class Lookup {
 
             int ok = 0;
             String file = null;
-            
+
             switch(cmd) {
             case X509Utils.X509_L_FILE_LOAD:
                 if (argl == X509Utils.X509_FILETYPE_DEFAULT) {
@@ -577,11 +578,11 @@ public class Lookup {
                 X509Error.addError(X509Utils.X509_R_WRONG_LOOKUP_TYPE);
                 return ok;
             }
-            
+
             LookupDir ctx = (LookupDir)x1.methodData;
 
             long h = name.hash();
-            
+
             Iterator<Integer> iter = ctx.dirsType.iterator();
             for(String cdir : ctx.dirs) {
                 int tp = iter.next();

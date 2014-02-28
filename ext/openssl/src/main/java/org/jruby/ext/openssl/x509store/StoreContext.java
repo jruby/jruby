@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -41,7 +41,6 @@ import java.util.Set;
 import java.util.HashSet;
 
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
 
@@ -83,7 +82,7 @@ public class StoreContext {
 
     public boolean isValid;
     public int lastUntrusted;
-    
+
     public List<X509AuxCertificate> chain; //List<X509AuxCertificate>
     public PolicyTree tree;
 
@@ -100,7 +99,7 @@ public class StoreContext {
     /**
      * c: X509_STORE_CTX_set_depth
      */
-    public void setDepth(int depth) { 
+    public void setDepth(int depth) {
         param.setDepth(depth);
     }
 
@@ -121,7 +120,7 @@ public class StoreContext {
     /**
      * c: X509_STORE_CTX_get1_issuer
      */
-    public int getFirstIssuer(X509AuxCertificate[] issuer, X509AuxCertificate x) throws Exception { 
+    public int getFirstIssuer(X509AuxCertificate[] issuer, X509AuxCertificate x) throws Exception {
         Name xn = new Name(x.getIssuerX500Principal());
         X509Object[] s_obj = new X509Object[1];
         int ok = ctx == null ? 0 : getBySubject(X509Utils.X509_LU_X509,xn,s_obj);
@@ -198,7 +197,7 @@ public class StoreContext {
     /**
      * c: X509_STORE_CTX_init
      */
-    public int init(Store store, X509AuxCertificate x509, List<X509AuxCertificate> chain) { 
+    public int init(Store store, X509AuxCertificate x509, List<X509AuxCertificate> chain) {
         int ret = 1;
         this.ctx=store;
         this.currentMethod=0;
@@ -297,7 +296,7 @@ public class StoreContext {
         this.extraData.add(null);this.extraData.add(null);this.extraData.add(null);
         this.extraData.add(null);this.extraData.add(null);this.extraData.add(null);
         return 1;
-    } 
+    }
 
     /**
      * c: X509_STORE_CTX_trusted_stack
@@ -318,7 +317,7 @@ public class StoreContext {
         tree = null;
         chain = null;
         extraData = null;
-    } 
+    }
 
     /**
      * c: find_issuer
@@ -335,22 +334,22 @@ public class StoreContext {
     /**
      * c: X509_STORE_CTX_set_ex_data
      */
-    public int setExtraData(int idx,Object data) { 
+    public int setExtraData(int idx,Object data) {
         extraData.set(idx,data);
-        return 1; 
-    } 
+        return 1;
+    }
 
     /**
      * c: X509_STORE_CTX_get_ex_data
      */
-    public Object getExtraData(int idx) { 
-        return extraData.get(idx); 
+    public Object getExtraData(int idx) {
+        return extraData.get(idx);
     }
 
     /**
      * c: X509_STORE_CTX_get_error
      */
-    public int getError() { 
+    public int getError() {
         return error;
     }
 
@@ -359,38 +358,38 @@ public class StoreContext {
      */
     public void setError(int s) {
         this.error = s;
-    } 
+    }
 
     /**
      * c: X509_STORE_CTX_get_error_depth
      */
-    public int getErrorDepth() { 
-        return errorDepth; 
-    } 
+    public int getErrorDepth() {
+        return errorDepth;
+    }
 
     /**
      * c: X509_STORE_CTX_get_current_cert
      */
-    public X509AuxCertificate getCurrentCertificate() { 
-        return currentCertificate; 
+    public X509AuxCertificate getCurrentCertificate() {
+        return currentCertificate;
     }
 
     /**
      * c: X509_STORE_CTX_get_chain
      */
-    public List<X509AuxCertificate> getChain() { 
-        return chain; 
-    } 
+    public List<X509AuxCertificate> getChain() {
+        return chain;
+    }
 
     /**
      * c: X509_STORE_CTX_get1_chain
      */
-    public List<X509AuxCertificate> getFirstChain() { 
+    public List<X509AuxCertificate> getFirstChain() {
         if(null == chain) {
             return null;
         }
-        return new ArrayList<X509AuxCertificate>(chain); 
-    } 
+        return new ArrayList<X509AuxCertificate>(chain);
+    }
 
     /**
      * c: X509_STORE_CTX_set_cert
@@ -419,19 +418,19 @@ public class StoreContext {
      */
     public void setCRLs(List<X509CRL> sk) {
         this.crls = sk;
-    } 
+    }
 
     /**
      * c: X509_STORE_CTX_set_purpose
      */
-    public int setPurpose(int purpose) { 
+    public int setPurpose(int purpose) {
         return purposeInherit(0,purpose,0);
     }
 
     /**
      * c: X509_STORE_CTX_set_trust
      */
-    public int setTrust(int trust) { 
+    public int setTrust(int trust) {
         return purposeInherit(0,0,trust);
     }
 
@@ -514,7 +513,7 @@ public class StoreContext {
     /**
      * c: X509_STORE_CTX_purpose_inherit
      */
-    public int purposeInherit(int defaultPurpose,int purpose, int trust) { 
+    public int purposeInherit(int defaultPurpose,int purpose, int trust) {
         int idx;
         if(purpose == 0) {
             purpose = defaultPurpose;
@@ -553,28 +552,28 @@ public class StoreContext {
             param.trust = trust;
         }
         return 1;
-    } 
+    }
 
     /**
      * c: X509_STORE_CTX_set_flags
      */
     public void setFlags(long flags) {
         param.setFlags(flags);
-    } 
+    }
 
     /**
      * c: X509_STORE_CTX_set_time
      */
     public void setTime(long flags,Date t) {
         param.setTime(t);
-    } 
+    }
 
     /**
      * c: X509_STORE_CTX_set_verify_cb
      */
     public void setVerifyCallback(Store.VerifyCallbackFunction verifyCallback) {
         this.verifyCallback = verifyCallback;
-    } 
+    }
 
     /**
      * c: X509_STORE_CTX_get0_policy_tree
@@ -586,28 +585,28 @@ public class StoreContext {
     /**
      * c: X509_STORE_CTX_get_explicit_policy
      */
-    public int getExplicitPolicy() { 
+    public int getExplicitPolicy() {
         return explicitPolicy;
-    } 
+    }
 
     /**
      * c: X509_STORE_CTX_get0_param
      */
-    public VerifyParameter getParam() { 
-        return param; 
-    } 
+    public VerifyParameter getParam() {
+        return param;
+    }
 
     /**
      * c: X509_STORE_CTX_set0_param
      */
     public void setParam(VerifyParameter param) {
         this.param = param;
-    } 
+    }
 
     /**
      * c: X509_STORE_CTX_set_default
      */
-    public int setDefault(String name) { 
+    public int setDefault(String name) {
         VerifyParameter p = VerifyParameter.lookup(name);
         if(p == null) {
             return 0;
@@ -711,7 +710,7 @@ public class StoreContext {
 
         i = chain.size();
         x = chain.get(i-1);
-        
+
         if(checkIssued.call(this,x,x) != 0) {
             /* we have a self signed certificate */
             if(chain.size() == 1) {
@@ -771,7 +770,7 @@ public class StoreContext {
             chain.add(x);
             num++;
         }
-        
+
         /* we now have our chain, lets check it... */
 
         //xn = new X509_NAME(x.getIssuerX500Principal());
@@ -833,7 +832,7 @@ public class StoreContext {
         if(ok == 0) {
             return ok;
         }
-        
+
         /* TODO: RFC 3779 path validation, now that CRL check has been done (from 1.0.0) */
 
         /* If we get this far evaluate policies */
@@ -1085,7 +1084,7 @@ public class StoreContext {
         } else {
             ptime = Calendar.getInstance().getTime();
         }
-        
+
         if(!crl.getThisUpdate().before(ptime)) {
             error=X509Utils.V_ERR_CRL_NOT_YET_VALID;
             if(notify == 0 || verifyCallback.call(new Integer(0),this) == 0) {
@@ -1106,7 +1105,7 @@ public class StoreContext {
     /**
      * c: get_crl_sk
      */
-    public int getCRLStack(X509CRL[] pcrl, Name nm, List<X509CRL> crls) throws Exception { 
+    public int getCRLStack(X509CRL[] pcrl, Name nm, List<X509CRL> crls) throws Exception {
         X509CRL best_crl = null;
         if(null != crls) {
             for(X509CRL crl : crls) {
@@ -1129,7 +1128,7 @@ public class StoreContext {
     /**
      * c: get_issuer_sk
      */
-    public final static Store.GetIssuerFunction getIssuerStack = new Store.GetIssuerFunction() { 
+    public final static Store.GetIssuerFunction getIssuerStack = new Store.GetIssuerFunction() {
             public int call(Object a1, Object a2, Object a3) throws Exception {
                 X509AuxCertificate[] issuer = (X509AuxCertificate[])a1;
                 StoreContext ctx = (StoreContext)a2;
@@ -1146,7 +1145,7 @@ public class StoreContext {
     /**
      * c: check_issued
      */
-    public final static Store.CheckIssuedFunction defaultCheckIssued = new Store.CheckIssuedFunction() { 
+    public final static Store.CheckIssuedFunction defaultCheckIssued = new Store.CheckIssuedFunction() {
             public int call(Object a1, Object a2, Object a3) throws Exception {
                 StoreContext ctx = (StoreContext)a1;
                 X509AuxCertificate x = (X509AuxCertificate)a2;
@@ -1168,7 +1167,7 @@ public class StoreContext {
     /**
      * c: null_callback
      */
-    public final static Store.VerifyCallbackFunction NullCallback = new Store.VerifyCallbackFunction() { 
+    public final static Store.VerifyCallbackFunction NullCallback = new Store.VerifyCallbackFunction() {
             public int call(Object a1, Object a2) {
                 return ((Integer)a1).intValue();
             }
@@ -1177,7 +1176,7 @@ public class StoreContext {
     /**
      * c: internal_verify
      */
-    public final static Store.VerifyFunction internalVerify = new Store.VerifyFunction() { 
+    public final static Store.VerifyFunction internalVerify = new Store.VerifyFunction() {
             public int call(Object a1) throws Exception {
                 StoreContext ctx = (StoreContext)a1;
                 Store.VerifyCallbackFunction cb = ctx.verifyCallback;
@@ -1247,7 +1246,7 @@ public class StoreContext {
     /**
      * c: check_revocation
      */
-    public final static Store.CheckRevocationFunction defaultCheckRevocation = new Store.CheckRevocationFunction() { 
+    public final static Store.CheckRevocationFunction defaultCheckRevocation = new Store.CheckRevocationFunction() {
             public int call(Object a1) throws Exception {
                 StoreContext ctx = (StoreContext)a1;
                 int last,ok=0;
@@ -1273,7 +1272,7 @@ public class StoreContext {
     /**
      * c: get_crl
      */
-    public final static Store.GetCRLFunction defaultGetCRL = new Store.GetCRLFunction() { 
+    public final static Store.GetCRLFunction defaultGetCRL = new Store.GetCRLFunction() {
             public int call(Object a1, Object a2, Object a3) throws Exception {
                 StoreContext ctx = (StoreContext)a1;
                 X509CRL[] pcrl = (X509CRL[])a2;
@@ -1302,7 +1301,7 @@ public class StoreContext {
     /**
      * c: check_crl
      */
-    public final static Store.CheckCRLFunction defaultCheckCRL = new Store.CheckCRLFunction() { 
+    public final static Store.CheckCRLFunction defaultCheckCRL = new Store.CheckCRLFunction() {
             public int call(Object a1, Object a2) throws Exception {
                 StoreContext ctx = (StoreContext)a1;
                 final X509CRL crl = (X509CRL)a2;
@@ -1362,7 +1361,7 @@ public class StoreContext {
     /**
      * c: cert_crl
      */
-    public final static Store.CertificateCRLFunction defaultCertificateCRL = new Store.CertificateCRLFunction() { 
+    public final static Store.CertificateCRLFunction defaultCertificateCRL = new Store.CertificateCRLFunction() {
             public int call(Object a1, Object a2, Object a3) throws Exception {
                 StoreContext ctx = (StoreContext)a1;
                 X509CRL crl = (X509CRL)a2;
@@ -1393,7 +1392,7 @@ public class StoreContext {
     /**
      * c: check_policy
      */
-    public final static CheckPolicyFunction defaultCheckPolicy = new CheckPolicyFunction() { 
+    public final static CheckPolicyFunction defaultCheckPolicy = new CheckPolicyFunction() {
             public int call(Object a1) throws Exception {
                 return 1;
             }
