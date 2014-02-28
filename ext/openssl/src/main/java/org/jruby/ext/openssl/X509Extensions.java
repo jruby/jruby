@@ -27,10 +27,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -47,6 +46,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -63,6 +63,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
+
+import static org.jruby.ext.openssl.OpenSSLReal.getMessageDigest;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -487,9 +489,10 @@ public class X509Extensions {
 
     private static byte[] getSHA1Digest(Ruby runtime, byte[] bytes) {
         try {
-            return MessageDigest.getInstance("SHA-1").digest(bytes);
-        } catch (GeneralSecurityException gse) {
-            throw newX509ExtError(runtime, gse.getMessage());
+            return getMessageDigest("SHA-1").digest(bytes);
+        }
+        catch (GeneralSecurityException ex) {
+            throw newX509ExtError(runtime, ex.getMessage());
         }
     }
 

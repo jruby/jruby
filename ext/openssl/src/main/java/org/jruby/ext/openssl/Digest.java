@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -69,12 +68,9 @@ public class Digest extends RubyObject {
     static MessageDigest getDigest(final String name, final Ruby runtime) {
         String algorithm = transformDigest(name);
         try {
-            return MessageDigest.getInstance(algorithm);
-        } catch (NoSuchAlgorithmException e) {
-            try {
-                return OpenSSLReal.getMessageDigestBC(algorithm);
-            } catch (GeneralSecurityException ignore) {
-            }
+            return OpenSSLReal.getMessageDigest(algorithm);
+        }
+        catch (NoSuchAlgorithmException e) {
             throw runtime.newNotImplementedError("Unsupported digest algorithm (" + name + ")");
         }
     }
@@ -174,7 +170,7 @@ public class Digest extends RubyObject {
     public IRubyObject digest_length() {
         return RubyFixnum.newFixnum(getRuntime(), algo.getDigestLength());
     }
-    
+
     // from http://www.win.tue.nl/pinpasjc/docs/apis/jc222/javacard/security/MessageDigest.html
     private enum BlockLength {
         DUMMY(-1),
@@ -183,7 +179,7 @@ public class Digest extends RubyObject {
         SHA_256(64),
         SHA_384(128),
         SHA_512(128);
-        
+
         public static BlockLength forAlgorithm(String algorithm) {
             if (algorithm.equalsIgnoreCase("SHA-1")) {
                 return SHA;
@@ -196,31 +192,31 @@ public class Digest extends RubyObject {
             } else if (algorithm.equalsIgnoreCase("SHA-512")) {
                 return SHA_512;
             }
-            
+
             return DUMMY;
         }
-        
+
         public int getLength() {
             return length;
         }
-        
+
         private BlockLength(int length) {
             this.length = length;
         }
-        
+
         private final int length;
     }
 
     @JRubyMethod()
     public IRubyObject block_length(ThreadContext context) {
         Ruby runtime = context.runtime;
-        
+
         BlockLength bl = BlockLength.forAlgorithm(algo.getAlgorithm());
-        
+
         if (bl.getLength() != -1) {
             return runtime.newFixnum(bl.getLength());
         }
-        
+
         // TODO: All algorithms should be supported here?
         throw getRuntime().newRuntimeError(
                 this.getMetaClass() + " doesn't implement block_length()");

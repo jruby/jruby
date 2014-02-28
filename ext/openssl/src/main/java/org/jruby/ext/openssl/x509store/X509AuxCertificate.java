@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -31,6 +31,11 @@ import java.io.IOException;
 import java.io.ByteArrayInputStream;
 import java.math.BigInteger;
 
+import java.util.Date;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+
 import java.security.Principal;
 import java.security.PublicKey;
 import java.security.NoSuchAlgorithmException;
@@ -44,23 +49,20 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateFactory;
-import org.bouncycastle.asn1.x509.Certificate;
-
-import java.util.Date;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-
 import javax.security.auth.x500.X500Principal;
+
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.x509.Certificate;
+
+import static org.jruby.ext.openssl.OpenSSLReal.getCertificateFactory;
 
 /**
  * Since regular X509Certificate doesn't represent the Aux part of a
  * certification, this class uses composition and extension to contain
  * both pieces of information.
- * 
+ *
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class X509AuxCertificate extends X509Certificate {
@@ -70,10 +72,10 @@ public class X509AuxCertificate extends X509Certificate {
 
     private boolean valid = false;
     private int ex_flags = 0;
-    
+
     public X509AuxCertificate(Certificate wrap) throws IOException, CertificateException {
         super();
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        CertificateFactory cf = getCertificateFactory("X.509");
         ByteArrayInputStream bis = new ByteArrayInputStream(wrap.getEncoded());
         this.wrap = (X509Certificate) cf.generateCertificate(bis);
         this.aux = null;
