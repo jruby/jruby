@@ -116,10 +116,15 @@ import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.cms.CMSSignedData;
 
+import org.jruby.ext.openssl.Cipher.Algorithm;
 import org.jruby.ext.openssl.Cipher.CipherModule;
 import org.jruby.ext.openssl.impl.ASN1Registry;
 import org.jruby.ext.openssl.impl.CipherSpec;
 import org.jruby.ext.openssl.impl.PKCS10Request;
+
+import static org.jruby.ext.openssl.OpenSSLReal.getCipher;
+import static org.jruby.ext.openssl.OpenSSLReal.getKeyFactory;
+import static org.jruby.ext.openssl.OpenSSLReal.getSecretKeyFactory;
 
 /**
  * Helper class to read and write PEM files correctly.
@@ -329,21 +334,20 @@ public class PEMInputOutput {
         PKCS12PBEParams pkcs12Params = PKCS12PBEParams.getInstance(algId.getParameters());
         PBEKeySpec pbeSpec = new PBEKeySpec(password);
         PBEParameterSpec pbeParams = new PBEParameterSpec(
-          pkcs12Params.getIV(), pkcs12Params.getIterations().intValue()
+            pkcs12Params.getIV(), pkcs12Params.getIterations().intValue()
         );
 
         //String algorithm = algId.getAlgorithm().getId();
         String algorithm = ASN1Registry.o2a(algId.getAlgorithm());
         algorithm = (algorithm.split("-"))[0];
 
-        SecretKeyFactory secKeyFact = SecretKeyFactory.getInstance(algorithm);
+        SecretKeyFactory secKeyFact = getSecretKeyFactory(algorithm);
 
-        Cipher cipher = Cipher.getInstance(algorithm);
-
+        Cipher cipher = getCipher(algorithm);
         cipher.init(Cipher.DECRYPT_MODE, secKeyFact.generateSecret(pbeSpec), pbeParams);
 
         PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(
-          ASN1Primitive.fromByteArray(cipher.doFinal(eIn.getEncryptedData()))
+            ASN1Primitive.fromByteArray(cipher.doFinal(eIn.getEncryptedData()))
         );
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(pInfo.getEncoded());
 
@@ -352,9 +356,9 @@ public class PEMInputOutput {
         // TODO: Can we just set it to RSA as in derivePrivateKeyPBES2?
         KeyFactory keyFact;
         if (keyFactAlg.startsWith("dsa")) {
-          keyFact = KeyFactory.getInstance("DSA");
+            keyFact = getKeyFactory("DSA");
         } else {
-          keyFact = KeyFactory.getInstance("RSA");
+            keyFact = getKeyFactory("RSA"); // BC
         }
 
         return keyFact.generatePrivate(keySpec);
@@ -891,20 +895,20 @@ public class PEMInputOutput {
         out.flush();
     }
 
-    private static void writePemEncrypted(BufferedWriter out, String pemHeader, byte[] encoding, CipherSpec cipher, char[] passwd) throws IOException {
-        Cipher c = cipher.getCipher();
-        byte[] iv = new byte[c.getBlockSize()];
+    private static void writePemEncrypted(BufferedWriter out, String pemHeader, byte[] encoding, CipherSpec cipherSpec, char[] passwd) throws IOException {
+        Cipher cipher = cipherSpec.getCipher();
+        byte[] iv = new byte[cipher.getBlockSize()];
         random.nextBytes(iv);
         byte[] salt = new byte[8];
         System.arraycopy(iv, 0, salt, 0, 8);
         OpenSSLPBEParametersGenerator pGen = new OpenSSLPBEParametersGenerator();
         pGen.init(PBEParametersGenerator.PKCS5PasswordToBytes(passwd), salt);
-        KeyParameter param = (KeyParameter) pGen.generateDerivedParameters(cipher.getKeyLenInBits());
-        SecretKey secretKey = new SecretKeySpec(param.getKey(), org.jruby.ext.openssl.Cipher.Algorithm.getAlgorithmBase(c));
+        KeyParameter param = (KeyParameter) pGen.generateDerivedParameters(cipherSpec.getKeyLenInBits());
+        SecretKey secretKey = new SecretKeySpec(param.getKey(), Algorithm.getAlgorithmBase(cipher));
         byte[] encData = null;
         try {
-            c.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(iv));
-            encData = c.doFinal(encoding);
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(iv));
+            encData = cipher.doFinal(encoding);
         } catch (InvalidKeyException ike) {
             if (ike.getMessage().startsWith("Invalid key length")) {
                 throw new IOException("Invalid key length. See http://wiki.jruby.org/UnlimitedStrengthCrypto");
@@ -917,7 +921,7 @@ public class PEMInputOutput {
         out.newLine();
         out.write("Proc-Type: 4,ENCRYPTED");
         out.newLine();
-        out.write("DEK-Info: " + cipher.getOsslName() + ",");
+        out.write("DEK-Info: " + cipherSpec.getOsslName() + ",");
         writeHexEncoded(out, iv);
         out.newLine();
         out.newLine();
@@ -987,28 +991,20 @@ public class PEMInputOutput {
                     rsaPubStructure.getPublicExponent());
 
         try {
-            KeyFactory keyFact = KeyFactory.getInstance("RSA");
-            return (RSAPublicKey) keyFact.generatePublic(keySpec);
-        } catch (NoSuchAlgorithmException e) {
-                // ignore
-        } catch (InvalidKeySpecException e) {
-                // ignore
+            return (RSAPublicKey) getKeyFactory("RSA").generatePublic(keySpec);
         }
-
+        catch (NoSuchAlgorithmException e) { /* ignore */ }
+        catch (InvalidKeySpecException e) { /* ignore */ }
         return  null;
     }
 
     private static PublicKey readPublicKey(byte[] input, String alg, String endMarker) throws IOException {
         KeySpec keySpec = new X509EncodedKeySpec(input);
         try {
-            KeyFactory keyFact = KeyFactory.getInstance(alg);
-            PublicKey pubKey = keyFact.generatePublic(keySpec);
-            return pubKey;
-        } catch (NoSuchAlgorithmException e) {
-            // ignore
-        } catch (InvalidKeySpecException e) {
-            // ignore
+            return getKeyFactory(alg).generatePublic(keySpec);
         }
+        catch (NoSuchAlgorithmException e) { /* ignore */ }
+        catch (InvalidKeySpecException e) { /* ignore */ }
         return null;
     }
 
@@ -1068,9 +1064,9 @@ public class PEMInputOutput {
         if (!CipherModule.isSupportedCipher(algorithm)) {
             throw new IOException("Unknown algorithm: " + algorithm);
         }
-        String[] cipher = org.jruby.ext.openssl.Cipher.Algorithm.osslToJsse(algorithm);
-        String realName = cipher[3];
-        int[] lengths = org.jruby.ext.openssl.Cipher.Algorithm.osslKeyIvLength(algorithm);
+        String[] cipherData = Algorithm.osslToJsse(algorithm);
+        String realName = cipherData[3];
+        int[] lengths = Algorithm.osslKeyIvLength(algorithm);
         int keyLen = lengths[0];
         int ivLen = lengths[1];
         if (iv.length != ivLen) {
@@ -1082,9 +1078,9 @@ public class PEMInputOutput {
         pGen.init(PBEParametersGenerator.PKCS5PasswordToBytes(passwd), salt);
         KeyParameter param = (KeyParameter) pGen.generateDerivedParameters(keyLen * 8);
         SecretKey secretKey = new javax.crypto.spec.SecretKeySpec(param.getKey(), realName);
-        Cipher c = Cipher.getInstance(realName);
-        c.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
-        return c.doFinal(decoded);
+        Cipher cipher = getCipher(realName);
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
+        return cipher.doFinal(decoded);
     }
 
     /**

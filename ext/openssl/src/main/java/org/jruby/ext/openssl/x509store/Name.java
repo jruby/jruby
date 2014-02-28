@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -28,12 +28,12 @@
 package org.jruby.ext.openssl.x509store;
 
 import java.security.MessageDigest;
-
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.x500.X500Name;
+
+import static org.jruby.ext.openssl.OpenSSLReal.getMessageDigest;
 
 /**
  * c: X509_NAME
@@ -58,11 +58,11 @@ public class Name {
     /**
      * c: X509_NAME_hash
      */
-    public long hash() { 
+    public long hash() {
         try {
             byte[] bytes = name.getEncoded();
             byte[] md = null;
-            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            MessageDigest md5 = getMessageDigest("MD5");
             md = md5.digest(bytes);
             long result = 0;
             result |= md[3] & 0xff; result <<= 8;

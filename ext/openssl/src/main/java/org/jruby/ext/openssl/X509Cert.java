@@ -31,6 +31,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -39,7 +40,6 @@ import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -54,6 +54,7 @@ import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -73,6 +74,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+
+import static org.jruby.ext.openssl.OpenSSLReal.getCertificateFactory;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -133,7 +136,8 @@ public class X509Cert extends RubyObject {
     }
 
     // this is the javax.security counterpart of the previous wrap method
-    public static IRubyObject wrap(Ruby runtime, javax.security.cert.Certificate c) throws javax.security.cert.CertificateEncodingException {
+    public static IRubyObject wrap(Ruby runtime, javax.security.cert.Certificate c)
+        throws javax.security.cert.CertificateEncodingException {
         RubyClass cr = Utils.getClassFromPath(runtime, "OpenSSL::X509::Certificate");
         return cr.callMethod(runtime.getCurrentContext(), "new", RubyString.newString(runtime, c.getEncoded()));
     }
@@ -142,24 +146,23 @@ public class X509Cert extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block unusedBlock) {
         Ruby runtime = context.runtime;
         extensions = new ArrayList<IRubyObject>();
-        if(args.length == 0) {
+        if (args.length == 0) {
             return this;
         }
         byte[] bytes = OpenSSLImpl.readX509PEM(args[0]);
         ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-
-        CertificateFactory cf;
 
         RubyModule ossl = runtime.getModule("OpenSSL");
         RubyModule x509 = (RubyModule)ossl.getConstant("X509");
         IRubyObject x509Name = x509.getConstant("Name");
 
         try {
-            cf = CertificateFactory.getInstance("X.509");
-            cert = (X509Certificate)cf.generateCertificate(bis);
-        } catch (CertificateException ex) {
+            cert = (X509Certificate) getCertificateFactory("X.509").generateCertificate(bis);
+        }
+        catch (CertificateException ex) {
             throw newCertificateError(runtime, ex);
         }
+
         if (cert == null) {
             throw newCertificateError(runtime, (String) null);
         }
