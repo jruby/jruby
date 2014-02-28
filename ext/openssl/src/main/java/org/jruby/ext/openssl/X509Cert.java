@@ -31,7 +31,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
-import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -148,7 +147,7 @@ public class X509Cert extends RubyObject {
         }
         byte[] bytes = OpenSSLImpl.readX509PEM(args[0]);
         ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-        
+
         CertificateFactory cf;
 
         RubyModule ossl = runtime.getModule("OpenSSL");
@@ -510,7 +509,7 @@ public class X509Cert extends RubyObject {
                         for(int i=0;i<n2.length;i++) {
                             v1.add(n2[i]);
                         }
-                        
+
                         ag.setRealValue(new String(ByteList.plain(GeneralNames.getInstance(new DLSequence(v1)).getEncoded(ASN1Encoding.DER))));
                     } catch (IOException ex) {
                         throw getRuntime().newIOErrorFromException(ex);
