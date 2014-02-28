@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -31,8 +31,6 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchProviderException;
 import java.security.cert.CertificateFactory;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import javax.crypto.SecretKeyFactory;
@@ -42,7 +40,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.ext.openssl.Cipher.CipherModule;
 import org.jruby.ext.openssl.x509store.X509Error;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -64,7 +61,7 @@ public class OpenSSLReal {
     public interface Runnable {
         public void run() throws GeneralSecurityException;
     }
-    
+
     public interface Callable {
         public Object call() throws GeneralSecurityException;
     }
@@ -157,20 +154,20 @@ public class OpenSSLReal {
             ((RubyModule) recv).setInternalVariable("debug", debug);
             return debug;
         }
-        
+
         // Added in 2.0; not masked because it does nothing anyway
         @JRubyMethod(meta = true)
         public static IRubyObject fips_mode(ThreadContext context, IRubyObject self) {
             return context.runtime.getFalse();
         }
-        
+
         // Added in 2.0; not masked because it does nothing anyway
         @JRubyMethod(name = "fips_mode=", meta = true)
         public static IRubyObject fips_mode_set(ThreadContext context, IRubyObject self, IRubyObject value) {
             if (value.isTrue()) {
                 context.runtime.getWarnings().warn("FIPS mode not supported on JRuby OpenSSL");
             }
-            
+
             return self;
         }
     }
