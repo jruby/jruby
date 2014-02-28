@@ -27,13 +27,29 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
-import java.security.NoSuchProviderException;
-import java.security.cert.CertificateFactory;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Locale;
 import java.util.Map;
+import java.util.StringTokenizer;
 
-import javax.crypto.SecretKeyFactory;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.KeyFactorySpi;
+import java.security.MessageDigest;
+import java.security.MessageDigestSpi;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Provider;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateFactorySpi;
+import javax.crypto.CipherSpi;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKeyFactorySpi;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -48,14 +64,14 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class OpenSSLReal {
+
     private static java.security.Provider BC_PROVIDER = null;
+    private static final String BC_PROVIDER_CLASS = "org.bouncycastle.jce.provider.BouncyCastleProvider";
 
     static {
         try {
-            BC_PROVIDER = (java.security.Provider) Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider").newInstance();
-        } catch (Throwable ignored) {
-            // no bouncy castle available
-        }
+            BC_PROVIDER = (java.security.Provider) Class.forName(BC_PROVIDER_CLASS).newInstance();
+        } catch (Throwable ignored) { /* no bouncy castle available */ }
     }
 
     public interface Runnable {
@@ -172,40 +188,296 @@ public class OpenSSLReal {
         }
     }
 
-    public static javax.crypto.Cipher getCipherBC(final String algorithm) throws GeneralSecurityException {
-        return (javax.crypto.Cipher) getWithBCProvider(new Callable() {
-
-            public Object call() throws GeneralSecurityException {
-                return javax.crypto.Cipher.getInstance(algorithm, "BC");
-            }
-        });
+    /**
+     * @note code calling this should not assume BC provider internals !
+     */
+    public static javax.crypto.Cipher getCipher(final String transformation)
+        throws NoSuchAlgorithmException, NoSuchPaddingException {
+        try {
+            return getCipherBC(transformation);
+        } // still try java.security :
+        catch (NoSuchAlgorithmException e) {
+            return javax.crypto.Cipher.getInstance(transformation);
+        }
     }
 
-    public static SecretKeyFactory getSecretKeyFactoryBC(final String algorithm) throws GeneralSecurityException {
-        return (SecretKeyFactory) getWithBCProvider(new Callable() {
+    public static javax.crypto.Cipher getCipherBC(final String transformation)
+        throws NoSuchAlgorithmException, NoSuchPaddingException {
+        // these are BC JCE (@see javax.crypto.Cipher) inspired internals :
+        final Class<?>[] paramTypes = { CipherSpi.class, Provider.class, String.class };
 
-            public Object call() throws GeneralSecurityException {
-                return SecretKeyFactory.getInstance(algorithm, "BC");
+        CipherSpi spi = (CipherSpi) getBCImplEngine("Cipher", transformation);
+
+        if ( spi == null ) {
+            //
+            // try the long way
+            //
+            StringTokenizer tok = new StringTokenizer(transformation, "/");
+            String algorithm = tok.nextToken();
+
+            spi = (CipherSpi) getBCImplEngine("Cipher", algorithm);
+
+            if ( spi == null ) throw new NoSuchAlgorithmException(transformation + " not found");
+
+            //
+            // make sure we don't get fooled by a "//" in the string
+            //
+            if (tok.hasMoreTokens() && ! transformation.regionMatches(algorithm.length(), "//", 0, 2)) {
+                // cipherSpi.engineSetMode(tok.nextToken());
+                doInvoke(spi, "engineSetMode", new Class[] { String.class }, tok.nextToken());
             }
-        });
+
+            if (tok.hasMoreTokens()) {
+                // cipherSpi.engineSetPadding(tok.nextToken());
+                doInvoke(spi, "engineSetPadding", new Class[] { String.class }, tok.nextToken());
+            }
+        }
+
+        // new javax.crypto.Cipher(spi, BC_PROVIDER, transformation);
+        return newInstance(javax.crypto.Cipher.class, paramTypes,
+            new Object[] { spi, BC_PROVIDER, transformation }
+        );
     }
 
-    public static MessageDigest getMessageDigestBC(final String algorithm) throws GeneralSecurityException {
-        return (MessageDigest) getWithBCProvider(new Callable() {
-
-            public Object call() throws GeneralSecurityException {
-                return MessageDigest.getInstance(algorithm, "BC");
-            }
-        });
+    /**
+     * @note code calling this should not assume BC provider internals !
+     */
+    public static javax.crypto.SecretKeyFactory getSecretKeyFactory(final String algorithm)
+        throws NoSuchAlgorithmException {
+        try {
+            return getSecretKeyFactoryBC(algorithm);
+        } // still try java.security :
+        catch (NoSuchAlgorithmException e) {
+            return javax.crypto.SecretKeyFactory.getInstance(algorithm);
+        }
     }
 
-    public static CertificateFactory getX509CertificateFactoryBC() throws GeneralSecurityException {
-        return (CertificateFactory) getWithBCProvider(new Callable() {
+    public static javax.crypto.SecretKeyFactory getSecretKeyFactoryBC(final String algorithm)
+        throws NoSuchAlgorithmException {
+        // these are BC JCE (@see javax.crypto.SecretKey) inspired internals :
+        final Class<?>[] paramTypes = { SecretKeyFactorySpi.class, Provider.class, String.class };
 
-            public Object call() throws GeneralSecurityException {
-                return CertificateFactory.getInstance("X.509", "BC");
-            }
-        });
+        SecretKeyFactorySpi spi = (SecretKeyFactorySpi) getBCImplEngine("SecretKeyFactory", algorithm);
+
+        if ( spi == null ) throw new NoSuchAlgorithmException(algorithm + " not found");
+
+        // return new SecretKeyFactory(spi, BC_PROVIDER, algorithm);
+        return newInstance(javax.crypto.SecretKeyFactory.class, paramTypes,
+            new Object[] { spi, BC_PROVIDER, algorithm }
+        );
     }
+
+    /**
+     * @note code calling this should not assume BC provider internals !
+     */
+    public static KeyFactory getKeyFactory(final String algorithm)
+        throws NoSuchAlgorithmException {
+        try {
+            return getKeyFactoryBC(algorithm);
+        } // still try java.security :
+        catch (NoSuchAlgorithmException e) {
+            return KeyFactory.getInstance(algorithm);
+        }
+    }
+
+    public static KeyFactory getKeyFactoryBC(final String algorithm)
+        throws NoSuchAlgorithmException {
+
+        final Class<?>[] paramTypes = { KeyFactorySpi.class, Provider.class, String.class };
+
+        KeyFactorySpi spi = (KeyFactorySpi) getBCImplEngine("KeyFactory", algorithm);
+
+        if ( spi == null ) throw new NoSuchAlgorithmException(algorithm + " not found");
+
+        // return new KeyFactory(spi, provider, algorithm)
+        return newInstance(KeyFactory.class, paramTypes,
+            new Object[] { spi, BC_PROVIDER, algorithm }
+        );
+    }
+
+    /**
+     * @note code calling this should not assume BC provider internals !
+     */
+    public static MessageDigest getMessageDigest(final String algorithm)
+        throws NoSuchAlgorithmException {
+        try {
+            return getMessageDigestBC(algorithm);
+        } // still try java.security :
+        catch (NoSuchAlgorithmException e) {
+            return MessageDigest.getInstance(algorithm);
+        }
+    }
+
+    public static MessageDigest getMessageDigestBC(final String algorithm)
+        throws NoSuchAlgorithmException {
+
+        final Object spi = getBCImplEngine("MessageDigest", algorithm);
+
+        if ( spi == null ) throw new NoSuchAlgorithmException(algorithm + " not found");
+
+        final MessageDigest messageDigest;
+        // likely the case with BC
+        // e.g. org.bouncycastle.jcajce.provider.digest.MD5$Digest.class
+        if ( spi instanceof MessageDigest ) {
+            messageDigest = (MessageDigest) spi;
+        }
+        else { // still emulate what MessageDigest.getDigest would do :
+            final Class<? extends MessageDigest> delegate;
+            try {
+                delegate = (Class<? extends MessageDigest>)
+                    Class.forName(MessageDigest.class.getName() + "$Delegate");
+            }
+            catch (ClassNotFoundException e) {
+                // it's in the JDK - not supposed to happen !
+                throw new RuntimeException(e);
+            }
+            // public Delegate(MessageDigestSpi digestSpi, String algorithm)
+            messageDigest = newInstance(delegate,
+                new Class[] { MessageDigestSpi.class, String.class }, spi, algorithm
+            );
+        }
+
+        // messageDigest.provider = BC_PROVIDER
+        setField(messageDigest, "provider", BC_PROVIDER);
+        return messageDigest;
+    }
+
+    /**
+     * @note code calling this should not assume BC provider internals !
+     */
+    public static CertificateFactory getCertificateFactory(final String type)
+        throws CertificateException {
+        try {
+            return getCertificateFactoryBC(type);
+        } // still try java.security :
+        catch (CertificateException e) {
+            return CertificateFactory.getInstance(type);
+        }
+    }
+
+    public static CertificateFactory getCertificateFactoryBC(final String type)
+        throws CertificateException {
+
+        final CertificateFactorySpi spi = (CertificateFactorySpi)
+            getBCImplEngine("CertificateFactory", type);
+
+        if ( spi == null ) throw new CertificateException(type + " not found");
+
+        // return new CertificateFactory(spi, provider, type);
+        return newInstance(CertificateFactory.class,
+            new Class[] { CertificateFactorySpi.class, Provider.class, String.class },
+            new Object[] { spi, BC_PROVIDER, type }
+        );
+    }
+
+    public static CertificateFactory getX509CertificateFactoryBC() throws CertificateException {
+        // BC's CertificateFactorySpi :
+        // org.bouncycastle.jcajce.provider.asymmetric.x509.CertificateFactory.class
+        return getCertificateFactoryBC("X.509");
+    }
+
+    // these are BC JCE (@see javax.crypto.JCEUtil) inspired internals :
+    // https://github.com/bcgit/bc-java/blob/master/jce/src/main/java/javax/crypto/JCEUtil.java
+
+    private static Object getBCImplEngine(String baseName, String algorithm) {
+        //
+        // try case insensitive
+        //
+        Object engine = findBCImplEngine(baseName, algorithm.toUpperCase(Locale.ENGLISH));
+        if ( engine == null ) engine = findBCImplEngine(baseName, algorithm);
+        return engine;
+    }
+
+    private static Object findBCImplEngine(String baseName, String algorithm) {
+        final Provider bcProvider = BC_PROVIDER;
+
+        String alias;
+        while ((alias = bcProvider.getProperty("Alg.Alias." + baseName + "." + algorithm)) != null) {
+            algorithm = alias;
+        }
+
+        final String className = bcProvider.getProperty(baseName + "." + algorithm);
+
+        if (className != null) {
+            try {
+                Class klass;
+                ClassLoader loader = bcProvider.getClass().getClassLoader();
+
+                if (loader != null) {
+                    klass = loader.loadClass(className);
+                }
+                else {
+                    klass = Class.forName(className);
+                }
+
+                return klass.newInstance();
+            }
+            catch (ClassNotFoundException e) {
+                throw new IllegalStateException(
+                    "algorithm " + algorithm + " in provider " + bcProvider.getName() + " but no class \"" + className + "\" found!");
+            }
+            catch (Exception e) {
+                throw new IllegalStateException(
+                    "algorithm " + algorithm + " in provider " + bcProvider.getName() + " but class \"" + className + "\" inaccessible!");
+            }
+        }
+
+        return null;
+    }
+
+    private static <T> T newInstance(Class<T> klass, Class<?>[] paramTypes, Object... params) {
+        final Constructor<T> constructor;
+        try {
+            constructor = klass.getDeclaredConstructor(paramTypes);
+            constructor.setAccessible(true);
+            return constructor.newInstance(params);
+        }
+        catch (NoSuchMethodException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
+        catch (InvocationTargetException e) {
+            throw new IllegalStateException(e.getTargetException());
+        }
+        catch (Exception e) {
+            if ( e instanceof RuntimeException ) throw (RuntimeException) e;
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static Object doInvoke(Object obj, String methodName, Class<?>[] paramTypes, Object... params) {
+        final Method method;
+        try {
+            method = obj.getClass().getDeclaredMethod(methodName, paramTypes);
+            method.setAccessible(true);
+            return method.invoke(obj, params);
+        }
+        catch (NoSuchMethodException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
+        catch (InvocationTargetException e) {
+            throw new IllegalStateException(e.getTargetException());
+        }
+        catch (Exception e) {
+            if ( e instanceof RuntimeException ) throw (RuntimeException) e;
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static void setField(Object obj, String fieldName, Object value) {
+        final Field field;
+        try {
+            field = obj.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            field.set(obj, value);
+        }
+        catch (NoSuchFieldException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
+        catch (Exception e) {
+            if ( e instanceof RuntimeException ) throw (RuntimeException) e;
+            throw new IllegalStateException(e);
+        }
+    }
+
 }// OpenSSLReal
 
