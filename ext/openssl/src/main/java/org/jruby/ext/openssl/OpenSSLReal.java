@@ -51,6 +51,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateFactorySpi;
 import javax.crypto.CipherSpi;
+import javax.crypto.MacSpi;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactorySpi;
 
@@ -259,14 +260,45 @@ public class OpenSSLReal {
     public static javax.crypto.SecretKeyFactory getSecretKeyFactoryBC(final String algorithm)
         throws NoSuchAlgorithmException {
         // these are BC JCE (@see javax.crypto.SecretKey) inspired internals :
-        final Class<?>[] paramTypes = { SecretKeyFactorySpi.class, Provider.class, String.class };
-
         SecretKeyFactorySpi spi = (SecretKeyFactorySpi) getBCImplEngine("SecretKeyFactory", algorithm);
 
         if ( spi == null ) throw new NoSuchAlgorithmException(algorithm + " not found");
 
         // return new SecretKeyFactory(spi, BC_PROVIDER, algorithm);
-        return newInstance(javax.crypto.SecretKeyFactory.class, paramTypes,
+        return newInstance(javax.crypto.SecretKeyFactory.class,
+            new Class[] { SecretKeyFactorySpi.class, Provider.class, String.class },
+            new Object[] { spi, BC_PROVIDER, algorithm }
+        );
+    }
+
+    /**
+     * @note code calling this should not assume BC provider internals !
+     */
+    public static javax.crypto.Mac getMac(final String algorithm)
+        throws NoSuchAlgorithmException {
+        javax.crypto.Mac mac = getMacBC(algorithm, true);
+        if ( mac == null ) mac = javax.crypto.Mac.getInstance(algorithm);
+        return mac;
+    }
+
+    static javax.crypto.Mac getMacBC(final String algorithm)
+        throws NoSuchAlgorithmException {
+        return getMacBC(algorithm, false);
+    }
+
+    private static javax.crypto.Mac getMacBC(final String algorithm, boolean silent)
+        throws NoSuchAlgorithmException {
+        // these are BC JCE (@see javax.crypto.Mac) inspired internals :
+        MacSpi spi = (MacSpi) getBCImplEngine("Mac", algorithm);
+
+        if ( spi == null ) {
+            if ( silent ) return null;
+            throw new NoSuchAlgorithmException(algorithm + " not found");
+        }
+
+        // return new Mac(spi, BC_PROVIDER, algorithm);
+        return newInstance(javax.crypto.Mac.class,
+            new Class[] { MacSpi.class, Provider.class, String.class },
             new Object[] { spi, BC_PROVIDER, algorithm }
         );
     }
