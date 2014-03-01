@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,17 +27,17 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
-
 import javax.crypto.spec.RC2ParameterSpec;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -49,6 +49,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
@@ -68,7 +69,7 @@ public class Cipher extends RubyObject {
         }
     };
 
-    public static void createCipher(Ruby runtime, RubyModule mOSSL) {
+    public static void createCipher(final Ruby runtime, final RubyModule mOSSL) {
         RubyClass cCipher = mOSSL.defineClassUnder("Cipher", runtime.getObject(), CIPHER_ALLOCATOR);
         cCipher.defineAnnotatedMethods(Cipher.class);
         cCipher.defineAnnotatedMethods(CipherModule.class);
@@ -80,42 +81,45 @@ public class Cipher extends RubyObject {
     public static class CipherModule {
 
         @JRubyMethod(meta = true)
-        public static IRubyObject ciphers(IRubyObject recv) {
+        public static IRubyObject ciphers(final ThreadContext context, final IRubyObject self) {
             initializeCiphers();
-            List<IRubyObject> result = new ArrayList<IRubyObject>();
+            final Ruby runtime = context.runtime;
+
+            List<IRubyObject> result = new ArrayList<IRubyObject>(CIPHERS.size() * 2);
             for (String cipher : CIPHERS) {
-                result.add(recv.getRuntime().newString(cipher));
-                result.add(recv.getRuntime().newString(cipher.toLowerCase()));
+                result.add( runtime.newString(cipher) );
+                result.add( runtime.newString(cipher.toLowerCase()) );
             }
-            return recv.getRuntime().newArray(result);
+            return runtime.newArray(result);
         }
 
         public static boolean isSupportedCipher(String name) {
             initializeCiphers();
+
             return CIPHERS.indexOf(name.toUpperCase()) != -1;
         }
+
         private static boolean initialized = false;
         private static final List<String> CIPHERS = new ArrayList<String>();
 
         private static void initializeCiphers() {
+            if ( initialized ) return;
             synchronized (CIPHERS) {
-                if (initialized) {
-                    return;
-                }
+                if ( initialized ) return;
                 String[] other = {"AES128", "AES192", "AES256", "BLOWFISH", "RC2-40-CBC", "RC2-64-CBC", "RC4", "RC4-40", "CAST", "CAST-CBC"};
                 String[] bases = {"AES-128", "AES-192", "AES-256", "BF", "DES", "DES-EDE", "DES-EDE3", "RC2", "CAST5"};
                 String[] suffixes = {"", "-CBC", "-CFB", "-CFB1", "-CFB8", "-ECB", "-OFB"};
                 for (int i = 0, j = bases.length; i < j; i++) {
+                    String cipher;
                     for (int k = 0, l = suffixes.length; k < l; k++) {
-                        String val = bases[i] + suffixes[k];
-                        if (tryCipher(val)) {
-                            CIPHERS.add(val.toUpperCase());
+                        if ( tryCipher( cipher = bases[i] + suffixes[k]) ) {
+                            CIPHERS.add( cipher.toUpperCase() );
                         }
                     }
                 }
                 for (int i = 0, j = other.length; i < j; i++) {
-                    if (tryCipher(other[i])) {
-                        CIPHERS.add(other[i].toUpperCase());
+                    if ( tryCipher( other[i] ) ) {
+                        CIPHERS.add( other[i].toUpperCase() );
                     }
                 }
                 initialized = true;
@@ -177,7 +181,7 @@ public class Cipher extends RubyObject {
             }
             return algoBase;
         }
-        
+
         public static String[] osslToJsse(String inName) {
             // assume PKCS5Padding
             return osslToJsse(inName, null);
@@ -240,13 +244,13 @@ public class Cipher extends RubyObject {
 
             return new String[]{cryptoBase, cryptoVersion, cryptoMode, realName, paddingType};
         }
-        
+
         public static int[] osslKeyIvLength(String name) {
             String[] values = Algorithm.osslToJsse(name);
             String cryptoBase = values[0];
             String cryptoVersion = values[1];
-            String cryptoMode = values[2];
-            String realName = values[3];
+            //String cryptoMode = values[2];
+            //String realName = values[3];
 
             int keyLen = -1;
             int ivLen = -1;
@@ -272,9 +276,8 @@ public class Cipher extends RubyObject {
                 } else {
                     keyLen = 16;
                     try {
-                        if ((javax.crypto.Cipher.getMaxAllowedKeyLength(name) / 8) < keyLen) {
-                            keyLen = javax.crypto.Cipher.getMaxAllowedKeyLength(name) / 8;
-                        }
+                        int maxLen = javax.crypto.Cipher.getMaxAllowedKeyLength(name) / 8;
+                        if (maxLen < keyLen) keyLen = maxLen;
                     } catch (Exception e) {
                         // I hate checked exceptions
                     }
@@ -297,19 +300,27 @@ public class Cipher extends RubyObject {
     }
 
     private static boolean tryCipher(final String rubyName) {
-        String cryptoMode = Algorithm.osslToJsse(rubyName, null)[3];
+        String transformation = Algorithm.osslToJsse(rubyName, null)[3];
         try {
-            javax.crypto.Cipher.getInstance(cryptoMode);
-            return true;
-        } catch (NoSuchAlgorithmException nsae) {
-            try {
-                OpenSSLReal.getCipherBC(cryptoMode);
-                return true;
-            } catch (GeneralSecurityException gse) {
-                return false;
-            }
-        } catch (Exception e) {
+            return getCipher(transformation, true) != null;
+        }
+        catch (Exception e) {
             return false;
+        }
+    }
+
+    private static javax.crypto.Cipher getCipher(final String transformation, boolean silent)
+        throws NoSuchAlgorithmException, NoSuchPaddingException {
+        try {
+            return OpenSSLReal.getCipher(transformation); // tries BC if it's available
+        }
+        catch (NoSuchAlgorithmException e) {
+            if ( silent ) return null;
+            throw e;
+        }
+        catch (NoSuchPaddingException e) {
+            if ( silent ) return null;
+            throw e;
         }
     }
 
@@ -580,14 +591,12 @@ public class Cipher extends RubyObject {
 
     javax.crypto.Cipher getCipher() {
         try {
-            return javax.crypto.Cipher.getInstance(realName);
-        } catch (NoSuchAlgorithmException e) {
-            try {
-                return OpenSSLReal.getCipherBC(realName);
-            } catch (GeneralSecurityException ignore) {
-            }
+            return getCipher(realName, false);
+        }
+        catch (NoSuchAlgorithmException e) {
             throw newCipherError(getRuntime(), "unsupported cipher algorithm (" + realName + ")");
-        } catch (javax.crypto.NoSuchPaddingException e) {
+        }
+        catch (NoSuchPaddingException e) {
             throw newCipherError(getRuntime(), "unsupported cipher padding (" + realName + ")");
         }
     }
@@ -785,17 +794,17 @@ public class Cipher extends RubyObject {
     int getKeyLen() {
         return keyLen;
     }
-    
+
     int getGenerateKeyLen() {
         return (generateKeyLen == -1) ? keyLen : generateKeyLen;
     }
-    
+
     private void checkInitialized() {
         if (ciph == null) {
             throw getRuntime().newRuntimeError("Cipher not inititalized!");
         }
     }
-    
+
     private boolean isStreamCipher() {
         return ciph.getBlockSize() == 0;
     }
