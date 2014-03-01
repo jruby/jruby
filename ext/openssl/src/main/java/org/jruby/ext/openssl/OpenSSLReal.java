@@ -38,6 +38,8 @@ import java.util.StringTokenizer;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyFactorySpi;
+import java.security.KeyPairGenerator;
+import java.security.KeyPairGeneratorSpi;
 import java.security.MessageDigest;
 import java.security.MessageDigestSpi;
 import java.security.NoSuchAlgorithmException;
@@ -295,6 +297,53 @@ public class OpenSSLReal {
         return newInstance(KeyFactory.class, paramTypes,
             new Object[] { spi, BC_PROVIDER, algorithm }
         );
+    }
+
+    /**
+     * @note code calling this should not assume BC provider internals !
+     */
+    public static KeyPairGenerator getKeyPairGenerator(final String algorithm)
+        throws NoSuchAlgorithmException {
+        try {
+            return getKeyPairGeneratorBC(algorithm);
+        } // still try java.security :
+        catch (NoSuchAlgorithmException e) {
+            return KeyPairGenerator.getInstance(algorithm);
+        }
+    }
+
+    static KeyPairGenerator getKeyPairGeneratorBC(final String algorithm)
+        throws NoSuchAlgorithmException {
+
+        Object spi = getBCImplEngine("KeyPairGenerator", algorithm);
+
+        if ( spi == null ) {
+            throw new NoSuchAlgorithmException(algorithm + " KeyPairGenerator not available");
+        }
+
+        final KeyPairGenerator keyPairGenerator;
+        if ( spi instanceof KeyPairGenerator ) {
+            keyPairGenerator = (KeyPairGenerator) spi;
+        }
+        else { // emulate what KeyPairGenerator.getInstance would do :
+            final Class<? extends KeyPairGenerator> delegate;
+            try {
+                delegate = (Class<? extends KeyPairGenerator>)
+                    Class.forName(KeyPairGenerator.class.getName() + "$Delegate");
+            }
+            catch (ClassNotFoundException e) {
+                // it's in the JDK - not supposed to happen !
+                throw new RuntimeException(e);
+            }
+            // Delegate(KeyPairGeneratorSpi spi, String algorithm)
+            keyPairGenerator = newInstance(delegate,
+                new Class[] { KeyPairGeneratorSpi.class, String.class }, spi, algorithm
+            );
+        }
+
+        // keyPairGeneratorSpi.provider = BC_PROVIDER
+        setField(keyPairGenerator, "provider", BC_PROVIDER);
+        return keyPairGenerator;
     }
 
     /**
