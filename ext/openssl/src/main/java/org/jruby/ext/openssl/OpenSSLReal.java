@@ -70,29 +70,32 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class OpenSSLReal {
 
-    private static java.security.Provider BC_PROVIDER = null;
+    private static final Provider BC_PROVIDER;
     private static final String BC_PROVIDER_CLASS = "org.bouncycastle.jce.provider.BouncyCastleProvider";
 
     static {
+        Provider bcProvider = null;
         try {
-            BC_PROVIDER = (java.security.Provider) Class.forName(BC_PROVIDER_CLASS).newInstance();
-        } catch (Throwable ignored) { /* no bouncy castle available */ }
+            bcProvider = (Provider) Class.forName(BC_PROVIDER_CLASS).newInstance();
+        }
+        catch (Throwable ignored) { /* no bouncy castle available */ }
+        BC_PROVIDER = bcProvider;
     }
 
+    @Deprecated
     public interface Runnable {
         public void run() throws GeneralSecurityException;
     }
 
-    public interface Callable {
-        public Object call() throws GeneralSecurityException;
+    public interface Callable<T> {
+        public T call() throws GeneralSecurityException;
     }
 
+    @Deprecated
     public static void doWithBCProvider(final Runnable toRun) throws GeneralSecurityException {
-        getWithBCProvider(new Callable() {
-
-            public Object call() throws GeneralSecurityException {
-                toRun.run();
-                return null;
+        getWithBCProvider(new Callable<Void>() {
+            public Void call() throws GeneralSecurityException {
+                toRun.run(); return null;
             }
         });
     }
@@ -102,7 +105,7 @@ public class OpenSSLReal {
     // and it causes unknown runtime error anywhere.  We avoid this. To use
     // part of jruby-openssl feature (X.509 and PKCS), users must be aware of
     // dynamic BC provider adding.
-    public static Object getWithBCProvider(Callable toCall) throws GeneralSecurityException {
+    public static <T> T getWithBCProvider(Callable<T> toCall) throws GeneralSecurityException {
         try {
             if (BC_PROVIDER != null && java.security.Security.getProvider("BC") == null) {
                 java.security.Security.addProvider(BC_PROVIDER);
