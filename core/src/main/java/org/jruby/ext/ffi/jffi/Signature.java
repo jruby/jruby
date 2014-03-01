@@ -3,6 +3,7 @@ package org.jruby.ext.ffi.jffi;
 import com.kenai.jffi.CallingConvention;
 import java.util.Arrays;
 import org.jruby.RubyHash;
+import org.jruby.ext.ffi.Enums;
 import org.jruby.ext.ffi.Type;
 
 /**
@@ -13,10 +14,10 @@ final class Signature {
     private final Type[] parameterTypes;
     private final CallingConvention convention;
     private final boolean ignoreError;
-    private final RubyHash enums;
+    private final Enums enums;
 
     public Signature(Type resultType, Type[] parameterTypes, 
-            CallingConvention convention, boolean ignoreError, RubyHash enums) {
+            CallingConvention convention, boolean ignoreError, Enums enums) {
         this.resultType = resultType;
         this.parameterTypes = (Type[]) parameterTypes.clone();
         this.convention = convention;
@@ -66,7 +67,7 @@ final class Signature {
         return resultType;
     }
 
-    public RubyHash getEnums() {
+    public Enums getEnums() {
         return enums;
     }
 }

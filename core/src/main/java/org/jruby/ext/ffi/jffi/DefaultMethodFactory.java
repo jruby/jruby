@@ -15,6 +15,7 @@ import org.jruby.ext.ffi.AbstractMemory;
 import org.jruby.ext.ffi.ArrayMemoryIO;
 import org.jruby.ext.ffi.Buffer;
 import org.jruby.ext.ffi.CallbackInfo;
+import org.jruby.ext.ffi.Enums;
 import org.jruby.ext.ffi.MappedType;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.MemoryPointer;
@@ -62,7 +63,7 @@ public final class DefaultMethodFactory extends MethodFactory {
         }
 
         Signature signature = new Signature(returnType, parameterTypes, convention, 
-                ignoreError, enums instanceof RubyHash ? (RubyHash) enums : null);
+                ignoreError, enums instanceof Enums ? (Enums) enums : null);
 
         BufferNativeInvoker fallbackInvoker = new BufferNativeInvoker(module, function, signature, functionInvoker, marshallers);
         return parameterTypes.length <= 6
@@ -156,7 +157,7 @@ public final class DefaultMethodFactory extends MethodFactory {
             return new ConvertingMarshaller(
                     getMarshaller(ctype.getRealType(), convention, enums), 
                     DataConverters.getParameterConverter(type, 
-                        enums instanceof RubyHash ? (RubyHash) enums : null));
+                        enums instanceof Enums ? (Enums) enums : null));
 
         } else {
             return null;
@@ -171,11 +172,11 @@ public final class DefaultMethodFactory extends MethodFactory {
      * @return A new <tt>ParameterMarshaller</tt>
      */
     static ParameterMarshaller getEnumMarshaller(Type type, CallingConvention convention, IRubyObject enums) {
-        if (!(enums instanceof RubyHash)) {
+        if (!(enums instanceof Enums)) {
             throw type.getRuntime().newArgumentError("wrong argument type "
-                    + enums.getMetaClass().getName() + " (expected Hash)");
+                    + enums.getMetaClass().getName() + " (expected Enums)");
         }
-        NativeDataConverter converter = DataConverters.getParameterConverter(type, (RubyHash) enums);
+        NativeDataConverter converter = DataConverters.getParameterConverter(type, (Enums) enums);
         ParameterMarshaller marshaller = getMarshaller(type.getNativeType());
         return converter != null ? new ConvertingMarshaller(marshaller, converter) : marshaller;
     }

@@ -130,7 +130,7 @@ public class CallbackInfo extends Type {
         if (args.length > 2) {
             if (!(args[2] instanceof RubyHash)) {
                 throw context.runtime.newTypeError("wrong argument type "
-                        + args[3].getMetaClass().getName() + " (expected Hash)");
+                        + args[2].getMetaClass().getName() + " (expected Hash)");
             }
             RubyHash hash = (RubyHash) args[2];
             stdcall = "stdcall".equals(hash.get(context.runtime.newSymbol("convention")));

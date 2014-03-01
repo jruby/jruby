@@ -133,6 +133,9 @@ public abstract class Factory {
             if (ffi.getClass("Enum") == null) {
                 Enum.createEnumClass(runtime, ffi);
             }
+            if (ffi.getClass("Enums") == null) {
+                Enums.createEnumsClass(runtime, ffi);
+            }
             if (ffi.getClass("Type").getClass("Mapped") == null) {
                 MappedType.createConverterTypeClass(runtime, ffi);
             }

@@ -19,9 +19,9 @@ import java.util.Map;
  */
 public class DataConverters {
     @SuppressWarnings("unchecked")
-    private static final Map<RubyHash, NativeDataConverter> enumConverters = Collections.synchronizedMap(new WeakIdentityHashMap());
+    private static final Map<Enums, NativeDataConverter> enumConverters = Collections.synchronizedMap(new WeakIdentityHashMap());
 
-    static boolean isEnumConversionRequired(Type type, RubyHash enums) {
+    static boolean isEnumConversionRequired(Type type, Enums enums) {
         if (type instanceof Type.Builtin && enums != null && !enums.isEmpty()) {
             switch (type.getNativeType()) {
                 case CHAR:
@@ -69,7 +69,8 @@ public class DataConverters {
 
         return null;
     }
-    static NativeDataConverter getParameterConverter(Type type, RubyHash enums) {
+
+    static NativeDataConverter getParameterConverter(Type type, Enums enums) {
         if (isEnumConversionRequired(type, enums)) {
             NativeDataConverter converter = enumConverters.get(enums);
             if (converter != null) {
@@ -82,13 +83,27 @@ public class DataConverters {
             return getParameterConverter(type);
         }
     }
+
+    // static NativeDataConverter getParameterConverter(Type type, RubyHash enums) {
+    //     if (isEnumConversionRequired(type, enums)) {
+    //         NativeDataConverter converter = enumConverters.get(enums);
+    //         if (converter != null) {
+    //             return converter;
+    //         }
+    //         enumConverters.put(enums, converter = new IntOrEnumConverter(NativeType.INT, enums));
+    //         return converter;
+    //     
+    //     } else {
+    //         return getParameterConverter(type);
+    //     }
+    // }
     
     public static final class IntOrEnumConverter extends NativeDataConverter {
         private final NativeType nativeType;
-        private final RubyHash enums;
+        private final Enums enums;
         private volatile IdentityHashMap<RubySymbol, RubyInteger> symbolToValue = new IdentityHashMap<RubySymbol, RubyInteger>();
 
-        public IntOrEnumConverter(NativeType nativeType, RubyHash enums) {
+        public IntOrEnumConverter(NativeType nativeType, Enums enums) {
             this.nativeType = nativeType;
             this.enums = enums;
         }
@@ -128,9 +143,10 @@ public class DataConverters {
         }
 
         private synchronized IRubyObject lookupAndCacheValue(IRubyObject obj) {
-            IRubyObject value = enums.fastARef(obj);
+            Ruby runtime = obj.getRuntime();
+            IRubyObject value = enums.mapSymbol(runtime.getCurrentContext(), obj);
             if (value.isNil() || !(value instanceof RubyInteger)) {
-                throw obj.getRuntime().newArgumentError("invalid enum value, " + obj.inspect());
+                throw runtime.newArgumentError("invalid enum value, " + obj.inspect());
             }
 
             IdentityHashMap<RubySymbol, RubyInteger> s2v = new IdentityHashMap<RubySymbol, RubyInteger>(symbolToValue);
