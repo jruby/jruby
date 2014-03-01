@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -29,7 +29,6 @@ package org.jruby.ext.openssl;
 
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.Mac;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.jruby.Ruby;
@@ -43,6 +42,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.runtime.Visibility;
 
+import static org.jruby.ext.openssl.OpenSSLReal.getMac;
+
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
@@ -54,7 +55,7 @@ public class HMAC extends RubyObject {
             return new HMAC(runtime, klass);
         }
     };
-    
+
     public static void createHMAC(Ruby runtime, RubyModule ossl) {
         RubyClass cHMAC = ossl.defineClassUnder("HMAC",runtime.getObject(),HMAC_ALLOCATOR);
         RubyClass openSSLError = ossl.getClass("OpenSSLError");
@@ -63,40 +64,41 @@ public class HMAC extends RubyObject {
         cHMAC.defineAnnotatedMethods(HMAC.class);
     }
 
-    static Mac getMac(String algoName) throws NoSuchAlgorithmException {
-        // some algorithms need the - removed; this is ugly, I know.
+    private static Mac getMacInstance(String algorithmName) throws NoSuchAlgorithmException {
+        final String algorithmSuffix = algorithmName.replaceAll("-", "");
         try {
-            return Mac.getInstance("HMAC" + algoName.replaceAll("-", ""));
-        } catch (NoSuchAlgorithmException nsae) {
-            return Mac.getInstance("HMAC-" + algoName.replaceAll("-", ""));
+            return getMac("HMAC" + algorithmSuffix);
+        } // some algorithms need the - removed; this is ugly, I know.
+        catch (NoSuchAlgorithmException nsae) {
+            return getMac("HMAC-" + algorithmSuffix);
         }
     }
-    
+
     @JRubyMethod(name = "digest", meta = true)
-    public static IRubyObject s_digest(IRubyObject recv, IRubyObject digest, IRubyObject kay, IRubyObject data) {
-        String algoName = getDigestAlgorithmName(digest);
+    public static IRubyObject s_digest(IRubyObject recv, IRubyObject digest, IRubyObject key, IRubyObject data) {
+        final String algorithm = getDigestAlgorithmName(digest);
+        final byte[] keyBytes = key.convertToString().getBytes();
         try {
-            Mac mac = getMac(algoName);
-            byte[] key = kay.convertToString().getBytes();
-            SecretKey keysp = new SecretKeySpec(key, mac.getAlgorithm());
-            mac.init(keysp);
+            Mac mac = getMacInstance(algorithm);
+            mac.init(new SecretKeySpec(keyBytes, mac.getAlgorithm()));
             return RubyString.newString(recv.getRuntime(), mac.doFinal(data.convertToString().getBytes()));
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
             throw recv.getRuntime().newNotImplementedError(e.getMessage());
         }
     }
 
     @JRubyMethod(name = "hexdigest", meta = true)
-    public static IRubyObject s_hexdigest(IRubyObject recv, IRubyObject digest, IRubyObject kay, IRubyObject data) {
-        String algoName = getDigestAlgorithmName(digest);
+    public static IRubyObject s_hexdigest(IRubyObject recv, IRubyObject digest, IRubyObject key, IRubyObject data) {
+        final String algorithm = getDigestAlgorithmName(digest);
+        final byte[] keyBytes = key.convertToString().getBytes();
         try {
-            Mac mac = getMac(algoName);
-            byte[] key = kay.convertToString().getBytes();
-            SecretKey keysp = new SecretKeySpec(key, mac.getAlgorithm());
-            mac.init(keysp);
+            Mac mac = getMacInstance(algorithm);
+            mac.init(new SecretKeySpec(keyBytes, mac.getAlgorithm()));
             return RubyString.newString(recv.getRuntime(), ByteList.plain(Utils.toHex(mac.doFinal(data.convertToString().getBytes()))));
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw recv.getRuntime().newNotImplementedError(e.getMessage());
         }
     }
@@ -113,10 +115,9 @@ public class HMAC extends RubyObject {
     public IRubyObject initialize(IRubyObject kay, IRubyObject digest) {
         String algoName = getDigestAlgorithmName(digest);
         try {
-            mac = getMac(algoName);
+            mac = getMacInstance(algoName);
             key = kay.convertToString().getBytes();
-            SecretKey keysp = new SecretKeySpec(key, mac.getAlgorithm());
-            mac.init(keysp);
+            mac.init(new SecretKeySpec(key, mac.getAlgorithm()));
         } catch (Exception e) {
             throw getRuntime().newNotImplementedError(e.getMessage());
         }
@@ -134,12 +135,11 @@ public class HMAC extends RubyObject {
         try {
             mac = Mac.getInstance(name);
             key = ((HMAC)obj).key;
-            SecretKey keysp = new SecretKeySpec(key,name);
-            mac.init(keysp);
+            mac.init(new SecretKeySpec(key, name));
         } catch(Exception e) {
             throw getRuntime().newNotImplementedError("Unsupported MAC algorithm (" + name + ")");
         }
-        
+
         data = new StringBuffer(((HMAC)obj).data.toString());
 
         return this;
