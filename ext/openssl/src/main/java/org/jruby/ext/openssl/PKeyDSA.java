@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * Copyright (C) 2007 Wiliam N Dortch <bill.dortch@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -57,9 +57,16 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.impl.CipherSpec;
 import org.jruby.ext.openssl.x509store.PEMInputOutput;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
+
+import static org.jruby.ext.openssl.OpenSSLReal.bcExceptionMessage;
+import static org.jruby.ext.openssl.OpenSSLReal.getKeyFactory;
+import static org.jruby.ext.openssl.OpenSSLReal.getKeyPairGenerator;
+import static org.jruby.ext.openssl.impl.PKey.readDSAPrivateKey;
+import static org.jruby.ext.openssl.impl.PKey.readDSAPublicKey;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -72,12 +79,12 @@ public class PKeyDSA extends PKey {
             return new PKeyDSA(runtime, klass);
         }
     };
-    
+
     public static void createPKeyDSA(Ruby runtime, RubyModule mPKey) {
         RubyClass cDSA = mPKey.defineClassUnder("DSA",mPKey.getClass("PKey"),PKEYDSA_ALLOCATOR);
         RubyClass pkeyError = mPKey.getClass("PKeyError");
         mPKey.defineClassUnder("DSAError",pkeyError,pkeyError.getAllocator());
-        
+
 
         cDSA.defineAnnotatedMethods(PKeyDSA.class);
     }
@@ -102,18 +109,18 @@ public class PKeyDSA extends PKey {
 
     private DSAPrivateKey privKey;
     private DSAPublicKey pubKey;
-    
+
     // specValues holds individual DSAPublicKeySpec components. this allows
     // a public key to be constructed incrementally, as required by the
     // current implementation of Net::SSH.
     // (see net-ssh-1.1.2/lib/net/ssh/transport/ossl/buffer.rb #read_keyblob)
     private BigInteger[] specValues;
-    
+
     private static final int SPEC_Y = 0;
     private static final int SPEC_P = 1;
     private static final int SPEC_Q = 2;
     private static final int SPEC_G = 3;
-    
+
     @Override
     PublicKey getPublicKey() {
         return pubKey;
@@ -142,7 +149,7 @@ public class PKeyDSA extends PKey {
      */
     private static void dsaGenerate(PKeyDSA dsa, int keysize) throws RaiseException {
         try {
-            KeyPairGenerator gen = KeyPairGenerator.getInstance("DSA");
+            KeyPairGenerator gen = getKeyPairGenerator("DSA");
             gen.initialize(keysize, new SecureRandom());
             KeyPair pair = gen.generateKeyPair();
             dsa.privKey = (DSAPrivateKey) (pair.getPrivate());
@@ -176,9 +183,9 @@ public class PKeyDSA extends PKey {
                 RubyString str = arg.convertToString();
 
                 Object val = null;
-                KeyFactory fact = null;
+                final KeyFactory fact;
                 try {
-                    fact = KeyFactory.getInstance("DSA");
+                    fact = getKeyFactory("DSA");
                 } catch (NoSuchAlgorithmException e) {
                     throw getRuntime().newLoadError("unsupported key algorithm (DSA)");
                 }
@@ -216,7 +223,7 @@ public class PKeyDSA extends PKey {
                 if (null == val) {
                     // d2i_DSAPrivateKey_bio
                     try {
-                        val = org.jruby.ext.openssl.impl.PKey.readDSAPrivateKey(str.getBytes());
+                        val = readDSAPrivateKey(str.getBytes());
                     } catch (NoClassDefFoundError e) {
                         val = null;
                     } catch (Exception e) {
@@ -226,7 +233,7 @@ public class PKeyDSA extends PKey {
                 if (null == val) {
                     // d2i_DSA_PUBKEY_bio
                     try {
-                        val = org.jruby.ext.openssl.impl.PKey.readDSAPublicKey(str.getBytes());
+                        val = readDSAPublicKey(str.getBytes());
                     } catch (NoClassDefFoundError e) {
                         val = null;
                     } catch (Exception e) {
@@ -283,13 +290,14 @@ public class PKeyDSA extends PKey {
         return privKey != null ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
+    @Override
     @JRubyMethod
     public IRubyObject to_der() {
         try {
             byte[] bytes = org.jruby.ext.openssl.impl.PKey.toDerDSAKey(pubKey, privKey);
             return RubyString.newString(getRuntime(), bytes);
         } catch (NoClassDefFoundError ncdfe) {
-            throw newDSAError(getRuntime(), OpenSSLReal.bcExceptionMessage(ncdfe));
+            throw newDSAError(getRuntime(), bcExceptionMessage(ncdfe));
         } catch (IOException ioe) {
             throw newDSAError(getRuntime(), ioe.getMessage());
         }
@@ -325,27 +333,26 @@ public class PKeyDSA extends PKey {
 
     @JRubyMethod(name = { "export", "to_pem", "to_s" }, rest = true)
     public IRubyObject export(IRubyObject[] args) {
-        StringWriter w = new StringWriter();
-        org.jruby.runtime.Arity.checkArgumentCount(getRuntime(), args, 0, 2);
-        CipherSpec ciph = null;
+        Arity.checkArgumentCount(getRuntime(), args, 0, 2);
+        CipherSpec spec = null;
         char[] passwd = null;
         if (args.length > 0 && !args[0].isNil()) {
             org.jruby.ext.openssl.Cipher c = (org.jruby.ext.openssl.Cipher) args[0];
-            ciph = new CipherSpec(c.getCipher(), c.getName(), c.getKeyLen() * 8);
+            spec = new CipherSpec(c.getCipher(), c.getName(), c.getKeyLen() * 8);
             if (args.length > 1 && !args[1].isNil()) {
                 passwd = args[1].toString().toCharArray();
             }
         }
         try {
+            final StringWriter writer = new StringWriter();
             if (privKey != null) {
-                PEMInputOutput.writeDSAPrivateKey(w, privKey, ciph, passwd);
+                PEMInputOutput.writeDSAPrivateKey(writer, privKey, spec, passwd);
             } else {
-                PEMInputOutput.writeDSAPublicKey(w, pubKey);
+                PEMInputOutput.writeDSAPublicKey(writer, pubKey);
             }
-            w.close();
-            return getRuntime().newString(w.toString());
+            return getRuntime().newString(writer.toString());
         } catch (NoClassDefFoundError ncdfe) {
-            throw newDSAError(getRuntime(), OpenSSLReal.bcExceptionMessage(ncdfe));
+            throw newDSAError(getRuntime(), bcExceptionMessage(ncdfe));
         } catch (IOException ioe) {
             throw newDSAError(getRuntime(), ioe.getMessage());
         }
@@ -362,7 +369,7 @@ public class PKeyDSA extends PKey {
         // TODO
         return getRuntime().getNil();
     }
-    
+
     @JRubyMethod(name="p")
     public synchronized IRubyObject get_p() {
         // FIXME: return only for public?
@@ -379,7 +386,7 @@ public class PKeyDSA extends PKey {
         }
         return getRuntime().getNil();
     }
-    
+
     @JRubyMethod(name="p=")
     public synchronized IRubyObject set_p(IRubyObject p) {
         return setKeySpecComponent(SPEC_P, p);
@@ -423,7 +430,7 @@ public class PKeyDSA extends PKey {
         }
         return getRuntime().getNil();
     }
-    
+
     @JRubyMethod(name="g=")
     public synchronized IRubyObject set_g(IRubyObject g) {
         return setKeySpecComponent(SPEC_G, g);
@@ -452,7 +459,7 @@ public class PKeyDSA extends PKey {
         }
         return getRuntime().getNil();
     }
-    
+
     @JRubyMethod(name="pub_key=")
     public synchronized IRubyObject set_pub_key(IRubyObject pub_key) {
         return setKeySpecComponent(SPEC_Y, pub_key);
@@ -468,7 +475,7 @@ public class PKeyDSA extends PKey {
         }
         // get the BigInteger value
         BigInteger bival = BN.getBigInteger(value);
-        
+
         if (vals != null) {
             // we already have some vals stored, store this one, too
             vals[index] = bival;
@@ -482,7 +489,7 @@ public class PKeyDSA extends PKey {
             // we now have all components. create the key.
             DSAPublicKeySpec spec = new DSAPublicKeySpec(vals[SPEC_Y], vals[SPEC_P], vals[SPEC_Q], vals[SPEC_G]);
             try {
-                this.pubKey = (DSAPublicKey)KeyFactory.getInstance("DSA").generatePublic(spec);
+                this.pubKey = (DSAPublicKey) getKeyFactory("DSA").generatePublic(spec);
             } catch (InvalidKeySpecException e) {
                 throw newDSAError(getRuntime(), "invalid keyspec");
             } catch (NoSuchAlgorithmException e) {
