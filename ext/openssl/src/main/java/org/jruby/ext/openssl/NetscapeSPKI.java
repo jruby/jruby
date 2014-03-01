@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -30,6 +30,7 @@ package org.jruby.ext.openssl;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PublicKey;
+
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERIA5String;
@@ -39,6 +40,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jce.netscape.NetscapeCertRequest;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -62,7 +64,7 @@ public class NetscapeSPKI extends RubyObject {
             return new NetscapeSPKI(runtime, klass);
         }
     };
-    
+
     public static void createNetscapeSPKI(Ruby runtime, RubyModule ossl) {
         RubyModule mNetscape = ossl.defineModuleUnder("Netscape");
         RubyClass cSPKI = mNetscape.defineClassUnder("SPKI",runtime.getObject(),NETSCAPESPKI_ALLOCATOR);
@@ -91,9 +93,8 @@ public class NetscapeSPKI extends RubyObject {
             byte[] enc = null;
             try {
                 // NetscapeCertRequest requires "BC" provider.
-                PublicKey pkey = (PublicKey) OpenSSLReal.getWithBCProvider(new OpenSSLReal.Callable() {
-
-                    public Object call() throws GeneralSecurityException {
+                PublicKey pkey = OpenSSLReal.getWithBCProvider(new OpenSSLReal.Callable<PublicKey>() {
+                    public PublicKey call() throws GeneralSecurityException {
                         try {
                             // NetscapeCertRequest throws java.lang.IllegalArgumentException
                             // when no BC provider allowed, with a message
@@ -109,7 +110,8 @@ public class NetscapeSPKI extends RubyObject {
                 });
                 algo = pkey.getAlgorithm();
                 enc = pkey.getEncoded();
-            } catch (GeneralSecurityException gse) {
+            }
+            catch (GeneralSecurityException gse) {
                 throw newSPKIError(getRuntime(), gse.getMessage());
             }
 
@@ -128,8 +130,7 @@ public class NetscapeSPKI extends RubyObject {
     private byte[] tryBase64Decode(byte[] b) {
         try {
             b = Base64.decode(b, 0, b.length, Base64.NO_OPTIONS);
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) { }
         return b;
     }
 
@@ -201,20 +202,21 @@ public class NetscapeSPKI extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject sign(final IRubyObject key, IRubyObject digest) {
-        String keyAlg = ((PKey) key).getAlgorithm();
-        String digAlg = ((Digest) digest).getShortAlgorithm();
-        final ASN1ObjectIdentifier alg = ASN1.getOIDLookup(getRuntime()).get(keyAlg.toLowerCase() + "-" + digAlg.toLowerCase());
-        try {
-            // NetscapeCertRequest requires "BC" provider.
-            OpenSSLReal.doWithBCProvider(new OpenSSLReal.Runnable() {
-
-                public void run() throws GeneralSecurityException {
-                    cert = new NetscapeCertRequest(challenge.toString(), new AlgorithmIdentifier(alg), ((PKey) public_key).getPublicKey());
-                    cert.sign(((PKey) key).getPrivateKey());
+    public IRubyObject sign(final IRubyObject key, final IRubyObject digest) {
+        final String keyAlg = ((PKey) key).getAlgorithm();
+        final String digAlg = ((Digest) digest).getShortAlgorithm();
+        final String symKey = keyAlg.toLowerCase() + "-" + digAlg.toLowerCase();
+        try { // NetscapeCertRequest requires "BC" provider.
+            OpenSSLReal.getWithBCProvider(new OpenSSLReal.Callable<Void>() {
+                public Void call() throws GeneralSecurityException {
+                    final ASN1ObjectIdentifier alg = ASN1.getOIDLookup(getRuntime()).get( symKey );
+                    final PublicKey publicKey = ((PKey) public_key).getPublicKey();
+                    cert = new NetscapeCertRequest(challenge.toString(), new AlgorithmIdentifier(alg), publicKey);
+                    cert.sign( ((PKey) key).getPrivateKey() ); return null;
                 }
             });
-        } catch (GeneralSecurityException gse) {
+        }
+        catch (GeneralSecurityException gse) {
             throw newSPKIError(getRuntime(), gse.getMessage());
         }
         return this;
@@ -223,16 +225,15 @@ public class NetscapeSPKI extends RubyObject {
     @JRubyMethod
     public IRubyObject verify(final IRubyObject pkey) {
         cert.setPublicKey(((PKey) pkey).getPublicKey());
-        try {
-            // NetscapeCertRequest requires "BC" provider.
-            Boolean result = (Boolean) OpenSSLReal.getWithBCProvider(new OpenSSLReal.Callable() {
-
+        try { // NetscapeCertRequest requires "BC" provider.
+            Boolean result = OpenSSLReal.getWithBCProvider(new OpenSSLReal.Callable<Boolean>() {
                 public Boolean call() throws GeneralSecurityException {
                     return cert.verify(challenge.toString());
                 }
             });
-            return result.booleanValue() ? getRuntime().getTrue() : getRuntime().getFalse();
-        } catch (GeneralSecurityException gse) {
+            return getRuntime().newBoolean(result.booleanValue());
+        }
+        catch (GeneralSecurityException gse) {
             throw newSPKIError(getRuntime(), gse.getMessage());
         }
     }
