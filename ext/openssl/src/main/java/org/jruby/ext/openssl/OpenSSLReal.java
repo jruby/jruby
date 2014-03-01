@@ -441,7 +441,7 @@ public class OpenSSLReal {
         }
     }
 
-    static Signature getSignatureBC(final String algorithm)
+    public static Signature getSignatureBC(final String algorithm)
         throws NoSuchAlgorithmException {
 
         final Object spi = getBCImplEngine("Signature", algorithm);
