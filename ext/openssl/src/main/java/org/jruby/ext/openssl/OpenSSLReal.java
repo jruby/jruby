@@ -43,6 +43,8 @@ import java.security.MessageDigestSpi;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
+import java.security.Signature;
+import java.security.SignatureSpi;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateFactorySpi;
@@ -340,6 +342,54 @@ public class OpenSSLReal {
         // messageDigest.provider = BC_PROVIDER
         setField(messageDigest, "provider", BC_PROVIDER);
         return messageDigest;
+    }
+
+    /**
+     * @note code calling this should not assume BC provider internals !
+     */
+    public static Signature getSignature(final String algorithm)
+        throws NoSuchAlgorithmException {
+        try {
+            return getSignatureBC(algorithm);
+        } // still try java.security :
+        catch (NoSuchAlgorithmException e) {
+            return Signature.getInstance(algorithm);
+        }
+    }
+
+    static Signature getSignatureBC(final String algorithm)
+        throws NoSuchAlgorithmException {
+
+        final Object spi = getBCImplEngine("Signature", algorithm);
+
+        if ( spi == null ) {
+            throw new NoSuchAlgorithmException(algorithm + " Signature not available");
+        }
+
+        // logic similar to whar Signature.getInstance does :
+        final Signature signature;
+        if ( spi instanceof Signature ) {
+            signature = (Signature) spi;
+        }
+        else {
+            // wrap it up: new Signature.Delegate(spi, algorithm);
+            final Class<? extends Signature> delegate;
+            try {
+                delegate = (Class<? extends Signature>)
+                    Class.forName(Signature.class.getName() + "$Delegate");
+            }
+            catch (ClassNotFoundException e) {
+                // it's in the JDK - not supposed to happen !
+                throw new RuntimeException(e);
+            }
+            signature = newInstance(delegate,
+                new Class[] { SignatureSpi.class, String.class }, spi, algorithm
+            );
+        }
+
+        // signature.provider = BC_PROVIDER
+        setField(signature, "provider", BC_PROVIDER);
+        return signature;
     }
 
     /**
