@@ -83,34 +83,54 @@ public class OpenSSLReal {
     }
 
     @Deprecated
-    public interface Runnable {
+    public static interface Runnable {
         public void run() throws GeneralSecurityException;
     }
 
-    public interface Callable<T> {
+    public static interface Callable<T> {
         public T call() throws GeneralSecurityException;
     }
 
+    /**
+     * Run a block of code with 'BC' provider installed.
+     *
+     * @deprecated No longer used within the JRuby-OpenSSL code-base, please avoid!
+     *
+     * @param block
+     * @throws GeneralSecurityException
+     */
     @Deprecated
-    public static void doWithBCProvider(final Runnable toRun) throws GeneralSecurityException {
+    public static void doWithBCProvider(final Runnable block) throws GeneralSecurityException {
         getWithBCProvider(new Callable<Void>() {
             public Void call() throws GeneralSecurityException {
-                toRun.run(); return null;
+                block.run(); return null;
             }
         });
     }
 
-    // This method just adds BouncyCastleProvider if it's allowed.  Removing
-    // "BC" can remove pre-installed or runtime-added BC provider by elsewhere
-    // and it causes unknown runtime error anywhere.  We avoid this. To use
-    // part of jruby-openssl feature (X.509 and PKCS), users must be aware of
-    // dynamic BC provider adding.
-    public static <T> T getWithBCProvider(Callable<T> toCall) throws GeneralSecurityException {
+    /**
+     * Adds BouncyCastleProvider if it's allowed (no security exceptions thrown)
+     * and runs the block of code. Once added the provider will stay registered
+     * within <code>java.security.Security</code> API. This might lead to memory
+     * leaks e.g. when the Ruby runtime that loaded BC is teared down.
+     *
+     * Removing the 'BC' provided (once the block run) can remove pre-installed
+     * or another runtime-added BC provider thus causing unknown runtime errors.
+     *
+     * @deprecated No longer used within the JRuby-OpenSSL code-base, please avoid!
+     *
+     * @param <T>
+     * @param block
+     * @return
+     * @throws GeneralSecurityException
+     */
+    @Deprecated
+    public static <T> T getWithBCProvider(final Callable<T> block) throws GeneralSecurityException {
         try {
             if (BC_PROVIDER != null && java.security.Security.getProvider("BC") == null) {
                 java.security.Security.addProvider(BC_PROVIDER);
             }
-            return toCall.call();
+            return block.call();
         } catch (NoSuchProviderException nspe) {
             throw new GeneralSecurityException(bcExceptionMessage(nspe), nspe);
         } catch (Exception e) {
@@ -149,8 +169,7 @@ public class OpenSSLReal {
         runtime.getLoadService().require("jopenssl/version");
         String jopensslVersion = runtime.getClassFromPath("Jopenssl::Version").getConstant("VERSION").toString();
         ossl.setConstant("VERSION", runtime.newString("1.0.0"));
-        ossl.setConstant("OPENSSL_VERSION",
-                runtime.newString("jruby-ossl " + jopensslVersion));
+        ossl.setConstant("OPENSSL_VERSION", runtime.newString("jruby-ossl " + jopensslVersion));
         ossl.setConstant("OPENSSL_VERSION_NUMBER", runtime.newFixnum(9469999));
         OpenSSLModule.setDebug(ossl,  runtime.getFalse());
     }
@@ -159,8 +178,8 @@ public class OpenSSLReal {
     public static class OpenSSLModule {
 
         @JRubyMethod(name = "errors", meta = true)
-        public static IRubyObject errors(IRubyObject recv) {
-            Ruby runtime = recv.getRuntime();
+        public static IRubyObject errors(IRubyObject self) {
+            Ruby runtime = self.getRuntime();
             RubyArray result = runtime.newArray();
             for (Map.Entry<Integer, String> e : X509Error.getErrors().entrySet()) {
                 result.add(runtime.newString(e.getValue()));
@@ -169,13 +188,13 @@ public class OpenSSLReal {
         }
 
         @JRubyMethod(name = "debug", meta = true)
-        public static IRubyObject getDebug(IRubyObject recv) {
-            return (IRubyObject)((RubyModule) recv).getInternalVariable("debug");
+        public static IRubyObject getDebug(IRubyObject self) {
+            return (IRubyObject)((RubyModule) self).getInternalVariable("debug");
         }
 
         @JRubyMethod(name = "debug=", meta = true)
-        public static IRubyObject setDebug(IRubyObject recv, IRubyObject debug) {
-            ((RubyModule) recv).setInternalVariable("debug", debug);
+        public static IRubyObject setDebug(IRubyObject self, IRubyObject debug) {
+            ((RubyModule) self).setInternalVariable("debug", debug);
             return debug;
         }
 
