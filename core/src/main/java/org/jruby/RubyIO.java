@@ -1237,6 +1237,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             // always a new fileno, so ok to use internal only
             fileno = descriptor.getFileno();
         } catch (RaisableException raisable) {
+            raisable.printStackTrace();
             throw raisable.newRaiseException(runtime);
         }
         return runtime.newFixnum(fileno);

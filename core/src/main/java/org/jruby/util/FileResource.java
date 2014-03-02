@@ -2,6 +2,9 @@ package org.jruby.util;
 
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
+import org.jruby.exceptions.RaisableException;
+import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.ModeFlags;
 
 /**
  * This is a shared interface for files loaded as {@link java.io.File} and {@link java.util.zip.ZipEntry}.
@@ -33,4 +36,6 @@ public interface FileResource {
     // JRubyFile if this resource is backed by one, and NOT_FOUND JRubyFile
     // otherwise.
     JRubyFile hackyGetJRubyFile();
+
+    ChannelDescriptor openDescriptor(ModeFlags flags, POSIX posix, int perm) throws RaisableException;
 }
