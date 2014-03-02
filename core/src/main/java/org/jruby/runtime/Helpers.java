@@ -1016,7 +1016,7 @@ public class Helpers {
         return isExceptionHandled(currentException, exception1, exception2, context);
     }
 
-    private static boolean checkJavaException(Throwable throwable, IRubyObject catchable, ThreadContext context) {
+    public static boolean checkJavaException(Throwable throwable, IRubyObject catchable, ThreadContext context) {
         Ruby runtime = context.runtime;
         if (
                 // rescue exception needs to catch Java exceptions

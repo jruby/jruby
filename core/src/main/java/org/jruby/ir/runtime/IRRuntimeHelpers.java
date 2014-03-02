@@ -15,6 +15,7 @@ import org.jruby.RubyProc;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.NativeException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
@@ -264,51 +265,79 @@ public class IRRuntimeHelpers {
         return (excObj instanceof RaiseException) ? ((RaiseException)excObj).getException() : excObj;
     }
 
-    // SSS FIXME: Is this code effectively equivalent to Helpers.isJavaExceptionHandled?
-    public static boolean exceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
-        Ruby runtime = context.runtime;
-
-        // unwrap Ruby exceptions
-        if (excObj instanceof RaiseException) {
-            excObj = ((RaiseException)excObj).getException();
+    private static boolean isJavaExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj, boolean arrayCheck) {
+        if (!(excObj instanceof Throwable)) {
+            return false;
         }
 
-        if (excObj instanceof IRubyObject) {
-            // regular ruby exception
-            if (!(excType instanceof RubyModule)) throw runtime.newTypeError("class or module required for rescue clause. Found: " + excType);
-            return excType.callMethod(context, "===", (IRubyObject)excObj).isTrue();
-        } else if (runtime.getException().op_ge(excType).isTrue() || runtime.getObject() == excType) {
-            // convert java obj to a ruby object and try again
-            return excType.callMethod(context, "===", JavaUtil.convertJavaToUsableRubyObject(runtime, excObj)).isTrue();
-        } else if (excType instanceof RubyClass && excType.getInstanceVariables().hasInstanceVariable("@java_class")) {
-            // java exception where the rescue clause has an embedded java class that could catch it
-            RubyClass rubyClass = (RubyClass)excType;
-            JavaClass javaClass = (JavaClass)rubyClass.getInstanceVariable("@java_class");
-            if (javaClass != null) {
-                Class cls = javaClass.javaClass();
-                if (cls.isInstance(excObj)) return true;
+        Ruby runtime = context.runtime;
+        Throwable throwable = (Throwable)excObj;
+
+        if (excType instanceof RubyArray) {
+            RubyArray testTypes = (RubyArray)excType;
+            for (int i = 0, n = testTypes.getLength(); i < n; i++) {
+                IRubyObject testType = testTypes.eltInternal(i);
+                if (IRRuntimeHelpers.isJavaExceptionHandled(context, testType, throwable, true)) {
+                    IRubyObject exceptionObj;
+                    if (n == 1 && testType == runtime.getNativeException()) {
+                        // wrap Throwable in a NativeException object
+                        exceptionObj = new NativeException(runtime, runtime.getNativeException(), throwable);
+                        ((NativeException)exceptionObj).prepareIntegratedBacktrace(context, throwable.getStackTrace());
+                    } else {
+                        // wrap as normal JI object
+                        exceptionObj = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
+                    }
+
+                    runtime.getGlobalVariables().set("$!", exceptionObj);
+                    return true;
+                }
             }
+        } else if (Helpers.checkJavaException(throwable, excType, context)) {
+            if (!arrayCheck) {
+                // wrap Throwable in a NativeException object
+                IRubyObject exceptionObj = new NativeException(runtime, runtime.getNativeException(), throwable);
+                ((NativeException)exceptionObj).prepareIntegratedBacktrace(context, throwable.getStackTrace());
+                runtime.getGlobalVariables().set("$!", exceptionObj);
+            }
+            return true;
         }
 
         return false;
     }
 
-    public static IRubyObject isExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
-        Ruby runtime = context.runtime;
-
-        boolean isUndefExc = excObj == UndefinedValue.UNDEFINED;
+    private static boolean isRubyExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
         if (excType instanceof RubyArray) {
             RubyArray testTypes = (RubyArray)excType;
             for (int i = 0, n = testTypes.getLength(); i < n; i++) {
                 IRubyObject testType = testTypes.eltInternal(i);
-                boolean handled = isUndefExc ? testType.isTrue() : IRRuntimeHelpers.exceptionHandled(context, testType, excObj);
-                if (handled) return runtime.newBoolean(true);
+                if (IRRuntimeHelpers.isRubyExceptionHandled(context, testType, excObj)) {
+                    return true;
+                }
             }
-            return runtime.newBoolean(false);
-        } else {
-            // SSS FIXME: Why are we returning 'excType'? Shouldn't this be a boolean?
-            return isUndefExc ? excType : runtime.newBoolean(IRRuntimeHelpers.exceptionHandled(context, excType, excObj));
+        } else if (excObj instanceof IRubyObject) {
+            // SSS FIXME: Should this check be "runtime.getModule().isInstance(excType)"??
+            if (!(excType instanceof RubyModule)) {
+                throw context.runtime.newTypeError("class or module required for rescue clause. Found: " + excType);
+            }
+
+            return excType.callMethod(context, "===", (IRubyObject)excObj).isTrue();
         }
+        return false;
+    }
+
+    public static IRubyObject isExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
+        // SSS FIXME: JIT should do an explicit unwrap in code just like in interpreter mode.
+        // This is called once for each RescueEQQ instr and unwrapping each time is unnecessary.
+        // This is not a performance issue, but more a question of where this belongs.
+        // It seems more logical to (a) recv-exc (b) unwrap-exc (c) do all the rescue-eqq checks.
+        //
+        // Unwrap Ruby exceptions
+        excObj = unwrapRubyException(excObj);
+
+        boolean ret = IRRuntimeHelpers.isRubyExceptionHandled(context, excType, excObj)
+            || IRRuntimeHelpers.isJavaExceptionHandled(context, excType, excObj, false);
+
+        return context.runtime.newBoolean(ret);
     }
 
     public static IRubyObject isEQQ(ThreadContext context, IRubyObject receiver, IRubyObject value) {

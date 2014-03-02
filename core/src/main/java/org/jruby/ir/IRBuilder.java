@@ -329,9 +329,10 @@ public class IRBuilder {
             EnsureBlockInfo ebi = ebArray[i];
 
             // For "break" and "next" instructions, we only want to run
-            // to run ensure blocks from the loops they are present in.
+            // ensure blocks from the loops they are present in.
             if (loop != null && ebi.innermostLoop != loop) break;
 
+            // SSS FIXME: Should $! be restored before or after the ensure block is run?
             if (ebi.savedGlobalException != null) {
                 addInstr(s, new PutGlobalVarInstr("$!", ebi.savedGlobalException));
             }
@@ -3252,9 +3253,11 @@ public class IRBuilder {
         Label caughtLabel = s.getNewLabel();
         if (exceptionList != null) {
             if (exceptionList instanceof ListNode) {
-               for (Node excType : exceptionList.childNodes()) {
-                   outputExceptionCheck(s, build(excType, s), exc, caughtLabel);
-               }
+                List<Operand> excTypes = new ArrayList<Operand>();
+                for (Node excType : exceptionList.childNodes()) {
+                    excTypes.add(build(excType, s));
+                }
+                outputExceptionCheck(s, new Array(excTypes), exc, caughtLabel);
             } else { // splatnode, catch
                 outputExceptionCheck(s, build(((SplatNode)exceptionList).getValue(), s), exc, caughtLabel);
             }
@@ -3337,7 +3340,7 @@ public class IRBuilder {
             retVal = ret;
             emitEnsureBlocks(s, null);
         } else if (!activeRescueBlockStack.empty()) {
-            // Restore $! and jump back to the entry of the rescue block
+            // Restore $!
             RescueBlockInfo rbi = activeRescueBlockStack.peek();
             addInstr(s, new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
         }
