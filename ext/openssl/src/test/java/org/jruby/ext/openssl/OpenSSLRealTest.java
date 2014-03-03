@@ -209,20 +209,20 @@ public class OpenSSLRealTest {
 
     // JCE
 
-//    @Test
-//    public void testGetCipher() throws Exception {
-//        System.out.println( getCipher("DES") );
-//
-//        assertNotNull( getCipher("DES") );
-//        assertNotNull( getCipher("AES") );
-//
-//        System.out.println(getCipherBC("AES"));
-//    }
+    @Test
+    public void testGetCipher() throws Exception {
+        assertNotNull( getCipher("DES") );
+        assertNotNull( getCipher("AES") );
 
-//    @Test
-//    public void testGetCipherBC() throws Exception {
-//        System.out.println(getCipherBC("AES"));
-//    }
+        assertNotNull( getCipher("DES/CBC/PKCS5Padding") );
+    }
+
+    @Test
+    public void testGetCipherBC() throws Exception {
+        assertNotNull( getCipherBC("AES") );
+
+        assertNotNull( getCipherBC("DES/CBC/PKCS5Padding") );
+    }
 
     @Test
     public void testGetCipherWithoutBC() throws Exception {
