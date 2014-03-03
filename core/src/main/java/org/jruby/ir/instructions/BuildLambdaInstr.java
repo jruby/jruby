@@ -88,4 +88,9 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
     public void visit(IRVisitor visitor) {
         visitor.BuildLambdaInstr(this);
     }
+
+    @Override
+    public String toString() {
+        return "" + ((ResultInstr)this).getResult() + " = lambda(" + lambdaBody + ")";
+    }
 }
