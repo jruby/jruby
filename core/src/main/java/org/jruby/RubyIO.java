@@ -1464,7 +1464,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         // console() can detect underlying windows codepage so we will just write to it
         // and hope it is legible.
-        if (Platform.IS_WINDOWS && tty_p(getRuntime().getCurrentContext()).isTrue()) {
+        if (Platform.IS_WINDOWS && tty_p(getRuntime().getCurrentContext()).isTrue() && System.console() != null) {
             System.console().printf("%s", buffer.asJavaString());
             return len;
         }
