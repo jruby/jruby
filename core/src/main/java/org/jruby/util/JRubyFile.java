@@ -37,6 +37,7 @@ import java.io.IOException;
 
 import org.jruby.Ruby;
 import org.jruby.RubyFile;
+import org.jruby.runtime.ThreadContext;
 
 import jnr.posix.JavaSecuredFile;
 import org.jruby.platform.Platform;
@@ -57,6 +58,10 @@ public class JRubyFile extends JavaSecuredFile {
         return createNoUnicodeConversion(cwd, pathname);
     }
 
+    public static FileResource createResource(ThreadContext context, String pathname) {
+      return createResource(context.runtime, pathname);
+    }
+
     public static FileResource createResource(Ruby runtime, String pathname) {
       return createResource(runtime.getCurrentDirectory(), pathname);
     }
@@ -73,6 +78,9 @@ public class JRubyFile extends JavaSecuredFile {
             return jarResource;
         }
 
+        if (pathname.startsWith("file:")) {
+            pathname = pathname.substring(5);
+        }
         return new RegularFileResource(create(cwd, pathname));
     }
 
