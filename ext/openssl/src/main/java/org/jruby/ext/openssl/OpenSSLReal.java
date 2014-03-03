@@ -33,7 +33,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.Map;
-import java.util.StringTokenizer;
 
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -50,7 +49,6 @@ import java.security.SignatureSpi;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateFactorySpi;
-import javax.crypto.CipherSpi;
 import javax.crypto.MacSpi;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactorySpi;
@@ -233,43 +231,10 @@ public class OpenSSLReal {
         return javax.crypto.Cipher.getInstance(transformation);
     }
 
-    private static final Class[] STRING_ARG = { String.class };
-
     static javax.crypto.Cipher getCipherBC(final String transformation)
         throws NoSuchAlgorithmException, NoSuchPaddingException {
-        // these are BC JCE (@see javax.crypto.Cipher) inspired internals :
-        CipherSpi spi = (CipherSpi) getBCImplEngine("Cipher", transformation);
 
-        if ( spi == null ) {
-            //
-            // try the long way
-            //
-            StringTokenizer tok = new StringTokenizer(transformation, "/");
-            String algorithm = tok.nextToken();
-
-            spi = (CipherSpi) getBCImplEngine("Cipher", algorithm);
-
-            if ( spi == null ) throw new NoSuchAlgorithmException(transformation + " not found");
-
-            //
-            // make sure we don't get fooled by a "//" in the string
-            //
-            if (tok.hasMoreTokens() && ! transformation.regionMatches(algorithm.length(), "//", 0, 2)) {
-                // cipherSpi.engineSetMode(tok.nextToken());
-                doInvoke(spi, CipherSpi.class, "engineSetMode", STRING_ARG, tok.nextToken());
-            }
-
-            if (tok.hasMoreTokens()) {
-                // cipherSpi.engineSetPadding(tok.nextToken());
-                doInvoke(spi, CipherSpi.class, "engineSetPadding", STRING_ARG, tok.nextToken());
-            }
-        }
-
-        // new javax.crypto.Cipher(spi, BC_PROVIDER, transformation);
-        return newInstance(javax.crypto.Cipher.class,
-            new Class[] { CipherSpi.class, Provider.class, String.class },
-            new Object[] { spi, BC_PROVIDER, transformation }
-        );
+        return javax.crypto.Cipher.getInstance(transformation, BC_PROVIDER);
     }
 
     /**
