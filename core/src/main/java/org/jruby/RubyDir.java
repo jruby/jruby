@@ -118,6 +118,11 @@ public class RubyDir extends RubyObject {
         }
     }
 
+    @Deprecated
+    public IRubyObject initialize(IRubyObject arg) {
+        return initialize(getRuntime().getCurrentContext(), arg);
+    }
+
     /**
      * Creates a new <code>Dir</code>.  This method takes a snapshot of the
      * contents of the directory at creation time, so changes to the contents
@@ -139,6 +144,11 @@ public class RubyDir extends RubyObject {
         snapshot = (String[]) snapshotList.toArray(new String[snapshotList.size()]);
 
         return this;
+    }
+
+    @Deprecated
+    public IRubyObject initialize19(IRubyObject arg) {
+        return initialize19(getRuntime().getCurrentContext(), arg);
     }
 
     @JRubyMethod(name = "initialize", compat = RUBY1_9)
