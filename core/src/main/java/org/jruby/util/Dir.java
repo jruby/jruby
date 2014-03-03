@@ -553,12 +553,7 @@ public class Dir {
         String[] files = directory.list();
         
         if (files != null) {
-            String[] filesPlusDotFiles = new String[files.length + 2];
-            System.arraycopy(files, 0, filesPlusDotFiles, 2, files.length);
-            filesPlusDotFiles[0] = ".";
-            filesPlusDotFiles[1] = "..";
-
-            return filesPlusDotFiles;
+            return files;
         } else {
             return new String[0];
         }
