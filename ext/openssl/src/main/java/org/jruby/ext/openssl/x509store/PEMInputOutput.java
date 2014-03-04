@@ -122,9 +122,7 @@ import org.jruby.ext.openssl.impl.ASN1Registry;
 import org.jruby.ext.openssl.impl.CipherSpec;
 import org.jruby.ext.openssl.impl.PKCS10Request;
 
-import static org.jruby.ext.openssl.OpenSSLReal.getCipher;
-import static org.jruby.ext.openssl.OpenSSLReal.getKeyFactory;
-import static org.jruby.ext.openssl.OpenSSLReal.getSecretKeyFactory;
+import org.jruby.ext.openssl.SecurityHelper;
 
 /**
  * Helper class to read and write PEM files correctly.
@@ -341,9 +339,9 @@ public class PEMInputOutput {
         String algorithm = ASN1Registry.o2a(algId.getAlgorithm());
         algorithm = (algorithm.split("-"))[0];
 
-        SecretKeyFactory secKeyFact = getSecretKeyFactory(algorithm);
+        SecretKeyFactory secKeyFact = SecurityHelper.getSecretKeyFactory(algorithm);
 
-        Cipher cipher = getCipher(algorithm);
+        Cipher cipher = SecurityHelper.getCipher(algorithm);
         cipher.init(Cipher.DECRYPT_MODE, secKeyFact.generateSecret(pbeSpec), pbeParams);
 
         PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(
@@ -356,9 +354,9 @@ public class PEMInputOutput {
         // TODO: Can we just set it to RSA as in derivePrivateKeyPBES2?
         KeyFactory keyFact;
         if (keyFactAlg.startsWith("dsa")) {
-            keyFact = getKeyFactory("DSA");
+            keyFact = SecurityHelper.getKeyFactory("DSA");
         } else {
-            keyFact = getKeyFactory("RSA"); // BC
+            keyFact = SecurityHelper.getKeyFactory("RSA"); // BC
         }
 
         return keyFact.generatePrivate(keySpec);
@@ -991,7 +989,7 @@ public class PEMInputOutput {
                     rsaPubStructure.getPublicExponent());
 
         try {
-            return (RSAPublicKey) getKeyFactory("RSA").generatePublic(keySpec);
+            return (RSAPublicKey) SecurityHelper.getKeyFactory("RSA").generatePublic(keySpec);
         }
         catch (NoSuchAlgorithmException e) { /* ignore */ }
         catch (InvalidKeySpecException e) { /* ignore */ }
@@ -1001,7 +999,7 @@ public class PEMInputOutput {
     private static PublicKey readPublicKey(byte[] input, String alg, String endMarker) throws IOException {
         KeySpec keySpec = new X509EncodedKeySpec(input);
         try {
-            return getKeyFactory(alg).generatePublic(keySpec);
+            return SecurityHelper.getKeyFactory(alg).generatePublic(keySpec);
         }
         catch (NoSuchAlgorithmException e) { /* ignore */ }
         catch (InvalidKeySpecException e) { /* ignore */ }
@@ -1078,7 +1076,7 @@ public class PEMInputOutput {
         pGen.init(PBEParametersGenerator.PKCS5PasswordToBytes(passwd), salt);
         KeyParameter param = (KeyParameter) pGen.generateDerivedParameters(keyLen * 8);
         SecretKey secretKey = new javax.crypto.spec.SecretKeySpec(param.getKey(), realName);
-        Cipher cipher = getCipher(realName);
+        Cipher cipher = SecurityHelper.getCipher(realName);
         cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
         return cipher.doFinal(decoded);
     }

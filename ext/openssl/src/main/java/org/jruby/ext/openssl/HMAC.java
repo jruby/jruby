@@ -42,8 +42,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.runtime.Visibility;
 
-import static org.jruby.ext.openssl.OpenSSLReal.getMac;
-
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
@@ -67,10 +65,10 @@ public class HMAC extends RubyObject {
     private static Mac getMacInstance(String algorithmName) throws NoSuchAlgorithmException {
         final String algorithmSuffix = algorithmName.replaceAll("-", "");
         try {
-            return getMac("HMAC" + algorithmSuffix);
+            return SecurityHelper.getMac("HMAC" + algorithmSuffix);
         } // some algorithms need the - removed; this is ugly, I know.
         catch (NoSuchAlgorithmException nsae) {
-            return getMac("HMAC-" + algorithmSuffix);
+            return SecurityHelper.getMac("HMAC-" + algorithmSuffix);
         }
     }
 

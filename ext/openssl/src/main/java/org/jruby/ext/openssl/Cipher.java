@@ -312,7 +312,7 @@ public class Cipher extends RubyObject {
     private static javax.crypto.Cipher getCipher(final String transformation, boolean silent)
         throws NoSuchAlgorithmException, NoSuchPaddingException {
         try {
-            return OpenSSLReal.getCipher(transformation); // tries BC if it's available
+            return SecurityHelper.getCipher(transformation); // tries BC if it's available
         }
         catch (NoSuchAlgorithmException e) {
             if ( silent ) return null;

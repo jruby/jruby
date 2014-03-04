@@ -56,7 +56,7 @@ import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
 
-import static org.jruby.ext.openssl.OpenSSLReal.getCertificateFactory;
+import org.jruby.ext.openssl.SecurityHelper;
 
 /**
  * X509_LOOKUP
@@ -156,7 +156,7 @@ public class Lookup {
                 ret = count;
             } else if (type == X509Utils.X509_FILETYPE_ASN1) {
                 X509Certificate cert = (X509Certificate)
-                    getCertificateFactory("X.509").generateCertificate(in);
+                    SecurityHelper.getCertificateFactory("X.509").generateCertificate(in);
                 x = StoreContext.ensureAux(cert);
                 if (x == null) {
                     X509Error.addError(13);
@@ -210,7 +210,7 @@ public class Lookup {
                 }
                 ret = count;
             } else if (type == X509Utils.X509_FILETYPE_ASN1) {
-                x = getCertificateFactory("X.509").generateCRL(in);
+                x = SecurityHelper.getCertificateFactory("X.509").generateCRL(in);
                 if (x == null) {
                     X509Error.addError(13);
                     return ret;
