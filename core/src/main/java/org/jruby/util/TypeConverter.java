@@ -29,15 +29,19 @@ package org.jruby.util;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
+import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingService;
 
@@ -283,5 +287,25 @@ public class TypeConverter {
         if (raise) throw obj.getRuntime().newTypeError("can't convert " + typeAsString(obj) + " into " + target);
 
         return obj.getRuntime().getNil();
+    }
+
+    // rb_check_type and Check_Type
+    public static void checkType(ThreadContext context, IRubyObject x, RubyModule t) {
+        ClassIndex xt;
+
+        if (x == RubyBasicObject.UNDEF) {
+            throw context.runtime.newRuntimeError("bug: undef leaked to the Ruby space");
+        }
+
+        xt = x.getMetaClass().getNativeClassIndex();
+
+        // MISSING: special error for T_DATA of a certain type
+        if (xt != t.getClassIndex()) {
+            String tname = t.getBaseName();
+            if (tname != null) {
+                throw context.runtime.newArgumentError("wrong argument type " + xt + " (expected " + t.getClassIndex());
+            }
+            throw context.runtime.newRuntimeError("bug: unknown type " + t.getClassIndex() + " (" + xt + " given)");
+        }
     }
 }

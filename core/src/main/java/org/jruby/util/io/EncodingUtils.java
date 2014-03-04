@@ -656,27 +656,29 @@ public class EncodingUtils {
     }
     
     // rb_enc_ascget
-    public static int encAscget(byte[] bytes, int offset, int end, int[] chlen, Encoding enc) {
+    public static int encAscget(byte[] pBytes, int p, int e, int[] len, Encoding enc) {
         int c;
         int l;
-        
-        if (enc.isAsciiCompatible()) {
-            c = bytes[offset];
+
+        // if e < p check unnecessary
+
+        if (encAsciicompat(enc)) {
+            c = pBytes[p] & 0xFF;
             if (!Encoding.isAscii((byte)c)) {
                 return -1;
             }
-            if (chlen != null) chlen[0] = 1;
+            if (len != null) len[0] = 1;
             return c;
         }
-        l = StringSupport.preciseLength(enc, bytes, offset, end);
+        l = StringSupport.preciseLength(enc, pBytes, p, e);
         if (StringSupport.MBCLEN_CHARFOUND_LEN(l) == 0) {
             return -1;
         }
-        c = enc.mbcToCode(bytes, offset, end);
+        c = enc.mbcToCode(pBytes, p, e);
         if (!Encoding.isAscii(c)) {
             return -1;
         }
-        if (chlen != null) chlen[0] = 1;
+        if (len != null) len[0] = 1;
         return c;
     }
     
@@ -1234,7 +1236,7 @@ public class EncodingUtils {
                 ptr_cr = StringSupport.codeRangeScan(ptrEnc, ptr);
             }
         } else {
-            if (!strEnc.isAsciiCompatible() || !ptrEnc.isAsciiCompatible()) {
+            if (!EncodingUtils.encAsciicompat(strEnc) || !EncodingUtils.encAsciicompat(ptrEnc)) {
                 if (ptr.getRealSize() == 0) {
                     return;
                 }

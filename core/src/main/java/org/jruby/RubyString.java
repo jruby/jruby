@@ -79,6 +79,7 @@ import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.string.JavaCrypt;
 
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Locale;
 
 import static org.jruby.RubyComparable.invcmp;
@@ -1291,8 +1292,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     // // rb_str_buf_append against VALUE
     public final RubyString cat19(RubyString str2) {
-        ByteList ptr = str2.value;
-
         int str2_cr = cat19(str2.getByteList(), str2.getCodeRange());
 
         infectBy(str2);
@@ -1338,6 +1337,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return this;
     }
 
+    // rb_enc_str_buf_cat
     public final int cat(byte[]bytes, int p, int len, Encoding enc) {
         int[] ptr_cr_ret = {CR_UNKNOWN};
         EncodingUtils.encCrStrBufCat(getRuntime(), this, new ByteList(bytes, p, len), enc, CR_UNKNOWN, ptr_cr_ret);
@@ -2679,37 +2679,37 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Ruby runtime = context.runtime;
 
         final Regex pattern, prepared;
-        final RubyRegexp regexp;
-        if (arg0 instanceof RubyRegexp) {
-            regexp = (RubyRegexp)arg0;
-            pattern = regexp.getPattern();
-            prepared = regexp.preparePattern(this);
-        } else {
-            regexp = null;
-            pattern = getStringPattern19(runtime, arg0);
-            prepared = RubyRegexp.preparePattern(runtime, pattern, this);
-        }
+        final RubyRegexp regexp = getPattern(arg0);
+        pattern = regexp.getPattern();
+        prepared = pattern;
 
-        final int begin = value.getBegin();
-        int slen = value.getRealSize();
-        final int range = begin + slen;
-        byte[]bytes = value.getUnsafeBytes();
-        final Matcher matcher = prepared.matcher(bytes, begin, range);
+        int offset, cp, n, blen;
 
-        int beg = RubyRegexp.matcherSearch(runtime, matcher, begin, range, Option.NONE);
+        final byte[] spBytes = value.getUnsafeBytes();
+        final int sp = value.getBegin();
+        final int spLen = value.getRealSize();
+
+        final Matcher matcher = prepared.matcher(spBytes, sp, sp + spLen);
+
+        int beg = RubyRegexp.matcherSearch(runtime, matcher, sp, sp + spLen, Option.NONE);
         if (beg < 0) {
             if (useBackref) context.setBackRef(runtime.getNil());
             return bang ? runtime.getNil() : strDup(runtime); /* bang: true, no match, no substitution */
         }
 
-        RubyString dest = new RubyString(runtime, getMetaClass(), new ByteList(slen + 30));
-        int offset = 0, cp = begin;
-        Encoding enc = value.getEncoding();
-        dest.setEncoding(enc);
-        dest.setCodeRange(enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
+        offset = 0;
+        n = 0;
+        blen = value.getRealSize() + 30;
+        RubyString dest = new RubyString(runtime, getMetaClass(), new ByteList(blen));
+        int slen = value.getRealSize();
+        cp = sp;
+        Encoding str_enc = value.getEncoding();
+        dest.setEncoding(str_enc);
+        dest.setCodeRange(str_enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
 
         RubyMatchData match = null;
         do {
+            n++;
             final RubyString val;
             int begz = matcher.getBegin();
             int endz = matcher.getEnd();
@@ -2726,28 +2726,28 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     context.setBackRef(match);
                     val = objAsString(context, block.yield(context, substr));
                 }
-                modifyCheck(bytes, slen, enc);
+                modifyCheck(spBytes, slen, str_enc);
                 if (bang) frozenCheck();
             }
 
             tuFlags |= val.flags;
 
             int len = beg - offset;
-            if (len != 0) dest.cat(bytes, cp, len, enc);
+            if (len != 0) dest.cat(spBytes, cp, len, str_enc);
             dest.cat19(val);
             offset = endz;
             if (begz == endz) {
                 if (slen <= endz) break;
-                len = StringSupport.length(enc, bytes, begin + endz, range);
-                dest.cat(bytes, begin + endz, len, enc);
+                len = StringSupport.encFastMBCLen(spBytes, sp + endz, sp + spLen, str_enc);
+                dest.cat(spBytes, sp + endz, len, str_enc);
                 offset = endz + len;
             }
-            cp = begin + offset;
+            cp = sp + offset;
             if (offset > slen) break;
-            beg = RubyRegexp.matcherSearch(runtime, matcher, cp, range, Option.NONE);
+            beg = RubyRegexp.matcherSearch(runtime, matcher, cp, sp + spLen, Option.NONE);
         } while (beg >= 0);
 
-        if (slen > offset) dest.cat(bytes, cp, slen - offset, enc);
+        if (slen > offset) dest.cat(spBytes, cp, slen - offset, str_enc);
 
         if (match != null) { // block given
             if (useBackref) context.setBackRef(match);

@@ -69,6 +69,11 @@ public final class StringSupport {
         return "???";  // Not reached unless something seriously boned
     }
 
+    // rb_enc_fast_mbclen
+    public static int encFastMBCLen(byte[] bytes, int p, int e, Encoding enc) {
+        return enc.length(bytes, p, e);
+    }
+
     // rb_enc_mbclen
     public static int length(Encoding enc, byte[]bytes, int p, int end) {
         int n = enc.length(bytes, p, end);

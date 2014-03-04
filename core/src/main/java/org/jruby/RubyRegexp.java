@@ -76,6 +76,7 @@ import org.jruby.util.RegexpOptions;
 import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.EncodingUtils;
 
 @JRubyClass(name="Regexp")
 public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable, MarshalEncoding {
@@ -2067,6 +2068,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return RubyString.newString(str.getRuntime(), val);
     }
 
+    // rb_reg_regsub
     static RubyString regsub19(RubyString str, RubyString src, Matcher matcher, Regex pattern) {
         Region regs = matcher.getRegion();
 
@@ -2081,47 +2083,61 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         ByteList srcbs = src.getByteList();
         Encoding srcEnc = srcbs.getEncoding();
 
+        boolean acompat = strEnc.isAsciiCompatible();
+
         RubyString val = null;
 
+        int[] tmpClen = {0};
         while (s < end) {
-            int c, cl;
-            if (strEnc.isAsciiCompatible()) {
-                cl = 1;
-                c = bytes[s] & 0xff;
-            } else {
-                cl = StringSupport.preciseLength(strEnc, bytes, s, end);
-                c = strEnc.mbcToCode(bytes, s, end);
+            int c, clen;
+            { // ASCGET
+                if (acompat) {
+                    clen = 1;
+                    byte tmpC = bytes[s];
+                    c = (Encoding.isAscii(tmpC) ? tmpC : -1);
+                } else {
+                    tmpClen[0] = 0;
+                    c = EncodingUtils.encAscget(bytes, s, end, tmpClen, strEnc);
+                    clen = tmpClen[0];
+                }
             }
 
-            if (!Encoding.isAscii(c)) {
-                s += StringSupport.length(strEnc, bytes, s, end);
+            if (c == -1) {
+                s += StringSupport.preciseLength(strEnc, bytes, s, end);
                 continue;
             }
 
             int ss = s;
-            s += cl;
+            s += clen;
 
             if (c != '\\' || s == end) continue;
-            if (val == null) val = RubyString.newString(str.getRuntime(), new ByteList(ss - p));
+
+            if (val == null) {
+                val = RubyString.newString(str.getRuntime(), new ByteList(ss - p));
+            }
 
             val.cat(bytes, p, ss - p, strEnc);
 
-            if (strEnc.isAsciiCompatible()) {
-                cl = 1;
-                c = bytes[s] & 0xff;
-            } else {
-                cl = StringSupport.preciseLength(strEnc, bytes, s, end);
-                c = strEnc.mbcToCode(bytes, s, end);
+            { // ASCGET
+                if (acompat) {
+                    clen = 1;
+                    byte tmpC = bytes[s];
+                    c = (Encoding.isAscii(tmpC) ? tmpC : -1);
+                } else {
+                    tmpClen[0] = 0;
+                    c = EncodingUtils.encAscget(bytes, s, end, tmpClen, strEnc);
+                    clen = tmpClen[0];
+                }
             }
 
-            if (!Encoding.isAscii(c)) {
-                s += StringSupport.length(strEnc, bytes, s, end);
+            if (c == -1) {
+                s += StringSupport.preciseLength(strEnc, bytes, s, end);
                 val.cat(bytes, ss, s - ss, strEnc);
                 p = s;
                 continue;
             }
 
-            s += cl;
+            s += clen;
             p = s;
 
             switch (c) {
@@ -2134,26 +2150,39 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 continue;
             case 'k':
                 if (s < end) {
-                    if (strEnc.isAsciiCompatible()) {
-                        cl = 1;
-                        c = bytes[s] & 0xff;
-                    } else {
-                        cl = StringSupport.preciseLength(strEnc, bytes, s, end);
-                        c = strEnc.mbcToCode(bytes, s, end);
+
+                    { // ASCGET
+                        if (acompat) {
+                            clen = 1;
+                            byte tmpC = bytes[s];
+                            c = (Encoding.isAscii(tmpC) ? tmpC : -1);
+                        } else {
+                            tmpClen[0] = 0;
+                            c = EncodingUtils.encAscget(bytes, s, end, tmpClen, strEnc);
+                            clen = tmpClen[0];
+                        }
                     }
+
                     if (c == '<') {
-                        int name = s + cl;
+                        int name = s + clen;
                         int nameEnd = name;
                         while (nameEnd < end) {
-                            if (strEnc.isAsciiCompatible()) {
-                                cl = 1;
-                                c = bytes[nameEnd] & 0xff;
-                            } else {
-                                cl = StringSupport.preciseLength(strEnc, bytes, nameEnd, end);
-                                c = strEnc.mbcToCode(bytes, nameEnd, end);
+
+                            { // ASCGET
+                                if (acompat) {
+                                    clen = 1;
+                                    byte tmpC = bytes[nameEnd];
+                                    c = (Encoding.isAscii(tmpC) ? tmpC : -1);
+                                } else {
+                                    tmpClen[0] = 0;
+                                    c = EncodingUtils.encAscget(bytes, nameEnd, end, tmpClen, strEnc);
+                                    clen = tmpClen[0];
+                                }
                             }
+
                             if (c == '>') break;
-                            nameEnd += (!Encoding.isAscii(c)) ? StringSupport.length(strEnc, bytes, nameEnd, end) : cl;
+
+                            nameEnd += (!Encoding.isAscii(c)) ? StringSupport.length(strEnc, bytes, nameEnd, end) : clen;
                         }
                         if (nameEnd < end) {
                             try {
@@ -2161,20 +2190,21 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                             } catch (JOniException je) {
                                 throw str.getRuntime().newIndexError(je.getMessage());
                             }
-                            p = s = nameEnd + cl;
+                            p = s = nameEnd + clen;
                             break;
                         } else {
                             throw str.getRuntime().newRuntimeError("invalid group name reference format");
                         }
                     }
                 }
+
                 val.cat(bytes, ss, s - ss, strEnc);
                 continue;
             case '0': case '&':
                 no = 0;
                 break;
             case '`':
-                val.cat( srcbs.getUnsafeBytes(), srcbs.getBegin(), matcher.getBegin(), srcEnc);
+                val.cat(srcbs.getUnsafeBytes(), srcbs.getBegin(), matcher.getBegin(), srcEnc);
                 continue;
             case '\'':
                 val.cat(srcbs.getUnsafeBytes(), srcbs.getBegin() + matcher.getEnd(), srcbs.getRealSize() - matcher.getEnd(), srcEnc);
@@ -2192,7 +2222,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 }
                 break;
             case '\\':
-                val.cat(bytes, s - cl, cl, strEnc);
+                val.cat(bytes, s - clen, clen, strEnc);
                 continue;
             default:
                 val.cat(bytes, ss, s - ss, strEnc);
