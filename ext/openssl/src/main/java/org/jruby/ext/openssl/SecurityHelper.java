@@ -56,6 +56,8 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.SecretKeyFactorySpi;
 
+import javax.net.ssl.SSLContext;
+
 /**
  * Java Security (and JCE) helpers.
  *
@@ -411,6 +413,27 @@ public abstract class SecurityHelper {
             new Class[] { SecretKeyFactorySpi.class, Provider.class, String.class },
             new Object[] { spi, provider, algorithm }
         );
+    }
+
+    private static boolean providerSSLContext = false; // BC does not implement + JDK default is fine
+
+    public static SSLContext getSSLContext(final String protocol)
+        throws NoSuchAlgorithmException {
+        try {
+            if ( providerSSLContext ) {
+                final Provider provider = getSecurityProvider();
+                if ( provider != null ) {
+                    return getSSLContext(protocol, provider);
+                }
+            }
+        }
+        catch (NoSuchAlgorithmException e) { }
+        return SSLContext.getInstance(protocol);
+    }
+
+    private static SSLContext getSSLContext(final String protocol, final Provider provider)
+        throws NoSuchAlgorithmException {
+        return SSLContext.getInstance(protocol, provider);
     }
 
     // these are BC JCE (@see javax.crypto.JCEUtil) inspired internals :
