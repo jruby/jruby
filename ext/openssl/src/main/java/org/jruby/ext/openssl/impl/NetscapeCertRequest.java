@@ -46,8 +46,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
-import static org.jruby.ext.openssl.OpenSSLReal.getSignatureBC;
-import static org.jruby.ext.openssl.OpenSSLReal.getKeyFactoryBC;
+import org.jruby.ext.openssl.SecurityHelper;
 
 /**
 *
@@ -145,7 +144,7 @@ public class NetscapeCertRequest // extends ASN1Object
             keyAlg = pubkeyinfo.getAlgorithmId();
             String keyAlgorithm = keyAlg.getObjectId().getId();
             // NOTE: KeyFactory.getInstance(keyAlgorithm, "BC")
-            KeyFactory keyFactory = getKeyFactoryBC(keyAlgorithm);
+            KeyFactory keyFactory = SecurityHelper.getKeyFactory(keyAlgorithm);
             pubkey = keyFactory.generatePublic(xspec);
 
         }
@@ -236,7 +235,7 @@ public class NetscapeCertRequest // extends ASN1Object
         //
         String signAlgorithm = sigAlg.getObjectId().getId();
         // NOTE: Signature.getInstance(signAlgorithm, "BC");
-        Signature sig = getSignatureBC(signAlgorithm);
+        Signature sig = SecurityHelper.getSignature(signAlgorithm);
         sig.initVerify(pubkey);
         sig.update(content.getBytes());
 
@@ -257,7 +256,7 @@ public class NetscapeCertRequest // extends ASN1Object
     {
         String signAlgorithm = sigAlg.getObjectId().getId();
         // NOTE: Signature.getInstance(signAlgorithm, "BC");
-        Signature sig = getSignatureBC(signAlgorithm);
+        Signature sig = SecurityHelper.getSignature(signAlgorithm);
 
         if (rand != null)
         {

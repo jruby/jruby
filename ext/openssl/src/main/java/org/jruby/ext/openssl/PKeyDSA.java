@@ -63,8 +63,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 
 import static org.jruby.ext.openssl.OpenSSLReal.bcExceptionMessage;
-import static org.jruby.ext.openssl.OpenSSLReal.getKeyFactory;
-import static org.jruby.ext.openssl.OpenSSLReal.getKeyPairGenerator;
 import static org.jruby.ext.openssl.impl.PKey.readDSAPrivateKey;
 import static org.jruby.ext.openssl.impl.PKey.readDSAPublicKey;
 
@@ -149,7 +147,7 @@ public class PKeyDSA extends PKey {
      */
     private static void dsaGenerate(PKeyDSA dsa, int keysize) throws RaiseException {
         try {
-            KeyPairGenerator gen = getKeyPairGenerator("DSA");
+            KeyPairGenerator gen = SecurityHelper.getKeyPairGenerator("DSA");
             gen.initialize(keysize, new SecureRandom());
             KeyPair pair = gen.generateKeyPair();
             dsa.privKey = (DSAPrivateKey) (pair.getPrivate());
@@ -185,7 +183,7 @@ public class PKeyDSA extends PKey {
                 Object val = null;
                 final KeyFactory fact;
                 try {
-                    fact = getKeyFactory("DSA");
+                    fact = SecurityHelper.getKeyFactory("DSA");
                 } catch (NoSuchAlgorithmException e) {
                     throw getRuntime().newLoadError("unsupported key algorithm (DSA)");
                 }
@@ -489,7 +487,7 @@ public class PKeyDSA extends PKey {
             // we now have all components. create the key.
             DSAPublicKeySpec spec = new DSAPublicKeySpec(vals[SPEC_Y], vals[SPEC_P], vals[SPEC_Q], vals[SPEC_G]);
             try {
-                this.pubKey = (DSAPublicKey) getKeyFactory("DSA").generatePublic(spec);
+                this.pubKey = (DSAPublicKey) SecurityHelper.getKeyFactory("DSA").generatePublic(spec);
             } catch (InvalidKeySpecException e) {
                 throw newDSAError(getRuntime(), "invalid keyspec");
             } catch (NoSuchAlgorithmException e) {

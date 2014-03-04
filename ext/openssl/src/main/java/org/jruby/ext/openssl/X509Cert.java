@@ -31,7 +31,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
-import java.security.GeneralSecurityException;
+
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -41,6 +41,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -74,8 +75,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-
-import static org.jruby.ext.openssl.OpenSSLReal.getCertificateFactory;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -157,7 +156,7 @@ public class X509Cert extends RubyObject {
         IRubyObject x509Name = x509.getConstant("Name");
 
         try {
-            cert = (X509Certificate) getCertificateFactory("X.509").generateCertificate(bis);
+            cert = (X509Certificate) SecurityHelper.getCertificateFactory("X.509").generateCertificate(bis);
         }
         catch (CertificateException ex) {
             throw newCertificateError(runtime, ex);

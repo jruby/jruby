@@ -33,7 +33,7 @@ import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.x500.X500Name;
 
-import static org.jruby.ext.openssl.OpenSSLReal.getMessageDigest;
+import org.jruby.ext.openssl.SecurityHelper;
 
 /**
  * c: X509_NAME
@@ -62,7 +62,7 @@ public class Name {
         try {
             byte[] bytes = name.getEncoded();
             byte[] md = null;
-            MessageDigest md5 = getMessageDigest("MD5");
+            MessageDigest md5 = SecurityHelper.getMessageDigest("MD5");
             md = md5.digest(bytes);
             long result = 0;
             result |= md[3] & 0xff; result <<= 8;
