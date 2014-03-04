@@ -38,6 +38,8 @@ import java.security.MessageDigest;
 import java.security.MessageDigestSpi;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.security.SecureRandom;
+import java.security.SecureRandomSpi;
 import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureSpi;
@@ -46,6 +48,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateFactorySpi;
 
 import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.KeyGeneratorSpi;
 import javax.crypto.Mac;
 import javax.crypto.MacSpi;
 import javax.crypto.NoSuchPaddingException;
@@ -244,6 +248,41 @@ public abstract class SecurityHelper {
         return messageDigest;
     }
 
+    public static SecureRandom getSecureRandom() {
+        try {
+            final Provider provider = getSecurityProvider();
+            if ( provider != null ) {
+                final String algorithm = getSecureRandomAlgorithm(provider);
+                if ( algorithm != null ) {
+                    return getSecureRandom(algorithm, provider);
+                }
+            }
+        }
+        catch (NoSuchAlgorithmException e) { }
+        return new SecureRandom(); // likely "SHA1PRNG" from SPI sun.security.provider.SecureRandom
+    }
+
+    private static SecureRandom getSecureRandom(final String algorithm, final Provider provider)
+        throws NoSuchAlgorithmException {
+        final SecureRandomSpi spi = (SecureRandomSpi) getImplEngine("SecureRandom", algorithm);
+        if ( spi == null ) throw new NoSuchAlgorithmException(algorithm + " not found");
+
+        return newInstance(SecureRandom.class,
+            new Class[] { SecureRandomSpi.class, Provider.class, String.class },
+            new Object[] { spi, provider, algorithm }
+        );
+    }
+
+    // NOTE: none (at least for BC 1.47)
+    private static String getSecureRandomAlgorithm(final Provider provider) {
+        for ( Provider.Service service : provider.getServices() ) {
+            if ( "SecureRandom".equals( service.getType() ) ) {
+                return service.getAlgorithm();
+            }
+        }
+        return null;
+    }
+
     /**
      * @note code calling this should not assume BC provider internals !
      */
@@ -324,6 +363,29 @@ public abstract class SecurityHelper {
         }
         return newInstance(Mac.class,
             new Class[] { MacSpi.class, Provider.class, String.class },
+            new Object[] { spi, provider, algorithm }
+        );
+    }
+
+    /**
+     * @note code calling this should not assume BC provider internals !
+     */
+    public static KeyGenerator getKeyGenerator(final String algorithm) throws NoSuchAlgorithmException {
+        try {
+            final Provider provider = getSecurityProvider();
+            if ( provider != null ) return getKeyGenerator(algorithm, provider);
+        }
+        catch (NoSuchAlgorithmException e) { }
+        return KeyGenerator.getInstance(algorithm);
+    }
+
+    static KeyGenerator getKeyGenerator(final String algorithm, final Provider provider)
+        throws NoSuchAlgorithmException {
+        final KeyGeneratorSpi spi = (KeyGeneratorSpi) getImplEngine("KeyGenerator", algorithm);
+        if ( spi == null ) throw new NoSuchAlgorithmException(algorithm + " not found");
+
+        return newInstance(KeyGenerator.class,
+            new Class[] { KeyGeneratorSpi.class, Provider.class, String.class },
             new Object[] { spi, provider, algorithm }
         );
     }
