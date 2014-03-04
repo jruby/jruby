@@ -68,7 +68,7 @@ public class Digest extends RubyObject {
     static MessageDigest getDigest(final String name, final Ruby runtime) {
         String algorithm = transformDigest(name);
         try {
-            return OpenSSLReal.getMessageDigest(algorithm);
+            return SecurityHelper.getMessageDigest(algorithm);
         }
         catch (NoSuchAlgorithmException e) {
             throw runtime.newNotImplementedError("Unsupported digest algorithm (" + name + ")");
