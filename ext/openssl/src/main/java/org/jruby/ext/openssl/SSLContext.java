@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,17 +27,20 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
 import javax.net.ssl.SSLEngine;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -48,13 +51,6 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.openssl.x509store.Certificate;
-import org.jruby.ext.openssl.x509store.Name;
-import org.jruby.ext.openssl.x509store.Store;
-import org.jruby.ext.openssl.x509store.StoreContext;
-import org.jruby.ext.openssl.x509store.X509AuxCertificate;
-import org.jruby.ext.openssl.x509store.X509Object;
-import org.jruby.ext.openssl.x509store.X509Utils;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -64,6 +60,14 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
+
+import org.jruby.ext.openssl.x509store.Certificate;
+import org.jruby.ext.openssl.x509store.Name;
+import org.jruby.ext.openssl.x509store.Store;
+import org.jruby.ext.openssl.x509store.StoreContext;
+import org.jruby.ext.openssl.x509store.X509AuxCertificate;
+import org.jruby.ext.openssl.x509store.X509Object;
+import org.jruby.ext.openssl.x509store.X509Utils;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -81,7 +85,7 @@ public class SSLContext extends RubyObject {
     private final static Map<String, String> SSL_VERSION_OSSL2JSSE;
     // Mapping table for JSEE's enabled protocols for the algorithm.
     private final static Map<String, String[]> ENABLED_PROTOCOLS;
-    
+
     static {
         SSL_VERSION_OSSL2JSSE = new HashMap<String, String>();
         ENABLED_PROTOCOLS = new HashMap<String, String[]>();
@@ -107,7 +111,7 @@ public class SSLContext extends RubyObject {
         ENABLED_PROTOCOLS.put("SSL", new String[] { "SSLv2", "SSLv3", "TLSv1" });
 
         // Followings(TLS, TLSv1.1) are JSSE only methods at present. Let's allow user to use it.
-        
+
         SSL_VERSION_OSSL2JSSE.put("TLS", "TLS");
         ENABLED_PROTOCOLS.put("TLS", new String[] { "TLSv1", "TLSv1.1" });
 
@@ -120,13 +124,13 @@ public class SSLContext extends RubyObject {
             return new SSLContext(runtime, klass);
         }
     };
-    
+
     public static void createSSLContext(Ruby runtime, RubyModule mSSL) {
         RubyClass cSSLContext = mSSL.defineClassUnder("SSLContext",runtime.getObject(),SSLCONTEXT_ALLOCATOR);
         for(int i=0;i<ctx_attrs.length;i++) {
             cSSLContext.addReadWriteAttribute(runtime.getCurrentContext(), ctx_attrs[i]);
         }
-        
+
         cSSLContext.defineAlias("ssl_timeout", "timeout");
         cSSLContext.defineAlias("ssl_timeout=", "timeout=");
 
@@ -142,7 +146,7 @@ public class SSLContext extends RubyObject {
     public static RaiseException newSSLError(Ruby runtime, String message) {
         return Utils.newError(runtime, "OpenSSL::SSL::SSLError", message, false);
     }
-    
+
     private String ciphers = CipherStrings.SSL_DEFAULT_CIPHER_LIST;
     private String protocol = "SSL"; // SSLv23 in OpenSSL by default
     private boolean protocolForServer = true;
@@ -160,12 +164,13 @@ public class SSLContext extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject setup() {
-        if (isFrozen()) {
-            return getRuntime().getNil();
-        }
-        this.freeze(getRuntime().getCurrentContext());
-        
+    public IRubyObject setup(final ThreadContext context) {
+        final Ruby runtime = context.runtime;
+
+        if ( isFrozen() ) return runtime.getNil();
+
+        this.freeze(context);
+
         internalCtx = new InternalContext();
         internalCtx.protocol = protocol;
         internalCtx.protocolForServer = protocolForServer;
@@ -191,7 +196,7 @@ public class SSLContext extends RubyObject {
         value = getInstanceVariable("@key");
         PKey key = null;
         if (value != null && !value.isNil()) {
-            Utils.checkKind(getRuntime(), value, "OpenSSL::PKey::PKey");
+            Utils.checkKind(runtime, value, "OpenSSL::PKey::PKey");
             key = (PKey) value;
         } else {
             key = getCallbackKey();
@@ -199,7 +204,7 @@ public class SSLContext extends RubyObject {
         value = getInstanceVariable("@cert");
         X509Cert cert = null;
         if (value != null && !value.isNil()) {
-            Utils.checkKind(getRuntime(), value, "OpenSSL::X509::Certificate");
+            Utils.checkKind(runtime, value, "OpenSSL::X509::Certificate");
             cert = (X509Cert) value;
         } else {
             cert = getCallbackCert();
@@ -217,7 +222,7 @@ public class SSLContext extends RubyObject {
                     internalCtx.clientCa.add(ele.getAuxCert());
                 }
             } else {
-                Utils.checkKind(getRuntime(), value, "OpenSSL::X509::Certificate");
+                Utils.checkKind(runtime, value, "OpenSSL::X509::Certificate");
                 internalCtx.clientCa.add(((X509Cert) value).getAuxCert());
             }
         }
@@ -227,10 +232,10 @@ public class SSLContext extends RubyObject {
         if (caFile != null || caPath != null) {
             try {
                 if (internalCtx.store.loadLocations(caFile, caPath) == 0) {
-                    getRuntime().getWarnings().warn(ID.MISCELLANEOUS, "can't set verify locations");
+                    runtime.getWarnings().warn(ID.MISCELLANEOUS, "can't set verify locations");
                 }
             } catch (Exception e) {
-                throw newSSLError(getRuntime(), e.getMessage());
+                throw newSSLError(runtime, e.getMessage());
             }
         }
 
@@ -251,7 +256,7 @@ public class SSLContext extends RubyObject {
         if (value != null && !value.isNil()) {
             internalCtx.timeout = RubyNumeric.fix2int(value);
         }
-        
+
         value = getInstanceVariable("@verify_depth");
         if (value != null && !value.isNil()) {
             internalCtx.store.setDepth(RubyNumeric.fix2int(value));
@@ -292,34 +297,44 @@ public class SSLContext extends RubyObject {
         try {
             internalCtx.init();
         } catch(GeneralSecurityException gse) {
-            throw newSSLError(getRuntime(), gse.getMessage());
+            throw newSSLError(runtime, gse.getMessage());
         }
-        return getRuntime().getTrue();
+        return runtime.getTrue();
     }
 
     @JRubyMethod
-    public IRubyObject ciphers() {
-        List<IRubyObject> list = new ArrayList<IRubyObject>();
-        Ruby rt = getRuntime();
+    @SuppressWarnings("unchecked")
+    public IRubyObject ciphers(final ThreadContext context) {
+        return context.runtime.newArray( (List) matchedCiphers(context) );
+    }
+
+    private List<RubyArray> matchedCiphers(final ThreadContext context) {
+        final Ruby runtime = context.runtime;
+
+        final ArrayList<RubyArray> cipherList = new ArrayList<RubyArray>();
         try {
-            String[] supported = getCipherSuites(createDummySSLEngine());
+            String[] supported = getCipherSuites( createDummySSLEngine() );
             List<CipherStrings.Def> ciphs = CipherStrings.getMatchingCiphers(ciphers, supported);
-            for (CipherStrings.Def def : ciphs) {
-                RubyArray ele = getRuntime().newArray(4);
-                ele.set(0, rt.newString(def.name));
-                ele.set(1, rt.newString(sslVersionString(def.algorithms)));
-                ele.set(2, rt.newFixnum(def.strength_bits));
-                ele.set(3, rt.newFixnum(def.alg_bits));
-                list.add(ele);
+            cipherList.ensureCapacity( ciphs.size() );
+
+            for ( CipherStrings.Def def : ciphs ) {
+                final RubyArray cipher = runtime.newArray(4);
+                cipher.set(0, runtime.newString(def.name));
+                cipher.set(1, runtime.newString(sslVersionString(def.algorithms)));
+                cipher.set(2, runtime.newFixnum(def.strength_bits));
+                cipher.set(3, runtime.newFixnum(def.alg_bits));
+
+                cipherList.add(cipher);
             }
-        } catch (GeneralSecurityException gse) {
-            throw newSSLError(getRuntime(), gse.getMessage());
         }
-        return rt.newArray(list);
+        catch (GeneralSecurityException gse) {
+            throw newSSLError(runtime, gse.getMessage());
+        }
+        return cipherList;
     }
 
     @JRubyMethod(name = "ciphers=")
-    public IRubyObject set_ciphers(IRubyObject val) {
+    public IRubyObject set_ciphers(final ThreadContext context, IRubyObject val) {
         if (val.isNil()) {
             ciphers = CipherStrings.SSL_DEFAULT_CIPHER_LIST;
         } else if (val instanceof RubyArray) {
@@ -336,9 +351,8 @@ public class SSLContext extends RubyObject {
                 ciphers = CipherStrings.SSL_DEFAULT_CIPHER_LIST;
             }
         }
-        RubyArray ary = (RubyArray)ciphers();
-        if (ary.size() == 0) {
-            throw newSSLError(getRuntime(), "no cipher match");
+        if ( matchedCiphers(context).isEmpty() ) {
+            throw newSSLError(context.runtime, "no cipher match");
         }
         return val;
     }
@@ -385,7 +399,7 @@ public class SSLContext extends RubyObject {
     }
 
     SSLEngine createDummySSLEngine() throws GeneralSecurityException {
-        javax.net.ssl.SSLContext ctx = javax.net.ssl.SSLContext.getInstance(protocol);
+        javax.net.ssl.SSLContext ctx = SecurityHelper.getSSLContext(protocol);
         ctx.init(null, null, null);
         return ctx.createSSLEngine();
     }
@@ -459,7 +473,7 @@ public class SSLContext extends RubyObject {
         }
         return sb.toString();
     }
-    
+
     private PKey getCallbackKey() {
         if (t_key != null) {
             return t_key;
@@ -526,7 +540,7 @@ public class SSLContext extends RubyObject {
             return 0;
         }
     }
-    
+
     private X509Cert[] convertToX509Certs(IRubyObject value) {
         final ArrayList<X509Cert> result = new ArrayList<X509Cert>();
         ThreadContext ctx = getRuntime().getCurrentContext();
@@ -603,7 +617,7 @@ public class SSLContext extends RubyObject {
     private static class KM extends javax.net.ssl.X509ExtendedKeyManager {
 
         private final InternalContext ctx;
-        
+
         public KM(InternalContext ctx) {
             super();
             this.ctx = ctx;
