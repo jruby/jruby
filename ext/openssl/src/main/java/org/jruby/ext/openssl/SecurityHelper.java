@@ -32,6 +32,8 @@ import java.security.KeyFactory;
 import java.security.KeyFactorySpi;
 import java.security.KeyPairGenerator;
 import java.security.KeyPairGeneratorSpi;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.MessageDigestSpi;
 import java.security.NoSuchAlgorithmException;
@@ -186,6 +188,24 @@ public abstract class SecurityHelper {
         }
         setField(keyPairGenerator, KeyPairGenerator.class, "provider", provider);
         return keyPairGenerator;
+    }
+
+    /**
+     * @note code calling this should not assume BC provider internals !
+     */
+    public static KeyStore getKeyStore(final String type)
+        throws KeyStoreException {
+        try {
+            final Provider provider = getSecurityProvider();
+            if ( provider != null ) return getKeyStore(type, provider);
+        }
+        catch (KeyStoreException e) { }
+        return KeyStore.getInstance(type);
+    }
+
+    static KeyStore getKeyStore(final String type, final Provider provider)
+        throws KeyStoreException {
+        return KeyStore.getInstance(type, provider);
     }
 
     /**
