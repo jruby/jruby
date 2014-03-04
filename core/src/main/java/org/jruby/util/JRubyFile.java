@@ -67,12 +67,11 @@ public class JRubyFile extends JavaSecuredFile {
     }
 
     public static FileResource createResource(String cwd, String pathname) {
-        if (pathname == null) {
-            // null pathnames do not exist
-            return new RegularFileResource(JRubyNonExistentFile.NOT_EXIST);
+        FileResource emptyResource = EmptyFileResource.create(pathname);
+        if (emptyResource != null) {
+            return emptyResource;
         }
 
-        // Try as a jar resource first
         FileResource jarResource = JarResource.create(pathname);
         if (jarResource != null) {
             return jarResource;
@@ -81,6 +80,8 @@ public class JRubyFile extends JavaSecuredFile {
         if (pathname.startsWith("file:")) {
             pathname = pathname.substring(5);
         }
+
+        // If any other special resource types fail, count it as a filesystem backed resource.
         return new RegularFileResource(create(cwd, pathname));
     }
 
