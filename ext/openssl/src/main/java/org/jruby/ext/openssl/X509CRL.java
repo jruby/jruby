@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -31,15 +31,16 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
-import java.security.GeneralSecurityException;
-import java.security.cert.CRLException;
-import java.security.cert.CertificateFactory;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
+
+import java.security.GeneralSecurityException;
+import java.security.cert.CRLException;
+import java.security.cert.CertificateFactory;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -50,6 +51,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERBoolean;
 import org.bouncycastle.asn1.DLSequence;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -61,10 +63,14 @@ import org.jruby.RubyTime;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.PEMInputOutput;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.ext.openssl.Utils.newRubyInstance;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -77,7 +83,7 @@ public class X509CRL extends RubyObject {
             return new X509CRL(runtime, klass);
         }
     };
-    
+
     public static void createX509CRL(Ruby runtime, RubyModule mX509) {
         RubyClass cX509CRL = mX509.defineClassUnder("CRL",runtime.getObject(),X509CRL_ALLOCATOR);
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
@@ -91,13 +97,14 @@ public class X509CRL extends RubyObject {
     private IRubyObject last_update;
     private IRubyObject next_update;
     private IRubyObject revoked;
-    private List<IRubyObject> extensions;
+
+    private List<IRubyObject> extensions = new ArrayList<IRubyObject>();
 
     private IRubyObject sig_alg;
 
     private boolean changed = true;
 
-    private org.bouncycastle.x509.X509V2CRLGenerator generator = new org.bouncycastle.x509.X509V2CRLGenerator();
+    private final org.bouncycastle.x509.X509V2CRLGenerator generator = new org.bouncycastle.x509.X509V2CRLGenerator();
     private java.security.cert.X509CRL crl;
 
     private ASN1Primitive crl_v;
@@ -111,76 +118,80 @@ public class X509CRL extends RubyObject {
     }
 
     @JRubyMethod(name="initialize", rest=true, visibility = Visibility.PRIVATE)
-    public IRubyObject _initialize(IRubyObject[] args, Block block) {
-        extensions = new ArrayList<IRubyObject>();
-        if(org.jruby.runtime.Arity.checkArgumentCount(getRuntime(),args,0,1) == 0) {
-            version = getRuntime().getNil();
-            issuer = getRuntime().getNil();
-            last_update = getRuntime().getNil();
-            next_update = getRuntime().getNil();
-            revoked = getRuntime().newArray();
+    public IRubyObject _initialize(final ThreadContext context,
+        final IRubyObject[] args, final Block block) {
+        final Ruby runtime = context.runtime;
+
+        if (Arity.checkArgumentCount(getRuntime(), args, 0, 1) == 0) {
+            issuer = version = runtime.getNil();
+            next_update = last_update = runtime.getNil();
+            revoked = runtime.newArray();
             return this;
         }
 
         ByteArrayInputStream bis = new ByteArrayInputStream(args[0].convertToString().getBytes());
-        try {
+        try { // FIXME: use BC for now :
             // SunJCE throws java.security.cert.CRLException: Invalid encoding of AuthorityKeyIdentifierExtension.
-            // FIXME: use BC for now.
-            CertificateFactory cf = OpenSSLReal.getX509CertificateFactoryBC();
-            crl = (java.security.cert.X509CRL) cf.generateCRL(bis);
-        } catch (GeneralSecurityException gse) {
-            throw newX509CRLError(getRuntime(), gse.getMessage());
+            CertificateFactory x509 = OpenSSLReal.getX509CertificateFactoryBC();
+            crl = (java.security.cert.X509CRL) x509.generateCRL(bis);
+        }
+        catch (GeneralSecurityException gse) {
+            throw newX509CRLError(runtime, gse.getMessage());
         }
 
         byte[] crl_bytes = OpenSSLImpl.readX509PEM(args[0]);
         try {
             crl_v = new ASN1InputStream(new ByteArrayInputStream(crl_bytes)).readObject();
-        } catch (IOException ioe) {
-            throw newX509CRLError(getRuntime(), ioe.getMessage());
+        }
+        catch (IOException ioe) {
+            throw newX509CRLError(runtime, ioe.getMessage());
         }
 
-        ASN1Encodable v0 = ((ASN1Sequence)(((ASN1Sequence)crl_v).getObjectAt(0))).getObjectAt(0);
-        if(v0 instanceof ASN1Integer) {
-            set_version(getRuntime().newFixnum(((ASN1Integer)v0).getValue().intValue()));
-        } else {
-            set_version(getRuntime().newFixnum(2));
+        final ASN1Sequence seqa = (ASN1Sequence)((ASN1Sequence) crl_v).getObjectAt(0);
+        final ASN1Encodable v0 = seqa.getObjectAt(0);
+        if ( v0 instanceof ASN1Integer ) {
+            set_version( runtime.newFixnum( ((ASN1Integer) v0).getValue().intValue() ) );
         }
-        set_last_update(RubyTime.newTime(getRuntime(),crl.getThisUpdate().getTime()));
-        set_next_update(RubyTime.newTime(getRuntime(),crl.getNextUpdate().getTime()));
-        RubyString name = RubyString.newString(getRuntime(), crl.getIssuerX500Principal().getEncoded());
-        set_issuer(Utils.newRubyInstance(getRuntime(), "OpenSSL::X509::Name", name));
+        else {
+            set_version( runtime.newFixnum(2) );
+        }
 
-        revoked = getRuntime().newArray();
+        set_last_update( context, RubyTime.newTime(runtime, crl.getThisUpdate().getTime()) );
+        set_next_update( context, RubyTime.newTime(runtime, crl.getNextUpdate().getTime()) );
+        RubyString name = RubyString.newString(runtime, crl.getIssuerX500Principal().getEncoded());
+        set_issuer( Utils.newRubyInstance(runtime, "OpenSSL::X509::Name", name) );
 
-        ASN1Sequence seqa = (ASN1Sequence)((ASN1Sequence)crl_v).getObjectAt(0);
-        ASN1Primitive maybe_ext = (ASN1Primitive)seqa.getObjectAt(seqa.size()-1);
-        if(maybe_ext instanceof ASN1TaggedObject && ((ASN1TaggedObject)maybe_ext).getTagNo() == 0) {
-            ASN1Sequence exts = (ASN1Sequence)((ASN1TaggedObject)maybe_ext).getObject();
-            for(int i=0;i<exts.size();i++) {
-                ASN1Sequence seq2 = (ASN1Sequence)exts.getObjectAt(i);
+        this.revoked = runtime.newArray();
+
+        final ASN1Primitive maybe_ext = (ASN1Primitive) seqa.getObjectAt( seqa.size() - 1 );
+        if ( maybe_ext instanceof ASN1TaggedObject && ( (ASN1TaggedObject) maybe_ext ).getTagNo() == 0 ) {
+            final IRubyObject mASN1 = runtime.getClassFromPath("OpenSSL::ASN1");
+
+            ASN1Sequence exts = (ASN1Sequence) ( (ASN1TaggedObject) maybe_ext ).getObject();
+            for ( int i=0; i<exts.size(); i++ ) {
+                ASN1Sequence seq2 = (ASN1Sequence) exts.getObjectAt(i);
                 boolean critical = false;
-                String oid = ((ASN1ObjectIdentifier)seq2.getObjectAt(0)).getId();
-                if(seq2.getObjectAt(1) == DERBoolean.TRUE) {
-                    critical = true;
-                }
-                byte[] value = crl.getExtensionValue(oid);
-                IRubyObject mASN1 = getRuntime().getClassFromPath("OpenSSL::ASN1");
-                IRubyObject rValue = null;
+                if ( seq2.getObjectAt(1) == DERBoolean.TRUE ) critical = true;
+
+                String oid = ( (ASN1ObjectIdentifier) seq2.getObjectAt(0) ).getId();
+                byte[] valueBytes = crl.getExtensionValue(oid);
+                IRubyObject realValue;
                 try {
-                    rValue = ASN1.decode(mASN1,
-                            ASN1.decode(mASN1, RubyString.newString(getRuntime(), value)).callMethod(getRuntime().getCurrentContext(), "value"));
+                    final RubyString value = RubyString.newString(runtime, valueBytes);
+                    realValue = ASN1.decode(mASN1, ASN1.decode(mASN1, value).callMethod(context, "value"));
                 } catch(Exception e) {
-                    rValue = RubyString.newString(getRuntime(), value);
+                    realValue = RubyString.newString(runtime, valueBytes);
                 }
-                X509Extensions.Extension ext1 = (X509Extensions.Extension) Utils.newRubyInstance(getRuntime(), "OpenSSL::X509::Extension");
+
+                X509Extensions.Extension ext1 = (X509Extensions.Extension) newRubyInstance(runtime, "OpenSSL::X509::Extension");
                 ext1.setRealOid(ext1.getObjectIdentifier(oid));
-                ext1.setRealValue(rValue);
+                ext1.setRealValue(realValue);
                 ext1.setRealCritical(critical);
                 add_extension(ext1);
             }
         }
 
-        changed = false;
+        this.changed = false;
         return this;
     }
 
@@ -188,31 +199,29 @@ public class X509CRL extends RubyObject {
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject obj) {
         System.err.println("WARNING: unimplemented method called: CRL#init_copy");
-        if(this == obj) {
-            return this;
-        }
-        checkFrozen();
-        return this;
+        if ( this == obj ) return this;
+        checkFrozen(); return this;
     }
 
     @JRubyMethod(name = {"to_pem", "to_s"})
-    public IRubyObject to_pem() {
-        StringWriter w = new StringWriter();
+    public IRubyObject to_pem(final ThreadContext context) {
+        StringWriter writer = new StringWriter();
         try {
-            PEMInputOutput.writeX509CRL(w, crl);
-            w.close();
-            return getRuntime().newString(w.toString());
-        } catch (IOException ioe) {
-            throw newX509CRLError(getRuntime(), ioe.getMessage());
+            PEMInputOutput.writeX509CRL(writer, crl);
+            return context.runtime.newString(writer.toString());
+        }
+        catch (IOException ioe) {
+            throw newX509CRLError(context.runtime, ioe.getMessage());
         }
     }
 
     @JRubyMethod
-    public IRubyObject to_der() {
+    public IRubyObject to_der(final ThreadContext context) {
         try {
-            return RubyString.newString(getRuntime(), crl_v.getEncoded());
-        } catch (IOException ioe) {
-            throw newX509CRLError(getRuntime(), ioe.getMessage());
+            return RubyString.newString(context.runtime, crl_v.getEncoded());
+        }
+        catch (IOException ioe) {
+            throw newX509CRLError(context.runtime, ioe.getMessage());
         }
     }
 
@@ -220,31 +229,35 @@ public class X509CRL extends RubyObject {
     private static final String IND12 = "            ";
     private static final String IND16 = "                ";
     private static final DateFormat ASN_DATE = new SimpleDateFormat("MMM dd HH:mm:ss yyyy zzz");
+
     @JRubyMethod
-    public IRubyObject to_text() {
-        StringBuilder sbe = new StringBuilder();
-        sbe.append("Certificate Revocation List (CRL):\n");
-        sbe.append(IND8).append("Version ").append(RubyNumeric.fix2int(version)+1).append(" (0x");
-        sbe.append(Integer.toString(RubyNumeric.fix2int(version),16)).append(")\n");
-        sbe.append(IND8).append("Signature Algorithm: ").append(ASN1.nid2ln(getRuntime(),ASN1.obj2nid(getRuntime(),((ASN1ObjectIdentifier)((ASN1Sequence)((ASN1Sequence)crl_v).getObjectAt(1)).getObjectAt(0))))).append("\n");
-        sbe.append(IND8).append("Issuer: ").append(issuer()).append("\n");
-        sbe.append(IND8).append("Last Update: ").append(ASN_DATE.format(((RubyTime)last_update()).getJavaDate())).append("\n");
-        if(!next_update().isNil()) {
-            sbe.append(IND8).append("Next Update: ").append(ASN_DATE.format(((RubyTime)next_update()).getJavaDate())).append("\n");
+    public IRubyObject to_text(final ThreadContext context) {
+        final Ruby runtime = context.runtime;
+        final StringBuilder text = new StringBuilder();
+
+        text.append("Certificate Revocation List (CRL):\n");
+        text.append(IND8).append("Version ").append( RubyNumeric.fix2int(version) + 1 ).append(" (0x");
+        text.append( Integer.toString( RubyNumeric.fix2int(version), 16 ) ).append(")\n");
+        ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier) ( (ASN1Sequence) ((ASN1Sequence) crl_v).getObjectAt(1) ).getObjectAt(0);
+        text.append(IND8).append("Signature Algorithm: ").append( ASN1.nid2ln(runtime, ASN1.obj2nid(runtime, oid)) ).append("\n");
+        text.append(IND8).append("Issuer: ").append( issuer() ).append("\n");
+        text.append(IND8).append("Last Update: ").
+            append( ASN_DATE.format( ((RubyTime) last_update()).getJavaDate() ) ).append("\n");
+        if ( ! next_update().isNil() ) {
+            text.append(IND8).append("Next Update: ").
+                append( ASN_DATE.format(((RubyTime) next_update()).getJavaDate() )).append("\n");
         } else {
-            sbe.append(IND8).append("Next Update: NONE\n");
+            text.append(IND8).append("Next Update: NONE\n");
         }
-        if(extensions.size()>0) {
-            sbe.append(IND8).append("CRL extensions\n");
-            for(Iterator<IRubyObject> iter = extensions.iterator();iter.hasNext();) {
-                X509Extensions.Extension ext = (X509Extensions.Extension)iter.next();
+        if ( extensions.size() > 0 ) {
+            text.append(IND8).append("CRL extensions\n");
+            for ( IRubyObject extension : extensions ) {
+                X509Extensions.Extension ext = (X509Extensions.Extension) extension;
                 ASN1ObjectIdentifier oiden = ext.getRealOid();
-                sbe.append(IND12).append(ASN1.o2a(getRuntime(),oiden)).append(": ");
-                if(ext.getRealCritical()) {
-                    sbe.append("critical");
-                }
-                sbe.append("\n");
-                sbe.append(IND16).append(ext.value()).append("\n");
+                text.append(IND12).append( ASN1.o2a(runtime, oiden) ).append(": ");
+                if ( ext.getRealCritical() ) text.append("critical");
+                text.append("\n");
+                text.append(IND16).append(ext.value()).append("\n");
             }
         }
         /*
@@ -267,7 +280,7 @@ public class X509CRL extends RubyObject {
     130         X509_signature_print(out, x->sig_alg, x->signature);
     131
         */
-        return getRuntime().newString(sbe.toString());
+        return runtime.newString( text.toString() );
     }
 
     @JRubyMethod
@@ -277,8 +290,8 @@ public class X509CRL extends RubyObject {
 
     @JRubyMethod(name="version=")
     public IRubyObject set_version(IRubyObject val) {
-        if(!val.equals(this.version)) {
-            changed = true;
+        if ( ! val.equals(this.version) ) {
+            this.changed = true;
         }
         this.version = val;
         return val;
@@ -296,8 +309,8 @@ public class X509CRL extends RubyObject {
 
     @JRubyMethod(name="issuer=")
     public IRubyObject set_issuer(IRubyObject val) {
-        if(!val.equals(this.issuer)) {
-            changed = true;
+        if ( ! val.equals(this.issuer) ) {
+            this.changed = true;
         }
         this.issuer = val;
         generator.setIssuerDN(((X509Name)issuer).getRealName());
@@ -310,11 +323,11 @@ public class X509CRL extends RubyObject {
     }
 
     @JRubyMethod(name="last_update=")
-    public IRubyObject set_last_update(IRubyObject val) {
+    public IRubyObject set_last_update(final ThreadContext context, IRubyObject val) {
         changed = true;
-        last_update = val.callMethod(getRuntime().getCurrentContext(),"getutc");
-        ((RubyTime)last_update).setMicroseconds(0);
-        generator.setThisUpdate(((RubyTime)last_update).getJavaDate());
+        final RubyTime value = (RubyTime) val.callMethod(context, "getutc");
+        value.setMicroseconds(0);
+        generator.setThisUpdate( value.getJavaDate() );
         this.last_update = val;
         return val;
     }
@@ -325,11 +338,11 @@ public class X509CRL extends RubyObject {
     }
 
     @JRubyMethod(name="next_update=")
-    public IRubyObject set_next_update(IRubyObject val) {
-        changed = true;
-        next_update = val.callMethod(getRuntime().getCurrentContext(),"getutc");
-        ((RubyTime)next_update).setMicroseconds(0);
-        generator.setNextUpdate(((RubyTime)next_update).getJavaDate());
+    public IRubyObject set_next_update(final ThreadContext context, IRubyObject val) {
+        this.changed = true;
+        final RubyTime value = (RubyTime) val.callMethod(context, "getutc");
+        value.setMicroseconds(0);
+        generator.setNextUpdate( value.getJavaDate() );
         this.next_update = val;
         return val;
     }
@@ -341,15 +354,15 @@ public class X509CRL extends RubyObject {
 
     @JRubyMethod(name="revoked=")
     public IRubyObject set_revoked(IRubyObject val) {
-        changed = true;
+        this.changed = true;
         this.revoked = val;
         return val;
     }
 
     @JRubyMethod
-    public IRubyObject add_revoked(IRubyObject val) {
-        changed = true;
-        this.revoked.callMethod(getRuntime().getCurrentContext(),"<<",val);
+    public IRubyObject add_revoked(final ThreadContext context, IRubyObject val) {
+        this.changed = true;
+        this.revoked.callMethod(context, "<<", val);
         return val;
     }
 
@@ -361,7 +374,7 @@ public class X509CRL extends RubyObject {
     @SuppressWarnings("unchecked")
     @JRubyMethod(name="extensions=")
     public IRubyObject set_extensions(IRubyObject val) {
-        this.extensions = ((RubyArray)val).getList();
+        this.extensions = ( (RubyArray) val ).getList();
         return val;
     }
 
@@ -372,62 +385,68 @@ public class X509CRL extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject sign(final IRubyObject key, IRubyObject digest) {
+    public IRubyObject sign(final ThreadContext context, final IRubyObject key, IRubyObject digest) {
+        final Ruby runtime = context.runtime;
         //System.err.println("WARNING: unimplemented method called: CRL#sign");
         // Have to obey some artificial constraints of the OpenSSL implementation. Stupid.
-        String keyAlg = ((PKey)key).getAlgorithm();
-        String digAlg = ((Digest)digest).getShortAlgorithm();
-        
-        if(("DSA".equalsIgnoreCase(keyAlg) && "MD5".equalsIgnoreCase(digAlg)) || 
+        final String keyAlg = ((PKey) key).getAlgorithm();
+        final String digAlg = ((Digest) digest).getShortAlgorithm();
+
+        if(("DSA".equalsIgnoreCase(keyAlg) && "MD5".equalsIgnoreCase(digAlg)) ||
            ("RSA".equalsIgnoreCase(keyAlg) && "DSS1".equals(((Digest)digest).name().toString())) ||
            ("DSA".equalsIgnoreCase(keyAlg) && "SHA1".equals(((Digest)digest).name().toString()))) {
-            throw newX509CRLError(getRuntime(), null);
+            throw newX509CRLError(runtime, null);
         }
 
-        sig_alg = getRuntime().newString(digAlg);
+        sig_alg = runtime.newString(digAlg);
         generator.setSignatureAlgorithm(digAlg + "WITH" + keyAlg);
 
-        for (IRubyObject obj : ((RubyArray)revoked).toJavaArray()) {
-            X509Revoked rev = (X509Revoked)obj; // TODO: can throw CCE
-            BigInteger serial = new BigInteger(rev.callMethod(getRuntime().getCurrentContext(),"serial").toString());
-            IRubyObject t1 = rev.callMethod(getRuntime().getCurrentContext(),"time").callMethod(getRuntime().getCurrentContext(),"getutc");
-            ((RubyTime)t1).setMicroseconds(0);
+        for ( IRubyObject obj : ((RubyArray) revoked).toJavaArray() ) {
+            X509Revoked rev = (X509Revoked) obj; // TODO: can throw CCE
+            BigInteger serial = new BigInteger( rev.callMethod(context, "serial").toString() );
+            RubyTime t1 = (RubyTime) rev.callMethod(context, "time").callMethod(context, "getutc");
+            t1.setMicroseconds(0);
             // Extensions ignored, for now
-            generator.addCRLEntry(serial,((RubyTime)t1).getJavaDate(),new org.bouncycastle.asn1.x509.X509Extensions(new Hashtable()));
+            generator.addCRLEntry( serial, t1.getJavaDate(), new org.bouncycastle.asn1.x509.X509Extensions(new Hashtable()) );
         }
 
         try {
-            for (Iterator<IRubyObject> iter = extensions.iterator(); iter.hasNext();) {
-                X509Extensions.Extension ag = (X509Extensions.Extension) iter.next();
-                generator.addExtension(ag.getRealOid(), ag.getRealCritical(), ag.getRealValueBytes());
+            for ( IRubyObject extension : extensions ) {
+                X509Extensions.Extension ext = (X509Extensions.Extension) extension;
+                generator.addExtension(ext.getRealOid(), ext.getRealCritical(), ext.getRealValueBytes());
             }
-        } catch (IOException ioe) {
-            throw newX509CRLError(getRuntime(), ioe.getMessage());
+        }
+        catch (IOException ioe) {
+            throw newX509CRLError(runtime, ioe.getMessage());
         }
         try {
             crl = generator.generate(((PKey) key).getPrivateKey());
-        } catch (Exception e) {
-            throw newX509CRLError(getRuntime(), e.getMessage());
+        }
+        catch (Exception e) {
+            throw newX509CRLError(runtime, e.getMessage());
         }
 
         try {
             crl_v = new ASN1InputStream(new ByteArrayInputStream(crl.getEncoded())).readObject();
-        } catch (CRLException crle) {
-            throw newX509CRLError(getRuntime(), crle.getMessage());
-        } catch (IOException ioe) {
-            throw newX509CRLError(getRuntime(), ioe.getMessage());
         }
-        ASN1Sequence v1 = (ASN1Sequence)(((ASN1Sequence)crl_v).getObjectAt(0));
-        ASN1EncodableVector build1 = new ASN1EncodableVector();
+        catch (CRLException crle) {
+            throw newX509CRLError(runtime, crle.getMessage());
+        }
+        catch (IOException ioe) {
+            throw newX509CRLError(runtime, ioe.getMessage());
+        }
+
+        ASN1Sequence v1 = (ASN1Sequence) ( ((ASN1Sequence) crl_v).getObjectAt(0) );
+        final ASN1EncodableVector build1 = new ASN1EncodableVector();
         int copyIndex = 0;
-        if(v1.getObjectAt(0) instanceof ASN1Integer) {
+        if (v1.getObjectAt(0) instanceof ASN1Integer) {
             copyIndex++;
         }
-        build1.add(new ASN1Integer(new java.math.BigInteger(version.toString())));
+        build1.add( new ASN1Integer( new BigInteger(version.toString()) ) );
         while(copyIndex < v1.size()) {
             build1.add(v1.getObjectAt(copyIndex++));
         }
-        ASN1EncodableVector build2 = new ASN1EncodableVector();
+        final ASN1EncodableVector build2 = new ASN1EncodableVector();
         build2.add(new DLSequence(build1));
         build2.add(((ASN1Sequence)crl_v).getObjectAt(1));
         build2.add(((ASN1Sequence)crl_v).getObjectAt(2));
@@ -437,15 +456,13 @@ public class X509CRL extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject verify(final IRubyObject key) {
-        if (changed) {
-            return getRuntime().getFalse();
-        }
+    public IRubyObject verify(final ThreadContext context, final IRubyObject key) {
+        if ( changed ) return context.runtime.getFalse();
         try {
             crl.verify(((PKey) key).getPublicKey());
-            return getRuntime().getTrue();
+            return context.runtime.getTrue();
         } catch (Exception ignored) {
-            return getRuntime().getFalse();
+            return context.runtime.getFalse();
         }
 
     }
@@ -453,4 +470,5 @@ public class X509CRL extends RubyObject {
     private static RaiseException newX509CRLError(Ruby runtime, String message) {
         return Utils.newError(runtime, "OpenSSL::X509::CRLError", message);
     }
+
 }// X509CRL
