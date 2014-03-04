@@ -34,7 +34,6 @@ import static org.jruby.util.io.ModeFlags.WRONLY;
 
 import java.io.File;
 import java.io.FileDescriptor;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,12 +52,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
+import org.jruby.Ruby;
 import org.jruby.RubyFile;
 
 import jnr.posix.POSIX;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketChannel;
 import org.jruby.exceptions.RaisableException;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.log.Logger;
@@ -83,6 +84,18 @@ import org.jruby.util.log.LoggerFactory;
  * POSIX dup also allows independent positioning information.
  */
 public class ChannelDescriptor {
+    static class IOError extends RaisableException {
+        private final IOException ioe;
+
+        IOError(IOException ioe) { 
+            this.ioe = ioe;
+        }
+
+        @Override
+        public RaiseException newRaiseException(Ruby runtime) {
+            return runtime.newIOErrorFromException(ioe);
+        }
+    }
 
     private static final Logger LOG = LoggerFactory.getLogger("ChannelDescriptor");
 
@@ -715,15 +728,8 @@ public class ChannelDescriptor {
      * @param path the file path to open
      * @param flags the mode flags to use for opening the file
      * @return a new ChannelDescriptor based on the specified parameters
-     * @throws java.io.FileNotFoundException if the target file could not be found
-     * and the create flag was not specified
-     * @throws org.jruby.util.io.DirectoryAsFileException if the target file is
-     * a directory being opened as a file
-     * @throws org.jruby.util.io.FileExistsException if the target file should
-     * be created anew, but already exists
-     * @throws java.io.IOException if there is an exception during IO
      */
-    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags) throws RaisableException, FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
+    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags) throws RaisableException {
         return open(cwd, path, flags, 0, null, null);
     }
     
@@ -738,15 +744,8 @@ public class ChannelDescriptor {
      * @param flags the mode flags to use for opening the file
      * @param classLoader a ClassLoader to use for classpath: resources
      * @return a new ChannelDescriptor based on the specified parameters
-     * @throws java.io.FileNotFoundException if the target file could not be found
-     * and the create flag was not specified
-     * @throws org.jruby.util.io.DirectoryAsFileException if the target file is
-     * a directory being opened as a file
-     * @throws org.jruby.util.io.FileExistsException if the target file should
-     * be created anew, but already exists
-     * @throws java.io.IOException if there is an exception during IO
      */
-    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, ClassLoader classLoader) throws RaisableException, FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
+    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, ClassLoader classLoader) throws RaisableException {
         return open(cwd, path, flags, 0, null, classLoader);
     }
 
@@ -762,15 +761,8 @@ public class ChannelDescriptor {
      * unobserved)
      * @param posix a POSIX api implementation, used for setting permissions; if null, permissions are ignored
      * @return a new ChannelDescriptor based on the specified parameters
-     * @throws java.io.FileNotFoundException if the target file could not be found
-     * and the create flag was not specified
-     * @throws org.jruby.util.io.DirectoryAsFileException if the target file is
-     * a directory being opened as a file
-     * @throws org.jruby.util.io.FileExistsException if the target file should
-     * be created anew, but already exists
-     * @throws java.io.IOException if there is an exception during IO
      */
-    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, int perm, POSIX posix) throws RaisableException, FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
+    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, int perm, POSIX posix) throws RaisableException {
         return open(cwd, path, flags, perm, posix, null);
     }
     
@@ -787,15 +779,8 @@ public class ChannelDescriptor {
      * @param posix a POSIX api implementation, used for setting permissions; if null, permissions are ignored
      * @param classLoader a ClassLoader to use for classpath: resources
      * @return a new ChannelDescriptor based on the specified parameters
-     * @throws java.io.FileNotFoundException if the target file could not be found
-     * and the create flag was not specified
-     * @throws org.jruby.util.io.DirectoryAsFileException if the target file is
-     * a directory being opened as a file
-     * @throws org.jruby.util.io.FileExistsException if the target file should
-     * be created anew, but already exists
-     * @throws java.io.IOException if there is an exception during IO
      */
-    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, int perm, POSIX posix, ClassLoader classLoader) throws RaisableException, FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
+    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, int perm, POSIX posix, ClassLoader classLoader) throws RaisableException {
         boolean fileCreated = false;
         if (path.equals("/dev/null") || path.equalsIgnoreCase("nul:") || path.equalsIgnoreCase("nul")) {
             Channel nullChannel = new NullChannel();
@@ -808,25 +793,33 @@ public class ChannelDescriptor {
                 String internalPath = path.substring(bangIndex + 2);
 
                 if (!new File(filePath).exists()) {
-                    throw new FileNotFoundException(path);
+                    throw new ErrnoException.NotFound(path);
                 }
 
-                JarFile jf = new JarFile(filePath);
-                ZipEntry entry = RubyFile.getFileEntry(jf, internalPath);
+                try {
+                    JarFile jf = new JarFile(filePath);
+                    ZipEntry entry = RubyFile.getFileEntry(jf, internalPath);
 
-                if (entry == null) {
-                    throw new FileNotFoundException(path);
+                    if (entry == null) {
+                        throw new ErrnoException.NotFound(path);
+                    }
+
+                    InputStream is = jf.getInputStream(entry);
+                    // FIXME: don't use RubyIO for this
+                    return new ChannelDescriptor(Channels.newChannel(is), flags);
+                } catch (IOException ioe) {
+                    throw new IOError(ioe);
                 }
-
-                InputStream is = jf.getInputStream(entry);
-                // FIXME: don't use RubyIO for this
-                return new ChannelDescriptor(Channels.newChannel(is), flags);
             } else {
-                // raw file URL, just open directly
-                URL url = new URL(path);
-                InputStream is = url.openStream();
-                // FIXME: don't use RubyIO for this
-                return new ChannelDescriptor(Channels.newChannel(is), flags);
+                try {
+                    // raw file URL, just open directly
+                    URL url = new URL(path);
+                    InputStream is = url.openStream();
+                    // FIXME: don't use RubyIO for this
+                    return new ChannelDescriptor(Channels.newChannel(is), flags);
+                } catch (IOException ioe) {
+                    throw new IOError(ioe);
+                }
             }
         } else if (path.startsWith("classpath:/") && classLoader != null) {
             path = path.substring("classpath:/".length());
@@ -837,7 +830,7 @@ public class ChannelDescriptor {
             JRubyFile theFile = JRubyFile.create(cwd,path);
 
             if (theFile.isDirectory() && flags.isWritable()) {
-                throw new DirectoryAsFileException();
+                throw new ErrnoException.FileIsDirectory(path);
             }
 
             if (flags.isCreate()) {
@@ -845,7 +838,7 @@ public class ChannelDescriptor {
                     fileCreated = theFile.createNewFile();
                     
                     if (!fileCreated && flags.isExclusive()) {
-                        throw new FileExistsException(path);
+                        throw new ErrnoException.FileExists(path);
                     }
                 } catch (IOException ioe) {
                     // See JRUBY-4380.
@@ -854,17 +847,17 @@ public class ChannelDescriptor {
                     // Java in such cases just throws IOException.
                     File parent = theFile.getParentFile();
                     if (parent != null && parent != theFile && !parent.exists()) {
-                        throw new FileNotFoundException(path);
+                        throw new ErrnoException.NotFound(path);
                     } else if (!theFile.canWrite()) {
-                        throw new PermissionDeniedException(path);
+                        throw new ErrnoException.PermissionDenied(path);
                     } else {
                         // for all other IO errors, just re-throw the original exception
-                        throw ioe;
+                        throw new IOError(ioe);
                     }
                 }
             } else {
                 if (!theFile.exists()) {
-                    throw new FileNotFoundException(path);
+                    throw new ErrnoException.NotFound(path);
                 }
             }
 
@@ -884,16 +877,20 @@ public class ChannelDescriptor {
              * we need manual seeking.
              */
             boolean isInAppendMode;
-            if (flags.isWritable() && !flags.isReadable()) {
-                FileOutputStream fos = new FileOutputStream(theFile, flags.isAppendable());
-                fileChannel = fos.getChannel();
-                fileDescriptor = fos.getFD();
-                isInAppendMode = true;
-            } else {
-                RandomAccessFile raf = new RandomAccessFile(theFile, flags.toJavaModeString());
-                fileChannel = raf.getChannel();
-                fileDescriptor = raf.getFD();
-                isInAppendMode = false;
+            try{
+                if (flags.isWritable() && !flags.isReadable()) {
+                    FileOutputStream fos = new FileOutputStream(theFile, flags.isAppendable());
+                    fileChannel = fos.getChannel();
+                    fileDescriptor = fos.getFD();
+                    isInAppendMode = true;
+                } else {
+                    RandomAccessFile raf = new RandomAccessFile(theFile, flags.toJavaModeString());
+                    fileChannel = raf.getChannel();
+                    fileDescriptor = raf.getFD();
+                    isInAppendMode = false;
+                }
+            } catch (IOException ioe) {
+                throw new IOError(ioe);
             }
 
             // call chmod after we created the RandomAccesFile
@@ -912,7 +909,7 @@ public class ChannelDescriptor {
                 if (ioe.getMessage().equals("Illegal seek")) {
                     // ignore; it's a pipe or fifo that can't be truncated
                 } else {
-                    throw ioe;
+                    throw new IOError(ioe);
                 }
             }
 

@@ -170,7 +170,7 @@ public interface Stream {
 
     void setBlocking(boolean blocking) throws IOException;
 
-    void freopen(Ruby runtime, String path, ModeFlags modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException;
+    void freopen(Ruby runtime, String path, ModeFlags modes) throws IOException, InvalidValueException, PipeException, BadDescriptorException;
 
     void setBinmode();
     boolean isBinmode();

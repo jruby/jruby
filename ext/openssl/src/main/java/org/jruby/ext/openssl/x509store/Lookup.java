@@ -50,7 +50,6 @@ import org.jruby.RubyHash;
 import org.jruby.exceptions.RaisableException;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ChannelStream;
-import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
 
@@ -304,10 +303,6 @@ public class Lookup {
             throw raisable.newRaiseException(runtime);
         } catch (NoSuchMethodError nsme) {
             return new BufferedInputStream(new FileInputStream(file));
-        } catch (FileExistsException fee) {
-            // should not happen because ModeFlag does not contain CREAT.
-            fee.printStackTrace(System.err);
-            throw new IllegalStateException(fee.getMessage(), fee);
         } catch (InvalidValueException ive) {
             // should not happen because ModeFlasg does not contain APPEND.
             ive.printStackTrace(System.err);

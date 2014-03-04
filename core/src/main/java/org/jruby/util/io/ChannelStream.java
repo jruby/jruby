@@ -1421,7 +1421,7 @@ public class ChannelStream implements Stream, Finalizable {
         return blocking;
     }
 
-    public synchronized void freopen(Ruby runtime, String path, ModeFlags modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException {
+    public synchronized void freopen(Ruby runtime, String path, ModeFlags modes) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
         // flush first
         flushWrite();
 
@@ -1443,7 +1443,9 @@ public class ChannelStream implements Stream, Finalizable {
             String cwd = runtime.getCurrentDirectory();
             JRubyFile theFile = JRubyFile.create(cwd,path);
 
-            if (theFile.isDirectory() && modes.isWritable()) throw new DirectoryAsFileException();
+            if (theFile.isDirectory() && modes.isWritable()) {
+                throw runtime.newErrnoEISDirError(path);
+            }
 
             if (modes.isCreate()) {
                 if (theFile.exists() && modes.isExclusive()) {
@@ -1499,7 +1501,7 @@ public class ChannelStream implements Stream, Finalizable {
         return stream;
     }
 
-    public static Stream fopen(Ruby runtime, String path, ModeFlags modes) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException, InvalidValueException, PipeException, BadDescriptorException {
+    public static Stream fopen(Ruby runtime, String path, ModeFlags modes) throws FileNotFoundException, IOException, InvalidValueException, PipeException, BadDescriptorException {
         try {
             ChannelDescriptor descriptor = ChannelDescriptor.open(runtime.getCurrentDirectory(), path, modes, runtime.getClassLoader());
             Stream stream = fdopen(runtime, descriptor, modes);
