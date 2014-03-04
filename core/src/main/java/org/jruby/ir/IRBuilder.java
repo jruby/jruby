@@ -1867,7 +1867,11 @@ public class IRBuilder {
                 ArgumentNode a = (ArgumentNode)node;
                 String argName = a.getName();
                 if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("req", argName);
-                addArgReceiveInstr(s, s.getNewLocalVariable(argName, 0), argIndex, post, numPreReqd, numPostRead);
+                // SSS FIXME: _$0 feels fragile?
+                // Ignore duplicate "_" args in blocks.
+                if (!argName.equals("_$0")) {
+                    addArgReceiveInstr(s, s.getNewLocalVariable(argName, 0), argIndex, post, numPreReqd, numPostRead);
+                }
                 break;
             }
             case MULTIPLEASGN19NODE: {
