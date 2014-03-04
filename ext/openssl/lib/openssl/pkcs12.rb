@@ -7,13 +7,9 @@ module OpenSSL
 
     java_import java.io.StringReader
     java_import java.io.StringBufferInputStream
-    java_import java.security.cert.CertificateFactory
-    java_import java.security.cert.Certificate
-    java_import java.security.KeyStore
     java_import java.io.ByteArrayOutputStream
     java_import org.bouncycastle.openssl.PEMReader
-
-    java.security.Security.add_provider(org.bouncycastle.jce.provider.BouncyCastleProvider.new)
+    java_import org.jruby.ext.openssl.SecurityHelper
 
     def self.create(pass, name, key, cert, ca = nil)
       pkcs12 = self.new
@@ -37,7 +33,7 @@ module OpenSSL
 
       p12_input_stream = StringBufferInputStream.new(@der)
 
-      store = KeyStore.get_instance("PKCS12")
+      store = SecurityHelper.getKeyStore("PKCS12")
       store.load(p12_input_stream, password.to_java.to_char_array)
 
       aliases = store.aliases
@@ -94,15 +90,15 @@ module OpenSSL
 
       certificates = cert.to_pem
       if ca
-        ca.each { |ca_cert| 
+        ca.each { |ca_cert|
           certificates << ca_cert.to_pem
         }
       end
 
       cert_input_stream = StringBufferInputStream.new(certificates)
-      certs = CertificateFactory.get_instance("X.509").generate_certificates(cert_input_stream)
+      certs = SecurityHelper.getCertificateFactory("X.509").generate_certificates(cert_input_stream)
 
-      store = KeyStore.get_instance("PKCS12", "BC")
+      store = SecurityHelper.getKeyStore("PKCS12")
       store.load(nil, nil)
       store.set_key_entry(alias_name, key_pair.get_private, nil, certs.to_array(Java::java.security.cert.Certificate[certs.size].new))
 
@@ -112,7 +108,7 @@ module OpenSSL
         store.store(pkcs12_output_stream, password.to_java.to_char_array)
       rescue java.lang.Exception => e
         raise PKCS12Error, "Exception: #{e}"
-      end 
+      end
 
       @der = String.from_java_bytes(pkcs12_output_stream.to_byte_array)
     end

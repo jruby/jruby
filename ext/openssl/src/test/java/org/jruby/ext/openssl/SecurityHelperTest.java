@@ -1,6 +1,7 @@
 
 package org.jruby.ext.openssl;
 
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.cert.CertificateException;
@@ -142,6 +143,39 @@ public class SecurityHelperTest {
             fail();
         }
         catch (NoSuchAlgorithmException e) {
+            // OK
+        }
+    }
+
+    //
+
+    @Test
+    public void testGetKeyStore() throws Exception {
+        assertNotNull( SecurityHelper.getKeyStore("PKCS12") );
+
+        assertNotNull( SecurityHelper.getKeyStore("PKCS12", savedProvider) );
+    }
+
+    @Test
+    public void testGetKeyStoreWithoutBC() throws Exception {
+        disableSecurityProvider();
+        assertNotNull( SecurityHelper.getKeyStore("PKCS12") );
+    }
+
+    @Test
+    public void testGetKeyStoreThrows() throws Exception {
+        try {
+            SecurityHelper.getKeyStore("PKCS42");
+            fail();
+        }
+        catch (KeyStoreException e) {
+            // OK
+        }
+        try {
+            SecurityHelper.getKeyStore("PKCS42", savedProvider);
+            fail();
+        }
+        catch (KeyStoreException e) {
             // OK
         }
     }
