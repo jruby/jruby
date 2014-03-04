@@ -572,7 +572,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     interpretFloatOp((AluInstr)instr, operation, context, floats, booleans, temp);
                     break;
                 case ARG_OP:
-                    receiveArg(context, instr, operation, args, IRRuntimeHelpers.extractKwargsCount(args, scope.receivesKeywordArgs()), currDynScope, temp, exception, block);
+                    // FIXME: As we stand we need to know required args count to know whether a last arg hash is kwargs or just a hash
+                    receiveArg(context, instr, operation, args, IRRuntimeHelpers.extractKwargsCount(args, 0, scope.receivesKeywordArgs()), currDynScope, temp, exception, block);
                     break;
                 case CALL_OP:
                     if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);

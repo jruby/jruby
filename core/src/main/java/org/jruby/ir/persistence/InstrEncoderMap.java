@@ -291,7 +291,7 @@ public class InstrEncoderMap {
         e.encode(instr.required);
         e.encode(instr.opt);
         e.encode(instr.rest);
-        e.encode(instr.receivesKwargs);
+        e.encode(instr.receivesKeywords);
     }
 
     private void encodeClassVarIsDefinedInstr(ClassVarIsDefinedInstr instr) {

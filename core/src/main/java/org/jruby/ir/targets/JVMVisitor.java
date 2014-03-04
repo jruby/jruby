@@ -773,7 +773,7 @@ public class JVMVisitor extends IRVisitor {
         jvm.method().adapter.ldc(checkarityinstr.required);
         jvm.method().adapter.ldc(checkarityinstr.opt);
         jvm.method().adapter.ldc(checkarityinstr.rest);
-        jvm.method().adapter.ldc(checkarityinstr.receivesKwargs);
+        jvm.method().adapter.ldc(checkarityinstr.receivesKeywords);
         jvm.method().adapter.invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, Object[].class, int.class, int.class, int.class, boolean.class));
     }
 

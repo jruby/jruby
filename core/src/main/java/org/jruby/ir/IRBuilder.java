@@ -1919,7 +1919,9 @@ public class IRBuilder {
             // (a) on inlining, we'll be able to get rid of these checks in almost every case.
             // (b) compiler to bytecode will anyway generate this and this is explicit.
             // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?
-            addInstr(s, new CheckArityInstr(required, opt, rest, argsNode.hasKwargs()));
+            KeywordRestArgNode keyRest = argsNode.getKeyRest();
+            addInstr(s, new CheckArityInstr(required, opt, rest, argsNode.hasKwargs(),
+                    keyRest == null ? -1 : keyRest.getIndex()));
         }
 
         // Other args begin at index 0
@@ -1999,7 +2001,11 @@ public class IRBuilder {
                 if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("key", argName);
                 addInstr(s, new ReceiveKeywordArgInstr(av, argName, required));
                 addInstr(s, BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, we are done
-                build(kasgn, s);
+
+                // Required kwargs have no value and check_arity will throw if they are not provided.
+                if (kasgn.getValueNode().getNodeType() != NodeType.REQUIRED_KEYWORD_ARGUMENT_VALUE) {
+                    build(kasgn, s);
+                }
                 addInstr(s, new LabelInstr(l));
             }
         }
