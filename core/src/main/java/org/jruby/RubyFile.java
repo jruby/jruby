@@ -35,6 +35,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.CompatVersion.*;
+import static org.jruby.runtime.Visibility.*;
+
 import jnr.constants.platform.OpenFlags;
 import org.jcodings.Encoding;
 import org.jruby.util.io.ModeFlags;
@@ -70,7 +73,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.util.ByteList;
@@ -86,7 +88,7 @@ import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.PipeException;
-import static org.jruby.CompatVersion.*;
+import org.jruby.exceptions.RaisableException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.encoding.EncodingService;
@@ -1299,6 +1301,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             // TODO: check if too many open files, GC and try again
 
             return descriptor;
+        } catch (RaisableException raisable) {
+            throw raisable.newRaiseException(getRuntime());
         } catch (PermissionDeniedException pde) {
             // PDException can be thrown only when creating the file and
             // permission is denied.  See JavaDoc of PermissionDeniedException.

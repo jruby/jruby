@@ -68,6 +68,7 @@ import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.RaisableException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
@@ -1241,8 +1242,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
                                        runtime.getJRubyClassLoader());
             // always a new fileno, so ok to use internal only
             fileno = descriptor.getFileno();
-        }
-        catch (FileNotFoundException fnfe) {
+        } catch (RaisableException raisable) {
+            throw raisable.newRaiseException(runtime);
+        } catch (FileNotFoundException fnfe) {
             throw runtime.newErrnoENOENTError(path);
         } catch (DirectoryAsFileException dafe) {
             throw runtime.newErrnoEISDirError(path);

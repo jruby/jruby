@@ -50,6 +50,7 @@ import java.util.LinkedList;
 
 import org.jruby.Finalizable;
 import org.jruby.Ruby;
+import org.jruby.exceptions.RaisableException;
 import org.jruby.platform.Platform;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyFile;
@@ -1499,10 +1500,14 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     public static Stream fopen(Ruby runtime, String path, ModeFlags modes) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException, InvalidValueException, PipeException, BadDescriptorException {
-        ChannelDescriptor descriptor = ChannelDescriptor.open(runtime.getCurrentDirectory(), path, modes, runtime.getClassLoader());
-        Stream stream = fdopen(runtime, descriptor, modes);
+        try {
+            ChannelDescriptor descriptor = ChannelDescriptor.open(runtime.getCurrentDirectory(), path, modes, runtime.getClassLoader());
+            Stream stream = fdopen(runtime, descriptor, modes);
 
-        return stream;
+            return stream;
+        } catch (RaisableException raisable) {
+            throw raisable.newRaiseException(runtime);
+        }
     }
 
     public Channel getChannel() {

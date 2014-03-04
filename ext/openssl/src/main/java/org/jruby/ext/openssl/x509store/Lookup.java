@@ -47,6 +47,7 @@ import java.util.Iterator;
 import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
+import org.jruby.exceptions.RaisableException;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.FileExistsException;
@@ -299,6 +300,8 @@ public class Lookup {
         try {
             ChannelDescriptor descriptor = ChannelDescriptor.open(runtime.getCurrentDirectory(), file, new ModeFlags(ModeFlags.RDONLY));
             return ChannelStream.open(runtime, descriptor).newInputStream();
+        } catch (RaisableException raisable) {
+            throw raisable.newRaiseException(runtime);
         } catch (NoSuchMethodError nsme) {
             return new BufferedInputStream(new FileInputStream(file));
         } catch (FileExistsException fee) {

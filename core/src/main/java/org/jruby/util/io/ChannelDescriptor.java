@@ -58,6 +58,7 @@ import org.jruby.RubyFile;
 import jnr.posix.POSIX;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketChannel;
+import org.jruby.exceptions.RaisableException;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.log.Logger;
@@ -722,7 +723,7 @@ public class ChannelDescriptor {
      * be created anew, but already exists
      * @throws java.io.IOException if there is an exception during IO
      */
-    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
+    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags) throws RaisableException, FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
         return open(cwd, path, flags, 0, null, null);
     }
     
@@ -745,7 +746,7 @@ public class ChannelDescriptor {
      * be created anew, but already exists
      * @throws java.io.IOException if there is an exception during IO
      */
-    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, ClassLoader classLoader) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
+    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, ClassLoader classLoader) throws RaisableException, FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
         return open(cwd, path, flags, 0, null, classLoader);
     }
 
@@ -769,7 +770,7 @@ public class ChannelDescriptor {
      * be created anew, but already exists
      * @throws java.io.IOException if there is an exception during IO
      */
-    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, int perm, POSIX posix) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
+    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, int perm, POSIX posix) throws RaisableException, FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
         return open(cwd, path, flags, perm, posix, null);
     }
     
@@ -794,7 +795,7 @@ public class ChannelDescriptor {
      * be created anew, but already exists
      * @throws java.io.IOException if there is an exception during IO
      */
-    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, int perm, POSIX posix, ClassLoader classLoader) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
+    public static ChannelDescriptor open(String cwd, String path, ModeFlags flags, int perm, POSIX posix, ClassLoader classLoader) throws RaisableException, FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException {
         boolean fileCreated = false;
         if (path.equals("/dev/null") || path.equalsIgnoreCase("nul:") || path.equalsIgnoreCase("nul")) {
             Channel nullChannel = new NullChannel();
