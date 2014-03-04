@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2008 Ola Bini <ola.bini@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -29,13 +29,15 @@ package org.jruby.ext.openssl.impl;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509CRL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
+
+import java.security.cert.CertificateException;
+import java.security.cert.X509CRL;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -49,6 +51,7 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.jce.provider.X509CertificateObject;
+
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 
 /** PKCS7_SIGNED

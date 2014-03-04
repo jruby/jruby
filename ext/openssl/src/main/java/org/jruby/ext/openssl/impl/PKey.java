@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2010 Hiroshi Nakamura <nahi@ruby-lang.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -29,6 +29,7 @@ package org.jruby.ext.openssl.impl;
 
 import java.io.IOException;
 import java.math.BigInteger;
+
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -45,11 +46,14 @@ import java.security.spec.KeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import javax.crypto.spec.DHParameterSpec;
+
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DLSequence;
+
+import org.jruby.ext.openssl.SecurityHelper;
 
 /**
  *
@@ -84,7 +88,7 @@ public class PKey {
             privSpec = new DSAPrivateKeySpec(x.getValue(), p.getValue(), q.getValue(), g.getValue());
             pubSpec = new DSAPublicKeySpec(y.getValue(), p.getValue(), q.getValue(), g.getValue());
         }
-        KeyFactory fact = KeyFactory.getInstance(type);
+        KeyFactory fact = SecurityHelper.getKeyFactory(type);
         return new KeyPair(fact.generatePublic(pubSpec), fact.generatePrivate(privSpec));
     }
 
@@ -126,7 +130,7 @@ public class PKey {
 
     // d2i_RSAPrivateKey_bio
     public static KeyPair readRSAPrivateKey(byte[] input) throws IOException, GeneralSecurityException {
-        KeyFactory fact = KeyFactory.getInstance("RSA");
+        KeyFactory fact = SecurityHelper.getKeyFactory("RSA");
         ASN1Sequence seq = (ASN1Sequence) (new ASN1InputStream(input).readObject());
         if (seq.size() == 9) {
             BigInteger mod = ((ASN1Integer) seq.getObjectAt(1)).getValue();
@@ -147,7 +151,7 @@ public class PKey {
 
     // d2i_RSAPublicKey_bio
     public static PublicKey readRSAPublicKey(byte[] input) throws IOException, GeneralSecurityException {
-        KeyFactory fact = KeyFactory.getInstance("RSA");
+        KeyFactory fact = SecurityHelper.getKeyFactory("RSA");
         ASN1Sequence seq = (ASN1Sequence) (new ASN1InputStream(input).readObject());
         if (seq.size() == 2) {
             BigInteger mod = ((ASN1Integer) seq.getObjectAt(0)).getValue();
@@ -160,7 +164,7 @@ public class PKey {
 
     // d2i_DSAPrivateKey_bio
     public static KeyPair readDSAPrivateKey(byte[] input) throws IOException, GeneralSecurityException {
-        KeyFactory fact = KeyFactory.getInstance("DSA");
+        KeyFactory fact = SecurityHelper.getKeyFactory("DSA");
         ASN1Sequence seq = (ASN1Sequence) (new ASN1InputStream(input).readObject());
         if (seq.size() == 6) {
             BigInteger p = ((ASN1Integer) seq.getObjectAt(1)).getValue();
@@ -178,7 +182,7 @@ public class PKey {
 
     // d2i_DSA_PUBKEY_bio
     public static PublicKey readDSAPublicKey(byte[] input) throws IOException, GeneralSecurityException {
-        KeyFactory fact = KeyFactory.getInstance("RSA");
+        KeyFactory fact = SecurityHelper.getKeyFactory("RSA");
         ASN1Sequence seq = (ASN1Sequence) (new ASN1InputStream(input).readObject());
         if (seq.size() == 4) {
             BigInteger y = ((ASN1Integer) seq.getObjectAt(0)).getValue();
@@ -190,7 +194,7 @@ public class PKey {
             return null;
         }
     }
-    
+
     // d2i_DHparams_bio
     public static DHParameterSpec readDHParameter(byte[] input) throws IOException {
         ASN1InputStream aIn = new ASN1InputStream(input);

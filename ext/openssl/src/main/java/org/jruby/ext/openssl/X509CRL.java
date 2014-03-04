@@ -139,7 +139,7 @@ public class X509CRL extends RubyObject {
             throw newX509CRLError(runtime, gse.getMessage());
         }
 
-        byte[] crl_bytes = OpenSSLImpl.readX509PEM(args[0]);
+        byte[] crl_bytes = OpenSSLImpl.readX509PEM(context, args[0]);
         try {
             crl_v = new ASN1InputStream(new ByteArrayInputStream(crl_bytes)).readObject();
         }
@@ -159,7 +159,7 @@ public class X509CRL extends RubyObject {
         set_last_update( context, RubyTime.newTime(runtime, crl.getThisUpdate().getTime()) );
         set_next_update( context, RubyTime.newTime(runtime, crl.getNextUpdate().getTime()) );
         RubyString name = RubyString.newString(runtime, crl.getIssuerX500Principal().getEncoded());
-        set_issuer( Utils.newRubyInstance(runtime, "OpenSSL::X509::Name", name) );
+        set_issuer( newRubyInstance(context, "OpenSSL::X509::Name", name) );
 
         this.revoked = runtime.newArray();
 
@@ -178,7 +178,9 @@ public class X509CRL extends RubyObject {
                 IRubyObject realValue;
                 try {
                     final RubyString value = RubyString.newString(runtime, valueBytes);
-                    realValue = ASN1.decode(mASN1, ASN1.decode(mASN1, value).callMethod(context, "value"));
+                    realValue = ASN1.decode(context, mASN1,
+                        ASN1.decode(context, mASN1, value).callMethod(context, "value")
+                    );
                 } catch(Exception e) {
                     realValue = RubyString.newString(runtime, valueBytes);
                 }
@@ -257,7 +259,7 @@ public class X509CRL extends RubyObject {
                 text.append(IND12).append( ASN1.o2a(runtime, oiden) ).append(": ");
                 if ( ext.getRealCritical() ) text.append("critical");
                 text.append("\n");
-                text.append(IND16).append(ext.value()).append("\n");
+                text.append(IND16).append( ext.value(context) ).append("\n");
             }
         }
         /*

@@ -29,8 +29,10 @@ package org.jruby.ext.openssl;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -84,16 +86,34 @@ public class Utils {
         return new RaiseException(rt, getClassFromPath(rt, path), message, nativeException);
     }
 
+    @Deprecated
     public static IRubyObject newRubyInstance(Ruby rt, String path) {
         return rt.getClassFromPath(path).callMethod(rt.getCurrentContext(), "new");
     }
 
+    @Deprecated
     public static IRubyObject newRubyInstance(Ruby rt, String path, IRubyObject arg) {
         return rt.getClassFromPath(path).callMethod(rt.getCurrentContext(), "new", arg);
     }
 
-    public static IRubyObject newRubyInstance(Ruby rt, String path, IRubyObject[] args) {
+    @Deprecated
+    public static IRubyObject newRubyInstance(Ruby rt, String path, IRubyObject... args) {
         return rt.getClassFromPath(path).callMethod(rt.getCurrentContext(), "new", args);
+    }
+
+    static IRubyObject newRubyInstance(final ThreadContext context, final String path) {
+        final RubyModule klass = context.runtime.getClassFromPath(path);
+        return klass.callMethod(context, "new");
+    }
+
+    static IRubyObject newRubyInstance(final ThreadContext context, final String path, IRubyObject arg) {
+        final RubyModule klass = context.runtime.getClassFromPath(path);
+        return klass.callMethod(context, "new", arg);
+    }
+
+    static IRubyObject newRubyInstance(final ThreadContext context, final String path, IRubyObject... args) {
+        final RubyModule klass = context.runtime.getClassFromPath(path);
+        return klass.callMethod(context, "new", args);
     }
 
 }// Utils
