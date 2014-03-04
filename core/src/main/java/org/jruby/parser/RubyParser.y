@@ -2066,7 +2066,7 @@ f_block_kw      : f_label primary_value {
                     $$ = support.keyword_arg($1.getPosition(), support.assignable($1, $2));
                 }
                 | f_label {
-                    $$ = support.keyword_arg($1.getPosition(), support.assignable($1, null));
+                    $$ = support.keyword_arg($1.getPosition(), support.assignable($1, new RequiredKeywordArgumentValueNode()));
                 }
              
 

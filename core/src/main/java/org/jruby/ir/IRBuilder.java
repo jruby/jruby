@@ -2005,6 +2005,8 @@ public class IRBuilder {
                 // Required kwargs have no value and check_arity will throw if they are not provided.
                 if (kasgn.getValueNode().getNodeType() != NodeType.REQUIRED_KEYWORD_ARGUMENT_VALUE) {
                     build(kasgn, s);
+                } else {
+                    addInstr(s, new RaiseRequiredKeywordArgumentError(argName));
                 }
                 addInstr(s, new LabelInstr(l));
             }

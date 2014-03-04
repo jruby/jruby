@@ -136,6 +136,7 @@ public enum Operation {
     GET_BACKREF(0),
     RESTORE_ERROR_INFO(OpFlags.f_has_side_effect),
     RAISE_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
+    RAISE_REQUIRED_KEYWORD_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
     CHECK_ARITY(OpFlags.f_is_book_keeping_op | OpFlags.f_can_raise_exception),
     CHECK_ARGS_ARRAY_ARITY(OpFlags.f_can_raise_exception),
     RECORD_END_BLOCK(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
