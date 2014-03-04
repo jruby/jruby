@@ -887,8 +887,8 @@ public class PKCS7 {
                 algoBase = algoBase.split("/")[0];
             }
             try {
-                KeyGenerator gen = KeyGenerator.getInstance(algoBase);
-                gen.init(evpCipher.getKeyLenInBits(), new SecureRandom());
+                KeyGenerator gen = SecurityHelper.getKeyGenerator(algoBase);
+                gen.init(evpCipher.getKeyLenInBits(), SecurityHelper.getSecureRandom());
                 SecretKey key = gen.generateKey();
                 evpCipher.getCipher().init(Cipher.ENCRYPT_MODE, key);
                 if (null != rsk) {

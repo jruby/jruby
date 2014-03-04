@@ -281,6 +281,11 @@ public class SecurityHelperTest {
         }
     }
 
+    @Test
+    public void testGetSecureRandom() throws Exception {
+        assertNotNull( SecurityHelper.getSecureRandom() );
+    }
+
     // JCE
 
     @Test
@@ -364,6 +369,39 @@ public class SecurityHelperTest {
         }
         try {
             SecurityHelper.getMac("HmacMDX", savedProvider);
+            fail();
+        }
+        catch (NoSuchAlgorithmException e) {
+            // OK
+        }
+    }
+
+    //
+
+    @Test
+    public void testGetKeyGenerator() throws Exception {
+        assertNotNull( SecurityHelper.getKeyGenerator("AES") );
+
+        assertNotNull( SecurityHelper.getKeyGenerator("AES", savedProvider) );
+    }
+
+    @Test
+    public void testGetKeyGeneratorWithoutBC() throws Exception {
+        disableSecurityProvider();
+        assertNotNull( SecurityHelper.getKeyGenerator("AES") );
+    }
+
+    @Test
+    public void testGetKeyGeneratorThrows() throws Exception {
+        try {
+            SecurityHelper.getKeyGenerator("AMD");
+            fail();
+        }
+        catch (NoSuchAlgorithmException e) {
+            // OK
+        }
+        try {
+            SecurityHelper.getKeyGenerator("AMD", savedProvider);
             fail();
         }
         catch (NoSuchAlgorithmException e) {
