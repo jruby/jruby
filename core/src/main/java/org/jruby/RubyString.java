@@ -2679,9 +2679,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Ruby runtime = context.runtime;
 
         final Regex pattern, prepared;
-        final RubyRegexp regexp = getPattern(arg0);
-        pattern = regexp.getPattern();
-        prepared = pattern;
+        final RubyRegexp regexp;
+        if (arg0 instanceof RubyRegexp) {
+            regexp = (RubyRegexp)arg0;
+            pattern = regexp.getPattern();
+            prepared = regexp.preparePattern(this);
+        } else {
+            regexp = null;
+            pattern = getStringPattern19(runtime, arg0);
+            prepared = RubyRegexp.preparePattern(runtime, pattern, this);
+        }
 
         int offset, cp, n, blen;
 
