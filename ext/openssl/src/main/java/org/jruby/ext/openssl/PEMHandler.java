@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -33,6 +33,7 @@ import java.io.Writer;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@Deprecated // no longer used
 public interface PEMHandler {
     Object readPEM(Reader read, String password) throws Exception;
     void writePEM(Writer writ, Object obj, String algorithm, char[] password) throws Exception;

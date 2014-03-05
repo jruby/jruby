@@ -37,6 +37,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.ext.openssl.x509store.PEMInputOutput;
+import static org.jruby.ext.openssl.OpenSSLReal.isDebug;
 
 /**
  * Static class that holds various OpenSSL methods that aren't
@@ -305,11 +306,13 @@ ASN1.addObject(runtime, 186, "AES-256-CFB", "aes-256-cfb","2.16.840.1.101.3.4.1.
         }
     }
 
+    @Deprecated // NOTE: seems to be no longer used !
     public static PEMHandler getPEMHandler() {
         try {
             return new BouncyCastlePEMHandler();
-        } catch (Exception e) {
-            // fallback to...
+        }
+        catch (Exception e) {
+            if ( isDebug() ) e.printStackTrace();
         }
         return new DefaultPEMHandler();
     }
