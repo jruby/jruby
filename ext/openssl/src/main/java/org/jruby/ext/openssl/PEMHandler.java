@@ -31,6 +31,8 @@ import java.io.Reader;
 import java.io.Writer;
 
 /**
+ * @deprecated
+ * @see PEMUtils
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 @Deprecated // no longer used
