@@ -969,8 +969,9 @@ public class EncodingUtils {
     };
     
     // transcode_loop
-    public static void transcodeLoop(ThreadContext context, byte[] inBytes, Ptr inPos, byte[] outBytes, Ptr outPos, int inStop, int outStop, ByteList destination, ResizeFunction resizeFunction, byte[] sname, byte[] dname, int ecflags, IRubyObject ecopts) {
+    public static void transcodeLoop(ThreadContext context, byte[] inBytes, Ptr inPos, byte[] outBytes, Ptr outPos, int inStop, int _outStop, ByteList destination, ResizeFunction resizeFunction, byte[] sname, byte[] dname, int ecflags, IRubyObject ecopts) {
         EConv ec;
+        Ptr outStop = new Ptr(_outStop);
         
         ec = econvOpenOpts(context, sname, dname, ecflags, ecopts);
         
@@ -983,11 +984,11 @@ public class EncodingUtils {
         Transcoding lastTC = ec.lastTranscoding;
         int maxOutput = lastTC != null ? lastTC.transcoder.maxOutput : 1;
 
-        int outStart = outPos.p;
+        Ptr outStart = new Ptr(outPos.p);
 
         // resume:
         while (true) {
-            EConvResult ret = ec.convert(inBytes, inPos, inStop, outBytes, outPos, outStop, 0);
+            EConvResult ret = ec.convert(inBytes, inPos, inStop, outBytes, outPos, outStop.p, 0);
 
             // TODO: call fallback on error
 
@@ -998,11 +999,13 @@ public class EncodingUtils {
             }
 
             if (ret == EConvResult.DestinationBufferFull) {
-                moreOutputBuffer(destination, resizeFunction, maxOutput, outPos.p, outStart, outStop);
+                moreOutputBuffer(destination, resizeFunction, maxOutput, outStart, outPos, outStop);
+                outBytes = destination.getUnsafeBytes();
                 continue;
             }
 
-            // rb_conv_close(ec);
+            ec.close();
+
             return;
         }
     }
@@ -1044,11 +1047,12 @@ public class EncodingUtils {
     }
 
     // more_output_buffer
-    static int moreOutputBuffer(ByteList destination, ResizeFunction resizeDestination, int maxOutput, int outPos, int outStart, int outStop) {
-        int len = outPos - outStart;
+    static void moreOutputBuffer(ByteList destination, ResizeFunction resizeDestination, int maxOutput, Ptr outStart, Ptr outPos, Ptr outStop) {
+        int len = outPos.p - outStart.p;
         int newLen = (len + maxOutput) * 2;
-        outStart = resizeDestination.resize(destination, len, newLen);
-        return outStart + newLen;
+        outStart.p = resizeDestination.resize(destination, len, newLen);
+        outPos.p = outStart.p + len;
+        outStop.p = outStart.p + newLen;
     }
     
     // io_set_encoding_by_bom
