@@ -8,8 +8,8 @@ module OpenSSL
     java_import java.io.StringReader
     java_import java.io.StringBufferInputStream
     java_import java.io.ByteArrayOutputStream
-    java_import org.bouncycastle.openssl.PEMReader
-    java_import org.jruby.ext.openssl.SecurityHelper
+    java_import 'org.jruby.ext.openssl.PEMUtils'
+    java_import 'org.jruby.ext.openssl.SecurityHelper'
 
     def self.create(pass, name, key, cert, ca = nil)
       pkcs12 = self.new
@@ -39,8 +39,7 @@ module OpenSSL
       aliases = store.aliases
       aliases.each do |alias_name|
         if store.is_key_entry(alias_name)
-          java_certificate = store.get_certificate(alias_name)
-          if java_certificate
+          if java_certificate = store.get_certificate(alias_name)
             der = String.from_java_bytes(java_certificate.get_encoded)
             @certificate = OpenSSL::X509::Certificate.new(der)
           end
@@ -81,36 +80,23 @@ module OpenSSL
     end
 
     def generate(pass, alias_name, key, cert, ca = nil)
-      @key = key
-      @certificate = cert
-      @ca_certs = ca
-
-      key_reader = StringReader.new(key.to_pem)
-      key_pair = PEMReader.new(key_reader).read_object
+      @key, @certificate, @ca_certs = key, cert, ca
 
       certificates = cert.to_pem
-      if ca
-        ca.each { |ca_cert|
-          certificates << ca_cert.to_pem
-        }
-      end
+      ca.each { |ca_cert| certificates << ca_cert.to_pem } if ca
 
-      cert_input_stream = StringBufferInputStream.new(certificates)
-      certs = SecurityHelper.getCertificateFactory("X.509").generate_certificates(cert_input_stream)
-
-      store = SecurityHelper.getKeyStore("PKCS12")
-      store.load(nil, nil)
-      store.set_key_entry(alias_name, key_pair.get_private, nil, certs.to_array(Java::java.security.cert.Certificate[certs.size].new))
-
-      pkcs12_output_stream = ByteArrayOutputStream.new
-      password = pass.nil? ? "" : pass;
       begin
-        store.store(pkcs12_output_stream, password.to_java.to_char_array)
-      rescue java.lang.Exception => e
+        der_bytes = PEMUtils.generatePKCS12(
+          StringReader.new(key.to_pem), certificates.to_java_bytes,
+          alias_name, ( pass.nil? ? "" : pass ).to_java.to_char_array
+        )
+      rescue java.security.KeyStoreException, java.security.cert.CertificateException => e
+        raise PKCS12Error, e.message
+      rescue java.security.GeneralSecurityException, java.io.IOException => e
         raise PKCS12Error, "Exception: #{e}"
       end
 
-      @der = String.from_java_bytes(pkcs12_output_stream.to_byte_array)
+      @der = String.from_java_bytes(der_bytes)
     end
 
     def to_der
