@@ -100,6 +100,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DSAParameter;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -335,31 +336,20 @@ public class PEMInputOutput {
             pkcs12Params.getIV(), pkcs12Params.getIterations().intValue()
         );
 
-        //String algorithm = algId.getAlgorithm().getId();
         String algorithm = ASN1Registry.o2a(algId.getAlgorithm());
         algorithm = (algorithm.split("-"))[0];
 
-        SecretKeyFactory secKeyFact = SecurityHelper.getSecretKeyFactory(algorithm);
+        SecretKeyFactory secKeyFactory = SecurityHelper.getSecretKeyFactory(algorithm);
 
         Cipher cipher = SecurityHelper.getCipher(algorithm);
-        cipher.init(Cipher.DECRYPT_MODE, secKeyFact.generateSecret(pbeSpec), pbeParams);
+        cipher.init(Cipher.DECRYPT_MODE, secKeyFactory.generateSecret(pbeSpec), pbeParams);
 
         PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(
             ASN1Primitive.fromByteArray(cipher.doFinal(eIn.getEncryptedData()))
         );
-        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(pInfo.getEncoded());
 
-        String keyFactAlg = ASN1Registry.o2a(pInfo.getPrivateKeyAlgorithm().getAlgorithm());
-
-        // TODO: Can we just set it to RSA as in derivePrivateKeyPBES2?
-        KeyFactory keyFact;
-        if (keyFactAlg.startsWith("dsa")) {
-            keyFact = SecurityHelper.getKeyFactory("DSA");
-        } else {
-            keyFact = SecurityHelper.getKeyFactory("RSA"); // BC
-        }
-
-        return keyFact.generatePrivate(keySpec);
+        KeyFactory keyFactory = getKeyFactory( pInfo.getPrivateKeyAlgorithm() );
+        return keyFactory.generatePrivate( new PKCS8EncodedKeySpec( pInfo.getEncoded() ) );
     }
 
     private static PrivateKey derivePrivateKeyPBES2(EncryptedPrivateKeyInfo eIn, AlgorithmIdentifier algId, char[] password)
@@ -391,7 +381,7 @@ public class PEMInputOutput {
         byte[] pkcs8 = new byte[len];
         System.arraycopy(out, 0, pkcs8, 0, len);
         KeyFactory fact = KeyFactory.getInstance("RSA"); // It seems to work for both RSA and DSA.
-        return fact.generatePrivate(new PKCS8EncodedKeySpec(pkcs8));
+        return fact.generatePrivate( new PKCS8EncodedKeySpec(pkcs8) );
     }
 
     private static CipherParameters extractPBES2CipherParams(char[] password, PBES2Parameters pbeParams) {
@@ -993,7 +983,7 @@ public class PEMInputOutput {
         }
         catch (NoSuchAlgorithmException e) { /* ignore */ }
         catch (InvalidKeySpecException e) { /* ignore */ }
-        return  null;
+        return null;
     }
 
     private static PublicKey readPublicKey(byte[] input, String alg, String endMarker) throws IOException {
@@ -1285,4 +1275,26 @@ public class PEMInputOutput {
             throw new IOException("problem parsing PKCS7 object: " + e.toString());
         }
     }
+
+    public static KeyFactory getKeyFactory(final AlgorithmIdentifier algId)
+        throws NoSuchAlgorithmException {
+
+        final ASN1ObjectIdentifier algIdentifier = algId.getAlgorithm();
+
+        String algorithm = null;
+        if ( X9ObjectIdentifiers.id_ecPublicKey.equals(algIdentifier) ) {
+            algorithm = "ECDSA";
+        }
+        else if ( PKCSObjectIdentifiers.rsaEncryption.equals(algIdentifier) ) {
+            algorithm = "RSA";
+        }
+        else if ( X9ObjectIdentifiers.id_dsa.equals(algIdentifier) ) {
+            algorithm = "DSA";
+        }
+
+        if ( algorithm == null ) algorithm = algIdentifier.getId();
+
+        return SecurityHelper.getKeyFactory(algorithm);
+    }
+
 }// PEM
