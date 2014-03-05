@@ -24,8 +24,10 @@ import org.jruby.RubyMethod;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
@@ -942,6 +944,10 @@ public class EncodingUtils {
         return dummy;
     }
 
+    public static boolean DECORATOR_P(byte[] sname, byte[] dname) {
+        return sname[0] == 0;
+    }
+
     public interface ResizeFunction {
         /**
          * Resize the destination, returning the new begin offset.
@@ -1297,5 +1303,123 @@ public class EncodingUtils {
 
         strBufCat(runtime, str, ptr);
         str.setEncodingAndCodeRange(resEnc, res_cr);
+    }
+
+    // econv_args
+    public static void econvArgs(ThreadContext context, IRubyObject[] args, byte[][] encNames, Encoding[] encs, int[] ecflags_p, IRubyObject[] ecopts_p) {
+        Ruby runtime = context.runtime;
+        IRubyObject snamev = context.nil;
+        IRubyObject dnamev = context.nil;
+        IRubyObject flags = context.nil;
+        IRubyObject opt = context.nil;
+
+        switch (args.length) {
+            case 3:
+                flags = args[2];
+            case 2:
+                dnamev = args[1];
+            case 1:
+                snamev = args[0];
+        }
+
+        if (!TypeConverter.checkHashType(runtime, opt).isNil()) {
+            opt = flags;
+            flags = context.nil;
+        }
+
+        if (!flags.isNil()) {
+            if (!opt.isNil()) {
+                throw runtime.newArgumentError(args.length, 3);
+            }
+            ecflags_p[0] = (int)flags.convertToInteger().getLongValue();
+            ecopts_p[0] = context.nil;
+        } else if (!opt.isNil()) {
+            ecflags_p[0] = EncodingUtils.econvPrepareOpts(context, opt, ecopts_p);
+        } else {
+            ecflags_p[0] = 0;
+            ecopts_p[0] = context.nil;
+        }
+
+        encs[0] = runtime.getEncodingService().getEncodingFromObjectNoError(snamev);
+        if (encs[0] == null) {
+            snamev = snamev.convertToString();
+        }
+        encs[1] = runtime.getEncodingService().getEncodingFromObjectNoError(dnamev);
+        if (encs[1] == null) {
+            dnamev = dnamev.convertToString();
+        }
+
+        encNames[0] = encs[0] != null ? encs[0].getName() : ((RubyString)snamev).getBytes();
+        encNames[1] = encs[1] != null ? encs[1].getName() : ((RubyString)dnamev).getBytes();
+
+        return;
+    }
+
+    // rb_econv_init_by_convpath
+    public static EConv econvInitByConvpath(ThreadContext context, IRubyObject convpath, byte[][] encNames, Encoding[] encs) {
+        final Ruby runtime = context.runtime;
+        final EConv ec = TranscoderDB.alloc(convpath.convertToArray().size());
+
+        IRubyObject[] sname_v = {context.nil};
+        IRubyObject[] dname_v = {context.nil};
+        byte[][] sname = {null};
+        byte[][] dname = {null};
+        Encoding[] senc = {null};
+        Encoding[] denc = {null};
+
+        boolean first = true;
+
+        for (int i = 0; i < ((RubyArray)convpath).size(); i++) {
+            IRubyObject elt = ((RubyArray)convpath).eltOk(i);
+            IRubyObject pair;
+            if (!(pair = elt.checkArrayType()).isNil()) {
+                if (((RubyArray)pair).size() != 2) {
+                    throw context.runtime.newArgumentError("not a 2-element array in convpath");
+                }
+                sname_v[0] = ((RubyArray)pair).eltOk(0);
+                encArg(context, sname_v[0], sname, senc);
+                dname_v[0] = ((RubyArray)pair).eltOk(1);
+                encArg(context, dname_v[0], dname, denc);
+            } else {
+                sname[0] = new byte[0];
+                dname[0] = elt.convertToString().getBytes();
+            }
+            if (DECORATOR_P(sname[0], dname[0])) {
+                // TODO: decorators
+            } else {
+                int j = ec.numTranscoders;
+                final int[] arg = {0,0};
+                int ret = TranscoderDB.searchPath(sname[0], dname[0], new TranscoderDB.SearchPathCallback() {
+                    @Override
+                    public void call(byte[] source, byte[] destination, int depth) {
+                        if (arg[1] == -1) return;
+
+                        arg[1] = ec.addConverter(source, destination, arg[0]) ? 0 : -1;
+                    }
+                });
+                if (ret == -1 || arg[1] == -1) {
+                    throw runtime.newArgumentError("adding conversion failed: " + new String(sname[0]) + " to " + new String(dname[0]));
+                }
+                if (first) {
+                    first = false;
+                    encs[0] = senc[0];
+                    encNames[0] = ec.elements[j].transcoding.transcoder.getSource();
+                }
+                encs[1] = denc[0];
+                encNames[1] = ec.elements[ec.numTranscoders - 1].transcoding.transcoder.getDestination();
+            }
+        }
+
+        if (first) {
+            encs[0] = null;
+            encs[1] = null;
+            encNames[0] = new byte[0];
+            encNames[1] = new byte[0];
+        }
+
+        ec.source = encNames[0];
+        ec.destination = encNames[0];
+
+        return ec;
     }
 }

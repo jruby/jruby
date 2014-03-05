@@ -1141,6 +1141,12 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return this;
     }
 
+    public RubyArray push(IRubyObject item) {
+        append(item);
+
+        return this;
+    }
+
     @JRubyMethod(name = "push", rest = true)
     public RubyArray push_m19(IRubyObject[] items) {
         modifyCheck();

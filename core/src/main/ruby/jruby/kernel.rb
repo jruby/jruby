@@ -31,7 +31,6 @@ load 'jruby/kernel/enumerable.rb'
 load 'jruby/kernel/io.rb'
 load 'jruby/kernel/time.rb'
 load 'jruby/kernel/gc.rb'
-load 'jruby/kernel/encoding/converter.rb'
 load 'jruby/kernel/range.rb'
 load 'jruby/kernel/load_error.rb'
 
