@@ -1,13 +1,5 @@
 package org.jruby.util;
 
-import org.jruby.RubyFile;
-import org.jruby.Ruby;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.*;
-import java.util.zip.ZipEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarEntry;
 
@@ -21,14 +13,9 @@ import java.util.jar.JarEntry;
  * </p>
  */
 class JarFileResource extends JarResource {
-  public static JarFileResource create(JarFile jar, String path) {
-    JarEntry entry = jar.getJarEntry(path);
-    return ((entry != null) && !entry.isDirectory()) ? new JarFileResource(jar, entry) : null;
-  }
+  private final JarEntry entry;
 
-  private final ZipEntry entry;
-
-  private JarFileResource(JarFile jar, ZipEntry entry) {
+  JarFileResource(JarFile jar, JarEntry entry) {
     super(jar);
     this.entry = entry;
   }

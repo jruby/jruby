@@ -1,9 +1,6 @@
 package org.jruby.util;
 
-import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.jar.JarFile;
-import java.util.jar.JarEntry;
 
 /**
  * Represents a directory in a jar.
@@ -13,28 +10,13 @@ import java.util.jar.JarEntry;
  * just that.</p>
  */
 class JarDirectoryResource extends JarResource {
-    public static JarDirectoryResource create(JarFile jar, String path) {
-        String dirPath = path.endsWith("/") ? path : path + "/";
-
-        // We always should have something in the jar, so "/" always corresponds to a directory
-        if ("/".equals(dirPath)) {
-            return new JarDirectoryResource(jar, dirPath);
-        }
-
-        Enumeration<JarEntry> entries = jar.entries();
-        while (entries.hasMoreElements()) {
-            if (entries.nextElement().getName().startsWith(dirPath)) {
-                return new JarDirectoryResource(jar, dirPath);
-            }
-        }
-        return null;
-    }
-
     private final String path;
+    private final String[] contents;
 
-    private JarDirectoryResource(JarFile jar, String path) {
+    JarDirectoryResource(JarFile jar, String path, String[] contents) {
         super(jar);
         this.path = path;
+        this.contents = contents;
     }
 
     @Override
@@ -67,32 +49,7 @@ class JarDirectoryResource extends JarResource {
 
     @Override
     public String[] list() {
-        HashSet<String> dirs = new HashSet<String>();
-
-        Enumeration<JarEntry> entries = jar.entries();
-        while (entries.hasMoreElements()) {
-            String entryPath = entries.nextElement().getName();
-
-            String subPath;
-            if (isRoot()) {
-                subPath = entryPath;
-            } else if (entryPath.startsWith(path) && (entryPath.length() > path.length())) {
-                subPath = entryPath.substring(path.length());
-            } else {
-                // entry's path doesn't match the directory or it's <this> path
-                continue;
-            }
-
-            // If entry is <path>/foo/bar.txt, we want to only return 'foo'
-            int slashIndex = subPath.indexOf('/');
-            if (slashIndex > 0) {
-                subPath = subPath.substring(0, slashIndex);
-            }
-
-            dirs.add(subPath);
-        }
-
-        return dirs.toArray(new String[0]);
+      return contents;
     }
 
     public boolean isRoot() {

@@ -2,16 +2,16 @@ package org.jruby.util;
 
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
-import org.jruby.Ruby;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public abstract class JarResource implements FileResource {
     private static Pattern PREFIX_MATCH = Pattern.compile("^(?:jar:)?(?:file:)?(.*)$");
+
+    private static final JarCache jarCache = new JarCache();
 
     public static JarResource create(String pathname) {
         Matcher matcher = PREFIX_MATCH.matcher(pathname);
@@ -24,9 +24,9 @@ public abstract class JarResource implements FileResource {
 
         JarFile jar;
         try {
-            jar = new JarFile(sanitized.substring(0, bang));
-        } catch (IOException e) {
-            return null;
+          jar = new JarFile(sanitized.substring(0, bang));
+        } catch (IOException ioe) {
+          return null;
         }
         
         String slashPath = sanitized.substring(bang + 1);
@@ -45,17 +45,21 @@ public abstract class JarResource implements FileResource {
     }
 
     private static JarResource createJarResource(JarFile jar, String path) {
-        // Try as directory first, file second, because if test.jar contains:
-        //
-        // test/
-        // test/foo.rb
-        //
-        // file:test.jar!test should be a directory and not a file.
-        JarResource resource = JarDirectoryResource.create(jar, path);
-        if (resource == null) {
-            resource = JarFileResource.create(jar, path);
+        JarCache.JarIndex index = jarCache.getIndex(jar);
+
+        // Try it as directory first, because jars tend to have foo/ entries
+        // and it's not really possible disambiguate between files and directories.
+        String[] entries = index.cachedDirEntries.get(path);
+        if (entries != null) {
+          return new JarDirectoryResource(jar, path, entries);
         }
-        return resource;
+
+        JarEntry jarEntry = jar.getJarEntry(path);
+        if (jarEntry != null) {
+          return new JarFileResource(jar, jarEntry);
+        }
+
+        return null;
     }
 
     protected final JarFile jar;
