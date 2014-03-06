@@ -470,10 +470,6 @@ public class IRRuntimeHelpers {
         });
     }
 
-    public static int extractKwargsCount(Object[] args, int required, boolean receivesKwargs) {
-        return (receivesKwargs && args.length > required && args[args.length - 1] instanceof RubyHash) ? 1 : 0;
-    }
-
     public static IRubyObject match3(ThreadContext context, RubyRegexp regexp, IRubyObject argValue) {
         if (argValue instanceof RubyString) {
             return regexp.op_match19(context, argValue);
