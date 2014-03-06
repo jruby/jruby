@@ -1446,8 +1446,8 @@ public class JVMVisitor extends IRVisitor {
     public void ReceiveOptArgInstr(ReceiveOptArgInstr instr) {
         // FIXME: Only works when args is in an array rather than being flattened out
         // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
-        jvm.method().adapter.pushInt(instr.getArgIndex() + instr.numUsedArgs); // MIN reqd args
-        jvm.method().adapter.pushInt(instr.getArgIndex() + instr.argOffset); // args array offset
+        jvm.method().adapter.pushInt(instr.getArgIndex() + instr.requiredArgs); // MIN reqd args
+        jvm.method().adapter.pushInt(instr.getArgIndex() + instr.preArgs); // args array offset
         jvm.method().adapter.aload(3); // index of arg array
         jvm.method().invokeHelper("irLoadOptArg", IRubyObject.class, int.class, int.class, IRubyObject[].class);
         jvmStoreLocal(instr.getResult());

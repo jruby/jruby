@@ -309,7 +309,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
         case RECV_OPT_ARG:
-            result = ((ReceiveOptArgInstr)instr).receiveOptArg(args, kwArgHashCount);
+            result = ((ReceiveOptArgInstr)instr).receiveOptArg(args, kwArgHashCount > 0);
             // For blocks, missing arg translates to nil
             setResult(temp, currDynScope, instr.getResult(), result);
             return;

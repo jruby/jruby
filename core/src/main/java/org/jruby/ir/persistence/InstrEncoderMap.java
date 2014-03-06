@@ -534,8 +534,8 @@ public class InstrEncoderMap {
     }
 
     private void encodeReceiveOptArgInstr(ReceiveOptArgInstr instr) {
-        e.encode(instr.numUsedArgs);
-        e.encode(instr.getArgOffset());
+        e.encode(instr.requiredArgs);
+        e.encode(instr.getPreArgs());
         e.encode(instr.getArgIndex());
     }
 
