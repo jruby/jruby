@@ -61,14 +61,12 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
         }
     }
 
-    public IRubyObject receivePostReqdArg(IRubyObject[] args, int kwArgHashCount) {
+    public IRubyObject receivePostReqdArg(IRubyObject[] args) {
         int n = args.length;
-        int remaining = n - preReqdArgsCount - kwArgHashCount;
-        if (remaining <= argIndex) {
-            return null;  // For blocks!
-        } else {
-            return (remaining > postReqdArgsCount) ? args[n - postReqdArgsCount - kwArgHashCount + argIndex] : args[preReqdArgsCount + argIndex];
-        }
+        int remaining = n - preReqdArgsCount;
+        if (remaining <= argIndex) return null;  // For blocks!
+
+        return (remaining > postReqdArgsCount) ? args[n - postReqdArgsCount + argIndex] : args[preReqdArgsCount + argIndex];
     }
 
     @Override

@@ -314,7 +314,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
         case RECV_POST_REQD_ARG:
-            result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(args, kwArgHashCount);
+            result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(args);
             // For blocks, missing arg translates to nil
             setResult(temp, currDynScope, instr.getResult(), result == null ? context.nil : result);
             return;
