@@ -1471,7 +1471,7 @@ public class JVMVisitor extends IRVisitor {
         // FIXME: Only works when args is in an array rather than being flattened out
         // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
         jvm.method().loadContext();
-        jvm.method().adapter.pushInt(instr.numUsedArgs); // MIN reqd args
+        jvm.method().adapter.pushInt(instr.required); // MIN reqd args
         jvm.method().adapter.pushInt(instr.getArgIndex()); // args array offset
         jvm.method().adapter.aload(3); // index of arg array
         jvm.method().invokeHelper("irLoadRestArg", IRubyObject.class, ThreadContext.class, int.class, int.class, IRubyObject[].class);
