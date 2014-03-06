@@ -1912,6 +1912,7 @@ public class IRBuilder {
         int rest = argsNode.getRestArg();
 
         s.getStaticScope().setArities(required, opt, rest);
+        KeywordRestArgNode keyRest = argsNode.getKeyRest();
 
         // For closures, we don't need the check arity call
         if (s instanceof IRMethod) {
@@ -1919,7 +1920,12 @@ public class IRBuilder {
             // (a) on inlining, we'll be able to get rid of these checks in almost every case.
             // (b) compiler to bytecode will anyway generate this and this is explicit.
             // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?
-            KeywordRestArgNode keyRest = argsNode.getKeyRest();
+
+            addInstr(s, new CheckArityInstr(required, opt, rest, argsNode.hasKwargs(),
+                    keyRest == null ? -1 : keyRest.getIndex()));
+        } else if (s instanceof IRClosure && argsNode.hasKwargs()) {
+            // FIXME: This is added to check for kwargs correctness but bypass regular correctness.
+            // Any other arity checking currently happens within Java code somewhere (RubyProc.call?)
             addInstr(s, new CheckArityInstr(required, opt, rest, argsNode.hasKwargs(),
                     keyRest == null ? -1 : keyRest.getIndex()));
         }

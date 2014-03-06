@@ -437,8 +437,8 @@ public class IRRuntimeHelpers {
         if (keywordArgs != null) argsLength -= 1;
 
         if (argsLength < required || (rest == -1 && argsLength > (required + opt))) {
-            //System.out.println("NUMARGS: " + numArgs + ", REQUIRED: " + required + ", OPT: " + opt + "KWARCOU: " + kwArgHashCount + ", AL: " + args.length + ",RKW: " + receivesKeywords );
-            //System.out.println("ARGS[0]: " + args[0]);
+//            System.out.println("NUMARGS: " + argsLength + ", REQUIRED: " + required + ", OPT: " + opt + ", AL: " + args.length + ",RKW: " + receivesKwargs );
+//            System.out.println("ARGS[0]: " + args[0]);
 
             Arity.raiseArgumentError(context.runtime, argsLength, required, required + opt);
         }
@@ -460,8 +460,12 @@ public class IRRuntimeHelpers {
             @Override
             public void visit(IRubyObject key, IRubyObject value) {
                 String keyAsString = key.asJavaString();
+                int slot = scope.isDefined((keyAsString));
 
-                if (scope.isDefined(keyAsString) < 0) throw context.runtime.newArgumentError("unknown keyword: " + keyAsString);
+                // Found name in higher variable scope.  Therefore non for this block/method def.
+                if ((slot >> 16) > 0) throw context.runtime.newArgumentError("unknown keyword: " + keyAsString);
+                // Could not find it anywhere.
+                if (((short) (slot & 0xffff)) < 0) throw context.runtime.newArgumentError("unknown keyword: " + keyAsString);
             }
         });
     }
