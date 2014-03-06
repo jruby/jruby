@@ -7,6 +7,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInstr {
@@ -62,7 +63,8 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
         }
     }
 
-    public IRubyObject receiveOptArg(IRubyObject[] args, boolean keywordArgumentSupplied) {
+    @Override
+    public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean keywordArgumentSupplied) {
         int optArgIndex = argIndex;  // which opt arg we are processing? (first one has index 0, second 1, ...).
         int argsLength = keywordArgumentSupplied ? args.length - 1 : args.length;
 

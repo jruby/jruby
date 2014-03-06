@@ -47,19 +47,16 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
     }
 
     @Override
-    public IRubyObject receiveArg(ThreadContext context, int kwArgHashCount, IRubyObject[] args) {
-        if (kwArgHashCount == 0 || numUsedArgs == args.length) {
-            return UndefinedValue.UNDEFINED;
-        } else {
-            RubyHash lastArg = (RubyHash)args[args.length - 1];
-            // If the key exists in the hash, delete and return it.
-            RubySymbol argSym = context.getRuntime().newSymbol(argName);
-            if (lastArg.fastARef(argSym) != null) {
-                // SSS FIXME: Can we use an internal delete here?
-                return lastArg.delete(context, argSym, Block.NULL_BLOCK);
-            } else {
-                return UndefinedValue.UNDEFINED;
-            }
-        }
+    public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean keywordArgumentSupplied) {
+        if (!keywordArgumentSupplied) return UndefinedValue.UNDEFINED;
+
+        RubyHash keywordArguments = (RubyHash)args[args.length - 1];
+        RubySymbol keywordName = context.getRuntime().newSymbol(argName);
+
+        if (keywordArguments.fastARef(keywordName) == null) return UndefinedValue.UNDEFINED;
+
+        // SSS FIXME: Can we use an internal delete here?
+        // Enebo FIXME: Delete seems wrong if we are doing this for duplication purposes.
+        return keywordArguments.delete(context, keywordName, Block.NULL_BLOCK);
     }
 }

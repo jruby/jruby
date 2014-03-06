@@ -295,7 +295,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, int kwArgHashCount, DynamicScope currDynScope, Object[] temp, Object exception, Block block) {
+    private static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean receivesKeywordArgument, DynamicScope currDynScope, Object[] temp, Object exception, Block block) {
         Object result;
         ResultInstr instr = (ResultInstr)i;
         switch(operation) {
@@ -306,11 +306,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             return;
         case RECV_CLOSURE:
             result = IRRuntimeHelpers.newProc(context.runtime, block);
-            setResult(temp, currDynScope, instr.getResult(), result);
-            return;
-        case RECV_OPT_ARG:
-            result = ((ReceiveOptArgInstr)instr).receiveOptArg(args, kwArgHashCount > 0);
-            // For blocks, missing arg translates to nil
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
         case RECV_POST_REQD_ARG:
@@ -325,7 +320,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             setResult(temp, currDynScope, instr.getResult(), exception);
             return;
         default:
-            result = ((ReceiveArgBase)instr).receiveArg(context, kwArgHashCount, args);
+            result = ((ReceiveArgBase)instr).receiveArg(context, args, receivesKeywordArgument);
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
         }
@@ -549,6 +544,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         boolean debug   = IRRuntimeHelpers.isDebug();
         boolean profile = IRRuntimeHelpers.inProfileMode();
         Integer scopeVersion = profile ? Profiler.initProfiling(scope) : 0;
+        // FIXME: As we stand we need to know required args count to know whether a last arg hash is kwargs or just a hash
+        boolean receivesKeywordArgument = IRRuntimeHelpers.extractKwargsCount(args, 0, scope.receivesKeywordArgs()) != 0;
 
         // Enter the looooop!
         while (ipc < n) {
@@ -572,8 +569,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     interpretFloatOp((AluInstr)instr, operation, context, floats, booleans, temp);
                     break;
                 case ARG_OP:
-                    // FIXME: As we stand we need to know required args count to know whether a last arg hash is kwargs or just a hash
-                    receiveArg(context, instr, operation, args, IRRuntimeHelpers.extractKwargsCount(args, 0, scope.receivesKeywordArgs()), currDynScope, temp, exception, block);
+                    receiveArg(context, instr, operation, args, receivesKeywordArgument, currDynScope, temp, exception, block);
                     break;
                 case CALL_OP:
                     if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);

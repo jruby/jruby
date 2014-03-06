@@ -50,17 +50,16 @@ public class ReceiveRestArgInstr extends ReceiveArgBase implements FixedArityIns
     private IRubyObject[] NO_PARAMS = new IRubyObject[0];
 
     @Override
-    public IRubyObject receiveArg(ThreadContext context, int kwArgLoss, IRubyObject[] parameters) {
-        IRubyObject[] args;
-        int numAvailableArgs = parameters.length - numUsedArgs - kwArgLoss;
-        if (numAvailableArgs <= 0) {
-            args = NO_PARAMS;
-        } else {
-            args = new IRubyObject[numAvailableArgs];
-            System.arraycopy(parameters, argIndex, args, 0, numAvailableArgs);
-        }
+    public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args,  boolean keywordArgumentSupplied) {
+        int argsLength = keywordArgumentSupplied ? args.length - 1 : args.length;
+        int remainingArguments = argsLength - numUsedArgs;
 
-        return context.runtime.newArray(args);
+        if (remainingArguments <= 0) return context.runtime.newArray(NO_PARAMS);
+
+        IRubyObject[] restArgs = new IRubyObject[remainingArguments];
+        System.arraycopy(args, argIndex, restArgs, 0, remainingArguments);
+
+        return context.runtime.newArray(restArgs);
     }
 
     @Override

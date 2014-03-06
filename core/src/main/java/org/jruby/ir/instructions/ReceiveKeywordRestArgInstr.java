@@ -41,11 +41,9 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
     }
 
     @Override
-    public IRubyObject receiveArg(ThreadContext context, int kwArgHashCount, IRubyObject[] args) {
-        if (kwArgHashCount == 0 || numUsedArgs == args.length) {
-            return RubyHash.newSmallHash(context.getRuntime());
-        } else {
-            return args[args.length - 1];
-        }
+    public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean keywordArgumentSupplied) {
+        if (!keywordArgumentSupplied) return RubyHash.newSmallHash(context.getRuntime());
+
+        return args[args.length - 1];
     }
 }
