@@ -88,7 +88,7 @@ public class RubyClassPathVariable extends RubyObject {
             File f = new File(target);
             String path = target;
             if (f.exists() && f.isDirectory() && !path.endsWith("/")) {
-                // URLClassLoader requires that directores end with slashes
+                // URLClassLoader requires that directories end with slashes
                 path = path + "/";
             }
             return new URL("file", null, path);
