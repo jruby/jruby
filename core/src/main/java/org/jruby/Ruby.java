@@ -2818,8 +2818,6 @@ public final class Ruby {
     }
     
     public void compileAndLoadFile(String filename, InputStream in, boolean wrap) {
-        ThreadContext context = getCurrentContext();
-        String file = context.getFile();
         InputStream readStream = in;
         
         try {
