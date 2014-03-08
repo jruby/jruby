@@ -134,8 +134,9 @@ public class RubySymbol extends RubyObject {
         private RubySymbol createSymbol(String name) {
             ByteList byteList = org.jruby.RubySymbol.symbolBytesFromString(context.getRuntime(), name);
             RubySymbol symbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), name, byteList);
-            symbolsTable.put(byteList, symbol);
-            return symbol;
+
+            RubySymbol existingSymbol = symbolsTable.putIfAbsent(byteList, symbol);
+            return existingSymbol == null ? symbol : existingSymbol;
         }
 
         public ConcurrentHashMap<ByteList, RubySymbol> getSymbolsTable(){
