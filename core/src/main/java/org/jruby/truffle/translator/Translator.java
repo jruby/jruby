@@ -14,8 +14,7 @@ import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.impl.DefaultSourceSection;
 import org.joni.Regex;
-import org.jruby.ast.MultipleAsgn19Node;
-import org.jruby.ast.RequiredKeywordArgumentValueNode;
+import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.DefinedNode;
 import org.jruby.truffle.nodes.ReadNode;
@@ -23,18 +22,31 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.WriteNode;
 import org.jruby.truffle.nodes.call.RubyCallNode;
 import org.jruby.truffle.nodes.cast.*;
+import org.jruby.truffle.nodes.cast.LambdaNode;
 import org.jruby.truffle.nodes.constants.EncodingPseudoVariableNode;
 import org.jruby.truffle.nodes.constants.UninitializedReadConstantNode;
 import org.jruby.truffle.nodes.constants.WriteConstantNode;
 import org.jruby.truffle.nodes.control.*;
+import org.jruby.truffle.nodes.control.BreakNode;
+import org.jruby.truffle.nodes.control.EnsureNode;
+import org.jruby.truffle.nodes.control.IfNode;
+import org.jruby.truffle.nodes.control.NextNode;
+import org.jruby.truffle.nodes.control.RedoNode;
+import org.jruby.truffle.nodes.control.RescueNode;
+import org.jruby.truffle.nodes.control.RetryNode;
+import org.jruby.truffle.nodes.control.ReturnNode;
+import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.literal.*;
+import org.jruby.truffle.nodes.literal.NilNode;
 import org.jruby.truffle.nodes.literal.array.UninitialisedArrayLiteralNode;
 import org.jruby.truffle.nodes.methods.AddMethodNode;
 import org.jruby.truffle.nodes.methods.AliasNode;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.objects.*;
+import org.jruby.truffle.nodes.objects.ClassNode;
+import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -559,6 +571,17 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         RubyNode superClass;
 
+        ArrayList<RubyNode> nodes = new ArrayList<RubyNode>();
+
+        if (node != null && node.getCPath() != null) {
+            for(org.jruby.ast.Node n : node.getCPath().childNodes()){
+                if (n instanceof org.jruby.ast.NilNode){
+                    NilNode nilNode = (NilNode) visitNilNode((org.jruby.ast.NilNode) n);
+                    nodes.add(nilNode);
+                }
+            }
+        }
+
         if (node.getSuperNode() != null) {
             superClass = (RubyNode) node.getSuperNode().accept(this);
         } else {
@@ -566,7 +589,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         }
         final DefineOrGetClassNode defineOrGetClass = new DefineOrGetClassNode(context, sourceSection, name, getModuleToDefineModulesIn(sourceSection), superClass);
 
-        return new OpenModuleNode(context, sourceSection, defineOrGetClass, definitionMethod, node.getCPath());
+        return new OpenModuleNode(context, sourceSection, defineOrGetClass, definitionMethod, nodes);
     }
 
     protected RubyNode getModuleToDefineModulesIn(SourceSection sourceSection) {
