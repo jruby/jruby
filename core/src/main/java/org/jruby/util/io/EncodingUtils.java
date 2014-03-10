@@ -630,9 +630,22 @@ public class EncodingUtils {
             replacement = ((RubyHash)opthash).op_aref(context, runtime.newSymbol("replace"));
         }
         
-        return TranscoderDB.open(sourceEncoding, destinationEncoding, ecflags);
-        // missing logic for checking replacement encoding, may live in CharsetTranscoder
-        // already...
+        EConv ec = TranscoderDB.open(sourceEncoding, destinationEncoding, ecflags);
+        if (ec == null) return ec;
+
+        if (!replacement.isNil()) {
+            int ret;
+            ec.makeReplacement();
+
+            ret = ec.setReplacement(ec.replacementString, 0, ec.replacementLength, ec.replacementEncoding);
+
+            if (ret == -1) {
+                ec.close();
+                return null;
+            }
+        }
+
+        return ec;
     }
     
     // rb_econv_open_exc
@@ -1379,7 +1392,7 @@ public class EncodingUtils {
                 snamev = args[0];
         }
 
-        if (!TypeConverter.checkHashType(runtime, opt).isNil()) {
+        if (!TypeConverter.checkHashType(runtime, flags).isNil()) {
             opt = flags;
             flags = context.nil;
         }

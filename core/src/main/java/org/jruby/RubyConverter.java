@@ -25,12 +25,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.Ptr;
-import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
@@ -42,22 +39,23 @@ import org.jcodings.transcode.EConvResult;
 import org.jcodings.transcode.Transcoder;
 import org.jcodings.transcode.TranscoderDB;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
-
-import org.jruby.anno.JRubyConstant;
-import org.jruby.exceptions.RaiseException;
-
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.encoding.CharsetTranscoder;
-import org.jruby.util.encoding.RubyCoderResult;
 import org.jruby.util.io.EncodingUtils;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.jruby.runtime.Visibility.PRIVATE;
 
 @JRubyClass(name="Converter")
 public class RubyConverter extends RubyObject {
@@ -120,8 +118,6 @@ public class RubyConverter extends RubyObject {
             return new RubyConverter(runtime, klass);
         }
     };
-
-    private static final Encoding UTF16 = UTF16BEEncoding.INSTANCE;
 
     public RubyConverter(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
@@ -214,6 +210,7 @@ public class RubyConverter extends RubyObject {
         return context.runtime.getEncodingService().convertEncodingToRubyEncoding(ec.destinationEncoding);
     }
 
+    // econv_primitive_convert
     @JRubyMethod(required = 2, optional = 4)
     public IRubyObject primitive_convert(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
@@ -271,8 +268,6 @@ public class RubyConverter extends RubyObject {
             if (v.isTrue()) {
                 flags |= EncodingUtils.ECONV_AFTER_OUTPUT;
             }
-        } else {
-            flags = 0;
         }
         
         ByteList inBytes;
@@ -293,6 +288,13 @@ public class RubyConverter extends RubyObject {
         Ptr inPtr = new Ptr();
         Ptr outPtr = new Ptr();
 
+        if (outputBytesizeObj.isNil()) {
+            outputBytesize = 16; // in MRI, this is RSTRING_EMBED_LEN_MAX
+            if (input != null && outputBytesize < input.getByteList().getRealSize()) {
+                outputBytesize = input.getByteList().getRealSize();
+            }
+        }
+
         while (true) {
             if (outputByteOffsetObj.isNil()) {
                 outputByteoffset = outBytes.getRealSize();
@@ -308,7 +310,8 @@ public class RubyConverter extends RubyObject {
 
             inPtr.p = inBytes.getBegin();
             outPtr.p = outBytes.getBegin() + outputByteoffset;
-            EConvResult res = ec.convert(inBytes.getUnsafeBytes(), inPtr, inBytes.getRealSize() + inPtr.p, outBytes.getUnsafeBytes(), outPtr, outputByteEnd, flags);
+            int os = outPtr.p + outputBytesize;
+            EConvResult res = ec.convert(inBytes.getUnsafeBytes(), inPtr, inBytes.getRealSize() + inPtr.p, outBytes.getUnsafeBytes(), outPtr, os, flags);
 
             outBytes.setRealSize(outPtr.p);
 
@@ -350,18 +353,19 @@ public class RubyConverter extends RubyObject {
 
         if (ret instanceof RubySymbol) {
             RubySymbol retSym = (RubySymbol)ret;
+            String retStr = retSym.toString();
 
-            if (retSym.toString().equals(EConvResult.InvalidByteSequence.symbolicName()) ||
-                    retSym.toString().equals(EConvResult.UndefinedConversion.symbolicName()) ||
-                    retSym.toString().equals(EConvResult.IncompleteInput.symbolicName())) {
+            if (retStr.equals(EConvResult.InvalidByteSequence.symbolicName()) ||
+                    retStr.equals(EConvResult.UndefinedConversion.symbolicName()) ||
+                    retStr.equals(EConvResult.IncompleteInput.symbolicName())) {
                 throw EncodingUtils.makeEconvException(context, ec);
             }
 
-            if (retSym.toString().equals(EConvResult.Finished.symbolicName())) {
+            if (retStr.equals(EConvResult.Finished.symbolicName())) {
                 throw runtime.newArgumentError("converter already finished");
             }
 
-            if (!retSym.toString().equals(EConvResult.SourceBufferEmpty.symbolicName())) {
+            if (!retStr.equals(EConvResult.SourceBufferEmpty.symbolicName())) {
                 throw runtime.newRuntimeError("bug: unexpected result of primitive_convert: " + retSym);
             }
         }
@@ -386,18 +390,15 @@ public class RubyConverter extends RubyObject {
 
         if (ret instanceof RubySymbol) {
             RubySymbol retSym = (RubySymbol)ret;
+            String retStr = retSym.toString();
 
-            if (retSym.toString().equals(EConvResult.InvalidByteSequence) ||
-                    retSym.toString().equals(EConvResult.UndefinedConversion) ||
-                    retSym.toString().equals(EConvResult.IncompleteInput)) {
+            if (retStr.equals(EConvResult.InvalidByteSequence.symbolicName()) ||
+                    retStr.equals(EConvResult.UndefinedConversion.symbolicName()) ||
+                    retStr.equals(EConvResult.IncompleteInput.symbolicName())) {
                 throw EncodingUtils.makeEconvException(context, ec);
             }
 
-            if (retSym.toString().equals(EConvResult.Finished)) {
-                throw runtime.newArgumentError("converter already finished");
-            }
-
-            if (!retSym.toString().equals(EConvResult.SourceBufferEmpty)) {
+            if (!retStr.equals(EConvResult.Finished.symbolicName())) {
                 throw runtime.newRuntimeError("bug: unexpected result of primitive_convert");
             }
         }
@@ -543,46 +544,46 @@ public class RubyConverter extends RubyObject {
     public static class EncodingErrorMethods {
         @JRubyMethod
         public static IRubyObject source_encoding(ThreadContext context, IRubyObject self) {
-            return self.getInstanceVariables().getInstanceVariable("source_encoding");
+            return Helpers.getInstanceVariableNoWarn(self, context, "source_encoding");
         }
         
         @JRubyMethod
         public static IRubyObject source_encoding_name(ThreadContext context, IRubyObject self) {
-            return self.getInstanceVariables().getInstanceVariable("source_encoding_name");
+            return Helpers.getInstanceVariableNoWarn(self, context, "source_encoding_name");
         }
         
         @JRubyMethod
         public static IRubyObject destination_encoding(ThreadContext context, IRubyObject self) {
-            return self.getInstanceVariables().getInstanceVariable("destination_encoding");
+            return Helpers.getInstanceVariableNoWarn(self, context, "destination_encoding");
         }
         
         @JRubyMethod
         public static IRubyObject destination_encoding_name(ThreadContext context, IRubyObject self) {
-            return self.getInstanceVariables().getInstanceVariable("destination_encoding_name");
+            return Helpers.getInstanceVariableNoWarn(self, context, "destination_encoding_name");
         }
     }
 
     public static class UndefinedConversionErrorMethods {
         @JRubyMethod
         public static IRubyObject error_char(ThreadContext context, IRubyObject self) {
-            return self.getInstanceVariables().getInstanceVariable("error_char");
+            return Helpers.getInstanceVariableNoWarn(self, context, "error_char");
         }
     }
 
     public static class InvalidByteSequenceErrorMethods {
         @JRubyMethod
         public static IRubyObject readagain_bytes(ThreadContext context, IRubyObject self) {
-            return self.getInstanceVariables().getInstanceVariable("readagain_bytes");
+            return Helpers.getInstanceVariableNoWarn(self, context, "readagain_bytes");
         }
 
         @JRubyMethod(name = "incomplete_input?")
         public static IRubyObject incomplete_input_p(ThreadContext context, IRubyObject self) {
-            return self.getInstanceVariables().getInstanceVariable("error_bytes");
+            return Helpers.getInstanceVariableNoWarn(self, context, "incomplete_input");
         }
 
         @JRubyMethod
         public static IRubyObject error_bytes(ThreadContext context, IRubyObject self) {
-            return self.getInstanceVariables().getInstanceVariable("error_bytes");
+            return Helpers.getInstanceVariableNoWarn(self, context, "error_bytes");
         }
     }
 }

@@ -2393,6 +2393,12 @@ public class Helpers {
         return runtime.getNil();
     }
 
+    public static IRubyObject getInstanceVariableNoWarn(IRubyObject self, ThreadContext context, String internedName) {
+        IRubyObject result = self.getInstanceVariables().getInstanceVariable(internedName);
+        if (result != null) return result;
+        return context.nil;
+    }
+
     private static void warnAboutUninitializedIvar(Ruby runtime, String internedName) {
         runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, "instance variable " + internedName + " not initialized");
     }
