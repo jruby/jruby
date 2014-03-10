@@ -1,25 +1,22 @@
 package org.jruby.ir;
 
-// SSS FIXME: If we can hide these flags from leaking out to the rest of the codebase,
-
-// that would be awesome, but I cannot nest this class in an Enum class.
 class OpFlags {
-    final static int f_has_side_effect     = 0x00001;
-    final static int f_can_raise_exception = 0x00002;
-    final static int f_is_marker_op        = 0x00004;
-    final static int f_is_jump_or_branch   = 0x00008;
-    final static int f_is_return           = 0x00010;
-    final static int f_is_exception        = 0x00020;
-    final static int f_is_debug_op         = 0x00040;
-    final static int f_is_load             = 0x00080;
-    final static int f_is_store            = 0x00100;
-    final static int f_is_call             = 0x00200;
-    final static int f_is_arg_receive      = 0x00400;
-    final static int f_modifies_code       = 0x00800;
-    final static int f_inline_unfriendly   = 0x01000;
-    final static int f_is_book_keeping_op  = 0x02000;
-    final static int f_is_float_op         = 0x04000;
-    final static int f_is_int_op           = 0x08000;
+    final static int f_has_side_effect     = 0x00001; // Used by analyses
+    final static int f_can_raise_exception = 0x00002; // Used by analyses
+    final static int f_is_marker_op        = 0x00004; // UNUSED
+    final static int f_is_jump_or_branch   = 0x00008; // Used by analyses
+    final static int f_is_return           = 0x00010; // Used by analyses
+    final static int f_is_exception        = 0x00020; // Used by analyses
+    final static int f_is_debug_op         = 0x00040; // Used by analyses
+    final static int f_is_load             = 0x00080; // UNUSED
+    final static int f_is_store            = 0x00100; // UNUSED
+    final static int f_is_call             = 0x00200; // Only used to opt. interpreter loop
+    final static int f_is_arg_receive      = 0x00400; // Only used to opt. interpreter loop
+    final static int f_modifies_code       = 0x00800; // Profiler uses this
+    final static int f_inline_unfriendly   = 0x01000; // UNUSED: Inliner might use this later
+    final static int f_is_book_keeping_op  = 0x02000; // Only used to opt. interpreter loop
+    final static int f_is_float_op         = 0x04000; // Only used to opt. interpreter loop
+    final static int f_is_int_op           = 0x08000; // Only used to opt. interpreter loop
 }
 
 public enum Operation {
@@ -63,13 +60,11 @@ public enum Operation {
     /** calls **/
     CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     NORESULT_CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    ATTR_ASSIGN(OpFlags.f_is_call | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     CLASS_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     INSTANCE_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     UNRESOLVED_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     ZSUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
-    YIELD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
-    LAMBDA(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
-    RUNTIME_HELPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
 
     /* specialized calls */
     CALL_1F(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
@@ -77,21 +72,31 @@ public enum Operation {
     CALL_0O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     NORESULT_CALL_1O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
 
+    /** Ruby operators: should all these be calls? Implementing instrs don't inherit from CallBase.java */
+    EQQ(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception), // a === call used in when
+    LAMBDA(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    MATCH(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    MATCH2(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    MATCH3(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+
+    /* Yield: Is this a call? Implementing instr doesn't inherit from CallBase.java */
+    YIELD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+
     /** returns -- returns unwind stack, etc. */
     RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
     NONLOCAL_RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
     /* BREAK is a return because it can only be used within closures
-     * and the net result is to return from the closure */
+     * and the net result is to return from the closure. */
     BREAK(OpFlags.f_has_side_effect | OpFlags.f_is_return),
 
     /** defines **/
     ALIAS(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_modifies_code),
-    GVAR_ALIAS(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_modifies_code),
     DEF_MODULE(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
     DEF_CLASS(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
     DEF_META_CLASS(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
     DEF_INST_METH(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
     DEF_CLASS_METH(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
+    GVAR_ALIAS(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_modifies_code),
     PROCESS_MODULE_BODY(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
     UNDEF_METHOD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_modifies_code),
 
@@ -107,15 +112,13 @@ public enum Operation {
     SEARCH_CONST(OpFlags.f_can_raise_exception),
 
     /** value loads (SSS FIXME: Do any of these have side effects?) **/
+    BINDING_LOAD(OpFlags.f_is_load),
     GET_GLOBAL_VAR(OpFlags.f_is_load),
     GET_FIELD(OpFlags.f_is_load),
     GET_CVAR(OpFlags.f_is_load | OpFlags.f_can_raise_exception),
-    BINDING_LOAD(OpFlags.f_is_load),
-    MASGN_OPT(OpFlags.f_is_load),
-    MASGN_REQD(OpFlags.f_is_load),
-    MASGN_REST(OpFlags.f_is_load),
 
     /** value stores **/
+    BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     PUT_CONST(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     // SSS FIXME: Not all global variable sets can throw exceptions.  Should we split this
     // operation into two different operations?  Those that can throw exceptions and those
@@ -123,47 +126,44 @@ public enum Operation {
     PUT_GLOBAL_VAR(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     PUT_FIELD(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     PUT_CVAR(OpFlags.f_is_store | OpFlags.f_has_side_effect),
-    BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect),
-    ATTR_ASSIGN(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
 
     /** debugging ops **/
     LINE_NUM(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op),
 
     /** JRuby-impl instructions **/
+    CHECK_ARGS_ARRAY_ARITY(OpFlags.f_can_raise_exception),
+    CHECK_ARITY(OpFlags.f_is_book_keeping_op | OpFlags.f_can_raise_exception),
+    CLASS_VAR_MODULE(0),
     COPY(0),
-    NOT(0), // ruby NOT operator
-    BLOCK_GIVEN(0),
-    GET_BACKREF(0),
-    RESTORE_ERROR_INFO(OpFlags.f_has_side_effect),
+    GET_ENCODING(0),
+    MASGN_OPT(0),
+    MASGN_REQD(0),
+    MASGN_REST(0),
     RAISE_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
     RAISE_REQUIRED_KEYWORD_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
-    CHECK_ARITY(OpFlags.f_is_book_keeping_op | OpFlags.f_can_raise_exception),
-    CHECK_ARGS_ARRAY_ARITY(OpFlags.f_can_raise_exception),
     RECORD_END_BLOCK(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    RESCUE_EQQ(OpFlags.f_can_raise_exception), // a === call used in rescue
+    RUNTIME_HELPER(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    THREAD_POLL(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    THROW(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_exception),
     // FIXME: TO_ARY is marked side-effecting since it can allocate new objects
     // Clarify semantics of 'f_has_side_effect' better
     TO_ARY(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
-    THROW(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_exception),
-    MATCH(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
-    MATCH2(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
-    MATCH3(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
-    CLASS_VAR_MODULE(0),
-    EQQ(0), // (FIXME: Exceptions?) a === call used in when
-    RESCUE_EQQ(OpFlags.f_can_raise_exception), // a === call used in rescue
-    THREAD_POLL(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    GET_ENCODING(0),
 
     /* Instructions to support defined? */
-    DEFINED_CONSTANT_OR_METHOD(OpFlags.f_can_raise_exception),
-    METHOD_DEFINED(OpFlags.f_can_raise_exception),
     BACKREF_IS_MATCH_DATA(0),
+    BLOCK_GIVEN(0),
     CLASS_VAR_IS_DEFINED(0),
+    DEFINED_CONSTANT_OR_METHOD(OpFlags.f_can_raise_exception),
+    GET_BACKREF(0),
+    GET_ERROR_INFO(0),
     GLOBAL_IS_DEFINED(0),
     HAS_INSTANCE_VAR(0),
     IS_METHOD_BOUND(0),
+    METHOD_DEFINED(OpFlags.f_can_raise_exception),
     METHOD_IS_PUBLIC(0),
+    RESTORE_ERROR_INFO(OpFlags.f_has_side_effect), // SSS FIXME: Side effecting? Really?
     SUPER_METHOD_BOUND(0),
-    GET_ERROR_INFO(0),
 
     /* Boxing/Unboxing between Ruby <--> Java types */
     BOX_FIXNUM(0),
@@ -201,11 +201,6 @@ public enum Operation {
     POP_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     POP_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     METHOD_LOOKUP(0); /* for splitting calls into method-lookup and call -- unused **/
-
-/* ----------- unused ops ------------------
-// primitive alu operations -- unboxed primitive ops (not native ruby)
-    ADD(0), SUB(0), MUL(0), DIV(OpFlags.f_can_raise_exception),
- * -----------------------------------------*/
 
     public final OpClass opClass;
     private int flags;

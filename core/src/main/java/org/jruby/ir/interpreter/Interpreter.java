@@ -326,15 +326,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, Block.Type blockType) {
+    private static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block) {
         Object result;
         switch(operation) {
-        case RUNTIME_HELPER: {
-            RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
-            result = rhc.callHelper(context, currDynScope, self, temp, blockType);
-            setResult(temp, currDynScope, rhc.getResult(), result);
-            break;
-        }
         case CALL_1F: {
             OneFixnumArgNoBlockCallInstr call = (OneFixnumArgNoBlockCallInstr)instr;
             IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, temp);
@@ -435,7 +429,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         return null;
     }
 
-    private static void processOtherOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, double[] floats, long[] fixnums, boolean[] booleans)
+    private static void processOtherOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, Block.Type blockType, double[] floats, long[] fixnums, boolean[] booleans)
     {
         Object result;
         switch(operation) {
@@ -470,6 +464,13 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             result = sci.getCachedConst();
             if (!sci.isCached(context, result)) result = sci.cache(context, currDynScope, self, temp);
             setResult(temp, currDynScope, sci.getResult(), result);
+            break;
+        }
+
+        case RUNTIME_HELPER: {
+            RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
+            result = rhc.callHelper(context, currDynScope, self, temp, blockType);
+            setResult(temp, currDynScope, rhc.getResult(), result);
             break;
         }
 
@@ -572,7 +573,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 case CALL_OP:
                     if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);
-                    processCall(context, instr, operation, currDynScope, temp, self, block, blockType);
+                    processCall(context, instr, operation, currDynScope, temp, self, block);
                     break;
                 case RET_OP:
                     return processReturnOp(context, instr, operation, scope, currDynScope, temp, self, blockType);
@@ -595,7 +596,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     }
                     break;
                 case OTHER_OP:
-                    processOtherOp(context, instr, operation, currDynScope, temp, self, block, floats, fixnums, booleans);
+                    processOtherOp(context, instr, operation, currDynScope, temp, self, block, blockType, floats, fixnums, booleans);
                     break;
                 }
             } catch (Throwable t) {

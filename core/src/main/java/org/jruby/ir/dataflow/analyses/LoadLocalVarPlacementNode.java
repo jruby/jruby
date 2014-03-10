@@ -86,7 +86,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
             }
 
             // In this case, we are going to blindly load everything -- so, at the call site, pending loads dont carry over!
-            if (scopeBindingHasEscaped || call.targetRequiresCallersBinding()) {
+            if (scopeBindingHasEscaped) {
                 reqdLoads.clear();
             } else {
                 // All variables not defined in the current scope have to be always loaded
@@ -191,7 +191,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                 }
 
                 // In this case, we are going to blindly load everything
-                if (scopeBindingHasEscaped || call.targetRequiresCallersBinding()) {
+                if (scopeBindingHasEscaped) {
                     it.next();
                     for (LocalVariable v: reqdLoads) {
                         it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
