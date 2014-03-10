@@ -51,7 +51,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name = "Pathname")
 public class RubyPathname extends RubyObject {
-    private RubyString path;
+    private RubyString getPath() {
+        return this.getInstanceVariable("@path").convertToString();
+    }
+
+    private void setPath(RubyString path) {
+        this.setInstanceVariable("@path", path);
+    }
 
     static void createPathnameClass(Ruby runtime) {
         RubyClass cPathname = runtime.defineClass("Pathname", runtime.getObject(),
@@ -136,7 +142,7 @@ public class RubyPathname extends RubyObject {
                 public IRubyObject call(ThreadContext context, IRubyObject _self, RubyModule clazz,
                         String name, IRubyObject[] args, Block block) {
                     RubyPathname self = (RubyPathname) _self;
-                    args = addArg.addArg(args, self.path);
+                    args = addArg.addArg(args, self.getPath());
                     return mapper.map(context, (RubyClass) clazz, klass.callMethod(context, name, args, block));
                 }
             });
@@ -179,7 +185,6 @@ public class RubyPathname extends RubyObject {
 
     public RubyPathname(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
-        path = null;
     }
 
     public static RubyPathname newInstance(ThreadContext context, RubyClass klass, IRubyObject path) {
@@ -204,9 +209,7 @@ public class RubyPathname extends RubyObject {
         }
 
         infectBy(str);
-        this.path = (RubyString) str.dup();
-        // TODO: remove (either direct bridge to field or all native)
-        setInstanceVariable("@path", this.path);
+        this.setPath((RubyString) str.dup());
         return this;
     }
 
@@ -223,32 +226,32 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(compat = CompatVersion.RUBY1_8)
     public IRubyObject to_str(ThreadContext context) {
-        return path;
+        return getPath();
     }
 
     @JRubyMethod(compat = CompatVersion.RUBY1_9)
     public IRubyObject to_path(ThreadContext context) {
-        return path;
+        return getPath();
     }
 
     @Override
     @JRubyMethod
     public IRubyObject freeze(ThreadContext context) {
-        path.freeze(context);
+        getPath().freeze(context);
         return super.freeze(context);
     }
 
     @Override
     @JRubyMethod
     public IRubyObject taint(ThreadContext context) {
-        path.taint(context);
+        getPath().taint(context);
         return super.taint(context);
     }
 
     @Override
     @JRubyMethod
     public IRubyObject untaint(ThreadContext context) {
-        path.untaint(context);
+        getPath().untaint(context);
         return super.untaint(context);
     }
 
@@ -256,15 +259,15 @@ public class RubyPathname extends RubyObject {
     @JRubyMethod(name = { "==", "eql?" })
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyPathname) {
-            return Helpers.rbEqual(context, path, ((RubyPathname) other).path);
+            return Helpers.rbEqual(context, getPath(), ((RubyPathname) other).getPath());
         } else {
             return context.runtime.getFalse();
         }
     }
 
     private int cmp(RubyPathname other) {
-        byte[] a = path.getByteList().bytes();
-        byte[] b = other.path.getByteList().bytes();
+        byte[] a = getPath().getByteList().bytes();
+        byte[] b = other.getPath().getByteList().bytes();
         int i;
         for (i = 0; i < a.length && i < b.length; i++) {
             byte ca = a[i];
@@ -300,34 +303,34 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        return path.hash();
+        return getPath().hash();
     }
 
     @Override
     public int hashCode() {
-        return path.hashCode();
+        return getPath().hashCode();
     }
 
     @JRubyMethod
     public IRubyObject to_s(ThreadContext context) {
-        return path.dup();
+        return getPath().dup();
     }
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return context.runtime.newString("<Pathname:" + path + ">");
+        return context.runtime.newString("<Pathname:" + getPath() + ">");
     }
 
     @JRubyMethod(required = 1, optional = 1, reads = BACKREF, writes = BACKREF)
     public IRubyObject sub(ThreadContext context, IRubyObject[] args, Block block) {
-        IRubyObject result = path.callMethod(context, "sub", args, block);
+        IRubyObject result = getPath().callMethod(context, "sub", args, block);
         return newInstance(context, result);
     }
 
     @JRubyMethod
     public IRubyObject sub_ext(ThreadContext context, IRubyObject newExt) {
-        IRubyObject ext = context.runtime.getFile().callMethod(context, "extname", path);
-        IRubyObject newPath = path.chomp(context, ext).callMethod(context, "+", newExt);
+        IRubyObject ext = context.runtime.getFile().callMethod(context, "extname", getPath());
+        IRubyObject newPath = getPath().chomp(context, ext).callMethod(context, "+", newExt);
         return newInstance(context, newPath);
     }
 
@@ -341,13 +344,13 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod
     public IRubyObject make_link(ThreadContext context, IRubyObject old) {
-        IRubyObject[] args = new IRubyObject[] { old, path };
+        IRubyObject[] args = new IRubyObject[] { old, getPath()};
         return context.runtime.getFile().callMethod(context, "link", args);
     }
 
     @JRubyMethod
     public IRubyObject make_symlink(ThreadContext context, IRubyObject old) {
-        IRubyObject[] args = new IRubyObject[] { old, path };
+        IRubyObject[] args = new IRubyObject[] { old, getPath()};
         return context.runtime.getFile().callMethod(context, "symlink", args);
     }
 
@@ -381,7 +384,7 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod
     public IRubyObject opendir(ThreadContext context, Block block) {
-        return context.runtime.getDir().callMethod(context, "open", new IRubyObject[] { path },
+        return context.runtime.getDir().callMethod(context, "open", new IRubyObject[] { getPath()},
                 block);
     }
 
@@ -402,23 +405,23 @@ public class RubyPathname extends RubyObject {
     @JRubyMethod(name = {"unlink", "delete"})
     public IRubyObject unlink(ThreadContext context) {
         try {
-            return context.runtime.getDir().callMethod(context, "unlink", path);
+            return context.runtime.getDir().callMethod(context, "unlink", getPath());
         } catch (RaiseException ex) {
             if (!context.runtime.getErrno().getClass("ENOTDIR").isInstance(ex.getException())) {
                 throw ex;
             }
-            return context.runtime.getFile().callMethod(context, "unlink", path);
+            return context.runtime.getFile().callMethod(context, "unlink", getPath());
         }
     }
 
     /* Helpers */
 
     private IRubyObject[] insertPath(IRubyObject[] args, int i) {
-        return insert(args, i, path);
+        return insert(args, i, getPath());
     }
 
     private IRubyObject[] unshiftPath(IRubyObject[] args) {
-        return insert(args, 0, path);
+        return insert(args, 0, getPath());
     }
 
     private static IRubyObject[] insert(IRubyObject[] old, int i, IRubyObject obj) {
