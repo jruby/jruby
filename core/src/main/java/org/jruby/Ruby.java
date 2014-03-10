@@ -1581,8 +1581,10 @@ public final class Ruby {
             encodingCompatibilityError = defineClassUnder("CompatibilityError", encodingError, encodingError.getAllocator(), encodingClass);
             invalidByteSequenceError = defineClassUnder("InvalidByteSequenceError", encodingError, encodingError.getAllocator(), encodingClass);
             invalidByteSequenceError.defineAnnotatedMethods(RubyConverter.EncodingErrorMethods.class);
+            invalidByteSequenceError.defineAnnotatedMethods(RubyConverter.InvalidByteSequenceErrorMethods.class);
             undefinedConversionError = defineClassUnder("UndefinedConversionError", encodingError, encodingError.getAllocator(), encodingClass);
             undefinedConversionError.defineAnnotatedMethods(RubyConverter.EncodingErrorMethods.class);
+            undefinedConversionError.defineAnnotatedMethods(RubyConverter.UndefinedConversionErrorMethods.class);
             converterNotFoundError = defineClassUnder("ConverterNotFoundError", encodingError, encodingError.getAllocator(), encodingClass);
             fiberError = defineClass("FiberError", standardError, standardError.getAllocator());
         }

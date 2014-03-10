@@ -351,18 +351,18 @@ public class RubyConverter extends RubyObject {
         if (ret instanceof RubySymbol) {
             RubySymbol retSym = (RubySymbol)ret;
 
-            if (retSym.toString().equals(EConvResult.InvalidByteSequence) ||
-                    retSym.toString().equals(EConvResult.UndefinedConversion) ||
-                    retSym.toString().equals(EConvResult.IncompleteInput)) {
+            if (retSym.toString().equals(EConvResult.InvalidByteSequence.symbolicName()) ||
+                    retSym.toString().equals(EConvResult.UndefinedConversion.symbolicName()) ||
+                    retSym.toString().equals(EConvResult.IncompleteInput.symbolicName())) {
                 throw EncodingUtils.makeEconvException(context, ec);
             }
 
-            if (retSym.toString().equals(EConvResult.Finished)) {
+            if (retSym.toString().equals(EConvResult.Finished.symbolicName())) {
                 throw runtime.newArgumentError("converter already finished");
             }
 
-            if (!retSym.toString().equals(EConvResult.SourceBufferEmpty)) {
-                throw runtime.newRuntimeError("bug: unexpected result of primitive_convert");
+            if (!retSym.toString().equals(EConvResult.SourceBufferEmpty.symbolicName())) {
+                throw runtime.newRuntimeError("bug: unexpected result of primitive_convert: " + retSym);
             }
         }
 
@@ -542,74 +542,47 @@ public class RubyConverter extends RubyObject {
     
     public static class EncodingErrorMethods {
         @JRubyMethod
-        public static IRubyObject error_char(ThreadContext context, IRubyObject self) {
-            EConv.LastError result = (EConv.LastError)self.dataGetStruct();
-            
-            if (result != null && result.errorBytes != null) {
-                // FIXME: do this elsewhere and cache it
-                ByteList errorBytes = new ByteList(result.errorBytes, ASCIIEncoding.INSTANCE, true);
-                return RubyString.newString(context.runtime, errorBytes);
-            }
-        
-            return context.nil;
-        }
-        
-        @JRubyMethod
-        public static IRubyObject readagain_bytes(ThreadContext context, IRubyObject self) {
-            EConv.LastError result = (EConv.LastError)self.dataGetStruct();
-            
-            if (result != null && result.readAgainLength > 0) {
-                // FIXME: do this elsewhere and cache it
-                ByteList errorBytes = new ByteList(result.errorBytes, result.errorBytesEnd, result.readAgainLength, ASCIIEncoding.INSTANCE, true);
-                return RubyString.newString(context.runtime, errorBytes);
-            }
-        
-            return context.nil;
-        }
-        
-        @JRubyMethod(name = "incomplete_input?")
-        public static IRubyObject incomplete_input_p(ThreadContext context, IRubyObject self) {
-            EConv.LastError result = (EConv.LastError)self.dataGetStruct();
-            
-            if (result != null) {
-                if (result.result.isInvalidByteSequence()) {
-                    return context.runtime.getTrue();
-                } else {
-                    return context.runtime.getFalse();
-                }
-            }
-        
-            return context.nil;
-        }
-        
-        @JRubyMethod
         public static IRubyObject source_encoding(ThreadContext context, IRubyObject self) {
-            EConv.LastError result = (EConv.LastError)self.dataGetStruct();
-
-            Encoding encoding = context.runtime.getEncodingService().findEncodingOrAliasEntry(result.source).getEncoding();
-            return context.runtime.getEncodingService().convertEncodingToRubyEncoding(encoding);
+            return self.getInstanceVariables().getInstanceVariable("source_encoding");
         }
         
         @JRubyMethod
         public static IRubyObject source_encoding_name(ThreadContext context, IRubyObject self) {
-            EConv.LastError result = (EConv.LastError)self.dataGetStruct();
-            
-            return RubyString.newString(context.runtime, result.source);
+            return self.getInstanceVariables().getInstanceVariable("source_encoding_name");
         }
         
         @JRubyMethod
         public static IRubyObject destination_encoding(ThreadContext context, IRubyObject self) {
-            EConv.LastError result = (EConv.LastError)self.dataGetStruct();
-
-            Encoding encoding = context.runtime.getEncodingService().findEncodingOrAliasEntry(result.destination).getEncoding();
-            return context.runtime.getEncodingService().convertEncodingToRubyEncoding(encoding);
+            return self.getInstanceVariables().getInstanceVariable("destination_encoding");
         }
         
         @JRubyMethod
         public static IRubyObject destination_encoding_name(ThreadContext context, IRubyObject self) {
-            EConv.LastError result = (EConv.LastError)self.dataGetStruct();
-            
-            return RubyString.newString(context.runtime, result.destination);
+            return self.getInstanceVariables().getInstanceVariable("destination_encoding_name");
+        }
+    }
+
+    public static class UndefinedConversionErrorMethods {
+        @JRubyMethod
+        public static IRubyObject error_char(ThreadContext context, IRubyObject self) {
+            return self.getInstanceVariables().getInstanceVariable("error_char");
+        }
+    }
+
+    public static class InvalidByteSequenceErrorMethods {
+        @JRubyMethod
+        public static IRubyObject readagain_bytes(ThreadContext context, IRubyObject self) {
+            return self.getInstanceVariables().getInstanceVariable("readagain_bytes");
+        }
+
+        @JRubyMethod(name = "incomplete_input?")
+        public static IRubyObject incomplete_input_p(ThreadContext context, IRubyObject self) {
+            return self.getInstanceVariables().getInstanceVariable("error_bytes");
+        }
+
+        @JRubyMethod
+        public static IRubyObject error_bytes(ThreadContext context, IRubyObject self) {
+            return self.getInstanceVariables().getInstanceVariable("error_bytes");
         }
     }
 }
