@@ -1,7 +1,5 @@
 package org.jruby.ir;
 
-// SSS FIXME: If we can hide these flags from leaking out to the rest of the codebase,
-// that would be awesome, but I cannot nest this class in an Enum class.
 class OpFlags {
     final static int f_has_side_effect     = 0x00001; // Used by analyses
     final static int f_can_raise_exception = 0x00002; // Used by analyses
@@ -203,11 +201,6 @@ public enum Operation {
     POP_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     POP_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     METHOD_LOOKUP(0); /* for splitting calls into method-lookup and call -- unused **/
-
-/* ----------- unused ops ------------------
-// primitive alu operations -- unboxed primitive ops (not native ruby)
-    ADD(0), SUB(0), MUL(0), DIV(OpFlags.f_can_raise_exception),
- * -----------------------------------------*/
 
     public final OpClass opClass;
     private int flags;
