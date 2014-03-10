@@ -1,25 +1,24 @@
 package org.jruby.ir;
 
 // SSS FIXME: If we can hide these flags from leaking out to the rest of the codebase,
-
 // that would be awesome, but I cannot nest this class in an Enum class.
 class OpFlags {
-    final static int f_has_side_effect     = 0x00001;
-    final static int f_can_raise_exception = 0x00002;
-    final static int f_is_marker_op        = 0x00004;
-    final static int f_is_jump_or_branch   = 0x00008;
-    final static int f_is_return           = 0x00010;
-    final static int f_is_exception        = 0x00020;
-    final static int f_is_debug_op         = 0x00040;
-    final static int f_is_load             = 0x00080;
-    final static int f_is_store            = 0x00100;
-    final static int f_is_call             = 0x00200;
-    final static int f_is_arg_receive      = 0x00400;
-    final static int f_modifies_code       = 0x00800;
-    final static int f_inline_unfriendly   = 0x01000;
-    final static int f_is_book_keeping_op  = 0x02000;
-    final static int f_is_float_op         = 0x04000;
-    final static int f_is_int_op           = 0x08000;
+    final static int f_has_side_effect     = 0x00001; // Used by analyses
+    final static int f_can_raise_exception = 0x00002; // Used by analyses
+    final static int f_is_marker_op        = 0x00004; // UNUSED
+    final static int f_is_jump_or_branch   = 0x00008; // Used by analyses
+    final static int f_is_return           = 0x00010; // Used by analyses
+    final static int f_is_exception        = 0x00020; // Used by analyses
+    final static int f_is_debug_op         = 0x00040; // Used by analyses
+    final static int f_is_load             = 0x00080; // UNUSED
+    final static int f_is_store            = 0x00100; // UNUSED
+    final static int f_is_call             = 0x00200; // Only used to opt. interpreter loop
+    final static int f_is_arg_receive      = 0x00400; // Only used to opt. interpreter loop
+    final static int f_modifies_code       = 0x00800; // Profiler uses this
+    final static int f_inline_unfriendly   = 0x01000; // UNUSED: Inliner might use this later
+    final static int f_is_book_keeping_op  = 0x02000; // Only used to opt. interpreter loop
+    final static int f_is_float_op         = 0x04000; // Only used to opt. interpreter loop
+    final static int f_is_int_op           = 0x08000; // Only used to opt. interpreter loop
 }
 
 public enum Operation {
