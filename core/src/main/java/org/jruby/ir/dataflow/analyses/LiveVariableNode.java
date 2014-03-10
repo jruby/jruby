@@ -142,7 +142,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                 // have a control-flow edge from this call to that block.  Since we dont want to add a
                 // control-flow edge from pretty much every call to the rescuer/exit BB, we are handling it
                 // implicitly here.
-                if (c.canRaiseException()) problem.addLiveLocalVars(liveVars, getExceptionTargetNode().out);
+                if (i.canRaiseException()) problem.addLiveLocalVars(liveVars, getExceptionTargetNode().out);
 
                 // Run LVA on the closure to propagate current LVA state through the closure
                 // SSS FIXME: Think through this .. Is there any way out of having
