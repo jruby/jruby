@@ -1,5 +1,3 @@
-exclude :test_from_sjis, "needs investigation"
-exclude :test_from_utf8, "needs investigation"
 exclude :test_kddi, "needs investigation"
 exclude :test_to_docomo, "needs investigation"
 exclude :test_to_eucjp, "needs investigation"
