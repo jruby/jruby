@@ -62,31 +62,31 @@ public class RubyConverter extends RubyObject {
     private EConv ec;
     
     @JRubyConstant
-    public static final int INVALID_MASK = EncodingUtils.ECONV_INVALID_MASK;
+    public static final int INVALID_MASK = EConvFlags.INVALID_MASK;
     @JRubyConstant
-    public static final int INVALID_REPLACE = EncodingUtils.ECONV_INVALID_REPLACE;
+    public static final int INVALID_REPLACE = EConvFlags.INVALID_REPLACE;
     @JRubyConstant
-    public static final int UNDEF_MASK = EncodingUtils.ECONV_UNDEF_MASK;
+    public static final int UNDEF_MASK = EConvFlags.UNDEF_MASK;
     @JRubyConstant
-    public static final int UNDEF_REPLACE = EncodingUtils.ECONV_UNDEF_REPLACE;
+    public static final int UNDEF_REPLACE = EConvFlags.UNDEF_REPLACE;
     @JRubyConstant
-    public static final int UNDEF_HEX_CHARREF = EncodingUtils.ECONV_UNDEF_HEX_CHARREF;
+    public static final int UNDEF_HEX_CHARREF = EConvFlags.UNDEF_HEX_CHARREF;
     @JRubyConstant
-    public static final int PARTIAL_INPUT = EncodingUtils.ECONV_PARTIAL_INPUT;
+    public static final int PARTIAL_INPUT = EConvFlags.PARTIAL_INPUT;
     @JRubyConstant
-    public static final int AFTER_OUTPUT = EncodingUtils.ECONV_AFTER_OUTPUT;
+    public static final int AFTER_OUTPUT = EConvFlags.AFTER_OUTPUT;
     @JRubyConstant
-    public static final int UNIVERSAL_NEWLINE_DECORATOR = EncodingUtils.ECONV_UNIVERSAL_NEWLINE_DECORATOR;
+    public static final int UNIVERSAL_NEWLINE_DECORATOR = EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
     @JRubyConstant
-    public static final int CRLF_NEWLINE_DECORATOR = EncodingUtils.ECONV_CRLF_NEWLINE_DECORATOR;
+    public static final int CRLF_NEWLINE_DECORATOR = EConvFlags.CRLF_NEWLINE_DECORATOR;
     @JRubyConstant
-    public static final int CR_NEWLINE_DECORATOR = EncodingUtils.ECONV_CR_NEWLINE_DECORATOR;
+    public static final int CR_NEWLINE_DECORATOR = EConvFlags.CR_NEWLINE_DECORATOR;
     @JRubyConstant
-    public static final int XML_TEXT_DECORATOR = EncodingUtils.ECONV_XML_TEXT_DECORATOR;
+    public static final int XML_TEXT_DECORATOR = EConvFlags.XML_TEXT_DECORATOR;
     @JRubyConstant
-    public static final int XML_ATTR_CONTENT_DECORATOR = EncodingUtils.ECONV_XML_ATTR_CONTENT_DECORATOR;
+    public static final int XML_ATTR_CONTENT_DECORATOR = EConvFlags.XML_ATTR_CONTENT_DECORATOR;
     @JRubyConstant
-    public static final int XML_ATTR_QUOTE_DECORATOR = EncodingUtils.ECONV_XML_ATTR_QUOTE_DECORATOR;
+    public static final int XML_ATTR_QUOTE_DECORATOR = EConvFlags.XML_ATTR_QUOTE_DECORATOR;
     
     // TODO: This is a little ugly...we should have a table of these in jcodings.
     public static final Map<Encoding, Encoding> NONASCII_TO_ASCII = new HashMap<Encoding, Encoding>();
@@ -262,11 +262,11 @@ public class RubyConverter extends RubyObject {
                 !(opt = TypeConverter.checkHashType(runtime, args[hashArg])).isNil()) {
             IRubyObject v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("partial_input"));
             if (v.isTrue()) {
-                flags |= EncodingUtils.ECONV_PARTIAL_INPUT;
+                flags |= EConvFlags.PARTIAL_INPUT;
             }
             v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("after_output"));
             if (v.isTrue()) {
-                flags |= EncodingUtils.ECONV_AFTER_OUTPUT;
+                flags |= EConvFlags.AFTER_OUTPUT;
             }
         }
         

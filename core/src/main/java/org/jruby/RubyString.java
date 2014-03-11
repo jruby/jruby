@@ -6129,77 +6129,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
     }
 
-    // old port of rb_enc_cr_str_buf_cat
-    @Deprecated
-    public final int cat(byte[]bytes, int p, int len, Encoding enc, int ptr_cr) {
-        Encoding str_enc = value.getEncoding();
-        Encoding res_enc;
-        int str_cr, res_cr;
-
-        modify(value.getRealSize() + len);
-        int toCr = getCodeRange();
-        Encoding toEnc = value.getEncoding();
-        int cr2 = ptr_cr;
-
-        if (toEnc == enc) {
-            if (toCr == CR_UNKNOWN) {
-                ptr_cr = CR_UNKNOWN;
-            } else if (ptr_cr == CR_UNKNOWN) {
-                ptr_cr = codeRangeScan(enc, bytes, p, len);
-            }
-        } else {
-            if (!toEnc.isAsciiCompatible() || !enc.isAsciiCompatible()) {
-                if (len == 0) return toCr;
-                if (value.getRealSize() == 0) {
-                    System.arraycopy(bytes, p, value.getUnsafeBytes(), value.getBegin() + value.getRealSize(), len);
-                    value.setRealSize(value.getRealSize() + len);
-                    setEncodingAndCodeRange(enc, ptr_cr);
-                    return ptr_cr;
-                }
-                throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " + toEnc + " and " + enc);
-            }
-            if (ptr_cr == CR_UNKNOWN) ptr_cr = codeRangeScan(enc, bytes, p, len);
-            if (toCr == CR_UNKNOWN) {
-                if (toEnc == ASCIIEncoding.INSTANCE || ptr_cr != CR_7BIT) toCr = scanForCodeRange();
-            }
-        }
-        if (cr2 != 0) cr2 = ptr_cr;
-
-        if (toEnc != enc && toCr != CR_7BIT && ptr_cr != CR_7BIT) {
-            throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " + toEnc + " and " + enc);
-        }
-
-        final int resCr;
-        final Encoding resEnc;
-        if (toCr == CR_UNKNOWN) {
-            resEnc = toEnc;
-            resCr = CR_UNKNOWN;
-        } else if (toCr == CR_7BIT) {
-            if (ptr_cr == CR_7BIT) {
-                resEnc = toEnc;
-                resCr = CR_7BIT;
-            } else {
-                resEnc = enc;
-                resCr = ptr_cr;
-            }
-        } else if (toCr == CR_VALID) {
-            resEnc = toEnc;
-            if (ptr_cr == CR_7BIT || ptr_cr == CR_VALID) {
-                resCr = toCr;
-            } else {
-                resCr = ptr_cr;
-            }
-        } else {
-            resEnc = toEnc;
-            resCr = len > 0 ? CR_UNKNOWN : toCr;
-        }
-
-        if (len < 0) throw getRuntime().newArgumentError("negative string size (or size too big)");
-
-        System.arraycopy(bytes, p, value.getUnsafeBytes(), value.getBegin() + value.getRealSize(), len);
-        value.setRealSize(value.getRealSize() + len);
-        setEncodingAndCodeRange(resEnc, resCr);
-
-        return cr2;
+    /**
+     * Utility to invoke #scrub on this string by redispatching to the Ruby impl.
+     *
+     * @param context
+     * @param rep
+     * @return
+     */
+    public IRubyObject scrub(ThreadContext context, IRubyObject rep) {
+        return callMethod(context, "scrub", rep);
     }
 }

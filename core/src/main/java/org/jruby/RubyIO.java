@@ -36,6 +36,7 @@
 package org.jruby;
 
 import org.jcodings.transcode.EConv;
+import org.jcodings.transcode.EConvFlags;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.StringSupport;
 import org.jruby.util.encoding.EncodingConverter;
@@ -4827,7 +4828,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     
     // MRI: NEED_READCONV (FIXME: Windows has slightly different version)
     private boolean needsReadConversion() {
-        return (enc2 != null || (ecflags & ~EncodingUtils.ECONV_CRLF_NEWLINE_DECORATOR) != 0);
+        return (enc2 != null || (ecflags & ~EConvFlags.CRLF_NEWLINE_DECORATOR) != 0);
     }
     
     // MRI: NEED_WRITECONV (FIXME: Windows has slightly different version)
@@ -4835,7 +4836,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
         
         return (enc != null && enc != ascii8bit) || openFile.isTextMode() || 
-                (ecflags & ((EncodingUtils.ECONV_DECORATOR_MASK & ~EncodingUtils.ECONV_CRLF_NEWLINE_DECORATOR)|EncodingUtils.ECONV_STATEFUL_DECORATOR_MASK)) != 0;
+                (ecflags & ((EConvFlags.DECORATOR_MASK & ~EConvFlags.CRLF_NEWLINE_DECORATOR)| EConvFlags.STATEFUL_DECORATOR_MASK)) != 0;
     }
     
     // MRI: make_readconv
@@ -4846,7 +4847,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         int ecflags;
         IRubyObject ecopts;
         byte[] sname, dname;
-        ecflags = this.ecflags & ~EncodingUtils.ECONV_NEWLINE_DECORATOR_WRITE_MASK;
+        ecflags = this.ecflags & ~EConvFlags.NEWLINE_DECORATOR_WRITE_MASK;
         ecopts = this.ecopts;
         
         if (enc2 != null) {
@@ -4877,7 +4878,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         
         writeconvInitialized = true;
         
-        ecflags = this.ecflags & ~EncodingUtils.ECONV_NEWLINE_DECORATOR_READ_MASK;
+        ecflags = this.ecflags & ~EConvFlags.NEWLINE_DECORATOR_READ_MASK;
         ecopts = this.ecopts;
 
         Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
@@ -4895,7 +4896,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             enc = this.enc2 != null ? this.enc2 : this.enc;
             Encoding tmpEnc = EncodingUtils.econvAsciicompatEncoding(enc);
             senc = tmpEnc == null ? null : tmpEnc.getName();
-            if (senc == null && (this.ecflags & EncodingUtils.ECONV_STATEFUL_DECORATOR_MASK) == 0) {
+            if (senc == null && (this.ecflags & EConvFlags.STATEFUL_DECORATOR_MASK) == 0) {
                 /* single conversion */
                 writeconvPreEcflags = ecflags;
                 writeconvPreEcopts = ecopts;
@@ -4904,7 +4905,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
             else {
                 /* double conversion */
-                writeconvPreEcflags = ecflags & ~EncodingUtils.ECONV_STATEFUL_DECORATOR_MASK;
+                writeconvPreEcflags = ecflags & ~EConvFlags.STATEFUL_DECORATOR_MASK;
                 writeconvPreEcopts = ecopts;
                 if (senc != null) {
                     denc = enc.getName();
@@ -4914,7 +4915,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     senc = denc = EMPTY_BYTE_ARRAY;
                     writeconvAsciicompat = RubyString.newString(context.runtime, enc.getName());
                 }
-                ecflags = this.ecflags & (EncodingUtils.ECONV_ERROR_HANDLER_MASK|EncodingUtils.ECONV_STATEFUL_DECORATOR_MASK);
+                ecflags = this.ecflags & (EConvFlags.ERROR_HANDLER_MASK | EConvFlags.STATEFUL_DECORATOR_MASK);
                 ecopts = this.ecopts;
                 writeconv = EncodingUtils.econvOpenOpts(context, senc, denc, ecflags, ecopts);
                 if (writeconv == null) {

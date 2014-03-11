@@ -10,6 +10,7 @@ import org.jcodings.specific.UTF32BEEncoding;
 import org.jcodings.specific.UTF32LEEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.transcode.EConv;
+import org.jcodings.transcode.EConvFlags;
 import org.jcodings.transcode.EConvResult;
 import org.jcodings.transcode.TranscoderDB;
 import org.jcodings.transcode.Transcoding;
@@ -18,59 +19,28 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyConverter;
 import org.jruby.RubyEncoding;
-import org.jruby.RubyGlobal;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
 import org.jruby.RubyMethod;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
-import org.jruby.util.encoding.EncodingConverter;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.encoding.RubyCoderResult;
 
 import java.util.Arrays;
 
-public class EncodingUtils {    
-    public static final int ECONV_ERROR_HANDLER_MASK               = 0x000000ff;
-
-    public static final int ECONV_INVALID_MASK                     = 0x0000000f;
-    public static final int ECONV_INVALID_REPLACE                  = 0x00000002;
-
-    public static final int ECONV_UNDEF_MASK                       = 0x000000f0;
-    public static final int ECONV_UNDEF_REPLACE                    = 0x00000020;
-    public static final int ECONV_UNDEF_HEX_CHARREF                = 0x00000030;
-
-    public static final int ECONV_DECORATOR_MASK                   = 0x0000ff00;
-    public static final int ECONV_NEWLINE_DECORATOR_MASK           = 0x00003f00;
-    public static final int ECONV_NEWLINE_DECORATOR_READ_MASK      = 0x00000f00;
-    public static final int ECONV_NEWLINE_DECORATOR_WRITE_MASK     = 0x00003000;
-
-    public static final int ECONV_UNIVERSAL_NEWLINE_DECORATOR      = 0x00000100;
-    public static final int ECONV_CRLF_NEWLINE_DECORATOR           = 0x00001000;
-    public static final int ECONV_CR_NEWLINE_DECORATOR             = 0x00002000;
-    public static final int ECONV_XML_TEXT_DECORATOR               = 0x00004000;
-    public static final int ECONV_XML_ATTR_CONTENT_DECORATOR       = 0x00008000;
-
-    public static final int ECONV_STATEFUL_DECORATOR_MASK          = 0x00f00000;
-    public static final int ECONV_XML_ATTR_QUOTE_DECORATOR         = 0x00100000;
-    
-    public static final int ECONV_PARTIAL_INPUT                    = 0x00010000;
-    public static final int ECONV_AFTER_OUTPUT                     = 0x00020000;
-    
-    public static final int ECONV_DEFAULT_NEWLINE_DECORATOR = Platform.IS_WINDOWS ? ECONV_CRLF_NEWLINE_DECORATOR : 0;
+public class EncodingUtils {
+    public static final int ECONV_DEFAULT_NEWLINE_DECORATOR = Platform.IS_WINDOWS ? EConvFlags.CRLF_NEWLINE_DECORATOR : 0;
     public static final int DEFAULT_TEXTMODE = Platform.IS_WINDOWS ? OpenFile.TEXTMODE : 0;
-    public static final int TEXTMODE_NEWLINE_DECORATOR_ON_WRITE = Platform.IS_WINDOWS ? ECONV_CRLF_NEWLINE_DECORATOR : -1;
+    public static final int TEXTMODE_NEWLINE_DECORATOR_ON_WRITE = Platform.IS_WINDOWS ? EConvFlags.CRLF_NEWLINE_DECORATOR : -1;
     
     private static final byte[] NULL_BYTE_ARRAY = new byte[0];
 
@@ -150,7 +120,7 @@ public class EncodingUtils {
     
     public static int SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(Encoding enc2, int ecflags) {
         if (enc2 != null && (ecflags & ECONV_DEFAULT_NEWLINE_DECORATOR) != 0) {
-            return ecflags | ECONV_UNIVERSAL_NEWLINE_DECORATOR;
+            return ecflags | EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
         }
         return ecflags;
     }
@@ -210,7 +180,7 @@ public class EncodingUtils {
 
             if (options == null || options.isNil()) {
                 ecflags = (fmode_p[0] & OpenFile.READABLE) != 0
-                        ? MODE_BTMODE(fmode_p[0], ECONV_DEFAULT_NEWLINE_DECORATOR, 0, ECONV_UNIVERSAL_NEWLINE_DECORATOR)
+                        ? MODE_BTMODE(fmode_p[0], ECONV_DEFAULT_NEWLINE_DECORATOR, 0, EConvFlags.UNIVERSAL_NEWLINE_DECORATOR)
                         : 0;
                 if (TEXTMODE_NEWLINE_DECORATOR_ON_WRITE != -1) {
                     ecflags |= (fmode_p[0] & OpenFile.WRITABLE) != 0
@@ -255,7 +225,7 @@ public class EncodingUtils {
                 }
                 
                 ecflags = (fmode_p[0] & OpenFile.READABLE) != 0 ?
-                        MODE_BTMODE(fmode_p[0], ECONV_DEFAULT_NEWLINE_DECORATOR, 0, ECONV_UNIVERSAL_NEWLINE_DECORATOR) : 0;
+                        MODE_BTMODE(fmode_p[0], ECONV_DEFAULT_NEWLINE_DECORATOR, 0, EConvFlags.UNIVERSAL_NEWLINE_DECORATOR) : 0;
                 if (TEXTMODE_NEWLINE_DECORATOR_ON_WRITE != -1) {
                     ecflags |= (fmode_p[0] & OpenFile.WRITABLE) != 0 ?
                             MODE_BTMODE(fmode_p[0], TEXTMODE_NEWLINE_DECORATOR_ON_WRITE, 0, TEXTMODE_NEWLINE_DECORATOR_ON_WRITE) : 0;
@@ -536,38 +506,38 @@ public class EncodingUtils {
         return ecflags;
     }
     
-    // rb_econv_opts
+    // econv_opts
     public static int econvOpts(ThreadContext context, IRubyObject opt, int ecflags) {
         Ruby runtime = context.runtime;
         IRubyObject v;
         
         v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("invalid"));
         if (v.isNil()) {
-        } else if (v == runtime.newSymbol("replace")) {
-            ecflags |= ECONV_INVALID_REPLACE;
+        } else if (v.toString().equals("replace")) {
+            ecflags |= EConvFlags.INVALID_REPLACE;
         } else {
             throw runtime.newArgumentError("unknown value for invalid character option");
         }
         
         v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("undef"));
         if (v.isNil()) {
-        } else if (v == runtime.newSymbol("replace")) {
-            ecflags |= ECONV_UNDEF_REPLACE;
+        } else if (v.toString().equals("replace")) {
+            ecflags |= EConvFlags.UNDEF_REPLACE;
         } else {
             throw runtime.newArgumentError("unknown value for undefined character option");
         }
         
         v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("replace"));
-        if (!v.isNil() && (ecflags & ECONV_INVALID_REPLACE) != 0) {
-            ecflags |= ECONV_UNDEF_REPLACE;
+        if (!v.isNil() && (ecflags & EConvFlags.INVALID_REPLACE) != 0) {
+            ecflags |= EConvFlags.UNDEF_REPLACE;
         }
         
         v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("xml"));
         if (!v.isNil()) {
-            if (v == runtime.newSymbol("text")) {
-                ecflags |= ECONV_XML_TEXT_DECORATOR|ECONV_UNDEF_HEX_CHARREF;
-            } else if (v == runtime.newSymbol("attr")) {
-                ecflags |= ECONV_XML_ATTR_CONTENT_DECORATOR|ECONV_XML_ATTR_QUOTE_DECORATOR|ECONV_UNDEF_HEX_CHARREF;
+            if (v.toString().equals("text")) {
+                ecflags |= EConvFlags.XML_TEXT_DECORATOR | EConvFlags.UNDEF_HEX_CHARREF;
+            } else if (v.toString().equals("attr")) {
+                ecflags |= EConvFlags.XML_ATTR_CONTENT_DECORATOR | EConvFlags.XML_ATTR_QUOTE_DECORATOR | EConvFlags.UNDEF_HEX_CHARREF;
             } else {
                 throw runtime.newArgumentError("unexpected value for xml option: " + v);
             }
@@ -575,14 +545,14 @@ public class EncodingUtils {
         
         v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("newline"));
         if (!v.isNil()) {
-            ecflags &= ~ECONV_NEWLINE_DECORATOR_MASK;
-            if (v == runtime.newSymbol("universal")) {
-                ecflags |= ECONV_UNIVERSAL_NEWLINE_DECORATOR;
-            } else if (v == runtime.newSymbol("crlf")) {
-                ecflags |= ECONV_CRLF_NEWLINE_DECORATOR;
-            } else if (v == runtime.newSymbol("cr")) {
-                ecflags |= ECONV_CR_NEWLINE_DECORATOR;
-            } else if (v == runtime.newSymbol("lf")) {
+            ecflags &= ~EConvFlags.NEWLINE_DECORATOR_MASK;
+            if (v.toString().equals("universal")) {
+                ecflags |= EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
+            } else if (v.toString().equals("crlf")) {
+                ecflags |= EConvFlags.CRLF_NEWLINE_DECORATOR;
+            } else if (v.toString().equals("cr")) {
+                ecflags |= EConvFlags.CR_NEWLINE_DECORATOR;
+            } else if (v.toString().equals("lf")) {
 //                ecflags |= ECONV_LF_NEWLINE_DECORATOR;
             } else {
                 throw runtime.newArgumentError("unexpected value for newline option");
@@ -594,24 +564,24 @@ public class EncodingUtils {
         
         v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("universal_newline"));
         if (v.isTrue()) {
-            setflags |= ECONV_UNIVERSAL_NEWLINE_DECORATOR;
+            setflags |= EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
         }
         newlineflag |= !v.isNil();
         
         v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("crlf_newline"));
         if (v.isTrue()) {
-            setflags |= ECONV_CRLF_NEWLINE_DECORATOR;
+            setflags |= EConvFlags.CRLF_NEWLINE_DECORATOR;
         }
         newlineflag |= !v.isNil();
         
         v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("cr_newline"));
         if (v.isTrue()) {
-            setflags |= ECONV_CR_NEWLINE_DECORATOR;
+            setflags |= EConvFlags.CR_NEWLINE_DECORATOR;
         }
         newlineflag |= !v.isNil();
         
         if (newlineflag) {
-            ecflags &= ~ECONV_NEWLINE_DECORATOR_MASK;
+            ecflags &= ~EConvFlags.NEWLINE_DECORATOR_MASK;
             ecflags |= setflags;
         }
         
@@ -637,9 +607,11 @@ public class EncodingUtils {
 
         if (!replacement.isNil()) {
             int ret;
+            RubyString replStr = (RubyString)replacement;
+            ByteList replBL = replStr.getByteList();
             ec.makeReplacement();
 
-            ret = ec.setReplacement(ec.replacementString, 0, ec.replacementLength, ec.replacementEncoding);
+            ret = ec.setReplacement(replBL.getUnsafeBytes(), replBL.getBegin(), replBL.getRealSize(), replBL.getEncoding().getName());
 
             if (ret == -1) {
                 ec.close();
@@ -833,6 +805,7 @@ public class EncodingUtils {
         Encoding[] senc_p = {null}, denc_p = {null};
         byte[][] sname_p = {null}, dname_p = {null};
         Encoding dencindex;
+        boolean explicitlyInvalidReplace = true;
         
         if (argc > 2) {
             throw context.runtime.newArgumentError(args.length, 2);
@@ -844,7 +817,10 @@ public class EncodingUtils {
                 if (ecflags == 0) return null;
                 arg1 = objEncoding(context, str);
             }
-            ecflags |= EncodingUtils.ECONV_INVALID_REPLACE | EncodingUtils.ECONV_UNDEF_REPLACE;
+            if ((ecflags & EConvFlags.INVALID_MASK) == 0) {
+                explicitlyInvalidReplace = false;
+            }
+            ecflags |= EConvFlags.INVALID_REPLACE | EConvFlags.UNDEF_REPLACE;
         } else {
             arg1 = args[0];
         }
@@ -852,23 +828,24 @@ public class EncodingUtils {
         arg2 = argc <= 1 ? context.nil : args[1];
         dencindex = strTranscodeEncArgs(context, str, arg1, arg2, sname_p, senc_p, dname_p, denc_p);
 
-        RubyString dest;
+        IRubyObject dest;
         
-        if ((ecflags & (EncodingUtils.ECONV_NEWLINE_DECORATOR_MASK
-                | EncodingUtils.ECONV_XML_TEXT_DECORATOR
-                | EncodingUtils.ECONV_XML_ATTR_CONTENT_DECORATOR
-                | EncodingUtils.ECONV_XML_ATTR_QUOTE_DECORATOR)) == 0) {
-            if (senc_p[0] != null && senc_p[0] == denc_p[0]) {                
-                // TODO: Ruby 2.0 or 2.1 use String#scrub here
-                if ((ecflags & EncodingUtils.ECONV_INVALID_MASK) != 0) {
-                    // TODO: scrub with replacement
-                    dest = (RubyString)str.dup();
-                } else {
-                    // TODO: scrub without replacement
-                    dest = (RubyString)str.dup();
+        if ((ecflags & (EConvFlags.NEWLINE_DECORATOR_MASK
+                | EConvFlags.XML_TEXT_DECORATOR
+                | EConvFlags.XML_ATTR_CONTENT_DECORATOR
+                | EConvFlags.XML_ATTR_QUOTE_DECORATOR)) == 0) {
+            if (senc_p[0] != null && senc_p[0] == denc_p[0]) {
+                if ((ecflags & EConvFlags.INVALID_MASK) != 0 && explicitlyInvalidReplace) {
+                    IRubyObject rep = context.nil;
+                    if (!ecopts.isNil()) {
+                        rep = ((RubyHash)ecopts).op_aref(context, runtime.newString("replace"));
+                    }
+                    dest = ((RubyString)str).scrub(context, rep);
+                    if (dest.isNil()) dest = str;
+                    self_p[0] = dest;
+                    return dencindex;
                 }
-                self_p[0] = dest;
-                return dencindex;
+                return arg2.isNil() ? null : dencindex;
             } else if (senc_p[0] != null && denc_p[0] != null && senc_p[0].isAsciiCompatible() && denc_p[0].isAsciiCompatible()) {
                 if (((RubyString)str).scanForCodeRange() == StringSupport.CR_7BIT) {
                     return dencindex;
@@ -889,7 +866,7 @@ public class EncodingUtils {
         int slen = ((RubyString)str).size();
         int blen = slen + 30;
         dest = RubyString.newStringLight(runtime, blen);
-        ByteList destp = dest.getByteList();
+        ByteList destp = ((RubyString)dest).getByteList();
 
         byte[] frompBytes = fromp.unsafeBytes();
         byte[] destpBytes = destp.unsafeBytes();
@@ -961,7 +938,7 @@ public class EncodingUtils {
     }
 
     public static boolean DECORATOR_P(byte[] sname, byte[] dname) {
-        return sname[0] == 0;
+        return sname == null || sname.length == 0 || sname[0] == 0;
     }
 
     public interface ResizeFunction {
@@ -1099,7 +1076,6 @@ public class EncodingUtils {
     // make_econv_exception
     public static RaiseException makeEconvException(ThreadContext context, EConv ec) {
         Ruby runtime = context.runtime;
-        // TODO: match MRI's exception logic
 
         String mesg;
         RaiseException exc;
@@ -1280,10 +1256,10 @@ public class EncodingUtils {
             throw runtime.newArgumentError("ASCII incompatible encoding needs binmode");
         }
         
-        if ((fmode & OpenFile.BINMODE) == 0 && (EncodingUtils.DEFAULT_TEXTMODE != 0 || (ecflags & EncodingUtils.ECONV_DECORATOR_MASK) != 0)) {
+        if ((fmode & OpenFile.BINMODE) == 0 && (EncodingUtils.DEFAULT_TEXTMODE != 0 || (ecflags & EConvFlags.DECORATOR_MASK) != 0)) {
             fmode |= EncodingUtils.DEFAULT_TEXTMODE;
             fmode_p[0] = fmode;
-        } else if (EncodingUtils.DEFAULT_TEXTMODE == 0 && (ecflags & ECONV_NEWLINE_DECORATOR_MASK) == 0) {
+        } else if (EncodingUtils.DEFAULT_TEXTMODE == 0 && (ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) == 0) {
             fmode &= ~OpenFile.TEXTMODE;
             fmode_p[0] = fmode;
         }
@@ -1527,7 +1503,10 @@ public class EncodingUtils {
                 dname[0] = elt.convertToString().getBytes();
             }
             if (DECORATOR_P(sname[0], dname[0])) {
-                // TODO: decorators
+                boolean ret = ec.addConverter(sname[0], dname[0], ec.numTranscoders);
+                if (!ret) {
+                    throw runtime.newArgumentError("decoration failed: " + new String(dname[0]));
+                }
             } else {
                 int j = ec.numTranscoders;
                 final int[] arg = {0,0};

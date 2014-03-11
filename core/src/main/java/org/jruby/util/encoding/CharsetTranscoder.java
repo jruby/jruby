@@ -29,6 +29,7 @@
 package org.jruby.util.encoding;
 
 import org.jcodings.specific.ISO8859_16Encoding;
+import org.jcodings.transcode.EConvFlags;
 import org.jruby.util.*;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -200,13 +201,13 @@ public class CharsetTranscoder extends EncodingConverter {
                 ((RubyHash)ecopts).op_aref(context, context.runtime.newSymbol("replace")) :
                 context.nil;
         
-        if ((ecflags & (EncodingUtils.ECONV_NEWLINE_DECORATOR_MASK
-                | EncodingUtils.ECONV_XML_TEXT_DECORATOR
-                | EncodingUtils.ECONV_XML_ATTR_CONTENT_DECORATOR
-                | EncodingUtils.ECONV_XML_ATTR_QUOTE_DECORATOR)) == 0) {
+        if ((ecflags & (EConvFlags.NEWLINE_DECORATOR_MASK
+                | EConvFlags.XML_TEXT_DECORATOR
+                | EConvFlags.XML_ATTR_CONTENT_DECORATOR
+                | EConvFlags.XML_ATTR_QUOTE_DECORATOR)) == 0) {
             if (senc != null && senc == denc) {                
                 // TODO: Ruby 2.0 or 2.1 use String#scrub here
-                if ((ecflags & EncodingUtils.ECONV_INVALID_MASK) != 0) {
+                if ((ecflags & EConvFlags.INVALID_MASK) != 0) {
                     // TODO: scrub with replacement
                     return selfByteList;
                 } else {
