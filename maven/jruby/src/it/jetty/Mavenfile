@@ -1,0 +1,111 @@
+#-*- mode: ruby -*-
+
+properties( 'jruby.version' => '9000.dev',
+            'project.build.sourceEncoding' => 'utf-8',
+            'final.name' => '${project.artifactId}',
+            'base.dir' => '${basedir}',
+            'public.dir' => '${base.dir}/public',
+            'webinf.dir' => '${public.dir}/WEB-INF',
+            'classes.dir' => '${webinf.dir}/classes',
+            'lib.dir' => '${base.dir}/lib',
+            'gem.home' => '${classes.dir}',
+            'gem.path' => '${gem.home}',
+            'work.dir' => '${base.dir}/pkg'  )
+
+# ruby-maven will dump an equivalent pom.xml
+properties[ 'tesla.dump.pom' ] = 'pom.xml'
+
+packaging :war
+
+gem 'flickraw', '0.9.7'
+
+repository( 'http://rubygems-proxy.torquebox.org/releases',
+            :id => 'rubygems-releases' )
+
+jar( 'org.jruby:jruby', '${jruby.version}',
+     :exclusions => ['org.jruby:jruby-stdlib' ])
+
+# needed to install gems for the build itself
+jar( 'org.jruby:jruby-stdlib', '${jruby.version}',
+     :scope => :provided )
+
+jar( 'org.jruby.rack:jruby-rack', '1.1.14', 
+     :exclusions => [ 'org.jruby:jruby-complete' ] )
+
+phase 'prepare-package' do
+  plugin( :dependency, '2.8',
+          :artifactItems => [ { :groupId => 'org.jruby',
+                                :artifactId => 'jruby-stdlib',
+                                :version => '${jruby.version}',
+                                :outputDirectory => '${classes.dir}' } ] ) do
+    execute_goal( :unpack )
+  end
+end
+
+# TODO remove jrubyVersion and use installed jruby
+jruby_plugin :gem, :includeRubygemsInTestResources => false, :includeRubygemsInResources => true, :jrubyVersion => '1.7.10' do
+  execute_goal :initialize
+end
+
+plugin!( :clean, '2.5', 
+         :filesets => [ { :directory => '${work.dir}',
+                          :includes => [ '**/*' ] },
+                        { :directory => '${classes.dir}',
+                          :includes => [ '**/*' ] } ] )
+
+build do
+  final_name '${final.name}'
+  directory '${work.dir}'
+  resource do
+    directory '${lib.dir}'
+  end
+end
+
+properties( 'jetty.version' => '9.1.3.v20140225',
+            'jetty.group_id' => 'org.eclipse.jetty' )
+
+plugin( '${jetty.group_id}:jetty-maven-plugin', '${jetty.version}',
+        :path => '/',
+        :webAppSourceDirectory => '${public.dir}',
+        :webXml => '${webinf.dir}/web.xml',
+        :stopPort => 9999,
+        :stopKey => 'foo',
+        :scanIntervalSeconds => 0,
+        :classesDirectory => '${lib.dir}' ) do
+   execute_goal( 'start', :id => 'start jetty', :phase => 'pre-integration-test', :daemon => true )
+   execute_goal( 'stop', :id => 'stop jetty', :phase => 'post-integration-test' )
+end
+
+plugin( :war, '2.2',
+        :warSourceDirectory => '${public.dir}',
+        :warSourceExcludes => [ 'WEB-INF/classes/META-INF/maven/*',
+                                'WEB-INF/classes/META-INF/MANIFEST.MF' ].join(','),
+        :webResources => [ { :directory => '${base.dir}',
+                             :targetPath => 'WEB-INF',
+                             :includes => [ 'config.ru' ] } ],
+        :webXml => '${webinf.dir}/web.xml' )
+
+execute 'setup', :phase => 'initialize' do |ctx|
+  require 'fileutils'
+  webinf = ctx.project.properties[ 'webinf.dir' ].to_s
+  FileUtils.mkdir_p webinf
+  FileUtils.cp( 'config.ru', webinf )
+end
+
+result = nil
+execute 'download', :phase => 'integration-test' do
+  require 'open-uri'
+  result = open( 'http://localhost:8080' ).string
+end
+
+execute 'check download', :phase => :verify do
+  expected = 'hello world:'
+  unless result.match( /^#{expected}/ )
+    raise "missed expected string in download: #{expected}"
+  end
+  expected = 'classes/gems/flickraw-0.9.7'
+  unless result.match( /#{expected}/ )
+    raise "missed expected string in download: #{expected}"
+  end
+end
+# vim: syntax=Ruby

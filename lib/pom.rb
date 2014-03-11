@@ -115,5 +115,11 @@ project 'JRuby Lib Setup' do
         FileUtils.cp( spec, default_specs )
       end
     end
+    # patch the bouncy-castle loading problems
+    # need to match the BC version from the default gem
+    File.open( File.join( shared, 'bouncy-castle-java.rb' ), 'w' ) do |f|
+      f.puts "require 'bcpkix-jdk15on-147.jar'"
+      f.puts "require 'bcprov-jdk15on-147.jar'"
+    end
   end
 end
