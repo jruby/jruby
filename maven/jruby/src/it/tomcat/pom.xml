@@ -8,20 +8,13 @@
   <packaging>war</packaging>
   <name>tomcat</name>
   <properties>
-    <webinf.dir>${public.dir}/WEB-INF</webinf.dir>
-    <tesla.version>0.0.9</tesla.version>
-    <jruby.plugins.version>1.0.0-SNAPSHOT</jruby.plugins.version>
     <jruby.version>9000.dev</jruby.version>
-    <classes.dir>${project.build.outputDirectory}</classes.dir>
-    <gem.home>${classes.dir}</gem.home>
-    <public.dir>${base.dir}/public</public.dir>
-    <final.name>${project.artifactId}</final.name>
     <gem.path>${gem.home}</gem.path>
-    <lib.dir>${base.dir}/src/main/ruby</lib.dir>
-    <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
+    <gem.home>${project.build.outputDirectory}</gem.home>
+    <jruby.plugins.version>1.0.0-rc4</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
-    <base.dir>${basedir}</base.dir>
-    <work.dir>${base.dir}/target</work.dir>
+    <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
+    <tesla.version>0.0.9</tesla.version>
   </properties>
   <dependencies>
     <dependency>
@@ -41,17 +34,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-      <groupId>org.jruby.rack</groupId>
-      <artifactId>jruby-rack</artifactId>
-      <version>1.1.14</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>jruby-complete</artifactId>
-          <groupId>org.jruby</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
   </dependencies>
   <repositories>
     <repository>
@@ -62,10 +44,9 @@
   <build>
     <resources>
       <resource>
-        <directory>${lib.dir}</directory>
+        <directory>src/main/ruby</directory>
       </resource>
     </resources>
-    <finalName>${final.name}</finalName>
     <plugins>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
@@ -101,7 +82,7 @@
               <groupId>org.jruby</groupId>
               <artifactId>jruby-stdlib</artifactId>
               <version>${jruby.version}</version>
-              <outputDirectory>${classes.dir}</outputDirectory>
+              <outputDirectory>${project.build.outputDirectory}</outputDirectory>
             </artifactItem>
           </artifactItems>
         </configuration>
