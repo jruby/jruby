@@ -615,7 +615,7 @@
 	  <executions>
 	    <execution>
 	      <id>pack jruby-noasm.jar</id>
-	      <phase>package</phase>
+	      <phase>verify</phase>
 	      <goals>
 		<goal>shade</goal>
 	      </goals>
@@ -642,26 +642,6 @@
     </pluginManagement>
   </build>
   <profiles>
-    <profile>
-      <id>main</id>
-      <build>
-	<plugins>
-	  <plugin>
-	    <artifactId>maven-shade-plugin</artifactId>
-	  </plugin>
-	</plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>all</id>
-      <build>
-	<plugins>
-	  <plugin>
-	    <artifactId>maven-shade-plugin</artifactId>
-	  </plugin>
-	</plugins>
-      </build>
-    </profile>
     <profile>
       <id>jruby.bash</id>
       <activation>
