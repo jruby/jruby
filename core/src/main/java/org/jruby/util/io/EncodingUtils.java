@@ -9,9 +9,11 @@ import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
 import org.jcodings.specific.UTF32LEEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.transcode.AsciiCompatibility;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvFlags;
 import org.jcodings.transcode.EConvResult;
+import org.jcodings.transcode.Transcoder;
 import org.jcodings.transcode.TranscoderDB;
 import org.jcodings.transcode.Transcoding;
 import org.jruby.Ruby;
@@ -776,7 +778,6 @@ public class EncodingUtils {
         Encoding dencindex = strTranscode0(context, 1, new IRubyObject[]{to}, newstr_p, ecflags, ecopt);
         
         return encodedDup(context, newstr_p[0], str, dencindex);
-        
     }
     
     // str_transcode
@@ -1542,5 +1543,60 @@ public class EncodingUtils {
         ec.destination = encNames[0];
 
         return ec;
+    }
+
+    // decorate_convpath
+    public static int decorateConvpath(ThreadContext context, IRubyObject convpath, int ecflags) {
+        Ruby runtime = context.runtime;
+        int num_decorators;
+        byte[][] decorators = new byte[EConvFlags.MAX_ECFLAGS_DECORATORS][];
+        int i;
+        int n, len;
+
+        num_decorators = TranscoderDB.decoratorNames(ecflags, decorators);
+        if (num_decorators == -1)
+            return -1;
+
+        len = n = ((RubyArray)convpath).size();
+        if (n != 0) {
+            IRubyObject pair = ((RubyArray)convpath).eltOk(n - 1);
+            if (pair instanceof RubyArray) {
+                byte[] sname = runtime.getEncodingService().getEncodingFromObject(((RubyArray)pair).eltOk(0)).getName();
+                byte[] dname = runtime.getEncodingService().getEncodingFromObject(((RubyArray)pair).eltOk(1)).getName();
+                TranscoderDB.Entry entry = TranscoderDB.getEntry(sname, dname);
+                Transcoder tr = entry.getTranscoder();
+                if (tr == null)
+                    return -1;
+                if (!DECORATOR_P(tr.getSource(), tr.getDestination()) &&
+                        tr.compatibility.isEncoder()) {
+                    n--;
+                    ((RubyArray)convpath).store(len + num_decorators - 1, pair);
+                }
+            } else {
+                ((RubyArray)convpath).store(len + num_decorators - 1, pair);
+            }
+        }
+
+        for (i = 0; i < num_decorators; i++)
+            ((RubyArray)convpath).store(n + i, RubyString.newString(runtime, decorators[i]));
+
+        return 0;
+    }
+
+    public static byte[] rbEconvEncodingToInsertOutput(EConv ec) {
+        Transcoding tc = ec.lastTranscoding;
+        Transcoder tr;
+
+        if (tc == null) {
+            return NULL_BYTE_ARRAY;
+        }
+
+        tr = tc.transcoder;
+
+        if (tr.compatibility.isEncoder()) {
+            return tr.getSource();
+        }
+
+        return tr.getDestination();
     }
 }

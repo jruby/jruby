@@ -499,17 +499,19 @@ public class RubyConverter extends RubyObject {
         return ary;
     }
 
-    @JRubyMethod(meta = true)
-    public static IRubyObject search_convpath(ThreadContext context, IRubyObject self, IRubyObject from, IRubyObject to) {
+    @JRubyMethod(meta = true, required = 2, optional = 1)
+    public static IRubyObject search_convpath(ThreadContext context, IRubyObject self, IRubyObject[] argv) {
         final Ruby runtime = context.runtime;
         final IRubyObject nil = context.nil;
-        Encoding fromEnc = runtime.getEncodingService().getEncodingFromObject(from);
-        final byte[] sname = fromEnc.getName();
-        Encoding toEnc = runtime.getEncodingService().getEncodingFromObject(to);
-        final byte[] dname = toEnc.getName();
+        final byte[][] encNames = {null, null};
+        final Encoding[] encs = {null, null};
+        final int[] ecflags_p = {0};
+        final IRubyObject[] ecopts_p = {context.nil};
         final IRubyObject[] convpath = {nil};
 
-        TranscoderDB.searchPath(sname, dname, new TranscoderDB.SearchPathCallback() {
+        EncodingUtils.econvArgs(context, argv, encNames, encs, ecflags_p, ecopts_p);
+
+        TranscoderDB.searchPath(encNames[0], encNames[1], new TranscoderDB.SearchPathCallback() {
             EncodingService es = runtime.getEncodingService();
 
             public void call(byte[] source, byte[] destination, int depth) {
@@ -519,8 +521,8 @@ public class RubyConverter extends RubyObject {
                     convpath[0] = runtime.newArray();
                 }
 
-                if (EncodingUtils.DECORATOR_P(sname, dname)) {
-                    v = RubyString.newString(runtime, dname);
+                if (EncodingUtils.DECORATOR_P(encNames[0], encNames[1])) {
+                    v = RubyString.newString(runtime, encNames[2]);
                 } else {
                     v = runtime.newArray(
                             es.convertEncodingToRubyEncoding(es.findEncodingOrAliasEntry(source).getEncoding()),
@@ -532,13 +534,77 @@ public class RubyConverter extends RubyObject {
         });
 
         if (convpath[0].isNil()) {
-            throw EncodingUtils.econvOpenExc(context, sname, dname, 0);
+            throw EncodingUtils.econvOpenExc(context, encNames[0], encNames[1], 0);
         }
 
-//        if (decorate_convpath(convpath, ecflags) == -1)
-//            rb_exc_raise(rb_econv_open_exc(sname, dname, ecflags));
+        if (EncodingUtils.decorateConvpath(context, convpath[0], ecflags_p[0]) == -1) {
+            throw EncodingUtils.econvOpenExc(context, encNames[0], encNames[1], ecflags_p[0]);
+        }
 
         return convpath[0];
+    }
+
+    // econv_insert_output
+    @JRubyMethod
+    public IRubyObject insert_output(ThreadContext context, IRubyObject string) {
+        Ruby runtime = context.runtime;
+        byte[] insertEnc;
+
+        int ret;
+
+        string = string.convertToString();
+        insertEnc = EncodingUtils.rbEconvEncodingToInsertOutput(ec);
+        string = EncodingUtils.rbStrEncode(
+                context,
+                string,
+                runtime.getEncodingService().findEncodingObject(insertEnc),
+                0,
+                context.nil);
+
+        ByteList stringBL = ((RubyString)string).getByteList();
+        ret = ec.insertOutput(stringBL.getUnsafeBytes(), stringBL.getRealSize(), insertEnc);
+        if (ret == -1) {
+            throw runtime.newArgumentError("too big string");
+        }
+
+        return context.nil;
+    }
+
+    // econv_putback
+    @JRubyMethod(required = 0, optional = 1)
+    public IRubyObject putback(ThreadContext context, IRubyObject[] argv)
+    {
+        Ruby runtime = context.runtime;
+        int n;
+        int putbackable;
+        IRubyObject str, max;
+
+        if (argv.length == 0) {
+            max = context.nil;
+        } else {
+            max = argv[0];
+        }
+
+        if (max.isNil()) {
+            n = ec.putbackable();
+        } else {
+            n = (int)max.convertToInteger().getLongValue();
+            putbackable = ec.putbackable();
+            if (putbackable < n) {
+                n = putbackable;
+            }
+        }
+
+        str = RubyString.newStringLight(runtime, n);
+        ByteList strBL = ((RubyString)str).getByteList();
+        ec.putback(strBL.getUnsafeBytes(), strBL.getBegin(), n);
+        strBL.setRealSize(n);
+
+        if (ec.sourceEncoding != null) {
+            ((RubyString)str).setEncoding(ec.sourceEncoding);
+        }
+
+        return str;
     }
     
     public static class EncodingErrorMethods {
