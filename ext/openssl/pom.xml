@@ -27,14 +27,14 @@
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk15on</artifactId>
-      <version>${bouncy-castle.version}</version>
+      <version>${bc.version}</version>
       <type>jar</type>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
-      <version>${bouncy-castle.version}</version>
+      <version>${bc.version}</version>
       <type>jar</type>
       <scope>provided</scope>
     </dependency>
@@ -75,7 +75,7 @@
                 <artifactItem>
                   <groupId>org.bouncycastle</groupId>
                   <artifactId>bcpkix-jdk15on</artifactId>
-                  <version>${bouncy-castle.version}</version>
+                  <version>${bc.version}</version>
                   <type>jar</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${openssl.dir}</outputDirectory>
@@ -83,7 +83,7 @@
                 <artifactItem>
                   <groupId>org.bouncycastle</groupId>
                   <artifactId>bcprov-jdk15on</artifactId>
-                  <version>${bouncy-castle.version}</version>
+                  <version>${bc.version}</version>
                   <type>jar</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${openssl.dir}</outputDirectory>
