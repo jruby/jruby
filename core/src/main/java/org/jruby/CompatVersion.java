@@ -29,6 +29,10 @@ public enum CompatVersion {
             return CompatVersion.RUBY2_0;
         } else if (compatString.equalsIgnoreCase("2.0")) {
             return CompatVersion.RUBY2_0;
+        } else if (compatString.equalsIgnoreCase("RUBY2_1")) {
+            return CompatVersion.RUBY2_1;
+        } else if (compatString.equalsIgnoreCase("2.1")) {
+            return CompatVersion.RUBY2_1;
         } else {
             return null;
         }
