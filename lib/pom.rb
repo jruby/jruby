@@ -35,6 +35,10 @@ project 'JRuby Lib Setup' do
   repository( 'http://rubygems-proxy.torquebox.org/releases',
               :id => 'rubygems-releases' )
 
+  plugin( :clean,
+          :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
+                           :includes => [ '*' ] } ] )
+
   # tell maven to download the respective gem artifacts
   default_gems.each do |n,k|
     gem n, "${#{k}}"
