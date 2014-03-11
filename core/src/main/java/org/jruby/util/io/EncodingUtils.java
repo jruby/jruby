@@ -494,9 +494,11 @@ public class EncodingUtils {
             opts[0] = context.nil;
             return ecflags;
         }
+
+        RubyHash optHash2 = (RubyHash)opthash;
         ecflags = econvOpts(context, opthash, ecflags);
         
-        v = ((RubyHash)opthash).op_aref(context, context.runtime.newSymbol("replace"));
+        v = optHash2.op_aref(context, context.runtime.newSymbol("replace"));
         if (!v.isNil()) {
             RubyString v_str = v.convertToString();
             if (v_str.scanForCodeRange() == StringSupport.CR_BROKEN) {
@@ -507,12 +509,12 @@ public class EncodingUtils {
             ((RubyHash)newhash).op_aset(context, context.runtime.newSymbol("replace"), v);
         }
         
-        v = ((RubyHash)opthash).op_aref(context, context.runtime.newSymbol("fallback"));
+        v = optHash2.op_aref(context, context.runtime.newSymbol("fallback"));
         if (!v.isNil()) {
             IRubyObject h = TypeConverter.checkHashType(context.runtime, v);
             boolean condition;
             if (h.isNil()) {
-                condition = (h instanceof RubyProc || h instanceof RubyMethod || h.respondsTo("[]"));
+                condition = (v instanceof RubyProc || v instanceof RubyMethod || v.respondsTo("[]"));
             } else {
                 v = h;
                 condition = true;
@@ -810,9 +812,9 @@ public class EncodingUtils {
         int ecflags = 0;
         int argc = args.length;
         IRubyObject[] ecopts_p = {context.nil};
-        
+
         if (args.length >= 1) {
-            IRubyObject tmp = TypeConverter.checkHashType(context.runtime, args[args.length -1]);
+            IRubyObject tmp = TypeConverter.checkHashType(context.runtime, args[args.length - 1]);
             if (!tmp.isNil()) {
                 argc--;
                 ecflags = econvPrepareOpts(context, tmp, ecopts_p);
@@ -981,19 +983,65 @@ public class EncodingUtils {
             return destination.getBegin();
         }
     };
+
+    public interface TranscodeFallback {
+        IRubyObject call(ThreadContext context, IRubyObject fallback, IRubyObject c);
+    }
+
+    private static final TranscodeFallback HASH_FALLBACK = new TranscodeFallback() {
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject fallback, IRubyObject c) {
+            return ((RubyHash)fallback).op_aref(context, c);
+        }
+    };
+
+    private static final TranscodeFallback PROC_FALLBACK = new TranscodeFallback() {
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject fallback, IRubyObject c) {
+            return ((RubyProc)fallback).call(context, new IRubyObject[]{c});
+        }
+    };
+
+    private static final TranscodeFallback METHOD_FALLBACK = new TranscodeFallback() {
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject fallback, IRubyObject c) {
+            return fallback.callMethod(context, "call", c);
+        }
+    };
+
+    private static final TranscodeFallback AREF_FALLBACK = new TranscodeFallback() {
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject fallback, IRubyObject c) {
+            return fallback.callMethod(context, "[]", c);
+        }
+    };
     
     // transcode_loop
     public static void transcodeLoop(ThreadContext context, byte[] inBytes, Ptr inPos, byte[] outBytes, Ptr outPos, int inStop, int _outStop, ByteList destination, ResizeFunction resizeFunction, byte[] sname, byte[] dname, int ecflags, IRubyObject ecopts) {
+        Ruby runtime = context.runtime;
         EConv ec;
         Ptr outStop = new Ptr(_outStop);
+        IRubyObject fallback = context.nil;
+        TranscodeFallback fallbackFunc = null;
         
         ec = econvOpenOpts(context, sname, dname, ecflags, ecopts);
         
         if (ec == null) {
             throw econvOpenExc(context, sname, dname, ecflags);
         }
-        
-        // TODO: fallback function
+
+        if (!ecopts.isNil() && ecopts instanceof RubyHash) {
+            fallback = ((RubyHash)ecopts).op_aref(context, runtime.newSymbol("fallback"));
+            if (fallback instanceof RubyHash) {
+                fallbackFunc = HASH_FALLBACK;
+            } else if (fallback instanceof RubyProc) { // not quite same check as MRI
+                fallbackFunc = PROC_FALLBACK;
+            } else if (fallback instanceof RubyMethod) { // not quite same check as MRI
+                fallbackFunc = METHOD_FALLBACK;
+            } else {
+                fallbackFunc = AREF_FALLBACK;
+            }
+        }
 
         Transcoding lastTC = ec.lastTranscoding;
         int maxOutput = lastTC != null ? lastTC.transcoder.maxOutput : 1;
@@ -1004,12 +1052,36 @@ public class EncodingUtils {
         while (true) {
             EConvResult ret = ec.convert(inBytes, inPos, inStop, outBytes, outPos, outStop.p, 0);
 
-            // TODO: call fallback on error
+            if (!fallback.isNil() && ret == EConvResult.UndefinedConversion) {
+                IRubyObject rep = RubyString.newStringNoCopy(
+                        runtime,
+                        new ByteList(
+                                ec.lastError.errorBytes,
+                                ec.lastError.errorBytesP,
+                                ec.lastError.errorBytesEnd - ec.lastError.errorBytesP,
+                                runtime.getEncodingService().findEncodingOrAliasEntry(ec.lastError.source).getEncoding(),
+                                false)
+                );
+                rep = fallbackFunc.call(context, fallback, rep);
+                if (!rep.isNil()) {
+                    rep = rep.convertToString();
+                    Encoding repEnc = ((RubyString)rep).getEncoding();
+                    ByteList repByteList = ((RubyString)rep).getByteList();
+                    byte[] repBytes = repByteList.bytes(); // inefficient but insertOutput doesn't take index
+                    ec.insertOutput(repBytes, repBytes.length, repEnc.getName());
+
+                    // TODO: check for too-large replacement
+
+                    continue;
+                }
+            }
 
             if (ret == EConvResult.InvalidByteSequence ||
                     ret == EConvResult.IncompleteInput ||
                     ret == EConvResult.UndefinedConversion) {
-                throw makeEconvException(context, ec);
+                RaiseException re = makeEconvException(context, ec);
+                ec.close();
+                throw re;
             }
 
             if (ret == EConvResult.DestinationBufferFull) {
