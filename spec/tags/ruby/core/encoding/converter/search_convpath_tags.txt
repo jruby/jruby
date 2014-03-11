@@ -1,1 +1,0 @@
-fails:Encoding::Converter.search_convpath indicates if crlf_newline conversion would occur

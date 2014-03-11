@@ -1,2 +1,0 @@
-fails:Encoding::Converter#primitive_convert returns :incomplete_input when source buffer ends unexpectedly and :partial_input isn't specified
-critical(hangs):Encoding::Converter#primitive_convert returns :source_buffer_empty when source buffer ends unexpectedly and :partial_input is true

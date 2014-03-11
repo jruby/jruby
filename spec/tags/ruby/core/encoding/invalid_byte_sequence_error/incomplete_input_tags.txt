@@ -1,1 +1,0 @@
-fails:Encoding::InvalidByteSequenceError#incomplete_input? returns true if #primitive_convert returned :incomplete_input for the same data

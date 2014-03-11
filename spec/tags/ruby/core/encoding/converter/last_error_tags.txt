@@ -1,1 +1,0 @@
-fails:Encoding::Converter#last_error returns an Encoding::InvalidByteSequenceError when #primitive_convert last returned :incomplete_input
