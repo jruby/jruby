@@ -1,7 +1,5 @@
 package org.jruby.util;
 
-import java.util.jar.JarFile;
-
 /**
  * Represents a directory in a jar.
  *
@@ -13,8 +11,8 @@ class JarDirectoryResource extends JarResource {
     private final String path;
     private final String[] contents;
 
-    JarDirectoryResource(JarFile jar, String path, String[] contents) {
-        super(jar);
+    JarDirectoryResource(String jarPath, String path, String[] contents) {
+        super(jarPath);
         this.path = path;
         this.contents = contents;
     }

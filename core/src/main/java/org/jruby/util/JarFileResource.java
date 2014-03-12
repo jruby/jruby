@@ -15,8 +15,8 @@ import java.util.jar.JarEntry;
 class JarFileResource extends JarResource {
   private final JarEntry entry;
 
-  JarFileResource(JarFile jar, JarEntry entry) {
-    super(jar);
+  JarFileResource(String jarPath, JarEntry entry) {
+    super(jarPath);
     this.entry = entry;
   }
 

@@ -22,57 +22,56 @@ public abstract class JarResource implements FileResource {
             return null;
         }
 
-        JarFile jar;
-        try {
-          jar = new JarFile(sanitized.substring(0, bang));
-        } catch (IOException ioe) {
-          return null;
-        }
-        
+        String jarPath = sanitized.substring(0, bang);
         String slashPath = sanitized.substring(bang + 1);
         if (!slashPath.startsWith("/")) {
             slashPath = "/" + slashPath;
         }
 
         // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
-        JarResource resource = createJarResource(jar, slashPath);
+        JarResource resource = createJarResource(jarPath, slashPath);
 
         if (resource == null) {
-            resource = createJarResource(jar, slashPath.substring(1));
+            resource = createJarResource(jarPath, slashPath.substring(1));
         }
-
+        
         return resource;
     }
 
-    private static JarResource createJarResource(JarFile jar, String path) {
-        JarCache.JarIndex index = jarCache.getIndex(jar);
+    private static JarResource createJarResource(String jarPath, String path) {
+        JarCache.JarIndex index = jarCache.getIndex(jarPath);
+
+        if (index == null) {
+            // Jar doesn't exist
+            return null;
+        }
 
         // Try it as directory first, because jars tend to have foo/ entries
         // and it's not really possible disambiguate between files and directories.
         String[] entries = index.cachedDirEntries.get(path);
         if (entries != null) {
-          return new JarDirectoryResource(jar, path, entries);
+            return new JarDirectoryResource(jarPath, path, entries);
         }
 
-        JarEntry jarEntry = jar.getJarEntry(path);
+        JarEntry jarEntry = index.getJarEntry(path);
         if (jarEntry != null) {
-          return new JarFileResource(jar, jarEntry);
+            return new JarFileResource(jarPath, jarEntry);
         }
 
         return null;
     }
 
-    protected final JarFile jar;
+    private final String jarPath;
     private final JarFileStat fileStat;
 
-    protected JarResource(JarFile jar) {
-        this.jar = jar;
+    protected JarResource(String jarPath) {
+        this.jarPath = jarPath;
         this.fileStat = new JarFileStat(this);
     }
 
     @Override
     public String absolutePath() {
-        return jar.getName() + "!" + entryName();
+        return jarPath + "!" + entryName();
     }
 
     @Override

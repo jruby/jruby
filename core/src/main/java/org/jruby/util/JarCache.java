@@ -1,5 +1,6 @@
 package org.jruby.util;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -18,69 +19,102 @@ import java.util.jar.JarFile;
   * <p>
   *     Implementation is threadsafe.
   *
-  *     Since loading index information is O(jar-entries), implementation caches index for
-  *     jars with matching names in a WeakHashMap. This all allows a performance boost and
-  *     and automatic GC once the jars aren't being used too much.
+  *     Since loading index information is O(jar-entries) we cache the snapshot in a WeakHashMap.
+  *     The implementation pays attention to lastModified timestamp of the jar and will invalidate
+  *     the cache entry if jar has been updated since the snapshot calculation.
   * </p>
   */
 class JarCache {
-  static class JarIndex {
-    private static final String ROOT_KEY = "";
-    final Map<String, String[]> cachedDirEntries;
+    static class JarIndex {
+        private static final String ROOT_KEY = "";
 
-    JarIndex(JarFile jar) {
-      Map<String, Set<String>> mutableCache = new HashMap<String, Set<String>>();
+        final Map<String, String[]> cachedDirEntries;
+        final JarFile jar;
+        final long snapshotCalculated;
 
-      // Always have a root directory
-      mutableCache.put(ROOT_KEY, new HashSet<String>());
+        JarIndex(String jarPath) throws IOException {
+            this.jar = new JarFile(jarPath);
+            this.snapshotCalculated = new File(jarPath).lastModified();
 
-      Enumeration<JarEntry> entries = jar.entries();
-      while (entries.hasMoreElements()) {
-        JarEntry entry = entries.nextElement();
-        String path = entry.getName();
+            Map<String, Set<String>> mutableCache = new HashMap<String, Set<String>>();
 
-        int lastPathSep;
-        while ((lastPathSep = path.lastIndexOf('/')) != -1) {
-          String dirPath = path.substring(0, lastPathSep); 
+            // Always have a root directory
+            mutableCache.put(ROOT_KEY, new HashSet<String>());
 
-          if (!mutableCache.containsKey(dirPath)) {
-            mutableCache.put(dirPath, new HashSet<String>());
-          }
+            Enumeration<JarEntry> entries = jar.entries();
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+                String path = entry.getName();
 
-          String entryPath = path.substring(lastPathSep + 1);
+                int lastPathSep;
+                while ((lastPathSep = path.lastIndexOf('/')) != -1) {
+                    String dirPath = path.substring(0, lastPathSep); 
 
-          // "" is not really a child path, even if we see foo/ entry
-          if (entryPath.length() > 0) {
-            mutableCache.get(dirPath).add(entryPath);
-          }
+                    if (!mutableCache.containsKey(dirPath)) {
+                        mutableCache.put(dirPath, new HashSet<String>());
+                    }
 
-          path = dirPath;
+                    String entryPath = path.substring(lastPathSep + 1);
+
+                    // "" is not really a child path, even if we see foo/ entry
+                    if (entryPath.length() > 0) {
+                        mutableCache.get(dirPath).add(entryPath);
+                    }
+
+                    path = dirPath;
+                }
+
+                mutableCache.get(ROOT_KEY).add(path);
+            }
+
+            Map<String, String[]> cachedDirEntries = new HashMap<String, String[]>();
+            for (Map.Entry<String, Set<String>> entry : mutableCache.entrySet()) {
+                cachedDirEntries.put(entry.getKey(), entry.getValue().toArray(new String[0]));
+            }
+
+            this.cachedDirEntries = Collections.unmodifiableMap(cachedDirEntries);
         }
 
-        mutableCache.get(ROOT_KEY).add(path);
-      }
+        public JarEntry getJarEntry(String entryPath) {
+            return jar.getJarEntry(entryPath);
+        }
 
-      Map<String, String[]> cachedDirEntries = new HashMap<String, String[]>();
-      for (Map.Entry<String, Set<String>> entry : mutableCache.entrySet()) {
-        cachedDirEntries.put(entry.getKey(), entry.getValue().toArray(new String[0]));
-      }
-      this.cachedDirEntries = Collections.unmodifiableMap(cachedDirEntries);
+        public void release() {
+            try {
+                jar.close();
+            } catch (IOException ioe) { }
+        }
+
+        public boolean isValid() {
+            return new File(jar.getName()).lastModified() <= snapshotCalculated;
+        }
     }
-  }
 
-  private final Map<String, JarIndex> indexCache = new WeakHashMap<String, JarIndex>();
+    private final Map<String, JarIndex> indexCache = new WeakHashMap<String, JarIndex>();
 
-  public JarIndex getIndex(JarFile jar) {
-    String cacheKey = jar.getName();
+    public JarIndex getIndex(String jarPath) {
+        String cacheKey = jarPath;
 
-    synchronized (indexCache) {
-      JarIndex index = indexCache.get(cacheKey);
-      if (index == null) {
-        index = new JarIndex(jar);
-        indexCache.put(cacheKey, index);
-      }
+        synchronized (indexCache) {
+            JarIndex index = indexCache.get(cacheKey);
 
-      return index;
+            // If the index is invalid (jar has changed since snapshot was loaded)
+            // we can just treat it as a "new" index and cache the updated results.
+            if (index != null && !index.isValid()) {
+                index.release();
+                index = null;
+            }
+
+            if (index == null) {
+                try { 
+                    index = new JarIndex(jarPath);
+                    indexCache.put(cacheKey, index);
+                } catch (IOException ioe) {
+                    return null;
+                }
+            }
+
+            return index;
+        }
     }
-  }
 }
