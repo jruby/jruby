@@ -1,16 +1,28 @@
-# the versions are declared in ../pom.xml
-default_gems = { 
-  'jruby-openssl' => 'jopenssl.version',
-  'rake' => 'rake.version',
-  'rdoc' => 'rdoc.version',
-  'json' => 'json.version',
-  'krypt' => 'krypt.version',
-  'krypt-core' => 'krypt.version',
-  'krypt-provider-jdk' => 'krypt.version',
-  'bouncy-castle-java' => 'bc.version'
-}
+class ImportedGem
+  attr_reader :name, :default_gem, :pom_version_key, :ruby_version, :only_spec
 
-only_specs = [ 'rdoc', 'json', 'jruby-openssl' ]
+  def initialize( name, pom_version_key, default_gem, ruby_version = nil )
+    @name = name
+    @default_gem = default_gem
+    @pom_version_key = pom_version_key
+    @ruby_version = ruby_version
+  end
+end
+
+# the versions are declared in ../pom.xml
+default_gems = 
+  [ 
+   ImportedGem.new( 'jruby-openssl', 'jopenssl.version', true ),
+   ImportedGem.new( 'rake', 'rake.version', true ),
+   ImportedGem.new( 'rdoc', 'rdoc.version', true, '2.1' ),
+   ImportedGem.new( 'json', 'json.version', true, '2.1' ),
+   ImportedGem.new( 'krypt', 'krypt.version', true ),
+   ImportedGem.new( 'krypt-core', 'krypt.version', true ),
+   ImportedGem.new( 'krypt-provider-jdk', 'krypt.version', true ),
+   ImportedGem.new( 'bouncy-castle-java', 'bc.version', true )
+  ]
+
+only_specs = [ 'jruby-openssl' ]
 
 project 'JRuby Lib Setup' do
 
@@ -32,9 +44,13 @@ project 'JRuby Lib Setup' do
   repository( 'http://rubygems-proxy.torquebox.org/releases',
               :id => 'rubygems-releases' )
 
+  plugin( :clean,
+          :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
+                           :includes => [ '*' ] } ] )
+
   # tell maven to download the respective gem artifacts
-  default_gems.each do |n,k|
-    gem n, "${#{k}}"
+  default_gems.each do |g|
+    gem g.name, "${#{g.pom_version_key}}"
   end
 
   # this is not an artifact for maven central
@@ -42,10 +58,10 @@ project 'JRuby Lib Setup' do
 
   phase :package do
     plugin :dependency do
-      items = default_gems.collect do |n,k|
+      items = default_gems.collect do |g|
         { 'groupId' =>  'rubygems',
-          'artifactId' =>  n,
-          'version' =>  "${#{k}}",
+          'artifactId' =>  g.name,
+          'version' =>  "${#{g.pom_version_key}}",
           'type' =>  'gem',
           'overWrite' =>  'false',
           'outputDirectory' =>  '${project.build.directory}' }
@@ -69,57 +85,66 @@ project 'JRuby Lib Setup' do
                                'specifications', 'default' )
     bin_stubs = File.join( ctx.project.basedir.to_s, 'ruby', 'gems', 'shared', 
                            'gems' )
-    shared = File.join( ctx.project.basedir.to_s, 'ruby', 'shared' )
+    ruby_dir = File.join( ctx.project.basedir.to_s, 'ruby' )
+    FileUtils.mkdir_p( default_specs )
+
+    # have an empty openssl.rb so we do not run in trob=uble with not having
+    # jopenssl which is part of the default gems
     openssl_dir = File.join( target, 'lib' )
     openssl = File.join( openssl_dir, 'openssl.rb' )
-
-    FileUtils.mkdir_p( default_specs )
     FileUtils.mkdir_p( openssl_dir )
     File.open( openssl, 'w' )
-
-    # in case we run some jruby-complete jar for that script
     $LOAD_PATH.unshift openssl_dir
 
     # now we can require the rubygems staff
     require 'rubygems/installer'
     
-    default_gems.each do |name, key|
-      version = ctx.project.properties.get( key )
+    default_gems.each do |g|
+      version = ctx.project.properties.get( g.pom_version_key )
       
-      if Dir[ File.join( specs, "#{name}-#{version}*.gemspec" ) ].empty?
+      # install the gem unless already installed
+      if Dir[ File.join( specs, "#{g.name}-#{version}*.gemspec" ) ].empty?
         installer = Gem::Installer.new( File.join( ctx.project.build.directory.to_s, 
-                                                   "#{name}-#{version}.gem" ),
+                                                   "#{g.name}-#{version}.gem" ),
                                         :ignore_dependencies => true,
                                         :install_dir => gem_home )
         installer.install 
-        
-        unless only_specs.include? name
-          puts "setup gem #{name}-#{version}"
-          Dir[ File.join( gems, "#{name}-#{version}*", 'lib', '*' ) ].each do |f|
-            FileUtils.cp_r( f, shared )
+
+        puts
+        puts "--- gem #{g.name}-#{version} ---"
+
+        # copy the gem content to shared
+        unless only_specs.include? g.name
+          dir = g.ruby_version || 'shared'
+          puts "copy gem content to ruby/#{dir}"
+          # assume default require_path
+          Dir[ File.join( gems, "#{g.name}-#{version}*", 'lib', '*' ) ].each do |f|
+            FileUtils.cp_r( f, File.join( ruby_dir, dir ) )
           end
         end
         
-        bin = File.join( gems, "#{name}-#{version}", 'bin' )
+        # copy bin files if the gem has any
+        bin = File.join( gems, "#{g.name}-#{version}", 'bin' )
         if File.exists? bin
           Dir[ File.join( bin, '*' ) ].each do |f|
-            puts "copy bin file #{File.basename( f )}"
+            puts "copy to bin: #{File.basename( f )}"
             target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
             FileUtils.mkdir_p( File.dirname( target ) )
             FileUtils.cp_r( f, target )
           end
         end
         
-        spec = Dir[ File.join( specs, "#{name}-#{version}*.gemspec" ) ].first
-        puts "copy specification #{File.basename( spec )}"
+        spec = Dir[ File.join( specs, "#{g.name}-#{version}*.gemspec" ) ].first
+        puts "copy to specifications/default: #{File.basename( spec )}"
         FileUtils.cp( spec, default_specs )
       end
     end
-    # patch the bouncy-castle loading problems
-    # need to match the BC version from the default gem
-    File.open( File.join( shared, 'bouncy-castle-java.rb' ), 'w' ) do |f|
-      f.puts "require 'bcpkix-jdk15on-147.jar'"
-      f.puts "require 'bcprov-jdk15on-147.jar'"
+
+    # patch the bouncy-castle loading problems on certain classloaders
+    File.open( File.join( ruby_dir, 'shared', 'bouncy-castle-java.rb' ), 'w' ) do |f|
+      bc_version = ctx.project.properties.get( 'bouncy-castle.version' )
+      f.puts "require 'bcpkix-jdk15on-#{bc_version}.jar'"
+      f.puts "require 'bcprov-jdk15on-#{bc_version}.jar'"
     end
   end
 end
