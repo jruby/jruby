@@ -1,3 +1,5 @@
+require 'rexml/document'
+require 'rexml/xpath'
 # the versions are declared in ../pom.xml
 default_gems = { 
   'jruby-openssl' => 'jopenssl.version',
@@ -10,12 +12,12 @@ default_gems = {
   'bouncy-castle-java' => 'bc.version'
 }
 
-only_specs = [ 'rdoc', 'json', 'jruby-openssl' ]
+only_specs = [ 'rdoc', 'jruby-openssl' ]
 
 project 'JRuby Lib Setup' do
 
-  doc = REXML::Document.new File.new(File.join(File.join( basedir, 'pom.xml'))
-  version = REXML::XPath.first(doc, "//project/version").text
+  doc = REXML::Document.new File.new(File.join(File.join( basedir, 'pom.xml')))
+  version = REXML::XPath.first(doc, "//project/parent/version").text
   #version = File.read( File.join( basedir, '..', 'VERSION' ) )
 
   model_version '4.0.0'
@@ -94,10 +96,14 @@ project 'JRuby Lib Setup' do
                                         :ignore_dependencies => true,
                                         :install_dir => gem_home )
         installer.install 
-        
+
+        puts
+        puts "--- gem #{name}-#{version} ---"
+
         # copy the gem content to shared
         unless only_specs.include? name
-          puts "setup gem #{name}-#{version}"
+          puts "copy gem content to shared"
+          # assume default require_path
           Dir[ File.join( gems, "#{name}-#{version}*", 'lib', '*' ) ].each do |f|
             FileUtils.cp_r( f, shared )
           end
@@ -107,7 +113,7 @@ project 'JRuby Lib Setup' do
         bin = File.join( gems, "#{name}-#{version}", 'bin' )
         if File.exists? bin
           Dir[ File.join( bin, '*' ) ].each do |f|
-            puts "copy bin file #{File.basename( f )}"
+            puts "copy to bin: #{File.basename( f )}"
             target = File.join( bin_stubs, f.sub( /#{gems}/, '' ) )
             FileUtils.mkdir_p( File.dirname( target ) )
             FileUtils.cp_r( f, target )
@@ -115,14 +121,14 @@ project 'JRuby Lib Setup' do
         end
         
         spec = Dir[ File.join( specs, "#{name}-#{version}*.gemspec" ) ].first
-        puts "copy specification #{File.basename( spec )}"
+        puts "copy to specifications/default: #{File.basename( spec )}"
         FileUtils.cp( spec, default_specs )
       end
     end
 
     # patch the bouncy-castle loading problems on certain classloaders
     File.open( File.join( shared, 'bouncy-castle-java.rb' ), 'w' ) do |f|
-      bc_version = ctx.project.properties.get( 'bc.version' )
+      bc_version = ctx.project.properties.get( 'bouncy-castle.version' )
       f.puts "require 'bcpkix-jdk15on-#{bc_version}.jar'"
       f.puts "require 'bcprov-jdk15on-#{bc_version}.jar'"
     end
