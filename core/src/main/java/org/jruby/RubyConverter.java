@@ -617,6 +617,20 @@ public class RubyConverter extends RubyObject {
 
         return str;
     }
+
+    // econv_equal
+    @JRubyMethod(name = "==")
+    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+        EConv ec1 = ec;
+        EConv ec2;
+        int i;
+
+        if (!(other instanceof RubyConverter)) return context.nil;
+
+        ec2 = ((RubyConverter)other).ec;
+
+        return context.runtime.newBoolean(ec1.equals(ec2));
+    }
     
     public static class EncodingErrorMethods {
         @JRubyMethod
