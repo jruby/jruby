@@ -43,6 +43,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -357,7 +358,7 @@ public class RubyFixnum extends RubyInteger {
     
     public IRubyObject op_plus(ThreadContext context, long otherValue) {
         long result = value + otherValue;
-        if (additionOverflowed(value, otherValue, result)) {
+        if (Helpers.additionOverflowed(value, otherValue, result)) {
             return addAsBignum(context, otherValue);
         }
         return newFixnum(context.runtime, result);
@@ -383,20 +384,12 @@ public class RubyFixnum extends RubyInteger {
     private IRubyObject addFixnum(ThreadContext context, RubyFixnum other) {
         long otherValue = other.value;
         long result = value + otherValue;
-        if (additionOverflowed(value, otherValue, result)) {
+        if (Helpers.additionOverflowed(value, otherValue, result)) {
             return addAsBignum(context, other);
         }
         return newFixnum(context.runtime, result);
     }
-    
-    private static boolean additionOverflowed(long original, long other, long result) {
-        return (~(original ^ other) & (original ^ result) & SIGN_BIT) != 0;
-    }
-    
-    private static boolean subtractionOverflowed(long original, long other, long result) {
-        return (~(original ^ ~other) & (original ^ result) & SIGN_BIT) != 0;
-    }
-    
+
     private IRubyObject addAsBignum(ThreadContext context, RubyFixnum other) {
         return RubyBignum.newBignum(context.runtime, value).op_plus(context, other);
     }
@@ -428,7 +421,7 @@ public class RubyFixnum extends RubyInteger {
 
     public IRubyObject op_minus(ThreadContext context, long otherValue) {
         long result = value - otherValue;
-        if (subtractionOverflowed(value, otherValue, result)) {
+        if (Helpers.subtractionOverflowed(value, otherValue, result)) {
             return subtractAsBignum(context, otherValue);
         }
         return newFixnum(context.runtime, result);
@@ -454,7 +447,7 @@ public class RubyFixnum extends RubyInteger {
     private IRubyObject subtractFixnum(ThreadContext context, RubyFixnum other) {
         long otherValue = other.value;
         long result = value - otherValue;
-        if (subtractionOverflowed(value, otherValue, result)) {
+        if (Helpers.subtractionOverflowed(value, otherValue, result)) {
             return subtractAsBignum(context, other);
         }
         return newFixnum(context.runtime, result);

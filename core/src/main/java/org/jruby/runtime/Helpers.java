@@ -467,6 +467,14 @@ public class Helpers {
         throw jump;
     }
 
+    public static boolean additionOverflowed(long original, long other, long result) {
+        return (~(original ^ other) & (original ^ result) & RubyFixnum.SIGN_BIT) != 0;
+    }
+
+    public static boolean subtractionOverflowed(long original, long other, long result) {
+        return (~(original ^ ~other) & (original ^ result) & RubyFixnum.SIGN_BIT) != 0;
+    }
+
     private static class MethodMissingMethod extends DynamicMethod {
         private final DynamicMethod delegate;
         private final CallType lastCallStatus;
