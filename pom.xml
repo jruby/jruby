@@ -67,7 +67,7 @@
     <tesla.version>0.0.8</tesla.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <tesla.dump.readonly>true</tesla.dump.readonly>
-    <jruby.plugins.version>1.0.0-rc3</jruby.plugins.version>
+    <jruby.plugins.version>1.0.0-rc4</jruby.plugins.version>
     <rake.version>10.1.0</rake.version>
     <rspec.version>2.14.1</rspec.version>
     <rspec-core.version>2.14.2</rspec-core.version>
@@ -79,6 +79,8 @@
     <minitest-excludes.version>1.0.2</minitest-excludes.version>
     <rdoc.version>4.1.0</rdoc.version>
     <json.version>1.8.0</json.version>
+    <jopenssl.version>0.9.3</jopenssl.version>
+    <bc.version>1.5.0147</bc.version>
     <bouncy-castle.version>1.47</bouncy-castle.version>
     <bc.version>1.5.0147</bc.version>
     <krypt.version>0.0.2.rc1</krypt.version>

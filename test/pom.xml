@@ -4,7 +4,11 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
+<<<<<<< HEAD
     <version>9000.dev</version>
+=======
+    <version>1.7.12-SNAPSHOT</version>
+>>>>>>> jruby-1_7
   </parent>
   <artifactId>jruby-tests</artifactId>
   <packaging>jar</packaging>

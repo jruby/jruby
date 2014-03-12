@@ -2,16 +2,16 @@ package org.jruby.util;
 
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
-import org.jruby.Ruby;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public abstract class JarResource implements FileResource {
     private static Pattern PREFIX_MATCH = Pattern.compile("^(?:jar:)?(?:file:)?(.*)$");
+
+    private static final JarCache jarCache = new JarCache();
 
     public static JarResource create(String pathname) {
         Matcher matcher = PREFIX_MATCH.matcher(pathname);
@@ -22,53 +22,56 @@ public abstract class JarResource implements FileResource {
             return null;
         }
 
-        JarFile jar;
-        try {
-            jar = new JarFile(sanitized.substring(0, bang));
-        } catch (IOException e) {
-            return null;
-        }
-        
+        String jarPath = sanitized.substring(0, bang);
         String slashPath = sanitized.substring(bang + 1);
         if (!slashPath.startsWith("/")) {
             slashPath = "/" + slashPath;
         }
 
         // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
-        JarResource resource = createJarResource(jar, slashPath);
+        JarResource resource = createJarResource(jarPath, slashPath);
 
         if (resource == null) {
-            resource = createJarResource(jar, slashPath.substring(1));
+            resource = createJarResource(jarPath, slashPath.substring(1));
         }
-
+        
         return resource;
     }
 
-    private static JarResource createJarResource(JarFile jar, String path) {
-        // Try as directory first, file second, because if test.jar contains:
-        //
-        // test/
-        // test/foo.rb
-        //
-        // file:test.jar!test should be a directory and not a file.
-        JarResource resource = JarDirectoryResource.create(jar, path);
-        if (resource == null) {
-            resource = JarFileResource.create(jar, path);
+    private static JarResource createJarResource(String jarPath, String path) {
+        JarCache.JarIndex index = jarCache.getIndex(jarPath);
+
+        if (index == null) {
+            // Jar doesn't exist
+            return null;
         }
-        return resource;
+
+        // Try it as directory first, because jars tend to have foo/ entries
+        // and it's not really possible disambiguate between files and directories.
+        String[] entries = index.cachedDirEntries.get(path);
+        if (entries != null) {
+            return new JarDirectoryResource(jarPath, path, entries);
+        }
+
+        JarEntry jarEntry = index.getJarEntry(path);
+        if (jarEntry != null) {
+            return new JarFileResource(jarPath, jarEntry);
+        }
+
+        return null;
     }
 
-    protected final JarFile jar;
+    private final String jarPath;
     private final JarFileStat fileStat;
 
-    protected JarResource(JarFile jar) {
-        this.jar = jar;
+    protected JarResource(String jarPath) {
+        this.jarPath = jarPath;
         this.fileStat = new JarFileStat(this);
     }
 
     @Override
     public String absolutePath() {
-        return jar.getName() + "!" + entryName();
+        return jarPath + "!" + entryName();
     }
 
     @Override
