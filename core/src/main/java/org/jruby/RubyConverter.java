@@ -474,24 +474,24 @@ public class RubyConverter extends RubyObject {
         Ruby runtime = context.runtime;
 
         IRubyObject[] values = {
-                runtime.newSymbol(ec.lastError.result.symbolicName()),
+                runtime.newSymbol(ec.lastError.getResult().symbolicName()),
                 context.nil,
                 context.nil,
                 context.nil,
                 context.nil
         };
 
-        if (ec.lastError.source != null) {
-            values[1] = RubyString.newString(runtime, ec.lastError.source);
+        if (ec.lastError.getSource() != null) {
+            values[1] = RubyString.newString(runtime, ec.lastError.getSource());
         }
 
-        if (ec.lastError.destination != null) {
-            values[2] = RubyString.newString(runtime, ec.lastError.destination);
+        if (ec.lastError.getDestination() != null) {
+            values[2] = RubyString.newString(runtime, ec.lastError.getDestination());
         }
 
-        if (ec.lastError.errorBytes != null) {
-            values[3] = RubyString.newString(runtime, ec.lastError.errorBytes, ec.lastError.errorBytesP, ec.lastError.errorBytesEnd - ec.lastError.errorBytesP);
-            values[4] = RubyString.newString(runtime, ec.lastError.errorBytes, ec.lastError.errorBytesEnd, ec.lastError.errorBytesEnd - ec.lastError.readAgainLength);
+        if (ec.lastError.getErrorBytes() != null) {
+            values[3] = RubyString.newString(runtime, ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP(), ec.lastError.getErrorBytesLength());
+            values[4] = RubyString.newString(runtime, ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP() + ec.lastError.getErrorBytesLength(), ec.lastError.getReadAgainLength());
         }
         
         RubyArray ary = RubyArray.newArrayNoCopy(context.runtime, values);
