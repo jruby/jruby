@@ -17,7 +17,7 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
   before :all do
     FileUtils.rm "glob_test/glob-test.jar", :force => true
     begin
-      FileUtils.rmdir "glob_test"
+      FileUtils.rm_rf "glob_test"
     rescue Errno::ENOENT; end
     
     FileUtils.mkdir_p 'glob_target'
@@ -75,6 +75,19 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
         '/glob_target/bar.txt'
       ])
     end
+  end
+
+  it "respects jar content filesystem changes" do
+    jar_path = File.join(Dir.pwd, 'glob_test', 'modified-glob-test.jar')
+    FileUtils.cp 'glob-test.jar', jar_path
+
+    lambda do
+      # Need to sleep a little bit to make sure that modified time is updated
+      sleep 1
+
+      # This should delete the /glob_target and /glob_target/bar.txt entries
+      `zip -d #{jar_path} glob_target/bar.txt`
+    end.should change { Dir.glob("#{jar_path}!/**/*").size }.by -2
   end
 end
 
