@@ -1,5 +1,4 @@
 exclude :test_all_bytes, "needs investigation"
-exclude :test_eucjp_sjis_unassigned, "needs investigation"
 exclude :test_from_cp50221, "needs investigation"
 exclude :test_gb2312, "needs investigation"
 exclude :test_invalid_replace, "needs investigation"
