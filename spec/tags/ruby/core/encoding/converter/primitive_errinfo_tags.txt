@@ -1,5 +1,1 @@
-fails:Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, and the erroneous bytes when #primitive_convert last returned :undefined_conversion
-fails:Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, and erroneous bytes when #primitive_convert last returned :incomplete_input
-fails:Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, erroneous bytes, and the read-again bytes when #primitive_convert last returned :invalid_byte_sequence
-fails:Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, erroneous bytes, and the read-again bytes when #convert last raised InvalidByteSequenceError
 critical(hangs):Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, erroneous bytes, and the read-again bytes when #finish last raised InvalidByteSequenceError

@@ -1,2 +1,0 @@
-fails:Encoding::Converter#putback returns the bytes buffered due to an :invalid_byte_sequence error
-fails:Encoding::Converter#putback accepts an integer argument corresponding to the number of bytes to be put back

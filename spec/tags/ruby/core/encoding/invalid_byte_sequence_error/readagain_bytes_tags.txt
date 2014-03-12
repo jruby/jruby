@@ -1,1 +1,0 @@
-fails:Encoding::InvalidByteSequenceError#readagain_bytes returns the bytes to be read again
