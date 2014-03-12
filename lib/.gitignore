@@ -1,3 +1,5 @@
+ruby/2.1/json*
+ruby/2.1/rdoc*
 ruby/shared/krypt*
 ruby/shared/rake*
 ruby/shared/bouncy-castle-java.rb

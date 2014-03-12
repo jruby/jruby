@@ -142,7 +142,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                 // have a control-flow edge from this call to that block.  Since we dont want to add a
                 // control-flow edge from pretty much every call to the rescuer/exit BB, we are handling it
                 // implicitly here.
-                if (c.canRaiseException()) problem.addLiveLocalVars(liveVars, getExceptionTargetNode().out);
+                if (i.canRaiseException()) problem.addLiveLocalVars(liveVars, getExceptionTargetNode().out);
 
                 // Run LVA on the closure to propagate current LVA state through the closure
                 // SSS FIXME: Think through this .. Is there any way out of having
@@ -179,16 +179,20 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
             }
 
             // If this is a dataflow barrier -- mark all local vars but %self and %block live
-            if (scopeBindingHasEscaped || c.targetRequiresCallersBinding()) {
+            if (scopeBindingHasEscaped) {
                 // System.out.println(".. call is a data flow barrier ..");
                 // Mark all non-self, non-block local variables live if 'c' is a dataflow barrier!
                 for (Variable x: problem.getNonSelfLocalVars()) {
                     if (!x.isImplicitBlockArg()) living.set(problem.getDFVar(x));
                 }
-            } else if (c.canRaiseException()) {
-                makeOutExceptionVariablesLiving(living);
             }
-        } else if (i.canRaiseException()) {
+        }
+
+        // NOTE: This is unnecessary in the case of calls in scopes where
+        // the binding has escaped since the if (scopeBindingHasEscapd) check above
+        // would have handled it. But, extra readability of the DRY-ed version is
+        // worth the the little bit of extra work.
+        if (i.canRaiseException()) {
             makeOutExceptionVariablesLiving(living);
         }
 
@@ -309,15 +313,19 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                     LiveVariablesProblem cl_lvp = (LiveVariablesProblem)cl.getDataFlowSolution(problem.getName());
                     // Collect variables live on entry and merge that info into the current problem.
                     markAllVariablesLive(problem, living, cl_lvp.getVarsLiveOnScopeEntry());
-                } else if (scopeBindingHasEscaped || c.targetRequiresCallersBinding()) {
+                } else if (scopeBindingHasEscaped) {
                     // Mark all non-self, non-block local variables live if 'c' is a dataflow barrier!
                     for (Variable x: problem.getNonSelfLocalVars()) {
                         if (!x.isImplicitBlockArg()) living.set(problem.getDFVar(x));
                     }
-                } else if (c.canRaiseException()) {
-                    makeOutExceptionVariablesLiving(living);
                 }
-            } else if (i.canRaiseException()) {
+            }
+
+            // NOTE: This is unnecessary in the case of calls in scopes where
+            // the binding has escaped since the if (scopeBindingHasEscapd) check above
+            // would have handled it. But, extra readability of the DRY-ed version is
+            // worth the the little bit of extra work.
+            if (i.canRaiseException()) {
                 makeOutExceptionVariablesLiving(living);
             }
 
