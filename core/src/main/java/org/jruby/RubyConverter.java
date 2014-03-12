@@ -231,7 +231,6 @@ public class RubyConverter extends RubyObject {
             } else {
                 outputByteOffsetObj = args[2];
                 outputByteoffset = (int)args[2].convertToInteger().getLongValue();
-                if (outputByteoffset < 0) throw runtime.newArgumentError("negative offset");
             }
         }
         
@@ -241,7 +240,6 @@ public class RubyConverter extends RubyObject {
             } else {
                 outputBytesizeObj = args[3];
                 outputBytesize = (int)args[3].convertToInteger().getLongValue();
-                if (outputBytesize < 0) throw runtime.newArgumentError("negative bytesize");
             }
         }
         
@@ -257,7 +255,7 @@ public class RubyConverter extends RubyObject {
             }
         }
         
-        IRubyObject opt = context.nil;
+        IRubyObject opt;
         if (hashArg != -1 &&
                 !(opt = TypeConverter.checkHashType(runtime, args[hashArg])).isNil()) {
             IRubyObject v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("partial_input"));
@@ -298,25 +296,38 @@ public class RubyConverter extends RubyObject {
         while (true) {
             if (outputByteOffsetObj.isNil()) {
                 outputByteoffset = outBytes.getRealSize();
-            } else if (outputByteoffset > outBytes.getRealSize()) {
-                throw runtime.newArgumentError("offset too big");
             }
 
-            int outputByteEnd = outputByteoffset + outputBytesize;
-
-            if (outputByteEnd > outBytes.getRealSize()) {
-                outBytes.ensure(outputByteEnd);
+            if (outputByteoffset < 0) {
+                throw runtime.newArgumentError("negative output offset");
             }
+
+            if (outBytes.getRealSize() < outputByteoffset) {
+                throw runtime.newArgumentError("output offset too big");
+            }
+
+            if (outputBytesize < 0) {
+                throw runtime.newArgumentError("negative bytesize");
+            }
+
+            long outputByteEnd = outputByteoffset + outputBytesize;
+
+            if (outputByteEnd > Integer.MAX_VALUE) {
+                // overflow check
+                throw runtime.newArgumentError("output offset + bytesize too big");
+            }
+
+            outBytes.ensure((int)outputByteEnd);
 
             inPtr.p = inBytes.getBegin();
             outPtr.p = outBytes.getBegin() + outputByteoffset;
             int os = outPtr.p + outputBytesize;
             EConvResult res = ec.convert(inBytes.getUnsafeBytes(), inPtr, inBytes.getRealSize() + inPtr.p, outBytes.getUnsafeBytes(), outPtr, os, flags);
 
-            outBytes.setRealSize(outPtr.p);
+            outBytes.setRealSize(outPtr.p - outBytes.begin());
 
             if (input != null) {
-                input.getByteList().delete(0, inPtr.p);
+                input.getByteList().delete(inBytes.getBegin(), inPtr.p - inBytes.getBegin());
             }
 
             if (outputBytesizeObj.isNil() && res == EConvResult.DestinationBufferFull) {
