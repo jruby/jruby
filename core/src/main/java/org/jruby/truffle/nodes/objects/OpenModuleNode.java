@@ -53,6 +53,8 @@ public class OpenModuleNode extends RubyNode {
                 Object obj = node.execute(frame);
                 if (obj instanceof NilPlaceholder){
                     throw new RaiseException(getContext().getCoreLibrary().typeError("No outer class"));
+                } else if (!(obj instanceof RubyModule)) {
+                    throw new RaiseException(getContext().getCoreLibrary().typeError(obj + " is not a class/module"));
                 }
             }
         }

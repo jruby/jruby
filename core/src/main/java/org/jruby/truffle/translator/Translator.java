@@ -574,10 +574,19 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         ArrayList<RubyNode> nodes = new ArrayList<RubyNode>();
 
         if (node != null && node.getCPath() != null) {
+
             for(org.jruby.ast.Node n : node.getCPath().childNodes()){
                 if (n instanceof org.jruby.ast.NilNode){
                     NilNode nilNode = (NilNode) visitNilNode((org.jruby.ast.NilNode) n);
                     nodes.add(nilNode);
+                } else if(n instanceof Colon2ConstNode) {
+                    Colon2ConstNode parentNode = ((Colon2ConstNode) n);
+                    final RubyNode lhs = (RubyNode) parentNode.getLeftNode().accept(this);
+                    nodes.add(new UninitializedReadConstantNode(context, translate(node.getPosition()), parentNode.getName(), lhs, false));
+                } else if(n instanceof ConstNode){
+                    ConstNode parentNode = ((ConstNode) n);
+                    final SourceSection s = translate(node.getPosition());
+                    nodes.add(new UninitializedReadConstantNode(context, s, parentNode.getName(), new SelfNode(context, s), false));
                 }
             }
         }
