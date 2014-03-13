@@ -1,6 +1,6 @@
 project 'JRuby Main Maven Artifact' do
 
-  version = '9000.dev' #File.read( File.join( basedir, '..', '..', 'VERSION' ) )
+  version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
   id "org.jruby:jruby:#{version}"

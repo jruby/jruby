@@ -42,11 +42,11 @@ default_gems =
 
 project 'JRuby Lib Setup' do
 
-  version = '9000.dev' #File.read( File.join( basedir, '..', 'VERSION' ) )
+  version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
-  id "org.jruby:jruby-lib:#{version}"
-  inherit "org.jruby:jruby-parent:#{version}"
+  id 'jruby-lib'
+  inherit "org.jruby:jruby-parent", version
   packaging 'pom'
 
   properties( 'tesla.dump.pom' => 'pom.xml',
