@@ -31,7 +31,7 @@ import static org.jruby.ir.IRFlags.CAN_CAPTURE_CALLERS_BINDING;
 import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
 import static org.jruby.ir.IRFlags.USES_EVAL;
 
-public abstract class CallBase extends Instr implements Specializeable {
+public abstract class CallBase extends Instr implements Specializeable, ClosureAcceptingInstr {
     private static long callSiteCounter = 1;
 
     public final long callSiteId;
@@ -76,6 +76,11 @@ public abstract class CallBase extends Instr implements Specializeable {
 
     public MethAddr getMethodAddr() {
         return methAddr;
+    }
+
+    /** From interface ClosureAcceptingInstr */
+    public Operand getClosureArg() {
+        return closure;
     }
 
     public Operand getClosureArg(Operand ifUnspecified) {

@@ -36,6 +36,7 @@
 package org.jruby;
 
 import jnr.constants.platform.OpenFlags;
+import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
@@ -1057,8 +1058,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(args.length - 2);
     }
     
-    @JRubyMethod(name = {"unlink", "delete"}, rest = true, meta = true)
-    public static IRubyObject unlink(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    @JRubyMethod(rest = true, meta = true)
+    public static IRubyObject delete(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
          
         for (int i = 0; i < args.length; i++) {
@@ -1082,6 +1083,40 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         
         return runtime.newFixnum(args.length);
+    }
+
+    @JRubyMethod(rest = true, meta = true)
+    public static IRubyObject unlink(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        POSIX posix = runtime.getPosix();
+
+        if (!posix.isNative()) return delete(context, recv, args);
+
+        for (int i = 0; i < args.length; i++) {
+            RubyString filename = get_path(context, args[i]);
+            JRubyFile lToDelete = JRubyFile.create(runtime.getCurrentDirectory(), filename.getUnicodeValue());
+
+            boolean isSymlink = RubyFileTest.symlink_p(recv, filename).isTrue();
+            // Broken symlinks considered by exists() as non-existing,
+            // so we need to check for symlinks explicitly.
+            if (!lToDelete.exists() && !isSymlink) {
+                throw runtime.newErrnoENOENTError(filename.getUnicodeValue());
+            }
+
+            if (lToDelete.isDirectory() && !isSymlink) {
+                throw runtime.newErrnoEPERMError(filename.getUnicodeValue());
+            }
+
+            if (posix.unlink(lToDelete.getAbsolutePath()) < 0) {
+                throw runtime.newErrnoFromInt(posix.errno());
+            }
+        }
+
+        return runtime.newFixnum(args.length);
+    }
+
+    public static IRubyObject unlink(ThreadContext context, IRubyObject... args) {
+        return unlink(context, context.runtime.getFile(), args);
     }
 
     @JRubyMethod
