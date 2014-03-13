@@ -958,6 +958,7 @@ public class EncodingUtils {
     public static final ResizeFunction strTranscodingResize = new ResizeFunction() {
         @Override
         public int resize(ByteList destination, int len, int new_len) {
+            destination.setRealSize(len);
             destination.ensure(new_len);
             return destination.getBegin();
         }
