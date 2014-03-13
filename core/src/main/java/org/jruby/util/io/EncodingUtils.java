@@ -9,7 +9,6 @@ import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
 import org.jcodings.specific.UTF32LEEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jcodings.transcode.AsciiCompatibility;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvFlags;
 import org.jcodings.transcode.EConvResult;
