@@ -23,9 +23,21 @@
       <version>9000.dev</version>
     </dependency>
     <dependency>
-      <groupId>rubygems</groupId>
+      <groupId>org.jruby.gems</groupId>
       <artifactId>jruby-openssl</artifactId>
-      <version>${jopenssl.version}</version>
+      <version>0.9.5.dev-SNAPSHOT</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby.gems</groupId>
+      <artifactId>jruby-readline</artifactId>
+      <version>1.0.dev-SNAPSHOT</version>
+      <type>gem</type>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby.gems</groupId>
+      <artifactId>jruby-ripper</artifactId>
+      <version>2.1.0.dev-SNAPSHOT</version>
       <type>gem</type>
     </dependency>
     <dependency>
@@ -80,6 +92,19 @@
   <build>
     <plugins>
       <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>${basedir}/ruby/gems/shared/specifications/default</directory>
+              <includes>
+                <include>*</include>
+              </includes>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+      <plugin>
         <artifactId>maven-deploy-plugin</artifactId>
         <configuration>
           <skip>true</skip>
@@ -97,9 +122,25 @@
             <configuration>
               <artifactItems>
                 <artifactItem>
-                  <groupId>rubygems</groupId>
+                  <groupId>org.jruby.gems</groupId>
                   <artifactId>jruby-openssl</artifactId>
-                  <version>${jopenssl.version}</version>
+                  <version>0.9.5.dev-SNAPSHOT</version>
+                  <type>gem</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}</outputDirectory>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.jruby.gems</groupId>
+                  <artifactId>jruby-readline</artifactId>
+                  <version>1.0.dev-SNAPSHOT</version>
+                  <type>gem</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}</outputDirectory>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.jruby.gems</groupId>
+                  <artifactId>jruby-ripper</artifactId>
+                  <version>2.1.0.dev-SNAPSHOT</version>
                   <type>gem</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
