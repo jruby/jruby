@@ -1500,7 +1500,7 @@ public class EncodingUtils {
                 dname_v[0] = ((RubyArray)pair).eltOk(1);
                 encArg(context, dname_v[0], dname, denc);
             } else {
-                sname[0] = new byte[0];
+                sname[0] = NULL_BYTE_ARRAY;
                 dname[0] = elt.convertToString().getBytes();
             }
             if (DECORATOR_P(sname[0], dname[0])) {
