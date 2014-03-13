@@ -22,6 +22,10 @@ properties( 'tesla.version' => '0.0.9',
 jar( 'org.jruby:jruby:${jruby.version}',
      :exclusions => 'org.jruby:jruby-stdlib' )
 
+# needed to install gems for the build itself
+jar( 'org.jruby:jruby-stdlib', '${jruby.version}',
+     :scope => :provided )
+
 plugin( :dependency, '2.8',
         'artifactItems' => [ { 'groupId' =>  'org.jruby',
                                'artifactId' =>  'jruby-stdlib',
