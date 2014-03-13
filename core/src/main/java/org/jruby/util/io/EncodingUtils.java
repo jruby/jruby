@@ -700,13 +700,14 @@ public class EncodingUtils {
     
     // enc_arg
     public static Encoding encArg(ThreadContext context, IRubyObject encval, byte[][] name_p, Encoding[] enc_p) {
-        if ((enc_p[0] = toEncodingIndex(context, encval)) == null) {
-            name_p[0] = ((RubyString)encval.anyToString()).getBytes();
+        Encoding enc;
+        if ((enc = toEncodingIndex(context, encval)) == null) {
+            name_p[0] = encval.convertToString().getBytes();
         } else {
-            name_p[0] = enc_p[0].getName();
+            name_p[0] = enc.getName();
         }
-        
-        return enc_p[0];
+
+        return enc_p[0] = enc;
     }
     
     // rb_to_encoding_index
