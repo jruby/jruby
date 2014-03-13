@@ -1433,18 +1433,21 @@ public class EncodingUtils {
         IRubyObject flags = context.nil;
         IRubyObject opt = context.nil;
 
-        switch (args.length) {
-            case 3:
-                flags = args[2];
-            case 2:
-                dnamev = args[1];
-            case 1:
-                snamev = args[0];
-        }
+        // scan args logic
+        {
+            switch (args.length) {
+                case 3:
+                    flags = args[2];
+                case 2:
+                    dnamev = args[1];
+                case 1:
+                    snamev = args[0];
+            }
 
-        if (!TypeConverter.checkHashType(runtime, flags).isNil()) {
-            opt = flags;
-            flags = context.nil;
+            if (!(flags = TypeConverter.checkHashType(runtime, flags)).isNil()) {
+                opt = flags;
+                flags = context.nil;
+            }
         }
 
         if (!flags.isNil()) {

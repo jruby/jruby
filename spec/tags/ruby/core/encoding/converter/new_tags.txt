@@ -1,1 +1,0 @@
-fails:Encoding::Converter.new calls #to_hash to convert the options argument to a Hash if not a Fixnum
