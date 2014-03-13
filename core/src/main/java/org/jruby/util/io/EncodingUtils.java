@@ -1510,7 +1510,7 @@ public class EncodingUtils {
                 }
             } else {
                 int j = ec.numTranscoders;
-                final int[] arg = {0,0};
+                final int[] arg = {j,0};
                 int ret = TranscoderDB.searchPath(sname[0], dname[0], new TranscoderDB.SearchPathCallback() {
                     @Override
                     public void call(byte[] source, byte[] destination, int depth) {
