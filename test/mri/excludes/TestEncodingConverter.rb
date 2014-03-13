@@ -1,5 +1,1 @@
 exclude :test_default_external, "needs investigation"
-exclude :test_iso2022jp_invalid_replace, "needs investigation"
-exclude :test_newline_option, "unknown encoding name -"
-exclude :test_noconv_insert_output, "needs investigation"
-exclude :test_s_new_convpath, "needs investigation"

@@ -1,7 +1,6 @@
 exclude :test_all_bytes, "needs investigation"
 exclude :test_from_cp50221, "needs investigation"
 exclude :test_gb2312, "needs investigation"
-exclude :test_invalid_replace, "needs investigation"
 exclude :'test_pseudo_encoding_inspect(UTF-16)', "needs investigation"
 exclude :'test_pseudo_encoding_inspect(UTF-32)', "needs investigation"
 exclude :test_to_cp50221, "needs investigation"
