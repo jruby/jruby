@@ -6,8 +6,8 @@ name "JRuby Jars Gem"
 # tell maven to include the jar files into gem
 gemspec :include_jars => true
 
-#version = File.read( File.join( basedir, '..', '..', 'VERSION' ) )
-version = model.version.gsub( /-SNAPSHOT$/, '' ).sub(/\.SNAPSHOT/, '-SNAPSHOT')
+version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
+version.gsub!( /-SNAPSHOT$/, '' )
 # overwrite the version from gemspec
 model.version = version
 inherit "org.jruby:jruby-artifacts:#{model.version}"
