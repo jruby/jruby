@@ -241,12 +241,12 @@ public class BN extends RubyObject {
     public IRubyObject bn_coerce(IRubyObject other) {
         Ruby runtime = getRuntime();
         IRubyObject self;
-        switch (other.getMetaClass().getClassIndex()) {
-        case STRING:
+        switch (other.getMetaClass().index) {
+        case ClassIndex.STRING:
             self = runtime.newString(value.toString());
             break;
-        case FIXNUM:
-        case BIGNUM:
+        case ClassIndex.FIXNUM:
+        case ClassIndex.BIGNUM:
             // FIXME: s/b faster way to convert than going through RubyString
             self = RubyNumeric.str2inum(runtime, runtime.newString(value.toString()), 10, true);
             break;
@@ -360,15 +360,15 @@ public class BN extends RubyObject {
         // the value would take a very, very long time to calculate.)
         // we'll check for values < 0 (illegal) while we're at it
         int exp;
-        switch(other.getMetaClass().getClassIndex()) {
-        case FIXNUM: {
+        switch(other.getMetaClass().index) {
+        case ClassIndex.FIXNUM: {
             long val = ((RubyFixnum)other).getLongValue();
             if (val >= 0 && val <= Integer.MAX_VALUE) {
                 exp = (int)val;
                 break;
             }
         }
-        case BIGNUM:
+        case ClassIndex.BIGNUM:
             // Bignum is inherently too big
             throw newBNError(getRuntime(), "invalid exponent");
         default: {
@@ -787,9 +787,9 @@ public class BN extends RubyObject {
     
     public static BigInteger getBigInteger(IRubyObject arg) {
         if (arg.isNil()) return null;
-        switch(arg.getMetaClass().getClassIndex()) {
-        case FIXNUM:
-        case BIGNUM:
+        switch(arg.getMetaClass().index) {
+        case ClassIndex.FIXNUM:
+        case ClassIndex.BIGNUM:
             return new BigInteger(arg.toString());
         default:
             if (arg instanceof BN) {
