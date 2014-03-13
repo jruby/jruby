@@ -1,124 +1,108 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-ext</artifactId>
     <version>9000.dev</version>
   </parent>
-  <artifactId>openssl</artifactId>
-  <version>0.9.4</version>
-  <packaging>jar</packaging>
-
+  <groupId>org.jruby.gems</groupId>
+  <artifactId>jruby-openssl</artifactId>
+  <version>0.9.5.dev-SNAPSHOT</version>
+  <packaging>gem</packaging>
   <name>JRuby OpenSSL</name>
-
+  <description>JRuby-OpenSSL is an add-on gem for JRuby that emulates the Ruby OpenSSL native library.</description>
+  <url>https://github.com/jruby/jruby</url>
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <openssl.dir>${project.basedir}/../../lib/ruby/shared</openssl.dir>
-    <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
+    <gem.path>${gem.home}</gem.path>
+    <gem.home>../target/rubygems</gem.home>
+    <jruby.plugins.version>1.0.0-rc4</jruby.plugins.version>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
   </properties>
-
   <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-    </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk15on</artifactId>
-      <version>${bouncy-castle.version}</version>
-      <type>jar</type>
-      <scope>provided</scope>
+      <version>1.47</version>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
-      <version>${bouncy-castle.version}</version>
-      <type>jar</type>
-      <scope>provided</scope>
+      <version>1.47</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
-      <artifactId>jruby-core</artifactId>
-      <version>${project.parent.version}</version>
+      <artifactId>jruby</artifactId>
+      <version>1.7.11</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
-  
+  <repositories>
+    <repository>
+      <id>rubygems-releases</id>
+      <url>http://rubygems-proxy.torquebox.org/releases</url>
+    </repository>
+  </repositories>
   <build>
+    <extensions>
+      <extension>
+        <groupId>de.saumya.mojo</groupId>
+        <artifactId>gem-extension</artifactId>
+        <version>${jruby.plugins.version}</version>
+      </extension>
+    </extensions>
+    <directory>${basedir}/pkg</directory>
     <plugins>
       <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.4</version>
+        <executions>
+          <execution>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
         <configuration>
-          <encoding>utf-8</encoding>
-          <debug>true</debug>
-          <verbose>true</verbose>
-          <fork>true</fork>
-          <showWarnings>true</showWarnings>
-          <showDeprecation>true</showDeprecation>
-          <source>${base.java.version}</source>
-          <target>${base.javac.version}</target>
+          <outputDirectory>lib</outputDirectory>
+          <finalName>jopenssl</finalName>
         </configuration>
       </plugin>
       <plugin>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy bouncy-castle</id>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>copy</goal>
-            </goals>
-            <configuration>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>org.bouncycastle</groupId>
-                  <artifactId>bcpkix-jdk15on</artifactId>
-                  <version>${bouncy-castle.version}</version>
-                  <type>jar</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${openssl.dir}</outputDirectory>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>org.bouncycastle</groupId>
-                  <artifactId>bcprov-jdk15on</artifactId>
-                  <version>${bouncy-castle.version}</version>
-                  <type>jar</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${openssl.dir}</outputDirectory>
-                </artifactItem>
-              </artifactItems>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <outputFile>${openssl.dir}/jopenssl.jar</outputFile>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <artifactId>maven-clean-plugin</artifactId>
+        <version>2.4</version>
         <configuration>
           <filesets>
             <fileset>
-              <directory>${openssl.dir}</directory>
+              <directory>lib</directory>
               <includes>
-                <include>bc*-jdk15on-*.jar</include>
                 <include>jopenssl.jar</include>
               </includes>
             </fileset>
           </filesets>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>de.saumya.mojo</groupId>
+        <artifactId>gem-maven-plugin</artifactId>
+        <version>${jruby.plugins.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>initialize</goal>
+            </goals>
+            <configuration>
+              <lib>non-existing</lib>
+            </configuration>
+          </execution>
+        </executions>
+        <configuration>
+          <gemspec>jruby-openssl.gemspec</gemspec>
+          <includeDependencies>true</includeDependencies>
         </configuration>
       </plugin>
     </plugins>

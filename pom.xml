@@ -40,7 +40,9 @@
   </repositories>
 
   <modules>
+<!--
     <module>ext</module>
+-->
     <module>core</module>
     <module>lib</module>
   </modules>
@@ -84,7 +86,6 @@
     <bouncy-castle.version>1.47</bouncy-castle.version>
     <bc.version>1.5.0147</bc.version>
     <krypt.version>0.0.2.rc1</krypt.version>
-    <jopenssl.version>0.9.4</jopenssl.version>
     <ant.version>1.9.2</ant.version>
     <joda.time.version>2.3</joda.time.version>
     <jffi.version>1.2.7</jffi.version>
