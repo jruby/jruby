@@ -565,7 +565,7 @@ public class RubyConverter extends RubyObject {
         int ret;
 
         string = string.convertToString();
-        insertEnc = EncodingUtils.rbEconvEncodingToInsertOutput(ec);
+        insertEnc = ec.encodingToInsertOutput();
         string = EncodingUtils.rbStrEncode(
                 context,
                 string,
@@ -574,7 +574,7 @@ public class RubyConverter extends RubyObject {
                 context.nil);
 
         ByteList stringBL = ((RubyString)string).getByteList();
-        ret = ec.insertOutput(stringBL.getUnsafeBytes(), stringBL.getRealSize(), insertEnc);
+        ret = ec.insertOutput(stringBL.getUnsafeBytes(), stringBL.getBegin(), stringBL.getRealSize(), insertEnc);
         if (ret == -1) {
             throw runtime.newArgumentError("too big string");
         }

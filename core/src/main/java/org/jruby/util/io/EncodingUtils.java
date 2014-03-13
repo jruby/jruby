@@ -1047,7 +1047,7 @@ public class EncodingUtils {
                     Encoding repEnc = ((RubyString)rep).getEncoding();
                     ByteList repByteList = ((RubyString)rep).getByteList();
                     byte[] repBytes = repByteList.bytes(); // inefficient but insertOutput doesn't take index
-                    ec.insertOutput(repBytes, repBytes.length, repEnc.getName());
+                    ec.insertOutput(repByteList.getUnsafeBytes(), repByteList.begin(), repByteList.getRealSize(), repEnc.getName());
 
                     // TODO: check for too-large replacement
 
@@ -1584,20 +1584,4 @@ public class EncodingUtils {
         return 0;
     }
 
-    public static byte[] rbEconvEncodingToInsertOutput(EConv ec) {
-        Transcoding tc = ec.lastTranscoding;
-        Transcoder tr;
-
-        if (tc == null) {
-            return NULL_BYTE_ARRAY;
-        }
-
-        tr = tc.transcoder;
-
-        if (tr.compatibility.isEncoder()) {
-            return tr.getSource();
-        }
-
-        return tr.getDestination();
-    }
 }
