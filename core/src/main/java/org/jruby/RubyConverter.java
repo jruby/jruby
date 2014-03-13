@@ -327,7 +327,8 @@ public class RubyConverter extends RubyObject {
             outBytes.setRealSize(outPtr.p - outBytes.begin());
 
             if (input != null) {
-                input.getByteList().delete(inBytes.getBegin(), inPtr.p - inBytes.getBegin());
+                input.getByteList().setRealSize(inBytes.getRealSize() - (inPtr.p - inBytes.getBegin()));
+                input.getByteList().setBegin(inPtr.p);
             }
 
             if (outputBytesizeObj.isNil() && res == EConvResult.DestinationBufferFull) {
