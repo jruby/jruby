@@ -28,8 +28,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.cli;
 
-import com.oracle.truffle.api.Truffle;
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.exceptions.MainExitException;
@@ -440,6 +438,28 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--disable-gems")) {
                         config.setDisableGems(true);
                         break FOR;
+                    } else if (argument.equals("--disable")) {
+                        errorMissingDisable();
+                    } else if (argument.startsWith("--disable=")) {
+                        String disablesStr = argument.substring("--disable=".length());
+                        String[] disables = disablesStr.split(",");
+
+                        if (disables.length == 0) errorMissingDisable();
+
+                        for (String disable : disables) {
+                            boolean all = disable.equals("all");
+                            if (disable.equals("gems") || all) {
+                                config.setDisableGems(true);
+                                continue;
+                            }
+                            if (disable.equals("rubyopt") || all) {
+                                config.setDisableRUBYOPT(true);
+                                continue;
+                            }
+
+                            config.getError().println("warning: unknown argument for --disable: `" + disable + "'");
+                        }
+                        break FOR;
                     } else if (argument.equals("--gemfile")) {
                         config.setLoadGemfile(true);
                         break FOR;
@@ -484,6 +504,13 @@ public class ArgumentProcessor {
                     throw new MainExitException(1, "jruby: unknown option " + argument);
             }
         }
+    }
+
+    private void errorMissingDisable() {
+        MainExitException mee;
+        mee = new MainExitException(1, "missing argument for --disable\n");
+        mee.setUsageError(true);
+        throw mee;
     }
 
     private void processEncodingOption(String value) {

@@ -1136,6 +1136,13 @@ public class RubyInstanceConfig {
     }
 
     /**
+     * @see Options.CLI_RUBYOPT_ENABLE
+     */
+    public void setDisableRUBYOPT(boolean dr) {
+        this.disableRUBYOPT = dr;
+    }
+
+    /**
      * @see Options.CLI_RUBYGEMS_ENABLE
      */
     public void setDisableGems(boolean dg) {
@@ -1433,6 +1440,7 @@ public class RubyInstanceConfig {
     private String threadDumpSignal = null;
     private boolean hardExit = false;
     private boolean disableGems = !Options.CLI_RUBYGEMS_ENABLE.load();
+    private boolean disableRUBYOPT = !Options.CLI_RUBYOPT_ENABLE.load();
     private boolean updateNativeENVEnabled = true;
     private boolean kernelGsubDefined;
     private boolean hasScriptArgv = false;
