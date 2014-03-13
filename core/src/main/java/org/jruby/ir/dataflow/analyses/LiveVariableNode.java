@@ -11,7 +11,7 @@ import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowConstants;
 import org.jruby.ir.dataflow.FlowGraphNode;
-import org.jruby.ir.instructions.CallBase;
+import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.LocalVariable;
@@ -106,9 +106,8 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
 
         // Check if 'i' is a call and uses a closure!
         // If so, we need to process the closure for live variable info.
-        if (i instanceof CallBase) {
-            CallBase c = (CallBase) i;
-            Operand  o = c.getClosureArg(null);
+        if (i instanceof ClosureAcceptingInstr) {
+            Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
             // System.out.println("Processing closure: " + o + "-------");
             if (o != null && o instanceof WrappedIRClosure) {
                 IRClosure cl = ((WrappedIRClosure)o).getClosure();
@@ -305,9 +304,8 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                 // System.out.println("IGNORING! No result!");
             }
 
-            if (i instanceof CallBase) {
-                CallBase c = (CallBase) i;
-                Operand  o = c.getClosureArg(null);
+            if (i instanceof ClosureAcceptingInstr) {
+                Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
                 if (o != null && o instanceof WrappedIRClosure) {
                     IRClosure cl = ((WrappedIRClosure)o).getClosure();
                     LiveVariablesProblem cl_lvp = (LiveVariablesProblem)cl.getDataFlowSolution(problem.getName());

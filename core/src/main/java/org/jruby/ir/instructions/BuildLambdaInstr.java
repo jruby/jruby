@@ -18,7 +18,7 @@ import java.util.Map;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.StringLiteral;
 
-public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityInstr {
+public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityInstr, ClosureAcceptingInstr {
     /** The position for the block */
     private final ISourcePosition position;
     private Variable result;
@@ -66,6 +66,10 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
     }
 
     private WrappedIRClosure getLambdaBody() {
+        return lambdaBody;
+    }
+
+    public Operand getClosureArg() {
         return lambdaBody;
     }
 

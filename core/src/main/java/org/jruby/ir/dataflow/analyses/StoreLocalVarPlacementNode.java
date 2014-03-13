@@ -11,7 +11,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.dataflow.DataFlowConstants;
 import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.BreakInstr;
-import org.jruby.ir.instructions.CallBase;
+import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
@@ -66,11 +66,10 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
         IRScope scope = problem.getScope();
         boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
 
-        // Process calls specially -- these are the sites of binding stores!
-        if (i instanceof CallBase) {
-            CallBase call = (CallBase) i;
-            // At this call site, a binding will get allocated if it has not been already!
-            Operand o = call.getClosureArg(null);
+        // Process closure accepting instrs specially -- these are the sites of binding stores!
+        if (i instanceof ClosureAcceptingInstr) {
+            Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
+            // At this site, a binding will get allocated if it has not been already!
             if (o != null && o instanceof WrappedIRClosure) {
                 // In this first pass, the current scope and the call's closure are considered
                 // independent of each other which means any variable that is used by the variable
@@ -180,9 +179,9 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
         while (instrs.hasNext()) {
             Instr i = instrs.next();
 
-            if (i instanceof CallBase) {
-                CallBase call = (CallBase) i;
-                Operand o = call.getClosureArg(null);
+            // Process closure accepting instrs specially -- these are the sites of binding stores!
+            if (i instanceof ClosureAcceptingInstr) {
+                Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
                 if (o != null && o instanceof WrappedIRClosure) {
                     IRClosure cl = ((WrappedIRClosure) o).getClosure();
 
