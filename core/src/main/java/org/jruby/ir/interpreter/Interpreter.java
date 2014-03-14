@@ -295,7 +295,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, int kwArgHashCount, DynamicScope currDynScope, Object[] temp, Object exception, Block block) {
+    private static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean receivesKeywordArgument, DynamicScope currDynScope, Object[] temp, Object exception, Block block) {
         Object result;
         ResultInstr instr = (ResultInstr)i;
         switch(operation) {
@@ -308,13 +308,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             result = IRRuntimeHelpers.newProc(context.runtime, block);
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
-        case RECV_OPT_ARG:
-            result = ((ReceiveOptArgInstr)instr).receiveOptArg(args, kwArgHashCount);
-            // For blocks, missing arg translates to nil
-            setResult(temp, currDynScope, instr.getResult(), result);
-            return;
         case RECV_POST_REQD_ARG:
-            result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(args, kwArgHashCount);
+            result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(args);
             // For blocks, missing arg translates to nil
             setResult(temp, currDynScope, instr.getResult(), result == null ? context.nil : result);
             return;
@@ -325,21 +320,15 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             setResult(temp, currDynScope, instr.getResult(), exception);
             return;
         default:
-            result = ((ReceiveArgBase)instr).receiveArg(context, kwArgHashCount, args);
+            result = ((ReceiveArgBase)instr).receiveArg(context, args, receivesKeywordArgument);
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
         }
     }
 
-    private static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, Block.Type blockType) {
+    private static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block) {
         Object result;
         switch(operation) {
-        case RUNTIME_HELPER: {
-            RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
-            result = rhc.callHelper(context, currDynScope, self, temp, blockType);
-            setResult(temp, currDynScope, rhc.getResult(), result);
-            break;
-        }
         case CALL_1F: {
             OneFixnumArgNoBlockCallInstr call = (OneFixnumArgNoBlockCallInstr)instr;
             IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, temp);
@@ -440,7 +429,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         return null;
     }
 
-    private static void processOtherOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, double[] floats, long[] fixnums, boolean[] booleans)
+    private static void processOtherOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, Block.Type blockType, double[] floats, long[] fixnums, boolean[] booleans)
     {
         Object result;
         switch(operation) {
@@ -475,6 +464,13 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             result = sci.getCachedConst();
             if (!sci.isCached(context, result)) result = sci.cache(context, currDynScope, self, temp);
             setResult(temp, currDynScope, sci.getResult(), result);
+            break;
+        }
+
+        case RUNTIME_HELPER: {
+            RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
+            result = rhc.callHelper(context, currDynScope, self, temp, blockType);
+            setResult(temp, currDynScope, rhc.getResult(), result);
             break;
         }
 
@@ -549,6 +545,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         boolean debug   = IRRuntimeHelpers.isDebug();
         boolean profile = IRRuntimeHelpers.inProfileMode();
         Integer scopeVersion = profile ? Profiler.initProfiling(scope) : 0;
+        boolean acceptsKeywordArgument = scope.receivesKeywordArgs();
 
         // Enter the looooop!
         while (ipc < n) {
@@ -572,11 +569,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     interpretFloatOp((AluInstr)instr, operation, context, floats, booleans, temp);
                     break;
                 case ARG_OP:
-                    receiveArg(context, instr, operation, args, IRRuntimeHelpers.extractKwargsCount(args, scope.receivesKeywordArgs()), currDynScope, temp, exception, block);
+                    receiveArg(context, instr, operation, args, acceptsKeywordArgument, currDynScope, temp, exception, block);
                     break;
                 case CALL_OP:
                     if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);
-                    processCall(context, instr, operation, currDynScope, temp, self, block, blockType);
+                    processCall(context, instr, operation, currDynScope, temp, self, block);
                     break;
                 case RET_OP:
                     return processReturnOp(context, instr, operation, scope, currDynScope, temp, self, blockType);
@@ -599,7 +596,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     }
                     break;
                 case OTHER_OP:
-                    processOtherOp(context, instr, operation, currDynScope, temp, self, block, floats, fixnums, booleans);
+                    processOtherOp(context, instr, operation, currDynScope, temp, self, block, blockType, floats, fixnums, booleans);
                     break;
                 }
             } catch (Throwable t) {

@@ -291,7 +291,7 @@ public class InstrEncoderMap {
         e.encode(instr.required);
         e.encode(instr.opt);
         e.encode(instr.rest);
-        e.encode(instr.receivesKwargs);
+        e.encode(instr.receivesKeywords);
     }
 
     private void encodeClassVarIsDefinedInstr(ClassVarIsDefinedInstr instr) {
@@ -526,16 +526,16 @@ public class InstrEncoderMap {
 
     private void encodeReceiveKeywordArgInstr(ReceiveKeywordArgInstr instr) {
         e.encode(instr.argName);
-        e.encode(instr.numUsedArgs);
+        e.encode(instr.required);
     }
 
     private void encodeReceiveKeywordRestArgInstr(ReceiveKeywordRestArgInstr instr) {
-        e.encode(instr.numUsedArgs);
+        e.encode(instr.required);
     }
 
     private void encodeReceiveOptArgInstr(ReceiveOptArgInstr instr) {
-        e.encode(instr.numUsedArgs);
-        e.encode(instr.getArgOffset());
+        e.encode(instr.requiredArgs);
+        e.encode(instr.getPreArgs());
         e.encode(instr.getArgIndex());
     }
 
@@ -550,7 +550,7 @@ public class InstrEncoderMap {
     }
 
     private void encodeReceiveRestArgInstr(ReceiveRestArgInstr instr) {
-        e.encode(instr.numUsedArgs);
+        e.encode(instr.required);
         e.encode(instr.getArgIndex());
     }
 

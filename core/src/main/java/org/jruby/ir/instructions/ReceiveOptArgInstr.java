@@ -1,43 +1,46 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubyHash;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInstr {
-    /** Starting offset into the args array*/
-    public final int argOffset;
+    /** opt args follow pre args **/
+    public final int preArgs;
 
-    /** Number of arguments already accounted for */
-    public final int numUsedArgs;
+    /** total number of required args (pre + post) **/
+    public final int requiredArgs;
 
-    public ReceiveOptArgInstr(Variable result, int numUsedArgs, int argOffset, int optArgIndex) {
+    public ReceiveOptArgInstr(Variable result, int requiredArgs, int preArgs, int optArgIndex) {
         super(Operation.RECV_OPT_ARG, result, optArgIndex);
-        this.argOffset = argOffset;
-        this.numUsedArgs = numUsedArgs;
+        this.preArgs = preArgs;
+        this.requiredArgs = requiredArgs;
     }
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { new Fixnum(numUsedArgs), new Fixnum(argOffset), new Fixnum(argIndex) };
+        return new Operand[] { new Fixnum(requiredArgs), new Fixnum(preArgs), new Fixnum(argIndex) };
     }
 
     @Override
     public String toString() {
-        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + numUsedArgs + "," + argOffset + "," + argIndex + ")";
+        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + requiredArgs + "," + preArgs + "," + argIndex + ")";
     }
 
-    public int getArgOffset() {
-        return argOffset;
+    public int getPreArgs() {
+        return preArgs;
     }
 
-    public int getNumUsedArgs() {
-        return numUsedArgs;
+    public int getRequiredArgs() {
+        return requiredArgs;
     }
 
     @Override
@@ -49,24 +52,28 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
         switch (ii.getCloneMode()) {
             case ENSURE_BLOCK_CLONE:
             case NORMAL_CLONE:
-                return new ReceiveOptArgInstr(ii.getRenamedVariable(result), numUsedArgs, argOffset, optArgIndex);
+                return new ReceiveOptArgInstr(ii.getRenamedVariable(result), requiredArgs, preArgs, optArgIndex);
             default: {
-                int minReqdArgs = optArgIndex + numUsedArgs;
+                int minReqdArgs = optArgIndex + requiredArgs;
                 if (ii.canMapArgsStatically()) {
                     int n = ii.getArgsCount();
-                    return new CopyInstr(ii.getRenamedVariable(result), minReqdArgs < n ? ii.getArg(argOffset + optArgIndex) : UndefinedValue.UNDEFINED);
+                    return new CopyInstr(ii.getRenamedVariable(result), minReqdArgs < n ? ii.getArg(preArgs + optArgIndex) : UndefinedValue.UNDEFINED);
                 } else {
-                    return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), argOffset + optArgIndex, minReqdArgs);
+                    return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), preArgs + optArgIndex, minReqdArgs);
                 }
             }
         }
     }
 
-    public IRubyObject receiveOptArg(IRubyObject[] args, int kwArgHashCount) {
-        // Added this copy for code clarity
-        // argIndex is relative to start of opt args and not the start of arg array
-        int optArgIndex = this.argIndex;
-        return (optArgIndex + numUsedArgs + kwArgHashCount < args.length ? args[argOffset + optArgIndex] : UndefinedValue.UNDEFINED);
+    @Override
+    public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean acceptsKeywordArgument) {
+        int optArgIndex = argIndex;  // which opt arg we are processing? (first one has index 0, second 1, ...).
+        RubyHash keywordArguments = IRRuntimeHelpers.extractKwargsHash(args, requiredArgs, acceptsKeywordArgument);
+        int argsLength = keywordArguments != null ? args.length - 1 : args.length;
+
+        if (requiredArgs + optArgIndex >= argsLength) return UndefinedValue.UNDEFINED; // No more args left
+
+        return args[preArgs + optArgIndex];
     }
 
     @Override

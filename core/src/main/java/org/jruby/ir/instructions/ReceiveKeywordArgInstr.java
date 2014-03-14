@@ -6,6 +6,7 @@ import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.Operation;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -17,22 +18,22 @@ import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArityInstr {
     public final String argName;
-    public final int numUsedArgs;
+    public final int required;
 
-    public ReceiveKeywordArgInstr(Variable result, String argName, int numUsedArgs) {
+    public ReceiveKeywordArgInstr(Variable result, String argName, int required) {
         super(Operation.RECV_KW_ARG, result, -1);
         this.argName = argName;
-        this.numUsedArgs = numUsedArgs;
+        this.required = required;
     }
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { new Fixnum(numUsedArgs), new StringLiteral(argName) };
+        return new Operand[] { new Fixnum(required), new StringLiteral(argName) };
     }
 
     @Override
     public String toString() {
-        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + numUsedArgs + ", " + argName + ")";
+        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + required + ", " + argName + ")";
     }
 
     @Override
@@ -43,23 +44,21 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ReceiveKeywordArgInstr(ii.getRenamedVariable(result), argName, numUsedArgs);
+        return new ReceiveKeywordArgInstr(ii.getRenamedVariable(result), argName, required);
     }
 
     @Override
-    public IRubyObject receiveArg(ThreadContext context, int kwArgHashCount, IRubyObject[] args) {
-        if (kwArgHashCount == 0 || numUsedArgs == args.length) {
-            return UndefinedValue.UNDEFINED;
-        } else {
-            RubyHash lastArg = (RubyHash)args[args.length - 1];
-            // If the key exists in the hash, delete and return it.
-            RubySymbol argSym = context.getRuntime().newSymbol(argName);
-            if (lastArg.fastARef(argSym) != null) {
-                // SSS FIXME: Can we use an internal delete here?
-                return lastArg.delete(context, argSym, Block.NULL_BLOCK);
-            } else {
-                return UndefinedValue.UNDEFINED;
-            }
-        }
+    public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean acceptsKeywordArgument) {
+        RubyHash keywordArguments = IRRuntimeHelpers.extractKwargsHash(args, required, acceptsKeywordArgument);
+
+        if (keywordArguments == null) return UndefinedValue.UNDEFINED;
+
+        RubySymbol keywordName = context.getRuntime().newSymbol(argName);
+
+        if (keywordArguments.fastARef(keywordName) == null) return UndefinedValue.UNDEFINED;
+
+        // SSS FIXME: Can we use an internal delete here?
+        // Enebo FIXME: Delete seems wrong if we are doing this for duplication purposes.
+        return keywordArguments.delete(context, keywordName, Block.NULL_BLOCK);
     }
 }

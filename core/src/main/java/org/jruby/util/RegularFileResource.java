@@ -85,7 +85,21 @@ class RegularFileResource implements FileResource {
 
     @Override
     public String[] list() {
-        return file.list();
+        String[] fileList = file.list();
+
+        if (fileList != null) {
+            // If we got some entries, then it's probably a directory and in Ruby all file
+            // directories should have '.' and '..' entries
+            String[] list = new String[fileList.length + 2];
+            list[0] = ".";
+            list[1] = "..";
+            for (int i = 0; i < fileList.length; i++) {
+                list[i+2] = fileList[i];
+            }
+            fileList = list;
+        }
+
+        return fileList;
     }
 
     @Override

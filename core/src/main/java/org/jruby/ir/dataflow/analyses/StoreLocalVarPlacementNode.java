@@ -11,7 +11,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.dataflow.DataFlowConstants;
 import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.BreakInstr;
-import org.jruby.ir.instructions.CallBase;
+import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
@@ -66,11 +66,10 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
         IRScope scope = problem.getScope();
         boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
 
-        // Process calls specially -- these are the sites of binding stores!
-        if (i instanceof CallBase) {
-            CallBase call = (CallBase) i;
-            // At this call site, a binding will get allocated if it has not been already!
-            Operand o = call.getClosureArg(null);
+        // Process closure accepting instrs specially -- these are the sites of binding stores!
+        if (i instanceof ClosureAcceptingInstr) {
+            Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
+            // At this site, a binding will get allocated if it has not been already!
             if (o != null && o instanceof WrappedIRClosure) {
                 // In this first pass, the current scope and the call's closure are considered
                 // independent of each other which means any variable that is used by the variable
@@ -79,7 +78,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                 IRClosure cl = ((WrappedIRClosure) o).getClosure();
 
                 // If the call is a dataflow barrier, we have to spill everything here
-                boolean spillAllVars = scopeBindingHasEscaped || call.targetRequiresCallersBinding();
+                boolean spillAllVars = scopeBindingHasEscaped;
 
                 // - If all variables have to be spilled, then those variables will no longer be dirty after the call site
                 // - If a variable is used in the closure (FIXME: Strictly only those vars that are live at the call site --
@@ -94,7 +93,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                     }
                 }
                 dirtyVars = newDirtyVars;
-            } else if (scopeBindingHasEscaped || call.targetRequiresCallersBinding()) { // Call has no closure && it requires stores
+            } else if (scopeBindingHasEscaped) { // Call has no closure && it requires stores
                 dirtyVars.clear();
             } else {
                 // All variables not local to the current scope have to be always spilled because of
@@ -180,9 +179,9 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
         while (instrs.hasNext()) {
             Instr i = instrs.next();
 
-            if (i instanceof CallBase) {
-                CallBase call = (CallBase) i;
-                Operand o = call.getClosureArg(null);
+            // Process closure accepting instrs specially -- these are the sites of binding stores!
+            if (i instanceof ClosureAcceptingInstr) {
+                Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
                 if (o != null && o instanceof WrappedIRClosure) {
                     IRClosure cl = ((WrappedIRClosure) o).getClosure();
 
@@ -190,7 +189,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                     instrs.previous();
 
                     // If the call is a dataflow barrier, we have to spill everything here
-                    boolean spillAllVars = scopeBindingHasEscaped || call.targetRequiresCallersBinding();
+                    boolean spillAllVars = scopeBindingHasEscaped;
 
                     // Unless we have to spill everything, spill only those dirty variables that are:
                     // - used in the closure (FIXME: Strictly only those vars that are live at the call site -- but we dont have this info!)
@@ -207,7 +206,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                     }
                     dirtyVars = newDirtyVars;
                     instrs.next();
-                } else if (scopeBindingHasEscaped || call.targetRequiresCallersBinding()) { // Call has no closure && it requires stores
+                } else if (scopeBindingHasEscaped) { // Call has no closure && it requires stores
                     // Add before call -- hence instrs.previous & instrs.next
                     instrs.previous();
                     for (LocalVariable v : dirtyVars) {

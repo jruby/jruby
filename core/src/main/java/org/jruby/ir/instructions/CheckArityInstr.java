@@ -1,8 +1,6 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.Ruby;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.runtime.Arity;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
@@ -14,15 +12,17 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
     public final int required;
     public final int opt;
     public final int rest;
-    public final boolean receivesKwargs;
+    public final boolean receivesKeywords;
+    private final int restKey;
 
-    public CheckArityInstr(int required, int opt, int rest, boolean receivesKwargs) {
+    public CheckArityInstr(int required, int opt, int rest, boolean receivesKeywords, int restKey) {
         super(Operation.CHECK_ARITY);
 
         this.required = required;
         this.opt = opt;
         this.rest = rest;
-        this.receivesKwargs = receivesKwargs;
+        this.receivesKeywords = receivesKeywords;
+        this.restKey = restKey;
     }
 
     @Override
@@ -32,7 +32,7 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + required + ", " + opt + ", " + rest + ")";
+        return super.toString() + "(" + required + ", " + opt + ", " + rest + ", " + receivesKeywords + ", " + restKey + ")";
     }
 
     @Override
@@ -40,7 +40,7 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
         switch (ii.getCloneMode()) {
             case ENSURE_BLOCK_CLONE:
             case NORMAL_CLONE:
-                return new CheckArityInstr(required, opt, rest, receivesKwargs);
+                return new CheckArityInstr(required, opt, rest, receivesKeywords, restKey);
             default:
                 if (ii.canMapArgsStatically()) {
                     // Since we know arity at a callsite, arity check passes or we have an ArgumentError
@@ -57,7 +57,7 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
     }
 
     public void checkArity(ThreadContext context, Object[] args) {
-        IRRuntimeHelpers.checkArity(context, args, required, opt, rest, receivesKwargs);
+        IRRuntimeHelpers.checkArity(context, args, required, opt, rest, receivesKeywords, restKey);
     }
 
     @Override

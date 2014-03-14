@@ -8,7 +8,7 @@ if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
-expected = "4.1.0.preview.3";
+expected = "4.1.0";
 if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
@@ -23,7 +23,7 @@ if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
-expected = "rdoc (4.1.0.preview.3)";
+expected = "rdoc (4.1.0)";
 if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );

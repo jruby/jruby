@@ -1,4 +1,3 @@
-fails:A class definition raises TypeError if any constant qualifying the class is not a Module
 fails:A class definition allows using self as the superclass if self is a class
 fails:A class definition raises a TypeError if inheriting from a metaclass
 fails:A class definition allows the declaration of class variables in the body

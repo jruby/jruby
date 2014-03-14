@@ -10,7 +10,7 @@ import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.dataflow.FlowGraphNode;
-import org.jruby.ir.instructions.CallBase;
+import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LoadLocalVarInstr;
 import org.jruby.ir.instructions.ResultInstr;
@@ -66,10 +66,9 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
             reqdLoads.remove(((ResultInstr) i).getResult());
         }
 
-        // Process calls specially -- these are the sites of binding loads!
-        if (i instanceof CallBase) {
-            CallBase call = (CallBase) i;
-            Operand o = call.getClosureArg(null);
+        // Process closure accepting instrs specially -- these are the sites of binding loads!
+        if (i instanceof ClosureAcceptingInstr) {
+            Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
             if (o != null && o instanceof WrappedIRClosure) {
                 IRClosure cl = ((WrappedIRClosure) o).getClosure();
 
@@ -86,7 +85,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
             }
 
             // In this case, we are going to blindly load everything -- so, at the call site, pending loads dont carry over!
-            if (scopeBindingHasEscaped || call.targetRequiresCallersBinding()) {
+            if (scopeBindingHasEscaped) {
                 reqdLoads.clear();
             } else {
                 // All variables not defined in the current scope have to be always loaded
@@ -167,9 +166,9 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
             // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
             if (i instanceof ResultInstr) reqdLoads.remove(((ResultInstr) i).getResult());
 
-            if (i instanceof CallBase) {
-                CallBase call = (CallBase) i;
-                Operand o = call.getClosureArg(null);
+            // Process closure accepting instrs specially -- these are the sites of binding loads!
+            if (i instanceof ClosureAcceptingInstr) {
+                Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
                 if (o != null && o instanceof WrappedIRClosure) {
                     IRClosure cl = ((WrappedIRClosure) o).getClosure();
 
@@ -191,7 +190,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                 }
 
                 // In this case, we are going to blindly load everything
-                if (scopeBindingHasEscaped || call.targetRequiresCallersBinding()) {
+                if (scopeBindingHasEscaped) {
                     it.next();
                     for (LocalVariable v: reqdLoads) {
                         it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));

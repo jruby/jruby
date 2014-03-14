@@ -28,12 +28,17 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.tempfile;
 
+import jnr.constants.platform.Errno;
+import jnr.posix.POSIX;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyException;
 import org.jruby.RubyFile;
 import org.jruby.RubyHash;
+import org.jruby.RubySystemCallError;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
@@ -189,17 +194,38 @@ public class Tempfile extends org.jruby.RubyFile {
 
     @JRubyMethod(name = {"unlink", "delete"})
     public IRubyObject unlink(ThreadContext context) {
-        // JRUBY-6688: delete when closed, warn otherwise
-        if (isClosed()) {
-            // the user intends to delete the file immediately, so do it
-            if (!tmpFile.exists() || tmpFile.delete()) {
-                path = null;
+        if (path == null) return context.nil;
+        
+        Ruby runtime = context.runtime;
+        POSIX posix = runtime.getPosix();
+
+        if (posix.isNative()) {
+            try {
+                RubyFile.unlink(context, this);
+            } catch (RaiseException re) {
+                RubyException excp = re.getException();
+                if (!(excp instanceof RubySystemCallError)) throw re;
+
+                int errno = (int)((RubySystemCallError)excp).errno().convertToInteger().getLongValue();
+                if (errno != Errno.ENOENT.intValue() &&
+                        errno != Errno.EACCES.intValue()) {
+                    throw re;
+                }
             }
+            path = null;
         } else {
-            // else, no-op, since we can't unlink the file without breaking stat et al
-            context.runtime.getWarnings().warn("Tempfile#unlink or delete called on open file; ignoring");
+            // JRUBY-6688: delete when closed, warn otherwise
+            if (isClosed()) {
+                // the user intends to delete the file immediately, so do it
+                if (!tmpFile.exists() || tmpFile.delete()) {
+                    path = null;
+                }
+            } else {
+                // else, no-op, since we can't unlink the file without breaking stat et al
+                runtime.getWarnings().warn("Tempfile#unlink or delete called on open file; ignoring");
+            }
         }
-        return context.runtime.getNil();
+        return runtime.getNil();
     }
 
     @Override

@@ -773,7 +773,7 @@ public class JVMVisitor extends IRVisitor {
         jvm.method().adapter.ldc(checkarityinstr.required);
         jvm.method().adapter.ldc(checkarityinstr.opt);
         jvm.method().adapter.ldc(checkarityinstr.rest);
-        jvm.method().adapter.ldc(checkarityinstr.receivesKwargs);
+        jvm.method().adapter.ldc(checkarityinstr.receivesKeywords);
         jvm.method().adapter.invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, Object[].class, int.class, int.class, int.class, boolean.class));
     }
 
@@ -1446,8 +1446,8 @@ public class JVMVisitor extends IRVisitor {
     public void ReceiveOptArgInstr(ReceiveOptArgInstr instr) {
         // FIXME: Only works when args is in an array rather than being flattened out
         // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
-        jvm.method().adapter.pushInt(instr.getArgIndex() + instr.numUsedArgs); // MIN reqd args
-        jvm.method().adapter.pushInt(instr.getArgIndex() + instr.argOffset); // args array offset
+        jvm.method().adapter.pushInt(instr.getArgIndex() + instr.requiredArgs); // MIN reqd args
+        jvm.method().adapter.pushInt(instr.getArgIndex() + instr.preArgs); // args array offset
         jvm.method().adapter.aload(3); // index of arg array
         jvm.method().invokeHelper("irLoadOptArg", IRubyObject.class, int.class, int.class, IRubyObject[].class);
         jvmStoreLocal(instr.getResult());
@@ -1471,7 +1471,7 @@ public class JVMVisitor extends IRVisitor {
         // FIXME: Only works when args is in an array rather than being flattened out
         // FIXME: Missing kwargs 2.0 support (kwArgHashCount value)
         jvm.method().loadContext();
-        jvm.method().adapter.pushInt(instr.numUsedArgs); // MIN reqd args
+        jvm.method().adapter.pushInt(instr.required); // MIN reqd args
         jvm.method().adapter.pushInt(instr.getArgIndex()); // args array offset
         jvm.method().adapter.aload(3); // index of arg array
         jvm.method().invokeHelper("irLoadRestArg", IRubyObject.class, ThreadContext.class, int.class, int.class, IRubyObject[].class);

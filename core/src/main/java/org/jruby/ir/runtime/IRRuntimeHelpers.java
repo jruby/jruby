@@ -22,7 +22,6 @@ import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.UndefinedValue;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
@@ -427,16 +426,48 @@ public class IRRuntimeHelpers {
         return block;
     }
 
-    public static void checkArity(ThreadContext context, Object[] args, int required, int opt, int rest, boolean receivesKwargs) {
-        int numArgs = args.length;
-        int kwArgHashCount = extractKwargsCount(args, receivesKwargs);
-        if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt + kwArgHashCount)))) {
-            Arity.raiseArgumentError(context.runtime, numArgs, required, required + opt);
+    public static void checkArity(ThreadContext context, Object[] args, int required, int opt, int rest,
+                                  boolean receivesKwargs, int restKey) {
+        int argsLength = args.length;
+        RubyHash keywordArgs = (RubyHash) extractKwargsHash(args, required, receivesKwargs);
+
+        if (restKey == -1 && keywordArgs != null) checkForExtraUnwantedKeywordArgs(context, keywordArgs);
+
+        // keyword arguments value is not used for arity checking.
+        if (keywordArgs != null) argsLength -= 1;
+
+        if (argsLength < required || (rest == -1 && argsLength > (required + opt))) {
+//            System.out.println("NUMARGS: " + argsLength + ", REQUIRED: " + required + ", OPT: " + opt + ", AL: " + args.length + ",RKW: " + receivesKwargs );
+//            System.out.println("ARGS[0]: " + args[0]);
+
+            Arity.raiseArgumentError(context.runtime, argsLength, required, required + opt);
         }
     }
 
-    public static int extractKwargsCount(Object[] args, boolean receivesKwargs) {
-        return (receivesKwargs && args.length > 0 && args[args.length - 1] instanceof RubyHash) ? 1 : 0;
+    public static RubyHash extractKwargsHash(Object[] args, int requiredArgsCount, boolean receivesKwargs) {
+        if (!receivesKwargs) return null;
+        if (args.length <= requiredArgsCount) return null; // No kwarg because required args slurp them up.
+
+        Object lastArg = args[args.length - 1];
+
+        return !(lastArg instanceof RubyHash) ? null : (RubyHash) lastArg;
+    }
+
+    public static void checkForExtraUnwantedKeywordArgs(final ThreadContext context, RubyHash keywordArgs) {
+        final StaticScope scope = context.getCurrentStaticScope();
+
+        keywordArgs.visitAll(new RubyHash.Visitor() {
+            @Override
+            public void visit(IRubyObject key, IRubyObject value) {
+                String keyAsString = key.asJavaString();
+                int slot = scope.isDefined((keyAsString));
+
+                // Found name in higher variable scope.  Therefore non for this block/method def.
+                if ((slot >> 16) > 0) throw context.runtime.newArgumentError("unknown keyword: " + keyAsString);
+                // Could not find it anywhere.
+                if (((short) (slot & 0xffff)) < 0) throw context.runtime.newArgumentError("unknown keyword: " + keyAsString);
+            }
+        });
     }
 
     public static IRubyObject match3(ThreadContext context, RubyRegexp regexp, IRubyObject argValue) {

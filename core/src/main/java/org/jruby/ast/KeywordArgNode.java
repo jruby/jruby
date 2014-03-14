@@ -30,6 +30,10 @@ public class KeywordArgNode extends Node {
         return Node.createList(assignable);
     }
 
+    public int getIndex() {
+        return ((IScopedNode) assignable).getIndex();
+    }
+
     @Override
     public NodeType getNodeType() {
         return NodeType.KEYWORDARGNODE;

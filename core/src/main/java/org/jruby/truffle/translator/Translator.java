@@ -14,7 +14,7 @@ import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.impl.DefaultSourceSection;
 import org.joni.Regex;
-import org.jruby.ast.MultipleAsgn19Node;
+import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.DefinedNode;
 import org.jruby.truffle.nodes.ReadNode;
@@ -22,18 +22,31 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.WriteNode;
 import org.jruby.truffle.nodes.call.RubyCallNode;
 import org.jruby.truffle.nodes.cast.*;
+import org.jruby.truffle.nodes.cast.LambdaNode;
 import org.jruby.truffle.nodes.constants.EncodingPseudoVariableNode;
 import org.jruby.truffle.nodes.constants.UninitializedReadConstantNode;
 import org.jruby.truffle.nodes.constants.WriteConstantNode;
 import org.jruby.truffle.nodes.control.*;
+import org.jruby.truffle.nodes.control.BreakNode;
+import org.jruby.truffle.nodes.control.EnsureNode;
+import org.jruby.truffle.nodes.control.IfNode;
+import org.jruby.truffle.nodes.control.NextNode;
+import org.jruby.truffle.nodes.control.RedoNode;
+import org.jruby.truffle.nodes.control.RescueNode;
+import org.jruby.truffle.nodes.control.RetryNode;
+import org.jruby.truffle.nodes.control.ReturnNode;
+import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.literal.*;
+import org.jruby.truffle.nodes.literal.NilNode;
 import org.jruby.truffle.nodes.literal.array.UninitialisedArrayLiteralNode;
 import org.jruby.truffle.nodes.methods.AddMethodNode;
 import org.jruby.truffle.nodes.methods.AliasNode;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.objects.*;
+import org.jruby.truffle.nodes.objects.ClassNode;
+import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -544,8 +557,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     public Object visitClassNode(org.jruby.ast.ClassNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final String name = node.getCPath().getName();
-
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
                         new UniqueMethodIdentifier());
         final ModuleTranslator classTranslator = new ModuleTranslator(context, this, newEnvironment, source);
@@ -563,9 +574,22 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         } else {
             superClass = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         }
-        final DefineOrGetClassNode defineOrGetClass = new DefineOrGetClassNode(context, sourceSection, name, getModuleToDefineModulesIn(sourceSection), superClass);
 
-        return new OpenModuleNode(context, sourceSection, defineOrGetClass, definitionMethod, node.getCPath());
+        final DefineOrGetClassNode defineOrGetClass = new DefineOrGetClassNode(context, sourceSection, node.getCPath().getName(), translateCPath(sourceSection, node.getCPath()), superClass);
+
+        return new OpenModuleNode(context, sourceSection, defineOrGetClass, definitionMethod);
+    }
+
+    private RubyNode translateCPath(SourceSection sourceSection, org.jruby.ast.Colon3Node node) {
+        if (node instanceof org.jruby.ast.Colon2ImplicitNode) {
+            return getModuleToDefineModulesIn(sourceSection);
+        } else {
+            if (node.childNodes().isEmpty()) {
+                return new ClassNode(context, sourceSection, new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getMainObject()));
+            } else {
+                return (RubyNode) node.childNodes().get(0).accept(this);
+            }
+        }
     }
 
     protected RubyNode getModuleToDefineModulesIn(SourceSection sourceSection) {
@@ -1223,7 +1247,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), node.getCPath().getName(), node.getBodyNode());
 
-        final DefineOrGetModuleNode defineModuleNode = new DefineOrGetModuleNode(context, sourceSection, name, getModuleToDefineModulesIn(sourceSection));
+        final DefineOrGetModuleNode defineModuleNode = new DefineOrGetModuleNode(context, sourceSection, name, translateCPath(sourceSection, node.getCPath()));
 
         return new OpenModuleNode(context, sourceSection, defineModuleNode, definitionMethod);
     }
@@ -1988,6 +2012,10 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     }
 
     public Object visitKeywordArgNode(org.jruby.ast.KeywordArgNode node) {
+        return unimplemented(node);
+    }
+
+    public Object visitRequiredKeywordArgumentValueNode(RequiredKeywordArgumentValueNode node) {
         return unimplemented(node);
     }
 

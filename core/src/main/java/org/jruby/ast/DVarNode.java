@@ -47,7 +47,7 @@ import org.jruby.util.DefinedMessage;
 /**
  * Access a dynamic variable (e.g. block scope local variable).
  */
-public class DVarNode extends Node implements INameNode {
+public class DVarNode extends Node implements INameNode, IScopedNode {
     // The name of the variable
     private String name;
     

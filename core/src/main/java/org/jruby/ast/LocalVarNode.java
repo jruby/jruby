@@ -47,7 +47,7 @@ import org.jruby.util.DefinedMessage;
 /**
  * Access a local variable 
  */
-public class LocalVarNode extends Node implements INameNode {
+public class LocalVarNode extends Node implements INameNode, IScopedNode {
     // The name of the variable
     private String name;
     

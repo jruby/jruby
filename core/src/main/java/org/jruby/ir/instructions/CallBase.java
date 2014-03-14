@@ -31,7 +31,7 @@ import static org.jruby.ir.IRFlags.CAN_CAPTURE_CALLERS_BINDING;
 import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
 import static org.jruby.ir.IRFlags.USES_EVAL;
 
-public abstract class CallBase extends Instr implements Specializeable {
+public abstract class CallBase extends Instr implements Specializeable, ClosureAcceptingInstr {
     private static long callSiteCounter = 1;
 
     public final long callSiteId;
@@ -76,6 +76,11 @@ public abstract class CallBase extends Instr implements Specializeable {
 
     public MethAddr getMethodAddr() {
         return methAddr;
+    }
+
+    /** From interface ClosureAcceptingInstr */
+    public Operand getClosureArg() {
+        return closure;
     }
 
     public Operand getClosureArg(Operand ifUnspecified) {
@@ -291,7 +296,11 @@ public abstract class CallBase extends Instr implements Specializeable {
 
         /* -------------------------------------------------------------
          * SSS FIXME: What about aliased accesses to these same methods?
-         * See problem snippet below
+         * See problem snippet below. To be clear, the problem with this
+         * Module.nesting below is because that method uses DynamicScope
+         * to access the static-scope. However, even if we moved the static-scope
+         * to Frame, the problem just shifts over to optimizations that eliminate
+         * push/pop of Frame objects from certain scopes.
          *
          * [subbu@earth ~/jruby] cat /tmp/pgm.rb
          * class Module

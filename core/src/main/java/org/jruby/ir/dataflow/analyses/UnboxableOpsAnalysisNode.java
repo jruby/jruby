@@ -17,6 +17,7 @@ import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.BFalseInstr;
 import org.jruby.ir.instructions.BTrueInstr;
 import org.jruby.ir.instructions.CallBase;
+import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.OneOperandBranchInstr;
@@ -258,11 +259,11 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                 dirtied = true;
                 tmpState.unboxedVars.put(dst, srcType);
             }
-        } else if (i instanceof CallBase) {
+        } else if (i instanceof ClosureAcceptingInstr) {
+            Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
             // Process calls specially -- these are what we want to optimize!
-            CallBase c = (CallBase)i;
-            Operand  o = c.getClosureArg(null);
-            if (o == null) {
+            if (i instanceof CallBase && o == null) {
+                CallBase c = (CallBase)i;
                 MethAddr m = c.getMethodAddr();
                 Operand  r = c.getReceiver();
                 Operand[] args = c.getCallArgs();
@@ -658,11 +659,10 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                         tmpState.unboxedVars.put(dst, srcType);
                         dirtied = true;
                     }
-                } else if (i instanceof CallBase) {
-                    // Process calls specially -- these are what we want to optimize!
-                    CallBase c = (CallBase)i;
-                    Operand  o = c.getClosureArg(null);
-                    if (o == null) {
+                } else if (i instanceof ClosureAcceptingInstr) {
+                    Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
+                    if (i instanceof CallBase && o == null) {
+                        CallBase c = (CallBase)i;
                         MethAddr m = c.getMethodAddr();
                         Operand  r = c.getReceiver();
                         Operand[] args = c.getCallArgs();

@@ -44,7 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * An assignment to a dynamic variable (e.g. block scope local variable).
  */
-public class DAsgnNode extends AssignableNode implements INameNode {
+public class DAsgnNode extends AssignableNode implements INameNode, IScopedNode {
     // The name of the variable
     private String name;
     
