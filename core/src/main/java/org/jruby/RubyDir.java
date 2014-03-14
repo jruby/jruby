@@ -753,15 +753,15 @@ public class RubyDir extends RubyObject {
         IRubyObject home = null;
 
         if (home == null || home.isNil()) {
-            home = envHash.op_aref(context, runtime.newString("LOGDIR"));
-        }
-
-        if (home == null || home.isNil()) {
             home = envHash.op_aref(context, runtime.newString("HOME"));
         }
 
         if (home == null || home.isNil()) {
             home = systemHash.callMethod(context, "[]", runtime.newString("user.home"));
+        }
+
+        if (home == null || home.isNil()) {
+            home = envHash.op_aref(context, runtime.newString("LOGDIR"));
         }
 
         if (home == null || home.isNil()) {
