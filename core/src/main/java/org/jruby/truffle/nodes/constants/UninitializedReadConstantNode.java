@@ -24,15 +24,8 @@ import org.jruby.truffle.runtime.core.*;
 @NodeInfo(shortName = "uninitialized-read-constant")
 public class UninitializedReadConstantNode extends ReadConstantNode {
 
-    private boolean replaceCache = true;
-
     public UninitializedReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
         super(context, sourceSection, name, receiver);
-    }
-
-    public UninitializedReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean replaceCache) {
-        super(context, sourceSection, name, receiver);
-        this.replaceCache = replaceCache;
     }
 
     /**
@@ -62,10 +55,7 @@ public class UninitializedReadConstantNode extends ReadConstantNode {
             throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(name));
         }
 
-        // When reading a colon2const (ie: Foo::Bar) then we don' need to replace cache
-        if (replaceCache){
-            replace(new CachedReadConstantNode(context, getSourceSection(), name, receiver, receiverObject.getRubyClass(), value));
-        }
+        replace(new CachedReadConstantNode(context, getSourceSection(), name, receiver, receiverObject.getRubyClass(), value));
 
         assert RubyContext.shouldObjectBeVisible(value);
 
