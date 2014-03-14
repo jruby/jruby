@@ -557,8 +557,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     public Object visitClassNode(org.jruby.ast.ClassNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final String name = node.getCPath().getName();
-
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
                         new UniqueMethodIdentifier());
         final ModuleTranslator classTranslator = new ModuleTranslator(context, this, newEnvironment, source);
@@ -571,34 +569,27 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         RubyNode superClass;
 
-        ArrayList<RubyNode> nodes = new ArrayList<RubyNode>();
-
-        if (node != null && node.getCPath() != null) {
-
-            for(org.jruby.ast.Node n : node.getCPath().childNodes()){
-                if (n instanceof org.jruby.ast.NilNode){
-                    NilNode nilNode = (NilNode) visitNilNode((org.jruby.ast.NilNode) n);
-                    nodes.add(nilNode);
-                } else if(n instanceof Colon2ConstNode) {
-                    Colon2ConstNode parentNode = ((Colon2ConstNode) n);
-                    final RubyNode lhs = (RubyNode) parentNode.getLeftNode().accept(this);
-                    nodes.add(new UninitializedReadConstantNode(context, translate(node.getPosition()), parentNode.getName(), lhs, false));
-                } else if(n instanceof ConstNode){
-                    ConstNode parentNode = ((ConstNode) n);
-                    final SourceSection s = translate(node.getPosition());
-                    nodes.add(new UninitializedReadConstantNode(context, s, parentNode.getName(), new SelfNode(context, s), false));
-                }
-            }
-        }
-
         if (node.getSuperNode() != null) {
             superClass = (RubyNode) node.getSuperNode().accept(this);
         } else {
             superClass = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         }
-        final DefineOrGetClassNode defineOrGetClass = new DefineOrGetClassNode(context, sourceSection, name, getModuleToDefineModulesIn(sourceSection), superClass);
 
-        return new OpenModuleNode(context, sourceSection, defineOrGetClass, definitionMethod, nodes);
+        final DefineOrGetClassNode defineOrGetClass = new DefineOrGetClassNode(context, sourceSection, node.getCPath().getName(), translateCPath(sourceSection, node.getCPath()), superClass);
+
+        return new OpenModuleNode(context, sourceSection, defineOrGetClass, definitionMethod);
+    }
+
+    private RubyNode translateCPath(SourceSection sourceSection, org.jruby.ast.Colon3Node node) {
+        if (node instanceof org.jruby.ast.Colon2ImplicitNode) {
+            return getModuleToDefineModulesIn(sourceSection);
+        } else {
+            if (node.childNodes().isEmpty()) {
+                return new ClassNode(context, sourceSection, new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getMainObject()));
+            } else {
+                return (RubyNode) node.childNodes().get(0).accept(this);
+            }
+        }
     }
 
     protected RubyNode getModuleToDefineModulesIn(SourceSection sourceSection) {
@@ -1256,7 +1247,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), node.getCPath().getName(), node.getBodyNode());
 
-        final DefineOrGetModuleNode defineModuleNode = new DefineOrGetModuleNode(context, sourceSection, name, getModuleToDefineModulesIn(sourceSection));
+        final DefineOrGetModuleNode defineModuleNode = new DefineOrGetModuleNode(context, sourceSection, name, translateCPath(sourceSection, node.getCPath()));
 
         return new OpenModuleNode(context, sourceSection, defineModuleNode, definitionMethod);
     }

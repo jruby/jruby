@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.objects;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
@@ -22,12 +23,12 @@ import org.jruby.truffle.runtime.core.*;
 public class DefineOrGetModuleNode extends RubyNode {
 
     private final String name;
-    @Child protected RubyNode moduleDefinedIn;
+    @Child protected RubyNode parentModule;
 
-    public DefineOrGetModuleNode(RubyContext context, SourceSection sourceSection, String name, RubyNode moduleDefinedIn) {
+    public DefineOrGetModuleNode(RubyContext context, SourceSection sourceSection, String name, RubyNode parentModule) {
         super(context, sourceSection);
         this.name = name;
-        this.moduleDefinedIn = adoptChild(moduleDefinedIn);
+        this.parentModule = adoptChild(parentModule);
     }
 
     @Override
@@ -36,29 +37,24 @@ public class DefineOrGetModuleNode extends RubyNode {
 
         final RubyContext context = getContext();
 
-        final RubyModule moduleDefinedInObject = (RubyModule) moduleDefinedIn.execute(frame);
-
         // Look for a current definition of the module, or create a new one
 
-        final Object constantValue = moduleDefinedInObject.lookupConstant(name);
+        RubyModule parentModuleObject;
+
+        try {
+            parentModuleObject = parentModule.executeRubyModule(frame);
+        } catch (UnexpectedResultException e) {
+            throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(e.getResult().toString(), "module"));
+        }
+
+        final Object constantValue = parentModuleObject.lookupConstant(name);
 
         RubyModule definingModule;
 
         if (constantValue == null) {
-            final Object self = frame.getArguments(RubyArguments.class).getSelf();
-
-            RubyModule parentModule;
-
-            if (self instanceof RubyModule) {
-                parentModule = (RubyModule) self;
-            } else {
-                // Because it's top level, and so self is the magic main object
-                parentModule = null;
-            }
-
-            definingModule = new RubyModule(context.getCoreLibrary().getModuleClass(), parentModule, name);
-            moduleDefinedInObject.setConstant(name, definingModule);
-            moduleDefinedInObject.getSingletonClass().setConstant(name, definingModule);
+            definingModule = new RubyModule(context.getCoreLibrary().getModuleClass(), parentModuleObject, name);
+            parentModuleObject.setConstant(name, definingModule);
+            parentModuleObject.getSingletonClass().setConstant(name, definingModule);
         } else {
             if (constantValue instanceof RubyModule) {
                 definingModule = (RubyModule) constantValue;

@@ -39,3 +39,5 @@ fails:Constant resolution within methods with statically assigned constants sear
 fails:Literal (A::X) constant resolution with statically assigned constants searches Object if no class or module qualifier is given
 fails:Literal (A::X) constant resolution with statically assigned constants searches Object after searching other scopes
 fails:Literal (A::X) constant resolution with statically assigned constants searches the superclass chain
+fails:Constant resolution within methods with statically assigned constants does not search the lexical scope of qualifying modules
+fails:Constant resolution within methods with dynamically assigned constants does not search the lexical scope of qualifying modules
