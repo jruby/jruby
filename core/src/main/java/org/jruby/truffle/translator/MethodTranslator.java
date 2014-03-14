@@ -158,7 +158,7 @@ class MethodTranslator extends Translator {
 
         if (environment.getBlockParameter() != null) {
             final FrameSlot param = environment.getBlockParameter();
-            final ReadBlockArgumentNode readArgumentNode = new ReadBlockArgumentNode(context, sourceSection, false);
+            final ReadBlockNode readArgumentNode = new ReadBlockNode(context, sourceSection, NilPlaceholder.INSTANCE);
             final WriteLocalVariableNode writeLocal = WriteLocalVariableNodeFactory.create(context, sourceSection, param, readArgumentNode);
             loadIndividualArgumentsNodes.add(writeLocal);
         }
@@ -342,6 +342,8 @@ class MethodTranslator extends Translator {
     public Object visitSuperNode(org.jruby.ast.SuperNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
+        System.err.println(node.getArgsNode());
+
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, node.getIterNode(), node.getArgsNode(), null);
 
         final String name = environment.getMethodName();
@@ -353,11 +355,9 @@ class MethodTranslator extends Translator {
     public Object visitZSuperNode(org.jruby.ast.ZSuperNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, node.getIterNode(), null, null);
-
         final String name = environment.getMethodName();
 
-        return new GeneralSuperCallNode(context, sourceSection, name, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted());
+        return new GeneralSuperReCallNode(context, sourceSection, name);
     }
 
     @Override

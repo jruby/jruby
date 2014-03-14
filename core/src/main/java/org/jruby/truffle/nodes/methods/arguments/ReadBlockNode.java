@@ -20,13 +20,13 @@ import org.jruby.truffle.runtime.core.*;
  * Read the block as a {@code Proc}.
  */
 @NodeInfo(shortName = "read-block-argument")
-public class ReadBlockArgumentNode extends RubyNode {
+public class ReadBlockNode extends RubyNode {
 
-    private final boolean undefinedIfNotPresent;
+    private final Object valueIfNotPresent;
 
-    public ReadBlockArgumentNode(RubyContext context, SourceSection sourceSection, boolean undefinedIfNotPresent) {
+    public ReadBlockNode(RubyContext context, SourceSection sourceSection, Object valueIfNotPresent) {
         super(context, sourceSection);
-        this.undefinedIfNotPresent = undefinedIfNotPresent;
+        this.valueIfNotPresent = valueIfNotPresent;
     }
 
     @Override
@@ -35,11 +35,7 @@ public class ReadBlockArgumentNode extends RubyNode {
         final RubyProc block = arguments.getBlock();
 
         if (block == null) {
-            if (undefinedIfNotPresent) {
-                return UndefinedPlaceholder.INSTANCE;
-            } else {
-                return NilPlaceholder.INSTANCE;
-            }
+            return valueIfNotPresent;
         } else {
             return block;
         }
