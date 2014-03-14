@@ -1321,9 +1321,17 @@ public class EncodingUtils {
         // negative length check here, we shouldn't need
         strBufCat(runtime, str, ptr);
     }
+    public static void  rbStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes, int ptr, int len) {
+        if (len == 0) return;
+        // negative length check here, we shouldn't need
+        strBufCat(runtime, str, ptrBytes, ptr, len);
+    }
 
     // str_buf_cat
     public static void strBufCat(Ruby runtime, RubyString str, ByteList ptr) {
+        strBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize());
+    }
+    public static void strBufCat(Ruby runtime, RubyString str, byte[] ptrBytes, int ptr, int len) {
         int total, off = -1;
 
         // termlen is not relevant since we have no termination sequence
@@ -1331,23 +1339,30 @@ public class EncodingUtils {
         // missing: if ptr string is inside str, off = ptr start minus str start
 
         str.modify();
-        if (ptr.length() == 0) return;
+        if (len == 0) return;
 
         // much logic is missing here, since we don't manually manage the ByteList buffer
 
-        total = str.size() + ptr.length();
+        total = str.size() + len;
         str.getByteList().ensure(total);
-        str.getByteList().append(ptr);
+        str.getByteList().append(ptrBytes, ptr, len);
     }
 
     // rb_enc_str_buf_cat
     public static void encStrBufCat(Ruby runtime, RubyString str, ByteList ptr, Encoding enc) {
-        encCrStrBufCat(runtime, str, ptr,
+        encCrStrBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize(),
+                enc, StringSupport.CR_UNKNOWN, null);
+    }
+    public static void encStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes, int ptr, int len, Encoding enc) {
+        encCrStrBufCat(runtime, str, ptrBytes, ptr, len,
                 enc, StringSupport.CR_UNKNOWN, null);
     }
 
     // rb_enc_cr_str_buf_cat
     public static void encCrStrBufCat(Ruby runtime, RubyString str, ByteList ptr, Encoding ptrEnc, int ptr_cr, int[] ptr_cr_ret) {
+        encCrStrBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize(), ptrEnc, ptr_cr, ptr_cr_ret);
+    }
+    public static void encCrStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes, int ptr, int len, Encoding ptrEnc, int ptr_cr, int[] ptr_cr_ret) {
         Encoding strEnc = str.getEncoding();
         Encoding resEnc;
         int str_cr, res_cr;
@@ -1359,15 +1374,15 @@ public class EncodingUtils {
             if (str_cr == StringSupport.CR_UNKNOWN) {
                 ptr_cr = StringSupport.CR_UNKNOWN;
             } else if (ptr_cr == StringSupport.CR_UNKNOWN) {
-                ptr_cr = StringSupport.codeRangeScan(ptrEnc, ptr);
+                ptr_cr = StringSupport.codeRangeScan(ptrEnc, ptrBytes, ptr, len);
             }
         } else {
             if (!EncodingUtils.encAsciicompat(strEnc) || !EncodingUtils.encAsciicompat(ptrEnc)) {
-                if (ptr.getRealSize() == 0) {
+                if (len == 0) {
                     return;
                 }
                 if (str.size() == 0) {
-                    rbStrBufCat(runtime, str, ptr);
+                    rbStrBufCat(runtime, str, ptrBytes, ptr, len);
                     str.setEncodingAndCodeRange(ptrEnc, ptr_cr);
                     return;
                 }
@@ -1375,7 +1390,7 @@ public class EncodingUtils {
             }
             if (!incompatible) {
                 if (ptr_cr == StringSupport.CR_UNKNOWN) {
-                    ptr_cr = StringSupport.codeRangeScan(ptrEnc, ptr);
+                    ptr_cr = StringSupport.codeRangeScan(ptrEnc, ptrBytes, ptr, len);
                 }
                 if (str_cr == StringSupport.CR_UNKNOWN) {
                     if (strEnc == ASCIIEncoding.INSTANCE || ptr_cr != StringSupport.CR_7BIT) {
@@ -1416,12 +1431,12 @@ public class EncodingUtils {
         } else { // str_cr must be BROKEN at this point
             resEnc = strEnc;
             res_cr = str_cr;
-            if (0 < ptr.getRealSize()) res_cr = StringSupport.CR_UNKNOWN;
+            if (0 < len) res_cr = StringSupport.CR_UNKNOWN;
         }
 
         // MRI checks for len < 0 here, but I don't think that's possible for us
 
-        strBufCat(runtime, str, ptr);
+        strBufCat(runtime, str, ptrBytes, ptr, len);
         str.setEncodingAndCodeRange(resEnc, res_cr);
     }
 

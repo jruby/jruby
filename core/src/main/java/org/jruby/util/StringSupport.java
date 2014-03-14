@@ -85,13 +85,18 @@ public final class StringSupport {
     public static int preciseLength(Encoding enc, byte[]bytes, int p, int end) {
         if (p >= end) return -1 - (1);
         int n = enc.length(bytes, p, end);
-        if (n > end - p) return -1 - (n - (end - p));
+        if (n > end - p) return MBCLEN_NEEDMORE(n - (end - p));
         return n;
     }
     
     // MBCLEN_NEEDMORE_P, ONIGENC_MBCLEN_NEEDMORE_P
     public static boolean MBCLEN_NEEDMORE_P(int r) {
         return r < -1;
+    }
+
+    // ONIGENC_MBCLEN_NEEDMORE
+    public static int MBCLEN_NEEDMORE(int n) {
+        return -1 - n;
     }
     
     // MBCLEN_INVALID_P, ONIGENC_MBCLEN_INVALID_P

@@ -2546,7 +2546,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         final Matcher matcher = prepared.matcher(value.getUnsafeBytes(), begin, range);
 
         if (RubyRegexp.matcherSearch(runtime, matcher, begin, range, Option.NONE) >= 0) {
-            repl = RubyRegexp.regsub19(repl, this, matcher, pattern);
+            repl = RubyRegexp.regsub19(context, repl, this, matcher, pattern);
             RubyMatchData match = RubyRegexp.createMatchData19(context, this, matcher, pattern);
             match.regexp = regexp;
             context.setBackRef(match);
@@ -2722,7 +2722,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             int endz = matcher.getEnd();
 
             if (repl != null) {     // string given
-                val = RubyRegexp.regsub19(repl, this, matcher, pattern);
+                val = RubyRegexp.regsub19(context, repl, this, matcher, pattern);
             } else {
                 final RubyString substr = makeShared19(runtime, begz, endz - begz);  
                 if (hash != null) { // hash given
