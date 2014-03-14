@@ -1,7 +1,6 @@
 require 'test/unit'
 require 'resolv'
 require 'socket'
-require 'tempfile'
 
 class TestResolvDNS < Test::Unit::TestCase
   def setup
@@ -151,14 +150,4 @@ class TestResolvDNS < Test::Unit::TestCase
     }
   end
 
-  def test_invalid_byte_comment
-    bug9273 = '[ruby-core:59239] [Bug #9273]'
-    Tempfile.open('resolv_test_dns_') do |tmpfile|
-      tmpfile.print("\xff\x00\x40")
-      tmpfile.close
-      assert_nothing_raised(ArgumentError, bug9273) do
-        Resolv::DNS::Config.parse_resolv_conf(tmpfile.path)
-      end
-    end
-  end
 end

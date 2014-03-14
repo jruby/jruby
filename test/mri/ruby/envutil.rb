@@ -334,7 +334,7 @@ module Test
   end
 eom
         args = args.dup
-        args.insert((Hash === args.first ? 1 : 0), "--disable=gems", *$:.map {|l| "-I#{l}"})
+        args.insert((Hash === args.first ? 1 : 0), "--disable-gems", *$:.map {|l| "-I#{l}"})
         stdout, stderr, status = EnvUtil.invoke_ruby(args, src, true, true, **opt)
         abort = status.coredump? || (status.signaled? && ABORT_SIGNALS.include?(status.termsig))
         assert(!abort, FailDesc[status, stderr])
@@ -378,7 +378,7 @@ eom
         token_re = Regexp.quote(token)
         envs = args.shift if Array === args and Hash === args.first
         args = [
-          "--disable=gems",
+          "--disable-gems",
           "-r", File.expand_path("../memory_status", __FILE__),
           *args,
           "-v", "-",

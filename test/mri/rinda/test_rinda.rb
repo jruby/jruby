@@ -4,7 +4,7 @@ require 'drb/drb'
 require 'drb/eq'
 require 'rinda/ring'
 require 'rinda/tuplespace'
-require 'timeout'
+
 require 'singleton'
 
 module Rinda
@@ -559,10 +559,6 @@ class TestRingServer < Test::Unit::TestCase
   end
 
   def test_do_reply
-    with_timeout(10) {_test_do_reply}
-  end
-
-  def _test_do_reply
     called = nil
 
     callback = proc { |ts|
@@ -575,16 +571,12 @@ class TestRingServer < Test::Unit::TestCase
 
     @rs.do_reply
 
-    wait_for(10) {called}
+    Thread.pass until called
 
     assert_same @ts, called
   end
 
   def test_do_reply_local
-    with_timeout(10) {_test_do_reply_local}
-  end
-
-  def _test_do_reply_local
     called = nil
 
     callback = proc { |ts|
@@ -595,7 +587,7 @@ class TestRingServer < Test::Unit::TestCase
 
     @rs.do_reply
 
-    wait_for(10) {called}
+    Thread.pass until called
 
     assert_same @ts, called
   end
@@ -682,46 +674,6 @@ class TestRingServer < Test::Unit::TestCase
     assert_nil(@rs.do_reply, 'otherwise should hang forever')
   end
 
-  private
-
-  def with_timeout(n)
-    aoe = Thread.abort_on_exception
-    Thread.abort_on_exception = true
-    tl0 = Thread.list
-    tl = nil
-    th = Thread.new(Thread.current) do |mth|
-      sleep n
-      (tl = Thread.list - tl0).each {|t|t.raise(Timeout::Error)}
-      mth.raise(Timeout::Error)
-    end
-    tl0 << th
-  rescue Timeout::Error => e
-    if tl
-      bt = e.backtrace
-      tl.each do |t|
-        begin
-          t.value
-        rescue Timeout::Error => e
-          bt.unshift("")
-          bt[0, 0] = e.backtrace
-        end
-      end
-    end
-    raise Timeout::Error, "timeout", bt
-  ensure
-    th.kill if th
-    Thread.abort_on_exception = aoe
-  end
-
-  def wait_for(n)
-    t = n + Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
-    until yield
-      if t < Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
-        flunk "timeout during waiting call"
-      end
-      sleep 0.1
-    end
-  end
 end
 
 class TestRingFinger < Test::Unit::TestCase

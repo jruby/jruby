@@ -181,7 +181,7 @@ module DL
       # In general uses of dlerror(3) should call it before use it.
       require 'socket'
       Socket.gethostbyname("localhost")
-      DL.dlopen("/lib/libc.so.7").sym('strcpy')
+      DL.dlopen("/usr/lib/libc.so").sym('strcpy')
     end if /freebsd/=~ RUBY_PLATFORM
   end
 end
