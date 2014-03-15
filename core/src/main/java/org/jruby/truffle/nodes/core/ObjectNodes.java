@@ -17,6 +17,7 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.methods.RubyMethod;
@@ -200,8 +201,17 @@ public abstract class ObjectNodes {
         }
 
         @Specialization
-        public Object instanceEval(VirtualFrame frame, RubyObject self, RubyProc block) {
-            return block.callWithModifiedSelf(frame.pack(), self);
+        public Object instanceEval(VirtualFrame frame, RubyBasicObject receiver, RubyProc block) {
+            if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
+                throw new RaiseException(getContext().getCoreLibrary().typeError("no class to make alias"));
+            }
+
+            return block.callWithModifiedSelf(frame.pack(), receiver);
+        }
+
+        @Specialization
+        public Object instanceEval(VirtualFrame frame, Object self, RubyProc block) {
+            return instanceEval(frame, getContext().getCoreLibrary().box(self), block);
         }
 
     }
@@ -398,6 +408,45 @@ public abstract class ObjectNodes {
         @Specialization
         public Object objectID(RubyBasicObject object) {
             return GeneralConversions.fixnumOrBignum(object.getObjectID());
+        }
+
+    }
+
+    @CoreMethod(names = "public_methods", appendCallNode = true, minArgs = 1, maxArgs = 2)
+    public abstract static class PublicMethodsNode extends CoreMethodNode {
+
+        public PublicMethodsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PublicMethodsNode(PublicMethodsNode prev) {
+            super(prev);
+        }
+
+        @Specialization(order = 1)
+        public RubyArray methods(RubyObject self, boolean includeInherited, Node callNode) {
+            if (!includeInherited) {
+                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "Object#methods always returns inherited methods at the moment");
+            }
+
+            return methods(self, callNode, UndefinedPlaceholder.INSTANCE);
+        }
+
+        @Specialization(order = 2)
+        public RubyArray methods(RubyObject self, @SuppressWarnings("unused") Node callNode, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
+            final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
+
+            final Map<String, RubyMethod> methods = new HashMap<>();
+
+            self.getLookupNode().getMethods(methods);
+
+            for (RubyMethod method : methods.values()) {
+                if (method.getVisibility() == Visibility.PUBLIC) {
+                    array.push(self.getRubyClass().getContext().newSymbol(method.getName()));
+                }
+            }
+
+            return array;
         }
 
     }

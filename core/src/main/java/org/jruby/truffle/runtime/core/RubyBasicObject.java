@@ -76,7 +76,7 @@ public class RubyBasicObject extends ObjectStorage {
 
     public RubyClass getSingletonClass() {
         if (rubySingletonClass == null) {
-            rubySingletonClass = new RubyClass(rubyClass.getParentModule(), rubyClass, String.format("#<Class:#<%s:%d>>", rubyClass.getName(), getObjectID()), true);
+            rubySingletonClass = new RubyClass(rubyClass.getParentModule(), rubyClass, String.format("#<Class:#<%s:0x%x>>", rubyClass.getName(), getObjectID()), true);
             lookupNode = new LookupFork(rubySingletonClass, rubyClass);
         }
 

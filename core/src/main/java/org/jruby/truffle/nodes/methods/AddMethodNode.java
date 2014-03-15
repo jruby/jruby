@@ -57,7 +57,13 @@ public class AddMethodNode extends RubyNode {
             }
         }
 
-        final RubyModule module = (RubyModule) receiverObject;
+        RubyModule module;
+
+        if (receiverObject instanceof RubyModule) {
+            module = (RubyModule) receiverObject;
+        } else {
+            module = ((RubyBasicObject) receiverObject).getSingletonClass();
+        }
 
         final RubyMethod methodWithDeclaringModule = methodObject.withDeclaringModule(module);
 

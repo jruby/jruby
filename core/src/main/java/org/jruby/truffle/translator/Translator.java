@@ -138,9 +138,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         final org.jruby.ast.LiteralNode oldName = (org.jruby.ast.LiteralNode) node.getOldName();
         final org.jruby.ast.LiteralNode newName = (org.jruby.ast.LiteralNode) node.getNewName();
 
-        final ClassNode classNode = new ClassNode(context, sourceSection, new SelfNode(context, sourceSection));
-
-        return new AliasNode(context, sourceSection, classNode, newName.getName(), oldName.getName());
+        return new AliasNode(context, sourceSection, new SelfNode(context, sourceSection), newName.getName(), oldName.getName());
     }
 
     @Override
@@ -739,7 +737,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     @Override
     public Object visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final ClassNode classNode = new ClassNode(context, sourceSection, new SelfNode(context, sourceSection));
+        final SelfNode classNode = new SelfNode(context, sourceSection);
         return translateMethodDefinition(sourceSection, classNode, node.getName(), node.getArgsNode(), node.getBodyNode());
     }
 

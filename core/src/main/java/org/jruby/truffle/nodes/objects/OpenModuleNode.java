@@ -37,14 +37,7 @@ public class OpenModuleNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        // Call the definition method with the module as self - there's no return value
-
-        final RubyModule module = (RubyModule) definingModule.execute(frame);
-        definitionMethod.executeMethod(frame).call(frame.pack(), module, null);
-
-        return module;
+        return definitionMethod.executeMethod(frame).call(frame.pack(), definingModule.execute(frame), null);
     }
 
 }

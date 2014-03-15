@@ -226,7 +226,7 @@ public abstract class ModuleNodes {
 
         @Specialization(order = 4)
         public Object classEval(VirtualFrame frame, RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
-            return block.call(frame.pack(), self);
+            return block.callWithModifiedSelf(frame.pack(), self);
         }
 
     }

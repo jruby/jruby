@@ -54,8 +54,6 @@ public class DefineOrGetClassNode extends RubyNode {
         RubyClass definingClass;
 
         if (constantValue == null) {
-            final Object self = frame.getArguments(RubyArguments.class).getSelf();
-
             final RubyClass superClassObject = (RubyClass) superClass.execute(frame);
 
             if (superClassObject instanceof RubyException.RubyExceptionClass) {
