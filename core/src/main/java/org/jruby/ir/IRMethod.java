@@ -43,7 +43,7 @@ public class IRMethod extends IRScope {
     @Override
     public void addInstr(Instr i) {
         // Accumulate call arguments
-        if (i instanceof ReceiveRestArgInstr) callArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult()));
+        if (i instanceof ReceiveRestArgInstr) callArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult(), true));
         else if (i instanceof ReceiveArgBase) callArgs.add(((ReceiveArgBase) i).getResult());
 
         super.addInstr(i);

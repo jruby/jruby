@@ -557,51 +557,33 @@ public class IRBuilder {
         switch (args.getNodeType()) {
             case ARGSCATNODE: {
                 CompoundArray a = (CompoundArray)build(args, s);
-                argsList.add(new Splat(a));
+                argsList.add(new Splat(a, true));
                 return a.getAppendedArg();
             }
             case ARGSPUSHNODE:  {
                 ArgsPushNode ap = (ArgsPushNode)args;
                 Operand v1 = build(ap.getFirstNode(), s);
                 Operand v2 = build(ap.getSecondNode(), s);
-                argsList.add(new Splat(new CompoundArray(v1, v2, true)));
+                argsList.add(new Splat(new CompoundArray(v1, v2, true), true));
                 return v2;
             }
             case ARRAYNODE: {
                 ArrayNode arrayNode = (ArrayNode)args;
                 if (arrayNode.isLightweight()) {
                     List<Node> children = arrayNode.childNodes();
-                    if (children.size() == 1) {
-                        // skipOverNewlines is required because the parser inserts a NewLineNode in between!
-                        Node child = skipOverNewlines(s, children.get(0));
-                        if (child instanceof SplatNode) {
-                            // SSS: If the only child is a splat, the splat is supposed to get through
-                            // as an array without being expanded into the call arg list.
-                            //
-                            // The AST for the foo([*1]) is: ArrayNode(Splat19Node(..))
-                            // The AST for the foo(*1) is: Splat19Node(..)
-                            //
-                            // Since a lone splat in call args is always expanded, we convert the splat
-                            // into a compound array: *n --> args-cat([], *n)
-                            SplatNode splat = (SplatNode)child;
-                            Variable splatArray = getValueInTemporaryVariable(s, build(splat.getValue(), s));
-                            argsList.add(new CompoundArray(new Array(), splatArray));
-                            return new Splat(splatArray);
-                        } else {
-                            Operand childOperand = build(child, s);
-                            argsList.add(childOperand);
-                            return childOperand;
-                        }
-                    } else {
-                        // explode array, it's an internal "args" array
-                        for (Node n: children) {
-                            argsList.add(build(n, s));
-                        }
+                    // explode array, it's an internal "args" array
+                    for (Node n: children) {
+                        argsList.add(build(n, s));
                     }
                 } else {
                     // use array as-is, it's a literal array
                     argsList.add(build(arrayNode, s));
                 }
+                break;
+            }
+            case SPLATNODE: {
+                Splat splat = new Splat(build(((SplatNode)args).getValue(), s), true);
+                argsList.add(splat);
                 break;
             }
             default: {

@@ -29,7 +29,7 @@ public abstract class CallAdapter {
         CallSite callSite = getCallSiteFor(callType, methAddr);
 
         if (callType == CallType.UNKNOWN) return new AttrAssignCallAdapter(callSite, methAddr.getName(), args);
-        if (containsSplat(args)) return new ManyArgBlockSplatCallAdapter(callSite, args, closure);
+        if (containsArgSplat(args)) return new ManyArgBlockSplatCallAdapter(callSite, args, closure);
 
         switch(args.length) {
             case 0:

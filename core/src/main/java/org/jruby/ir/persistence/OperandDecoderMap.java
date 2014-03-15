@@ -96,7 +96,7 @@ class OperandDecoderMap {
             case REGEXP: return decodeRegexp();
             case SCOPE_MODULE: return new ScopeModule(d.decodeScope());
             case SELF: return Self.SELF;
-            case SPLAT: return new Splat(d.decodeOperand());
+            case SPLAT: return new Splat(d.decodeOperand(), d.decodeBoolean());
             case STANDARD_ERROR: return new StandardError();
             case STRING_LITERAL: return new StringLiteral(d.decodeString());
             case SVALUE: return new SValue(d.decodeOperand());

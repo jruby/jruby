@@ -181,7 +181,7 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void Self(Self self) {} // No data
 
-    @Override public void Splat(Splat splat) { encode(splat.getArray()); }
+    @Override public void Splat(Splat splat) { encode(splat.getArray()); encoder.encode(splat.unsplatArgs); }
 
     @Override public void StandardError(StandardError standarderror) {} // No data
 

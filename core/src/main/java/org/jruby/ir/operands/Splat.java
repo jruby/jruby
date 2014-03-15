@@ -16,16 +16,21 @@ import java.util.Map;
 // Further down the line, it could get converted to calls that implement splat semantics
 public class Splat extends Operand {
     final private Operand array;
+    final public boolean unsplatArgs;
+
+    public Splat(Operand array, boolean unsplatArgs) {
+        super(OperandType.SPLAT);
+        this.array = array;
+        this.unsplatArgs = unsplatArgs;
+    }
 
     public Splat(Operand array) {
-        super(OperandType.SPLAT);
-
-        this.array = array;
+        this(array, false);
     }
 
     @Override
     public String toString() {
-        return "*" + array;
+        return (unsplatArgs ? "*(unsplat)" : "*") + array;
     }
 
     @Override
@@ -47,7 +52,7 @@ public class Splat extends Operand {
         _array = ((Variable)_array).getValue(valueMap);
         }
          */
-        return (newArray == array) ? this : new Splat(newArray);
+        return (newArray == array) ? this : new Splat(newArray, unsplatArgs);
     }
 
     /** Append the list of variables used in this operand to the input list */
@@ -58,7 +63,7 @@ public class Splat extends Operand {
 
     @Override
     public Operand cloneForInlining(InlinerInfo ii) {
-        return hasKnownValue() ? this : new Splat(array.cloneForInlining(ii));
+        return hasKnownValue() ? this : new Splat(array.cloneForInlining(ii), unsplatArgs);
     }
 
     @Override

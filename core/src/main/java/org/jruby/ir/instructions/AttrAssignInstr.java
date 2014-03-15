@@ -33,7 +33,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
     @Override
     public CallBase specializeForInterpretation() {
         Operand[] callArgs = getCallArgs();
-        if (containsSplat(callArgs)) return this;
+        if (containsArgSplat(callArgs)) return this;
 
         switch (callArgs.length) {
             case 1:
