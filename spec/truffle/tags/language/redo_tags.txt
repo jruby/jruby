@@ -1,1 +1,0 @@
-fails:The redo statement restarts block execution if used within block

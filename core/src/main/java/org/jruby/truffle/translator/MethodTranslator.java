@@ -60,11 +60,12 @@ class MethodTranslator extends Translator {
         }
 
         if (isBlock) {
-            body = new CatchNextNode(context, sourceSection, body);
+            body = new RedoableNode(context, sourceSection, body);
         } else {
             body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID());
-            body = new CatchNextNode(context, sourceSection, body);
         }
+
+        body = new CatchNextNode(context, sourceSection, body);
 
         final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), methodName, body);
 
