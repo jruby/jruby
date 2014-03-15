@@ -341,9 +341,7 @@ public class RubyModule extends RubyObject implements LookupNode {
     }
 
     public static void setCurrentVisibility(Frame frame, Visibility visibility) {
-        final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(VISIBILITY_FRAME_SLOT_ID);
-
-        frame.setObject(slot, visibility);
+        frame.setObject(frame.getFrameDescriptor().findFrameSlot(VISIBILITY_FRAME_SLOT_ID), visibility);
     }
 
     public void visibilityMethod(PackedFrame frame, Object[] arguments, Visibility visibility) {

@@ -738,7 +738,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     public Object visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
         final SelfNode classNode = new SelfNode(context, sourceSection);
-        return translateMethodDefinition(sourceSection, classNode, node.getName(), node.getArgsNode(), node.getBodyNode());
+        return translateMethodDefinition(sourceSection, classNode, node.getName(), node.getArgsNode(), node.getBodyNode(), false);
     }
 
     @Override
@@ -749,10 +749,10 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         final SingletonClassNode singletonClassNode = new SingletonClassNode(context, sourceSection, objectNode);
 
-        return translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node.getArgsNode(), node.getBodyNode());
+        return translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node.getArgsNode(), node.getBodyNode(), true);
     }
 
-    private RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
+    private RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity) {
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
                         new UniqueMethodIdentifier());
 
@@ -760,7 +760,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, source);
 
-        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode);
+        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode, ignoreLocalVisiblity);
 
         /*
          * In the top-level, methods are defined in the class of the main object. This is
@@ -1143,7 +1143,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
             throw new UnsupportedOperationException();
         }
 
-        return methodCompiler.compileFunctionNode(translate(node.getPosition()), "(block)", argsNode, node.getBodyNode());
+        return methodCompiler.compileFunctionNode(translate(node.getPosition()), "(block)", argsNode, node.getBodyNode(), false);
     }
 
     @Override
@@ -2051,7 +2051,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
             throw new UnsupportedOperationException();
         }
 
-        final MethodDefinitionNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), "(lambda)", argsNode, node.getBodyNode());
+        final MethodDefinitionNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), "(lambda)", argsNode, node.getBodyNode(), false);
 
         return new LambdaNode(context, translate(node.getPosition()), definitionNode);
     }

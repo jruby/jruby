@@ -26,7 +26,7 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
 
     public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, String name, UniqueMethodIdentifier uniqueIdentifier, FrameDescriptor frameDescriptor,
                     boolean requiresDeclarationFrame, RubyRootNode pristineRootNode, CallTarget callTarget) {
-        super(context, sourceSection, name, uniqueIdentifier, frameDescriptor, requiresDeclarationFrame, pristineRootNode, callTarget);
+        super(context, sourceSection, name, uniqueIdentifier, frameDescriptor, requiresDeclarationFrame, pristineRootNode, callTarget, false);
     }
 
     @Override

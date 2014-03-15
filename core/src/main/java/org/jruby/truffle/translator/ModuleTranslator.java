@@ -62,7 +62,7 @@ class ModuleTranslator extends Translator {
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRootNode));
 
         return new MethodDefinitionNode(context, sourceSection, methodName, environment.getUniqueMethodIdentifier(), environment.getFrameDescriptor(), environment.needsDeclarationFrame(),
-                        pristineRootNode, callTarget);
+                        pristineRootNode, callTarget, false);
     }
 
     @Override
@@ -93,7 +93,7 @@ class ModuleTranslator extends Translator {
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
                         new UniqueMethodIdentifier());
         final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, source);
-        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), node.getName(), node.getArgsNode(), node.getBodyNode());
+        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), node.getName(), node.getArgsNode(), node.getBodyNode(), false);
 
         final SourceSection sourceSection = translate(node.getPosition());
         return new AddMethodNode(context, sourceSection, new SelfNode(context, sourceSection), functionExprNode);

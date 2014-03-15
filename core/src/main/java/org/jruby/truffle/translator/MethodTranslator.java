@@ -40,7 +40,7 @@ class MethodTranslator extends Translator {
         this.isBlock = isBlock;
     }
 
-    public MethodDefinitionNode compileFunctionNode(SourceSection sourceSection, String methodName, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
+    public MethodDefinitionNode compileFunctionNode(SourceSection sourceSection, String methodName, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity) {
         environment.setMethodName(methodName);
 
         final Arity arity = findParameters(argsNode);
@@ -75,7 +75,7 @@ class MethodTranslator extends Translator {
                             pristineRootNode, callTarget);
         } else {
             return new MethodDefinitionNode(context, sourceSection, methodName, environment.getUniqueMethodIdentifier(), environment.getFrameDescriptor(), environment.needsDeclarationFrame(),
-                            pristineRootNode, callTarget);
+                            pristineRootNode, callTarget, ignoreLocalVisiblity);
         }
     }
 

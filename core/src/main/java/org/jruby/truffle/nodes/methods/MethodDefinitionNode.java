@@ -34,8 +34,10 @@ public class MethodDefinitionNode extends RubyNode {
 
     protected final boolean requiresDeclarationFrame;
 
+    protected final boolean ignoreLocalVisibility;
+
     public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, UniqueMethodIdentifier uniqueIdentifier, FrameDescriptor frameDescriptor,
-            boolean requiresDeclarationFrame, RubyRootNode pristineRootNode, CallTarget callTarget) {
+            boolean requiresDeclarationFrame, RubyRootNode pristineRootNode, CallTarget callTarget, boolean ignoreLocalVisibility) {
         super(context, sourceSection);
         this.name = name;
         this.uniqueIdentifier = uniqueIdentifier;
@@ -43,6 +45,7 @@ public class MethodDefinitionNode extends RubyNode {
         this.requiresDeclarationFrame = requiresDeclarationFrame;
         this.pristineRootNode = pristineRootNode;
         this.callTarget = callTarget;
+        this.ignoreLocalVisibility = ignoreLocalVisibility;
     }
 
     public RubyMethod executeMethod(VirtualFrame frame) {
@@ -56,17 +59,17 @@ public class MethodDefinitionNode extends RubyNode {
             declarationFrame = null;
         }
 
-        final FrameSlot visibilitySlot = frame.getFrameDescriptor().findFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID);
-
         Visibility visibility;
 
-        if (name.equals("initialize") || name.equals("initialize_copy") || name.equals("initialize_clone") || name.equals("initialize_dup") || name.equals("respond_to_missing?")) {
+        if (ignoreLocalVisibility) {
+            visibility = Visibility.PUBLIC;
+        } else if (name.equals("initialize") || name.equals("initialize_copy") || name.equals("initialize_clone") || name.equals("initialize_dup") || name.equals("respond_to_missing?")) {
             visibility = Visibility.PRIVATE;
         } else {
+            final FrameSlot visibilitySlot = frame.getFrameDescriptor().findFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID);
+
             if (visibilitySlot == null) {
-
                 visibility = Visibility.PUBLIC;
-
             } else {
                 Object visibilityObject;
 
