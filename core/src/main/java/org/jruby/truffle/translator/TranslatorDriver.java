@@ -57,7 +57,7 @@ public class TranslatorDriver {
 
         final MethodTranslator translator = new MethodTranslator(context, null, environment, false, context.getSourceManager().get(bodyNode.getPosition().getFile()));
 
-        return translator.compileFunctionNode(new DefaultSourceSection(context.getSourceManager().get(bodyNode.getPosition().getFile()), "(unknown)", bodyNode.getPosition().getStartLine() + 1, -1, -1, -1), "(unknown)", argsNode, bodyNode);
+        return translator.compileFunctionNode(new DefaultSourceSection(context.getSourceManager().get(bodyNode.getPosition().getFile()), "(unknown)", bodyNode.getPosition().getStartLine() + 1, -1, -1, -1), "(unknown)", argsNode, bodyNode, false);
     }
 
     public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame) {
@@ -75,8 +75,6 @@ public class TranslatorDriver {
              */
 
             MaterializedFrame frame = parentFrame;
-
-            final org.jruby.lexer.yacc.ISourcePosition scopeSourceSection = new org.jruby.lexer.yacc.SimpleSourcePosition("(scope)", 0);
 
             while (frame != null) {
                 for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
@@ -157,6 +155,10 @@ public class TranslatorDriver {
             // Catch return
 
             truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
+
+            // Catch retry
+
+            truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
 
             // Shell result
 

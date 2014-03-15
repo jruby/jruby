@@ -435,6 +435,10 @@ public class CoreLibrary {
         return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), "divided by 0");
     }
 
+    public RubyException syntaxError(String message) {
+        return new RubyException(syntaxErrorClass, message);
+    }
+
     public RubyContext getContext() {
         return context;
     }

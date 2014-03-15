@@ -66,6 +66,7 @@ class MethodTranslator extends Translator {
         }
 
         body = new CatchNextNode(context, sourceSection, body);
+        body = new CatchRetryAsErrorNode(context, sourceSection, body);
 
         final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), methodName, body);
 
