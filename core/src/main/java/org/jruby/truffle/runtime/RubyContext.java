@@ -26,6 +26,7 @@ import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.subsystems.*;
@@ -103,11 +104,20 @@ public class RubyContext implements ExecutionContext {
     }
 
     public void loadFile(String fileName) {
+        if (new File(fileName).isAbsolute()) {
+            loadFileAbsolute(fileName);
+        } else {
+            loadFileAbsolute(this.getRuntime().getCurrentDirectory() + File.separator + fileName);
+        }
+    }
+
+    private void loadFileAbsolute(String fileName) {
         final Source source = sourceManager.get(fileName);
         final String code = source.getCode();
         if (code == null) {
             throw new RuntimeException("Can't read file " + fileName);
         }
+        coreLibrary.getLoadedFeatures().push(makeString(fileName));
         execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
     }
 

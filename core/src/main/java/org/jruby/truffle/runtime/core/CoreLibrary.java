@@ -276,7 +276,10 @@ public class CoreLibrary {
 
         globalVariablesObject = new RubyBasicObject(objectClass);
         globalVariablesObject.switchToPrivateLayout();
-        globalVariablesObject.setInstanceVariable("$:", new RubyArray(arrayClass, new ObjectArrayStore()));
+        globalVariablesObject.setInstanceVariable("$LOAD_PATH", new RubyArray(arrayClass, new ObjectArrayStore()));
+        globalVariablesObject.setInstanceVariable("$LOADED_FEATURES", new RubyArray(arrayClass, new ObjectArrayStore()));
+        globalVariablesObject.setInstanceVariable("$:", globalVariablesObject.getInstanceVariable("$LOAD_PATH"));
+        globalVariablesObject.setInstanceVariable("$\"", globalVariablesObject.getInstanceVariable("$LOADED_FEATURES"));
 
         initializeEncodingConstants();
     }
@@ -644,6 +647,14 @@ public class CoreLibrary {
 
     public RubyBasicObject getGlobalVariablesObject() {
         return globalVariablesObject;
+    }
+
+    public RubyArray getLoadPath() {
+        return (RubyArray) globalVariablesObject.getInstanceVariable("$LOAD_PATH");
+    }
+
+    public RubyArray getLoadedFeatures() {
+        return (RubyArray) globalVariablesObject.getInstanceVariable("$LOADED_FEATURES");
     }
 
     public RubyBasicObject getMainObject() {

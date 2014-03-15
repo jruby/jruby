@@ -27,8 +27,6 @@ public class FeatureManager {
 
     private RubyContext context;
 
-    private final Set<String> requiredFiles = new HashSet<>();
-
     public FeatureManager(RubyContext context) {
         this.context = context;
     }
@@ -53,10 +51,10 @@ public class FeatureManager {
 
         // Get the load path
 
-        final Object loadPathObject = context.getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$:");
+        final Object loadPathObject = context.getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$LOAD_PATH");
 
         if (!(loadPathObject instanceof RubyArray)) {
-            throw new RuntimeException("$: is not an array");
+            throw new RuntimeException("$LOAD_PATH is not an array");
         }
 
         final List<Object> loadPath = ((RubyArray) loadPathObject).asList();
@@ -64,6 +62,12 @@ public class FeatureManager {
         // Try as a full path
 
         if (requireInPath("", feature)) {
+            return true;
+        }
+
+        // Try as a path relative to the current director
+
+        if (requireInPath(context.getRuntime().getCurrentDirectory(), feature)) {
             return true;
         }
 
@@ -103,7 +107,7 @@ public class FeatureManager {
     }
 
     private boolean requireFile(String fileName) throws IOException {
-        if (requiredFiles.contains(fileName)) {
+        if (context.getCoreLibrary().getLoadedFeatures().contains(fileName)) {
             return true;
         }
 
@@ -114,7 +118,7 @@ public class FeatureManager {
 
         if (new File(fileName).isFile()) {
             context.loadFile(fileName);
-            requiredFiles.add(fileName);
+            context.getCoreLibrary().getLoadedFeatures().push(context.makeString(fileName));
             return true;
         } else {
             URL url;
@@ -134,7 +138,8 @@ public class FeatureManager {
             }
 
             context.load(context.getSourceManager().get(url.toString(), inputStream));
-            requiredFiles.add(fileName);
+            context.getCoreLibrary().getLoadedFeatures().push(context.makeString(fileName));
+            ((RubyArray) context.getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$LOADED_FEATURES")).push(context.makeString(fileName));
             return true;
         }
     }

@@ -342,8 +342,6 @@ class MethodTranslator extends Translator {
     public Object visitSuperNode(org.jruby.ast.SuperNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        System.err.println(node.getArgsNode());
-
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, node.getIterNode(), node.getArgsNode(), null);
 
         final String name = environment.getMethodName();

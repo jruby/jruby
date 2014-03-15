@@ -94,6 +94,25 @@ public abstract class DebugNodes {
 
     }
 
+    @CoreMethod(names = "tree", isModuleMethod = true, needsSelf = false, appendCallNode = true, maxArgs = 0)
+    public abstract static class TreeNode extends CoreMethodNode {
+
+        public TreeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public TreeNode(TreeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public NilPlaceholder tree(Node callNode) {
+            NodeUtil.printCompactTree(getContext().getRuntime().getOut(), NodeUtil.findOutermostRootNode(callNode));
+            return NilPlaceholder.INSTANCE;
+        }
+
+    }
+
     @CoreMethod(names = "where", isModuleMethod = true, needsSelf = false, appendCallNode = true, minArgs = 1, maxArgs = 1)
     public abstract static class WhereNode extends CoreMethodNode {
 

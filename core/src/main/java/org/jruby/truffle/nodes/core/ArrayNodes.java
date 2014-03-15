@@ -354,6 +354,25 @@ public abstract class ArrayNodes {
 
     }
 
+    @CoreMethod(names = "clear", maxArgs = 0)
+    public abstract static class ClearNode extends ArrayCoreMethodNode {
+
+        public ClearNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ClearNode(ClearNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray clear(RubyArray array) {
+            array.clear();
+            return array;
+        }
+
+    }
+
     @CoreMethod(names = "compact", maxArgs = 0)
     public abstract static class CompactNode extends ArrayCoreMethodNode {
 
@@ -927,6 +946,25 @@ public abstract class ArrayNodes {
             } else {
                 return NilPlaceholder.INSTANCE;
             }
+        }
+
+    }
+
+    @CoreMethod(names = "replace", minArgs = 1, maxArgs = 1)
+    public abstract static class ReplaceNode extends ArrayCoreMethodNode {
+
+        public ReplaceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ReplaceNode(ReplaceNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray clear(RubyArray array, RubyArray other) {
+            array.replace(other);
+            return array;
         }
 
     }

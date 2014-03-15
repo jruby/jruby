@@ -259,6 +259,14 @@ public final class RubyArray extends RubyObject {
         return store.deleteAt(normalisedIndex);
     }
 
+    public void clear() {
+        store = EmptyArrayStore.INSTANCE;
+    }
+
+    public void replace(RubyArray other) {
+        store = other.store.dup();
+    }
+
     @Override
     @CompilerDirectives.SlowPath
     public Object dup() {

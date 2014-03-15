@@ -73,7 +73,7 @@ public abstract class ObjectNodes {
 
     }
 
-    @CoreMethod(names = "dup", maxArgs = 0)
+    @CoreMethod(names = {"dup", "clone"}, maxArgs = 0)
     public abstract static class DupNode extends CoreMethodNode {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
