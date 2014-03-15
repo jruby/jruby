@@ -14,7 +14,6 @@ import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.impl.DefaultSourceSection;
 import org.joni.Regex;
-import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.DefinedNode;
 import org.jruby.truffle.nodes.ReadNode;
@@ -43,6 +42,7 @@ import org.jruby.truffle.nodes.literal.array.UninitialisedArrayLiteralNode;
 import org.jruby.truffle.nodes.methods.AddMethodNode;
 import org.jruby.truffle.nodes.methods.AliasNode;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
+import org.jruby.truffle.nodes.methods.UndefNode;
 import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.ClassNode;
@@ -1256,7 +1256,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     }
 
     @Override
-    public Object visitMultipleAsgnNode(MultipleAsgn19Node node) {
+    public Object visitMultipleAsgnNode(org.jruby.ast.MultipleAsgn19Node node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final org.jruby.ast.ArrayNode preArray = (org.jruby.ast.ArrayNode) node.getPre();
@@ -1891,7 +1891,9 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
     @Override
     public Object visitUndefNode(org.jruby.ast.UndefNode node) {
-        return unimplemented(node);
+        final SourceSection sourceSection = translate(node.getPosition());
+        final SelfNode classNode = new SelfNode(context, sourceSection);
+        return new UndefNode(context, sourceSection, classNode, ((org.jruby.ast.LiteralNode) node.getName()).getName());
     }
 
     @Override
@@ -2013,7 +2015,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         return unimplemented(node);
     }
 
-    public Object visitRequiredKeywordArgumentValueNode(RequiredKeywordArgumentValueNode node) {
+    public Object visitRequiredKeywordArgumentValueNode(org.jruby.ast.RequiredKeywordArgumentValueNode node) {
         return unimplemented(node);
     }
 

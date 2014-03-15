@@ -77,7 +77,7 @@ public class DispatchNode extends Node {
         // Check for methods that are explicitly undefined
 
         if (method.isUndefined()) {
-            throw new RaiseException(context.getCoreLibrary().nameErrorNoMethod(name, receiverBasicObject.toString()));
+            throw new RaiseException(context.getCoreLibrary().noMethodError(name, receiverBasicObject.toString()));
         }
 
         /**
