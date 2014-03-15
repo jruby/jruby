@@ -35,17 +35,16 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     private static long callSiteCounter = 1;
 
     public final long callSiteId;
+    private final CallType callType;
     protected Operand   receiver;
     protected Operand[] arguments;
     protected Operand   closure;
     protected MethAddr methAddr;
     protected CallSite callSite;
-    private final CallType callType;
 
     private boolean flagsComputed;
     private boolean canBeEval;
     private boolean targetRequiresCallersBinding;    // Does this call make use of the caller's binding?
-    public HashMap<DynamicMethod, Integer> profile;
     private boolean dontInline;
     private boolean containsSplat;
 
