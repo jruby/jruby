@@ -51,14 +51,6 @@ public class FeatureManager {
 
         // Get the load path
 
-        final Object loadPathObject = context.getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$LOAD_PATH");
-
-        if (!(loadPathObject instanceof RubyArray)) {
-            throw new RuntimeException("$LOAD_PATH is not an array");
-        }
-
-        final List<Object> loadPath = ((RubyArray) loadPathObject).asList();
-
         // Try as a full path
 
         if (requireInPath("", feature)) {
@@ -73,7 +65,7 @@ public class FeatureManager {
 
         // Try each load path in turn
 
-        for (Object pathObject : loadPath) {
+        for (Object pathObject : context.getCoreLibrary().getLoadPath().asList()) {
             final String path = pathObject.toString();
 
             if (requireInPath(path, feature)) {

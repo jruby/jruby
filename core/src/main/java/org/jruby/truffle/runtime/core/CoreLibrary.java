@@ -439,16 +439,8 @@ public class CoreLibrary {
         return context;
     }
 
-    public RubyClass getArgumentErrorClass() {
-        return argumentErrorClass;
-    }
-
     public RubyClass getArrayClass() {
         return arrayClass;
-    }
-
-    public RubyClass getBasicObjectClass() {
-        return basicObjectClass;
     }
 
     public RubyClass getBignumClass() {
@@ -463,20 +455,8 @@ public class CoreLibrary {
         return classClass;
     }
 
-    public RubyModule getComparableClass() {
-        return comparableModule;
-    }
-
     public RubyClass getContinuationClass() {
         return continuationClass;
-    }
-
-    public RubyClass getDirClass() {
-        return dirClass;
-    }
-
-    public RubyClass getExceptionClass() {
-        return exceptionClass;
     }
 
     public RubyClass getFalseClass() {
@@ -503,20 +483,8 @@ public class CoreLibrary {
         return hashClass;
     }
 
-    public RubyClass getIntegerClass() {
-        return integerClass;
-    }
-
-    public RubyClass getIoClass() {
-        return ioClass;
-    }
-
     public RubyClass getLoadErrorClass() {
         return loadErrorClass;
-    }
-
-    public RubyClass getLocalJumpErrorClass() {
-        return localJumpErrorClass;
     }
 
     public RubyClass getMatchDataClass() {
@@ -539,10 +507,6 @@ public class CoreLibrary {
         return noMethodErrorClass;
     }
 
-    public RubyClass getNumericClass() {
-        return numericClass;
-    }
-
     public RubyClass getObjectClass() {
         return objectClass;
     }
@@ -551,16 +515,8 @@ public class CoreLibrary {
         return procClass;
     }
 
-    public RubyClass getProcessClass() {
-        return processClass;
-    }
-
     public RubyClass getRangeClass() {
         return rangeClass;
-    }
-
-    public RubyClass getRangeErrorClass() {
-        return rangeErrorClass;
     }
 
     public RubyClass getRegexpClass() {
@@ -573,14 +529,6 @@ public class CoreLibrary {
 
     public RubyClass getRuntimeErrorClass() {
         return runtimeErrorClass;
-    }
-
-    public RubyModule getSignalModule() {
-        return signalModule;
-    }
-
-    public RubyClass getStandardErrorClass() {
-        return standardErrorClass;
     }
 
     public RubyClass getStringClass() {
@@ -601,10 +549,6 @@ public class CoreLibrary {
         return syntaxErrorClass;
     }
 
-    public RubyClass getSystemCallErrorClass() {
-        return systemCallErrorClass;
-    }
-
     public RubyClass getThreadClass() {
         return threadClass;
     }
@@ -617,28 +561,12 @@ public class CoreLibrary {
         return trueClass;
     }
 
-    public RubyClass getTypeErrorClass() {
-        return typeErrorClass;
-    }
-
     public RubyClass getZeroDivisionErrorClass() {
         return zeroDivisionErrorClass;
     }
 
     public RubyModule getKernelModule() {
         return kernelModule;
-    }
-
-    public RubyModule getMathModule() {
-        return mathModule;
-    }
-
-    public RubyModule getObjectSpaceModule() {
-        return objectSpaceModule;
-    }
-
-    public RubyModule getDebugModule() {
-        return debugModule;
     }
 
     public RubyArray getArgv() {
@@ -659,18 +587,6 @@ public class CoreLibrary {
 
     public RubyBasicObject getMainObject() {
         return mainObject;
-    }
-
-    public RubyFalseClass getFalseObject() {
-        return falseObject;
-    }
-
-    public RubyNilClass getNilObject() {
-        return nilObject;
-    }
-
-    public RubyTrueClass getTrueObject() {
-        return trueObject;
     }
 
     public RubyEncoding getDefaultEncoding() { return RubyEncoding.findEncodingByName(context.makeString("US-ASCII")); }

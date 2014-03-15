@@ -95,10 +95,6 @@ public class RubyContext implements ExecutionContext {
         return debugManager;
     }
 
-    public ASTPrinter getASTPrinter() {
-        return astPrinter;
-    }
-
     public void load(Source source) {
         execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
     }
@@ -123,12 +119,6 @@ public class RubyContext implements ExecutionContext {
 
     public RubySymbol.SymbolTable getSymbolTable() {
         return symbolTable;
-    }
-    /**
-     * Receives runtime notification that execution has halted.
-     */
-    public void haltedAt(Node node, MaterializedFrame frame) {
-        runShell(node, frame);
     }
 
     public RubySymbol newSymbol(String name) {
@@ -281,17 +271,13 @@ public class RubyContext implements ExecutionContext {
      * so.
      */
     public static boolean shouldObjectBeVisible(Object object) {
-        // TODO(cs): RubyMethod should never be visible
-
         return object instanceof UndefinedPlaceholder || //
                         object instanceof Boolean || //
                         object instanceof Integer || //
                         object instanceof BigInteger || //
                         object instanceof Double || //
                         object instanceof RubyBasicObject || //
-                        object instanceof RubyMethod || //
-                        object instanceof NilPlaceholder || //
-                        object instanceof RubyMethod;
+                        object instanceof NilPlaceholder;
     }
 
     public static boolean shouldObjectsBeVisible(Object... objects) {
