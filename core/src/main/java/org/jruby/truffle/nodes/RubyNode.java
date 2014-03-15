@@ -154,10 +154,6 @@ public abstract class RubyNode extends Node {
         return RubyTypesGen.RUBYTYPES.expectRubyMatchData(execute(frame));
     }
 
-    public RubyMethod executeRubyMethod(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyMethod(execute(frame));
-    }
-
     public RubyModule executeRubyModule(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectRubyModule(execute(frame));
     }

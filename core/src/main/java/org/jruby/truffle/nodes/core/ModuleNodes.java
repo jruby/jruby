@@ -324,31 +324,31 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(order = 1)
-        public RubyMethod defineMethod(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
+        public RubySymbol defineMethod(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
             final RubyMethod method = block.getMethod();
             module.addMethod(method.withNewName(name.toString()));
-            return method;
+            return getContext().getSymbolTable().getSymbol(name.getBytes());
         }
 
         @Specialization(order = 2)
-        public RubyMethod defineMethod(RubyModule module, RubyString name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public RubySymbol defineMethod(RubyModule module, RubyString name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             final RubyMethod method = proc.getMethod();
             module.addMethod(method.withNewName(name.toString()));
-            return method;
+            return getContext().getSymbolTable().getSymbol(name.getBytes());
         }
 
         @Specialization(order = 3)
-        public RubyMethod defineMethod(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
+        public RubySymbol defineMethod(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
             final RubyMethod method = block.getMethod();
             module.addMethod(method.withNewName(name.toString()));
-            return method;
+            return name;
         }
 
         @Specialization(order = 4)
-        public RubyMethod defineMethod(RubyModule module, RubySymbol name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public RubySymbol defineMethod(RubyModule module, RubySymbol name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             final RubyMethod method = proc.getMethod();
             module.addMethod(method.withNewName(name.toString()));
-            return method;
+            return name;
         }
 
     }

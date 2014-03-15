@@ -49,7 +49,6 @@ import java.math.BigInteger;
                 RubyFloat.class, //
                 RubyHash.class, //
                 RubyMatchData.class, //
-                RubyMethod.class, //
                 RubyModule.class, //
                 RubyNilClass.class, //
                 RubyProc.class, //
