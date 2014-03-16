@@ -18,7 +18,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
-import sun.org.mozilla.javascript.internal.Undefined;
 
 import java.util.Arrays;
 import java.util.regex.Pattern;
