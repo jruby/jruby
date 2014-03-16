@@ -38,7 +38,7 @@ public class RubyString extends RubyObject {
 
         @Override
         public RubyBasicObject newInstance() {
-            return new RubyString(getContext().getCoreLibrary().getStringClass(), "");
+            return new RubyString(this, "");
         }
 
     }
@@ -68,14 +68,15 @@ public class RubyString extends RubyObject {
      * Java {@link String} as needed.
      */
 
-
     public RubyString(RubyString copyOf) {
         super(copyOf.getRubyClass().getContext().getCoreLibrary().getStringClass());
-        fromJavaString = copyOf.fromJavaString;
-        bytes = copyOf.getBytes();
+        setStringValue(copyOf);
+    }
 
-
-        cachedStringValue = copyOf.cachedStringValue;
+    public void setStringValue(RubyString from) {
+        fromJavaString = from.fromJavaString;
+        bytes = from.getBytes();
+        cachedStringValue = from.cachedStringValue;
     }
 
     public void forceEncoding(Encoding encoding) {

@@ -626,7 +626,7 @@ public abstract class FixnumNodes {
                 if (-b >= RubyFixnum.SIZE) {
                     return 0;
                 } else {
-                    return a >> -b;
+                    return a << -b;
                 }
             }
         }

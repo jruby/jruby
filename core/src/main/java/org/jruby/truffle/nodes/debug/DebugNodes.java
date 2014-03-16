@@ -94,7 +94,7 @@ public abstract class DebugNodes {
 
     }
 
-    @CoreMethod(names = "tree", isModuleMethod = true, needsSelf = false, appendCallNode = true, maxArgs = 0)
+    @CoreMethod(names = "tree", isModuleMethod = true, needsSelf = false, appendCallNode = true, minArgs = 1, maxArgs = 1)
     public abstract static class TreeNode extends CoreMethodNode {
 
         public TreeNode(RubyContext context, SourceSection sourceSection) {

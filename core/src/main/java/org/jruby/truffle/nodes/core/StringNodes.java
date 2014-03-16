@@ -18,6 +18,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
+import sun.org.mozilla.javascript.internal.Undefined;
 
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -325,6 +326,29 @@ public abstract class StringNodes {
         @Specialization
         public RubyString inspect(RubyString string) {
             return getContext().makeString("\"" + string.toString().replace("\\", "\\\\").replace("\"", "\\\"") + "\"");
+        }
+    }
+
+    @CoreMethod(names = "initialize", minArgs = 1, maxArgs = 1)
+    public abstract static class InitializeNode extends CoreMethodNode {
+
+        public InitializeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InitializeNode(InitializeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString initialize(RubyString self, UndefinedPlaceholder from) {
+            return self;
+        }
+
+        @Specialization
+        public RubyString initialize(RubyString self, RubyString from) {
+            self.setStringValue(from);
+            return self;
         }
     }
 

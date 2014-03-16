@@ -58,6 +58,8 @@ public class DefineOrGetClassNode extends RubyNode {
 
             if (superClassObject instanceof RubyException.RubyExceptionClass) {
                 definingClass = new RubyException.RubyExceptionClass(superClassObject, name);
+            } else if (superClassObject instanceof RubyString.RubyStringClass) {
+                definingClass = new RubyString.RubyStringClass(superClassObject);
             } else {
                 definingClass = new RubyClass(parentModuleObject, superClassObject, name);
             }
