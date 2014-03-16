@@ -41,7 +41,9 @@ public abstract class SplatCastNode extends RubyNode {
 
     @Specialization
     public RubyArray doObject(Object object) {
-        if (object instanceof RubyArray) {
+        if (object instanceof NilPlaceholder) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+        } else if (object instanceof RubyArray) {
             return (RubyArray) object;
         } else {
             return RubyArray.specializedFromObject(getContext().getCoreLibrary().getArrayClass(), object);
