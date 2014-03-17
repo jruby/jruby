@@ -2687,6 +2687,7 @@ public class Helpers {
             IRubyObject nil = runtime.getNil();
 
             for (int i = 0; i < scopeOffsets.length; i++) {
+                // SSS FIXME: This is not doing the offset/depth extraction as in the else case
                 context.getCurrentScope().setValue(nil, scopeOffsets[i], 0);
             }
         } else {

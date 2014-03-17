@@ -2712,8 +2712,21 @@ public class IRBuilder {
     public Operand buildMatch2(Match2Node matchNode, IRScope s) {
         Operand receiver = build(matchNode.getReceiverNode(), s);
         Operand value    = build(matchNode.getValueNode(), s);
-        Variable result = s.getNewTemporaryVariable();
+        Variable result  = s.getNewTemporaryVariable();
         addInstr(s, new Match2Instr(result, receiver, value));
+        if (matchNode instanceof Match2CaptureNode) {
+            Match2CaptureNode m2c = (Match2CaptureNode)matchNode;
+            String[] vars = s.getStaticScope().getVariables();
+            for (int slot:  m2c.getScopeOffsets()) {
+                // Static scope scope offsets store both depth and offset
+                int depth = slot >> 16;
+                int offset = slot & 0xffff;
+
+                // For now, we'll continue to implicitly reference "$~"
+                String var = vars[offset];
+                addInstr(s, new SetCapturedVarInstr(s.getLocalVariable(var, depth), result, var));
+            }
+        }
         return result;
     }
 

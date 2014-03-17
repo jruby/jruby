@@ -57,6 +57,8 @@ public class Match3Instr extends Instr implements ResultInstr, FixedArityInstr {
 
     @Override
     public boolean computeScopeFlags(IRScope scope) {
+        // $~ is implicitly used since Backref and NthRef operands
+        // access it and $~ is not made explicit in those operands.
         scope.getFlags().add(USES_BACKREF_OR_LASTLINE);
         return true;
     }

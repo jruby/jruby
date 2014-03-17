@@ -273,6 +273,15 @@ public class RubyMatchData extends RubyObject {
         return RubyRegexp.nth_match(n, this);
     }
 
+    public int getNameToBackrefNumber(String name) {
+        try {
+            byte[] bytes = name.getBytes();
+            return pattern.nameToBackrefNumber(bytes, 0, bytes.length, regs);
+        } catch (JOniException je) {
+            throw getRuntime().newIndexError(je.getMessage());
+        }
+    }
+
     // This returns a list of values in the order the names are defined (named capture local var
     // feature uses this).
     public IRubyObject[] getNamedBackrefValues(Ruby runtime) {
