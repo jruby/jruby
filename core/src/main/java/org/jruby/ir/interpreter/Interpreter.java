@@ -295,7 +295,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean receivesKeywordArgument, DynamicScope currDynScope, Object[] temp, Object exception, Block block) {
+    private static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean acceptsKeywordArgument, DynamicScope currDynScope, Object[] temp, Object exception, Block block) {
         Object result;
         ResultInstr instr = (ResultInstr)i;
         switch(operation) {
@@ -309,7 +309,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
         case RECV_POST_REQD_ARG:
-            result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(args);
+            result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(args, acceptsKeywordArgument);
             // For blocks, missing arg translates to nil
             setResult(temp, currDynScope, instr.getResult(), result == null ? context.nil : result);
             return;
@@ -320,7 +320,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             setResult(temp, currDynScope, instr.getResult(), exception);
             return;
         default:
-            result = ((ReceiveArgBase)instr).receiveArg(context, args, receivesKeywordArgument);
+            result = ((ReceiveArgBase)instr).receiveArg(context, args, acceptsKeywordArgument);
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
         }
