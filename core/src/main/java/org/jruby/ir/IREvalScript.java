@@ -7,6 +7,7 @@ import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Variable;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
@@ -112,6 +113,11 @@ public class IREvalScript extends IRClosure {
         if (lvar.getScopeDepth() != scopeDepth) lvar = lvar.cloneForDepth(scopeDepth);
 
         return lvar;
+    }
+
+    @Override
+    public LocalVariable getImplicitBlockArg() {
+        return getLocalVariable(Variable.BLOCK, nearestNonEvalScopeDepth);
     }
 
     @Override

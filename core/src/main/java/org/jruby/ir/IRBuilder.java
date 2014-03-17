@@ -1075,7 +1075,7 @@ public class IRBuilder {
         Variable tmpVar = s.getNewTemporaryVariable();
         addInstr(s, new DefineClassInstr(tmpVar, classBody, container, superClass));
         Variable ret = s.getNewTemporaryVariable();
-        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar));
+        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar, (s instanceof IRClosure || s instanceof IRMethod) ? s.getImplicitBlockArg() : manager.getNil()));
 
         addInstr(classBody, new ReceiveSelfInstr(classBody.getSelf()));
         // Set %current_scope = <c>
@@ -1107,7 +1107,7 @@ public class IRBuilder {
         Variable tmpVar = s.getNewTemporaryVariable();
         addInstr(s, new DefineMetaClassInstr(tmpVar, receiver, metaClassBody));
         Variable ret = s.getNewTemporaryVariable();
-        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar));
+        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar, (s instanceof IRClosure || s instanceof IRMethod) ? s.getImplicitBlockArg() : manager.getNil()));
 
         addInstr(metaClassBody, new ReceiveSelfInstr(metaClassBody.getSelf()));
         // Set %current_scope = <current-scope>
@@ -2766,7 +2766,7 @@ public class IRBuilder {
         Variable tmpVar = s.getNewTemporaryVariable();
         addInstr(s, new DefineModuleInstr(tmpVar, moduleBody, container));
         Variable ret = s.getNewTemporaryVariable();
-        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar));
+        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar, (s instanceof IRClosure || s instanceof IRMethod) ? s.getImplicitBlockArg() : manager.getNil()));
 
         addInstr(moduleBody, new ReceiveSelfInstr(moduleBody.getSelf()));
         // Set %current_scope = <c>

@@ -485,6 +485,7 @@ public class InstrEncoderMap {
 
     private void encodeProcessModuleBodyInstr(ProcessModuleBodyInstr instr) {
         e.encode(instr.getModuleBody());
+        e.encode(instr.getBlockArg());
     }
 
     private void encodePushBindingInstr(PushBindingInstr instr) {
