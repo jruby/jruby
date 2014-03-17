@@ -35,8 +35,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvFlags;
+import org.jcodings.transcode.EConvResult;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.StringSupport;
 import org.jruby.util.encoding.EncodingConverter;
@@ -2525,10 +2527,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
         ByteList bytes = new ByteList();
         int firstByte;
         int r = 0;
-        boolean done = false;
+        int ecflags = this.ecflags | EConvFlags.PARTIAL_INPUT;
+        byte[] out = new byte[16];
+        Ptr inP = new Ptr(0);
+        Ptr outP = new Ptr(0);
         
         // keep going
-        while (!done) {
+        while (true) {
             firstByte = stream.fgetc();
             
             if (firstByte == -1) {
@@ -2541,14 +2546,36 @@ public class RubyIO extends RubyObject implements IOEncodable {
             r = StringSupport.preciseLength(read, bytes.getUnsafeBytes(), 0, bytes.getRealSize());
             if (!StringSupport.MBCLEN_NEEDMORE_P(r)) {
                 // logic from fill_buf, which transcodes while buffering from IO
-                bytes = EncodingUtils.econvStrConvert(context, readconv, bytes, 0);
-            
-                if (bytes.length() == 0) continue;
-                
-                break;
+                EConvResult res = readconv.convert(bytes.getUnsafeBytes(), inP, bytes.getBegin() + bytes.getRealSize(), out, outP, out.length, ecflags);
+
+                int putbackable = readconv.putbackable();
+                if (putbackable != 0) {
+                    inP.p -= putbackable;
+                }
+
+                RaiseException re = EncodingUtils.makeEconvException(context, readconv);
+                if (re != null) {
+                    throw re;
+                }
+
+                if (res == EConvResult.Finished) {
+                    break;
+                }
+
+                if (res == EConvResult.SourceBufferEmpty) {
+                    if (outP.p > 0) {
+                        // don't need more and transcoding did not produce empty string; done.
+                        break;
+                    }
+                }
             }
             // Missing: logic for too-long character
         }
+
+        // switch to transcoded out bytes
+        bytes.setUnsafeBytes(out);
+        bytes.setBegin(0);
+        bytes.setRealSize(outP.p);
         
         // done with reading, check what we have
         if (StringSupport.MBCLEN_INVALID_P(r)) {
