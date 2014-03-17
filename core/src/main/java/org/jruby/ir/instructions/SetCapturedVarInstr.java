@@ -3,19 +3,14 @@ package org.jruby.ir.instructions;
 import java.util.Map;
 
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.StringLiteral;
-import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyRegexp;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -67,7 +62,7 @@ public class SetCapturedVarInstr extends Instr implements ResultInstr, FixedArit
 
     @Interp
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject matchRes = (IRubyObject)match2Result.retrieve(context, self, currDynScope, temp);
         Object val;
         if (matchRes.isNil()) {

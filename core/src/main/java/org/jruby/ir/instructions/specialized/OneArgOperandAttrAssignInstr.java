@@ -23,7 +23,7 @@ public class OneArgOperandAttrAssignInstr extends AttrAssignInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope dynamicScope, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
         Operand[] args = getCallArgs();
         IRubyObject object = (IRubyObject) receiver.retrieve(context, self, dynamicScope, temp);
         IRubyObject value = (IRubyObject) args[0].retrieve(context, self, dynamicScope, temp);

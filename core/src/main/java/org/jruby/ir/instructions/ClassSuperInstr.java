@@ -44,7 +44,7 @@ public class ClassSuperInstr extends CallInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block aBlock) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject[] args = prepareArguments(context, self, getCallArgs(), currDynScope, temp);
         Block block = prepareBlock(context, self, currDynScope, temp);
         String methodName = methAddr.getName();

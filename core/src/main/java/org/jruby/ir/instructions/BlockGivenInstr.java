@@ -56,7 +56,7 @@ public class BlockGivenInstr extends Instr implements ResultInstr, FixedArityIns
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Object blk = (Object) blockArg.retrieve(context, self, currDynScope, temp);
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;

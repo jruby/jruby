@@ -43,7 +43,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope dynamicScope, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
         IRubyObject object = (IRubyObject) receiver.retrieve(context, self, dynamicScope, temp);
         IRubyObject[] values = prepareArguments(context, self, getCallArgs(), dynamicScope, temp);
 

@@ -12,7 +12,6 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -78,7 +77,7 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr, FixedAri
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Ruby runtime = context.runtime;
         IRubyObject obj = (IRubyObject)object.retrieve(context, self, currDynScope, temp);
 

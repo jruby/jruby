@@ -12,7 +12,6 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -33,7 +32,7 @@ public class IsMethodBoundInstr extends DefinedObjectNameInstr implements FixedA
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject receiver = (IRubyObject) getObject().retrieve(context, self, currDynScope, temp);
 
         return context.runtime.newBoolean(receiver.getMetaClass().isMethodBound(getName().string, false));

@@ -74,7 +74,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block aBlock) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // SSS FIXME: Copied this from ast/LambdaNode ... Is this required here as well?
         //
         // JRUBY-5686: do this before executing so first time sets cref module

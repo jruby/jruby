@@ -54,7 +54,7 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block aBlock) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         DynamicScope argsDynScope = currDynScope;
 
         // Find args that need to be passed into super

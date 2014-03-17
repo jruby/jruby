@@ -9,7 +9,6 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -76,7 +75,7 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Ruby        runtime   = context.runtime;
         StaticScope scope     = (StaticScope) startingScope.retrieve(context, self, currDynScope, temp);
         RubyModule  rubyClass = scope.getModule();

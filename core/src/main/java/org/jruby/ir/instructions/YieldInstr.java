@@ -1,8 +1,5 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyArray;
-import org.jruby.RubyNil;
-import org.jruby.RubyProc;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
@@ -11,7 +8,6 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -89,7 +85,7 @@ public class YieldInstr extends Instr implements ResultInstr, FixedArityInstr {
 
     @Interp
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Object blk = blockArg.retrieve(context, self, currDynScope, temp);
         if (yieldArg == UndefinedValue.UNDEFINED) {
             return IRRuntimeHelpers.yieldSpecific(context, blk);

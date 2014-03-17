@@ -33,7 +33,6 @@ import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
-import org.jruby.ir.instructions.ReceiveOptArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.RecordEndBlockInstr;
 import org.jruby.ir.instructions.ResultInstr;
@@ -326,7 +325,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block) {
+    private static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self) {
         Object result;
         switch(operation) {
         case CALL_1F: {
@@ -359,11 +358,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             break;
         }
         case NORESULT_CALL:
-            instr.interpret(context, currDynScope, self, temp, block);
+            instr.interpret(context, currDynScope, self, temp);
             break;
         case CALL:
         default:
-            result = instr.interpret(context, currDynScope, self, temp, block);
+            result = instr.interpret(context, currDynScope, self, temp);
             setResult(temp, currDynScope, instr, result);
             break;
         }
@@ -429,7 +428,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         return null;
     }
 
-    private static void processOtherOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, Block.Type blockType, double[] floats, long[] fixnums, boolean[] booleans)
+    private static void processOtherOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block.Type blockType, double[] floats, long[] fixnums, boolean[] booleans)
     {
         Object result;
         switch(operation) {
@@ -516,7 +515,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         // ---------- All the rest ---------
         default:
-            result = instr.interpret(context, currDynScope, self, temp, block);
+            result = instr.interpret(context, currDynScope, self, temp);
             setResult(temp, currDynScope, instr, result);
             break;
         }
@@ -573,7 +572,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 case CALL_OP:
                     if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);
-                    processCall(context, instr, operation, currDynScope, temp, self, block);
+                    processCall(context, instr, operation, currDynScope, temp, self);
                     break;
                 case RET_OP:
                     return processReturnOp(context, instr, operation, scope, currDynScope, temp, self, blockType);
@@ -596,7 +595,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     }
                     break;
                 case OTHER_OP:
-                    processOtherOp(context, instr, operation, currDynScope, temp, self, block, blockType, floats, fixnums, booleans);
+                    processOtherOp(context, instr, operation, currDynScope, temp, self, blockType, floats, fixnums, booleans);
                     break;
                 }
             } catch (Throwable t) {

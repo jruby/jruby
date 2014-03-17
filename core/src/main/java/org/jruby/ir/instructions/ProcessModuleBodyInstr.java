@@ -63,7 +63,7 @@ public class ProcessModuleBodyInstr extends Instr implements ResultInstr, FixedA
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block aBlock) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         InterpretedIRMethod bodyMethod = (InterpretedIRMethod)moduleBody.retrieve(context, self, currDynScope, temp);
 		RubyModule implClass = bodyMethod.getImplementationClass();
         Object blk = block.retrieve(context, self, currDynScope, temp);

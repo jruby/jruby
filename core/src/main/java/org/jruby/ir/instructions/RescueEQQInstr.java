@@ -6,7 +6,6 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -74,7 +73,7 @@ public class RescueEQQInstr extends Instr implements ResultInstr, FixedArityInst
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject excType = (IRubyObject) arg1.retrieve(context, self, currDynScope, temp);
         Object excObj = arg2.retrieve(context, self, currDynScope, temp);
 

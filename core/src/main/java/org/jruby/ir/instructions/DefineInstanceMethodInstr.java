@@ -9,7 +9,6 @@ import org.jruby.ir.IRMethod;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -60,7 +59,7 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
 
     // SSS FIXME: Go through this and DefineClassMethodInstr.interpret, clean up, extract common code
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Ruby runtime = context.runtime;
 
         // SSS FIXME: This is a temporary solution that uses information from the stack.

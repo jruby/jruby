@@ -386,7 +386,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope dynamicScope, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
         IRubyObject object = (IRubyObject) receiver.retrieve(context, self, dynamicScope, temp);
         IRubyObject[] values = prepareArguments(context, self, arguments, dynamicScope, temp);
         Block preparedBlock = prepareBlock(context, self, dynamicScope, temp);
