@@ -8,7 +8,7 @@
   <packaging>war</packaging>
   <name>tomcat</name>
   <properties>
-    <jruby.version>9000.dev</jruby.version>
+    <jruby.version>@project.version@</jruby.version>
     <gem.path>${gem.home}</gem.path>
     <gem.home>${project.build.outputDirectory}</gem.home>
     <jruby.plugins.version>1.0.0-rc4</jruby.plugins.version>
@@ -68,7 +68,6 @@
         <configuration>
           <includeRubygemsInTestResources>false</includeRubygemsInTestResources>
           <includeRubygemsInResources>true</includeRubygemsInResources>
-          <jrubyVersion>1.7.10</jrubyVersion>
         </configuration>
       </plugin>
       <plugin>
