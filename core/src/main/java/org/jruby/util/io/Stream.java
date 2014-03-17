@@ -31,6 +31,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import org.jruby.util.ByteList;
 import org.jruby.Ruby;
@@ -51,6 +52,8 @@ public interface Stream {
 
     void clearerr();
 
+    ByteBuffer getBuffer();
+
     ModeFlags getModes();
     
     void setModes(ModeFlags modeFlags);
@@ -58,6 +61,10 @@ public interface Stream {
     boolean isSync();
 
     void setSync(boolean sync);
+
+    int bufferedAvailable();
+
+    int refillBuffer() throws IOException;
 
     ByteList fgets(ByteList separatorString) throws IOException, BadDescriptorException, EOFException;
     ByteList readall() throws IOException, BadDescriptorException, EOFException;

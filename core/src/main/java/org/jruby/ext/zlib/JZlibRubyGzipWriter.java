@@ -50,7 +50,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.encoding.EncodingConverter;
+import org.jruby.util.io.EncodingUtils;
 
 import java.io.IOException;
 
@@ -357,22 +357,22 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     @JRubyMethod(name = "write", required = 1)
     public IRubyObject write(IRubyObject p1) {
         Ruby runtime = getRuntime();
-        ByteList bytes = p1.asString().getByteList();
+        RubyString str = p1.asString();
 
         if (enc2 != null
                 && enc2 != ASCIIEncoding.INSTANCE) {
-            bytes = EncodingConverter.strConvEncOpts(runtime.getCurrentContext(), bytes, bytes.getEncoding(),
+            str = EncodingUtils.strConvEncOpts(runtime.getCurrentContext(), str, str.getEncoding(),
                     enc2, 0, runtime.getNil());
         
         }
         
         try {
             // TODO: jzlib-1.1.0.jar throws IndexOutOfBoundException for zero length buffer.
-            if (bytes.length() > 0) {
-                io.write(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+            if (str.size() > 0) {
+                io.write(str.getByteList().getUnsafeBytes(), str.getByteList().begin(), str.getByteList().length());
             }
             
-            return runtime.newFixnum(bytes.length());
+            return runtime.newFixnum(str.getByteList().length());
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         }

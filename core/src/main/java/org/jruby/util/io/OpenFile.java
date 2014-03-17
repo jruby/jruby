@@ -1,7 +1,19 @@
 package org.jruby.util.io;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channel;
+
+import org.jcodings.Encoding;
+import org.jcodings.transcode.EConv;
+import org.jcodings.transcode.EConvFlags;
+import org.jcodings.transcode.EConvResult;
 import org.jruby.Ruby;
+import org.jruby.RubyString;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.ShellLauncher;
 
 public class OpenFile {
@@ -28,6 +40,7 @@ public class OpenFile {
 
         public void finalize(Ruby runtime, boolean raise);
     }
+    private Channel mainChannel;
     private Stream mainStream;
     private Stream pipeStream;
     private int mode;
@@ -36,6 +49,39 @@ public class OpenFile {
     private String path;
     private Finalizer finalizer;
     private boolean stdio;
+
+    public static class Buffer {
+        public byte[] ptr;
+        public int start;
+        public int off;
+        public int len;
+        public int capa;
+    }
+
+    public IOEncodable.ConvConfig encs = new IOEncodable.ConvConfig();
+
+    public EConv readconv;
+    public EConv writeconv;
+    public IRubyObject writeconvAsciicompat;
+    public int writeconvPreEcflags;
+    public IRubyObject writeconvPreEcopts;
+    public boolean writeconvInitialized;
+
+    // unnecessary with JVM locking?
+    // VALUE write_lock;
+
+    public final Buffer wbuf = new Buffer(), rbuf = new Buffer(), cbuf = new Buffer();
+
+    public boolean READ_DATA_PENDING() {return rbuf.len != 0;}
+    public int READ_DATA_PENDING_COUNT() {return rbuf.len;}
+    public byte[] READ_DATA_PENDING_PTR() {return rbuf.ptr;}
+    public int READ_DATA_PENDING_START() {return rbuf.start;}
+    public boolean READ_DATA_BUFFERED() {return READ_DATA_PENDING();}
+
+    public boolean READ_CHAR_PENDING() {return cbuf.len != 0;}
+    public int READ_CHAR_PENDING_COUNT() {return cbuf.len;}
+    public byte[] READ_CHAR_PENDING_PTR() {return cbuf.ptr;}
+    public int READ_CHAR_PENDING_START() {return cbuf.start;}
 
     public Stream getMainStream() {
         return mainStream;
@@ -49,6 +95,7 @@ public class OpenFile {
 
     public void setMainStream(Stream mainStream) {
         this.mainStream = mainStream;
+        this.mainChannel = mainStream.getChannel();
     }
 
     public Stream getPipeStream() {
@@ -492,5 +539,314 @@ public class OpenFile {
         } catch (Throwable t) {
             t.printStackTrace();
         }
+    }
+
+    // MRI: NEED_READCONV (FIXME: Windows has slightly different version)
+    public boolean needsReadConversion() {
+        return (encs.enc2 != null || (encs.ecflags & ~EConvFlags.CRLF_NEWLINE_DECORATOR) != 0);
+    }
+
+    // MRI: NEED_WRITECONV (FIXME: Windows has slightly different version)
+    private boolean needsWriteConversion(ThreadContext context) {
+        Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
+
+        return (encs.enc != null && encs.enc != ascii8bit) || isTextMode() ||
+                (encs.ecflags & ((EConvFlags.DECORATOR_MASK & ~EConvFlags.CRLF_NEWLINE_DECORATOR)| EConvFlags.STATEFUL_DECORATOR_MASK)) != 0;
+    }
+
+    // MRI: make_readconv
+    // Missing flags and doubling readTranscoder as transcoder and whether transcoder has been initializer (ick).
+    private void makeReadConversion(ThreadContext context) {
+        if (readconv != null) return;
+
+        int ecflags;
+        IRubyObject ecopts;
+        byte[] sname, dname;
+        ecflags = encs.ecflags & ~EConvFlags.NEWLINE_DECORATOR_WRITE_MASK;
+        ecopts = encs.ecopts;
+
+        if (encs.enc2 != null) {
+            sname = encs.enc2.getName();
+            dname = encs.enc.getName();
+        } else {
+            sname = dname = EMPTY_BYTE_ARRAY;
+        }
+
+        readconv = EncodingUtils.econvOpenOpts(context, sname, dname, ecflags, ecopts);
+
+        if (readconv == null) {
+            throw EncodingUtils.econvOpenExc(context, sname, dname, ecflags);
+        }
+
+        // rest of MRI code sets up read/write buffers
+    }
+
+    // MRI: make_writeconv
+    private void makeWriteConversion(ThreadContext context) {
+        if (writeconvInitialized) return;
+
+        byte[] senc;
+        byte[] denc;
+        Encoding enc;
+        int ecflags;
+        IRubyObject ecopts;
+
+        writeconvInitialized = true;
+
+        ecflags = encs.ecflags & ~EConvFlags.NEWLINE_DECORATOR_READ_MASK;
+        ecopts = encs.ecopts;
+
+        Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
+        if (encs.enc == null || (encs.enc == ascii8bit && encs.enc2 == null)) {
+            /* no encoding conversion */
+            writeconvPreEcflags = 0;
+            writeconvPreEcopts = context.nil;
+            writeconv = EncodingUtils.econvOpenOpts(context, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, ecflags, ecopts);
+            if (writeconv == null) {
+                throw EncodingUtils.econvOpenExc(context, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, ecflags);
+            }
+            writeconvAsciicompat = context.nil;
+        }
+        else {
+            enc = encs.enc2 != null ? encs.enc2 : encs.enc;
+            Encoding tmpEnc = EncodingUtils.econvAsciicompatEncoding(enc);
+            senc = tmpEnc == null ? null : tmpEnc.getName();
+            if (senc == null && (encs.ecflags & EConvFlags.STATEFUL_DECORATOR_MASK) == 0) {
+                /* single conversion */
+                writeconvPreEcflags = ecflags;
+                writeconvPreEcopts = ecopts;
+                writeconv = null;
+                writeconvAsciicompat = context.nil;
+            }
+            else {
+                /* double conversion */
+                writeconvPreEcflags = ecflags & ~EConvFlags.STATEFUL_DECORATOR_MASK;
+                writeconvPreEcopts = ecopts;
+                if (senc != null) {
+                    denc = enc.getName();
+                    writeconvAsciicompat = RubyString.newString(context.runtime, senc);
+                }
+                else {
+                    senc = denc = EMPTY_BYTE_ARRAY;
+                    writeconvAsciicompat = RubyString.newString(context.runtime, enc.getName());
+                }
+                ecflags = encs.ecflags & (EConvFlags.ERROR_HANDLER_MASK | EConvFlags.STATEFUL_DECORATOR_MASK);
+                ecopts = encs.ecopts;
+                writeconv = EncodingUtils.econvOpenOpts(context, senc, denc, ecflags, ecopts);
+                if (writeconv == null) {
+                    throw EncodingUtils.econvOpenExc(context, senc, denc, ecflags);
+                }
+            }
+        }
+    }
+
+    private void clearReadConversion() {
+        readconv = null;
+    }
+
+    private void clearCodeConversion() {
+        readconv = null;
+        writeconv = null;
+    }
+
+    private static final int MORE_CHAR_SUSPENDED = 0;
+    private static final int MORE_CHAR_FINISHED = 1;
+    public static final int EOF = -1;
+
+    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
+    public int appendline(ThreadContext context, int delim, ByteList[] strp, int[] lp)
+    {
+        ByteList str = strp[0];
+        int limit = lp[0];
+
+        if (needsReadConversion()) {
+            setBinmode();
+            makeReadConversion(context);
+            do {
+                int p, e;
+                int searchlen = cbuf.len;
+                if (searchlen > 0) {
+                    byte[] pBytes = cbuf.ptr;
+                    p = cbuf.start;
+                    if (0 < limit && limit < searchlen)
+                        searchlen = limit;
+                    e = 0;
+                    for (int i = p; i < p + searchlen; i++) if ((pBytes[i] & 0xFF) == delim) e = i;
+                    if (e != 0) {
+                        int len = (int)(e-p+1);
+                        if (str != null) {
+                            strp[0] = str = new ByteList(pBytes, p, len);
+                        } else {
+                            str.append(pBytes, p, len);
+                        }
+                        cbuf.off += len;
+                        cbuf.len -= len;
+                        limit -= len;
+                        lp[0] = limit;
+                        return delim;
+                    }
+
+                    if (str == null) {
+                        strp[0] = str = new ByteList(pBytes, p, searchlen);
+                    } else {
+                        str.append(pBytes, p, searchlen);
+                    }
+                    cbuf.off += searchlen;
+                    cbuf.len -= searchlen;
+                    limit -= searchlen;
+
+                    if (limit == 0) {
+                        lp[0] = limit;
+                        return str.get(str.getRealSize() - 1) & 0xFF;
+                    }
+                }
+            } while (moreChar() != MORE_CHAR_FINISHED);
+            clearReadConversion();
+            lp[0] = limit;
+            return EOF;
+        }
+
+        NEED_NEWLINE_DECORATOR_ON_READ_CHECK();
+        do {
+            int pending = rbuf.len;
+            if (pending > 0) {
+                byte[] pBytes = rbuf.ptr;
+                int p = rbuf.start;
+                int e;
+                int last;
+
+                if (limit > 0 && pending > limit) pending = limit;
+                e = -1;
+                for (int i = p; i < p + pending; i++) if ((pBytes[i] & 0xFF) == delim) e = i;
+                if (e != -1) pending = e - p + 1;
+                if (str != null) {
+                    last = str.getRealSize();
+                    str.ensure(last + pending);
+                }
+                else {
+                    last = 0;
+                    strp[0] = str = new ByteList(pending);
+                }
+                readBufferedData(str.getUnsafeBytes(), str.getBegin() + last, pending); /* must not fail */
+                limit -= pending;
+                lp[0] = limit;
+                if (e != -1) return delim;
+                if (limit == 0) {
+                    return str.get(str.getRealSize() - 1) & 0xFF;
+                }
+            }
+            checkReadable(runtime);
+        } while (fillbuf() >= 0);
+        lp[0] = limit;
+        return EOF;
+    }
+
+    private void NEED_NEWLINE_DECORATOR_ON_READ_CHECK() {
+        if (NEED_NEWLINE_DECORATOR_ON_READ()) {
+            if ((getMode() & OpenFile.READABLE) != 0 &&
+                    (encs.ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) == 0) {
+                setBinmode();
+            } else {
+                setTextMode();
+            }
+        }
+    }
+
+    private boolean NEED_NEWLINE_DECORATOR_ON_READ() {
+        return isTextMode();
+    }
+
+    private int moreChar() {
+
+    }
+
+    private int fillCbuf() {
+        byte[] sBytes, dBytes;
+        int ss, sp, se;
+        int ds, dp, de;
+        EConvResult res;
+        int putbackable;
+        int cbuf_len0;
+        RaiseException exc;
+
+        Stream readStream = getOpenFile().getMainStream();
+        ByteBuffer readBuffer = readStream.getBuffer();
+
+        ecflags |= EConvFlags.PARTIAL_INPUT;
+
+        // taken care of by fill below
+//        if (fptr->cbuf.len == fptr->cbuf.capa)
+//            return MORE_CHAR_SUSPENDED; /* cbuf full */
+//        if (fptr->cbuf.len == 0)
+//            fptr->cbuf.off = 0;
+//        else if (fptr->cbuf.off + fptr->cbuf.len == fptr->cbuf.capa) {
+//            memmove(fptr->cbuf.ptr, fptr->cbuf.ptr+fptr->cbuf.off, fptr->cbuf.len);
+//            fptr->cbuf.off = 0;
+//        }
+//
+//        cbuf_len0 = fptr->cbuf.len;
+
+        while (true) {
+            ss = sp = (const unsigned char *)fptr->rbuf.ptr + fptr->rbuf.off;
+            se = sp + fptr->rbuf.len;
+            ds = dp = (unsigned char *)fptr->cbuf.ptr + fptr->cbuf.off + fptr->cbuf.len;
+            de = (unsigned char *)fptr->cbuf.ptr + fptr->cbuf.capa;
+            res = rb_econv_convert(fptr->readconv, &sp, se, &dp, de, ec_flags);
+            fptr->rbuf.off += (int)(sp - ss);
+            fptr->rbuf.len -= (int)(sp - ss);
+            fptr->cbuf.len += (int)(dp - ds);
+
+            putbackable = rb_econv_putbackable(fptr->readconv);
+            if (putbackable) {
+                rb_econv_putback(fptr->readconv, (unsigned char *)fptr->rbuf.ptr + fptr->rbuf.off - putbackable, putbackable);
+                fptr->rbuf.off -= putbackable;
+                fptr->rbuf.len += putbackable;
+            }
+
+            exc = rb_econv_make_exception(fptr->readconv);
+            if (!NIL_P(exc))
+                return exc;
+
+            if (cbuf_len0 != fptr->cbuf.len)
+                return MORE_CHAR_SUSPENDED;
+
+            if (res == econv_finished) {
+                return MORE_CHAR_FINISHED;
+            }
+
+            if (res == econv_source_buffer_empty) {
+                if (fptr->rbuf.len == 0) {
+                    READ_CHECK(fptr);
+                    if (io_fillbuf(fptr) == -1) {
+                        if (!fptr->readconv) {
+                            return MORE_CHAR_FINISHED;
+                        }
+                        ds = dp = (unsigned char *)fptr->cbuf.ptr + fptr->cbuf.off + fptr->cbuf.len;
+                        de = (unsigned char *)fptr->cbuf.ptr + fptr->cbuf.capa;
+                        res = rb_econv_convert(fptr->readconv, NULL, NULL, &dp, de, 0);
+                        fptr->cbuf.len += (int)(dp - ds);
+                        rb_econv_check_error(fptr->readconv);
+                        break;
+                    }
+                }
+            }
+        }
+        if (cbuf_len0 != fptr->cbuf.len)
+            return MORE_CHAR_SUSPENDED;
+
+        return MORE_CHAR_FINISHED;
+    }
+
+    // read_buffered_data
+    private int readBufferedData(byte[] ptrBytes, int ptr, int len) {
+        int n = rbuf.len;
+
+        if (n <= 0) return n;
+        if (n > len) n = len;
+        System.arraycopy(rbuf.ptr, rbuf.start + rbuf.off, ptrBytes, ptr, n);
+        rbuf.off += n;
+        rbuf.len -= n;
+        return n;
     }
 }

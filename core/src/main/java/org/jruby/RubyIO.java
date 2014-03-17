@@ -41,7 +41,6 @@ import org.jcodings.transcode.EConvFlags;
 import org.jcodings.transcode.EConvResult;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.StringSupport;
-import org.jruby.util.encoding.EncodingConverter;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.SelectBlob;
@@ -530,11 +529,19 @@ public class RubyIO extends RubyObject implements IOEncodable {
             separatorValue.convertToString().getByteList();
 
         if (separator != null) {
-            if (separator.getRealSize() == 0) return Stream.PARAGRAPH_DELIMETER;
+            Encoding encIO, encRS;
 
-            if (separator.getEncoding() != getEnc()) {
-                separator = EncodingConverter.strConvEncOpts(runtime.getCurrentContext(), separator,
-                        getEnc2(), getEnc(), 0, runtime.getNil());
+            encRS = separator.getEncoding();
+            encIO = getReadEncoding();
+
+            if (encIO != encRS &&
+                    (!((RubyString)separatorValue).isAsciiOnly() ||
+                    separator.getRealSize() > 0 && !encIO.isAsciiCompatible())) {
+                if (separatorValue == runtime.getGlobalVariables().getDefaultSeparator()) {
+                    separator = new ByteList(new byte[]{'\n'}, encIO);
+                } else {
+                    throw runtime.newArgumentError("encoding mismatch: " + encIO + " IO with " + encRS + " RS");
+                }
             }
         }
 
@@ -592,41 +599,55 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * getline using logic of gets.  If limit is -1 then read unlimited amount.
      * mri: rb_io_getline_1 (mostly)
      */
-    private IRubyObject getlineInner(ThreadContext context, ByteList separator, long limit, ByteListCache cache) {
+    private IRubyObject getlineInner(ThreadContext context, ByteList separator, int limit, ByteListCache cache) {
         Ruby runtime = context.runtime;
         
         try {
-            OpenFile myOpenFile = getOpenFileChecked();
+            OpenFile fptr = getOpenFileChecked();
 
-            myOpenFile.checkReadable(runtime);
-            myOpenFile.setReadBuffered();
+            fptr.checkReadable(runtime);
+            fptr.setReadBuffered();
 
-            boolean isParagraph = separator == Stream.PARAGRAPH_DELIMETER;
-            separator = isParagraph ? Stream.PARAGRAPH_SEPARATOR : separator;
-            
-            if (isParagraph) swallow('\n');
+            boolean isParagraph = false;
             
             if (separator == null && limit < 0) {
-                return getlineAll(runtime.getCurrentContext(), myOpenFile);
+                return getlineAll(runtime.getCurrentContext(), fptr);
             } else if (limit == 0) {
                 return getlineEmptyString(runtime);
-            } else if (separator != null && separator.length() == 1 && limit < 0 && 
-                    (!needsReadConversion() && getReadEncoding().isAsciiCompatible())) {
+            } else if (separator.equals(((RubyString)runtime.getGlobalVariables().getDefaultSeparator()).getByteList()) && limit < 0 && !fptr.needsReadConversion() &&
+                    getReadEncoding().isAsciiCompatible()) {
+                // TODO: NEED_NEWLINE_DECORATOR_ON_READ_CHECK(fptr);
                 return getlineFast(runtime, separator.get(0) & 0xFF, cache);
             } else {
-                Stream readStream = myOpenFile.getMainStreamSafe();
-                int c = -1;
-                int n = -1;
-                int newline = (separator != null) ? (separator.get(separator.length() - 1) & 0xFF) : -1;
+                int c = -1, newline = -1;
+                byte[] rsptrBytes = null;
+                int rsptr = 0;
+                int rslen = 0;
+                boolean rspara = false;
+                int extraLimit = 16;
+
+                SET_BINARY_MODE();
+                Encoding enc = getReadEncoding();
                 
                 // FIXME: Change how we consume streams to match MRI (see append_line/more_char/fill_cbuf)
-                // Awful hack.  MRI pre-transcodes lines into read-ahead whereas
-                // we read a single line at a time PRE-transcoded.  To keep our
-                // logic we need to do one additional transcode of the sep to
-                // match the pre-transcoded encoding.  This is gross and we should
-                // mimick MRI.
-                if (separator != null && separator.getEncoding() != getInputEncoding()) {
-                    separator = EncodingConverter.strConvEncOpts(runtime.getCurrentContext(), separator, separator.getEncoding(), getInputEncoding(), 0, context.nil);
+                if (separator != null) {
+                    rslen = separator.getRealSize();
+                    if (rslen == 0) {
+                        rsptrBytes = Stream.PARAGRAPH_SEPARATOR.unsafeBytes();
+                        rsptr = Stream.PARAGRAPH_SEPARATOR.getBegin();
+                        rslen = 2;
+                        rspara = true;
+                        fptr.swallow('\n');
+                        separator = Stream.PARAGRAPH_SEPARATOR;
+                        isParagraph = true;
+                        if (!enc.isAsciiCompatible()) {
+                            RubyString rs = RubyString.newString(runtime, separator);
+                            rs = (RubyString)EncodingUtils.strEncode(runtime.getCurrentContext(), rs, IRubyObject.NULL_ARRAY);
+                            separator = rs.getByteList();
+                        } else {
+                            // separator as-is
+                        }
+                    }
                     newline = separator.get(separator.length() - 1) & 0xFF;
                 }
 
@@ -634,16 +655,23 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 try {
                     boolean update = false;
                     boolean limitReached = false;
+                    ByteList[] strp = {null};
+                    int[] limitp = {limit};
                     
-                    makeReadConversion(context);
-                    
-                    while (true) {
+                    while ((c = fptr.appendline(context, newline, strp, limitp)) != OpenFile.EOF) {
+                        int s, p, pp, e;
+
+                        if (c == newline) {
+                            if (strp[0].getRealSize() < rslen) continue;
+
+                        }
                         do {
                             readCheck(readStream);
                             readStream.clearerr();
 
                             try {
                                 runtime.getCurrentContext().getThread().beforeBlockingCall();
+
                                 if (limit == -1) {
                                     n = readStream.getline(buf, (byte) newline);
                                 } else {
@@ -693,13 +721,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
                             break;
                         }
                     }
-                    
-                    if (readconv != null) buf = EncodingUtils.econvStrConvert(context, readconv, buf, 0);
+
+                    // logic from fill_buf, which transcodes while buffering from IO
+                    if (openFile.readconv != null) buf = EncodingUtils.econvStrConvert(context, openFile.readconv, buf, 0);
+                    clearReadConversion();
                     
                     if (isParagraph && c != -1) swallow('\n');
                     if (!update) return runtime.getNil();
 
-                    incrementLineno(runtime, myOpenFile);
+                    incrementLineno(runtime, fptr);
 
                     ByteList newBuf = cache != null ? new ByteList(buf) : buf;
                     RubyString str = RubyString.newString(runtime, newBuf);
@@ -722,22 +752,22 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // fptr->enc and codeconv->enc
     public Encoding getEnc() {
-        return enc;
+        return openFile.encs.enc;
     }
     
     // mri: io_read_encoding
     public Encoding getReadEncoding() {
-        return enc != null ? enc : EncodingUtils.defaultExternalEncoding(getRuntime());
+        return openFile.encs.enc != null ? openFile.encs.enc : EncodingUtils.defaultExternalEncoding(getRuntime());
     }
     
     // fptr->enc2 and codeconv->enc2
     public Encoding getEnc2() {
-        return enc2;
+        return openFile.encs.enc2;
     }
     
     // mri: io_input_encoding
     public Encoding getInputEncoding() {
-        return enc2 != null ? enc2 : getReadEncoding();
+        return openFile.encs.enc2 != null ? openFile.encs.enc2 : getReadEncoding();
     }
 
     private RubyString makeString(Ruby runtime, ByteList buffer, boolean isCached) {
@@ -760,7 +790,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
     protected boolean swallow(int term) throws IOException, BadDescriptorException {
         Stream readStream = openFile.getMainStreamSafe();
         int c;
-        
+
+        // TODO: read conversion logic
+
         do {
             readCheck(readStream);
             
@@ -1005,10 +1037,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public IRubyObject external_encoding(ThreadContext context) {
         EncodingService encodingService = context.runtime.getEncodingService();
         
-        if (enc2 != null) return encodingService.getEncoding(enc2);
+        if (openFile.encs.enc2 != null) return encodingService.getEncoding(openFile.encs.enc2);
         
         if (openFile.isWritable()) {
-            return enc == null ? context.runtime.getNil() : encodingService.getEncoding(enc);
+            return openFile.encs.enc == null ? context.runtime.getNil() : encodingService.getEncoding(openFile.encs.enc);
         }
         
         return encodingService.getEncoding(getReadEncoding());
@@ -1016,7 +1048,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod
     public IRubyObject internal_encoding(ThreadContext context) {
-        if (enc2 == null) return context.nil;
+        if (openFile.encs.enc2 == null) return context.nil;
         
         return context.runtime.getEncodingService().getEncoding(getReadEncoding());
     }
@@ -1050,7 +1082,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // mri: io_encoding_set
     public void setEncoding(ThreadContext context, IRubyObject v1, IRubyObject v2, IRubyObject opt) {
         IOEncodable.ConvConfig holder = new IOEncodable.ConvConfig();
-        int ecflags = this.ecflags;
+        int ecflags = openFile.encs.ecflags;
         IRubyObject[] ecopts_p = {context.nil};
         IRubyObject tmp;
         
@@ -1106,11 +1138,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
         int[] fmode_p = {openFile.getMode()};
         EncodingUtils.validateEncodingBinmode(context, fmode_p, ecflags, holder);
         openFile.setMode(fmode_p[0]);
-        
-        this.enc = holder.enc;
-        this.enc2 = holder.enc2;
-        this.ecflags = ecflags;
-        this.ecopts = ecopts_p[0];
+
+        openFile.encs.enc = holder.enc;
+        openFile.encs.enc2 = holder.enc2;
+        openFile.encs.ecflags = ecflags;
+        openFile.encs.ecopts = ecopts_p[0];
 
         clearCodeConversion();
     }
@@ -2527,7 +2559,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         ByteList bytes = new ByteList();
         int firstByte;
         int r = 0;
-        int ecflags = this.ecflags | EConvFlags.PARTIAL_INPUT;
+        int ecflags = openFile.encs.ecflags | EConvFlags.PARTIAL_INPUT;
         byte[] out = new byte[16];
         Ptr inP = new Ptr(0);
         Ptr outP = new Ptr(0);
@@ -2546,14 +2578,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
             r = StringSupport.preciseLength(read, bytes.getUnsafeBytes(), 0, bytes.getRealSize());
             if (!StringSupport.MBCLEN_NEEDMORE_P(r)) {
                 // logic from fill_buf, which transcodes while buffering from IO
-                EConvResult res = readconv.convert(bytes.getUnsafeBytes(), inP, bytes.getBegin() + bytes.getRealSize(), out, outP, out.length, ecflags);
+                EConvResult res = openFile.readconv.convert(bytes.getUnsafeBytes(), inP, bytes.getBegin() + bytes.getRealSize(), out, outP, out.length, ecflags);
 
-                int putbackable = readconv.putbackable();
+                int putbackable = openFile.readconv.putbackable();
                 if (putbackable != 0) {
                     inP.p -= putbackable;
                 }
 
-                RaiseException re = EncodingUtils.makeEconvException(context, readconv);
+                RaiseException re = EncodingUtils.makeEconvException(context, openFile.readconv);
                 if (re != null) {
                     throw re;
                 }
@@ -2723,7 +2755,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
     }
     
-    // MRI: NEED_NEWLINE_DECORATOR_ON_READ_CHECK
+    // MRI: READ_CHECK
     private void readCheck(Stream stream) {
         if (!stream.readDataBuffered()) {
             openFile.checkClosed(getRuntime());
@@ -3175,7 +3207,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             // TODO: handle writing into original buffer better
             ByteList buf = readAllCommon(runtime);
 
-            if (readconv != null) buf = EncodingUtils.econvStrConvert(runtime.getCurrentContext(), readconv, buf, 0);
+            if (openFile.readconv != null) buf = EncodingUtils.econvStrConvert(runtime.getCurrentContext(), openFile.readconv, buf, 0);
             
             clearReadConversion();
             return ioEncStr(runtime.newString(buf));
@@ -4826,26 +4858,26 @@ public class RubyIO extends RubyObject implements IOEncodable {
         openFile.setBinmode(); // In MRI this does not affect flags like we do in OpenFile
         makeWriteConversion(context);
         
-        if (writeconv != null) {
-            if (!writeconvAsciicompat.isNil()) {
-                commonEncoding = writeconvAsciicompat;
+        if (openFile.writeconv != null) {
+            if (!openFile.writeconvAsciicompat.isNil()) {
+                commonEncoding = openFile.writeconvAsciicompat;
 //            } else if (/*MODE_BTMODE(DEFAULT_TEXTMODE,0,1) && */ EncodingUtils.econvAsciicompatEncoding(enc) == null) {
 //                throw runtime.newArgumentError("ASCII incompatible string written for text mode IO without encoding conversion:" + str.getEncoding());
             }
         } else {
-            if (enc2 != null) {
-                commonEncoding = runtime.getEncodingService().convertEncodingToRubyEncoding(enc2);
-            } else if (enc != runtime.getEncodingService().getAscii8bitEncoding()) {
-                commonEncoding = runtime.getEncodingService().convertEncodingToRubyEncoding(enc);
+            if (openFile.encs.enc2 != null) {
+                commonEncoding = runtime.getEncodingService().convertEncodingToRubyEncoding(openFile.encs.enc2);
+            } else if (openFile.encs.enc != runtime.getEncodingService().getAscii8bitEncoding()) {
+                commonEncoding = runtime.getEncodingService().convertEncodingToRubyEncoding(openFile.encs.enc);
             }
         }
         
         if (!commonEncoding.isNil()) {
-            str = EncodingUtils.rbStrEncode(context, str, commonEncoding, writeconvPreEcflags, writeconvPreEcopts);
+            str = EncodingUtils.rbStrEncode(context, str, commonEncoding, openFile.writeconvPreEcflags, openFile.writeconvPreEcopts);
         }
         
-        if (writeconv != null) {
-            str = runtime.newString(EncodingUtils.econvStrConvert(context, writeconv, ((RubyString)str).getByteList(), 0));
+        if (openFile.writeconv != null) {
+            str = runtime.newString(EncodingUtils.econvStrConvert(context, openFile.writeconv, ((RubyString)str).getByteList(), 0));
         }
         
         // TODO: win32 logic
@@ -4853,142 +4885,34 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return str;
     }
     
-    // MRI: NEED_READCONV (FIXME: Windows has slightly different version)
-    private boolean needsReadConversion() {
-        return (enc2 != null || (ecflags & ~EConvFlags.CRLF_NEWLINE_DECORATOR) != 0);
-    }
-    
-    // MRI: NEED_WRITECONV (FIXME: Windows has slightly different version)
-    private boolean needsWriteConversion(ThreadContext context) {
-        Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
-        
-        return (enc != null && enc != ascii8bit) || openFile.isTextMode() || 
-                (ecflags & ((EConvFlags.DECORATOR_MASK & ~EConvFlags.CRLF_NEWLINE_DECORATOR)| EConvFlags.STATEFUL_DECORATOR_MASK)) != 0;
-    }
-    
-    // MRI: make_readconv
-    // Missing flags and doubling readTranscoder as transcoder and whether transcoder has been initializer (ick).
-    private void makeReadConversion(ThreadContext context) {
-        if (readconv != null) return;
-        
-        int ecflags;
-        IRubyObject ecopts;
-        byte[] sname, dname;
-        ecflags = this.ecflags & ~EConvFlags.NEWLINE_DECORATOR_WRITE_MASK;
-        ecopts = this.ecopts;
-        
-        if (enc2 != null) {
-            sname = enc2.getName();
-            dname = enc.getName();
-        } else {
-            sname = dname = EMPTY_BYTE_ARRAY;
-        }
-        
-        readconv = EncodingUtils.econvOpenOpts(context, sname, dname, ecflags, ecopts);
-        
-        if (readconv == null) {
-            throw EncodingUtils.econvOpenExc(context, sname, dname, ecflags);
-        }
-        
-        // rest of MRI code sets up read/write buffers
-    }
-    
-    // MRI: make_writeconv
-    private void makeWriteConversion(ThreadContext context) {
-        if (writeconvInitialized) return;
-        
-        byte[] senc;
-        byte[] denc;
-        Encoding enc;
-        int ecflags;
-        IRubyObject ecopts;
-        
-        writeconvInitialized = true;
-        
-        ecflags = this.ecflags & ~EConvFlags.NEWLINE_DECORATOR_READ_MASK;
-        ecopts = this.ecopts;
-
-        Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
-        if (this.enc == null || (this.enc == ascii8bit && enc2 == null)) {
-            /* no encoding conversion */
-            writeconvPreEcflags = 0;
-            writeconvPreEcopts = context.nil;
-            writeconv = EncodingUtils.econvOpenOpts(context, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, ecflags, ecopts);
-            if (writeconv == null) {
-                throw EncodingUtils.econvOpenExc(context, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, ecflags);
-            }
-            writeconvAsciicompat = context.nil;
-        }
-        else {
-            enc = this.enc2 != null ? this.enc2 : this.enc;
-            Encoding tmpEnc = EncodingUtils.econvAsciicompatEncoding(enc);
-            senc = tmpEnc == null ? null : tmpEnc.getName();
-            if (senc == null && (this.ecflags & EConvFlags.STATEFUL_DECORATOR_MASK) == 0) {
-                /* single conversion */
-                writeconvPreEcflags = ecflags;
-                writeconvPreEcopts = ecopts;
-                writeconv = null;
-                writeconvAsciicompat = context.nil;
-            }
-            else {
-                /* double conversion */
-                writeconvPreEcflags = ecflags & ~EConvFlags.STATEFUL_DECORATOR_MASK;
-                writeconvPreEcopts = ecopts;
-                if (senc != null) {
-                    denc = enc.getName();
-                    writeconvAsciicompat = RubyString.newString(context.runtime, senc);
-                }
-                else {
-                    senc = denc = EMPTY_BYTE_ARRAY;
-                    writeconvAsciicompat = RubyString.newString(context.runtime, enc.getName());
-                }
-                ecflags = this.ecflags & (EConvFlags.ERROR_HANDLER_MASK | EConvFlags.STATEFUL_DECORATOR_MASK);
-                ecopts = this.ecopts;
-                writeconv = EncodingUtils.econvOpenOpts(context, senc, denc, ecflags, ecopts);
-                if (writeconv == null) {
-                    throw EncodingUtils.econvOpenExc(context, senc, denc, ecflags);
-                }
-            }
-        }
-    }
-    
-    private void clearReadConversion() {
-        readconv = null;
-    }
-    
-    private void clearCodeConversion() {
-        readconv = null;
-        writeconv = null;
-    }
-    
     @Override
     public void setEnc2(Encoding enc2) {
-        this.enc2 = enc2;
+        openFile.encs.enc2 = enc2;
     }
     
     @Override
     public void setEnc(Encoding enc) {
-        this.enc = enc;
+        openFile.encs.enc = enc;
     }
     
     @Override
     public void setEcflags(int ecflags) {
-        this.ecflags = ecflags;
+        openFile.encs.ecflags = ecflags;
     }
     
     @Override
     public int getEcflags() {
-        return ecflags;
+        return openFile.encs.ecflags;
     }
     
     @Override
     public void setEcopts(IRubyObject ecopts) {
-        this.ecopts = ecopts;
+        openFile.encs.ecopts = ecopts;
     }
     
     @Override
     public IRubyObject getEcopts() {
-        return ecopts;
+        return openFile.encs.ecopts;
     }
     
     @Override
@@ -5005,18 +4929,18 @@ public class RubyIO extends RubyObject implements IOEncodable {
     protected void setAscii8bitBinmode() {
         Encoding ascii8bit = getRuntime().getEncodingService().getAscii8bitEncoding();
 
-        if (readconv != null) {
-            readconv = null;
+        if (openFile.readconv != null) {
+            openFile.readconv = null;
         }
-        if (writeconv != null) {
-            writeconv = null;
+        if (openFile.writeconv != null) {
+            openFile.writeconv = null;
         }
         openFile.setBinmode();
         openFile.clearTextMode();
-        enc = ascii8bit;
-        enc2 = null;
-        ecflags = 0;
-        ecopts = getRuntime().getNil();
+        openFile.encs.enc = ascii8bit;
+        openFile.encs.enc2 = null;
+        openFile.encs.ecflags = 0;
+        openFile.encs.ecopts = getRuntime().getNil();
         clearCodeConversion();
     }
     
@@ -5040,40 +4964,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return getline(runtime.getCurrentContext(), separator, limit, null);
     }
     
-    protected EConv readconv = null;
-    protected boolean writeconvInitialized = false;
-    protected EConv writeconv = null;
     protected OpenFile openFile;
     protected List<RubyThread> blockingThreads;
-    
-    /**
-     * readEncoding/writeEncoding deserve a paragraph explanation.  In spite
-     * of appearing to be a better name than enc/enc as is used in MRI, it is
-     * probably a wash.  readEncoding represents the encoding we want the string
-     * to be.  If writeEncoding is not null this represents the source encoding
-     * to use.
-     * 
-     * Reading:
-     * So if we are reading and there is no writeEncoding then we assume that
-     * the io is already readEncoding and read it as such.  If both are set
-     * then we assume readEncoding is external encoding and we transcode to
-     * writeEncoding (internal).
-     * 
-     * Writing:
-     * If writeEncoding is null then we write the bytes as readEncoding.  If
-     * writeEncoding is set then we convert from writeEncoding to readEncoding.
-     * 
-     * Note: This naming is clearly wrong, but it is no worse then enc/enc2 so
-     * I did not feel the need to fix it.
-     */
-    protected Encoding enc; // MRI:enc
-    protected Encoding enc2; // MRI:enc2
-    protected int ecflags;
-    protected IRubyObject ecopts = getRuntime().getNil();
-    protected int writeconvPreEcflags;
-    protected IRubyObject writeconvPreEcopts = ecopts;
-    protected IRubyObject writeconvAsciicompat = ecopts;
-    
+
     /**
      * If the stream is being used for popen, we don't want to destroy the process
      * when we close the stream.

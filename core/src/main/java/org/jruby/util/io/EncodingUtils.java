@@ -402,12 +402,14 @@ public class EncodingUtils {
     }
 
     // rb_econv_append
-    public static ByteList econvAppend(ThreadContext context, EConv ec, ByteList ss, ByteList dst, int flags) {
-        int len = ss.getRealSize();
+    public static ByteList econvAppend(ThreadContext context, EConv ec, ByteList sByteList, ByteList dst, int flags) {
+        int len = sByteList.getRealSize();
 
         Ptr sp = new Ptr(0);
         int se = 0;
-        byte[] ds;
+        int ds = 0;
+        int ss = sByteList.getBegin();
+        byte[] dBytes;
         Ptr dp = new Ptr(0);
         int de = 0;
         EConvResult res;
@@ -428,7 +430,7 @@ public class EncodingUtils {
 
         do {
             int dlen = dst.getRealSize();
-            if (dst.getUnsafeBytes().length - dst.getBegin() < len + maxOutput) {
+            if ((dst.getUnsafeBytes().length - dst.getBegin()) - dlen < len + maxOutput) {
                 long newCapa = dlen + len + maxOutput;
                 if (Integer.MAX_VALUE < newCapa) {
                     throw context.runtime.newArgumentError("too long string");
@@ -436,21 +438,28 @@ public class EncodingUtils {
                 dst.ensure((int)newCapa);
                 dst.setRealSize(dlen);
             }
-            sp.p = ss.begin();
+            sp.p = ss;
             se = sp.p + len;
-            ds = dst.getUnsafeBytes();
-            de = ds.length;
-            dp.p = dst.begin() + dlen;
-            res = ec.convert(ss.getUnsafeBytes(), sp, se, ds, dp, de, flags);
-            len -= sp.p - ss.begin();
-            ss.setBegin(sp.p);
-            dst.setRealSize(dlen + (dp.p - dst.begin()));
-//            econvCheckError(context, ec);
+            dBytes = dst.getUnsafeBytes();
+            ds = dst.getBegin();
+            de = dBytes.length;
+            dp.p = ds += dlen;
+            res = ec.convert(sByteList.getUnsafeBytes(), sp, se, dBytes, dp, de, flags);
+            len -= sp.p - ss;
+            ss = sp.p;
+            dst.setRealSize(dlen + (dp.p - ds));
+            EncodingUtils.econvCheckError(context, ec);
         } while (res == EConvResult.DestinationBufferFull);
 
         return dst;
     }
-    
+
+    // rb_econv_check_error
+    private static void econvCheckError(ThreadContext context, EConv ec) {
+        RaiseException re = makeEconvException(context, ec);
+        if (re != null) throw re;
+    }
+
     // rb_econv_prepare_opts
     public static int econvPrepareOpts(ThreadContext context, IRubyObject opthash, IRubyObject[] opts) {
         return econvPrepareOptions(context, opthash, opts, 0);
@@ -940,6 +949,97 @@ public class EncodingUtils {
 
     public static boolean DECORATOR_P(byte[] sname, byte[] dname) {
         return sname == null || sname.length == 0 || sname[0] == 0;
+    }
+
+    // TODO: Get rid of this and get consumers calling with existing RubyString
+    public static ByteList strConvEncOpts(ThreadContext context, ByteList str, Encoding fromEncoding,
+                                            Encoding toEncoding, int ecflags, IRubyObject ecopts) {
+        return strConvEncOpts(
+                context,
+                RubyString.newString(context.runtime, str),
+                fromEncoding, toEncoding, ecflags, ecopts).getByteList();
+    }
+
+    /**
+     * This will try and transcode the supplied ByteList to the supplied toEncoding.  It will use
+     * forceEncoding as its encoding if it is supplied; otherwise it will use the encoding it has
+     * tucked away in the bytelist.  This will return a new copy of a ByteList in the request
+     * encoding or die trying (ConverterNotFound).
+     *
+     * c: rb_str_conv_enc_opts
+     */
+    public static RubyString strConvEncOpts(ThreadContext context, RubyString str, Encoding fromEncoding,
+            Encoding toEncoding, int ecflags, IRubyObject ecopts) {
+
+        if (toEncoding == null) return str;
+        if (fromEncoding == null) fromEncoding = str.getEncoding();
+        if (fromEncoding == toEncoding) return str;
+        if ((toEncoding.isAsciiCompatible() && str.isAsciiOnly()) ||
+                toEncoding == ASCIIEncoding.INSTANCE) {
+            if (str.getEncoding() != toEncoding) {
+                str = (RubyString)str.dup();
+                str.setEncoding(toEncoding);
+            }
+            return str;
+        }
+
+        ByteList strByteList = str.getByteList();
+        int len = strByteList.getRealSize();
+        ByteList newStr = new ByteList(len);
+        int olen = len;
+
+        EConv ec = econvOpenOpts(context, fromEncoding.getName(), toEncoding.getName(), ecflags, ecopts);
+        if (ec == null) return str;
+
+        byte[] sbytes = strByteList.getUnsafeBytes();
+        Ptr sp = new Ptr(strByteList.getBegin());
+        int start = sp.p;
+
+        byte[] destbytes;
+        Ptr dp = new Ptr(0);
+        EConvResult ret;
+        int convertedOutput = 0;
+
+        destbytes = newStr.getUnsafeBytes();
+        int dest = newStr.begin();
+        dp.p = dest + convertedOutput;
+        ret = ec.convert(sbytes, sp, start + len, destbytes, dp, dest + olen, 0);
+        while (ret == EConvResult.DestinationBufferFull) {
+            int convertedInput = sp.p - start;
+            int rest = len - convertedInput;
+            convertedOutput = dp.p - dest;
+            newStr.setRealSize(convertedOutput);
+            if (convertedInput != 0 && convertedOutput != 0 &&
+                    rest < (Integer.MAX_VALUE / convertedOutput)) {
+                rest = (rest * convertedOutput) / convertedInput;
+            } else {
+                rest = olen;
+            }
+            olen += rest < 2 ? 2 : rest;
+            newStr.ensure(olen);
+        }
+        ec.close();
+
+        switch (ret) {
+            case Finished:
+                len = dp.p;
+                newStr.setRealSize(len);
+                newStr.setEncoding(toEncoding);
+                return RubyString.newString(context.runtime, newStr);
+
+            default:
+                // some error, return original
+                return str;
+        }
+    }
+
+    // rb_str_conv_enc
+    public static RubyString strConvEnc(ThreadContext context, RubyString value, Encoding fromEncoding, Encoding toEncoding) {
+        return strConvEncOpts(context, value, fromEncoding, toEncoding, 0, context.nil);
+    }
+
+    public static ByteList strConvEnc(ThreadContext context, ByteList value, Encoding fromEncoding, Encoding toEncoding) {
+        return strConvEncOpts(context, value, fromEncoding, toEncoding, 0, context.nil);
     }
 
     public interface ResizeFunction {

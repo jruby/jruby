@@ -90,7 +90,6 @@ import org.jruby.util.io.PipeException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.encoding.EncodingService;
-import org.jruby.util.encoding.EncodingConverter;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
 
@@ -1401,7 +1400,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     pathEncoding != encodingService.getAscii8bitEncoding() &&
                     pathEncoding != encodingService.getFileSystemEncoding(runtime) &&
                     !path.isAsciiOnly()) {
-                ByteList bytes = EncodingConverter.strConvEnc(context, path.getByteList(), pathEncoding, encodingService.getFileSystemEncoding(runtime));
+                ByteList bytes = EncodingUtils.strConvEnc(context, path.getByteList(), pathEncoding, encodingService.getFileSystemEncoding(runtime));
                 path = RubyString.newString(runtime, bytes);
             }
         }

@@ -35,17 +35,13 @@ import java.util.HashSet;
 import java.util.Set;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
-import org.jcodings.Ptr;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.transcode.EConv;
-import org.jcodings.transcode.EConvResult;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
 /**
@@ -124,86 +120,7 @@ public abstract class EncodingConverter {
                 ecflags,
                 replacement);
     }
-    
-    /**
-     * This will try and transcode the supplied ByteList to the supplied toEncoding.  It will use
-     * forceEncoding as its encoding if it is supplied; otherwise it will use the encoding it has
-     * tucked away in the bytelist.  This will return a new copy of a ByteList in the request
-     * encoding or die trying (ConverterNotFound).
-     * 
-     * c: rb_str_conv_enc_opts
-     */
-    public static ByteList strConvEncOpts(ThreadContext context, ByteList str, Encoding fromEncoding,
-            Encoding toEncoding, int ecflags, IRubyObject ecopts) {
 
-        if (toEncoding == null) return str;
-        if (fromEncoding == null) fromEncoding = str.getEncoding();
-        if (fromEncoding == toEncoding) return str;
-        
-        // This logic appears to not work like in MRI; following code will not
-        // properly decode the string:
-        // "\x00a".force_encoding("ASCII-8BIT").encode("UTF-8", "UTF-16BE")
-        if ((toEncoding.isAsciiCompatible() && StringSupport.codeRangeScan(str.getEncoding(), str) == StringSupport.CR_7BIT) ||
-                toEncoding == ASCIIEncoding.INSTANCE) {
-            if (str.getEncoding() != toEncoding) {
-                str = str.shallowDup();
-                str.setEncoding(toEncoding);
-            }
-            return str;
-        }
-
-        int len = str.getRealSize();
-        ByteList newStr = new ByteList(len);
-        int olen = len;
-        
-        EConv ec = EncodingUtils.econvOpenOpts(context, fromEncoding.getName(), toEncoding.getName(), ecflags, ecopts);
-        if (ec == null) return str;
-
-        byte[] sbytes = str.getUnsafeBytes();
-        Ptr sp = new Ptr(str.getBegin());
-        int start = sp.p;
-
-        byte[] destbytes;
-        Ptr dp = new Ptr(0);
-        EConvResult ret;
-        int convertedOutput = 0;
-
-        destbytes = newStr.getUnsafeBytes();
-        dp.p = newStr.begin() + convertedOutput;
-        ret = ec.convert(sbytes, sp, sp.p + len, destbytes, dp, dp.p + olen, 0);
-        while (ret == EConvResult.DestinationBufferFull) {
-            int convertedInput = sp.p - start;
-            int rest = len - convertedInput;
-            convertedOutput = dp.p;
-            newStr.setRealSize(convertedOutput);
-            if (convertedInput != 0 && convertedOutput != 0 &&
-                    rest < (Integer.MAX_VALUE / convertedOutput)) {
-                rest = (rest * convertedOutput) / convertedInput;
-            } else {
-                rest = olen;
-            }
-            olen *= rest < 2 ? 2 : rest;
-            newStr.ensure(olen);
-        }
-
-        switch (ret) {
-            case Finished:
-                len = dp.p;
-                newStr.setRealSize(len);
-                newStr.setEncoding(toEncoding);
-                return newStr;
-
-            default:
-                // some error, return original
-                return str;
-        }
-    }
-    
-    // rb_str_conv_enc
-    public static ByteList strConvEnc(ThreadContext context, ByteList value, Encoding fromEncoding, Encoding toEncoding) {
-        return strConvEncOpts(context, value, fromEncoding, toEncoding, 0, context.nil);
-    }
-    
     public static ByteList transcode(ThreadContext context, ByteList value, Encoding fromEncoding,
             Encoding toEncoding, IRubyObject opts, boolean is7BitASCII) {
         if (toEncoding == null) return value;

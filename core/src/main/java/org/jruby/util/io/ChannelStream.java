@@ -126,6 +126,11 @@ public class ChannelStream implements Stream, Finalizable {
         this.modes = modes;
     }
 
+    @Override
+    public ByteBuffer getBuffer() {
+        return buffer;
+    }
+
     public Ruby getRuntime() {
         return runtime;
     }
@@ -198,12 +203,19 @@ public class ChannelStream implements Stream, Finalizable {
         return !reading && buffer.position() > 0;
     }
 
-    private final int refillBuffer() throws IOException {
+    @Override
+    public final int bufferedAvailable() {
+        return buffer.remaining();
+    }
+
+    @Override
+    public final int refillBuffer() throws IOException {
         buffer.clear();
         int n = ((ReadableByteChannel) descriptor.getChannel()).read(buffer);
         buffer.flip();
         return n;
     }
+
     public synchronized ByteList fgets(ByteList separatorString) throws IOException, BadDescriptorException {
         checkReadable();
         ensureRead();

@@ -42,7 +42,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.encoding.EncodingConverter;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
 
@@ -161,8 +160,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
             return RubyString.newString(runtime, value, getEnc());
         }
 
-        value = EncodingConverter.strConvEncOpts(runtime.getCurrentContext(), value, enc2, enc, ecflags, ecopts);
-        return RubyString.newString(runtime, value);
+        return EncodingUtils.strConvEncOpts(runtime.getCurrentContext(), RubyString.newString(runtime, value), enc2, enc, ecflags, ecopts);
     }
 
     @JRubyMethod(name = "os_code")
