@@ -15,7 +15,9 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 
 /**
  * Splat as used to cast a value to an array if it isn't already, as in {@code *value}.
@@ -40,12 +42,26 @@ public abstract class SplatCastNode extends RubyNode {
     }
 
     @Specialization
-    public RubyArray doObject(Object object) {
-        if (object instanceof NilPlaceholder) {
+    public RubyArray doObject(VirtualFrame frame, Object object) {
+        if (object == NilPlaceholder.INSTANCE) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         } else if (object instanceof RubyArray) {
             return (RubyArray) object;
         } else {
+            // TODO(CS): need to specialize for this
+
+            final RubyBasicObject boxedObject = getContext().getCoreLibrary().box(object);
+
+            final RubyMethod toA = boxedObject.getLookupNode().lookupMethod("to_a");
+
+            if (toA != null) {
+                final Object toAResult = toA.call(frame.pack(), boxedObject, null);
+
+                if (toAResult instanceof RubyArray) {
+                    return (RubyArray) toAResult;
+                }
+            }
+
             return RubyArray.specializedFromObject(getContext().getCoreLibrary().getArrayClass(), object);
         }
     }

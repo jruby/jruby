@@ -27,3 +27,4 @@ fails:Multiple assignment, array-style returns an array of all rhs values
 fails:Basic assignment supports the {|r,| } form of block assignment
 fails:Basic assignment allows the assignment of the rhs to the lhs using the lhs splat operator
 fails:Assigning multiple values bundles remaining values to an array when using the splat operator
+fails:Basic multiple assignment with a single RHS value does not call #to_a on an object if #to_ary is not defined

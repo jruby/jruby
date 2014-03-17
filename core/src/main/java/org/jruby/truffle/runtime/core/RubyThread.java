@@ -12,6 +12,8 @@ package org.jruby.truffle.runtime.core;
 import java.util.*;
 import java.util.concurrent.*;
 
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.subsystems.*;
 
 /**
@@ -42,6 +44,7 @@ public class RubyThread extends RubyObject {
     private final ThreadManager manager;
 
     private final CountDownLatch finished = new CountDownLatch(1);
+    private RubyException exception = null;
 
     private final int hashCode = new Random().nextInt();
 
@@ -57,7 +60,11 @@ public class RubyThread extends RubyObject {
 
             @Override
             public void run() {
-                finalBlock.call(null);
+                try {
+                    finalBlock.call(null);
+                } catch (ReturnException e) {
+                    exception = getRubyClass().getContext().getCoreLibrary().unexpectedReturn();
+                }
             }
 
         });
@@ -108,6 +115,10 @@ public class RubyThread extends RubyObject {
             }
         } finally {
             runningThread.manager.enterGlobalLock(runningThread);
+        }
+
+        if (exception != null) {
+            throw new RaiseException(exception);
         }
     }
 

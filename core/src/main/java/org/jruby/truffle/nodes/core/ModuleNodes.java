@@ -11,10 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameDescriptor;
-import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.common.IRubyWarnings;
@@ -30,12 +27,10 @@ import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
-import org.jruby.truffle.runtime.methods.Arity;
-import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.methods.UniqueMethodIdentifier;
-import org.jruby.truffle.runtime.methods.Visibility;
+import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.translator.TranslatorDriver;
 
 import java.util.List;
@@ -325,30 +320,30 @@ public abstract class ModuleNodes {
 
         @Specialization(order = 1)
         public RubySymbol defineMethod(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
-            final RubyMethod method = block.getMethod();
-            module.addMethod(method.withNewName(name.toString()));
-            return getContext().getSymbolTable().getSymbol(name.getBytes());
+            return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
         }
 
         @Specialization(order = 2)
         public RubySymbol defineMethod(RubyModule module, RubyString name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            final RubyMethod method = proc.getMethod();
-            module.addMethod(method.withNewName(name.toString()));
-            return getContext().getSymbolTable().getSymbol(name.getBytes());
+            final RubySymbol symbol = getContext().getSymbolTable().getSymbol(name.getBytes());
+            defineMethod(module, symbol, proc);
+            return symbol;
         }
 
         @Specialization(order = 3)
         public RubySymbol defineMethod(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
-            final RubyMethod method = block.getMethod();
-            module.addMethod(method.withNewName(name.toString()));
-            return name;
+            return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
         }
 
         @Specialization(order = 4)
         public RubySymbol defineMethod(RubyModule module, RubySymbol name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+            defineMethod(module, name, proc);
+            return name;
+        }
+
+        private static void defineMethod(RubyModule module, RubySymbol name, RubyProc proc) {
             final RubyMethod method = proc.getMethod();
             module.addMethod(method.withNewName(name.toString()));
-            return name;
         }
 
     }
