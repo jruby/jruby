@@ -65,7 +65,7 @@ public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         String name = method.getName();
         Ruby runtime = context.runtime;
-        RubyObject obj = (RubyObject) container.retrieve(context, self, currDynScope, temp);
+        IRubyObject obj = (IRubyObject) container.retrieve(context, self, currDynScope, temp);
 
         if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {
             throw runtime.newTypeError("can't define singleton method \"" + name + "\" for " + obj.getMetaClass().getBaseName());
