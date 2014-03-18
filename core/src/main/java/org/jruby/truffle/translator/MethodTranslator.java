@@ -61,10 +61,9 @@ class MethodTranslator extends Translator {
 
         if (isBlock) {
             body = new RedoableNode(context, sourceSection, body);
-        } else {
-            body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID());
         }
 
+        body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID(), isBlock);
         body = new CatchNextNode(context, sourceSection, body);
         body = new CatchRetryAsErrorNode(context, sourceSection, body);
 

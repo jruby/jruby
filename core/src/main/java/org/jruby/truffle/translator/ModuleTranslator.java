@@ -55,7 +55,7 @@ class ModuleTranslator extends Translator {
             body = new SequenceNode(context, sourceSection, initFlipFlopStates(sourceSection), body);
         }
 
-        body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID());
+        body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID(), false);
 
         final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), methodName, body);
 
