@@ -47,18 +47,17 @@ public class SystemNode extends RubyNode {
         }
 
         final InputStream stdout = process.getInputStream();
-        final BufferedReader reader = new BufferedReader(new InputStreamReader(stdout));
+        final InputStreamReader reader = new InputStreamReader(stdout);
 
         final StringBuilder resultBuilder = new StringBuilder();
-
-        String line;
 
         // TODO(cs): this isn't great for binary output
 
         try {
-            while ((line = reader.readLine()) != null) {
-                resultBuilder.append(line);
-                resultBuilder.append("\n");
+            int c;
+
+            while ((c = reader.read()) != -1) {
+                resultBuilder.append((char) c);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

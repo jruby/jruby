@@ -8,7 +8,7 @@ import org.jcodings.specific.USASCIIEncoding;
  */
 public class RubyEncoding extends RubyObject{
 
-    private org.jruby.RubyEncoding rubyEncoding;
+    private final org.jruby.RubyEncoding rubyEncoding;
 
     /**
      * The class from which we create the object that is {@code Encoding}. A subclass of
@@ -68,4 +68,23 @@ public class RubyEncoding extends RubyObject{
     public boolean compareTo(RubyEncoding other) {
         return getRubyEncoding().getEncoding().equals(other.getRubyEncoding().getEncoding());
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        RubyEncoding that = (RubyEncoding) o;
+
+        if (!rubyEncoding.equals(that.rubyEncoding)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return rubyEncoding.hashCode();
+    }
+
 }
