@@ -500,14 +500,14 @@ public class InvokeDynamicSupport {
         
         // prepare fallback
         MethodHandle fallback = null;
-        if (site.chainCount() + 1 > RubyInstanceConfig.MAX_POLY_COUNT) {
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tqet on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo(site));
+        if (site.chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name + "\tqet on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo(site));
             fallback = findStatic(InvokeDynamicSupport.class, "getVariableFail", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
             fallback = fallback.bindTo(site);
             site.setTarget(fallback);
             return (IRubyObject)fallback.invokeWithArguments(self);
         } else {
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) {
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 if (direct) {
                     LOG.info(site.name + "\tget field on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
                 } else {
@@ -524,7 +524,7 @@ public class InvokeDynamicSupport {
         
         getValue = guardWithTest(test, getValue, fallback);
         
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget on class " + self.getMetaClass().id + " bound directly" + extractSourceInfo(site));
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name + "\tget on class " + self.getMetaClass().id + " bound directly" + extractSourceInfo(site));
         site.setTarget(getValue);
         
         return (IRubyObject)getValue.invokeWithArguments(self);
@@ -575,14 +575,14 @@ public class InvokeDynamicSupport {
 
         // prepare fallback
         MethodHandle fallback = null;
-        if (site.chainCount() + 1 > RubyInstanceConfig.MAX_POLY_COUNT) {
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo(site));
+        if (site.chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name + "\tset on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo(site));
             fallback = findStatic(InvokeDynamicSupport.class, "setVariableFail", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class, IRubyObject.class));
             fallback = fallback.bindTo(site);
             site.setTarget(fallback);
             return (IRubyObject)fallback.invokeWithArguments(self, value);
         } else {
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) {
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 if (direct) {
                     LOG.info(site.name + "\tset field on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
                 } else {
@@ -600,7 +600,7 @@ public class InvokeDynamicSupport {
 
         setValue = guardWithTest(test, setValue, fallback);
 
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset on class " + self.getMetaClass().id + " bound directly" + extractSourceInfo(site));
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name + "\tset on class " + self.getMetaClass().id + " bound directly" + extractSourceInfo(site));
         site.setTarget(setValue);
 
         return (IRubyObject)setValue.invokeWithArguments(self, value);
@@ -781,7 +781,7 @@ public class InvokeDynamicSupport {
         IRubyObject value = scope.getConstant(site.name());
         
         if (value != null) {
-            if (RubyInstanceConfig.LOG_INDY_CONSTANTS) LOG.info("constant " + site.name() + " bound directly");
+            if (Options.INVOKEDYNAMIC_LOG_CONSTANTS.load()) LOG.info("constant " + site.name() + " bound directly");
             
             MethodHandle valueHandle = constant(IRubyObject.class, value);
             valueHandle = dropArguments(valueHandle, 0, AbstractScript.class, ThreadContext.class);
@@ -810,7 +810,7 @@ public class InvokeDynamicSupport {
         IRubyObject value = scope.getConstant(site.name());
         
         if (value != null) {
-            if (RubyInstanceConfig.LOG_INDY_CONSTANTS) LOG.info("constant " + site.name() + " bound directly");
+            if (Options.INVOKEDYNAMIC_LOG_CONSTANTS.load()) LOG.info("constant " + site.name() + " bound directly");
             
             MethodHandle valueHandle = constant(boolean.class, value.isTrue());
             valueHandle = dropArguments(valueHandle, 0, AbstractScript.class, ThreadContext.class);

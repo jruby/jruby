@@ -1,9 +1,10 @@
 package org.jruby.util.cli;
 
 import java.util.Arrays;
+
+import com.headius.options.Option;
 import jnr.posix.util.Platform;
 import org.jruby.CompatVersion;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.Constants;
 import org.jruby.util.SafePropertyAccessor;
 
@@ -64,6 +65,7 @@ public class OutputStrings {
                 .append("  --client        use the non-optimizing \"client\" JVM\n")
                 .append("                    (improves startup; default)\n")
                 .append("  --server        use the optimizing \"server\" JVM (improves perf)\n")
+                .append("  --(no-)indy     use invokedynamic (Java 7+) to optimize (perf++, startup--)\n")
                 .append("  --manage        enable remote JMX management and monitoring of the VM\n")
                 .append("                    and JRuby\n")
                 .append("  --headless      do not launch a GUI window, no matter what\n")
@@ -137,7 +139,7 @@ public class OutputStrings {
                 Constants.REVISION,
                 SafePropertyAccessor.getProperty("java.vm.name", "Unknown JVM"),
                 SafePropertyAccessor.getProperty("java.runtime.version", SafePropertyAccessor.getProperty("java.version", "Unknown version")),
-                RubyInstanceConfig.USE_INVOKEDYNAMIC ? " +indy" : "",
+                Options.COMPILE_INVOKEDYNAMIC.load() ? " +indy" : "",
                 Platform.getOSName(),
                 SafePropertyAccessor.getProperty("os.arch", "Unknown arch")
                 );

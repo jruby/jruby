@@ -1787,49 +1787,6 @@ public class RubyInstanceConfig {
     public static final boolean JIT_LOADING_DEBUG = Options.JIT_DEBUG.load();
 
     public static final boolean CAN_SET_ACCESSIBLE = Options.JI_SETACCESSIBLE.load();
-    /**
-     * In Java integration, allow upper case name for a Java package;
-     * e.g., com.example.UpperCase.Class
-     */
-    @Deprecated
-    public static final boolean UPPER_CASE_PACKAGE_NAME_ALLOWED = Options.JI_UPPER_CASE_PACKAGE_NAME_ALLOWED.load();
-    
-    
-    public static final boolean USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load();
-    
-    // max times an indy call site can fail before it goes to simple IC
-    public static final int MAX_FAIL_COUNT = Options.INVOKEDYNAMIC_MAXFAIL.load();
-    
-    // max polymorphism at a call site to build a chained method handle PIC
-    public static final int MAX_POLY_COUNT = Options.INVOKEDYNAMIC_MAXPOLY.load();
-    
-    // logging of various indy aspects
-    public static final boolean LOG_INDY_BINDINGS = Options.INVOKEDYNAMIC_LOG_BINDING.load();
-    public static final boolean LOG_INDY_CONSTANTS = Options.INVOKEDYNAMIC_LOG_CONSTANTS.load();
-    
-    // properties enabling or disabling certain uses of invokedynamic
-    public static final boolean INVOKEDYNAMIC_ALL = USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_ALL.load();
-    public static final boolean INVOKEDYNAMIC_SAFE = USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_SAFE.load();
-    
-    private static final boolean invokedynamicOn = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE || USE_INVOKEDYNAMIC;
-    
-    public static final boolean INVOKEDYNAMIC_INVOCATION = invokedynamicOn && Options.INVOKEDYNAMIC_INVOCATION.load();
-    
-    private static final boolean invokedynamicInvocation = invokedynamicOn && INVOKEDYNAMIC_INVOCATION;
-    
-    public static final boolean INVOKEDYNAMIC_INVOCATION_SWITCHPOINT = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load();
-    public static final boolean INVOKEDYNAMIC_INDIRECT = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_INDIRECT.load();
-    public static final boolean INVOKEDYNAMIC_JAVA = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_JAVA.load();
-    public static final boolean INVOKEDYNAMIC_ATTR = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_ATTR.load();
-    public static final boolean INVOKEDYNAMIC_FASTOPS = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_FASTOPS.load();
-    
-    public static final boolean INVOKEDYNAMIC_CACHE = invokedynamicOn && Options.INVOKEDYNAMIC_CACHE.load();
-    
-    private static final boolean invokedynamicCache = invokedynamicOn && INVOKEDYNAMIC_CACHE;
-    
-    public static final boolean INVOKEDYNAMIC_CONSTANTS = invokedynamicCache && Options.INVOKEDYNAMIC_CACHE_CONSTANTS.load();
-    public static final boolean INVOKEDYNAMIC_LITERALS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_LITERALS.load();
-    public static final boolean INVOKEDYNAMIC_IVARS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_IVARS.load();
     
     // properties for logging exceptions, backtraces, and caller invocations
     public static final boolean LOG_EXCEPTIONS = Options.LOG_EXCEPTIONS.load();
@@ -1993,4 +1950,46 @@ public class RubyInstanceConfig {
     public boolean isBenchmarking() {
         return false;
     }
+    /**
+     * In Java integration, allow upper case name for a Java package;
+     * e.g., com.example.UpperCase.Class
+     */
+    @Deprecated
+    public static final boolean UPPER_CASE_PACKAGE_NAME_ALLOWED = Options.JI_UPPER_CASE_PACKAGE_NAME_ALLOWED.load();
+
+    @Deprecated public static final boolean USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load();
+
+    // max times an indy call site can fail before it goes to simple IC
+    @Deprecated public static final int MAX_FAIL_COUNT = Options.INVOKEDYNAMIC_MAXFAIL.load();
+
+    // max polymorphism at a call site to build a chained method handle PIC
+    @Deprecated public static final int MAX_POLY_COUNT = Options.INVOKEDYNAMIC_MAXPOLY.load();
+
+    // logging of various indy aspects
+    @Deprecated public static final boolean LOG_INDY_BINDINGS = Options.INVOKEDYNAMIC_LOG_BINDING.load();
+    @Deprecated public static final boolean LOG_INDY_CONSTANTS = Options.INVOKEDYNAMIC_LOG_CONSTANTS.load();
+
+    // properties enabling or disabling certain uses of invokedynamic
+    @Deprecated public static final boolean INVOKEDYNAMIC_ALL = USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_ALL.load();
+    @Deprecated public static final boolean INVOKEDYNAMIC_SAFE = USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_SAFE.load();
+
+    @Deprecated private static final boolean invokedynamicOn = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE || USE_INVOKEDYNAMIC;
+
+    @Deprecated public static final boolean INVOKEDYNAMIC_INVOCATION = invokedynamicOn && Options.INVOKEDYNAMIC_INVOCATION.load();
+
+    @Deprecated private static final boolean invokedynamicInvocation = invokedynamicOn && INVOKEDYNAMIC_INVOCATION;
+
+    @Deprecated public static final boolean INVOKEDYNAMIC_INVOCATION_SWITCHPOINT = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load();
+    @Deprecated public static final boolean INVOKEDYNAMIC_INDIRECT = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_INDIRECT.load();
+    @Deprecated public static final boolean INVOKEDYNAMIC_JAVA = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_JAVA.load();
+    @Deprecated public static final boolean INVOKEDYNAMIC_ATTR = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_ATTR.load();
+    @Deprecated public static final boolean INVOKEDYNAMIC_FASTOPS = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_FASTOPS.load();
+
+    @Deprecated public static final boolean INVOKEDYNAMIC_CACHE = invokedynamicOn && Options.INVOKEDYNAMIC_CACHE.load();
+
+    @Deprecated private static final boolean invokedynamicCache = invokedynamicOn && INVOKEDYNAMIC_CACHE;
+
+    @Deprecated public static final boolean INVOKEDYNAMIC_CONSTANTS = invokedynamicCache && Options.INVOKEDYNAMIC_CACHE_CONSTANTS.load();
+    @Deprecated public static final boolean INVOKEDYNAMIC_LITERALS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_LITERALS.load();
+    @Deprecated public static final boolean INVOKEDYNAMIC_IVARS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_IVARS.load();
 }
