@@ -9,20 +9,27 @@
  */
 package org.jruby.truffle.nodes.control;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
-import com.oracle.truffle.api.utilities.*;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.cast.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.control.*;
+import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.nodes.RootNode;
+import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.BreakException;
+import org.jruby.truffle.runtime.control.NextException;
+import org.jruby.truffle.runtime.control.RedoException;
 
 /**
- * Represents a Ruby {@code while} statement.
+ * Represents a Ruby {@code while} statement where the body is executed before the condition for the first time.
  */
-@NodeInfo(shortName = "while")
-public class WhileNode extends RubyNode {
+@NodeInfo(shortName = "do-while")
+public class DoWhileNode extends RubyNode {
 
     @Child protected BooleanCastNode condition;
     @Child protected RubyNode body;
@@ -31,7 +38,7 @@ public class WhileNode extends RubyNode {
     private final BranchProfile nextProfile = new BranchProfile();
     private final BranchProfile redoProfile = new BranchProfile();
 
-    public WhileNode(RubyContext context, SourceSection sourceSection, BooleanCastNode condition, RubyNode body) {
+    public DoWhileNode(RubyContext context, SourceSection sourceSection, BooleanCastNode condition, RubyNode body) {
         super(context, sourceSection);
         this.condition = adoptChild(condition);
         this.body = adoptChild(body);
@@ -42,7 +49,7 @@ public class WhileNode extends RubyNode {
         int count = 0;
 
         try {
-            outer: while (condition.executeBoolean(frame)) {
+            outer: while (true) {
                 while (true) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
@@ -50,16 +57,22 @@ public class WhileNode extends RubyNode {
 
                     try {
                         body.execute(frame);
-                        continue outer;
+                        break;
                     } catch (BreakException e) {
                         breakProfile.enter();
                         return e.getResult();
                     } catch (NextException e) {
                         nextProfile.enter();
-                        continue outer;
+                        break;
                     } catch (RedoException e) {
                         redoProfile.enter();
                     }
+                }
+
+                if (condition.executeBoolean(frame)) {
+                    continue outer;
+                } else {
+                    break outer;
                 }
             }
         } finally {

@@ -1914,7 +1914,11 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         final RubyNode body = (RubyNode) node.getBodyNode().accept(this);
 
-        return new WhileNode(context, sourceSection, conditionCastNotCast, body);
+        if (node.evaluateAtStart()) {
+            return new WhileNode(context, sourceSection, conditionCastNotCast, body);
+        } else {
+            return new DoWhileNode(context, sourceSection, conditionCastNotCast, body);
+        }
     }
 
     @Override
@@ -1952,7 +1956,11 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         final RubyNode body = (RubyNode) node.getBodyNode().accept(this);
 
-        return new WhileNode(context, sourceSection, conditionCast, body);
+        if (node.evaluateAtStart()) {
+            return new WhileNode(context, sourceSection, conditionCast, body);
+        } else {
+            return new DoWhileNode(context, sourceSection, conditionCast, body);
+        }
     }
 
     @Override
@@ -1978,7 +1986,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         if (argsNode != null) {
             if (argsNode instanceof org.jruby.ast.ListNode) {
-                arguments.addAll(((org.jruby.ast.ListNode) node.getArgsNode()).childNodes());
+                arguments.addAll((node.getArgsNode()).childNodes());
             } else {
                 arguments.add(node.getArgsNode());
             }
@@ -2004,10 +2012,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
     @Override
     public Object visitZSuperNode(org.jruby.ast.ZSuperNode node) {
-        return unimplemented(node);
-    }
-
-    public Object visitArgumentNode(org.jruby.ast.ArgumentNode node) {
         return unimplemented(node);
     }
 
