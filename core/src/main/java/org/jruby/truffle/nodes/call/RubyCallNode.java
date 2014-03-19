@@ -59,7 +59,7 @@ public class RubyCallNode extends RubyNode {
 
     @Child protected DispatchHeadNode dispatchHead;
 
-    public RubyCallNode(RubyContext context, SourceSection section, String name, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode[] arguments) {
+    public RubyCallNode(RubyContext context, SourceSection section, String name, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
         super(context, section);
 
         assert receiver != null;

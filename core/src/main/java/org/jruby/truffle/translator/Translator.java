@@ -13,6 +13,7 @@ import com.oracle.truffle.api.Source;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.impl.DefaultSourceSection;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import org.joni.Regex;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.DefinedNode;
@@ -457,8 +458,8 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
                 final List<org.jruby.ast.Node> expressions;
 
-                if (when.getExpressionNodes() instanceof org.jruby.ast.ListNode) {
-                    expressions = ((org.jruby.ast.ListNode) when.getExpressionNodes()).childNodes();
+                if (when.getExpressionNodes() instanceof org.jruby.ast.ListNode && !(when.getExpressionNodes() instanceof org.jruby.ast.ArrayNode)) {
+                    expressions = when.getExpressionNodes().childNodes();
                 } else {
                     expressions = Arrays.asList(when.getExpressionNodes());
                 }
@@ -468,9 +469,15 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
                 for (org.jruby.ast.Node expressionNode : expressions) {
                     final RubyNode rubyExpression = (RubyNode) expressionNode.accept(this);
 
-                    final RubyCallNode comparison = new RubyCallNode(context, sourceSection, "===", rubyExpression, null, false, new RubyNode[]{environment.findLocalVarNode(tempName, sourceSection)});
-
-                    comparisons.add(comparison);
+                    if (expressionNode instanceof org.jruby.ast.SplatNode) {
+                        final SplatCastNode splatCastNode = (SplatCastNode) rubyExpression;
+                        comparisons.add(new WhenSplatNode(context, sourceSection, NodeUtil.cloneNode(readTemp), splatCastNode));
+                    } else if (expressionNode instanceof org.jruby.ast.ArgsCatNode) {
+                        final ArrayConcatNode arrayConcatNode = (ArrayConcatNode) rubyExpression;
+                        comparisons.add(new WhenSplatNode(context, sourceSection, NodeUtil.cloneNode(readTemp), arrayConcatNode));
+                    } else {
+                        comparisons.add(new RubyCallNode(context, sourceSection, "===", rubyExpression, null, false, NodeUtil.cloneNode(readTemp)));
+                    }
                 }
 
                 RubyNode conditionNode = comparisons.get(comparisons.size() - 1);

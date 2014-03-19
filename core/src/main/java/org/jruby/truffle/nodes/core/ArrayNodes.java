@@ -99,6 +99,32 @@ public abstract class ArrayNodes {
 
     }
 
+    @CoreMethod(names = "|", minArgs = 1, maxArgs = 1)
+    public abstract static class UnionNode extends CoreMethodNode {
+
+        public UnionNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public UnionNode(UnionNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray equal(RubyArray a, RubyArray b) {
+            final RubyArray result = (RubyArray) a.dup();
+
+            for (Object value : b.asList()) {
+                if (!result.contains(value)) {
+                    result.push(value);
+                }
+            }
+
+            return result;
+        }
+
+    }
+
     @CoreMethod(names = "==", minArgs = 1, maxArgs = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 

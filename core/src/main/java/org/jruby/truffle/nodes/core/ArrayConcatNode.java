@@ -32,7 +32,7 @@ public final class ArrayConcatNode extends RubyNode {
 
     @ExplodeLoop
     @Override
-    public Object execute(VirtualFrame frame) {
+    public RubyArray execute(VirtualFrame frame) {
         final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
         for (int n = 0; n < children.length; n++) {

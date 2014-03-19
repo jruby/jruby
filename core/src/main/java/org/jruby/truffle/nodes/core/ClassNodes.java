@@ -40,6 +40,11 @@ public abstract class ClassNodes {
         public boolean containsInstance(RubyClass rubyClass, RubyBasicObject instance) {
             return instance.getRubyClass().assignableTo(rubyClass);
         }
+
+        @Specialization
+        public boolean containsInstance(RubyClass rubyClass, Object instance) {
+            return getContext().getCoreLibrary().box(instance).getRubyClass().assignableTo(rubyClass);
+        }
     }
 
     @CoreMethod(names = "new", needsBlock = true, isSplatted = true)

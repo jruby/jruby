@@ -32,6 +32,25 @@ import java.util.Map;
 @CoreClass(name = "Object")
 public abstract class ObjectNodes {
 
+    @CoreMethod(names = "===", minArgs = 1, maxArgs = 1)
+    public abstract static class ThreeEqualNode extends CoreMethodNode {
+
+        public ThreeEqualNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ThreeEqualNode(ThreeEqualNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean equal(Object a, Object b) {
+            // TODO(CS) ideally all classes would do this in their own nodes
+            return a.equals(b);
+        }
+
+    }
+
     @CoreMethod(names = "class", maxArgs = 0)
     public abstract static class ClassNode extends CoreMethodNode {
 
