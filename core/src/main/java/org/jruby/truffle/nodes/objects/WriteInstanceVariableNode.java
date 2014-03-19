@@ -48,12 +48,14 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
     @Child protected BoxingNode receiver;
     @Child protected RubyNode rhs;
     @Child protected WriteObjectFieldNode writeNode;
+    private final boolean isGlobal;
 
-    public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs) {
+    public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs, boolean isGlobal) {
         super(context, sourceSection);
         this.receiver = adoptChild(new BoxingNode(context, sourceSection, receiver));
         this.rhs = adoptChild(rhs);
         writeNode = adoptChild(new UninitializedWriteObjectFieldNode(name, hook));
+        this.isGlobal = isGlobal;
     }
 
     @Override
@@ -95,6 +97,6 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
     @Override
     public RubyNode makeReadNode() {
-        return new ReadInstanceVariableNode(getContext(), getSourceSection(), writeNode.getName(), receiver);
+        return new ReadInstanceVariableNode(getContext(), getSourceSection(), writeNode.getName(), receiver, isGlobal);
     }
 }

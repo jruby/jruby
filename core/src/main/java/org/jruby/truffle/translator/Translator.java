@@ -78,6 +78,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     private static final Map<Class, String> nodeDefinedNames = new HashMap<>();
 
     static {
+        // TODO(CS): this was a temporary hack and needs to be removed
         nodeDefinedNames.put(org.jruby.ast.SelfNode.class, "self");
         nodeDefinedNames.put(org.jruby.ast.NilNode.class, "nil");
         nodeDefinedNames.put(org.jruby.ast.TrueNode.class, "true");
@@ -92,7 +93,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         nodeDefinedNames.put(org.jruby.ast.OpAsgnNode.class, "assignment");
         nodeDefinedNames.put(org.jruby.ast.OpElementAsgnNode.class, "assignment");
         nodeDefinedNames.put(org.jruby.ast.MultipleAsgn19Node.class, "assignment");
-        nodeDefinedNames.put(org.jruby.ast.GlobalVarNode.class, "global-variable");
         nodeDefinedNames.put(org.jruby.ast.StrNode.class, "expression");
         nodeDefinedNames.put(org.jruby.ast.DStrNode.class, "expression");
         nodeDefinedNames.put(org.jruby.ast.FixnumNode.class, "expression");
@@ -1004,7 +1004,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         } else {
             final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
 
-            return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs);
+            return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true);
         }
     }
 
@@ -1024,7 +1024,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         } else {
             final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
 
-            return new ReadInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode);
+            return new ReadInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, true);
         }
     }
 
@@ -1105,7 +1105,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
             rhs = (RubyNode) node.getValueNode().accept(this);
         }
 
-        return new WriteInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver, rhs);
+        return new WriteInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver, rhs, false);
     }
 
     @Override
@@ -1115,7 +1115,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         final RubyNode receiver = new SelfNode(context, sourceSection);
 
-        return new ReadInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver);
+        return new ReadInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver, false);
     }
 
     @Override

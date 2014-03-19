@@ -10,12 +10,18 @@
 package org.jruby.truffle.nodes.objectstorage;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
+import org.jruby.truffle.runtime.objectstorage.StorageLocation;
 
 public class UninitializedReadObjectFieldNode extends ReadObjectFieldNode {
 
     public UninitializedReadObjectFieldNode(String name, RespecializeHook hook) {
         super(name, hook);
+    }
+
+    public boolean isSet(ObjectStorage object) {
+        return object.getObjectLayout().findStorageLocation(getName()) != null;
     }
 
     @Override

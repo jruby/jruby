@@ -52,13 +52,15 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
     @Child protected BoxingNode receiver;
     @Child protected ReadObjectFieldNode readNode;
+    private final boolean isGlobal;
 
     private final BranchProfile nullProfile = new BranchProfile();
 
-    public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
+    public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean isGlobal) {
         super(context, sourceSection);
         this.receiver = adoptChild(new BoxingNode(context, sourceSection, receiver));
         readNode = adoptChild(new UninitializedReadObjectFieldNode(name, hook));
+        this.isGlobal = isGlobal;
     }
 
     @Override
@@ -85,6 +87,14 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
+        if (isGlobal) {
+            if (readNode.getName().equals("$~") || readNode.isSet(receiver.executeRubyBasicObject(frame))) {
+                return getContext().makeString("global-variable");
+            } else{
+                return NilPlaceholder.INSTANCE;
+            }
+        }
+
         final RubyContext context = getContext();
 
         try {
@@ -106,6 +116,6 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
     @Override
     public RubyNode makeWriteNode(RubyNode rhs) {
-        return new WriteInstanceVariableNode(getContext(), getSourceSection(), readNode.getName(), receiver, rhs);
+        return new WriteInstanceVariableNode(getContext(), getSourceSection(), readNode.getName(), receiver, rhs, isGlobal);
     }
 }

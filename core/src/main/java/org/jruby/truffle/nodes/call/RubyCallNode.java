@@ -117,6 +117,16 @@ public class RubyCallNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
+        if (receiver.isDefined(frame) == NilPlaceholder.INSTANCE) {
+            return NilPlaceholder.INSTANCE;
+        }
+
+        for (RubyNode argument : arguments) {
+            if (argument.isDefined(frame) == NilPlaceholder.INSTANCE) {
+                return NilPlaceholder.INSTANCE;
+            }
+        }
+
         final RubyContext context = getContext();
 
         Object receiverObject;

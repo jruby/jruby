@@ -1,17 +1,3 @@
-fails:The defined? keyword for an expression returns nil for an expression with !~ and an undefined method
-fails:The defined? keyword for an expression returns 'method' for an expression with '!~'
-fails:The defined? keyword for an expression with logical connectives returns nil for an expression with '!' and an unset class variable
-fails:The defined? keyword for an expression with logical connectives returns nil for an expression with 'not' and an unset class variable
-fails:The defined? keyword for an expression with logical connectives returns nil for an expression with '!' and an unset global variable
-fails:The defined? keyword for an expression with logical connectives returns nil for an expression with '!' and an unset instance variable
-fails:The defined? keyword for an expression with logical connectives returns nil for an expression with 'not' and an unset global variable
-fails:The defined? keyword for an expression with logical connectives returns nil for an expression with 'not' and an unset instance variable
-fails:The defined? keyword for variables returns nil for a global variable that has not been read
-fails:The defined? keyword for variables returns nil for a global variable that has been read but not assigned to
-fails:The defined? keyword for variables when a String does not match a Regexp returns nil for $&
-fails:The defined? keyword for variables when a String does not match a Regexp returns nil for $`
-fails:The defined? keyword for variables when a String does not match a Regexp returns nil for $'
-fails:The defined? keyword for variables when a String does not match a Regexp returns nil for $+
 fails:The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $&
 fails:The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $`
 fails:The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $'

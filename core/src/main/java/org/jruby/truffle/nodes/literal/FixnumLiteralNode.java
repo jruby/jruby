@@ -35,6 +35,11 @@ public class FixnumLiteralNode extends RubyNode {
         return value;
     }
 
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        return getContext().makeString("expression");
+    }
+
     // TODO(CS): remove this - shouldn't be fiddling with nodes from the outside
     public int getValue() {
         return value;

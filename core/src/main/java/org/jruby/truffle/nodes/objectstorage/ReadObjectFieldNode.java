@@ -23,6 +23,10 @@ public abstract class ReadObjectFieldNode extends Node {
         this.hook = hook;
     }
 
+    public boolean isSet(ObjectStorage object) {
+        return true;
+    }
+
     public abstract Object execute(ObjectStorage object);
 
     public int executeInteger(ObjectStorage object) throws UnexpectedResultException {

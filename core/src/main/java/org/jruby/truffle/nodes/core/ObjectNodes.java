@@ -46,8 +46,46 @@ public abstract class ObjectNodes {
 
         @Specialization
         public boolean equal(Object a, Object b) {
-            // TODO(CS) ideally all classes would do this in their own nodes
+            // TODO(CS): placeholder
             return a.equals(b);
+        }
+
+    }
+
+    @CoreMethod(names = "=~", minArgs = 1, maxArgs = 1)
+    public abstract static class MatchNode extends CoreMethodNode {
+
+        public MatchNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public MatchNode(MatchNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean equal(Object a, Object b) {
+            // TODO(CS): placeholder
+            return a.equals(b);
+        }
+
+    }
+
+    @CoreMethod(names = "!~", minArgs = 1, maxArgs = 1)
+    public abstract static class NotMatchNode extends CoreMethodNode {
+
+        public NotMatchNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public NotMatchNode(NotMatchNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean equal(Object a, Object b) {
+            // TODO(CS): placeholder
+            return !a.equals(b);
         }
 
     }

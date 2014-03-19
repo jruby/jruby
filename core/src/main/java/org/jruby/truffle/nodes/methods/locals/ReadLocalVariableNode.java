@@ -50,4 +50,9 @@ public abstract class ReadLocalVariableNode extends FrameSlotNode implements Rea
         return WriteLocalVariableNodeFactory.create(getContext(), getSourceSection(), frameSlot, rhs);
     }
 
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        return getContext().makeString("local-variable");
+    }
+
 }

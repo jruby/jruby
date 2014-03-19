@@ -29,4 +29,9 @@ public class SelfNode extends RubyNode {
         return self;
     }
 
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        return getContext().makeString("self");
+    }
+
 }
