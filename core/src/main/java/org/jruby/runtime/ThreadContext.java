@@ -266,7 +266,7 @@ public final class ThreadContext {
         return scopeStack[scopeIndex - 1];
     }
     
-    private void expandFramesIfNecessary() {
+    private void expandFrameStack() {
         int newSize = frameStack.length * 2;
         frameStack = fillNewFrameStack(new Frame[newSize], newSize);
     }
@@ -281,7 +281,7 @@ public final class ThreadContext {
         return newFrameStack;
     }
     
-    private void expandParentsIfNecessary() {
+    private void expandParentStack() {
         int newSize = parentStack.length * 2;
         RubyModule[] newParentStack = new RubyModule[newSize];
 
@@ -295,7 +295,7 @@ public final class ThreadContext {
         DynamicScope[] stack = scopeStack;
         stack[index] = scope;
         if (index + 1 == stack.length) {
-            expandScopesIfNecessary();
+            expandScopeStack();
         }
     }
     
@@ -303,7 +303,7 @@ public final class ThreadContext {
         scopeStack[scopeIndex--] = null;
     }
     
-    private void expandScopesIfNecessary() {
+    private void expandScopeStack() {
         int newSize = scopeStack.length * 2;
         DynamicScope[] newScopeStack = new DynamicScope[newSize];
 
@@ -358,7 +358,7 @@ public final class ThreadContext {
     }
     
     //////////////////// CATCH MANAGEMENT ////////////////////////
-    private void expandCatchIfNecessary() {
+    private void expandCatchStack() {
         int newSize = catchStack.length * 2;
         if (newSize == 0) newSize = 1;
         Continuation[] newCatchStack = new Continuation[newSize];
@@ -370,7 +370,7 @@ public final class ThreadContext {
     public void pushCatch(Continuation catchTarget) {
         int index = ++catchIndex;
         if (index == catchStack.length) {
-            expandCatchIfNecessary();
+            expandCatchStack();
         }
         catchStack[index] = catchTarget;
     }
@@ -409,7 +409,7 @@ public final class ThreadContext {
         Frame currentFrame = stack[index - 1];
         stack[index].updateFrame(currentFrame);
         if (index + 1 == stack.length) {
-            expandFramesIfNecessary();
+            expandFrameStack();
         }
     }
     
@@ -418,7 +418,7 @@ public final class ThreadContext {
         Frame[] stack = frameStack;
         stack[index] = frame;
         if (index + 1 == stack.length) {
-            expandFramesIfNecessary();
+            expandFrameStack();
         }
         return frame;
     }
@@ -429,7 +429,7 @@ public final class ThreadContext {
         Frame[] stack = frameStack;
         stack[index].updateFrame(clazz, self, name, block, callNumber);
         if (index + 1 == stack.length) {
-            expandFramesIfNecessary();
+            expandFrameStack();
         }
     }
     
@@ -438,7 +438,7 @@ public final class ThreadContext {
         Frame[] stack = frameStack;
         stack[index].updateFrameForEval(self, callNumber);
         if (index + 1 == stack.length) {
-            expandFramesIfNecessary();
+            expandFrameStack();
         }
     }
     
@@ -446,7 +446,7 @@ public final class ThreadContext {
         int index = ++this.frameIndex;
         Frame[] stack = frameStack;
         if (index + 1 == stack.length) {
-            expandFramesIfNecessary();
+            expandFrameStack();
         }
     }
     
@@ -475,7 +475,7 @@ public final class ThreadContext {
         int index = frameIndex;
         Frame[] stack = frameStack;
         if (index + 1 == stack.length) {
-            expandFramesIfNecessary();
+            expandFrameStack();
         }
         return stack[index + 1];
     }
@@ -525,7 +525,7 @@ public final class ThreadContext {
 
     /////////////////// BACKTRACE ////////////////////
 
-    private static void expandBacktraceIfNecessary(ThreadContext context) {
+    private static void expandBacktraceStack(ThreadContext context) {
         int newSize = context.backtrace.length * 2;
         context.backtrace = fillNewBacktrace(context, new BacktraceElement[newSize], newSize);
     }
@@ -545,7 +545,7 @@ public final class ThreadContext {
         BacktraceElement[] stack = context.backtrace;
         BacktraceElement.update(stack[index], method, position);
         if (index + 1 == stack.length) {
-            ThreadContext.expandBacktraceIfNecessary(context);
+            ThreadContext.expandBacktraceStack(context);
         }
     }
 
@@ -554,7 +554,7 @@ public final class ThreadContext {
         BacktraceElement[] stack = context.backtrace;
         BacktraceElement.update(stack[index], method, file, line);
         if (index + 1 == stack.length) {
-            ThreadContext.expandBacktraceIfNecessary(context);
+            ThreadContext.expandBacktraceStack(context);
         }
     }
 
@@ -684,7 +684,7 @@ public final class ThreadContext {
         RubyModule[] stack = parentStack;
         stack[index] = currentModule;
         if (index + 1 == stack.length) {
-            expandParentsIfNecessary();
+            expandParentStack();
         }
     }
     
