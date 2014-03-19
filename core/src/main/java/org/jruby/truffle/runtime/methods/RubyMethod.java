@@ -145,7 +145,19 @@ public class RubyMethod {
                 return true;
 
             case PROTECTED:
-                return true;
+                if (module == declaringModule) {
+                    return true;
+                }
+
+                if (module.getSingletonClass() == declaringModule) {
+                    return true;
+                }
+
+                if (module.getParentModule() != null && isVisibleTo(module.getParentModule())) {
+                    return true;
+                }
+
+                return false;
 
             case PRIVATE:
                 if (module == declaringModule) {

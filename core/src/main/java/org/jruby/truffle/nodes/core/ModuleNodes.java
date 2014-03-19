@@ -653,7 +653,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "protected", appendCallNode = true, isSplatted = true)
+    @CoreMethod(names = "protected", isSplatted = true)
     public abstract static class ProtectedNode extends CoreMethodNode {
 
         public ProtectedNode(RubyContext context, SourceSection sourceSection) {
@@ -665,9 +665,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule doProtected(RubyModule module, @SuppressWarnings("unused") Object[] args) {
-            final Node callNode = (Node) args[args.length - 1];
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "protected does nothing at the moment");
+        public RubyModule doProtected(VirtualFrame frame, RubyModule module, Object... args) {
+            module.visibilityMethod(frame.getCaller(), args, Visibility.PROTECTED);
             return module;
         }
     }
