@@ -58,6 +58,8 @@ public class RubyClass extends RubyModule {
     public RubyClass(RubyModule parentModule, RubyClass rubySuperclass, String name, boolean isSingleton) {
         this(rubySuperclass.getContext(), rubySuperclass.getContext().getCoreLibrary().getClassClass(), parentModule, rubySuperclass, name);
 
+        // TODO(CS): Why am I doing this? Why does it break if I don't?
+
         if (!isSingleton) {
             getSingletonClass();
         }

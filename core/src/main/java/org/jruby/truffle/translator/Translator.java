@@ -590,7 +590,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
             return getModuleToDefineModulesIn(sourceSection);
         } else {
             if (node.childNodes().isEmpty()) {
-                return new ClassNode(context, sourceSection, new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getMainObject()));
+                return new ClassNode(context, sourceSection, new BoxingNode(context, sourceSection, new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getMainObject())));
             } else {
                 return (RubyNode) node.childNodes().get(0).accept(this);
             }
@@ -598,14 +598,14 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     }
 
     protected RubyNode getModuleToDefineModulesIn(SourceSection sourceSection) {
-        return new ClassNode(context, sourceSection, new SelfNode(context, sourceSection));
+        return new ClassNode(context, sourceSection, new BoxingNode(context, sourceSection, new SelfNode(context, sourceSection)));
     }
 
     @Override
     public Object visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final RubyNode receiver = new ClassNode(context, sourceSection, new SelfNode(context, sourceSection));
+        final RubyNode receiver = new ClassNode(context, sourceSection, new BoxingNode(context, sourceSection, new SelfNode(context, sourceSection)));
 
         final RubyNode rhs = (RubyNode) node.getValueNode().accept(this);
 
@@ -650,7 +650,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     public Object visitConstDeclNode(org.jruby.ast.ConstDeclNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final ClassNode classNode = new ClassNode(context, sourceSection, new SelfNode(context, sourceSection));
+        final ClassNode classNode = new ClassNode(context, sourceSection, new BoxingNode(context, sourceSection, new SelfNode(context, sourceSection)));
 
         return new WriteConstantNode(context, sourceSection, node.getName(), classNode, (RubyNode) node.getValueNode().accept(this));
     }
@@ -754,7 +754,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         final RubyNode objectNode = (RubyNode) node.getReceiverNode().accept(this);
 
-        final SingletonClassNode singletonClassNode = new SingletonClassNode(context, sourceSection, objectNode);
+        final SingletonClassNode singletonClassNode = new SingletonClassNode(context, sourceSection, new BoxingNode(context, sourceSection, objectNode));
 
         return translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node.getArgsNode(), node.getBodyNode(), true);
     }
@@ -1841,7 +1841,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         final RubyNode receiverNode = (RubyNode) node.getReceiverNode().accept(this);
 
-        final SingletonClassNode singletonClassNode = new SingletonClassNode(context, sourceSection, receiverNode);
+        final SingletonClassNode singletonClassNode = new SingletonClassNode(context, sourceSection, new BoxingNode(context, sourceSection, receiverNode));
 
         return new OpenModuleNode(context, sourceSection, singletonClassNode, definitionMethod);
     }

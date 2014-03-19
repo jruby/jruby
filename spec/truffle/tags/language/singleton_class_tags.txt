@@ -1,8 +1,3 @@
-fails:A singleton class is TrueClass for true
-fails:A singleton class is FalseClass for false
-fails:A singleton class is NilClass for nil
-fails:A singleton class raises a TypeError for Fixnum's
-fails:A singleton class raises a TypeError for symbols
 fails:A singleton class is a singleton Class instance
 fails:A singleton class inherits from Class for classes
 fails:A singleton class is a subclass of Class's singleton class

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -518,19 +519,19 @@ public abstract class ObjectNodes {
     }
 
     @CoreMethod(names = "singleton_class", maxArgs = 0)
-    public abstract static class SingletonClassNode extends CoreMethodNode {
+    public abstract static class SingletonClassMethodNode extends CoreMethodNode {
 
-        public SingletonClassNode(RubyContext context, SourceSection sourceSection) {
+        public SingletonClassMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public SingletonClassNode(SingletonClassNode prev) {
+        public SingletonClassMethodNode(SingletonClassMethodNode prev) {
             super(prev);
         }
 
         @Specialization
-        public RubyClass singletonClass(RubyBasicObject self) {
-            return self.getSingletonClass();
+        public RubyClass singletonClass(Object self) {
+            return getContext().getCoreLibrary().box(self).getSingletonClass();
         }
 
     }

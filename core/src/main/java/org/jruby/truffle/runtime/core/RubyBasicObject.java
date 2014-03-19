@@ -76,8 +76,18 @@ public class RubyBasicObject extends ObjectStorage {
 
     public RubyClass getSingletonClass() {
         if (rubySingletonClass == null) {
-            rubySingletonClass = new RubyClass(rubyClass.getParentModule(), rubyClass, String.format("#<Class:#<%s:0x%x>>", rubyClass.getName(), getObjectID()), true);
-            lookupNode = new LookupFork(rubySingletonClass, rubyClass);
+            final CoreLibrary coreLibrary = getRubyClass().getContext().getCoreLibrary();
+
+            // TODO(CS): some of these reference comparisons should probably check for subclasses as well
+
+            if (getRubyClass() == coreLibrary.getNilClass() || getRubyClass() == coreLibrary.getTrueClass() || getRubyClass() == coreLibrary.getFalseClass()) {
+                rubySingletonClass = getRubyClass();
+            } else if (getRubyClass() == coreLibrary.getFixnumClass() || getRubyClass() == coreLibrary.getFloatClass() || getRubyClass() == coreLibrary.getSymbolClass()) {
+                throw new RaiseException(coreLibrary.typeError("can't define singleton"));
+            } else {
+                rubySingletonClass = new RubyClass(rubyClass.getParentModule(), rubyClass, String.format("#<Class:#<%s:0x%x>>", rubyClass.getName(), getObjectID()), true);
+                lookupNode = new LookupFork(rubySingletonClass, rubyClass);
+            }
         }
 
         return rubySingletonClass;
