@@ -1,1 +1,0 @@
-fails:The module keyword raises a TypeError if the constant is a Class

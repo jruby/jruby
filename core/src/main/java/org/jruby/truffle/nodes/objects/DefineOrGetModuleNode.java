@@ -56,7 +56,7 @@ public class DefineOrGetModuleNode extends RubyNode {
             parentModuleObject.setConstant(name, definingModule);
             parentModuleObject.getSingletonClass().setConstant(name, definingModule);
         } else {
-            if (constantValue instanceof RubyModule) {
+            if (constantValue instanceof RubyModule && !(constantValue instanceof RubyClass)) {
                 definingModule = (RubyModule) constantValue;
             } else {
                 throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(name, "module"));
