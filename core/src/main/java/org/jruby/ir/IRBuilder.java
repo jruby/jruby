@@ -320,6 +320,29 @@ public class IRBuilder {
         }
     }
 
+    private Operand getImplicitBlockArg(IRScope s) {
+        int n = 0;
+        while (s != null && s instanceof IRClosure) {
+            n++;
+            s = s.getLexicalParent();
+        }
+
+        if (s != null) {
+            LocalVariable v = null;
+            if (s instanceof IRMethod) {
+                v = ((IRMethod)s).getLocalVariable(Variable.BLOCK, 0);
+            } else if (s instanceof IRMetaClassBody) {
+                v = ((IRMetaClassBody)s).getLocalVariable(Variable.BLOCK, 0);
+            }
+
+            if (v != null) {
+                return n == 0 ? v : v.cloneForDepth(n);
+            }
+        }
+
+        return manager.getNil();
+    }
+
     // Emit cloned ensure bodies by walking up the ensure block stack.
     // If we have been passed a loop value, only emit bodies that are nested within that loop.
     private void emitEnsureBlocks(IRScope s, IRLoop loop) {
@@ -1075,7 +1098,7 @@ public class IRBuilder {
         Variable tmpVar = s.getNewTemporaryVariable();
         addInstr(s, new DefineClassInstr(tmpVar, classBody, container, superClass));
         Variable ret = s.getNewTemporaryVariable();
-        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar, (s instanceof IRClosure || s instanceof IRMethod) ? s.getImplicitBlockArg() : manager.getNil()));
+        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar, getImplicitBlockArg(s)));
 
         addInstr(classBody, new ReceiveSelfInstr(classBody.getSelf()));
         // Set %current_scope = <c>
@@ -1107,12 +1130,12 @@ public class IRBuilder {
         Variable tmpVar = s.getNewTemporaryVariable();
         addInstr(s, new DefineMetaClassInstr(tmpVar, receiver, metaClassBody));
         Variable ret = s.getNewTemporaryVariable();
-        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar, (s instanceof IRClosure || s instanceof IRMethod) ? s.getImplicitBlockArg() : manager.getNil()));
+        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar, getImplicitBlockArg(s)));
 
         addInstr(metaClassBody, new ReceiveSelfInstr(metaClassBody.getSelf()));
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        addInstr(metaClassBody, new ReceiveClosureInstr(metaClassBody.getImplicitBlockArg()));
+        addInstr(metaClassBody, new ReceiveClosureInstr((Variable)getImplicitBlockArg(metaClassBody)));
         addInstr(metaClassBody, new CopyInstr(metaClassBody.getCurrentScopeVariable(), new CurrentScope(metaClassBody)));
         addInstr(metaClassBody, new CopyInstr(metaClassBody.getCurrentModuleVariable(), new ScopeModule(metaClassBody)));
         // Create a new nested builder to ensure this gets its own IR builder state
@@ -1526,7 +1549,7 @@ public class IRBuilder {
             case INSTVARNODE:
                 return buildDefinitionCheck(s, new HasInstanceVarInstr(s.getNewTemporaryVariable(), s.getSelf(), new StringLiteral(((InstVarNode) node).getName())), "instance-variable");
             case YIELDNODE:
-                return buildDefinitionCheck(s, new BlockGivenInstr(s.getNewTemporaryVariable(), s.getImplicitBlockArg()), "yield");
+                return buildDefinitionCheck(s, new BlockGivenInstr(s.getNewTemporaryVariable(), getImplicitBlockArg(s)), "yield");
             case BACKREFNODE:
                 return buildDefinitionCheck(s, new BackrefIsMatchDataInstr(s.getNewTemporaryVariable()), "$" + ((BackRefNode) node).getType());
             case NTHREFNODE: {
@@ -1879,11 +1902,12 @@ public class IRBuilder {
             addInstr(s, new ReceiveClosureInstr(blockVar));
         }
 
-        // SSS FIXME: This instruction is only needed if there is an yield instr somewhere!
         // In addition, store the block argument in an implicit block variable
-        Variable implicitBlockArg = s.getImplicitBlockArg();
-        if (blockVar == null) addInstr(s, new ReceiveClosureInstr(implicitBlockArg));
-        else addInstr(s, new CopyInstr(implicitBlockArg, blockVar));
+        if (s instanceof IRMethod) {
+            Variable implicitBlockArg = (Variable)getImplicitBlockArg(s);
+            if (blockVar == null) addInstr(s, new ReceiveClosureInstr(implicitBlockArg));
+            else addInstr(s, new CopyInstr(implicitBlockArg, blockVar));
+        }
     }
 
     protected void receiveNonBlockArgs(final ArgsNode argsNode, IRScope s) {
@@ -1969,7 +1993,7 @@ public class IRBuilder {
         // For methods, we always receive it (implicitly, if the block arg is not explicit)
         // For closures, only if it is explicitly present
         BlockArgNode blockArg = argsNode.getBlock();
-        if ((s instanceof IRMethod) || (blockArg != null)) receiveClosureArg(blockArg, s);
+        if (s instanceof IRMethod || blockArg != null) receiveClosureArg(blockArg, s);
     }
 
     public void receiveArgs(final ArgsNode argsNode, IRScope s) {
@@ -2154,9 +2178,8 @@ public class IRBuilder {
             addInstr(s, new ReceiveClosureInstr(blockVar));
         }
 
-        // SSS FIXME: This instruction is only needed if there is an yield instr somewhere!
         // In addition, store the block argument in an implicit block variable
-        Variable implicitBlockArg = s.getImplicitBlockArg();
+        Variable implicitBlockArg = (Variable)getImplicitBlockArg(s);
         if (blockVar == null) addInstr(s, new ReceiveClosureInstr(implicitBlockArg));
         else addInstr(s, new CopyInstr(implicitBlockArg, blockVar));
     }
@@ -2766,7 +2789,7 @@ public class IRBuilder {
         Variable tmpVar = s.getNewTemporaryVariable();
         addInstr(s, new DefineModuleInstr(tmpVar, moduleBody, container));
         Variable ret = s.getNewTemporaryVariable();
-        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar, (s instanceof IRClosure || s instanceof IRMethod) ? s.getImplicitBlockArg() : manager.getNil()));
+        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar, getImplicitBlockArg(s)));
 
         addInstr(moduleBody, new ReceiveSelfInstr(moduleBody.getSelf()));
         // Set %current_scope = <c>
@@ -3458,7 +3481,7 @@ public class IRBuilder {
 
         List<Operand> args = setupCallArgs(superNode.getArgsNode(), s);
         Operand block = setupCallClosure(superNode.getIterNode(), s);
-        if (block == null) block = s.getImplicitBlockArg();
+        if (block == null) block = getImplicitBlockArg(s);
         return buildSuperInstr(s, block, args.toArray(new Operand[args.size()]));
     }
 
@@ -3588,7 +3611,7 @@ public class IRBuilder {
         }
 
         Variable ret = s.getNewTemporaryVariable();
-        addInstr(s, new YieldInstr(ret, s.getImplicitBlockArg(), build(argNode, s), unwrap));
+        addInstr(s, new YieldInstr(ret, getImplicitBlockArg(s), build(argNode, s), unwrap));
         return ret;
     }
 
@@ -3617,7 +3640,7 @@ public class IRBuilder {
         if (s.isModuleBody()) return buildSuperInScriptBody(s);
 
         Operand block = setupCallClosure(zsuperNode.getIterNode(), s);
-        if (block == null) block = s.getImplicitBlockArg();
+        if (block == null) block = getImplicitBlockArg(s);
 
         // Enebo:ZSuper in for (or nested for) can be statically resolved like method but it needs
         // to fixup depth.

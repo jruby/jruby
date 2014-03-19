@@ -41,13 +41,6 @@ public class IRScriptBody extends IRScope {
     }
 
     @Override
-    public LocalVariable getImplicitBlockArg() {
-        assert false: "A Script body never accepts block args";
-
-        return null;
-    }
-
-    @Override
     public IRScopeType getScopeType() {
         return IRScopeType.SCRIPT_BODY;
     }

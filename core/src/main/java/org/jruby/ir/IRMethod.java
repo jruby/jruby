@@ -73,8 +73,4 @@ public class IRMethod extends IRScope {
         if (lvar == null) lvar = getNewLocalVariable(name, scopeDepth);
         return lvar;
     }
-
-    public LocalVariable getImplicitBlockArg() {
-        return getLocalVariable(Variable.BLOCK, 0);
-    }
 }

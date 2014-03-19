@@ -21,11 +21,6 @@ public class IRMetaClassBody extends IRClassBody {
     }
 
     @Override
-    public LocalVariable getImplicitBlockArg() {
-        return getLocalVariable(Variable.BLOCK, 0);
-    }
-
-    @Override
     public boolean isNonSingletonClassBody() {
         return false;
     }

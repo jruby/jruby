@@ -182,7 +182,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                 // System.out.println(".. call is a data flow barrier ..");
                 // Mark all non-self, non-block local variables live if 'c' is a dataflow barrier!
                 for (Variable x: problem.getNonSelfLocalVars()) {
-                    if (!x.isImplicitBlockArg()) living.set(problem.getDFVar(x));
+                    living.set(problem.getDFVar(x));
                 }
             }
         }
@@ -293,7 +293,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                     // System.out.println("YES!");
                     i.markDead();
                     it.remove();
-                    if (v.isImplicitBlockArg()) problem.getScope().getFlags().add(IRFlags.HAS_UNUSED_IMPLICIT_BLOCK_ARG);
+                    problem.getScope().getFlags().add(IRFlags.HAS_UNUSED_IMPLICIT_BLOCK_ARG);
                 } else {
                     // System.out.println("NO! has side effects! Op is: " + i.getOperation());
                 }
@@ -314,7 +314,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                 } else if (scopeBindingHasEscaped) {
                     // Mark all non-self, non-block local variables live if 'c' is a dataflow barrier!
                     for (Variable x: problem.getNonSelfLocalVars()) {
-                        if (!x.isImplicitBlockArg()) living.set(problem.getDFVar(x));
+                        living.set(problem.getDFVar(x));
                     }
                 }
             }

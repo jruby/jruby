@@ -829,8 +829,6 @@ public abstract class IRScope implements ParseResult {
         return currentScopeVariable;
     }
 
-    public abstract LocalVariable getImplicitBlockArg();
-
     /**
      * Get the local variables for this scope.
      * This should only be used by persistence layer.

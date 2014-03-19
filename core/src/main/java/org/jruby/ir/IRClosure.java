@@ -293,11 +293,6 @@ public class IRClosure extends IRScope {
         return nestingDepth;
     }
 
-    @Override
-    public LocalVariable getImplicitBlockArg() {
-        return getLocalVariable(Variable.BLOCK, getNestingDepth());
-    }
-
     protected IRClosure cloneForInlining(InlinerInfo ii, IRClosure clone) {
         clone.nestingDepth  = this.nestingDepth;
         clone.parameterList = this.parameterList;
