@@ -44,6 +44,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -119,7 +120,7 @@ public class MathLinker {
         MethodHandle test = lookup().findStatic(MathLinker.class, "fixnumTest", methodType(boolean.class, IRubyObject.class));
         test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), new int[] {2});
         
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tFixnum operation at site #" + site.siteID() + " (" + site.file() + ":" + site.line() + ") bound directly");
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(name + "\tFixnum operation at site #" + site.siteID() + " (" + site.file() + ":" + site.line() + ") bound directly");
         
         // confirm it's a Fixnum
         target = guardWithTest(test, target, fallback);
@@ -153,7 +154,7 @@ public class MathLinker {
         MethodHandle test = lookup().findStatic(MathLinker.class, "fixnumTest", methodType(boolean.class, IRubyObject.class));
         test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), new int[] {2});
         
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tFixnum boolean operation at site #" + site.siteID() + " (" + site.file() + ":" + site.line() + ") bound directly");
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(name + "\tFixnum boolean operation at site #" + site.siteID() + " (" + site.file() + ":" + site.line() + ") bound directly");
         
         // confirm it's a Fixnum
         target = guardWithTest(test, target, fallback);
@@ -304,7 +305,7 @@ public class MathLinker {
         MethodHandle test = lookup().findStatic(MathLinker.class, "floatTest", methodType(boolean.class, IRubyObject.class));
         test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), new int[] {2});
         
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tFloat operation at site #" + site.siteID() + " (" + site.file() + ":" + site.line() + ") bound directly");
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(name + "\tFloat operation at site #" + site.siteID() + " (" + site.file() + ":" + site.line() + ") bound directly");
         site.setTarget(guardWithTest(test, target, fallback));
         
         // confirm it's a Float

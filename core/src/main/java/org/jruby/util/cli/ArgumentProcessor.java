@@ -472,6 +472,10 @@ public class ArgumentProcessor {
                             throw mee;
                         }
                         break;
+                    } else if (argument.equals("--dev")) {
+                        Options.COMPILE_INVOKEDYNAMIC.force("false");
+                        config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
+                        break FOR;
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty

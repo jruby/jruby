@@ -39,6 +39,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.cli.Options;
 import org.objectweb.asm.Label;
 
 import static org.jruby.util.CodegenUtils.*;
@@ -311,7 +312,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
 
     @Override
     public void invokeBinaryFixnumRHS(String name, CompilerCallback receiverCallback, final long fixnum) {
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_FASTOPS) {
+        if (!Options.INVOKEDYNAMIC_INVOCATION_FASTOPS.load()) {
             ArgumentsCallback argumentsCallback = new ArgumentsCallback() {
                 @Override
                 public int getArity() {
@@ -352,7 +353,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
 
     @Override
     public void invokeBinaryBooleanFixnumRHS(String name, CompilerCallback receiverCallback, final long fixnum) {
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_FASTOPS) {
+        if (!Options.INVOKEDYNAMIC_INVOCATION_FASTOPS.load()) {
             ArgumentsCallback argumentsCallback = new ArgumentsCallback() {
                 @Override
                 public int getArity() {
@@ -393,7 +394,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
     }
     
     public void invokeBinaryFloatRHS(String name, CompilerCallback receiverCallback, final double flote) {
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_FASTOPS) {
+        if (!Options.INVOKEDYNAMIC_INVOCATION_FASTOPS.load()) {
             ArgumentsCallback argumentsCallback = new ArgumentsCallback() {
                 @Override
                 public int getArity() {
