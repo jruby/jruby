@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import java.nio.charset.UnsupportedCharsetException;
 import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
@@ -28,7 +29,13 @@ public class StringLiteral extends Operand {
         super(OperandType.STRING_LITERAL);
 
         bytelist = val;
-        string = Helpers.byteListToString(bytelist);
+        String stringTemp;
+        try {
+            stringTemp = Helpers.byteListToString(bytelist);
+        } catch (UnsupportedCharsetException e) {
+            stringTemp = bytelist.toString();
+        }
+        string = stringTemp;
     }
 
     public StringLiteral(String s) {
