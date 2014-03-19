@@ -139,7 +139,7 @@ public abstract class CoreMethodNodeManager {
         final List<String> aliases = names.subList(1, names.size());
 
         final UniqueMethodIdentifier uniqueIdentifier = new UniqueMethodIdentifier();
-        final Visibility visibility = Visibility.PUBLIC;
+        final Visibility visibility = methodDetails.getMethodAnnotation().visibility();
 
         final RubyRootNode pristineRootNode = makeGenericMethod(context, methodDetails);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRootNode));

@@ -18,6 +18,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.nodes.cast.*;
@@ -438,7 +439,7 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "print", isModuleMethod = true, needsSelf = false, isSplatted = true)
+    @CoreMethod(names = "print", visibility = Visibility.PRIVATE, isModuleMethod = true, needsSelf = false, isSplatted = true)
     public abstract static class PrintNode extends CoreMethodNode {
 
         public PrintNode(RubyContext context, SourceSection sourceSection) {

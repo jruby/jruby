@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import java.lang.annotation.*;
 
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.runtime.methods.*;
 
 @Target(ElementType.TYPE)
@@ -18,6 +19,8 @@ import org.jruby.truffle.runtime.methods.*;
 public @interface CoreMethod {
 
     String[] names();
+
+    Visibility visibility() default Visibility.PUBLIC;
 
     boolean isModuleMethod() default false;
 

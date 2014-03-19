@@ -13,14 +13,17 @@ import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.SJISEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.array.ObjectArrayStore;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.hash.RubyHash;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 
 import java.io.File;
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.Map;
 
 public class CoreLibrary {
@@ -285,6 +288,12 @@ public class CoreLibrary {
     }
 
     public void initializeAfterMethodsAdded() {
+        // Just create a dummy object for $stdout - we can use Kernel#print
+
+        final RubyBasicObject stdout = new RubyBasicObject(objectClass);
+        stdout.getSingletonClass().addMethod(stdout.getLookupNode().lookupMethod("print").withNewVisibility(Visibility.PUBLIC));
+        globalVariablesObject.setInstanceVariable("$stdout", stdout);
+
         bignumClass.getSingletonClass().undefMethod("new");
         falseClass.getSingletonClass().undefMethod("new");
         fixnumClass.getSingletonClass().undefMethod("new");
