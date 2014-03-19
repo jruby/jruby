@@ -140,11 +140,17 @@ public class RubyCallNode extends RubyNode {
 
         final RubyBasicObject self = context.getCoreLibrary().box(frame.getArguments(RubyArguments.class).getSelf());
 
-        if (method == null || method.isUndefined()) {
-            return NilPlaceholder.INSTANCE;
-        }
+        if (method == null) {
+            final RubyMethod respondToMissing = receiverBasicObject.getLookupNode().lookupMethod("respond_to_missing?");
 
-        if (!method.isVisibleTo(self)) {
+            if (respondToMissing != null) {
+                if (!GeneralConversions.toBoolean(respondToMissing.call(frame.pack(), receiverBasicObject, null, context.makeString(name), true))) {
+                    return NilPlaceholder.INSTANCE;
+                }
+            }
+        } else if (method.isUndefined()) {
+            return NilPlaceholder.INSTANCE;
+        } else if (!method.isVisibleTo(self)) {
             return NilPlaceholder.INSTANCE;
         }
 

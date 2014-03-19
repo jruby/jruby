@@ -518,6 +518,29 @@ public abstract class ObjectNodes {
 
     }
 
+    @CoreMethod(names = "respond_to_missing?", minArgs = 1, maxArgs = 2)
+    public abstract static class RespondToMissingNode extends CoreMethodNode {
+
+        public RespondToMissingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RespondToMissingNode(RespondToMissingNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean doesRespondToMissing(Object object, RubySymbol name, boolean includeAll) {
+            return false;
+        }
+
+        @Specialization
+        public boolean doesRespondToMissing(Object object, RubyString name, boolean includeAll) {
+            return false;
+        }
+
+    }
+
     @CoreMethod(names = "singleton_class", maxArgs = 0)
     public abstract static class SingletonClassMethodNode extends CoreMethodNode {
 
