@@ -23,19 +23,17 @@ public class RubyMethod {
     private final SourceSection sourceSection;
     private final RubyModule declaringModule;
     private final UniqueMethodIdentifier uniqueIdentifier;
-    private final String intrinsicName;
     private final String name;
     private final Visibility visibility;
     private final boolean undefined;
 
     private final MethodImplementation implementation;
 
-    public RubyMethod(SourceSection sourceSection, RubyModule declaringModule, UniqueMethodIdentifier uniqueIdentifier, String intrinsicName, String name, Visibility visibility, boolean undefined,
+    public RubyMethod(SourceSection sourceSection, RubyModule declaringModule, UniqueMethodIdentifier uniqueIdentifier, String name, Visibility visibility, boolean undefined,
                     MethodImplementation implementation) {
         this.sourceSection = sourceSection;
         this.declaringModule = declaringModule;
         this.uniqueIdentifier = uniqueIdentifier;
-        this.intrinsicName = intrinsicName;
         this.name = name;
         this.visibility = visibility;
         this.undefined = undefined;
@@ -61,10 +59,6 @@ public class RubyMethod {
         return uniqueIdentifier;
     }
 
-    public String getIntrinsicName() {
-        return intrinsicName;
-    }
-
     public RubyModule getDeclaringModule() { return declaringModule; }
 
     public String getName() {
@@ -88,7 +82,7 @@ public class RubyMethod {
             return this;
         }
 
-        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, intrinsicName, newName, visibility, undefined, implementation);
+        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, newName, visibility, undefined, implementation);
     }
 
     public RubyMethod withNewVisibility(Visibility newVisibility) {
@@ -96,7 +90,7 @@ public class RubyMethod {
             return this;
         }
 
-        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, intrinsicName, name, newVisibility, undefined, implementation);
+        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, name, newVisibility, undefined, implementation);
     }
 
     public RubyMethod withDeclaringModule(RubyModule newDeclaringModule) {
@@ -104,7 +98,7 @@ public class RubyMethod {
             return this;
         }
 
-        return new RubyMethod(sourceSection, newDeclaringModule, uniqueIdentifier, intrinsicName, name, visibility, undefined, implementation);
+        return new RubyMethod(sourceSection, newDeclaringModule, uniqueIdentifier, name, visibility, undefined, implementation);
     }
 
     public RubyMethod undefined() {
@@ -112,7 +106,7 @@ public class RubyMethod {
             return this;
         }
 
-        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, intrinsicName, name, visibility, true, implementation);
+        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, name, visibility, true, implementation);
     }
 
     public boolean isVisibleTo(RubyBasicObject caller, RubyBasicObject receiver) {

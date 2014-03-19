@@ -44,7 +44,7 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
         final RubyArguments arguments = frame.getArguments(RubyArguments.class);
 
         final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, declarationFrame, frameDescriptor, pristineRootNode, true, false);
-        final RubyMethod method = new RubyMethod(getSourceSection(), null, uniqueIdentifier, null, name, Visibility.PUBLIC, false, methodImplementation);
+        final RubyMethod method = new RubyMethod(getSourceSection(), null, uniqueIdentifier, name, Visibility.PUBLIC, false, methodImplementation);
 
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, arguments.getSelf(), arguments.getBlock(), method);
     }

@@ -144,11 +144,9 @@ public abstract class CoreMethodNodeManager {
         final RubyRootNode pristineRootNode = makeGenericMethod(context, methodDetails);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRootNode));
 
-        final String intrinsicName = methodDetails.getClassAnnotation().name() + "#" + canonicalName;
-
         final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRootNode, true,
                         methodDetails.getMethodAnnotation().appendCallNode());
-        final RubyMethod method = new RubyMethod(pristineRootNode.getSourceSection(), module, uniqueIdentifier, intrinsicName, canonicalName, visibility, false, methodImplementation);
+        final RubyMethod method = new RubyMethod(pristineRootNode.getSourceSection(), module, uniqueIdentifier, canonicalName, visibility, false, methodImplementation);
 
         module.addMethod(method);
 
