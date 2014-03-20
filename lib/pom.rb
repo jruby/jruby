@@ -68,15 +68,15 @@ project 'JRuby Lib Setup' do
 
     puts "using jruby #{JRUBY_VERSION}"
 
-    target = ctx.project.build.directory.to_s
+    target = ctx.project.build.directory.to_s.gsub(/\\/, '/')
+    basedir = ctx.project.basedir.to_s.gsub(/\\/, '/')
     gem_home = File.join( target, 'rubygems' )
     gems = File.join( gem_home, 'gems' )
     specs = File.join( gem_home, 'specifications' )
-    default_specs = File.join( ctx.project.basedir.to_s, 'ruby', 'gems', 'shared', 
+    default_specs = File.join( basedir, 'ruby', 'gems', 'shared', 
                                'specifications', 'default' )
-    bin_stubs = File.join( ctx.project.basedir.to_s, 'ruby', 'gems', 'shared', 
-                           'gems' )
-    shared = File.join( ctx.project.basedir.to_s, 'ruby', 'shared' )
+    bin_stubs = File.join( basedir, 'ruby', 'gems', 'shared', 'gems' )
+    shared = File.join( basedir, 'ruby', 'shared' )
     FileUtils.mkdir_p( default_specs )
 
     # have an empty openssl.rb so we do not run in trob=uble with not having
@@ -95,7 +95,7 @@ project 'JRuby Lib Setup' do
       
       # install the gem unless already installed
       if Dir[ File.join( specs, "#{name}-#{version}*.gemspec" ) ].empty?
-        installer = Gem::Installer.new( File.join( ctx.project.build.directory.to_s, 
+        installer = Gem::Installer.new( File.join( ctx.project.build.directory.to_s.gsub(/\\/, '/'), 
                                                    "#{name}-#{version}.gem" ),
                                         :ignore_dependencies => true,
                                         :install_dir => gem_home )
