@@ -1,30 +1,18 @@
+fails:The defined? keyword for variables when a String does not match a Regexp returns nil for $1-$9
 fails:The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $&
 fails:The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $`
 fails:The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $'
 fails:The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for $+
 fails:The defined? keyword for variables when a String matches a Regexp returns 'global-variable' for the capture references
-fails:The defined? keyword for variables when a Regexp does not match a String returns nil for $&
-fails:The defined? keyword for variables when a Regexp does not match a String returns nil for $`
-fails:The defined? keyword for variables when a Regexp does not match a String returns nil for $'
-fails:The defined? keyword for variables when a Regexp does not match a String returns nil for $+
+fails:The defined? keyword for variables when a String matches a Regexp returns nil for non-captures
+fails:The defined? keyword for variables when a Regexp does not match a String returns nil for $1-$9
 fails:The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for $&
 fails:The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for $`
 fails:The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for $'
 fails:The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for $+
 fails:The defined? keyword for variables when a Regexp matches a String returns 'global-variable' for the capture references
-fails:The defined? keyword for a scoped constant returns nil when an undefined constant is scoped to a defined constant
-fails:The defined? keyword for a top-level scoped constant returns nil when an undefined constant is scoped to a defined constant
-fails:The defined? keyword for super returns nil when a superclass undef's the method
-fails:The defined? keyword for super for a method taking no arguments returns 'super' from a block when a superclass method exists
-fails:The defined? keyword for super for a method taking no arguments returns 'super' from a #define_method when a superclass method exists
-fails:The defined? keyword for super for a method taking no arguments returns 'super' from a block in a #define_method when a superclass method exists
-fails:The defined? keyword for super for a method taking no arguments returns 'super' when the method exists in a supermodule
-fails:The defined? keyword for super for a method taking arguments returns 'super' when a superclass method exists
-fails:The defined? keyword for super for a method taking arguments returns 'super' from a block when a superclass method exists
-fails:The defined? keyword for super for a method taking arguments returns 'super' from a #define_method when a superclass method exists
-fails:The defined? keyword for super for a method taking arguments returns 'super' from a block in a #define_method when a superclass method exists
-fails:The defined? keyword for super within an included module's method returns 'super' when a superclass method exists in the including hierarchy
-fails:The defined? keyword for variables when a String does not match a Regexp returns nil for $1-$9
-fails:The defined? keyword for variables when a String matches a Regexp returns nil for non-captures
-fails:The defined? keyword for variables when a Regexp does not match a String returns nil for $1-$9
 fails:The defined? keyword for variables when a Regexp matches a String returns nil for non-captures
+fails:The defined? keyword for super for a method taking no arguments returns 'super' from a #define_method when a superclass method exists
+fails:The defined? keyword for super for a method taking no arguments returns 'super' when the method exists in a supermodule
+fails:The defined? keyword for super for a method taking arguments returns 'super' from a #define_method when a superclass method exists
+fails:The defined? keyword for super within an included module's method returns 'super' when a superclass method exists in the including hierarchy
