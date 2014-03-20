@@ -40,11 +40,6 @@ public abstract class DNode extends ListNode {
         return buildDynamicString(runtime, context, self, aBlock);
     }
 
-    // Enebo: Without massive rethink of AST system I think we are stuck with an if check
-    public boolean is19() {
-        return encoding != null;
-    }
-
     public boolean isSameEncoding(StrNode strNode) {
         return strNode.getValue().getEncoding() == encoding;
     }
@@ -52,7 +47,7 @@ public abstract class DNode extends ListNode {
     protected RubyString allocateString(Ruby runtime) {
         RubyString string = RubyString.newString(runtime, new ByteList());
 
-        if (is19()) string.setEncoding(encoding);
+        string.setEncoding(encoding);
 
         return string;
     }
@@ -60,7 +55,7 @@ public abstract class DNode extends ListNode {
     public void appendToString(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, RubyString string, Node node) {
         if (node instanceof StrNode) {
             StrNode strNode = (StrNode)node;
-            if (!is19() || isSameEncoding(strNode) && strNode.getCodeRange() == string.getCodeRange()) {
+            if (isSameEncoding(strNode) && strNode.getCodeRange() == string.getCodeRange()) {
                 string.getByteList().append(strNode.getValue());
             } else {
                 string.cat19(strNode.getValue(), strNode.getCodeRange());
@@ -72,15 +67,9 @@ public abstract class DNode extends ListNode {
             if (bodyNode == null) return;
 
             IRubyObject body = bodyNode.interpret(runtime, context, self, aBlock);
-            if (is19()) {
                 Helpers.shortcutAppend(string, body);
-            } else {
-                Helpers.shortcutAppend18(string, body);
-            }
-        } else if (is19()) {
-            string.append19(node.interpret(runtime, context, self, aBlock));
         } else {
-            string.append(node.interpret(runtime, context, self, aBlock));
+            string.append19(node.interpret(runtime, context, self, aBlock));
         }
     }
 
@@ -98,6 +87,6 @@ public abstract class DNode extends ListNode {
     @Override
     public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         RubyString definition = super.definition(runtime, context, self, aBlock);
-        return is19() && definition == null ? runtime.getDefinedMessage(DefinedMessage.EXPRESSION) : definition;
+        return definition == null ? runtime.getDefinedMessage(DefinedMessage.EXPRESSION) : definition;
     }
 }

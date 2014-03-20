@@ -2023,26 +2023,21 @@ public class ASTCompiler {
 
                 switch (nextNode.getNodeType()) {
                     case STRNODE:
-                        context.appendByteList(((StrNode) nextNode).getValue(), ((StrNode) nextNode).getCodeRange(), dNode.is19());
+                        context.appendByteList(((StrNode) nextNode).getValue(), ((StrNode) nextNode).getCodeRange(), true);
                         break;
                     case EVSTRNODE:
                         compile(((EvStrNode)nextNode).getBody(), context, true);
-                        context.shortcutAppend(dNode.is19());
+                        context.shortcutAppend(true);
                         break;
                     default:
                         compile(nextNode, context, true);
-                        context.appendObject(dNode.is19());
+                        context.appendObject(true);
                 }
             }
         };
 
         if (expr) {
-            Encoding enc = null;
-            if (dNode.is19()) {
-                enc = dNode.getEncoding();
-            }
-
-            context.buildNewString(dstrCallback, dNode.size(), enc);
+            context.buildNewString(dstrCallback, dNode.size(), dNode.getEncoding());
         } else {
             // not an expression, only compile the elements
             for (Node nextNode : dNode.childNodes()) {
@@ -2061,7 +2056,7 @@ public class ASTCompiler {
         compileDNode(dsymbolNode, context, expr);
 
         if (expr) {
-            context.stringToSymbol(dsymbolNode.is19());
+            context.stringToSymbol(true);
         }
     }
 
