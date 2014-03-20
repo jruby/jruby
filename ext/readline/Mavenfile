@@ -1,6 +1,6 @@
 #-*- mode: ruby -*-
 
-gemspec :include_dependencies => true, :jar => 'readline.jar'
+gemspec :include_jars => true, :jar => 'readline.jar'
 
 parent 'org.jruby:jruby-ext', '9000.dev'
 
