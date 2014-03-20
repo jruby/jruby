@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.SJISEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.runtime.Constants;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
@@ -182,6 +183,9 @@ public class CoreLibrary {
         argv = new RubyArray(arrayClass, new ObjectArrayStore());
         objectClass.setConstant("ARGV", argv);
         objectClass.setConstant("ENV", getEnv());
+        objectClass.setConstant("TRUE", true);
+        objectClass.setConstant("FALSE", false);
+        objectClass.setConstant("NIL", NilPlaceholder.INSTANCE);
 
         final RubyHash configHash = new RubyHash(hashClass);
         configHash.put(new RubyString(stringClass, "ruby_install_name"), new RubyString(stringClass, "rubytruffle"));
@@ -293,6 +297,11 @@ public class CoreLibrary {
         final RubyBasicObject stdout = new RubyBasicObject(objectClass);
         stdout.getSingletonClass().addMethod(stdout.getLookupNode().lookupMethod("print").withNewVisibility(Visibility.PUBLIC));
         globalVariablesObject.setInstanceVariable("$stdout", stdout);
+
+        objectClass.setConstant("STDIN", new RubyBasicObject(objectClass));
+        objectClass.setConstant("STDOUT", globalVariablesObject.getInstanceVariable("$stdout"));
+        objectClass.setConstant("STDERR", globalVariablesObject.getInstanceVariable("$stdout"));
+        objectClass.setConstant("RUBY_RELEASE_DATE", context.makeString(Constants.COMPILE_DATE));
 
         bignumClass.getSingletonClass().undefMethod("new");
         falseClass.getSingletonClass().undefMethod("new");

@@ -59,20 +59,27 @@ import java.math.BigInteger;
                 RubySymbol.class, //
                 RubyThread.class, //
                 RubyTime.class, //
+                RubyTrueClass.class, //
+                RubyFalseClass.class, //
                 RubyObject.class, //
                 RubyBasicObject.class, //
                 Node.class, //
                 Object[].class})
 public class RubyTypes {
 
-    /*
-     * The implicit casts allow the DSL to convert from an object of one type to another to satisfy
-     * specializations.
-     */
-
     @ImplicitCast
     public NilPlaceholder unboxNil(@SuppressWarnings("unused") RubyNilClass value) {
         return NilPlaceholder.INSTANCE;
+    }
+
+    @ImplicitCast
+    public boolean unboxBoolean(RubyTrueClass value) {
+        return true;
+    }
+
+    @ImplicitCast
+    public boolean unboxBoolean(RubyFalseClass value) {
+        return false;
     }
 
     @ImplicitCast

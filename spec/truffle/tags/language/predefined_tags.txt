@@ -52,13 +52,6 @@ fails:Global variable $-v is an alias of $VERBOSE
 fails:Global variable $-w is an alias of $VERBOSE
 fails:Global variable $0 raises a TypeError when not given an object that can be coerced to a String
 fails:The predefined standard objects includes ARGF
-fails:The predefined global constants includes TRUE
-fails:The predefined global constants includes FALSE
-fails:The predefined global constants includes NIL
-fails:The predefined global constants includes STDIN
-fails:The predefined global constants includes STDOUT
-fails:The predefined global constants includes STDERR
-fails:The predefined global constants includes RUBY_RELEASE_DATE
 fails:The predefined global constants includes TOPLEVEL_BINDING
 fails:Processing RUBYOPT adds the -I path to $LOAD_PATH
 fails:Processing RUBYOPT sets $DEBUG to true for '-d'

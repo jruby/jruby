@@ -94,21 +94,26 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization(order = 2)
-        public boolean equal(int a, int b) {
+        public boolean equal(boolean a, boolean b) {
             return a == b;
         }
 
         @Specialization(order = 3)
-        public boolean equal(double a, double b) {
+        public boolean equal(int a, int b) {
             return a == b;
         }
 
         @Specialization(order = 4)
+        public boolean equal(double a, double b) {
+            return a == b;
+        }
+
+        @Specialization(order = 5)
         public boolean equal(BigInteger a, BigInteger b) {
             return a.compareTo(b) == 0;
         }
 
-        @Specialization(order = 5)
+        @Specialization(order = 6)
         public boolean equal(RubyBasicObject a, RubyBasicObject b) {
             return a == b;
         }
