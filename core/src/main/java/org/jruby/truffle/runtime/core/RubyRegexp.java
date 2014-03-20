@@ -89,6 +89,8 @@ public class RubyRegexp extends RubyObject {
         if (match != -1) {
             final Region region = matcher.getEagerRegion();
 
+            final Object[] values = new Object[region.numRegs];
+
             for (int n = 1; n < region.numRegs + 1; n++) {
                 final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$" + n);
 
@@ -97,17 +99,32 @@ public class RubyRegexp extends RubyObject {
                     final int end = region.end[n];
                     final RubyString groupString = context.makeString(string.substring(start, end));
                     frame.setObject(slot, groupString);
+                    values[n] = groupString;
                 }
+            }
+
+            final RubyMatchData matchObject =  new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), values);
+
+            final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
+
+            if (slot != null) {
+                frame.setObject(slot, matchObject);
             }
 
             return matcher.getBegin();
         } else {
+            final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
+
+            if (slot != null) {
+                frame.setObject(slot, NilPlaceholder.INSTANCE);
+            }
+
             return NilPlaceholder.INSTANCE;
         }
     }
 
     @CompilerDirectives.SlowPath
-    public Object match(String string) {
+    public Object match(Frame frame, String string) {
         final RubyContext context = getRubyClass().getContext();
 
         final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
@@ -131,8 +148,22 @@ public class RubyRegexp extends RubyObject {
                 }
             }
 
-            return new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), values);
+            final RubyMatchData matchObject =  new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), values);
+
+            final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
+
+            if (slot != null) {
+                frame.setObject(slot, matchObject);
+            }
+
+            return matchObject;
         } else {
+            final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
+
+            if (slot != null) {
+                frame.setObject(slot, NilPlaceholder.INSTANCE);
+            }
+
             return NilPlaceholder.INSTANCE;
         }
     }

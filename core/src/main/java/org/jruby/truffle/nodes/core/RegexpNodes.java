@@ -95,7 +95,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "match", appendCallNode = true, minArgs = 2, maxArgs = 2)
+    @CoreMethod(names = "match", minArgs = 1, maxArgs = 1)
     public abstract static class MatchNode extends CoreMethodNode {
 
         public MatchNode(RubyContext context, SourceSection sourceSection) {
@@ -107,8 +107,8 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public Object match(RubyRegexp regexp, RubyString string, Node callNode) {
-            return regexp.match(string.toString());
+        public Object match(VirtualFrame frame, RubyRegexp regexp, RubyString string) {
+            return regexp.match(frame.getCaller().unpack(), string.toString());
         }
 
     }

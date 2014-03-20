@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.translator.Translator;
 
 public abstract class ReadLocalVariableNode extends FrameSlotNode implements ReadNode {
 
@@ -52,7 +53,11 @@ public abstract class ReadLocalVariableNode extends FrameSlotNode implements Rea
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return getContext().makeString("local-variable");
+        if (Translator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(frameSlot.getIdentifier())) {
+            return getContext().makeString("global-variable");
+        } else {
+            return getContext().makeString("local-variable");
+        }
     }
 
 }

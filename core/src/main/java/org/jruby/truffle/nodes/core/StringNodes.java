@@ -403,14 +403,14 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object match(RubyString string, RubyString regexpString) {
+        public Object match(VirtualFrame frame, RubyString string, RubyString regexpString) {
             final RubyRegexp regexp = new RubyRegexp(getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
-            return regexp.match(string.toString());
+            return regexp.match(frame.getCaller().unpack(), string.toString());
         }
 
         @Specialization
-        public Object match(RubyString string, RubyRegexp regexp) {
-            return regexp.match(string.toString());
+        public Object match(VirtualFrame frame, RubyString string, RubyRegexp regexp) {
+            return regexp.match(frame.getCaller().unpack(), string.toString());
         }
     }
 

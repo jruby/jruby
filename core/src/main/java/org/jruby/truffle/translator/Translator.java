@@ -122,7 +122,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     /**
      * Global variables which in common usage have frame local semantics.
      */
-    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_"));
+    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$~"));
 
     public Translator(RubyContext context, Translator parent, TranslatorEnvironment environment, Source source) {
         this.context = context;

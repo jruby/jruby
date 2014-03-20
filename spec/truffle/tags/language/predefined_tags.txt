@@ -1,5 +1,3 @@
-fails:Predefined global $~ is set to contain the MatchData object of the last match if successful
-fails:Predefined global $~ is set to nil if the last match was unsuccessful
 fails:Predefined global $~ is set at the method-scoped level rather than block-scoped
 fails:Predefined global $~ raises an error if assigned an object not nil or instanceof MatchData
 fails:Predefined global $~ changes the value of derived capture globals when assigned
