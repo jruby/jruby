@@ -87,6 +87,7 @@
         <version>${jruby.plugins.version}</version>
         <configuration>
           <gemspec>readline.gemspec</gemspec>
+          <includeDependencies>true</includeDependencies>
         </configuration>
       </plugin>
     </plugins>

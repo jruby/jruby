@@ -1,6 +1,6 @@
 # load jline and our readline into classpath
 require 'readline/version'
-require "readline/jline-#{Readline::Version::JLINE_VERSION}.jar"
+require "jline-#{Readline::Version::JLINE_VERSION}.jar"
 require "readline.jar"
 
 # boot extension
