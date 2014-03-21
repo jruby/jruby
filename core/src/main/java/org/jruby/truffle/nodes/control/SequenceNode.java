@@ -25,7 +25,7 @@ public final class SequenceNode extends RubyNode {
 
     public SequenceNode(RubyContext context, SourceSection sourceSection, RubyNode... body) {
         super(context, sourceSection);
-        this.body = adoptChildren(body);
+        this.body = body;
     }
 
     @ExplodeLoop

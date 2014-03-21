@@ -38,7 +38,7 @@ public class CachedUnboxedDispatchNode extends UnboxedDispatchNode {
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = unmodifiedAssumption;
         this.method = method;
-        this.next = adoptChild(next);
+        this.next = next;
     }
 
     @Override
@@ -64,7 +64,7 @@ public class CachedUnboxedDispatchNode extends UnboxedDispatchNode {
 
     @Override
     public void setNext(UnboxedDispatchNode next) {
-        this.next = adoptChild(next);
+        this.next = insert(next);
     }
 
 }

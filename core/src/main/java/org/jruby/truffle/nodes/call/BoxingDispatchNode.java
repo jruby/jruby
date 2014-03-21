@@ -30,7 +30,7 @@ public class BoxingDispatchNode extends UnboxedDispatchNode {
     public BoxingDispatchNode(RubyContext context, SourceSection sourceSection, BoxedDispatchNode next) {
         super(context, sourceSection);
 
-        this.next = adoptChild(next);
+        this.next = next;
     }
 
     @Override

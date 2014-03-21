@@ -51,7 +51,7 @@ public class BooleanDispatchNode extends UnboxedDispatchNode {
         this.trueUnmodifiedAssumption = trueUnmodifiedAssumption;
         this.trueMethod = trueMethod;
 
-        this.next = adoptChild(next);
+        this.next = next;
     }
 
     @Override
@@ -90,7 +90,7 @@ public class BooleanDispatchNode extends UnboxedDispatchNode {
 
     @Override
     public void setNext(UnboxedDispatchNode next) {
-        this.next = adoptChild(next);
+        this.next = next;
     }
 
 }

@@ -42,7 +42,7 @@ public class CachedBoxedMethodMissingDispatchNode extends BoxedDispatchNode {
         this.expectedLookupNode = expectedLookupNode;
         unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
         this.method = method;
-        this.next = adoptChild(next);
+        this.next = next;
         symbol = context.newSymbol(name);
     }
 

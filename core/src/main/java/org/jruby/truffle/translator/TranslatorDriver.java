@@ -10,6 +10,7 @@
 package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.debug.DebugManager;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.impl.DefaultSourceSection;
 import com.oracle.truffle.api.nodes.*;

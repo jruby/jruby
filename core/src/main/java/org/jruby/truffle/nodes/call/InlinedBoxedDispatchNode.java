@@ -44,7 +44,7 @@ public class InlinedBoxedDispatchNode extends BoxedDispatchNode {
         unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
         this.method = method;
         this.rootNode = method.getCloneOfPristineRootNode();
-        this.next = adoptChild(next);
+        this.next = next;
     }
 
     @Override

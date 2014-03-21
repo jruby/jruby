@@ -27,7 +27,7 @@ public final class ArrayConcatNode extends RubyNode {
     public ArrayConcatNode(RubyContext context, SourceSection sourceSection, RubyNode[] children) {
         super(context, sourceSection);
         assert children.length > 1;
-        this.children = adoptChildren(children);
+        this.children = children;
     }
 
     @ExplodeLoop

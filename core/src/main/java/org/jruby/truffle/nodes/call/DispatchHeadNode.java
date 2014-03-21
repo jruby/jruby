@@ -36,7 +36,7 @@ public class DispatchHeadNode extends DispatchNode {
         this.isSplatted = isSplatted;
 
         final UninitializedDispatchNode uninitializedDispatch = new UninitializedDispatchNode(context, sourceSection, name);
-        dispatch = adoptChild(new UninitializedBoxingDispatchNode(context, sourceSection, uninitializedDispatch));
+        dispatch = new UninitializedBoxingDispatchNode(context, sourceSection, uninitializedDispatch);
     }
 
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {

@@ -13,7 +13,10 @@ import java.io.*;
 import java.math.*;
 import java.util.concurrent.atomic.*;
 
-import com.oracle.truffle.api.impl.DefaultDebugManager;
+import com.oracle.truffle.api.debug.ASTPrinter;
+import com.oracle.truffle.api.debug.DebugContext;
+import com.oracle.truffle.api.debug.DebugManager;
+import com.oracle.truffle.api.debug.DefaultDebugManager;
 import org.jruby.Ruby;
 
 import com.oracle.truffle.api.*;
@@ -26,8 +29,6 @@ import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.core.array.RubyArray;
-import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.runtime.debug.RubyDebugManager;
@@ -296,6 +297,11 @@ public class RubyContext implements ExecutionContext {
 
     public SourceManager getSourceManager() {
         return sourceManager;
+    }
+
+    @Override
+    public DebugContext getDebugContext() {
+        throw new UnsupportedOperationException();
     }
 
     public RubyDebugManager getRubyDebugManager() {

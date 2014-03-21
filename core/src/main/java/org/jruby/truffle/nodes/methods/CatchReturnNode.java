@@ -39,7 +39,7 @@ public class CatchReturnNode extends RubyNode {
 
     public CatchReturnNode(RubyContext context, SourceSection sourceSection, RubyNode body, long returnID, boolean isProc) {
         super(context, sourceSection);
-        this.body = adoptChild(body);
+        this.body = body;
         this.returnID = returnID;
         this.isProc = isProc;
     }

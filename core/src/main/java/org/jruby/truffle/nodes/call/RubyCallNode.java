@@ -66,19 +66,19 @@ public class RubyCallNode extends RubyNode {
         assert arguments != null;
         assert name != null;
 
-        this.receiver = adoptChild(receiver);
+        this.receiver = receiver;
 
         if (block == null) {
             this.block = null;
         } else {
-            this.block = adoptChild(ProcOrNullNodeFactory.create(context, section, block));
+            this.block = ProcOrNullNodeFactory.create(context, section, block);
         }
 
-        this.arguments = adoptChildren(arguments);
+        this.arguments = arguments;
         this.name = name;
         this.isSplatted = isSplatted;
 
-        dispatchHead = adoptChild(new DispatchHeadNode(context, section, name, isSplatted));
+        dispatchHead = new DispatchHeadNode(context, section, name, isSplatted);
     }
 
     @Override

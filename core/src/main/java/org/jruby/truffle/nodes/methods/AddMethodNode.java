@@ -25,8 +25,8 @@ public class AddMethodNode extends RubyNode {
 
     public AddMethodNode(RubyContext context, SourceSection section, RubyNode receiver, MethodDefinitionNode method) {
         super(context, section);
-        this.receiver = adoptChild(receiver);
-        this.method = adoptChild(method);
+        this.receiver = receiver;
+        this.method = method;
     }
 
     @Override

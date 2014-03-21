@@ -29,8 +29,8 @@ public class YieldNode extends RubyNode {
 
     public YieldNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments, boolean unsplat) {
         super(context, sourceSection);
-        this.arguments = adoptChildren(arguments);
-        dispatch = adoptChild(new UninitializedYieldDispatchNode(getContext(), getSourceSection()));
+        this.arguments = arguments;
+        dispatch = new UninitializedYieldDispatchNode(getContext(), getSourceSection());
         this.unsplat = unsplat;
     }
 

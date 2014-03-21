@@ -344,12 +344,12 @@ public abstract class KernelNodes {
 
         public IntegerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toInt = adoptChild(new DispatchHeadNode(context, getSourceSection(), "to_int", false));
+            toInt = new DispatchHeadNode(context, getSourceSection(), "to_int", false);
         }
 
         public IntegerNode(IntegerNode prev) {
             super(prev);
-            toInt = adoptChild(prev.toInt);
+            toInt = prev.toInt;
         }
 
         @Specialization
@@ -422,15 +422,15 @@ public abstract class KernelNodes {
 
         public LoopNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            whileNode = adoptChild(
-                    new WhileNode(context, sourceSection, BooleanCastNodeFactory.create(context, sourceSection,
-                            new BooleanLiteralNode(context, sourceSection, true)),
-                            new YieldNode(context, getSourceSection(), new RubyNode[]{}, false)));
+            whileNode = new WhileNode(context, sourceSection, BooleanCastNodeFactory.create(context, sourceSection,
+                    new BooleanLiteralNode(context, sourceSection, true)),
+                    new YieldNode(context, getSourceSection(), new RubyNode[]{}, false)
+            );
         }
 
         public LoopNode(LoopNode prev) {
             super(prev);
-            whileNode = adoptChild(prev.whileNode);
+            whileNode = prev.whileNode;
         }
 
         @Specialization
@@ -527,12 +527,12 @@ public abstract class KernelNodes {
 
         public PrettyInspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = adoptChild(new DispatchHeadNode(context, getSourceSection(), "to_s", false));
+            toS = new DispatchHeadNode(context, getSourceSection(), "to_s", false);
         }
 
         public PrettyInspectNode(PrettyInspectNode prev) {
             super(prev);
-            toS = adoptChild(prev.toS);
+            toS = prev.toS;
         }
 
         @Specialization
@@ -616,12 +616,12 @@ public abstract class KernelNodes {
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = adoptChild(new DispatchHeadNode(context, getSourceSection(), "initialize", false));
+            initialize = new DispatchHeadNode(context, getSourceSection(), "initialize", false);
         }
 
         public RaiseNode(RaiseNode prev) {
             super(prev);
-            initialize = adoptChild(prev.initialize);
+            initialize = prev.initialize;
         }
 
         @Specialization(order = 1)
@@ -700,12 +700,12 @@ public abstract class KernelNodes {
 
         public StringNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = adoptChild(new DispatchHeadNode(context, getSourceSection(), "to_s", false));
+            toS = new DispatchHeadNode(context, getSourceSection(), "to_s", false);
         }
 
         public StringNode(StringNode prev) {
             super(prev);
-            toS = adoptChild(prev.toS);
+            toS = prev.toS;
         }
 
         @Specialization

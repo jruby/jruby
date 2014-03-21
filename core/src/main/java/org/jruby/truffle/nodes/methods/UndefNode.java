@@ -16,7 +16,6 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyModule;
 
 @NodeInfo(shortName = "undef")
@@ -27,7 +26,7 @@ public class UndefNode extends RubyNode {
 
     public UndefNode(RubyContext context, SourceSection sourceSection, RubyNode module, String name) {
         super(context, sourceSection);
-        this.module = adoptChild(module);
+        this.module = module;
         this.name = name;
     }
 

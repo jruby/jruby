@@ -28,7 +28,7 @@ public class SystemNode extends RubyNode {
 
     public SystemNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
-        this.child = adoptChild(child);
+        this.child = child;
     }
 
     @Override

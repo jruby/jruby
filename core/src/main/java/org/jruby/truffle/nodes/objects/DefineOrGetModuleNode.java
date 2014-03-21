@@ -28,7 +28,7 @@ public class DefineOrGetModuleNode extends RubyNode {
     public DefineOrGetModuleNode(RubyContext context, SourceSection sourceSection, String name, RubyNode parentModule) {
         super(context, sourceSection);
         this.name = name;
-        this.parentModule = adoptChild(parentModule);
+        this.parentModule = parentModule;
     }
 
     @Override

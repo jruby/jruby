@@ -23,7 +23,7 @@ public abstract class ReadConstantNode extends RubyNode {
     public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
         super(context, sourceSection);
         this.name = name;
-        this.receiver = adoptChild(receiver);
+        this.receiver = receiver;
     }
 
     @Override

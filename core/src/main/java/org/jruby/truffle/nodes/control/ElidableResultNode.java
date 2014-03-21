@@ -30,8 +30,8 @@ public class ElidableResultNode extends RubyNode {
 
     public ElidableResultNode(RubyContext context, SourceSection sourceSection, RubyNode required, RubyNode elidableResult) {
         super(context, sourceSection);
-        this.required = adoptChild(required);
-        this.elidableResult = adoptChild(elidableResult);
+        this.required = required;
+        this.elidableResult = elidableResult;
     }
 
     @Override

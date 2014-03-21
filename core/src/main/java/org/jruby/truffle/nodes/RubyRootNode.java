@@ -28,7 +28,7 @@ public class RubyRootNode extends RootNode {
         assert indicativeName != null;
         assert body != null;
 
-        this.body = adoptChild(body);
+        this.body = body;
         this.indicativeName = indicativeName;
     }
 

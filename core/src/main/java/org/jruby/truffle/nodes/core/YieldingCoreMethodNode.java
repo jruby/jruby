@@ -21,12 +21,12 @@ public abstract class YieldingCoreMethodNode extends CoreMethodNode {
 
     public YieldingCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        dispatchNode = adoptChild(new UninitializedYieldDispatchNode(context, getSourceSection()));
+        dispatchNode = new UninitializedYieldDispatchNode(context, getSourceSection());
     }
 
     public YieldingCoreMethodNode(YieldingCoreMethodNode prev) {
         super(prev);
-        dispatchNode = adoptChild(prev.dispatchNode);
+        dispatchNode = prev.dispatchNode;
     }
 
     public Object yield(VirtualFrame frame, RubyProc block, Object... arguments) {

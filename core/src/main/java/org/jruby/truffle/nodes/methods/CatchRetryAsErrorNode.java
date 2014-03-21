@@ -16,7 +16,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.RetryException;
-import org.jruby.truffle.runtime.control.ReturnException;
 
 public class CatchRetryAsErrorNode extends RubyNode {
 
@@ -24,7 +23,7 @@ public class CatchRetryAsErrorNode extends RubyNode {
 
     public CatchRetryAsErrorNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);
-        this.body = adoptChild(body);
+        this.body = body;
     }
 
     @Override

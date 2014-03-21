@@ -23,7 +23,7 @@ public class ShellResultNode extends RubyNode {
 
     public ShellResultNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);
-        this.body = adoptChild(body);
+        this.body = body;
     }
 
     @Override

@@ -32,7 +32,7 @@ public abstract class ArrayCastNode extends RubyNode {
 
     public ArrayCastNode(ArrayCastNode prev) {
         super(prev);
-        toArrayNode = adoptChild(prev.toArrayNode);
+        toArrayNode = prev.toArrayNode;
     }
 
     protected abstract RubyNode getChild();

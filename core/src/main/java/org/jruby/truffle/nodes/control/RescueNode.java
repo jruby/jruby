@@ -25,7 +25,7 @@ public abstract class RescueNode extends RubyNode {
 
     public RescueNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);
-        this.body = adoptChild(body);
+        this.body = body;
     }
 
     public abstract boolean canHandle(VirtualFrame frame, RubyBasicObject exception);

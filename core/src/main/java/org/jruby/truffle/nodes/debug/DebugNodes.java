@@ -107,7 +107,7 @@ public abstract class DebugNodes {
 
         @Specialization
         public NilPlaceholder tree(Node callNode) {
-            NodeUtil.printCompactTree(getContext().getRuntime().getOut(), NodeUtil.findOutermostRootNode(callNode));
+            NodeUtil.printCompactTree(getContext().getRuntime().getOut(), callNode.getRootNode());
             return NilPlaceholder.INSTANCE;
         }
 

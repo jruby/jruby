@@ -32,7 +32,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
         super(context, sourceSection);
         this.index = index;
         this.minimum = minimum;
-        this.defaultValue = adoptChild(defaultValue);
+        this.defaultValue = defaultValue;
     }
 
     @Override

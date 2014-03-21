@@ -29,7 +29,7 @@ public final class ArrayRestNode extends RubyNode {
     public ArrayRestNode(RubyContext context, SourceSection sourceSection, int begin, RubyNode array) {
         super(context, sourceSection);
         this.begin = begin;
-        this.array = adoptChild(array);
+        this.array = array;
     }
 
     @Override

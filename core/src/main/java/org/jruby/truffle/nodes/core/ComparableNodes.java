@@ -25,12 +25,12 @@ public abstract class ComparableNodes {
 
         public ComparableCoreMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareNode = adoptChild(new DispatchHeadNode(context, getSourceSection(), "<=>", false));
+            compareNode = new DispatchHeadNode(context, getSourceSection(), "<=>", false);
         }
 
         public ComparableCoreMethodNode(ComparableCoreMethodNode prev) {
             super(prev);
-            compareNode = adoptChild(prev.compareNode);
+            compareNode = prev.compareNode;
         }
 
         public int compare(VirtualFrame frame, RubyBasicObject receiverObject, Object comparedTo) {

@@ -24,7 +24,7 @@ public class LambdaNode extends RubyNode {
 
     public LambdaNode(RubyContext context, SourceSection sourceSection, RubyNode definition) {
         super(context, sourceSection);
-        this.definition = adoptChild(definition);
+        this.definition = definition;
     }
 
     @Override

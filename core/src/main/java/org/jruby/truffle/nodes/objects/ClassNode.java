@@ -15,7 +15,6 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.cast.BoxingNode;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 
 /**
@@ -28,7 +27,7 @@ public class ClassNode extends RubyNode {
 
     public ClassNode(RubyContext context, SourceSection sourceSection, BoxingNode child) {
         super(context, sourceSection);
-        this.child = adoptChild(child);
+        this.child = child;
     }
 
     @Override

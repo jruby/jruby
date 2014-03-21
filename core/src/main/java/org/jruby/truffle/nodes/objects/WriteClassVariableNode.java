@@ -26,8 +26,8 @@ public class WriteClassVariableNode extends RubyNode {
     public WriteClassVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode module, RubyNode rhs) {
         super(context, sourceSection);
         this.name = name;
-        this.module = adoptChild(module);
-        this.rhs = adoptChild(rhs);
+        this.module = module;
+        this.rhs = rhs;
     }
 
     @Override

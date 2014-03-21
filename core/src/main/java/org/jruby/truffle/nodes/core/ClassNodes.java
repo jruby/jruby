@@ -54,12 +54,12 @@ public abstract class ClassNodes {
 
         public NewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = adoptChild(new DispatchHeadNode(context, getSourceSection(), "initialize", false));
+            initialize = new DispatchHeadNode(context, getSourceSection(), "initialize", false);
         }
 
         public NewNode(NewNode prev) {
             super(prev);
-            initialize = adoptChild(prev.initialize);
+            initialize = prev.initialize;
         }
 
         @Specialization

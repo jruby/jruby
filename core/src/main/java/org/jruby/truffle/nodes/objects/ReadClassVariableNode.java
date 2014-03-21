@@ -25,7 +25,7 @@ public class ReadClassVariableNode extends RubyNode {
     public ReadClassVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode module) {
         super(context, sourceSection);
         this.name = name;
-        this.module = adoptChild(module);
+        this.module = module;
     }
 
     @Override

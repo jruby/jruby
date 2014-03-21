@@ -39,7 +39,7 @@ public class InlinedUnboxedDispatchNode extends UnboxedDispatchNode {
         this.unmodifiedAssumption = unmodifiedAssumption;
         this.method = method;
         this.rootNode = method.getCloneOfPristineRootNode();
-        this.next = adoptChild(next);
+        this.next = next;
     }
 
     @Override
@@ -78,7 +78,7 @@ public class InlinedUnboxedDispatchNode extends UnboxedDispatchNode {
 
     @Override
     public void setNext(UnboxedDispatchNode next) {
-        this.next = adoptChild(next);
+        this.next = insert(next);
     }
 
 }

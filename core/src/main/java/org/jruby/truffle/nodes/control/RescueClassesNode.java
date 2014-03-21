@@ -26,7 +26,7 @@ public class RescueClassesNode extends RescueNode {
 
     public RescueClassesNode(RubyContext context, SourceSection sourceSection, RubyNode[] handlingClassNodes, RubyNode body) {
         super(context, sourceSection, body);
-        this.handlingClassNodes = adoptChildren(handlingClassNodes);
+        this.handlingClassNodes = handlingClassNodes;
     }
 
     @ExplodeLoop

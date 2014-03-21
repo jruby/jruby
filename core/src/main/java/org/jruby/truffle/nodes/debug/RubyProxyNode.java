@@ -36,14 +36,14 @@ public class RubyProxyNode extends RubyNode implements InstrumentationProxyNode 
     public RubyProxyNode(RubyContext context, RubyNode child) {
         super(context, SourceSection.NULL);
         assert !(child instanceof RubyProxyNode);
-        this.child = adoptChild(child);
+        this.child = child;
         this.probeChain = context.getDebugManager().getProbeChain(child.getSourceSection());
     }
 
     public RubyProxyNode(RubyContext context, RubyNode child, ProbeChain probeChain) {
         super(context, SourceSection.NULL);
         assert !(child instanceof RubyProxyNode);
-        this.child = adoptChild(child);
+        this.child = child;
         this.probeChain = probeChain;
     }
 

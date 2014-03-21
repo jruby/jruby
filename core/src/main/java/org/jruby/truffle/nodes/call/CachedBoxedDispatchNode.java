@@ -39,7 +39,7 @@ public class CachedBoxedDispatchNode extends BoxedDispatchNode {
         this.expectedLookupNode = expectedLookupNode;
         unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
         this.method = method;
-        this.next = adoptChild(next);
+        this.next = next;
     }
 
     @Override

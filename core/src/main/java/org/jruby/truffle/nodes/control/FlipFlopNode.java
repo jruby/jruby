@@ -28,9 +28,9 @@ public class FlipFlopNode extends RubyNode {
 
     public FlipFlopNode(RubyContext context, SourceSection sourceSection, BooleanCastNode begin, BooleanCastNode end, FlipFlopStateNode stateNode, boolean exclusive) {
         super(context, sourceSection);
-        this.begin = adoptChild(begin);
-        this.end = adoptChild(end);
-        this.stateNode = adoptChild(stateNode);
+        this.begin = begin;
+        this.end = end;
+        this.stateNode = stateNode;
         this.exclusive = exclusive;
     }
 

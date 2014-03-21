@@ -25,7 +25,7 @@ public class AliasNode extends RubyNode {
 
     public AliasNode(RubyContext context, SourceSection sourceSection, RubyNode module, String newName, String oldName) {
         super(context, sourceSection);
-        this.module = adoptChild(module);
+        this.module = module;
         this.newName = newName;
         this.oldName = oldName;
     }

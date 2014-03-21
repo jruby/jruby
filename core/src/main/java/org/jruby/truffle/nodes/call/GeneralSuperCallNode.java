@@ -40,8 +40,8 @@ public class GeneralSuperCallNode extends RubyNode {
         assert !isSplatted || arguments.length == 1;
 
         this.name = name;
-        this.block = adoptChild(block);
-        this.arguments = adoptChildren(arguments);
+        this.block = block;
+        this.arguments = arguments;
         this.isSplatted = isSplatted;
     }
 

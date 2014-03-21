@@ -22,7 +22,7 @@ public class RespondToNode extends RubyNode {
 
     public RespondToNode(RubyContext context, SourceSection sourceSection, RubyNode child, String name) {
         super(context, sourceSection);
-        this.child = adoptChild(child);
+        this.child = child;
         this.name = name;
     }
 

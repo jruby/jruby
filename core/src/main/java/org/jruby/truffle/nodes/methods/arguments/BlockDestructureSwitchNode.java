@@ -34,10 +34,10 @@ public class BlockDestructureSwitchNode extends RubyNode {
     public BlockDestructureSwitchNode(RubyContext context, SourceSection sourceSection, Arity arity, RubyNode loadIndividualArguments, RespondToNode respondToCheck, RubyNode destructureArguments, RubyNode body) {
         super(context, sourceSection);
         this.arity = arity;
-        this.loadIndividualArguments = adoptChild(loadIndividualArguments);
-        this.respondToCheck = adoptChild(respondToCheck);
-        this.destructureArguments = adoptChild(destructureArguments);
-        this.body = adoptChild(body);
+        this.loadIndividualArguments = loadIndividualArguments;
+        this.respondToCheck = respondToCheck;
+        this.destructureArguments = destructureArguments;
+        this.body = body;
     }
 
     @Override

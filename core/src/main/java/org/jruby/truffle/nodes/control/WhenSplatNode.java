@@ -15,7 +15,6 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
-import org.jruby.truffle.nodes.cast.SplatCastNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 
@@ -28,9 +27,9 @@ public class WhenSplatNode extends RubyNode {
 
     public WhenSplatNode(RubyContext context, SourceSection sourceSection, RubyNode readCaseExpression, RubyNode splat) {
         super(context, sourceSection);
-        this.readCaseExpression = adoptChild(readCaseExpression);
-        this.splat = adoptChild(splat);
-        dispatchThreeEqual = adoptChild(new DispatchHeadNode(context, sourceSection, "===", false));
+        this.readCaseExpression = readCaseExpression;
+        this.splat = splat;
+        dispatchThreeEqual = new DispatchHeadNode(context, sourceSection, "===", false);
     }
 
     @Override

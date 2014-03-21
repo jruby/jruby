@@ -24,7 +24,7 @@ public class RedoableNode extends RubyNode {
 
     public RedoableNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);
-        this.body = adoptChild(body);
+        this.body = body;
     }
 
     @Override
