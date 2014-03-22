@@ -396,14 +396,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Is this value a true value or not? Based on the {@link #FALSE_F} flag.
+     * Is this value a truthy value or not? Based on the {@link #FALSE_F} flag.
      */
     public final boolean isTrue() {
         return (flags & FALSE_F) == 0;
     }
 
     /**
-     * Is this value a false value or not? Based on the {@link #FALSE_F} flag.
+     * Is this value a falsy value or not? Based on the {@link #FALSE_F} flag.
      */
     public final boolean isFalse() {
         return (flags & FALSE_F) != 0;
