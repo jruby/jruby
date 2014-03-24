@@ -403,7 +403,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Is this value a falsy value or not? Based on the {@link #FALSE_F} flag.
+     * Is this value a falsey value or not? Based on the {@link #FALSE_F} flag.
      */
     public final boolean isFalse() {
         return (flags & FALSE_F) != 0;
