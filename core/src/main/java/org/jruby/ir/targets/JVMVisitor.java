@@ -149,6 +149,7 @@ import java.util.Map;
 import org.jruby.RubyArray;
 import org.jruby.RubyRange;
 
+import static org.jruby.util.CodegenUtils.c;
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
@@ -188,7 +189,7 @@ public class JVMVisitor extends IRVisitor {
 //            e.printStackTrace();
 //        }
 
-        return jrubyClassLoader.defineClass(JVM.scriptToClass(scope.getName()), target.code());
+        return jrubyClassLoader.defineClass(c(JVM.scriptToClass(scope.getName())), target.code());
     }
 
     public byte[] code() {
