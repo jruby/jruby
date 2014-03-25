@@ -98,6 +98,8 @@ public class SelectBlob {
             return constructResults(runtime);
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
+        } catch (CancelledKeyException e) {
+            throw runtime.newErrnoEBADFError();
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         } catch (InterruptedException ie) {
@@ -312,56 +314,25 @@ public class SelectBlob {
         for (Selector selector : selectors.values()) {
             
             for (SelectionKey key : selector.selectedKeys()) {
-                
                 int readIoIndex = 0;
                 int writeIoIndex = 0;
-                
-                try {
-                    int interestAndReady = key.interestOps() & key.readyOps();
-                    
-                    if (readArray != null && readAcceptReady(interestAndReady)) {
-                        readIoIndex = ((Map<Character,Integer>)key.attachment()).get('r');
-                        
-                        getReadResults().append(readArray.eltOk(readIoIndex));
-                        
-                        if (pendingReads != null) {
-                            pendingReads[readIoIndex] = false;
-                        }
+
+                int interestAndReady = key.interestOps() & key.readyOps();
+
+                if (readArray != null && readAcceptReady(interestAndReady)) {
+                    readIoIndex = ((Map<Character,Integer>)key.attachment()).get('r');
+
+                    getReadResults().append(readArray.eltOk(readIoIndex));
+
+                    if (pendingReads != null) {
+                        pendingReads[readIoIndex] = false;
                     }
-                    
-                    if (writeArray != null && writeConnectReady(interestAndReady)) {
-                        writeIoIndex = ((Map<Character,Integer>)key.attachment()).get('w');
-                        
-                        getWriteResults().append(writeArray.eltOk(writeIoIndex));
-                    }
-                    
-                } catch (CancelledKeyException cke) {
-                    // TODO: is this the right thing to do?
-                    int interest = key.interestOps();
-                    
-                    if (readArray != null && cancelReady(interest)) {
-                        
-                        if (pendingReads != null) {
-                            pendingReads[readIoIndex] = false;
-                        }
-                        
-                        if (errorResults != null) {
-                            errorResults = RubyArray.newArray(runtime, readArray.size() + writeArray.size());
-                        }
-                        
-                        if (fastSearch(errorResults.toJavaArrayUnsafe(), readIOs[readIoIndex]) == -1) {
-                            // only add to error if not there
-                            getErrorResults().append(readArray.eltOk(readIoIndex));
-                        }
-                    }
-                    
-                    if (writeArray != null && writeReady(interest)) {
-                        
-                        if (fastSearch(errorResults.toJavaArrayUnsafe(), writeIOs[writeIoIndex]) == -1) {
-                            // only add to error if not there
-                            errorResults.append(writeArray.eltOk(writeIoIndex));
-                        }
-                    }
+                }
+
+                if (writeArray != null && writeConnectReady(interestAndReady)) {
+                    writeIoIndex = ((Map<Character,Integer>)key.attachment()).get('w');
+
+                    getWriteResults().append(writeArray.eltOk(writeIoIndex));
                 }
             }
         }
