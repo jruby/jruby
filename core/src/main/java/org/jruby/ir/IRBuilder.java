@@ -44,6 +44,7 @@ import org.jruby.ir.operands.SValue;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Symbol;
+import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
@@ -3363,6 +3364,11 @@ public class IRBuilder {
 
     public Operand buildReturn(ReturnNode returnNode, IRScope s) {
         Operand retVal = (returnNode.getValueNode() == null) ? manager.getNil() : build(returnNode.getValueNode(), s);
+
+        if (retVal instanceof UnboxedBoolean) {
+            // FIXME: this is wrong.
+            retVal = ((UnboxedBoolean)retVal).isTrue() ? org.jruby.ir.operands.Boolean.TRUE : org.jruby.ir.operands.Boolean.FALSE;
+        }
 
         // Before we return,
         // - have to go execute all the ensure blocks if there are any.
