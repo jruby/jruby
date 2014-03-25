@@ -3706,7 +3706,7 @@ public final class Ruby {
     }
 
     public RaiseException newIOErrorFromException(IOException ioe) {
-        if (ioe instanceof ClosedChannelException) {
+        if (ioe instanceof ClosedChannelException || ioe.getMessage().equals("Bad file descriptor")) {
             throw newErrnoEBADFError();
         }
 
