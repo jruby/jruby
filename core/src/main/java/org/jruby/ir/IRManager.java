@@ -8,7 +8,6 @@ import java.util.Set;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.listeners.InstructionsListener;
-import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.Nil;
 import org.jruby.ir.passes.BasicCompilerPassListener;
 import org.jruby.ir.passes.CompilerPass;
@@ -27,8 +26,8 @@ public class IRManager {
     private final IRModuleBody classMetaClass = new IRMetaClassBody(this, null, getMetaClassName(), "", 0, null);
     private final IRModuleBody object = new IRClassBody(this, null, "Object", "", 0, null);
     private final Nil nil = new Nil();
-    private final UnboxedBoolean trueObject = new UnboxedBoolean(true);
-    private final UnboxedBoolean falseObject = new UnboxedBoolean(false);
+    private final org.jruby.ir.operands.Boolean trueObject = new org.jruby.ir.operands.Boolean(true);
+    private final org.jruby.ir.operands.Boolean falseObject = new org.jruby.ir.operands.Boolean(false);
     // Listeners for debugging and testing of IR
     private Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
     private CompilerPassListener defaultListener = new BasicCompilerPassListener();
@@ -65,11 +64,11 @@ public class IRManager {
         return nil;
     }
 
-    public UnboxedBoolean getTrue() {
+    public org.jruby.ir.operands.Boolean getTrue() {
         return trueObject;
     }
 
-    public UnboxedBoolean getFalse() {
+    public org.jruby.ir.operands.Boolean getFalse() {
         return falseObject;
     }
 
