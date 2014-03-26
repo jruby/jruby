@@ -431,15 +431,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     protected Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         if (closure == null) return Block.NULL_BLOCK;
 
-        Object value = closure.retrieve(context, self, currDynScope, temp);
-
-        Block block = IRRuntimeHelpers.getBlockFromObject(context, value);
-
-        // ENEBO: This came from duplicated logic from SuperInstr....
-        // Blocks passed in through calls are always normal blocks, no matter where they came from
-        block.type = Block.Type.NORMAL;
-
-        return block;
+        return IRRuntimeHelpers.getBlockFromObject(context, closure.retrieve(context, self, currDynScope, temp));
     }
 
 }
