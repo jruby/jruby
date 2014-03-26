@@ -140,7 +140,8 @@ public class IRReader {
         case CLOSURE:
             return new IRClosure(manager, lexicalParent, line, staticScope, Arity.createArity(arity), argumentType);
         case EVAL_SCRIPT:
-            return new IREvalScript(manager, lexicalParent, lexicalParent.getFileName(), line, staticScope);
+            // SSS FIXME: This is broken right now -- the isModuleEval arg has to be persisted and then read back.
+            return new IREvalScript(manager, lexicalParent, lexicalParent.getFileName(), line, staticScope, false);
         }
 
         return null;

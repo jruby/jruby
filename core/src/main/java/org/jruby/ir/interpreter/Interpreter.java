@@ -101,24 +101,23 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static IRScope getEvalContainerScope(StaticScope evalScope) {
-        // SSS FIXME: Weirdness here.  We cannot get the containing IR scope from evalScope because of static-scope wrapping
-        // that is going on
+    private static IRScope getEvalContainerScope(StaticScope evalScope, boolean isModuleEval) {
+        // We cannot get the containing IR scope from evalScope because of static-scope wrapping
+        // that is going on.
         // 1. In all cases, DynamicScope.getEvalScope wraps the executing static scope in a new local scope.
         // 2. For instance-eval (module-eval, class-eval) scenarios, there is an extra scope that is added to
         //    the stack in ThreadContext.java:preExecuteUnder
-        // I dont know what rule to apply when.  However, in both these cases, since there is no IR-scope associated,
-        // I have used the hack below where I first unwrap once and see if I get a non-null IR scope.  If that doesn't
-        // work, I unwarp once more and I am guaranteed to get the IR scope I want.
-        IRScope containingIRScope = ((IRStaticScope)evalScope.getEnclosingScope()).getIRScope();
-        if (containingIRScope == null) containingIRScope = ((IRStaticScope)evalScope.getEnclosingScope().getEnclosingScope()).getIRScope();
-        return containingIRScope;
+        if (isModuleEval) {
+            return ((IRStaticScope)evalScope.getEnclosingScope().getEnclosingScope()).getIRScope();
+        } else {
+            return ((IRStaticScope)evalScope.getEnclosingScope()).getIRScope();
+        }
     }
 
-    public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, String backtraceName, RootNode rootNode, IRubyObject self, Block block) {
+    public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, String backtraceName, RootNode rootNode, IRubyObject self, Block block, boolean isModuleEval) {
         StaticScope ss = rootNode.getStaticScope();
-        IRScope containingIRScope = getEvalContainerScope(ss);
-        IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
+        IRScope containingIRScope = getEvalContainerScope(ss, isModuleEval);
+        IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode, isModuleEval);
         evalScript.prepareForInterpretation(false);
         ThreadContext context = runtime.getCurrentContext();
 
@@ -146,11 +145,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     public static IRubyObject interpretSimpleEval(Ruby runtime, String file, int lineNumber, String backtraceName, Node node, IRubyObject self) {
-        return interpretCommonEval(runtime, file, lineNumber, backtraceName, (RootNode)node, self, Block.NULL_BLOCK);
+        return interpretCommonEval(runtime, file, lineNumber, backtraceName, (RootNode)node, self, Block.NULL_BLOCK, true);
     }
 
     public static IRubyObject interpretBindingEval(Ruby runtime, String file, int lineNumber, String backtraceName, Node node, IRubyObject self, Block block) {
-        return interpretCommonEval(runtime, file, lineNumber, backtraceName, (RootNode)node, self, block);
+        return interpretCommonEval(runtime, file, lineNumber, backtraceName, (RootNode)node, self, block, false);
     }
 
     public static void runBeginEndBlocks(List<IRClosure> beBlocks, ThreadContext context, IRubyObject self, Object[] temp) {

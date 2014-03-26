@@ -25,10 +25,13 @@ public class IREvalScript extends IRClosure {
     private int     nearestNonEvalScopeDepth;
     private List<IRClosure> beginBlocks;
     private List<IRClosure> endBlocks;
+    private boolean isModuleEval;
 
     public IREvalScript(IRManager manager, IRScope lexicalParent, String fileName,
-            int lineNumber, StaticScope staticScope) {
+            int lineNumber, StaticScope staticScope, boolean isModuleEval) {
         super(manager, lexicalParent, fileName, lineNumber, staticScope, "EVAL_");
+
+        this.isModuleEval = isModuleEval;
 
         int n = 0;
         IRScope s = lexicalParent;
@@ -97,7 +100,7 @@ public class IREvalScript extends IRClosure {
     }
 
     @Override
-    public LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
+    protected LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
         // Look in the nearest non-eval scope's shared eval scope vars first.
         // If you dont find anything there, look in the nearest non-eval scope's regular vars.
         LocalVariable lvar = lookupExistingLVar(name);
@@ -107,8 +110,16 @@ public class IREvalScript extends IRClosure {
 
     @Override
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
-        LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
-        if (lvar == null) lvar = getNewLocalVariable(name, scopeDepth);
+        // Reduce lookup depth by 1 since the AST seems to be adding
+        // an additional static/dynamic scope for which there is no
+        // corresponding IRScope.
+        //
+        // FIXME: Investigate if this is something left behind from
+        // 1.8 mode support. Or if we need to introduce the additional
+        // IRScope object.
+        int lookupDepth = isModuleEval ? scopeDepth - 1 : scopeDepth;
+        LocalVariable lvar = findExistingLocalVariable(name, lookupDepth);
+        if (lvar == null) lvar = getNewLocalVariable(name, lookupDepth);
         // Create a copy of the variable usable at the right depth
         if (lvar.getScopeDepth() != scopeDepth) lvar = lvar.cloneForDepth(scopeDepth);
 

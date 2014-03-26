@@ -213,7 +213,7 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
+    protected LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
         LocalVariable lvar = lookupExistingLVar(name);
         if (lvar != null) return lvar;
 

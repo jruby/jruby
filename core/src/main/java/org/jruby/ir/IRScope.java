@@ -854,7 +854,7 @@ public abstract class IRScope implements ParseResult {
         return localVars.get(name);
     }
 
-    public LocalVariable findExistingLocalVariable(String name, int depth) {
+    protected LocalVariable findExistingLocalVariable(String name, int depth) {
         return localVars.get(name);
     }
 

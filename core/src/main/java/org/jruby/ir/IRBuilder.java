@@ -3404,9 +3404,9 @@ public class IRBuilder {
         return U_NIL;
     }
 
-    public IREvalScript buildEvalRoot(StaticScope staticScope, IRScope containingScope, String file, int lineNumber, RootNode rootNode) {
+    public IREvalScript buildEvalRoot(StaticScope staticScope, IRScope containingScope, String file, int lineNumber, RootNode rootNode, boolean isModuleEval) {
         // Top-level script!
-        IREvalScript script = new IREvalScript(manager, containingScope, file, lineNumber, staticScope);
+        IREvalScript script = new IREvalScript(manager, containingScope, file, lineNumber, staticScope, isModuleEval);
 
         // Debug info: record line number
         addInstr(script, new LineNumberInstr(script, lineNumber));
