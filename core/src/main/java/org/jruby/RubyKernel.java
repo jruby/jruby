@@ -1525,7 +1525,11 @@ public class RubyKernel {
         
         boolean nativeFailed = false;
         boolean nativeExec = Options.NATIVE_EXEC.load();
-        System.setProperty("user.dir", runtime.getCurrentDirectory());
+        runtime.setCurrentDirectory(runtime.getCurrentDirectory());
+
+        if (options instanceof RubyHash) {
+            RubyIO.processExecOptions(runtime, options);
+        }
 
         if (nativeExec) {
             try {

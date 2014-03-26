@@ -1201,9 +1201,14 @@ public class RubyProcess {
         IRubyObject options = args[2];
         IRubyObject arguments = args[3];
 
+        String oldPwd = runtime.getCurrentDirectory();
+
         RubyIO.checkSpawnOptions(options);
-        
+        RubyIO.processExecOptions(runtime, options);
+
         long pid = ShellLauncher.runExternalWithoutWait(runtime, env, prog, options, arguments);
+        runtime.setCurrentDirectory(oldPwd);
+        
         return RubyFixnum.newFixnum(runtime, pid);
     }
     

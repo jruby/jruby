@@ -4566,9 +4566,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     private static final Set<String> UNSUPPORTED_SPAWN_OPTIONS = new HashSet<String>(Arrays.asList(new String[] {
             "unsetenv_others",
-            "prgroup",
+            "pgroup",
             "rlimit_resourcename",
-            "chdir",
             "umask",
             "in",
             "out",
@@ -4578,7 +4577,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     private static final Set<String> ALL_SPAWN_OPTIONS = new HashSet<String>(Arrays.asList(new String[] {
             "unsetenv_others",
-            "prgroup",
+            "pgroup",
             "rlimit_resourcename",
             "chdir",
             "umask",
@@ -4636,7 +4635,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     /**
-     * Error when using unknown option.
+     * Error when using unknown option for spawn and exec.
      *
      * @param options
      */
@@ -4647,7 +4646,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = optsHash.getRuntime();
 
         for (Object opt : optsHash.keySet()) {
-            if (opt instanceof RubySymbol || opt instanceof RubyFixnum || valid.contains(opt.toString())) {
+            if (opt instanceof RubySymbol) {
+                IRubyObject obj = (IRubyObject) opt;
+                if (valid.contains(obj.toString())) {
+                    continue;
+                } else {
+                    throw runtime.newTypeError("wrong exec option symbol: " + opt);
+                }
+            }
+            
+            if (opt instanceof RubyFixnum || opt instanceof RubyIO || opt instanceof RubyArray) {
                 continue;
             }
 
@@ -4655,6 +4663,23 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
     }
     
+    public static void processExecOptions(Ruby runtime, IRubyObject options) {
+        if (!(options instanceof RubyHash)) {
+            return;
+        }
+        
+        RubyHash opts = (RubyHash) options;
+        
+        for (Object opt: opts.keySet()) {
+            if (opt instanceof RubySymbol) {
+                RubySymbol symbol = (RubySymbol) opt;
+                if ("chdir".equals(symbol.toString())) {
+                    String str = opts.fetch(runtime.getCurrentContext(), symbol, Block.NULL_BLOCK).toString();
+                    runtime.setCurrentDirectory(str);
+                }
+            }
+        }
+    }
     /**
      * Try for around 1s to destroy the child process. This is to work around
      * issues on some JVMs where if you try to destroy the process too quickly
