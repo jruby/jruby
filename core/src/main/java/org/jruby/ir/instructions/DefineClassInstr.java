@@ -8,6 +8,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
@@ -30,7 +31,7 @@ public class DefineClassInstr extends Instr implements ResultInstr, FixedArityIn
         assert result != null: "DefineClassInstr result is null";
 
         this.container = container;
-        this.superClass = superClass == null ? newIRClassBody.getManager().getNil() : superClass;
+        this.superClass = superClass == null ? UndefinedValue.UNDEFINED : superClass;
         this.newIRClassBody = newIRClassBody;
         this.result = result;
     }
@@ -71,14 +72,12 @@ public class DefineClassInstr extends Instr implements ResultInstr, FixedArityIn
         if (newIRClassBody instanceof IRMetaClassBody) return classContainer.getMetaClass();
 
         RubyClass sc;
-        if (superClass == context.runtime.getIRManager().getNil()) {
+        if (superClass == UndefinedValue.UNDEFINED) {
             sc = null;
         } else {
             Object o = superClass.retrieve(context, self, currDynScope, temp);
 
-            if (!(o instanceof RubyClass)) {
-                throw context.runtime.newTypeError("superclass must be Class (" + o + " given)");
-            }
+            RubyClass.checkInheritable((IRubyObject) o);
 
             sc = (RubyClass) o;
         }
