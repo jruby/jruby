@@ -246,11 +246,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     }
 
     @Override
-    public Object visitBlockArg18Node(org.jruby.ast.BlockArg18Node node) {
-        return unimplemented(node);
-    }
-
-    @Override
     public Object visitBlockArgNode(org.jruby.ast.BlockArgNode node) {
         return unimplemented(node);
     }

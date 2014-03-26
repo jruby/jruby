@@ -134,7 +134,7 @@ public class InterpretedBlock extends ContextAwareBlockBody {
      */
     private void assignerFor(IterNode iter) {
         Node varNode = iter.getVarNode();
-        Node block = iter.getBlockVarNode();
+        Node block = null;
         boolean hasBlock = block != null;
 
         if (varNode == null || varNode instanceof ZeroArgNode) { // No argument blocks

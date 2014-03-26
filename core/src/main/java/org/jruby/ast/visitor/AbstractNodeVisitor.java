@@ -36,7 +36,6 @@ import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
-import org.jruby.ast.BlockArg18Node;
 import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
@@ -196,11 +195,6 @@ public class AbstractNodeVisitor implements NodeVisitor {
 
     @Override
     public Object visitBlockArgNode(BlockArgNode iVisited) {
-        return defaultVisit(iVisited);
-    }
-
-    @Override
-    public Object visitBlockArg18Node(BlockArg18Node iVisited) {
         return defaultVisit(iVisited);
     }
 

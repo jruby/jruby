@@ -51,7 +51,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class IterNode extends Node {
     private final Node varNode;
     private final Node bodyNode;
-    private final Node blockVarNode; // This is only for 1.8 blocks
     
     // What static scoping relationship exists when it comes into being.
     private StaticScope scope;
@@ -60,13 +59,7 @@ public class IterNode extends Node {
     public IterNode(ISourcePosition position, Node args, StaticScope scope, Node body) {
         super(position);
 
-        if (args instanceof BlockArg18Node) {
-            this.varNode = ((BlockArg18Node) args).getArgs();
-            this.blockVarNode = ((BlockArg18Node) args).getBlockArg();
-        } else {
-            this.varNode = args;
-            this.blockVarNode = null;
-        }
+        this.varNode = args;
         this.scope = scope;
         this.bodyNode = body;
         this.blockBody = InterpretedBlock.newBlockBody(this, Arity.procArityOf(varNode), getArgumentType());
@@ -76,7 +69,6 @@ public class IterNode extends Node {
         super(position);
 
         this.varNode = args;
-        this.blockVarNode = null; // This is only for 1.8 blocks
         this.bodyNode = body;
         this.scope = scope;
         this.blockBody = Interpreted19Block.newBlockBody(this);
@@ -96,10 +88,6 @@ public class IterNode extends Node {
      **/
     public Object accept(NodeVisitor iVisitor) {
         return iVisitor.visitIterNode(this);
-    }
-
-    public Node getBlockVarNode() {
-        return blockVarNode;
     }
 
     public StaticScope getScope() {
@@ -127,7 +115,7 @@ public class IterNode extends Node {
     }
     
     public List<Node> childNodes() {
-        return Node.createList(varNode, blockVarNode, bodyNode);
+        return Node.createList(varNode, bodyNode);
     }
     
     @Override

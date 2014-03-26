@@ -1357,10 +1357,6 @@ public class ParserSupport {
         return new UndefNode(position, nameNode);
     }
 
-    public BlockArg18Node newBlockArg18(ISourcePosition position, Node blockValue, Node args) {
-        return new BlockArg18Node(position, blockValue, args);
-    }
-
     public BlockArgNode newBlockArg(ISourcePosition position, Token nameToken) {
         String identifier = (String) nameToken.getValue();
 

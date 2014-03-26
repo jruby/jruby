@@ -519,7 +519,6 @@ public class IRBuilder {
 
         // args
         closureBuilder.receiveBlockArgs(node, closure);
-        closureBuilder.receiveBlockClosureArg(node.getBlockVarNode(), closure);
 
         Operand closureRetVal = node.getBody() == null ? manager.getNil() : closureBuilder.build(node.getBody(), closure);
 
@@ -2195,10 +2194,6 @@ public class IRBuilder {
         }
     }
 
-    public void receiveBlockClosureArg(Node node, IRScope s) {
-        // Nothing to do here.  iterNode.blockVarNode is not valid in 1.9 mode
-    }
-
     public String buildType(Node typeNode) {
         switch (typeNode.getNodeType()) {
         case CONSTNODE:
@@ -2666,7 +2661,6 @@ public class IRBuilder {
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
         if ((iterNode.getVarNode() != null) && (argsNodeId != null))
             closureBuilder.receiveBlockArgs(iterNode, closure);
-        closureBuilder.receiveBlockClosureArg(iterNode.getBlockVarNode(), closure);
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
