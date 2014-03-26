@@ -137,7 +137,12 @@ public class IREvalScript extends IRClosure {
 
     @Override
     public LocalVariable getNewFlipStateVariable() {
-        return getLocalVariable("%flip_" + allocateNextPrefixedName("%flip"), 0);
+        String flipVarName = "%flip_" + allocateNextPrefixedName("%flip");
+        LocalVariable v = lookupExistingLVar(flipVarName);
+        if (v == null) {
+            v = getNewLocalVariable(flipVarName, 0);
+        }
+        return v;
     }
 
     @Override
