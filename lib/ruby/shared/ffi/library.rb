@@ -55,12 +55,31 @@
 module FFI
   CURRENT_PROCESS = USE_THIS_PROCESS_AS_LIBRARY = Object.new
 
+  # This module is the base to use native functions.
+  #
+  # A basic usage may be:
+  #  require 'ffi'
+  #
+  #  module Hello
+  #    extend FFI::Library
+  #    ffi_lib FFI::Library::LIBC
+  #    attach_function 'puts', [ :string ], :int
+  #  end
+  #
+  #  Hello.puts("Hello, World")
+  #
+  #
   module Library
     CURRENT_PROCESS = FFI::CURRENT_PROCESS
     LIBC = FFI::Platform::LIBC
 
+    # @param [Array] names names of libraries to load
+    # @return [Array<DynamicLibrary>]
+    # @raise {LoadError} if a library cannot be opened
+    # Load native libraries.
     def ffi_lib(*names)
       raise LoadError.new("library names list must not be empty") if names.empty?
+
       lib_flags = defined?(@ffi_lib_flags) ? @ffi_lib_flags : FFI::DynamicLibrary::RTLD_LAZY | FFI::DynamicLibrary::RTLD_LOCAL
       ffi_libs = names.map do |name|
         if name == FFI::CURRENT_PROCESS
@@ -76,8 +95,8 @@ module FFI
               break if lib
             rescue Exception => ex
               ldscript = false
-              if ex.message =~ /(([^ \t()])+\.so([^ \t:()])*):([ \t])*invalid ELF header/
-                if File.read($1) =~ /GROUP *\( *([^ \)]+) *\)/
+              if ex.message =~ /(([^ \t()])+\.so([^ \t:()])*):([ \t])*(invalid ELF header|file too short|invalid file format)/
+                if File.read($1) =~ /(?:GROUP|INPUT) *\( *([^ \)]+)/
                   libname = $1
                   ldscript = true
                 end
@@ -103,18 +122,32 @@ module FFI
       @ffi_libs = ffi_libs
     end
 
-
+    # Set the calling convention for {#attach_function} and {#callback}
+    #
+    # @see http://en.wikipedia.org/wiki/Stdcall#stdcall
+    # @note +:stdcall+ is typically used for attaching Windows API functions
+    #
+    # @param [Symbol] convention one of +:default+, +:stdcall+
+    # @return [Symbol] the new calling convention
     def ffi_convention(convention = nil)
       @ffi_convention ||= :default
       @ffi_convention = convention if convention
       @ffi_convention
     end
 
+    # @see #ffi_lib
+    # @return [Array<FFI::DynamicLibrary>] array of currently loaded FFI libraries
+    # @raise [LoadError] if no libraries have been loaded (using {#ffi_lib})
+    # Get FFI libraries loaded using {#ffi_lib}.
     def ffi_libraries
       raise LoadError.new("no library specified") if !defined?(@ffi_libs) || @ffi_libs.empty?
       @ffi_libs
-          end
+    end
 
+    # Flags used in {#ffi_lib}.
+    #
+    # This map allows you to supply symbols to {#ffi_lib_flags} instead of
+    # the actual constants.
     FlagsMap = {
       :global => DynamicLibrary::RTLD_GLOBAL,
       :local => DynamicLibrary::RTLD_LOCAL,
@@ -122,69 +155,145 @@ module FFI
       :now => DynamicLibrary::RTLD_NOW
     }
 
+    # Sets library flags for {#ffi_lib}.
+    #
+    # @example
+    #   ffi_lib_flags(:lazy, :local) # => 5
+    #
+    # @param [Symbol, …] flags (see {FlagsMap})
+    # @return [Fixnum] the new value
     def ffi_lib_flags(*flags)
-      lib_flags = flags.inject(0) { |result, f| result | FlagsMap[f] }
-      if (lib_flags & (DynamicLibrary::RTLD_LAZY | DynamicLibrary::RTLD_NOW)) == 0
-        lib_flags |= DynamicLibrary::RTLD_LAZY
-      end
-
-      if (lib_flags & (DynamicLibrary::RTLD_GLOBAL | DynamicLibrary::RTLD_LOCAL) == 0)
-        lib_flags |= DynamicLibrary::RTLD_LOCAL
-      end
-
-      @ffi_lib_flags = lib_flags
+      @ffi_lib_flags = flags.inject(0) { |result, f| result | FlagsMap[f] }
     end
 
-    
+
     ##
-    # Attach C function +name+ to this module.
+    # @overload attach_function(func, args, returns, options = {})
+    #  @example attach function without an explicit name
+    #    module Foo
+    #      extend FFI::Library
+    #      ffi_lib FFI::Library::LIBC
+    #      attach_function :malloc, [:size_t], :pointer
+    #    end
+    #    # now callable via Foo.malloc
+    # @overload attach_function(name, func, args, returns, options = {})
+    #  @example attach function with an explicit name
+    #    module Bar
+    #      extend FFI::Library
+    #      ffi_lib FFI::Library::LIBC
+    #      attach_function :c_malloc, :malloc, [:size_t], :pointer
+    #    end
+    #    # now callable via Bar.c_malloc
     #
-    # If you want to provide an alternate name for the module function, supply
-    # it after the +name+, otherwise the C function name will be used.#
+    # Attach C function +func+ to this module.
     #
-    # After the +name+, the C function argument types are provided as an Array.
     #
-    # The C function return type is provided last.
-
-    def attach_function(mname, a2, a3, a4=nil, a5 = nil)
+    # @param [#to_s] name name of ruby method to attach as
+    # @param [#to_s] func name of C function to attach
+    # @param [Array<Symbol>] args an array of types
+    # @param [Symbol] returns type of return value
+    # @option options [Boolean] :blocking (@blocking) set to true if the C function is a blocking call
+    # @option options [Symbol] :convention (:default) calling convention (see {#ffi_convention})
+    # @option options [FFI::Enums] :enums
+    # @option options [Hash] :type_map
+    #
+    # @return [FFI::VariadicInvoker]
+    #
+    # @raise [FFI::NotFoundError] if +func+ cannot be found in the attached libraries (see {#ffi_lib})
+    def attach_function(name, func, args, returns = nil, options = nil)
+      mname, a2, a3, a4, a5 = name, func, args, returns, options
       cname, arg_types, ret_type, opts = (a4 && (a2.is_a?(String) || a2.is_a?(Symbol))) ? [ a2, a3, a4, a5 ] : [ mname.to_s, a2, a3, a4 ]
-
 
       # Convert :foo to the native type
       arg_types = arg_types.map { |e| find_type(e) }
-      options = Hash.new
-      options[:convention] = defined?(@ffi_convention) ? @ffi_convention : :default
-      options[:type_map] = defined?(@ffi_typedefs) ? @ffi_typedefs : nil
-      options[:enums] = defined?(@ffi_enum_map) ? @ffi_enum_map : nil
-      options.merge!(opts) if opts.is_a?(Hash)
+      options = {
+        :convention => ffi_convention,
+        :type_map => defined?(@ffi_typedefs) ? @ffi_typedefs : nil,
+        :blocking => defined?(@blocking) && @blocking,
+        :enums => defined?(@ffi_enums) ? @ffi_enums : nil,
+      }
+
+      @blocking = false
+      options.merge!(opts) if opts && opts.is_a?(Hash)
 
       # Try to locate the function in any of the libraries
       invokers = []
-      load_error = nil
       ffi_libraries.each do |lib|
         if invokers.empty?
           begin
-            function = lib.find_function(cname.to_s)
-            raise FFI::NotFoundError.new(cname.to_s, *ffi_libraries.map { |clib| clib.name }) unless function
+            function = nil
+            function_names(cname, arg_types).find do |fname|
+              function = lib.find_function(fname)
+            end
+            raise LoadError unless function
+
             invokers << if arg_types.length > 0 && arg_types[arg_types.length - 1] == FFI::NativeType::VARARGS
               FFI::VariadicInvoker.new(arg_types, find_type(ret_type), function, options)
             else
               FFI::Function.new(find_type(ret_type), arg_types, function, options)
             end
-   
-          rescue LoadError => ex
-            load_error = ex
 
+          rescue LoadError
           end
         end
       end
       invoker = invokers.compact.shift
-      raise load_error if load_error && invoker.nil?
+      raise FFI::NotFoundError.new(cname.to_s, ffi_libraries.map { |lib| lib.name }) unless invoker
 
       invoker.attach(self, mname.to_s)
       invoker # Return a version that can be called via #call
     end
 
+    # @param [#to_s] name function name
+    # @param [Array] arg_types function's argument types
+    # @return [Array<String>]
+    # This function returns a list of possible names to lookup.
+    # @note Function names on windows may be decorated if they are using stdcall. See
+    #   * http://en.wikipedia.org/wiki/Name_mangling#C_name_decoration_in_Microsoft_Windows
+    #   * http://msdn.microsoft.com/en-us/library/zxk0tw93%28v=VS.100%29.aspx
+    #   * http://en.wikibooks.org/wiki/X86_Disassembly/Calling_Conventions#STDCALL
+    #   Note that decorated names can be overridden via def files.  Also note that the
+    #   windows api, although using, doesn't have decorated names.
+    def function_names(name, arg_types)
+      result = [name.to_s]
+      if ffi_convention == :stdcall
+        # Get the size of each parameter
+        size = arg_types.inject(0) do |mem, arg|
+          mem + arg.size
+        end
+
+        # Next, the size must be a multiple of 4
+        size += (4 - size) % 4
+
+        result << "_#{name.to_s}@#{size}" # win32
+        result << "#{name.to_s}@#{size}" # win64
+      end
+      result
+    end
+
+    # @overload attach_variable(mname, cname, type)
+    #  @example
+    #   module Bar
+    #     extend FFI::Library
+    #     ffi_lib 'my_lib'
+    #     attach_variable :c_myvar, :myvar, :long
+    #   end
+    #   # now callable via Bar.c_myvar
+    # @overload attach_variable(cname, type)
+    #  @example
+    #   module Bar
+    #     extend FFI::Library
+    #     ffi_lib 'my_lib'
+    #     attach_variable :myvar, :long
+    #   end
+    #   # now callable via Bar.myvar
+    # @param [#to_s] mname name of ruby method to attach as
+    # @param [#to_s] cname name of C variable to attach
+    # @param [DataConverter, Struct, Symbol, Type] type C varaible's type
+    # @return [DynamicLibrary::Symbol]
+    # @raise {FFI::NotFoundError} if +cname+ cannot be found in libraries
+    #
+    # Attach C variable +cname+ to this module.
     def attach_variable(mname, a1, a2 = nil)
       cname, type = a2 ? [ a1, a2 ] : [ mname.to_s, a1 ]
       address = nil
@@ -196,8 +305,7 @@ module FFI
         end
       end
 
-      raise FFI::NotFoundError.new(cname, *ffi_libraries) if address.nil? || address.null?
-      
+      raise FFI::NotFoundError.new(cname, ffi_libraries) if address.nil? || address.null?
       if type.is_a?(Class) && type < FFI::Struct
         # If it is a global struct, just attach directly to the pointer
         s = type.new(address)
@@ -226,10 +334,17 @@ module FFI
         code
 
       end
-      
+
       address
     end
 
+
+    # @overload callback(name, params, ret)
+    # @overload callback(params, ret)
+    # @param name callback name to add to type map
+    # @param [Array] params array of parameters' types
+    # @param [DataConverter, Struct, Symbol, Type] ret callback return type
+    # @return [FFI::CallbackInfo]
     def callback(*args)
       raise ArgumentError, "wrong number of arguments" if args.length < 2 || args.length > 3
       name, params, ret = if args.length == 3
@@ -241,41 +356,45 @@ module FFI
       native_params = params.map { |e| find_type(e) }
       raise ArgumentError, "callbacks cannot have variadic parameters" if native_params.include?(FFI::Type::VARARGS)
       options = Hash.new
-      options[:convention] = defined?(@ffi_convention) ? @ffi_convention : :default
-      options[:enums] = defined?(@ffi_enum_map) ? @ffi_enum_map : nil
-
+      options[:convention] = ffi_convention
+      options[:enums] = @ffi_enums if defined?(@ffi_enums)
       cb = FFI::CallbackInfo.new(find_type(ret), native_params, options)
 
       # Add to the symbol -> type map (unless there was no name)
       unless name.nil?
-        __cb_map[name] = cb
-
-        # Also put in the type map, so it can be used for typedefs
-        __type_map[name] = cb
+        typedef cb, name
       end
 
       cb
     end
 
-    def __type_map
-      defined?(@ffi_typedefs) ? @ffi_typedefs : (@ffi_typedefs = Hash.new)
-    end
-
-    def __cb_map
-      defined?(@ffi_callbacks) ? @ffi_callbacks: (@ffi_callbacks = Hash.new)
-    end
-
+    # @param [DataConverter, Symbol, Type] old
+    # @param  add
+    # @param [] info
+    # @return [FFI::Enum, FFI::Type]
+    # Register or get an already registered type definition.
+    #
+    # To register a new type definition, +old+ should be a {FFI::Type}. +add+
+    # is in this case the type definition.
+    #
+    # If +old+ is a {DataConverter}, a {Type::Mapped} is returned.
+    #
+    # If +old+ is +:enum+
+    # * and +add+ is an +Array+, a call to {#enum} is made with +add+ as single parameter;
+    # * in others cases, +info+ is used to create a named enum.
+    #
+    # If +old+ is a key for type map, #typedef get +old+ type definition.
     def typedef(old, add, info=nil)
       @ffi_typedefs = Hash.new unless defined?(@ffi_typedefs)
 
-      @ffi_typedefs[add] = if old.kind_of?(Type)
+      @ffi_typedefs[add] = if old.kind_of?(FFI::Type)
         old
 
       elsif @ffi_typedefs.has_key?(old)
         @ffi_typedefs[old]
 
       elsif old.is_a?(DataConverter)
-        Type::Mapped.new(old)
+        FFI::Type::Mapped.new(old)
 
       elsif old == :enum
         if add.kind_of?(Array)
@@ -289,13 +408,25 @@ module FFI
       end
     end
 
+    # @overload enum(name, values)
+    #  Create a named enum.
+    #  @example
+    #   enum :foo, [:zero, :one, :two]  # named enum
+    #  @param [Symbol] name name for new enum
+    #  @param [Array] values values for enum
+    # @overload enum(*args)
+    #  Create an unnamed enum.
+    #  @example
+    #   enum :zero, :one, :two  # unnamed enum
+    #  @param args values for enum
+    # @overload enum(values)
+    #  Create an unnamed enum.
+    #  @example
+    #   enum [:zero, :one, :two]  # unnamed enum, equivalent to above example
+    #  @param [Array] values values for enum
+    # @return [FFI::Enum]
+    # Create a new {FFI::Enum}.
     def enum(*args)
-      #
-      # enum can be called as:
-      # enum :zero, :one, :two  # unnamed enum
-      # enum [ :zero, :one, :two ] # equivalent to above
-      # enum :foo, [ :zero, :one, :two ] create an enum named :foo
-      #
       name, values = if args[0].kind_of?(Symbol) && args[1].kind_of?(Array)
         [ args[0], args[1] ]
       elsif args[0].kind_of?(Array)
@@ -303,47 +434,44 @@ module FFI
       else
         [ nil, args ]
       end
+      @ffi_enums ||= FFI::Enums.new
+      @ffi_enums << (e = FFI::Enum.new(values, name))
 
-      e = Enum.new(values, name)
-      if name
-        @ffi_tagged_enums = Hash.new unless defined?(@ffi_tagged_enums)
-        @ffi_tagged_enums[name] = e
-        # If called as enum :foo, [ :zero, :one, :two ], add a typedef alias
-        typedef(e, name)
-      end
-
-      @ffi_enum_map = Hash.new unless defined?(@ffi_enum_map)
-
-      # append all the enum values to a global :name => value map
-      @ffi_enum_map.merge!(e.symbol_map)
-
+      # If called as enum :foo, [ :zero, :one, :two ], add a typedef alias
+      typedef(e, name) if name
       e
     end
 
+    # @param name
+    # @return [FFI::Enum]
+    # Find an enum by name.
     def enum_type(name)
-      @ffi_tagged_enums[name] if defined?(@ffi_tagged_enums)
+      @ffi_enums && @ffi_enums.find(name)
     end
 
+    # @param symbol
+    # @return [FFI::Enum]
+    # Find an enum by a symbol it contains.
     def enum_value(symbol)
-      @ffi_enum_map[symbol]
+      @ffi_enums.__map_symbol(symbol)
     end
 
+    # @param [DataConverter, Type, Struct, Symbol] t type to find
+    # @return [Type]
+    # Find a type definition.
     def find_type(t)
       if t.kind_of?(FFI::Type)
         t
-      
+
       elsif defined?(@ffi_typedefs) && @ffi_typedefs.has_key?(t)
         @ffi_typedefs[t]
 
-      elsif defined?(@ffi_callbacks) && @ffi_callbacks.has_key?(t)
-        @ffi_callbacks[t]
+      elsif t.is_a?(Class) && t < Struct
+        Type::POINTER
 
       elsif t.is_a?(DataConverter)
         # Add a typedef so next time the converter is used, it hits the cache
         typedef Type::Mapped.new(t), t
-
-      elsif t.is_a?(Class) && t < FFI::Struct
-        FFI::NativeType::POINTER
 
       end || FFI.find_type(t)
     end

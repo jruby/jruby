@@ -119,9 +119,9 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
             }
 
             enums = options.fastARef(context.runtime.newSymbol("enums"));
-            if (enums != null && !enums.isNil() && !(enums instanceof RubyHash)) {
+            if (enums != null && !enums.isNil() && !(enums instanceof Enums)) {
                 throw context.runtime.newTypeError("wrong type for options[:enum] "
-                        + enums.getMetaClass().getName() + " (expected Hash)");
+                        + enums.getMetaClass().getName() + " (expected Enums)");
 
             }
         }
