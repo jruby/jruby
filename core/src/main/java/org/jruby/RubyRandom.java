@@ -262,8 +262,8 @@ public class RubyRandom extends RubyObject {
         }
     }
 
-    // c: rb_f_rand for 1.9
-    public static IRubyObject randCommon19(ThreadContext context, IRubyObject recv,
+    // c: rb_f_rand
+    public static IRubyObject randCommon(ThreadContext context, IRubyObject recv,
             IRubyObject[] args) {
         RandomType random = getDefaultRand(context);
         if (args.length == 0) {
@@ -282,20 +282,18 @@ public class RubyRandom extends RubyObject {
         return randCommon(context, random, max);
     }
 
+    // c: rb_f_rand for 1.9
+    @Deprecated
+    public static IRubyObject randCommon19(ThreadContext context, IRubyObject recv,
+            IRubyObject[] args) {
+        return randCommon(context, recv, args);
+    }
+
     // c: rb_f_rand for 1.8
+    @Deprecated
     public static IRubyObject randCommon18(ThreadContext context, IRubyObject recv,
             IRubyObject[] args) {
-        RandomType random = getDefaultRand(context);
-        if (args.length == 0) {
-            return randFloat(context, random);
-        }
-        IRubyObject arg = args[0];
-        if (arg.isNil()) {
-            return randFloat(context, random);
-        }
-        // 1.8 calls rb_Integer()
-        RubyInteger max = (RubyInteger) RubyKernel.new_integer(context, recv, arg);
-        return randCommon(context, random, max);
+        return randCommon(context, recv, args);
     }
 
     private static IRubyObject randCommon(ThreadContext context, RandomType random, RubyInteger max) {
