@@ -254,7 +254,12 @@ public class RubyRandom extends RubyObject {
 
     @JRubyMethod(name = "rand", meta = true, optional = 1, compat = RUBY1_9)
     public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return randCommon19(context, recv, args);
+        RandomType random = getDefaultRand(context);
+        if (args.length == 0) {
+            return randFloat(context, random);
+        } else {
+            return randomRand(context, args[0], random);
+        }
     }
 
     // c: rb_f_rand for 1.9
