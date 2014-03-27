@@ -61,5 +61,5 @@ function pack {
     shasum -a 1 $targetname > $targetname.sha1
 }
 
-pack "linux" "b122" "0.1"
-pack "macosx" "b122" "0.1"
+pack "linux" "b132" "0.2"
+pack "macosx" "b132" "0.2"
