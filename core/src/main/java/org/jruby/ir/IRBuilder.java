@@ -323,6 +323,10 @@ public class IRBuilder {
     private Operand getImplicitBlockArg(IRScope s) {
         int n = 0;
         while (s != null && s instanceof IRClosure) {
+            // We have this oddity of an extra inserted scope for instance/class/module evals
+            if (s instanceof IREvalScript && ((IREvalScript)s).isModuleEval()) {
+                n++;
+            }
             n++;
             s = s.getLexicalParent();
         }
