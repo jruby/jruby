@@ -1403,13 +1403,19 @@ public class RubyKernel {
         return RubyRandom.srandCommon(context, recv, arg);
     }
 
+    @Deprecated
     public static IRubyObject rand18(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
-        return rand19(context, recv, arg);
+        return rand(context, recv, arg);
+    }
+
+    @Deprecated
+    public static IRubyObject rand19(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
+        return rand(context, recv, arg);
     }
 
     @JRubyMethod(name = "rand", module = true, optional = 1, visibility = PRIVATE)
-    public static IRubyObject rand19(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
-        return RubyRandom.randCommon19(context, recv, arg);
+    public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] arg) {
+        return RubyRandom.randCommon(context, recv, arg);
     }
 
     /**
