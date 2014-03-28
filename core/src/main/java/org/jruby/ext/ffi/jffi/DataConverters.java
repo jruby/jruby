@@ -69,6 +69,7 @@ public class DataConverters {
 
         return null;
     }
+
     static NativeDataConverter getParameterConverter(Type type, RubyHash enums) {
         if (isEnumConversionRequired(type, enums)) {
             NativeDataConverter converter = enumConverters.get(enums);
@@ -82,7 +83,7 @@ public class DataConverters {
             return getParameterConverter(type);
         }
     }
-    
+
     public static final class IntOrEnumConverter extends NativeDataConverter {
         private final NativeType nativeType;
         private final RubyHash enums;
