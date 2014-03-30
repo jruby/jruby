@@ -113,6 +113,25 @@ public abstract class DebugNodes {
 
     }
 
+    @CoreMethod(names = "full_tree", isModuleMethod = true, needsSelf = false, appendCallNode = true, minArgs = 1, maxArgs = 1)
+    public abstract static class FullTreeNode extends CoreMethodNode {
+
+        public FullTreeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public FullTreeNode(FullTreeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public NilPlaceholder fullTree(Node callNode) {
+            NodeUtil.printTree(getContext().getRuntime().getOut(), callNode.getRootNode());
+            return NilPlaceholder.INSTANCE;
+        }
+
+    }
+
     @CoreMethod(names = "where", isModuleMethod = true, needsSelf = false, appendCallNode = true, minArgs = 1, maxArgs = 1)
     public abstract static class WhereNode extends CoreMethodNode {
 

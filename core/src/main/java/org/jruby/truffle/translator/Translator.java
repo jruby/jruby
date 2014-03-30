@@ -73,7 +73,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     protected final Source source;
     protected final RubyNodeInstrumenter instrumenter;
 
-    private boolean translatingForStatement = false;
+    public boolean translatingForStatement = false;
 
     private static final Map<Class, String> nodeDefinedNames = new HashMap<>();
 
@@ -435,7 +435,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         if (node.getCaseNode() != null) {
             // Evaluate the case expression and store it in a local
 
-            final String tempName = environment.allocateLocalTemp();
+            final String tempName = environment.allocateLocalTemp("case");
 
             final RubyNode readTemp = environment.findLocalVarNode(tempName, sourceSection);
 
@@ -599,11 +599,8 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     @Override
     public Object visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-
         final RubyNode receiver = new ClassNode(context, sourceSection, new BoxingNode(context, sourceSection, new SelfNode(context, sourceSection)));
-
         final RubyNode rhs = (RubyNode) node.getValueNode().accept(this);
-
         return new WriteClassVariableNode(context, sourceSection, node.getName(), receiver, rhs);
     }
 
@@ -847,7 +844,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     }
 
     protected FlipFlopStateNode createFlipFlopState(SourceSection sourceSection, int depth) {
-        final FrameSlot frameSlot = environment.declareVar(environment.allocateLocalTemp());
+        final FrameSlot frameSlot = environment.declareVar(environment.allocateLocalTemp("flipflop"));
         environment.getFlipFlopStates().add(frameSlot);
 
         if (depth == 0) {
@@ -930,7 +927,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
          * term for a block. Here, JRuby calls the object being iterated over the 'iter'.
          */
 
-        final String temp = environment.allocateLocalTemp();
+        final String temp = environment.allocateLocalTemp("for");
 
         final org.jruby.ast.Node receiver = node.getIterNode();
 
@@ -971,7 +968,9 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
             return new org.jruby.ast.DAsgnNode(node.getPosition(), dAsgnNode.getName(), 0, rhs);
         } else if (node instanceof org.jruby.ast.MultipleAsgn19Node) {
             final org.jruby.ast.MultipleAsgn19Node multAsgnNode = (org.jruby.ast.MultipleAsgn19Node) node;
-            return new org.jruby.ast.MultipleAsgn19Node(node.getPosition(), multAsgnNode.getPre(), multAsgnNode.getRest(), multAsgnNode.getPost());
+            final org.jruby.ast.MultipleAsgn19Node newNode = new org.jruby.ast.MultipleAsgn19Node(node.getPosition(), multAsgnNode.getPre(), multAsgnNode.getRest(), multAsgnNode.getPost());
+            newNode.setValueNode(rhs);
+            return newNode;
         } else if (node instanceof org.jruby.ast.InstAsgnNode) {
             final org.jruby.ast.InstAsgnNode instAsgnNode = (org.jruby.ast.InstAsgnNode) node;
             return new org.jruby.ast.InstAsgnNode(node.getPosition(), instAsgnNode.getName(), rhs);
@@ -1125,11 +1124,10 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         // Unset this flag for any for any blocks within the for statement's body
 
-        translatingForStatement = false;
-
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getReturnID(), hasOwnScope, false,
                         new UniqueMethodIdentifier());
         final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, true, source);
+        methodCompiler.translatingForStatement = translatingForStatement;
 
         org.jruby.ast.ArgsNode argsNode;
 
@@ -1208,7 +1206,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         if (readNode == null) {
             context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), "local variable " + name + " found by parser but not by translator");
-            readNode = environment.findLocalVarNode(environment.allocateLocalTemp(), sourceSection);
+            readNode = new NilNode(context, sourceSection);
         }
 
         return readNode;
@@ -1304,7 +1302,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
             final RubyNode[] tempValues = new RubyNode[assignedValuesCount];
 
             for (int n = 0; n < assignedValuesCount; n++) {
-                final String tempName = environment.allocateLocalTemp();
+                final String tempName = environment.allocateLocalTemp("multi");
                 final RubyNode readTemp = environment.findLocalVarNode(tempName, sourceSection);
                 final RubyNode assignTemp = ((ReadNode) readTemp).makeWriteNode(rhsValues[n]);
                 final RubyNode assignFinalValue = translateDummyAssignment(preArray.get(n), readTemp);
@@ -1347,7 +1345,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
              * Create a temp for the array.
              */
 
-            final String tempName = environment.allocateLocalTemp();
+            final String tempName = environment.allocateLocalTemp("array");
 
             /*
              * Create a sequence of instructions, with the first being the literal array assigned to
@@ -1490,7 +1488,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
                 translated = ((ReadNode) ((WriteLocalVariableNode) dummyTranslated.getNonProxyNode()).makeReadNode()).makeWriteNode(rhs);
             }
         } else {
-            translated = ((ReadNode) environment.findLocalVarNode(environment.allocateLocalTemp(), sourceSection)).makeWriteNode(rhs);
+            translated = ((ReadNode) environment.findLocalVarNode(environment.allocateLocalTemp("dummy"), sourceSection)).makeWriteNode(rhs);
         }
 
         return translated;
@@ -1555,7 +1553,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
          * temp = a; temp.foo = temp.foo + c
          */
 
-        final String temp = environment.allocateLocalTemp();
+        final String temp = environment.allocateLocalTemp("opassign");
         final org.jruby.ast.Node writeReceiverToTemp = new org.jruby.ast.LocalAsgnNode(node.getPosition(), temp, 0, node.getReceiverNode());
         final org.jruby.ast.Node readReceiverFromTemp = new org.jruby.ast.LocalVarNode(node.getPosition(), 0, temp);
 
@@ -1602,7 +1600,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
 
         final org.jruby.ast.Node operand = node.getValueNode();
 
-        final String temp = environment.allocateLocalTemp();
+        final String temp = environment.allocateLocalTemp("opelementassign");
         final org.jruby.ast.Node writeArrayToTemp = new org.jruby.ast.LocalAsgnNode(node.getPosition(), temp, 0, node.getReceiverNode());
         final org.jruby.ast.Node readArrayFromTemp = new org.jruby.ast.LocalVarNode(node.getPosition(), 0, temp);
 

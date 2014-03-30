@@ -102,12 +102,8 @@ class ModuleTranslator extends Translator {
     @Override
     public Object visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-
-        final RubyNode receiver = new SelfNode(context, sourceSection);
-
         final RubyNode rhs = (RubyNode) node.getValueNode().accept(this);
-
-        return new WriteClassVariableNode(context, sourceSection, node.getName(), receiver, rhs);
+        return new WriteClassVariableNode(context, sourceSection, node.getName(), new SelfNode(context, sourceSection), rhs);
     }
 
     @Override

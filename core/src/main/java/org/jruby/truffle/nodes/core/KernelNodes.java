@@ -33,7 +33,8 @@ import org.jruby.truffle.runtime.core.hash.RubyHash;
 import org.jruby.truffle.runtime.subsystems.*;
 
 @CoreClass(name = "Kernel")
-public abstract class KernelNodes {
+public abstract class
+        KernelNodes {
 
     @CoreMethod(names = "Array", isModuleMethod = true, needsSelf = false, isSplatted = true)
     public abstract static class ArrayNode extends CoreMethodNode {
@@ -436,6 +437,43 @@ public abstract class KernelNodes {
         @Specialization
         public Object loop(VirtualFrame frame) {
             return whileNode.execute(frame);
+        }
+    }
+
+    @CoreMethod(names = "p", visibility = Visibility.PRIVATE, isModuleMethod = true, needsSelf = false, isSplatted = true)
+    public abstract static class PNode extends CoreMethodNode {
+
+        public PNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PNode(PNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public NilPlaceholder p(Object[] args) {
+            final ThreadManager threadManager = getContext().getThreadManager();
+
+            final RubyThread runningThread = threadManager.leaveGlobalLock();
+
+            try {
+                for (Object arg : args) {
+                    final String string;
+
+                    if (arg instanceof RubyBasicObject) {
+                        string = ((RubyBasicObject) arg).inspect();
+                    } else {
+                        string = arg.toString();
+                    }
+
+                    getContext().getRuntime().getInstanceConfig().getOutput().println(string);
+                }
+            } finally {
+                threadManager.enterGlobalLock(runningThread);
+            }
+
+            return NilPlaceholder.INSTANCE;
         }
     }
 

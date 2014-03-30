@@ -189,7 +189,7 @@ class MethodTranslator extends Translator {
 
         final List<RubyNode> destructureLoadArgumentsNodes = new ArrayList<>();
 
-        final String destructureArrayTemp = environment.allocateLocalTemp();
+        final String destructureArrayTemp = environment.allocateLocalTemp("destructure");
         final FrameSlot destructureArrayFrameSlot = environment.declareVar(destructureArrayTemp);
         final ArrayCastNode arrayCast = ArrayCastNodeFactory.create(context, sourceSection, new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR));
         final WriteLocalVariableNode writeArrayToTemp = WriteLocalVariableNodeFactory.create(context, sourceSection, destructureArrayFrameSlot, arrayCast);

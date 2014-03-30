@@ -145,12 +145,12 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public NilPlaceholder each(VirtualFrame frame, RubyHash hash, RubyProc block) {
+        public RubyHash each(VirtualFrame frame, RubyHash hash, RubyProc block) {
             for (Map.Entry<Object, Object> entry : hash.storage.entrySet()) {
-                yield(frame, block, entry.getKey(), entry.getValue());
+                yield(frame, block, RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), entry.getKey(), entry.getValue()));
             }
 
-            return NilPlaceholder.INSTANCE;
+            return hash;
         }
 
     }

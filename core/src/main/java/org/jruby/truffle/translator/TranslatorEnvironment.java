@@ -10,6 +10,7 @@
 package org.jruby.truffle.translator;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
@@ -49,7 +50,7 @@ public class TranslatorEnvironment {
     private boolean needsDeclarationFrame = false;
     private UniqueMethodIdentifier methodIdentifier;
 
-    private int tempIndex;
+    private static AtomicInteger tempIndex = new AtomicInteger();
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, FrameDescriptor frameDescriptor, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments,
                     boolean neverAssignInParentScope, UniqueMethodIdentifier methodIdentifier) {
@@ -66,10 +67,6 @@ public class TranslatorEnvironment {
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
                     UniqueMethodIdentifier methodIdentifier) {
         this(context, parent, new FrameDescriptor(RubyFrameTypeConversion.getInstance()), parser, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier);
-    }
-
-    public int getLocalVarCount() {
-        return getFrameDescriptor().getSize();
     }
 
     public TranslatorEnvironment getParent() {
@@ -165,10 +162,6 @@ public class TranslatorEnvironment {
         return blockParameter;
     }
 
-    public void declareFunction(String name) {
-        declareVar(name);
-    }
-
     public String getMethodName() {
         return methodName;
     }
@@ -189,9 +182,8 @@ public class TranslatorEnvironment {
         return frameDescriptor;
     }
 
-    public String allocateLocalTemp() {
-        final String name = "rubytruffle_temp" + tempIndex;
-        tempIndex++;
+    public String allocateLocalTemp(String indicator) {
+        final String name = "rubytruffle_temp_" + indicator + "_" + tempIndex.getAndIncrement();
         declareVar(name);
         return name;
     }
