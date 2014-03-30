@@ -74,6 +74,7 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     protected final RubyNodeInstrumenter instrumenter;
 
     public boolean translatingForStatement = false;
+    public boolean useClassVariablesAsIfInClass = false;
 
     private static final Map<Class, String> nodeDefinedNames = new HashMap<>();
 
@@ -599,7 +600,12 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     @Override
     public Object visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final RubyNode receiver = new ClassNode(context, sourceSection, new BoxingNode(context, sourceSection, new SelfNode(context, sourceSection)));
+        final RubyNode receiver;
+        if (useClassVariablesAsIfInClass) {
+            receiver = new BoxingNode(context, sourceSection, new SelfNode(context, sourceSection));
+        } else {
+            receiver = new ClassNode(context, sourceSection, new BoxingNode(context, sourceSection, new SelfNode(context, sourceSection)));
+        }
         final RubyNode rhs = (RubyNode) node.getValueNode().accept(this);
         return new WriteClassVariableNode(context, sourceSection, node.getName(), receiver, rhs);
     }
@@ -612,7 +618,13 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     @Override
     public Object visitClassVarNode(org.jruby.ast.ClassVarNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        return new ReadClassVariableNode(context, sourceSection, node.getName(), new SelfNode(context, sourceSection));
+        final RubyNode receiver;
+        if (useClassVariablesAsIfInClass) {
+            receiver = new BoxingNode(context, sourceSection, new SelfNode(context, sourceSection));
+        } else {
+            receiver = new ClassNode(context, sourceSection, new BoxingNode(context, sourceSection, new SelfNode(context, sourceSection)));
+        }
+        return new ReadClassVariableNode(context, sourceSection, node.getName(), receiver);
     }
 
     @Override
@@ -1141,6 +1153,10 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
             argsNode = null;
         } else {
             throw new UnsupportedOperationException();
+        }
+
+        if (translatingForStatement && useClassVariablesAsIfInClass) {
+            methodCompiler.useClassVariablesAsIfInClass = true;
         }
 
         return methodCompiler.compileFunctionNode(translate(node.getPosition()), "(block)", argsNode, node.getBodyNode(), false);

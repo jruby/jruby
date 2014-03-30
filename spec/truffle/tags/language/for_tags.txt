@@ -1,1 +1,0 @@
-fails:The for expression allows a class variable as an iterator name

@@ -33,6 +33,7 @@ class ModuleTranslator extends Translator {
 
     public ModuleTranslator(RubyContext context, Translator parent, TranslatorEnvironment environment, Source source) {
         super(context, parent, environment, source);
+        useClassVariablesAsIfInClass = true;
     }
 
     public MethodDefinitionNode compileClassNode(org.jruby.lexer.yacc.ISourcePosition sourcePosition, String name, org.jruby.ast.Node bodyNode) {
