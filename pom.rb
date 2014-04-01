@@ -24,6 +24,11 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
+  plugin_repository( 'https://oss.sonatype.org/content/repositories/snapshots/',
+                     :id => 'sonatype' ) do
+    releases 'false'
+    snapshots 'true'
+  end
   repository( 'https://oss.sonatype.org/content/repositories/snapshots/',
               :id => 'sonatype' ) do
     releases 'false'
@@ -66,7 +71,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'base.java.version' => '1.7',
               'tesla.dump.readonly' => 'true',
               'rspec-mocks.version' => '2.14.1',
-              'jruby.plugins.version' => '1.0.0-rc3',
+              'jruby.plugins.version' => '1.0.0-SNAPSHOT',
               'invoker.skip' => 'true',
               'json.version' => '1.8.0',
               'version.jruby' => '${project.version}',
@@ -198,6 +203,9 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
       modules [ 'maven' ]
       
+      build do
+        default_goal 'install'
+      end
     end
   end
 
