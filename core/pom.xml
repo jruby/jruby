@@ -1,27 +1,38 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-  
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
     <version>9000.dev</version>
   </parent>
   <artifactId>jruby-core</artifactId>
-  <packaging>jar</packaging>
-  
   <name>JRuby Core</name>
-
   <scm>
     <connection>scm:git:git://github.com/jruby/jruby.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/jruby/jruby.git</developerConnection>
     <url>http://github.com/jruby/jruby</url>
   </scm>
-
+  <properties>
+    <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
+    <jruby.basedir>${basedir}/..</jruby.basedir>
+    <unsafe.version>8.0</unsafe.version>
+    <main.basedir>${project.parent.basedir}</main.basedir>
+    <maven.test.skip>true</maven.test.skip>
+    <build.date>${maven.build.timestamp}</build.date>
+    <tzdata.scope>provided</tzdata.scope>
+    <unsafe.jar>${settings.localRepository}/com/headius/unsafe-mock/${unsafe.version}/unsafe-mock-${unsafe.version}.jar</unsafe.jar>
+    <jruby.test.memory.permgen>2G</jruby.test.memory.permgen>
+    <jruby.test.memory>3G</jruby.test.memory>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <tzdata.version>2013d</tzdata.version>
+    <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
+    <anno.sources>${project.basedir}/target/generated-sources</anno.sources>
+    <jruby.compile.memory>2G</jruby.compile.memory>
+  </properties>
   <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-    </dependency>
     <dependency>
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm</artifactId>
@@ -43,22 +54,14 @@
       <version>${asm.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.jruby.joni</groupId>
-      <artifactId>joni</artifactId>
-      <version>2.1.1</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-netdb</artifactId>
       <version>1.1.2</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
       <version>0.4</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -69,177 +72,269 @@
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
       <version>0.3</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
       <version>3.0.2-SNAPSHOT</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby.extras</groupId>
-      <artifactId>bytelist</artifactId>
-      <version>1.0.11</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
       <version>0.8.5</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby.jcodings</groupId>
-      <artifactId>jcodings</artifactId>
-      <version>1.0.10</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
       <version>1.0.7</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jffi</artifactId>
       <version>${jffi.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jffi</artifactId>
       <version>${jffi.version}</version>
       <classifier>native</classifier>
-      <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>org.yaml</groupId>
-      <artifactId>snakeyaml</artifactId>
-      <version>1.13</version>
-      <type>jar</type>
+      <groupId>org.jruby.joni</groupId>
+      <artifactId>joni</artifactId>
+      <version>2.1.1</version>
     </dependency>
     <dependency>
-      <groupId>com.jcraft</groupId>
-      <artifactId>jzlib</artifactId>
-      <version>1.1.2</version>
-      <type>jar</type>
+      <groupId>org.jruby.extras</groupId>
+      <artifactId>bytelist</artifactId>
+      <version>1.0.11</version>
     </dependency>
     <dependency>
-      <groupId>com.headius</groupId>
-      <artifactId>invokebinder</artifactId>
-      <version>1.3</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
-      <groupId>org.osgi</groupId>
-      <artifactId>org.osgi.core</artifactId>
-      <version>5.0.0</version>
-      <type>jar</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.ant</groupId>
-      <artifactId>ant</artifactId>
-      <version>${ant.version}</version>
-      <type>jar</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>bsf</groupId>
-      <artifactId>bsf</artifactId>
-      <version>2.4.0</version>
-      <type>jar</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.martiansoftware</groupId>
-      <artifactId>nailgun-server</artifactId>
-      <version>0.9.1</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
-      <groupId>com.headius</groupId>
-      <artifactId>coro-mock</artifactId>
-      <version>1.0</version>
-      <type>jar</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.headius</groupId>
-      <artifactId>unsafe-mock</artifactId>
-      <version>8.0</version>
-      <type>jar</type>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.headius</groupId>
-      <artifactId>jsr292-mock</artifactId>
-      <version>1.1</version>
-      <type>jar</type>
-      <scope>provided</scope>
+      <groupId>org.jruby.jcodings</groupId>
+      <artifactId>jcodings</artifactId>
+      <version>1.0.10</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>yecht</artifactId>
       <version>1.0</version>
-      <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>joda-timezones</artifactId>
-      <version>${tzdata.jar.version}</version>
-      <type>jar</type>
-      <scope>${tzdata.scope}</scope>
-    </dependency>
-    <!-- joda-time MUST come after the joda-timezone for the shade plugin
-         to pack it correctly -->
-    <dependency>
-      <groupId>joda-time</groupId>
-      <artifactId>joda-time</artifactId>
-      <version>${joda.time.version}</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
-      <groupId>com.oracle</groupId>
-      <artifactId>truffle</artifactId>
-      <version>0.2</version>
-      <type>jar</type>
+      <groupId>com.headius</groupId>
+      <artifactId>invokebinder</artifactId>
+      <version>1.3</version>
     </dependency>
     <dependency>
       <groupId>com.headius</groupId>
       <artifactId>options</artifactId>
       <version>1.1-SNAPSHOT</version>
     </dependency>
+    <dependency>
+      <groupId>com.headius</groupId>
+      <artifactId>coro-mock</artifactId>
+      <version>1.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.headius</groupId>
+      <artifactId>unsafe-mock</artifactId>
+      <version>${unsafe.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.headius</groupId>
+      <artifactId>jsr292-mock</artifactId>
+      <version>1.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>bsf</groupId>
+      <artifactId>bsf</artifactId>
+      <version>2.4.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.jcraft</groupId>
+      <artifactId>jzlib</artifactId>
+      <version>1.1.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.martiansoftware</groupId>
+      <artifactId>nailgun-server</artifactId>
+      <version>0.9.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.oracle</groupId>
+      <artifactId>truffle</artifactId>
+      <version>0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.ant</groupId>
+      <artifactId>ant</artifactId>
+      <version>${ant.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.core</artifactId>
+      <version>5.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <version>1.13</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>joda-timezones</artifactId>
+      <version>${tzdata.version}</version>
+      <scope>${tzdata.scope}</scope>
+    </dependency>
+    <dependency>
+      <groupId>joda-time</groupId>
+      <artifactId>joda-time</artifactId>
+      <version>${joda.time.version}</version>
+    </dependency>
   </dependencies>
-  <properties>
-    <anno.sources>${project.basedir}/target/generated-sources</anno.sources>
-    <unsafe.jar>${settings.localRepository}/com/headius/unsafe-mock/8.0/unsafe-mock-8.0.jar</unsafe.jar>
-    <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
-    <build.date>${maven.build.timestamp}</build.date>
-    <Constants.java>org/jruby/runtime/Constants.java</Constants.java>
-    <jruby.compile.memory>2G</jruby.compile.memory>
-    <jruby.test.memory>3G</jruby.test.memory>
-    <jruby.test.memory.permgen>2G</jruby.test.memory.permgen>
-    <maven.test.skip>true</maven.test.skip>
-    <jruby.basedir>${basedir}/..</jruby.basedir>
-    <!-- this one needs to match the version packed with joda-time -->
-    <tzdata.version>2013d</tzdata.version>
-    <!-- any version which is on maven repo will do -->
-    <tzdata.jar.version>2013d</tzdata.jar.version>
-    <tzdata.scope>provided</tzdata.scope>
-    <main.basedir>${project.parent.basedir}</main.basedir>
-    <bundle.name>JRuby Core</bundle.name>
-    <bundle.symbolic_name>org.jruby.jruby-core</bundle.symbolic_name>
-  </properties>
   <build>
     <defaultGoal>package</defaultGoal>
+    <resources>
+      <resource>
+        <directory>src/main/ruby</directory>
+        <includes>
+          <include>**/*rb</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <includes>
+          <include>META-INF/**/*</include>
+        </includes>
+      </resource>
+      <resource>
+        <targetPath>${project.build.sourceDirectory}</targetPath>
+        <filtering>true</filtering>
+        <directory>${project.basedir}/src/main/resources</directory>
+        <includes>
+          <include>${Constants.java}</include>
+        </includes>
+      </resource>
+    </resources>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>properties-maven-plugin</artifactId>
+                    <versionRange>[1.0-alpha-2,)</versionRange>
+                    <goals>
+                      <goal>read-project-properties</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore></ignore>
+                  </action>
+                </pluginExecution>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <versionRange>[1.8,)</versionRange>
+                    <goals>
+                      <goal>add-source</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore></ignore>
+                  </action>
+                </pluginExecution>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <versionRange>[1.2.1,)</versionRange>
+                    <goals>
+                      <goal>exec</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore></ignore>
+                  </action>
+                </pluginExecution>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <versionRange>[2.8,)</versionRange>
+                    <goals>
+                      <goal>copy</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore></ignore>
+                  </action>
+                </pluginExecution>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <versionRange>[2.5,)</versionRange>
+                    <goals>
+                      <goal>clean</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore></ignore>
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-shade-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>pack jruby-noasm.jar</id>
+              <phase>verify</phase>
+              <goals>
+                <goal>shade</goal>
+              </goals>
+              <configuration>
+                <shadedArtifactAttached>true</shadedArtifactAttached>
+                <shadedClassifierName>noasm</shadedClassifierName>
+                <artifactSet>
+                  <includes>
+                    <include>com.github.jnr:jnr-ffi</include>
+                    <include>org.ow2.asm:*</include>
+                  </includes>
+                </artifactSet>
+                <relocations>
+                  <relocation>
+                    <pattern>org.objectweb</pattern>
+                    <shadedPattern>org.jruby.org.objectweb</shadedPattern>
+                  </relocation>
+                </relocations>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
-      <plugin>
-	<groupId>org.apache.felix</groupId>
-	<artifactId>maven-bundle-plugin</artifactId>
-      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>properties-maven-plugin</artifactId>
@@ -324,22 +419,6 @@
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <encoding>utf-8</encoding>
-          <debug>true</debug>
-          <verbose>true</verbose>
-          <fork>true</fork>
-          <compilerArgs>
-            <arg>-J-Xmx1G</arg>
-          </compilerArgs>
-          <showWarnings>true</showWarnings>
-          <showDeprecation>true</showDeprecation>
-          <source>${base.java.version}</source>
-          <target>${base.javac.version}</target>
-          <useIncrementalCompilation>false</useIncrementalCompilation>
-          <source>1.7</source>
-          <target>1.7</target>
-        </configuration>
         <executions>
           <execution>
             <id>anno</id>
@@ -408,12 +487,28 @@
             </goals>
             <configuration>
               <skipMain>true</skipMain>
-               <includes>
-                 <include>**/*.java</include>
-               </includes>
-             </configuration>
-           </execution>
+              <includes>
+                <include>**/*.java</include>
+              </includes>
+            </configuration>
+          </execution>
         </executions>
+        <configuration>
+          <encoding>utf-8</encoding>
+          <debug>true</debug>
+          <verbose>true</verbose>
+          <fork>true</fork>
+          <compilerArgs>
+            <arg>-J-Xmx1G</arg>
+          </compilerArgs>
+          <showWarnings>true</showWarnings>
+          <showDeprecation>true</showDeprecation>
+          <source>${base.java.version}</source>
+          <source>1.7</source>
+          <target>${base.javac.version}</target>
+          <target>1.7</target>
+          <useIncrementalCompilation>false</useIncrementalCompilation>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-clean-plugin</artifactId>
@@ -435,23 +530,6 @@
               </filesets>
               <failOnError>false</failOnError>
             </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>default-jar</id>
-            <phase>package</phase>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-	    <configuration>
-	      <archive>
-		<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-	      </archive>
-	    </configuration>
           </execution>
         </executions>
       </plugin>
@@ -502,157 +580,6 @@
         </configuration>
       </plugin>
     </plugins>
-    <resources>
-      <resource>
-        <directory>src/main/ruby</directory>
-        <includes>
-          <include>**/*rb</include>
-        </includes>
-      </resource>
-      <resource>
-        <directory>src/main/resources</directory>
-        <includes>
-          <include>META-INF/**/*</include>
-        </includes>
-      </resource>
-      <resource>
-        <directory>${project.basedir}/src/main/resources</directory>
-        <includes>
-          <include>${Constants.java}</include>
-        </includes>
-        <targetPath>${project.build.sourceDirectory}</targetPath>
-        <filtering>true</filtering>
-      </resource>
-    </resources>
-    <pluginManagement>
-      <plugins>
-        <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
-        <plugin>
-          <groupId>org.eclipse.m2e</groupId>
-          <artifactId>lifecycle-mapping</artifactId>
-          <version>1.0.0</version>
-          <configuration>
-            <lifecycleMappingMetadata>
-              <pluginExecutions>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>
-                      properties-maven-plugin
-                    </artifactId>
-                    <versionRange>
-                      [1.0-alpha-2,)
-                    </versionRange>
-                    <goals>
-                      <goal>
-                        read-project-properties
-                      </goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <ignore></ignore>
-                  </action>
-                </pluginExecution>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>
-                      build-helper-maven-plugin
-                    </artifactId>
-                    <versionRange>[1.8,)</versionRange>
-                    <goals>
-                      <goal>add-source</goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <ignore></ignore>
-                  </action>
-                </pluginExecution>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>
-                      exec-maven-plugin
-                    </artifactId>
-                    <versionRange>
-                      [1.2.1,)
-                    </versionRange>
-                    <goals>
-                      <goal>exec</goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <ignore></ignore>
-                  </action>
-                </pluginExecution>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>
-                      org.apache.maven.plugins
-                    </groupId>
-                    <artifactId>
-                      maven-dependency-plugin
-                    </artifactId>
-                    <versionRange>[2.8,)</versionRange>
-                    <goals>
-                      <goal>copy</goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <ignore></ignore>
-                  </action>
-                </pluginExecution>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>
-                      org.apache.maven.plugins
-                    </groupId>
-                    <artifactId>
-                      maven-clean-plugin
-                    </artifactId>
-                    <versionRange>[2.5,)</versionRange>
-                    <goals>
-                      <goal>clean</goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <ignore></ignore>
-                  </action>
-                </pluginExecution>
-              </pluginExecutions>
-            </lifecycleMappingMetadata>
-          </configuration>
-        </plugin>
-	<plugin>
-	  <artifactId>maven-shade-plugin</artifactId>
-	  <executions>
-	    <execution>
-	      <id>pack jruby-noasm.jar</id>
-	      <phase>verify</phase>
-	      <goals>
-		<goal>shade</goal>
-	      </goals>
-	      <configuration>
-		<shadedArtifactAttached>true</shadedArtifactAttached>
-		<shadedClassifierName>noasm</shadedClassifierName>
-		<artifactSet>
-		  <includes>
-		    <include>com.github.jnr:jnr-ffi</include>
-		    <include>org.ow2.asm:*</include>
-		  </includes>
-		</artifactSet>
-		<relocations>
-		  <relocation>
-		    <pattern>org.objectweb</pattern>
-		    <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-		  </relocation>
-		  </relocations>
-	      </configuration>
-	    </execution>
-	  </executions>
-	</plugin>
-      </plugins>
-    </pluginManagement>
   </build>
   <profiles>
     <profile>
@@ -691,38 +618,37 @@
       <id>native</id>
       <activation>
         <file>
-          <!-- can not use properties here -->
           <missing>../lib/jni</missing>
         </file>
       </activation>
       <build>
         <plugins>
-      <plugin>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>unzip native</id>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>unpack</goal>
-            </goals>
-            <configuration>
-              <excludes>META-INF,META-INF/*</excludes>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>com.github.jnr</groupId>
-                  <artifactId>jffi</artifactId>
-                  <version>${jffi.version}</version>
-                  <type>jar</type>
-                  <classifier>native</classifier>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${jruby.basedir}/lib</outputDirectory>
-                </artifactItem>
-              </artifactItems>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+          <plugin>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>unzip native</id>
+                <phase>process-classes</phase>
+                <goals>
+                  <goal>unpack</goal>
+                </goals>
+                <configuration>
+                  <excludes>META-INF,META-INF/*</excludes>
+                  <artifactItems>
+                    <artifactItem>
+                      <groupId>com.github.jnr</groupId>
+                      <artifactId>jffi</artifactId>
+                      <version>${jffi.version}</version>
+                      <type>jar</type>
+                      <classifier>native</classifier>
+                      <overWrite>false</overWrite>
+                      <outputDirectory>${jruby.basedir}/lib</outputDirectory>
+                    </artifactItem>
+                  </artifactItems>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
         </plugins>
       </build>
     </profile>
@@ -731,10 +657,6 @@
       <properties>
         <maven.test.skip>false</maven.test.skip>
       </properties>
-    </profile>
-    <profile>
-      <id>default</id>
-      <!-- just leave it since travis might need it -->
     </profile>
     <profile>
       <id>tzdata</id>

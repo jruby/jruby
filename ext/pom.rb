@@ -7,6 +7,9 @@ project 'JRuby Ext' do
   inherit 'org.jruby:jruby-parent', version
   packaging 'pom'
 
+  properties( 'tesla.dump.pom' => 'pom.xml',
+              'tesla.dump.readonly' => true )
+
   modules [ 'openssl',
             'readline',
             'ripper' ]

@@ -54,7 +54,7 @@
   </developers>
   <mailingLists>
     <mailingList>
-      <name>jruby</name>
+      <name>jruby-user</name>
       <archive>http://markmail.org/search/list:org.codehaus.jruby.user</archive>
     </mailingList>
     <mailingList>
@@ -66,13 +66,12 @@
       <archive>http://markmail.org/search/list:org.codehaus.jruby.scm</archive>
     </mailingList>
     <mailingList>
-      <name>jruby-announce</name>
-      <archive>http://markmail.org/search/list:org.codehaus.jruby.announce</archive>
+      <name>jruby-annouce</name>
+      <archive>http://markmail.org/search/list:org.codehaus.jruby.annouce</archive>
     </mailingList>
   </mailingLists>
   <modules>
     <module>core</module>
-    <module>ext</module>
     <module>lib</module>
   </modules>
   <scm>
@@ -113,7 +112,7 @@
     <base.java.version>1.7</base.java.version>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <rspec-mocks.version>2.14.1</rspec-mocks.version>
-    <jruby.plugins.version>1.0.0-SNAPSHOT</jruby.plugins.version>
+    <jruby.plugins.version>1.0.0-rc3</jruby.plugins.version>
     <json.version>1.8.0</json.version>
     <invoker.skip>true</invoker.skip>
     <version.jruby>${project.version}</version.jruby>
@@ -144,16 +143,6 @@
       </snapshots>
       <id>sonatype</id>
       <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-    </repository>
-    <repository>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>truffle</id>
-      <url>http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/releases/</url>
     </repository>
   </repositories>
   <build>
@@ -485,6 +474,20 @@
   </reporting>
   <profiles>
     <profile>
+      <id>ext</id>
+      <activation>
+        <file>
+          <missing>ext/openssl/pkg</missing>
+        </file>
+      </activation>
+      <build>
+        <defaultGoal>install</defaultGoal>
+      </build>
+      <modules>
+        <module>ext</module>
+      </modules>
+    </profile>
+    <profile>
       <id>rake</id>
       <build>
         <defaultGoal>validate</defaultGoal>
@@ -515,18 +518,14 @@
       <id>bootstrap</id>
       <modules>
         <module>test</module>
+        <module>ext</module>
       </modules>
     </profile>
     <profile>
       <id>bootstrap-no-launcher</id>
       <modules>
         <module>test</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>gems</id>
-      <modules>
-        <module>maven</module>
+        <module>ext</module>
       </modules>
     </profile>
     <profile>
@@ -536,25 +535,25 @@
       </modules>
     </profile>
     <profile>
-      <id>main</id>
-      <build>
-        <defaultGoal>install</defaultGoal>
-      </build>
-      <modules>
-        <module>maven</module>
-      </modules>
-    </profile>
-    <profile>
       <id>jruby-jars</id>
       <modules>
         <module>maven</module>
       </modules>
     </profile>
     <profile>
+      <id>main</id>
+      <modules>
+        <module>maven</module>
+      </modules>
+    </profile>
+    <profile>
       <id>complete</id>
-      <build>
-        <defaultGoal>install</defaultGoal>
-      </build>
+      <modules>
+        <module>maven</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>dist</id>
       <modules>
         <module>maven</module>
       </modules>
@@ -569,18 +568,20 @@
       </modules>
     </profile>
     <profile>
-      <id>dist</id>
+      <id>all</id>
       <build>
         <defaultGoal>install</defaultGoal>
       </build>
       <modules>
+        <module>test</module>
+        <module>docs</module>
         <module>maven</module>
       </modules>
     </profile>
     <profile>
-      <id>all</id>
+      <id>clean</id>
       <build>
-        <defaultGoal>install</defaultGoal>
+        <defaultGoal>clean</defaultGoal>
       </build>
       <modules>
         <module>test</module>
