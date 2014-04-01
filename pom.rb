@@ -9,47 +9,19 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   description 'JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter in Java.'
 
-  developer 'headius' do
-    name 'headius'
-    roles 'developer'
-  end
-
-  developer 'enebo' do
-    name 'enebo'
-    roles 'developer'
-  end
-
-  developer 'wmeissner' do
-    name 'wmeissner'
-    roles 'developer'
-  end
-
-  developer 'BanzaiMan' do
-    name 'BanzaiMan'
-    roles 'developer'
-  end
-
-  developer 'mkristian' do
-    name 'mkristian'
-    roles 'developer'
+  [ 'headius', 'enebo', 'wmeissner', 'BanzaiMan', 'mkristian' ].each do |name|
+    developer name do
+      name name
+      roles 'developer'
+    end
   end
 
   issue_management 'https://github.com/jruby/jruby/issues', 'GitHub'
 
-  mailing_list 'jruby' do
-    archives 'http://markmail.org/search/list:org.codehaus.jruby.user'
-  end
-
-  mailing_list 'jruby-dev' do
-    archives 'http://markmail.org/search/list:org.codehaus.jruby.dev'
-  end
-
-  mailing_list 'jruby-scm' do
-    archives 'http://markmail.org/search/list:org.codehaus.jruby.scm'
-  end
-
-  mailing_list 'jruby-announce' do
-    archives 'http://markmail.org/search/list:org.codehaus.jruby.announce'
+  [ 'user', 'dev', 'scm', 'annouce' ].each do |id|
+    mailing_list "jruby-#{id}" do
+      archives "http://markmail.org/search/list:org.codehaus.jruby.#{id}"
+    end
   end
 
   repository( 'https://oss.sonatype.org/content/repositories/snapshots/',
@@ -57,11 +29,11 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     releases 'false'
     snapshots 'true'
   end
-  repository( 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/releases/',
-              :id => 'truffle' ) do
-    releases 'true'
-    snapshots 'false'
-  end
+#  repository( 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/releases/',
+#              :id => 'truffle' ) do
+#    releases 'true'
+#    snapshots 'false'
+#  end
 
   source_control( 'https://github.com/jruby/jruby',
                   :connection => 'scm:git:git@jruby.org:jruby.git',
@@ -105,7 +77,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'jruby.home' => '${project.basedir}',
               'joda.time.version' => '2.3' )
 
-  modules [ 'core', 'ext', 'lib' ]
+  modules [ 'core', 'lib' ]
 
   overrides do
     jar( 'junit:junit:4.11',
@@ -184,131 +156,83 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     default_goal 'package'
   end
 
-  profile 'rake' do
+  profile 'ext' do
 
-    modules [ 'test' ]
-
+    activation do
+      file( :missing => 'ext/openssl/pkg' )
+    end
+    
+    modules [ 'ext' ]
 
     build do
-      default_goal 'validate'
+      default_goal 'install'
     end
-
   end
 
-  profile 'exec' do
+  [ 'rake', 'exec', 'truffle' ].each do |name|
+    profile name do
 
-    modules [ 'test' ]
+      modules [ 'test' ]
 
-
-    build do
-      default_goal 'validate'
+      build do
+        default_goal 'validate'
+      end
     end
-
   end
 
-  profile 'truffle' do
+  [ 'bootstrap', 'bootstrap-no-launcher' ].each do |name|
+    profile name do
 
-    modules [ 'test' ]
-
-
-    build do
-      default_goal 'validate'
+      modules [ 'test', 'ext' ]
+      
     end
-
-  end
-
-  profile 'bootstrap' do
-
-    modules [ 'test' ]
-
-  end
-
-  profile 'bootstrap-no-launcher' do
-
-    modules [ 'test' ]
-
-  end
-
-  profile 'gems' do
-
-    modules [ 'maven' ]
-
   end
 
   profile 'docs' do
-
     modules [ 'docs' ]
-
   end
 
-  profile 'main' do
+  [ 'jruby-jars', 'main', 'complete', 'dist' ].each do |name|
 
-    modules [ 'maven' ]
+    profile name do
 
-
-    build do
-      default_goal 'install'
+      modules [ 'maven' ]
+      
     end
-
   end
 
-  profile 'jruby-jars' do
-
-    modules [ 'maven' ]
-
-  end
-
-  profile 'complete' do
-
-    modules [ 'maven' ]
-
-
-    build do
-      default_goal 'install'
-    end
-
-  end
-
+  # TODO get rid of it
   profile 'rake-plugin' do
 
     modules [ 'maven' ]
 
-
     build do
       default_goal 'install'
     end
-
   end
 
-  profile 'dist' do
-
-    modules [ 'maven' ]
-
-
-    build do
-      default_goal 'install'
-    end
-
-  end
+  all_modules = [ 'test', 'docs', 'maven' ]
 
   profile 'all' do
 
-    modules [ 'test',
-            'docs',
-            'maven' ]
-
+    modules all_modules
 
     build do
       default_goal 'install'
     end
+  end
 
+  profile 'clean' do
+
+    modules all_modules
+
+    build do
+      default_goal 'clean'
+    end
   end
 
   profile 'release' do
-
-    modules [ 'test',
-            'maven' ]
-
+    modules [ 'test', 'maven' ]
   end
 
   reporting do

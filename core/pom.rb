@@ -2,70 +2,75 @@ version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 project 'JRuby Core' do
 
   model_version '4.0.0'
-  artifact_id 'jruby-core'
   inherit 'org.jruby:jruby-parent', version
+  id 'org.jruby:jruby-core'
+  packaging 'jar'
 
   source_control( 'http://github.com/jruby/jruby',
                   :connection => 'scm:git:git://github.com/jruby/jruby.git',
                   :developer_connection => 'scm:git:ssh://git@github.com/jruby/jruby.git' )
 
-  properties( 'tzdata.jar.version' => '2013d',
-              'maven.build.timestamp.format' => 'yyyy-MM-dd',
-              'bundle.symbolic_name' => 'org.jruby.jruby-core',
-              'jruby.basedir' => '${basedir}/..',
-              'main.basedir' => '${project.parent.basedir}',
-              'maven.test.skip' => 'true',
-              'tzdata.scope' => 'provided',
-              'unsafe.jar' => '${settings.localRepository}/com/headius/unsafe-mock/8.0/unsafe-mock-8.0.jar',
-              'build.date' => '${maven.build.timestamp}',
-              'bundle.name' => 'JRuby Core',
-              'jruby.test.memory.permgen' => '2G',
+  properties( 'tesla.dump.pom' => 'pom.xml',
+              'tesla.dump.readonly' => true,
+
               'tzdata.version' => '2013d',
-              'jruby.test.memory' => '3G',
+              'tzdata.scope' => 'provided',
+
+              'unsafe.version' => '8.0',
+              'unsafe.jar' => '${settings.localRepository}/com/headius/unsafe-mock/${unsafe.version}/unsafe-mock-${unsafe.version}.jar',
+
+              'maven.build.timestamp.format' => 'yyyy-MM-dd',
+              'maven.test.skip' => 'true',
+              'build.date' => '${maven.build.timestamp}',
+              'main.basedir' => '${project.parent.basedir}',
               'Constants.java' => 'org/jruby/runtime/Constants.java',
               'anno.sources' => '${project.basedir}/target/generated-sources',
+
+              'jruby.basedir' => '${basedir}/..',
+              'jruby.test.memory' => '3G',
+              'jruby.test.memory.permgen' => '2G',
               'jruby.compile.memory' => '2G' )
 
-  jar 'junit:junit'
   jar 'org.ow2.asm:asm:${asm.version}'
   jar 'org.ow2.asm:asm-commons:${asm.version}'
   jar 'org.ow2.asm:asm-analysis:${asm.version}'
   jar 'org.ow2.asm:asm-util:${asm.version}'
-  jar 'org.jruby.joni:joni:2.1.1'
+
   jar 'com.github.jnr:jnr-netdb:1.1.2'
   jar 'com.github.jnr:jnr-enxio:0.4'
   jar 'com.github.jnr:jnr-x86asm:1.0.2'
   jar 'com.github.jnr:jnr-unixsocket:0.3'
-  jar 'com.github.jnr:jnr-posix:3.0.1'
-  jar 'org.jruby.extras:bytelist:1.0.11'
+  jar 'com.github.jnr:jnr-posix:3.0.2-SNAPSHOT'
   jar 'com.github.jnr:jnr-constants:0.8.5'
-  jar 'org.jruby.jcodings:jcodings:1.0.10'
   jar 'com.github.jnr:jnr-ffi:1.0.7'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
-  jar 'org.yaml:snakeyaml:1.13'
-  jar 'com.jcraft:jzlib:1.1.2'
-  jar 'com.headius:invokebinder:1.3'
-  jar( 'org.osgi:org.osgi.core:5.0.0',
-       :scope => 'provided' )
-  jar( 'org.apache.ant:ant:${ant.version}',
-       :scope => 'provided' )
-  jar( 'bsf:bsf:2.4.0',
-       :scope => 'provided' )
-  jar 'com.martiansoftware:nailgun-server:0.9.1'
-  jar( 'com.headius:coro-mock:1.0',
-       :scope => 'provided' )
-  jar( 'com.headius:unsafe-mock:8.0',
-       :scope => 'provided' )
-  jar( 'com.headius:jsr292-mock:1.1',
-       :scope => 'provided' )
-  jar 'org.jruby:yecht:1.0'
-  jar( 'org.jruby:joda-timezones:${tzdata.jar.version}',
-       :scope => '${tzdata.scope}' )
-  jar 'joda-time:joda-time:${joda.time.version}'
-  jar 'com.oracle:truffle:0.1'
 
-  overrides do
+  jar 'org.jruby.joni:joni:2.1.1'
+  jar 'org.jruby.extras:bytelist:1.0.11'
+  jar 'org.jruby.jcodings:jcodings:1.0.10'
+  jar 'org.jruby:yecht:1.0'
+
+  jar 'com.headius:invokebinder:1.3'
+  jar 'com.headius:options:1.1-SNAPSHOT'
+  jar 'com.headius:coro-mock:1.0', :scope => 'provided'
+  jar 'com.headius:unsafe-mock', '${unsafe.version}', :scope => 'provided'
+  jar 'com.headius:jsr292-mock:1.1', :scope => 'provided'
+
+  jar 'bsf:bsf:2.4.0', :scope => 'provided'
+  jar 'com.jcraft:jzlib:1.1.2'
+  jar 'com.martiansoftware:nailgun-server:0.9.1'
+  jar 'com.oracle:truffle:0.2'
+  jar 'junit:junit', :scope => 'test'
+  jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
+  jar 'org.osgi:org.osgi.core:5.0.0', :scope => 'provided'
+  jar 'org.yaml:snakeyaml:1.13'  
+
+  # joda timezone must be before joda-time to be packed correctly
+  jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'
+  jar 'joda-time:joda-time:${joda.time.version}'
+
+  plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
             'lifecycleMappingMetadata' => {
               'pluginExecutions' => [ { 'pluginExecutionFilter' => {
@@ -130,7 +135,7 @@ project 'JRuby Core' do
 
   end
 
-  plugin 'org.apache.felix:maven-bundle-plugin'
+#  plugin 'org.apache.felix:maven-bundle-plugin'
   plugin 'org.codehaus.mojo:properties-maven-plugin:1.0-alpha-2' do
     execute_goals( 'read-project-properties',
                    :id => 'properties',
@@ -148,41 +153,37 @@ project 'JRuby Core' do
                    'buildNumberPropertyName' =>  'jruby.revision' )
   end
 
-  plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
-    execute_goals( 'add-source',
-                   :id => 'add-populators',
-                   :phase => 'process-classes',
-                   'sources' => [ '${anno.sources}' ] )
-  end
+  phase 'process-classes' do
+    plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
+      execute_goals( 'add-source',
+                     :id => 'add-populators',
+                     'sources' => [ '${anno.sources}' ] )
+    end
 
-  plugin 'org.codehaus.mojo:exec-maven-plugin' do
-    execute_goals( 'exec',
-                   :id => 'invoker-generator',
-                   :phase => 'process-classes',
-                   'arguments' => [ '-Djruby.bytecode.version=${base.java.version}',
-                                    '-classpath',
-                                    xml( '<classpath/>' ),
-                                    'org.jruby.anno.InvokerGenerator',
-                                    '${anno.sources}/annotated_classes.txt',
-                                    '${project.build.outputDirectory}' ],
-                   'executable' =>  'java',
-                   'classpathScope' =>  'compile' )
+    plugin 'org.codehaus.mojo:exec-maven-plugin' do
+      execute_goals( 'exec',
+                     :id => 'invoker-generator',
+                     'arguments' => [ '-Djruby.bytecode.version=${base.java.version}',
+                                      '-classpath',
+                                      xml( '<classpath/>' ),
+                                      'org.jruby.anno.InvokerGenerator',
+                                      '${anno.sources}/annotated_classes.txt',
+                                      '${project.build.outputDirectory}' ],
+                     'executable' =>  'java',
+                     'classpathScope' =>  'compile' )
+    end
   end
 
   plugin( :compiler,
-          'encoding' =>  'utf-8',
-          'debug' =>  'true',
-          'verbose' =>  'true',
-          'fork' =>  'true',
-          'compilerArgs' => {
-            'arg' =>  '-J-Xmx1G'
-          },
-          'showWarnings' =>  'true',
-          'showDeprecation' =>  'true',
-          'source' => [ '${base.java.version}',
-                        '1.7' ],
-          'target' => [ '${base.javac.version}',
-                        '1.7' ],
+          'encoding' => 'utf-8',
+          'debug' => 'true',
+          'verbose' => 'true',
+          'fork' => 'true',
+          'compilerArgs' => { 'arg' => '-J-Xmx1G' },
+          'showWarnings' => 'true',
+          'showDeprecation' => 'true',
+          'source' => [ '${base.java.version}', '1.7' ],
+          'target' => [ '${base.javac.version}', '1.7' ],
           'useIncrementalCompilation' =>  'false' ) do
     execute_goals( 'compile',
                    :id => 'anno',
@@ -231,24 +232,24 @@ project 'JRuby Core' do
                    'failOnError' =>  'false' )
   end
 
-  plugin :jar do
-    execute_goals( 'jar',
-                   :id => 'default-jar',
-                   :phase => 'package',
-                   'archive' => {
-                     'manifestFile' =>  '${project.build.outputDirectory}/META-INF/MANIFEST.MF'
-                   } )
-  end
+ # phase :package do
+#    plugin :jar do
+ #     execute_goals( 'jar',
+  #                   :id => 'default-jar',
+ #                    'archive' => {
+  #                   'manifestFile' =>  '${project.build.outputDirectory}/META-INF/MANIFEST.MF'
+   #                } )
+  #end
 
   plugin :shade do
     execute_goals( 'shade',
                    :id => 'pack jruby.jar',
                    :phase => 'package',
-                   'relocations' => [ { 'pattern' =>  'org.objectweb',
-                                        'shadedPattern' =>  'org.jruby.org.objectweb' } ],
+                   'relocations' => [ { 'pattern' => 'org.objectweb',
+                                        'shadedPattern' => 'org.jruby.org.objectweb' } ],
                    'outputFile' =>  '${jruby.basedir}/lib/jruby.jar',
-                   'transformers' => [ { '@implementation' =>  'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' =>  'org.jruby.Main' } ] )
+                   'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
+                                         'mainClass' => 'org.jruby.Main' } ] )
   end
 
   plugin( :surefire,
@@ -270,19 +271,16 @@ project 'JRuby Core' do
     resource do
       directory 'src/main/ruby'
       includes '**/*rb'
-      excludes 
     end
 
     resource do
       directory 'src/main/resources'
       includes 'META-INF/**/*'
-      excludes 
     end
 
     resource do
       directory '${project.basedir}/src/main/resources'
       includes '${Constants.java}'
-      excludes 
       target_path '${project.build.sourceDirectory}'
       filtering 'true'
     end
@@ -340,10 +338,6 @@ project 'JRuby Core' do
   profile 'test' do
 
     properties( 'maven.test.skip' => 'false' )
-
-  end
-
-  profile 'default' do
 
   end
 
