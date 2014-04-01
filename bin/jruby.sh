@@ -58,8 +58,8 @@ process_special_opts() {
         *) break;;
     esac
 }
-for opt in ${JRUBY_OPTS[@]}; do
-    for special in ${JRUBY_OPTS_SPECIAL[@]}; do
+for opt in ${JRUBY_OPTS}; do
+    for special in ${JRUBY_OPTS_SPECIAL}; do
         if [ $opt != $special ]; then
             JRUBY_OPTS_TEMP="${JRUBY_OPTS_TEMP} $opt"
         else
@@ -280,7 +280,7 @@ if [ "$VERIFY_JRUBY" != "" ]; then
   fi
 
 
-  "$JAVACMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" ${java_args[@]} -classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
+  "$JAVACMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" ${java_args} -classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
     "-Djruby.home=$JRUBY_HOME" \
     "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
     "-Djruby.shell=$JRUBY_SHELL" \
