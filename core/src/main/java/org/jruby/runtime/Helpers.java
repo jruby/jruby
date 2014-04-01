@@ -1025,7 +1025,7 @@ public class Helpers {
                 // rescue Object needs to catch Java exceptions
                 runtime.getObject() == catchable ||
 
-                // rescue StandardError needs t= catch Java exceptions
+                // rescue StandardError needs to catch Java exceptions
                 runtime.getStandardError() == catchable) {
 
             if (throwable instanceof RaiseException) {
@@ -1048,6 +1048,12 @@ public class Helpers {
                     return true;
                 }
             }
+
+        } else if (catchable instanceof RubyModule) {
+            IRubyObject exception = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
+            IRubyObject result = invoke(context, catchable, "===", exception);
+            return result.isTrue();
+
         }
 
         return false;
