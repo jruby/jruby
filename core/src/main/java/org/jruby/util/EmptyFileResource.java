@@ -2,8 +2,10 @@ package org.jruby.util;
 
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.exceptions.RaisableException;
+import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.ModeFlags;
 
 class EmptyFileResource implements FileResource {
     // All empty resources are the same and immutable, so may as well
@@ -81,5 +83,10 @@ class EmptyFileResource implements FileResource {
         // intending to replace. However, that should go away once we get rid of the hacky method, so
         // should be okay for now.
         return JRubyNonExistentFile.NOT_EXIST;
+    }
+
+    @Override
+    public ChannelDescriptor openDescriptor(ModeFlags flags, POSIX posix, int perm) throws RaisableException {
+        throw new ResourceException.NotFound(absolutePath());
     }
 }

@@ -2,13 +2,18 @@ package org.jruby.util;
 
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
+import org.jruby.exceptions.RaisableException;
+import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.ModeFlags;
+
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-public abstract class JarResource implements FileResource {
+abstract class JarResource implements FileResource {
     private static Pattern PREFIX_MATCH = Pattern.compile("^(?:jar:)?(?:file:)?(.*)$");
 
     private static final JarCache jarCache = new JarCache();
@@ -53,9 +58,14 @@ public abstract class JarResource implements FileResource {
             return new JarDirectoryResource(jarPath, path, entries);
         }
 
-        JarEntry jarEntry = index.getJarEntry(path);
-        if (jarEntry != null) {
-            return new JarFileResource(jarPath, jarEntry);
+        try {
+            JarEntry jarEntry = index.getJarEntry(path);
+            if (jarEntry != null) {
+                InputStream jarEntryStream = index.jar.getInputStream(jarEntry);
+                return new JarFileResource(path, jarEntry, jarEntryStream);
+            }
+        } catch (IOException ioe) {
+            // Probably not a jar entry then
         }
 
         return null;

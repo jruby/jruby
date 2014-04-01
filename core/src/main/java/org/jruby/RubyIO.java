@@ -68,6 +68,7 @@ import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.RaisableException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
@@ -87,8 +88,6 @@ import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.PipeException;
-import org.jruby.util.io.FileExistsException;
-import org.jruby.util.io.DirectoryAsFileException;
 import org.jruby.util.io.STDIO;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
@@ -348,11 +347,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             openFile.setPath(path);
 
             if (openFile.getMainStream() == null) {
-                try {
-                    openFile.setMainStream(ChannelStream.fopen(runtime, path, modes.getModeFlags()));
-                } catch (FileExistsException fee) {
-                    throw runtime.newErrnoEEXISTError(path);
-                }
+                openFile.setMainStream(ChannelStream.fopen(runtime, path, modes.getModeFlags()));
 
                 if (openFile.getPipeStream() != null) {
                     openFile.getPipeStream().fclose();
@@ -1241,15 +1236,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
                                        runtime.getJRubyClassLoader());
             // always a new fileno, so ok to use internal only
             fileno = descriptor.getFileno();
-        }
-        catch (FileNotFoundException fnfe) {
-            throw runtime.newErrnoENOENTError(path);
-        } catch (DirectoryAsFileException dafe) {
-            throw runtime.newErrnoEISDirError(path);
-        } catch (FileExistsException fee) {
-            throw runtime.newErrnoEEXISTError(path);
-        } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+        } catch (RaisableException raisable) {
+            raisable.printStackTrace();
+            throw raisable.newRaiseException(runtime);
         }
         return runtime.newFixnum(fileno);
     }

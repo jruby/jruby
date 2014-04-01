@@ -1,6 +1,14 @@
 package org.jruby.util;
 
-import java.util.jar.JarFile;
+import jnr.posix.POSIX;
+import org.jruby.Ruby;
+import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.ModeFlags;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.RaisableException;
+
+import java.io.InputStream;
+import java.nio.channels.Channels;
 import java.util.jar.JarEntry;
 
 /**
@@ -14,10 +22,12 @@ import java.util.jar.JarEntry;
  */
 class JarFileResource extends JarResource {
   private final JarEntry entry;
+  private final InputStream entryStream;
 
-  JarFileResource(String jarPath, JarEntry entry) {
+  JarFileResource(String jarPath, JarEntry entry, InputStream entryStream) {
     super(jarPath);
     this.entry = entry;
+    this.entryStream = entryStream;
   }
 
   @Override
@@ -49,5 +59,10 @@ class JarFileResource extends JarResource {
   public String[] list() {
     // Files cannot be listed
     return null;
+  }
+
+  @Override
+  public ChannelDescriptor openDescriptor(ModeFlags flags, POSIX posix, int perm) throws RaisableException {
+    return new ChannelDescriptor(Channels.newChannel(entryStream), flags);
   }
 }

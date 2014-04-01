@@ -217,7 +217,7 @@ public class CRLFStreamWrapper implements Stream {
         stream.setBlocking(blocking);
     }
 
-    public void freopen(Ruby runtime, String path, ModeFlags modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException {
+    public void freopen(Ruby runtime, String path, ModeFlags modes) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
         stream.freopen(runtime, path, modes);
     }
 

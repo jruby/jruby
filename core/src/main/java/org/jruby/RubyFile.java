@@ -35,6 +35,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.CompatVersion.*;
+import static org.jruby.runtime.Visibility.*;
+
 import jnr.constants.platform.OpenFlags;
 import org.jcodings.Encoding;
 import org.jruby.util.io.ModeFlags;
@@ -70,23 +73,19 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.util.ByteList;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.io.DirectoryAsFileException;
-import org.jruby.util.io.PermissionDeniedException;
 import org.jruby.util.io.Stream;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.IOOptions;
 import org.jruby.util.io.BadDescriptorException;
-import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.PipeException;
-import static org.jruby.CompatVersion.*;
+import org.jruby.exceptions.RaisableException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.encoding.EncodingService;
@@ -1299,23 +1298,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             // TODO: check if too many open files, GC and try again
 
             return descriptor;
-        } catch (PermissionDeniedException pde) {
-            // PDException can be thrown only when creating the file and
-            // permission is denied.  See JavaDoc of PermissionDeniedException.
-            throw getRuntime().newErrnoEACCESError(path);
-        } catch (FileNotFoundException fnfe) {
-            // FNFException can be thrown in both cases, when the file
-            // is not found, or when permission is denied.
-            if (Ruby.isSecurityRestricted() || new File(path).exists()) {
-                throw getRuntime().newErrnoEACCESError(path);
-            }
-            throw getRuntime().newErrnoENOENTError(path);
-        } catch (DirectoryAsFileException dafe) {
-            throw getRuntime().newErrnoEISDirError();
-        } catch (FileExistsException fee) {
-            throw getRuntime().newErrnoEEXISTError(path);
-        } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+        } catch (RaisableException raisable) {
+            throw raisable.newRaiseException(getRuntime());
         }
     }
 
@@ -1327,10 +1311,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     flags);
         } catch (BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
-        } catch (PermissionDeniedException pde) {
-            // PDException can be thrown only when creating the file and
-            // permission is denied.  See JavaDoc of PermissionDeniedException.
-            throw getRuntime().newErrnoEACCESError(path);
         } catch (FileNotFoundException ex) {
             // FNFException can be thrown in both cases, when the file
             // is not found, or when permission is denied.
@@ -1343,10 +1323,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
             
             throw getRuntime().newErrnoENOENTError(path);
-        } catch (DirectoryAsFileException ex) {
-            throw getRuntime().newErrnoEISDirError();
-        } catch (FileExistsException ex) {
-            throw getRuntime().newErrnoEEXISTError(path);
         } catch (IOException ex) {
             throw getRuntime().newIOErrorFromException(ex);
         } catch (InvalidValueException ex) {
