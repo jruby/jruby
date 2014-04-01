@@ -57,7 +57,7 @@ namespace :test do
   permute_tests(:mri, compile_flags) do |t|
     files = []
     File.open('test/mri.index') do |f|
-      f.lines.each do |line|
+      f.each_line.each do |line|
         filename = "test/#{line.chomp}.rb"
         next unless File.exist? filename
         files << filename
@@ -79,7 +79,7 @@ namespace :test do
   permute_tests(:jruby, compile_flags, 'test:compile') do |t|
     files = []
     File.open('test/jruby.index') do |f|
-      f.lines.each do |line|
+      f.each_line.each do |line|
         filename = "test/#{line.chomp}.rb"
         next unless File.exist? filename
         files << filename
@@ -94,7 +94,7 @@ namespace :test do
   permute_tests(:rubicon, compile_flags) do |t|
     files = []
     File.open('test/rubicon.index') do |f|
-      f.lines.each do |line|
+      f.each_line.each do |line|
         filename = "test/#{line.chomp}.rb"
         next unless File.exist? filename
         files << filename
@@ -109,7 +109,7 @@ namespace :test do
   permute_tests(:slow, compile_flags) do |t|
     files = []
     File.open('test/slow.index') do |f|
-      f.lines.each do |line|
+      f.each_line.each do |line|
         filename = "test/#{line.chomp}.rb"
         next unless File.exist? filename
         files << filename
@@ -124,7 +124,7 @@ namespace :test do
   permute_tests(:objectspace, compile_flags) do |t|
     files = []
     File.open('test/objectspace.index') do |f|
-      f.lines.each do |line|
+      f.each_line.each do |line|
         filename = "test/#{line.chomp}.rb"
         next unless File.exist? filename
         files << filename
