@@ -37,16 +37,43 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.anno.*;
+import org.jruby.anno.AnnotationBinder;
+import org.jruby.anno.AnnotationHelper;
+import org.jruby.anno.FrameField;
+import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyConstant;
+import org.jruby.anno.JRubyMethod;
+import org.jruby.anno.JavaMethodDescriptor;
+import org.jruby.anno.TypePopulator;
 import org.jruby.ast.Node;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.embed.Extension;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.*;
+import org.jruby.internal.runtime.methods.AliasMethod;
+import org.jruby.internal.runtime.methods.AttrReaderMethod;
+import org.jruby.internal.runtime.methods.AttrWriterMethod;
+import org.jruby.internal.runtime.methods.CacheableMethod;
+import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.DefaultMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.InterpretedMethod;
+import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.*;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
+import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.MethodFactory;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -70,12 +97,21 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessControlException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.runtime.Visibility.*;
+
 
 /**
  *

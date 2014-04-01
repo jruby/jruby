@@ -23,10 +23,15 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.runtime.profile.buildin;
+package org.jruby.runtime.profile.builtin;
 
-import org.jruby.*;
+import org.jruby.MetaClass;
+import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig.ProfilingMode;
+import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.IntHashMap;

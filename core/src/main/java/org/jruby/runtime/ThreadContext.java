@@ -35,8 +35,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
 import org.jruby.RubyContinuation.Continuation;
+import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyModule;
+import org.jruby.RubyString;
+import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.JumpException.ReturnJump;
 import org.jruby.ext.fiber.ThreadFiber;
@@ -58,7 +64,11 @@ import org.jruby.util.log.LoggerFactory;
 
 import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 public final class ThreadContext {
 
@@ -1404,14 +1414,14 @@ public final class ThreadContext {
     public int profileEnter(int nextMethod) {
         int previousMethodSerial = currentMethodSerial;
         currentMethodSerial = nextMethod;
-        if (isProfiling()) { // TODO can this check be removed ?
+        if (isProfiling()) {
             getProfileCollection().profileEnter(nextMethod);
         }
         return previousMethodSerial;
     }
 
     public int profileEnter(String name, DynamicMethod nextMethod) {
-        if (isProfiling()) {  // TODO can this check be removed ?
+        if (isProfiling()) {
             // TODO This can be removed, because the profiled method will be added in the MethodEnhancer if necessary
             getRuntime().getProfiledMethods().addProfiledMethod( name, nextMethod );
         }
@@ -1421,7 +1431,7 @@ public final class ThreadContext {
     public int profileExit(int nextMethod, long startTime) {
         int previousMethodSerial = currentMethodSerial;
         currentMethodSerial = nextMethod;
-        if (isProfiling()) { // TODO can this check be removed ?
+        if (isProfiling()) {
             getProfileCollection().profileExit(nextMethod, startTime);
         }
         return previousMethodSerial;
