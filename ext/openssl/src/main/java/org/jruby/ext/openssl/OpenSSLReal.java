@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,22 +27,21 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
-import java.security.NoSuchProviderException;
-import java.security.cert.CertificateFactory;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
-import javax.crypto.SecretKeyFactory;
+import java.security.GeneralSecurityException;
+import java.security.NoSuchProviderException;
+import java.security.Provider;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.ext.openssl.Cipher.CipherModule;
 import org.jruby.ext.openssl.x509store.X509Error;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -51,45 +50,59 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class OpenSSLReal {
-    private static java.security.Provider BC_PROVIDER = null;
 
-    static {
-        try {
-            BC_PROVIDER = (java.security.Provider) Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider").newInstance();
-        } catch (Throwable ignored) {
-            // no bouncy castle available
-        }
-    }
+    private OpenSSLReal() { /* no instances */ }
 
-    public interface Runnable {
+    @Deprecated
+    public static interface Runnable {
         public void run() throws GeneralSecurityException;
     }
-    
-    public interface Callable {
-        public Object call() throws GeneralSecurityException;
+
+    public static interface Callable<T> {
+        public T call() throws GeneralSecurityException;
     }
 
-    public static void doWithBCProvider(final Runnable toRun) throws GeneralSecurityException {
-        getWithBCProvider(new Callable() {
-
-            public Object call() throws GeneralSecurityException {
-                toRun.run();
-                return null;
+    /**
+     * Run a block of code with 'BC' provider installed.
+     *
+     * @deprecated No longer used within the JRuby-OpenSSL code-base, please avoid!
+     *
+     * @param block
+     * @throws GeneralSecurityException
+     */
+    @Deprecated
+    public static void doWithBCProvider(final Runnable block) throws GeneralSecurityException {
+        getWithBCProvider(new Callable<Void>() {
+            public Void call() throws GeneralSecurityException {
+                block.run(); return null;
             }
         });
     }
 
-    // This method just adds BouncyCastleProvider if it's allowed.  Removing
-    // "BC" can remove pre-installed or runtime-added BC provider by elsewhere
-    // and it causes unknown runtime error anywhere.  We avoid this. To use
-    // part of jruby-openssl feature (X.509 and PKCS), users must be aware of
-    // dynamic BC provider adding.
-    public static Object getWithBCProvider(Callable toCall) throws GeneralSecurityException {
+    /**
+     * Adds BouncyCastleProvider if it's allowed (no security exceptions thrown)
+     * and runs the block of code. Once added the provider will stay registered
+     * within <code>java.security.Security</code> API. This might lead to memory
+     * leaks e.g. when the Ruby runtime that loaded BC is teared down.
+     *
+     * Removing the 'BC' provided (once the block run) can remove pre-installed
+     * or another runtime-added BC provider thus causing unknown runtime errors.
+     *
+     * @deprecated No longer used within the JRuby-OpenSSL code-base, please avoid!
+     *
+     * @param <T>
+     * @param block
+     * @return
+     * @throws GeneralSecurityException
+     */
+    @Deprecated
+    public static <T> T getWithBCProvider(final Callable<T> block) throws GeneralSecurityException {
         try {
-            if (BC_PROVIDER != null && java.security.Security.getProvider("BC") == null) {
-                java.security.Security.addProvider(BC_PROVIDER);
+            final Provider provider = SecurityHelper.getSecurityProvider(); // BC
+            if (provider != null && java.security.Security.getProvider(provider.getName()) == null) {
+                java.security.Security.addProvider(provider);
             }
-            return toCall.call();
+            return block.call();
         } catch (NoSuchProviderException nspe) {
             throw new GeneralSecurityException(bcExceptionMessage(nspe), nspe);
         } catch (Exception e) {
@@ -105,7 +118,9 @@ public class OpenSSLReal {
         return "You need to configure JVM/classpath to enable BouncyCastle Security Provider: NoClassDefFoundError: " + ncdfe.getMessage();
     }
 
-    public static void createOpenSSL(Ruby runtime) {
+    public static void createOpenSSL(final Ruby runtime) {
+        // SecurityHelper.setBouncyCastleProvider();
+
         RubyModule ossl = runtime.getOrCreateModule("OpenSSL");
         RubyClass standardError = runtime.getClass("StandardError");
         ossl.defineClassUnder("OpenSSLError", standardError, standardError.getAllocator());
@@ -128,18 +143,37 @@ public class OpenSSLReal {
         runtime.getLoadService().require("jopenssl/version");
         String jopensslVersion = runtime.getClassFromPath("Jopenssl::Version").getConstant("VERSION").toString();
         ossl.setConstant("VERSION", runtime.newString("1.0.0"));
-        ossl.setConstant("OPENSSL_VERSION",
-                runtime.newString("jruby-ossl " + jopensslVersion));
+        ossl.setConstant("OPENSSL_VERSION", runtime.newString("jruby-ossl " + jopensslVersion));
         ossl.setConstant("OPENSSL_VERSION_NUMBER", runtime.newFixnum(9469999));
-        OpenSSLModule.setDebug(ossl,  runtime.getFalse());
+
+        OpenSSLModule.setDebug(ossl, runtime.newBoolean( Boolean.getBoolean("jruby.openssl.debug") ) );
+    }
+
+    private static boolean debug;
+
+    static boolean isDebug() {
+        return debug;
+    }
+
+    static boolean isDebug(final Ruby runtime) {
+        RubyModule ossl = runtime.getModule("OpenSSL");
+        return OpenSSLModule.getDebug(ossl).isTrue();
+    }
+
+    static void warn(final ThreadContext context, final String msg) {
+        warn(context, RubyString.newString(context.runtime, msg));
+    }
+
+    static void warn(final ThreadContext context, final IRubyObject msg) {
+        context.runtime.getKernel().callMethod(context, "warn", msg);
     }
 
     @JRubyModule(name = "OpenSSL")
     public static class OpenSSLModule {
 
         @JRubyMethod(name = "errors", meta = true)
-        public static IRubyObject errors(IRubyObject recv) {
-            Ruby runtime = recv.getRuntime();
+        public static IRubyObject errors(IRubyObject self) {
+            Ruby runtime = self.getRuntime();
             RubyArray result = runtime.newArray();
             for (Map.Entry<Integer, String> e : X509Error.getErrors().entrySet()) {
                 result.add(runtime.newString(e.getValue()));
@@ -148,67 +182,40 @@ public class OpenSSLReal {
         }
 
         @JRubyMethod(name = "debug", meta = true)
-        public static IRubyObject getDebug(IRubyObject recv) {
-            return (IRubyObject)((RubyModule) recv).getInternalVariable("debug");
+        public static IRubyObject getDebug(IRubyObject self) {
+            return (IRubyObject) ((RubyModule) self).getInternalVariable("debug");
         }
 
         @JRubyMethod(name = "debug=", meta = true)
-        public static IRubyObject setDebug(IRubyObject recv, IRubyObject debug) {
-            ((RubyModule) recv).setInternalVariable("debug", debug);
+        public static IRubyObject setDebug(IRubyObject self, IRubyObject debug) {
+            ((RubyModule) self).setInternalVariable("debug", debug);
+            OpenSSLReal.debug = debug.isTrue();
             return debug;
         }
-        
+
         // Added in 2.0; not masked because it does nothing anyway
         @JRubyMethod(meta = true)
         public static IRubyObject fips_mode(ThreadContext context, IRubyObject self) {
             return context.runtime.getFalse();
         }
-        
+
         // Added in 2.0; not masked because it does nothing anyway
         @JRubyMethod(name = "fips_mode=", meta = true)
         public static IRubyObject fips_mode_set(ThreadContext context, IRubyObject self, IRubyObject value) {
             if (value.isTrue()) {
                 context.runtime.getWarnings().warn("FIPS mode not supported on JRuby OpenSSL");
             }
-            
+
             return self;
         }
     }
 
-    public static javax.crypto.Cipher getCipherBC(final String algorithm) throws GeneralSecurityException {
-        return (javax.crypto.Cipher) getWithBCProvider(new Callable() {
-
-            public Object call() throws GeneralSecurityException {
-                return javax.crypto.Cipher.getInstance(algorithm, "BC");
-            }
-        });
+    @Deprecated
+    public static CertificateFactory getX509CertificateFactoryBC() throws CertificateException {
+        // BC's CertificateFactorySpi :
+        // org.bouncycastle.jcajce.provider.asymmetric.x509.CertificateFactory.class
+        return SecurityHelper.getCertificateFactory("X.509");
     }
 
-    public static SecretKeyFactory getSecretKeyFactoryBC(final String algorithm) throws GeneralSecurityException {
-        return (SecretKeyFactory) getWithBCProvider(new Callable() {
-
-            public Object call() throws GeneralSecurityException {
-                return SecretKeyFactory.getInstance(algorithm, "BC");
-            }
-        });
-    }
-
-    public static MessageDigest getMessageDigestBC(final String algorithm) throws GeneralSecurityException {
-        return (MessageDigest) getWithBCProvider(new Callable() {
-
-            public Object call() throws GeneralSecurityException {
-                return MessageDigest.getInstance(algorithm, "BC");
-            }
-        });
-    }
-
-    public static CertificateFactory getX509CertificateFactoryBC() throws GeneralSecurityException {
-        return (CertificateFactory) getWithBCProvider(new Callable() {
-
-            public Object call() throws GeneralSecurityException {
-                return CertificateFactory.getInstance("X.509", "BC");
-            }
-        });
-    }
 }// OpenSSLReal
 

@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -29,9 +29,10 @@ package org.jruby.ext.openssl;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyModule;
 import org.jruby.RubyObject;
-import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -40,11 +41,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class Utils {
     private Utils() {}
     public static String toHex(byte[] val) {
-        StringBuffer out = new StringBuffer();
-        for(int i=0,j=val.length;i<j;i++) {
-            String ve = Integer.toString((((int)((char)val[i])) & 0xFF),16);
-            if(ve.length() == 1) {
-                ve = "0" + ve;
+        final StringBuilder out = new StringBuilder();
+        for ( int i=0,j=val.length; i<j; i++ ) {
+            String ve = Integer.toString( ( ((int)((char)val[i])) & 0xFF ) , 16);
+            if (ve.length() == 1) {
+                out.append('0'); // "0#{ve}"
             }
             out.append(ve);
         }
@@ -52,15 +53,17 @@ public class Utils {
     }
 
     public static String toHex(byte[] val, char sep) {
-        StringBuffer out = new StringBuffer();
-        String sap = "";
-        for(int i=0,j=val.length;i<j;i++) {
-            String ve = Integer.toString((((int)((char)val[i])) & 0xFF),16);
-            if(ve.length() == 1) {
-                ve = "0" + ve;
+        final StringBuilder out = new StringBuilder();
+        final String sepStr = Character.toString(sep);
+        String separator = "";
+        for ( int i=0,j=val.length; i<j; i++ ) {
+            out.append(separator);
+            String ve = Integer.toString( ( ((int)((char)val[i])) & 0xFF ) , 16);
+            if (ve.length() == 1) {
+                out.append('0'); // "0#{ve}"
             }
-            out.append(sap).append(ve);
-            sap = ""+(char)sep;
+            out.append(ve);
+            separator = sepStr;
         }
         return out.toString().toUpperCase();
     }
@@ -74,7 +77,7 @@ public class Utils {
     public static RubyClass getClassFromPath(Ruby rt, String path) {
         return (RubyClass) rt.getClassFromPath(path);
     }
-    
+
     public static RaiseException newError(Ruby rt, String path, String message) {
         return new RaiseException(rt, getClassFromPath(rt, path), message, true);
     }
@@ -83,16 +86,34 @@ public class Utils {
         return new RaiseException(rt, getClassFromPath(rt, path), message, nativeException);
     }
 
+    @Deprecated
     public static IRubyObject newRubyInstance(Ruby rt, String path) {
         return rt.getClassFromPath(path).callMethod(rt.getCurrentContext(), "new");
     }
 
+    @Deprecated
     public static IRubyObject newRubyInstance(Ruby rt, String path, IRubyObject arg) {
         return rt.getClassFromPath(path).callMethod(rt.getCurrentContext(), "new", arg);
     }
 
-    public static IRubyObject newRubyInstance(Ruby rt, String path, IRubyObject[] args) {
+    @Deprecated
+    public static IRubyObject newRubyInstance(Ruby rt, String path, IRubyObject... args) {
         return rt.getClassFromPath(path).callMethod(rt.getCurrentContext(), "new", args);
     }
-    
+
+    static IRubyObject newRubyInstance(final ThreadContext context, final String path) {
+        final RubyModule klass = context.runtime.getClassFromPath(path);
+        return klass.callMethod(context, "new");
+    }
+
+    static IRubyObject newRubyInstance(final ThreadContext context, final String path, IRubyObject arg) {
+        final RubyModule klass = context.runtime.getClassFromPath(path);
+        return klass.callMethod(context, "new", arg);
+    }
+
+    static IRubyObject newRubyInstance(final ThreadContext context, final String path, IRubyObject... args) {
+        final RubyModule klass = context.runtime.getClassFromPath(path);
+        return klass.callMethod(context, "new", args);
+    }
+
 }// Utils

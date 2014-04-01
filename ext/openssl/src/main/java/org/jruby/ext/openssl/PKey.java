@@ -27,11 +27,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -54,7 +52,6 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.PEMInputOutput;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -88,8 +85,8 @@ public abstract class PKey extends RubyObject {
     public static class PKeyModule {
 
         @JRubyMethod(name = "read", meta = true, required = 1, optional = 1)
-        public static IRubyObject read(ThreadContext ctx, IRubyObject recv, IRubyObject[] args) {
-            Ruby runtime = ctx.runtime;
+        public static IRubyObject read(final ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+            final Ruby runtime = context.runtime;
             IRubyObject data;
             char[] pass;
             switch (args.length) {
@@ -101,7 +98,7 @@ public abstract class PKey extends RubyObject {
                 data = args[0];
                 pass = args[1].isNil() ? null : args[1].toString().toCharArray();
             }
-            byte[] input = OpenSSLImpl.readX509PEM(data);
+            byte[] input = OpenSSLImpl.readX509PEM(context, data);
             KeyPair key = null;
             // d2i_PrivateKey_bio
             try {
@@ -191,11 +188,11 @@ public abstract class PKey extends RubyObject {
         }
         String digAlg = ((Digest) digest).getShortAlgorithm();
         try {
-            Signature sig = Signature.getInstance(digAlg + "WITH" + getAlgorithm());
-            sig.initSign(getPrivateKey());
+            Signature signature = SecurityHelper.getSignature(digAlg + "WITH" + getAlgorithm());
+            signature.initSign(getPrivateKey());
             byte[] inp = data.convertToString().getBytes();
-            sig.update(inp);
-            byte[] sigge = sig.sign();
+            signature.update(inp);
+            byte[] sigge = signature.sign();
             return RubyString.newString(getRuntime(), sigge);
         } catch (GeneralSecurityException gse) {
             throw newPKeyError(getRuntime(), gse.getMessage());
@@ -232,7 +229,7 @@ public abstract class PKey extends RubyObject {
         String algorithm = ((Digest)digest).getShortAlgorithm() + "WITH" + getAlgorithm();
         boolean valid;
         try {
-            Signature signature = Signature.getInstance(algorithm);
+            Signature signature = SecurityHelper.getSignature(algorithm);
             signature.initVerify(getPublicKey());
             signature.update(dataBytes);
             valid = signature.verify(sigBytes);

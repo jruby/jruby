@@ -1,7 +1,6 @@
 package org.jruby.ext.openssl;
 
 import org.jruby.Ruby;
-import org.jruby.ext.openssl.OpenSSLReal;
 import org.jruby.runtime.load.Library;
 
 import java.io.IOException;
