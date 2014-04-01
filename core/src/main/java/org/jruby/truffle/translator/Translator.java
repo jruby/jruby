@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.impl.DefaultSourceSection;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.joni.Regex;
+import org.jruby.ast.NthRefNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.DefinedNode;
 import org.jruby.truffle.nodes.ReadNode;
@@ -735,7 +736,12 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
             expressionNode = ((org.jruby.ast.NewlineNode) expressionNode).getNextNode();
         }
 
+        if (expressionNode instanceof NthRefNode) {
+            return new NilNode(context, sourceSection);
+        }
+
         final String name = nodeDefinedNames.get(expressionNode.getClass());
+
 
         if (name != null) {
             final StringLiteralNode literal = new StringLiteralNode(context, sourceSection, name);
