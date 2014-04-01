@@ -232,15 +232,6 @@ project 'JRuby Core' do
                    'failOnError' =>  'false' )
   end
 
- # phase :package do
-#    plugin :jar do
- #     execute_goals( 'jar',
-  #                   :id => 'default-jar',
- #                    'archive' => {
-  #                   'manifestFile' =>  '${project.build.outputDirectory}/META-INF/MANIFEST.MF'
-   #                } )
-  #end
-
   plugin :shade do
     execute_goals( 'shade',
                    :id => 'pack jruby.jar',
