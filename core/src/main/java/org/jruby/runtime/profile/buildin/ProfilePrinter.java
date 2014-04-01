@@ -23,22 +23,17 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.runtime.profile;
+package org.jruby.runtime.profile.buildin;
+
+import org.jruby.*;
+import org.jruby.RubyInstanceConfig.ProfilingMode;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.IntHashMap;
+import org.jruby.util.collections.IntHashMap.Entry;
 
 import java.io.PrintStream;
 import java.text.DecimalFormat;
-
-import org.jruby.Ruby;
-import org.jruby.RubyIO;
-import org.jruby.RubyClass;
-import org.jruby.MetaClass;
-import org.jruby.RubyModule;
-import org.jruby.RubyObject;
-import org.jruby.RubyInstanceConfig.ProfilingMode;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.util.collections.IntHashMap;
-import org.jruby.util.collections.IntHashMap.Entry;
 
 public abstract class ProfilePrinter {
     
@@ -47,7 +42,7 @@ public abstract class ProfilePrinter {
      * @param mode the profiling mode
      * @param profileData
      * @param runtime
-     * @see Ruby#printProfileData(org.jruby.runtime.profile.ProfileData)  
+     * @see Ruby#printProfileData(ProfileData)
      */
     public static ProfilePrinter newPrinter(ProfilingMode mode, ProfileData profileData) {
         return newPrinter(mode, profileData, null);
@@ -170,15 +165,15 @@ public abstract class ProfilePrinter {
         }
     }
 
-    private static final String PROFILER_START_METHOD = "JRuby::Profiler.start";
-    private static final String PROFILER_STOP_METHOD = "JRuby::Profiler.stop";
+    private static final String PROFILER_START_METHOD = "JRuby::ProfilingService.start";
+    private static final String PROFILER_STOP_METHOD = "JRuby::ProfilingService.stop";
     
     /*
      * Here to keep these in one place if the hash format gets updated
      * @see ProfileData#computeResults()
      */
-    static final String PROFILER_PROFILE_METHOD = "JRuby::Profiler.profile";
-    static final String PROFILER_PROFILED_CODE_METHOD = "JRuby::Profiler.profiled_code";
+    static final String PROFILER_PROFILE_METHOD = "JRuby::ProfilingService.profile";
+    static final String PROFILER_PROFILED_CODE_METHOD = "JRuby::ProfilingService.profiled_code";
     
     private static String moduleHashMethod(RubyModule module, String name) {
         if (module instanceof MetaClass) {

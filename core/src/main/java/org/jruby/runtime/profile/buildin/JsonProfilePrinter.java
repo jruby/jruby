@@ -23,14 +23,14 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.runtime.profile;
+package org.jruby.runtime.profile.buildin;
 
+
+import org.jruby.util.collections.IntHashMap;
 
 import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.Locale;
-
-import org.jruby.util.collections.IntHashMap;
 
 
 public class JsonProfilePrinter extends ProfilePrinter {

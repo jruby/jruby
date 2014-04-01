@@ -23,14 +23,10 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.runtime.profile;
+package org.jruby.runtime.profile.buildin;
 
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.util.collections.IntHashMap;
-
-import static org.jruby.runtime.profile.ProfilePrinter.PROFILER_PROFILE_METHOD;
-import static org.jruby.runtime.profile.ProfilePrinter.PROFILER_PROFILED_CODE_METHOD;
+import org.jruby.runtime.profile.ProfileCollection;
 
 /**
  * Encapsulates the logic of recording and reporting profiled timings of
@@ -39,12 +35,8 @@ import static org.jruby.runtime.profile.ProfilePrinter.PROFILER_PROFILED_CODE_ME
  *
  * @see org.jruby.internal.runtime.methods.ProfilingDynamicMethod
  */
-public class ProfileData {
-    
-    private static final int MAX_PROFILE_METHODS = 100000;
-    
-    private final IntHashMap<ProfiledMethod> profiledMethods = new IntHashMap<ProfiledMethod>(500);
-    
+public class ProfileData implements ProfileCollection {
+
     private Invocation currentInvocation;
     private Invocation topInvocation;
     private int[] methodRecursion;
@@ -56,55 +48,33 @@ public class ProfileData {
         clear();
     }
     
-    public IntHashMap<ProfiledMethod> getProfiledMethods() {
-        return profiledMethods;
-    }
-    
-    public void addProfiledMethod(String name, DynamicMethod method) {
-        if (method.isUndefined()) return;
-        final long serial = method.getSerialNumber();
-        if (serial > MAX_PROFILE_METHODS) return;
-        
-        if (profiledMethods.get((int) serial) == null) {
-            profiledMethods.put((int) serial, new ProfiledMethod(name, method));
-        }
-    }
-    
-    protected ProfiledMethod getProfiledMethod(final int serial) {
-        ProfiledMethod profiledMethod = getProfiledMethods().get(serial);
-        if (profiledMethod == null) { // check for the method in the runtime :
-            ProfiledMethod[] runtimeMethods = threadContext.getRuntime().getProfiledMethods();
-            if (serial < runtimeMethods.length) {
-                profiledMethod = runtimeMethods[serial];
-            }
-        }
-        return profiledMethod;
+    private ProfiledMethod getProfiledMethod(final long serial) {
+        return threadContext.getRuntime().getProfiledMethods().getProfiledMethod( serial );
     }
     
     /**
      * Begin profiling a new method, aggregating the current time diff in the previous
      * method's profile slot.
      *
-     * @param nextMethod the serial number of the next method to profile
-     * @return the serial number of the previous method being profiled
+     * @param calledMethod the serial number of the next method to profile
      */
-    public int profileEnter(int calledMethod) {
+    @Override
+    public void profileEnter(final long calledMethod) {
         Invocation parentInvocation = currentInvocation;
 
-        Invocation childInvocation = parentInvocation.childInvocationFor(calledMethod);
+        Invocation childInvocation = parentInvocation.childInvocationFor( (int) calledMethod );
         childInvocation.incrementCount();
 
         currentInvocation = childInvocation;
-        return parentInvocation.getMethodSerialNumber();
     }
     
     /**
      * Fall back to previously profiled method after current method has returned.
      *
-     * @param nextMethod the serial number of the next method to profile
-     * @return the serial number of the previous method being profiled
+     * @param callingMethod the serial number of the next method to profile
      */
-    public int profileExit(int callingMethod, long startTime) {
+    @Override
+    public void profileExit(final long callingMethod, final long startTime) {
         long now = System.nanoTime();
         long duration = now - startTime;
         int oldSerial = currentInvocation.getMethodSerialNumber();
@@ -113,7 +83,7 @@ public class ProfileData {
         if (currentInvocation == topInvocation) { 
             Invocation newTopInvocation = new Invocation(0);
             Invocation newCurrentInvocation = 
-                currentInvocation.copyWithNewSerialAndParent(callingMethod, newTopInvocation);
+                currentInvocation.copyWithNewSerialAndParent( (int) callingMethod, newTopInvocation);
             
             newTopInvocation.addChild(newCurrentInvocation);
             newCurrentInvocation.incrementCount();
@@ -121,10 +91,9 @@ public class ProfileData {
             topInvocation     = newTopInvocation;
             currentInvocation = newCurrentInvocation;
             
-            return oldSerial;
         } else if (currentInvocation.getParent() == topInvocation && callingMethod != 0) {
             Invocation newTopInvocation = new Invocation(0);
-            Invocation newCurrentInvocation = newTopInvocation.childInvocationFor(callingMethod);
+            Invocation newCurrentInvocation = newTopInvocation.childInvocationFor( (int) callingMethod);
             Invocation newChildInvocation = 
                 currentInvocation.copyWithNewSerialAndParent(currentInvocation.getMethodSerialNumber(), newCurrentInvocation);
             
@@ -133,12 +102,9 @@ public class ProfileData {
 
             topInvocation = newTopInvocation;
             currentInvocation = newCurrentInvocation;
-            return oldSerial;
         }
         else {
             currentInvocation = currentInvocation.getParent();
-            
-            return oldSerial;
         }
     }
 
@@ -149,8 +115,6 @@ public class ProfileData {
         methodRecursion = new int[1000];
         currentInvocation = new Invocation(0);
         topInvocation = currentInvocation;
-        
-        profiledMethods.clear();
     }
 
     public long totalTime() {
@@ -191,10 +155,10 @@ public class ProfileData {
         if (topInvocation.getChildren().size() == 1) {
             Invocation singleTopChild = topInvocation.getChildren().values().iterator().next();
             int serial = singleTopChild.getMethodSerialNumber();
-            if ( PROFILER_PROFILE_METHOD.equals( methodName(serial) ) ) {
+            if ( ProfilePrinter.PROFILER_PROFILE_METHOD.equals( methodName(serial) ) ) {
                 for ( Invocation inv : singleTopChild.getChildren().values() ) {
                     serial = inv.getMethodSerialNumber();
-                    if ( PROFILER_PROFILED_CODE_METHOD.equals( methodName(serial) ) ) {
+                    if ( ProfilePrinter.PROFILER_PROFILED_CODE_METHOD.equals( methodName(serial) ) ) {
                         return setDuration(inv.copyWithNewSerialAndParent(0, null));
                     }
                 }

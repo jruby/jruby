@@ -1,4 +1,4 @@
-package org.jruby.runtime.profile;
+package org.jruby.runtime.profile.buildin;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
 

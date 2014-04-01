@@ -37,66 +37,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.internal.runtime.methods.AttrWriterMethod;
-import org.jruby.internal.runtime.methods.AttrReaderMethod;
-
-import static org.jruby.anno.FrameField.VISIBILITY;
-import static org.jruby.runtime.Visibility.*;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.security.AccessControlException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-
-import org.jruby.anno.AnnotationBinder;
-import org.jruby.anno.AnnotationHelper;
-import org.jruby.anno.FrameField;
-import org.jruby.anno.JRubyClass;
-import org.jruby.anno.JRubyConstant;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.anno.JavaMethodDescriptor;
-import org.jruby.anno.TypePopulator;
+import org.jruby.anno.*;
 import org.jruby.ast.Node;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.embed.Extension;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.AliasMethod;
-import org.jruby.internal.runtime.methods.CallConfiguration;
-import org.jruby.internal.runtime.methods.CacheableMethod;
-import org.jruby.internal.runtime.methods.DefaultMethod;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.InterpretedMethod;
-import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.internal.runtime.methods.ProcMethod;
-import org.jruby.internal.runtime.methods.ProfilingDynamicMethod;
-import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
-import org.jruby.internal.runtime.methods.WrapperMethod;
-import org.jruby.internal.runtime.methods.MethodNodes;
-import org.jruby.internal.runtime.methods.MethodWithNodes;
-import org.jruby.runtime.Helpers;
+import org.jruby.internal.runtime.methods.*;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.MethodFactory;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -107,7 +57,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
-import org.jruby.truffle.TruffleMethod;
+import org.jruby.runtime.profile.MethodEnhancer;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
@@ -115,6 +65,17 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.security.AccessControlException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
+import static org.jruby.anno.FrameField.VISIBILITY;
+import static org.jruby.runtime.Visibility.*;
 
 /**
  *
@@ -281,8 +242,9 @@ public class RubyModule extends RubyObject {
         // if (parent == null) parent = runtime.getObject();
         setFlag(USER7_F, !isClass());
         generationObject = generation = runtime.getNextModuleGeneration();
+
         if (runtime.getInstanceConfig().isProfiling()) {
-            cacheEntryFactory = new ProfilingCacheEntryFactory(NormalCacheEntryFactory);
+            cacheEntryFactory = new ProfilingCacheEntryFactory(runtime, NormalCacheEntryFactory);
         } else {
             cacheEntryFactory = NormalCacheEntryFactory;
         }
@@ -980,7 +942,7 @@ public class RubyModule extends RubyObject {
     }
     
     protected static abstract class CacheEntryFactory {
-        public abstract CacheEntry newCacheEntry(DynamicMethod method, int token);
+        public abstract CacheEntry newCacheEntry(String name,DynamicMethod method, int token);
 
         /**
          * Test all WrapperCacheEntryFactory instances in the chain for assignability
@@ -1026,7 +988,7 @@ public class RubyModule extends RubyObject {
 
     protected static final CacheEntryFactory NormalCacheEntryFactory = new CacheEntryFactory() {
         @Override
-        public CacheEntry newCacheEntry(DynamicMethod method, int token) {
+        public CacheEntry newCacheEntry(String name, DynamicMethod method, int token) {
             return new CacheEntry(method, token);
         }
     };
@@ -1036,27 +998,37 @@ public class RubyModule extends RubyObject {
             super(previous);
         }
         @Override
-        public CacheEntry newCacheEntry(DynamicMethod method, int token) {
+        public CacheEntry newCacheEntry(String name,DynamicMethod method, int token) {
             if (method.isUndefined()) {
                 return new CacheEntry(method, token);
             }
             // delegate up the chain
-            CacheEntry delegated = previous.newCacheEntry(method, token);
+            CacheEntry delegated = previous.newCacheEntry(name,method, token);
             return new CacheEntry(new SynchronizedDynamicMethod(delegated.method), delegated.token);
         }
     }
 
     protected static class ProfilingCacheEntryFactory extends WrapperCacheEntryFactory {
-        public ProfilingCacheEntryFactory(CacheEntryFactory previous) {
+
+        private final MethodEnhancer enhancer;
+
+        public ProfilingCacheEntryFactory( Ruby runtime, CacheEntryFactory previous) {
             super(previous);
+            this.enhancer = runtime.getProfilingService().newMethodEnhancer( runtime );
         }
+
+        private MethodEnhancer getMethodEnhancer() {
+            return enhancer;
+        }
+
         @Override
-        public CacheEntry newCacheEntry(DynamicMethod method, int token) {
+        public CacheEntry newCacheEntry(String name, DynamicMethod method, int token) {
             if (method.isUndefined()) {
                 return new CacheEntry(method, token);
             }
-            CacheEntry delegated = previous.newCacheEntry(method, token);
-            return new CacheEntry(new ProfilingDynamicMethod(delegated.method), delegated.token);
+            CacheEntry delegated = previous.newCacheEntry(name, method, token);
+            DynamicMethod enhancedMethod = getMethodEnhancer().enhance( name, delegated.method );
+            return new CacheEntry( enhancedMethod, delegated.token );
         }
     }
 
@@ -1072,7 +1044,7 @@ public class RubyModule extends RubyObject {
     }
 
     private CacheEntry addToCache(String name, DynamicMethod method, int token) {
-        CacheEntry entry = cacheEntryFactory.newCacheEntry(method, token);
+        CacheEntry entry = cacheEntryFactory.newCacheEntry(name, method, token);
         getCachedMethodsForWrite().put(name, entry);
 
         return entry;
@@ -1095,7 +1067,7 @@ public class RubyModule extends RubyObject {
             return;
         }
 
-        List<Invalidator> invalidators = new ArrayList();
+        List<Invalidator> invalidators = new ArrayList<Invalidator>();
         invalidators.add(methodInvalidator);
         
         synchronized (getRuntime().getHierarchyLock()) {
@@ -1688,7 +1660,7 @@ public class RubyModule extends RubyObject {
         if(isSingleton()){            
             IRubyObject attached = ((MetaClass)this).getAttached();
             StringBuilder buffer = new StringBuilder("#<Class:");
-            if (attached != null) { // FIXME: figure out why we get null sometimes
+            if (attached != null) { // FIXME: figure out why we getService null sometimes
                 if(attached instanceof RubyClass || attached instanceof RubyModule){
                     buffer.append(attached.inspect());
                 }else{
@@ -1904,7 +1876,7 @@ public class RubyModule extends RubyObject {
 
         for (int i = 0; i < args.length; i++) {
             // This is almost always already interned, since it will be called with a symbol in most cases
-            // but when created from Java code, we might get an argument that needs to be interned.
+            // but when created from Java code, we might getService an argument that needs to be interned.
             // addAccessor has as a precondition that the string MUST be interned
             addAccessor(context, args[i].asJavaString().intern(), visibility, true, true);
         }
@@ -1914,7 +1886,7 @@ public class RubyModule extends RubyObject {
 
     /**
      * Get a list of all instance methods names of the provided visibility unless not is true, then 
-     * get all methods which are not the provided 
+     * getService all methods which are not the provided
      * 
      * @param args passed into one of the Ruby instance_method methods
      * @param visibility to find matching instance methods against
@@ -2413,7 +2385,7 @@ public class RubyModule extends RubyObject {
      * @return The new module wrapper resulting from this include
      */
     private RubyModule proceedWithInclude(RubyModule insertAbove, RubyModule moduleToInclude) {
-        // In the current logic, if we get here we know that module is not an
+        // In the current logic, if we getService here we know that module is not an
         // IncludedModuleWrapper, so there's no need to fish out the delegate. But just
         // in case the logic should change later, let's do it anyway
         RubyClass wrapper = new IncludedModuleWrapper(getRuntime(), insertAbove.getSuperClass(), moduleToInclude.getNonIncludedClass());
