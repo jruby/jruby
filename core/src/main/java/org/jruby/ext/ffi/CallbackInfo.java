@@ -96,7 +96,7 @@ public class CallbackInfo extends Type {
      * @param context The current ruby thread context
      * @param klass The ruby class of the CallbackInfo instance
      * @param returnType The ruby return type
-     * @param _paramTypes An array containing the ruby parameter types
+     * @param paramTypes An array containing the ruby parameter types
      *
      * @return A new CallbackInfo instance
      */
@@ -130,7 +130,7 @@ public class CallbackInfo extends Type {
         if (args.length > 2) {
             if (!(args[2] instanceof RubyHash)) {
                 throw context.runtime.newTypeError("wrong argument type "
-                        + args[3].getMetaClass().getName() + " (expected Hash)");
+                        + args[2].getMetaClass().getName() + " (expected Enums or Hash)");
             }
             RubyHash hash = (RubyHash) args[2];
             stdcall = "stdcall".equals(hash.get(context.runtime.newSymbol("convention")));
