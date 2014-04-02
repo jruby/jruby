@@ -3265,7 +3265,8 @@ public final class Ruby {
      * @return the, for this ruby instance, configured implementation of ProfilingService, or null
      */
     public ProfilingService getProfilingService() {
-        return getProfilingServiceLookup().getService();
+        ProfilingServiceLookup lockup = getProfilingServiceLookup();
+        return lockup == null ? null : lockup.getService();
     }
 
     // new factory methods ------------------------------------------------------------------------
