@@ -219,7 +219,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  all_modules = [ 'test', 'docs', 'maven' ]
+  all_modules = [ 'test', 'docs', 'maven', 'ext' ]
 
   profile 'all' do
 

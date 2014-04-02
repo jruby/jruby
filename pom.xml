@@ -600,6 +600,7 @@
         <module>test</module>
         <module>docs</module>
         <module>maven</module>
+        <module>ext</module>
       </modules>
     </profile>
     <profile>
@@ -611,6 +612,7 @@
         <module>test</module>
         <module>docs</module>
         <module>maven</module>
+        <module>ext</module>
       </modules>
     </profile>
     <profile>
