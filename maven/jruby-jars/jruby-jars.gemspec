@@ -4,14 +4,8 @@ require 'rake'
 require 'rexml/document'
 require 'rexml/xpath'
 
-begin
-  doc = REXML::Document.new File.new(File.join(File.dirname(File.expand_path(__FILE__)), '..', '..', 'pom.xml'))
-  version = REXML::XPath.first(doc, "//project/version").text
-rescue
-  # sometimes there are strange (Errno::EBADF) Bad file descriptor
-  retry
-end
-# version = File.read( File.join( basedir, '..', '..', 'VERSION' ) )
+version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
+version.gsub!( /-SNAPSHOT$/, '' )
 
 Gem::Specification.new do |s|
   s.name = 'jruby-jars'
