@@ -43,6 +43,13 @@ class MethodTranslator extends Translator {
     public MethodDefinitionNode compileFunctionNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity) {
         environment.setMethodName(methodName);
 
+        final ParameterCollector parameterCollector = new ParameterCollector();
+        argsNode.accept(parameterCollector);
+
+        for (String parameter : parameterCollector.getParameters()) {
+            environment.declareVar(parameter);
+        }
+
         final Arity arity = findParameters(argsNode);
 
         RubyNode body;
@@ -235,7 +242,9 @@ class MethodTranslator extends Translator {
             for (org.jruby.ast.Node arg : args.getPre().childNodes()) {
                 if (arg instanceof org.jruby.ast.ArgumentNode) {
                     final org.jruby.ast.ArgumentNode argNode = (org.jruby.ast.ArgumentNode) arg;
-                    environment.getPreParameters().add(environment.declareVar(argNode.getName()));
+                    final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(argNode.getName());
+                    assert slot != null;
+                    environment.getPreParameters().add(slot);
                 } else if (arg instanceof org.jruby.ast.MultipleAsgn19Node) {
                     final org.jruby.ast.MultipleAsgn19Node multAsgn = (org.jruby.ast.MultipleAsgn19Node) arg;
 
@@ -243,7 +252,9 @@ class MethodTranslator extends Translator {
                     getNamesFromMultipleAssignment(multAsgn, names);
 
                     for (String name : names) {
-                        environment.getPreParameters().add(environment.declareVar(name));
+                        final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(name);
+                        assert slot != null;
+                        environment.getPreParameters().add(slot);
                     }
                 } else {
                     throw new UnsupportedOperationException(arg.getClass().toString());
@@ -285,7 +296,8 @@ class MethodTranslator extends Translator {
                     paramDefaultValue = (RubyNode) valueNode.accept(this);
                 }
 
-                final FrameSlot frameSlot = environment.declareVar(name);
+                final FrameSlot frameSlot = environment.getFrameDescriptor().findFrameSlot(name);
+                assert frameSlot != null;
                 environment.getOptionalParameters().add(frameSlot);
                 environment.getOptionalParametersDefaultValues().put(frameSlot, paramDefaultValue);
             }
@@ -294,19 +306,24 @@ class MethodTranslator extends Translator {
         if (args.getPost() != null) {
             for (org.jruby.ast.Node arg : args.getPost().childNodes()) {
                 final org.jruby.ast.ArgumentNode argNode = (org.jruby.ast.ArgumentNode) arg;
-                environment.getPostParameters().add(environment.declareVar(argNode.getName()));
+                final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(argNode.getName());
+                assert slot != null;
+                environment.getPostParameters().add(slot);
             }
         }
 
         if (args.getRestArgNode() != null) {
             final org.jruby.ast.RestArgNode rest = (org.jruby.ast.RestArgNode) args.getRestArgNode();
-            environment.setRestParameter(environment.declareVar(rest.getName()));
+            final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(rest.getName());
+            assert slot != null;
+            environment.setRestParameter(slot);
         }
 
         if (args.getBlock() != null) {
             final org.jruby.ast.BlockArgNode blockArgNode = args.getBlock();
-            final FrameSlot frameSlot = environment.declareVar(blockArgNode.getName());
-            environment.setBlockParameter(frameSlot);
+            final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(blockArgNode.getName());
+            assert slot != null;
+            environment.setBlockParameter(slot);
         }
 
         final int minimum = environment.getPreParameters().size() + environment.getPostParameters().size();

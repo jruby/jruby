@@ -20,6 +20,7 @@ public abstract class FrameSlotNode extends RubyNode {
 
     protected FrameSlotNode(RubyContext context, SourceSection sourceSection, FrameSlot frameSlot) {
         super(context, sourceSection);
+        assert frameSlot != null;
         this.frameSlot = frameSlot;
     }
 
