@@ -121,7 +121,7 @@ project 'JRuby Core' do
             } )
     plugin :shade do
       execute_goals( 'shade',
-                     :id => 'pack jruby-noasm.jar',
+                     :id => 'pack jruby-core-noasm.jar',
                      :phase => 'verify',
                      'shadedArtifactAttached' =>  'true',
                      'shadedClassifierName' =>  'noasm',
@@ -131,6 +131,15 @@ project 'JRuby Core' do
                      },
                      'relocations' => [ { 'pattern' =>  'org.objectweb',
                                           'shadedPattern' =>  'org.jruby.org.objectweb' } ] )
+      execute_goals( 'shade',
+                     :id => 'pack jruby-core-complete.jar',
+                     :phase => 'verify',
+                     'shadedArtifactAttached' =>  'true',
+                     'shadedClassifierName' =>  'complete',
+                     'relocations' => [ { 'pattern' =>  'org.objectweb',
+                                          'shadedPattern' =>  'org.jruby.org.objectweb' } ],
+                     'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
+                                           'mainClass' => 'org.jruby.Main' } ] )
     end
 
   end

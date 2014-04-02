@@ -308,7 +308,7 @@
           <artifactId>maven-shade-plugin</artifactId>
           <executions>
             <execution>
-              <id>pack jruby-noasm.jar</id>
+              <id>pack jruby-core-noasm.jar</id>
               <phase>verify</phase>
               <goals>
                 <goal>shade</goal>
@@ -328,6 +328,28 @@
                     <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                   </relocation>
                 </relocations>
+              </configuration>
+            </execution>
+            <execution>
+              <id>pack jruby-core-complete.jar</id>
+              <phase>verify</phase>
+              <goals>
+                <goal>shade</goal>
+              </goals>
+              <configuration>
+                <shadedArtifactAttached>true</shadedArtifactAttached>
+                <shadedClassifierName>complete</shadedClassifierName>
+                <relocations>
+                  <relocation>
+                    <pattern>org.objectweb</pattern>
+                    <shadedPattern>org.jruby.org.objectweb</shadedPattern>
+                  </relocation>
+                </relocations>
+                <transformers>
+                  <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                    <mainClass>org.jruby.Main</mainClass>
+                  </transformer>
+                </transformers>
               </configuration>
             </execution>
           </executions>

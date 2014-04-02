@@ -7,12 +7,13 @@
   <dependencies>
     <dependency>
       <groupId>org.jruby</groupId>
-      <artifactId>jruby-core-complete</artifactId>
+      <artifactId>jruby-core</artifactId>
       <version>@project.version@</version>
+      <classifier>complete</classifier>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
-      <artifactId>jruby-stdlib-complete</artifactId>
+      <artifactId>jruby-stdlib</artifactId>
       <version>@project.version@</version>
     </dependency>
   </dependencies>
