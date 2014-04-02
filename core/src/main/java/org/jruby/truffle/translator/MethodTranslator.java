@@ -236,15 +236,8 @@ class MethodTranslator extends Translator {
                 if (arg instanceof org.jruby.ast.ArgumentNode) {
                     final org.jruby.ast.ArgumentNode argNode = (org.jruby.ast.ArgumentNode) arg;
                     environment.getPreParameters().add(environment.declareVar(argNode.getName()));
-                } else if (arg instanceof org.jruby.ast.MultipleAsgnNode) {
-                    /*
-                     * TODO(cs): I don't know how to handle this yet, so I just do my best to get
-                     * the names out and define them so the rest of the parser succeeds.
-                     */
-
-                    context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, args.getPosition().getFile(), args.getPosition().getStartLine(), "only extracting names from multiple assignment in arguments");
-
-                    final org.jruby.ast.MultipleAsgnNode multAsgn = (org.jruby.ast.MultipleAsgnNode) arg;
+                } else if (arg instanceof org.jruby.ast.MultipleAsgn19Node) {
+                    final org.jruby.ast.MultipleAsgn19Node multAsgn = (org.jruby.ast.MultipleAsgn19Node) arg;
 
                     final List<String> names = new ArrayList<>();
                     getNamesFromMultipleAssignment(multAsgn, names);
@@ -252,6 +245,8 @@ class MethodTranslator extends Translator {
                     for (String name : names) {
                         environment.getPreParameters().add(environment.declareVar(name));
                     }
+                } else {
+                    throw new UnsupportedOperationException(arg.getClass().toString());
                 }
             }
         }
@@ -325,12 +320,12 @@ class MethodTranslator extends Translator {
         return new Arity(minimum, maximum);
     }
 
-    private void getNamesFromMultipleAssignment(org.jruby.ast.MultipleAsgnNode multAsgn, List<String> names) {
+    private void getNamesFromMultipleAssignment(org.jruby.ast.MultipleAsgn19Node multAsgn, List<String> names) {
         for (org.jruby.ast.Node a : multAsgn.getPre().childNodes()) {
             if (a instanceof org.jruby.ast.DAsgnNode) {
                 names.add(((org.jruby.ast.DAsgnNode) a).getName());
-            } else if (a instanceof org.jruby.ast.MultipleAsgnNode) {
-                getNamesFromMultipleAssignment((org.jruby.ast.MultipleAsgnNode) a, names);
+            } else if (a instanceof org.jruby.ast.MultipleAsgn19Node) {
+                getNamesFromMultipleAssignment((org.jruby.ast.MultipleAsgn19Node) a, names);
             } else if (a instanceof org.jruby.ast.LocalAsgnNode) {
                 names.add(((org.jruby.ast.LocalAsgnNode) a).getName());
             } else {
