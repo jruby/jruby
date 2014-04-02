@@ -1425,22 +1425,13 @@ public class LoadService {
         try {
             if (!Ruby.isSecurityRestricted()) {
                 String reportedPath = loadPathEntry + "/" + namePlusSuffix;
-                boolean absolute = true;
-                // we check length == 0 for 'load', which does not use load path
-                if (!new File(reportedPath).isAbsolute()) {
-                    absolute = false;
-                    // prepend ./ if . is not already there, since we're loading based on CWD
-                    if (reportedPath.charAt(0) != '.') {
-                        reportedPath = "./" + reportedPath;
-                    }
-                    loadPathEntry = JRubyFile.create(runtime.getCurrentDirectory(), loadPathEntry).getAbsolutePath();
-                }
+
                 JRubyFile actualPath = JRubyFile.create(loadPathEntry, RubyFile.expandUserPath(runtime.getCurrentContext(), namePlusSuffix));
                 if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
                     debugLogTry("resourceFromLoadPath", "'" + actualPath.toString() + "' " + actualPath.isFile() + " " + actualPath.canRead());
                 }
                 if (actualPath.canRead()) {
-                    foundResource = new LoadServiceResource(actualPath, reportedPath, absolute);
+                    foundResource = new LoadServiceResource(actualPath, reportedPath, true);
                     debugLogFound(foundResource);
                 }
             }
