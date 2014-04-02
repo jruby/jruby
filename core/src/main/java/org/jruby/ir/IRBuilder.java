@@ -1886,7 +1886,7 @@ public class IRBuilder {
                 MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
                 Variable v = s.getNewTemporaryVariable();
                 addArgReceiveInstr(s, v, argIndex, post, numPreReqd, numPostRead);
-                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("rest", "");
+                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("req", "");
                 Variable tmp = s.getNewTemporaryVariable();
                 addInstr(s, new ToAryInstr(tmp, v));
                 buildMultipleAsgn19Assignment(childNode, s, tmp, null);
