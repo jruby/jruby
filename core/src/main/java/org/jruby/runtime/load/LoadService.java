@@ -223,7 +223,7 @@ public class LoadService {
     protected final Map<String, Library> builtinLibraries = new HashMap<String, Library>();
 
     protected final Map<String, JarFile> jarFiles = new HashMap<String, JarFile>();
-    private final ConcurrentMap<String, Set<File>> filesystemLookups = new ConcurrentHashMap<String, Set<File>>();
+    private final ConcurrentMap<String, Set<String>> filesystemLookups = new ConcurrentHashMap<String, Set<String>>();
 
     private WatchService loadPathWatcher = null;
     private Set<String> watchedLoadPaths = new HashSet<String>();
@@ -1458,7 +1458,7 @@ public class LoadService {
                         cacheFileSystemEntries(loadPathEntry, false);
                     }
 
-                    if (!filesystemLookups.get(loadPathEntry).contains(new File(reportedPath))) {
+                    if (!filesystemLookups.get(loadPathEntry).contains(reportedPath)) {
                         return null;
                     }
 
@@ -1477,13 +1477,13 @@ public class LoadService {
                                 return null;
                             }
                         } else {
-                            if (!filesystemLookups.get(path).contains(new File(path + "/" + nameParts[i + 1]))) {
+                            if (!filesystemLookups.get(path).contains(path + "/" + nameParts[i + 1])) {
                                 return null;
                             }
                         }
                     }
 
-                    if (!filesystemLookups.get(path).contains(new File(reportedPath))) {
+                    if (!filesystemLookups.get(path).contains(reportedPath)) {
                         return null;
                     }
                 }
@@ -1506,7 +1506,17 @@ public class LoadService {
     private File[] cacheFileSystemEntries(String path, boolean replace) {
         File[] children = new File(path).listFiles();
 
-        Set<File> value = children == null ? Collections.emptySet() : new HashSet(Arrays.asList(children));
+        Set<String> value;
+
+        if (children == null) {
+            value = Collections.emptySet();
+        } else {
+            value = new HashSet<String>();
+
+            for (File child : children) {
+                value.add(child.getPath());
+            }
+        }
 
         if (replace) {
             filesystemLookups.replace(path, value);
