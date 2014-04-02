@@ -57,7 +57,6 @@ import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -226,6 +225,7 @@ public class LoadService {
     private final ConcurrentMap<String, Set<String>> filesystemLookups = new ConcurrentHashMap<String, Set<String>>();
 
     private WatchService loadPathWatcher = null;
+    private final LoadPathWatcherThread loadPathWatcherThread;
     private Set<String> watchedLoadPaths = new HashSet<String>();
 
     protected final Ruby runtime;
@@ -241,7 +241,7 @@ public class LoadService {
         try {
             loadPathWatcher = FileSystems.getDefault().newWatchService();
         } catch (IOException e) {
-            // Ignored.
+            LOG.debug("Failed to start load path watcher.", e);
         }
 
         loadPathWatcherThread = new LoadPathWatcherThread();
@@ -1469,15 +1469,27 @@ public class LoadService {
                         cacheFileSystemEntries(loadPathEntry, false);
                     }
 
-                    if (!filesystemLookups.get(loadPathEntry).contains(reportedPath)) {
+                    final Set<String> cachedEntries = filesystemLookups.get(loadPathEntry);
+                    if ((cachedEntries != null) && (cachedEntries.contains(reportedPath) == false)) {
                         return null;
                     }
 
                 } else {
-                    String path = loadPathEntry;
+                    final File loadPathEntryFile = new File(loadPathEntry);
+                    String path = loadPathEntryFile.getParent();
+                    final List<String> descendantPaths = new ArrayList<String>(nameParts.length + 1);
 
-                    for (int i = 0; i < nameParts.length - 1; i++) {
-                        path = path + "/" + nameParts[i];
+                    // This is ugly and should probably be revisited.  But in order to keep the following for loop
+                    // clean, we treat the last path component of the load path entry as if it were part of the
+                    // require statement itself.  This way if any load path entries don't have any children, we
+                    // can catch that situation and bail out a bit earlier.
+                    descendantPaths.add(loadPathEntryFile.getName());
+                    for (String part : nameParts) {
+                        descendantPaths.add(part);
+                    }
+
+                    for (int i = 0; i < descendantPaths.size() - 1; i++) {
+                        path = path + "/" + descendantPaths.get(i);
 
                         if (! filesystemLookups.containsKey(path)) {
                             File[] children = cacheFileSystemEntries(path, false);
@@ -1488,13 +1500,15 @@ public class LoadService {
                                 return null;
                             }
                         } else {
-                            if (!filesystemLookups.get(path).contains(path + "/" + nameParts[i + 1])) {
+                            final Set<String> cachedEntries = filesystemLookups.get(path);
+                            if ((cachedEntries != null) && (cachedEntries.contains(path + "/" + descendantPaths.get(i + 1)) == false)) {
                                 return null;
                             }
                         }
                     }
 
-                    if (!filesystemLookups.get(path).contains(reportedPath)) {
+                    final Set<String> cachedEntries = filesystemLookups.get(path);
+                    if ((cachedEntries != null) && (cachedEntries.contains(path) == false)) {
                         return null;
                     }
                 }
@@ -1517,32 +1531,37 @@ public class LoadService {
     private File[] cacheFileSystemEntries(String path, boolean replace) {
         File[] children = new File(path).listFiles();
 
-        Set<String> value;
+        // If the load path watcher is dead or never started properly, we can't cache entries at all, otherwise
+        // we could be serving stale data.  So just return the list of children in this case.
+        if (loadPathWatcher != null) {
+            Set<String> value;
 
-        if (children == null) {
-            value = Collections.emptySet();
-        } else {
-            value = new HashSet<String>();
+            if (children == null) {
+                value = Collections.emptySet();
+            } else {
+                value = new HashSet<String>();
 
-            for (File child : children) {
-                value.add(child.getPath());
-            }
-        }
-
-        if (replace) {
-            filesystemLookups.replace(path, value);
-        } else {
-            filesystemLookups.putIfAbsent(path, value);
-        }
-
-        if (! watchedLoadPaths.contains(path)) {
-            try {
-                Paths.get(path).register(loadPathWatcher, StandardWatchEventKinds.ENTRY_CREATE);
-            } catch (IOException e) {
-                // Ignored.
+                for (File child : children) {
+                    value.add(child.getPath());
+                }
             }
 
-            watchedLoadPaths.add(path);
+            if (replace) {
+                filesystemLookups.replace(path, value);
+            } else {
+                filesystemLookups.putIfAbsent(path, value);
+            }
+
+            if (!watchedLoadPaths.contains(path)) {
+                try {
+                    Paths.get(path).register(loadPathWatcher, StandardWatchEventKinds.ENTRY_CREATE);
+                } catch (Exception e) {
+                    // If we can't watch a directory, we can't cache it either.
+                    filesystemLookups.remove(path);
+                }
+
+                watchedLoadPaths.add(path);
+            }
         }
 
         return children;
