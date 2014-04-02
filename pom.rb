@@ -34,11 +34,11 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     releases 'false'
     snapshots 'true'
   end
-#  repository( 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/releases/',
-#              :id => 'truffle' ) do
-#    releases 'true'
-#    snapshots 'false'
-#  end
+  repository( 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/releases/',
+              :id => 'truffle' ) do
+    releases 'true'
+    snapshots 'false'
+  end
 
   source_control( 'https://github.com/jruby/jruby',
                   :connection => 'scm:git:git@jruby.org:jruby.git',
@@ -301,7 +301,5 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin 'org.codehaus.mojo:versions-maven-plugin:2.1' do
       report_set 'dependency-updates-report', 'plugin-updates-report', 'property-updates-report'
     end
-
   end
-
 end

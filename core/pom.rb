@@ -4,7 +4,6 @@ project 'JRuby Core' do
   model_version '4.0.0'
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-core'
-  packaging 'jar'
 
   source_control( 'http://github.com/jruby/jruby',
                   :connection => 'scm:git:git://github.com/jruby/jruby.git',
@@ -144,7 +143,6 @@ project 'JRuby Core' do
 
   end
 
-#  plugin 'org.apache.felix:maven-bundle-plugin'
   plugin 'org.codehaus.mojo:properties-maven-plugin:1.0-alpha-2' do
     execute_goals( 'read-project-properties',
                    :id => 'properties',
@@ -247,7 +245,7 @@ project 'JRuby Core' do
                    :phase => 'package',
                    'relocations' => [ { 'pattern' => 'org.objectweb',
                                         'shadedPattern' => 'org.jruby.org.objectweb' } ],
-                   'outputFile' =>  '${jruby.basedir}/lib/jruby.jar',
+                   'outputFile' => '${jruby.basedir}/lib/jruby.jar',
                    'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                          'mainClass' => 'org.jruby.Main' } ] )
   end
@@ -351,5 +349,4 @@ project 'JRuby Core' do
                 'tzdata.scope' => 'runtime' )
 
   end
-
 end
