@@ -1462,54 +1462,57 @@ public class LoadService {
         try {
             if (!Ruby.isSecurityRestricted()) {
                 String reportedPath = loadPathEntry + "/" + namePlusSuffix;
-                String[] nameParts = namePlusSuffix.split("/");
 
-                if (nameParts.length == 1) {
-                    if (! filesystemLookups.containsKey(loadPathEntry)) {
-                        cacheFileSystemEntries(loadPathEntry, false);
-                    }
+                if (loadPathWatcher != null) {
+                    String[] nameParts = namePlusSuffix.split("/");
 
-                    final Set<String> cachedEntries = filesystemLookups.get(loadPathEntry);
-                    if ((cachedEntries != null) && (cachedEntries.contains(reportedPath) == false)) {
-                        return null;
-                    }
+                    if (nameParts.length == 1) {
+                        if (!filesystemLookups.containsKey(loadPathEntry)) {
+                            cacheFileSystemEntries(loadPathEntry, false);
+                        }
 
-                } else {
-                    final File loadPathEntryFile = new File(loadPathEntry);
-                    String path = loadPathEntryFile.getParent();
-                    final List<String> descendantPaths = new ArrayList<String>(nameParts.length + 1);
+                        final Set<String> cachedEntries = filesystemLookups.get(loadPathEntry);
+                        if ((cachedEntries != null) && (cachedEntries.contains(reportedPath) == false)) {
+                            return null;
+                        }
 
-                    // This is ugly and should probably be revisited.  But in order to keep the following for loop
-                    // clean, we treat the last path component of the load path entry as if it were part of the
-                    // require statement itself.  This way if any load path entries don't have any children, we
-                    // can catch that situation and bail out a bit earlier.
-                    descendantPaths.add(loadPathEntryFile.getName());
-                    for (String part : nameParts) {
-                        descendantPaths.add(part);
-                    }
+                    } else {
+                        final File loadPathEntryFile = new File(loadPathEntry);
+                        String path = loadPathEntryFile.getParent();
+                        final List<String> descendantPaths = new ArrayList<String>(nameParts.length + 1);
 
-                    for (int i = 0; i < descendantPaths.size() - 1; i++) {
-                        path = path + "/" + descendantPaths.get(i);
+                        // This is ugly and should probably be revisited.  But in order to keep the following for loop
+                        // clean, we treat the last path component of the load path entry as if it were part of the
+                        // require statement itself.  This way if any load path entries don't have any children, we
+                        // can catch that situation and bail out a bit earlier.
+                        descendantPaths.add(loadPathEntryFile.getName());
+                        for (String part : nameParts) {
+                            descendantPaths.add(part);
+                        }
 
-                        if (! filesystemLookups.containsKey(path)) {
-                            File[] children = cacheFileSystemEntries(path, false);
+                        for (int i = 0; i < descendantPaths.size() - 1; i++) {
+                            path = path + "/" + descendantPaths.get(i);
 
-                            // Since filesystem paths are nested, if any parent doesn't exist, we can assume any child also
-                            // does not exist and short-circuit the search here.
-                            if (children == null) {
-                                return null;
-                            }
-                        } else {
-                            final Set<String> cachedEntries = filesystemLookups.get(path);
-                            if ((cachedEntries != null) && (cachedEntries.contains(path + "/" + descendantPaths.get(i + 1)) == false)) {
-                                return null;
+                            if (!filesystemLookups.containsKey(path)) {
+                                File[] children = cacheFileSystemEntries(path, false);
+
+                                // Since filesystem paths are nested, if any parent doesn't exist, we can assume any child also
+                                // does not exist and short-circuit the search here.
+                                if (children == null) {
+                                    return null;
+                                }
+                            } else {
+                                final Set<String> cachedEntries = filesystemLookups.get(path);
+                                if ((cachedEntries != null) && (cachedEntries.contains(path + "/" + descendantPaths.get(i + 1)) == false)) {
+                                    return null;
+                                }
                             }
                         }
-                    }
 
-                    final Set<String> cachedEntries = filesystemLookups.get(path);
-                    if ((cachedEntries != null) && (cachedEntries.contains(path) == false)) {
-                        return null;
+                        final Set<String> cachedEntries = filesystemLookups.get(path);
+                        if ((cachedEntries != null) && (cachedEntries.contains(path) == false)) {
+                            return null;
+                        }
                     }
                 }
 
