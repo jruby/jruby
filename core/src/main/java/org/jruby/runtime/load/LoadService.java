@@ -1455,18 +1455,7 @@ public class LoadService {
 
                 if (nameParts.length == 1) {
                     if (! filesystemLookups.containsKey(loadPathEntry)) {
-                        File[] children = new File(loadPathEntry).listFiles();
-                        filesystemLookups.putIfAbsent(loadPathEntry, children == null ? Collections.emptySet() : new HashSet(Arrays.asList(children)));
-
-                        if (! watchedLoadPaths.contains(loadPathEntry)) {
-                            try {
-                                Paths.get(loadPathEntry).register(loadPathWatcher, StandardWatchEventKinds.ENTRY_CREATE);
-                            } catch (IOException e) {
-                                // Ignored.
-                            }
-
-                            watchedLoadPaths.add(loadPathEntry);
-                        }
+                        cacheFileSystemEntries(loadPathEntry, false);
                     }
 
                     if (!filesystemLookups.get(loadPathEntry).contains(new File(reportedPath))) {
@@ -1480,18 +1469,7 @@ public class LoadService {
                         path = path + "/" + nameParts[i];
 
                         if (! filesystemLookups.containsKey(path)) {
-                            File[] children = new File(path).listFiles();
-                            filesystemLookups.putIfAbsent(path, children == null ? Collections.emptySet() : new HashSet(Arrays.asList(children)));
-
-                            if (! watchedLoadPaths.contains(path)) {
-                                try {
-                                    Paths.get(path).register(loadPathWatcher, StandardWatchEventKinds.ENTRY_CREATE);
-                                } catch (IOException e) {
-                                    // Ignored.
-                                }
-
-                                watchedLoadPaths.add(path);
-                            }
+                            File[] children = cacheFileSystemEntries(path, false);
 
                             // Since filesystem paths are nested, if any parent doesn't exist, we can assume any child also
                             // does not exist and short-circuit the search here.
@@ -1523,6 +1501,30 @@ public class LoadService {
         }
 
         return foundResource;
+    }
+
+    private File[] cacheFileSystemEntries(String path, boolean replace) {
+        File[] children = new File(path).listFiles();
+
+        Set<File> value = children == null ? Collections.emptySet() : new HashSet(Arrays.asList(children));
+
+        if (replace) {
+            filesystemLookups.replace(path, value);
+        } else {
+            filesystemLookups.putIfAbsent(path, value);
+        }
+
+        if (! watchedLoadPaths.contains(path)) {
+            try {
+                Paths.get(path).register(loadPathWatcher, StandardWatchEventKinds.ENTRY_CREATE);
+            } catch (IOException e) {
+                // Ignored.
+            }
+
+            watchedLoadPaths.add(path);
+        }
+
+        return children;
     }
 
     protected LoadServiceResource tryResourceAsIs(String namePlusSuffix) throws RaiseException {
@@ -1744,8 +1746,7 @@ public class LoadService {
                 if (key != null) {
                     final Path directory = (Path) key.watchable();
 
-                    final File[] children = directory.toFile().listFiles();
-                    filesystemLookups.replace(directory.toString(), children == null ? Collections.emptySet() : new HashSet(Arrays.asList(children)));
+                    cacheFileSystemEntries(directory.toString(), true);
 
                     // Drain any events.
                     key.pollEvents();
