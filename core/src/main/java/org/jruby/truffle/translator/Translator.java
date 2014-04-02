@@ -16,6 +16,7 @@ import com.oracle.truffle.api.impl.DefaultSourceSection;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.joni.Regex;
 import org.jruby.ast.NthRefNode;
+import org.jruby.ast.ArgumentNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.DefinedNode;
 import org.jruby.truffle.nodes.ReadNode;
@@ -204,6 +205,11 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     @Override
     public Object visitArgsPushNode(org.jruby.ast.ArgsPushNode node) {
         return new ArrayPushNode(context, translate(node.getPosition()), (RubyNode) node.getFirstNode().accept(this), (RubyNode) node.getSecondNode().accept(this));
+    }
+
+    @Override
+    public Object visitArgumentNode(ArgumentNode node) {
+        return unimplemented(node);
     }
 
     @Override

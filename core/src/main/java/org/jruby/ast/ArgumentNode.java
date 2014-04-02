@@ -60,7 +60,7 @@ public class ArgumentNode extends Node implements INameNode {
     }
     
     public Object accept(NodeVisitor visitor) {
-        return null;
+        return visitor.visitArgumentNode(this);
     }
 
     /**
