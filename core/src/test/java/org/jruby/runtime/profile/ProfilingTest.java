@@ -17,16 +17,6 @@ public class ProfilingTest extends TestCase {
     }
 
 /*
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        // start off with a neutral parent
-        ClassLoader parent = JRubyThreadContextTest.class.getClassLoader();
-        Thread.currentThread().setContextClassLoader(parent);
-    }
-*/
-
-
     public void testCopyOfProfilingServiceFromParentConfigWorks() {
         RubyInstanceConfig config = Ruby.getGlobalRuntime().getInstanceConfig();
 
@@ -39,10 +29,11 @@ public class ProfilingTest extends TestCase {
         assertEquals( configOne.getProfilingService(), configTwo.getProfilingService() );
         assertEquals( configOne.getProfilingMode(), configTwo.getProfilingMode() );
     }
-
+*/
     /**
      * Tests the {@link org.jruby.runtime.profile.ProfilingServiceLookup} too
      */
+/*
     public void testNoProfilingServerAvailableIfProfilingIsDisabled() {
         RubyInstanceConfig config = Ruby.getGlobalRuntime().getInstanceConfig();
 
@@ -54,10 +45,11 @@ public class ProfilingTest extends TestCase {
         assertNull(ruby.getProfilingService());
         assertNull( ruby.getProfiledMethods() );
     }
-
+*/
     /**
      * Tests the {@link org.jruby.runtime.profile.ProfilingServiceLookup} too
      */
+/*
     public void testProfilingServiceLookupWorks() {
         try {
             RubyInstanceConfig config = Ruby.getGlobalRuntime().getInstanceConfig();
@@ -76,5 +68,5 @@ public class ProfilingTest extends TestCase {
             // TODO hwo to mock org.jruby.exceptions.RaiseException: (LoadError) no such file to load -- jruby/profiler/shutdown_hook
         }
     }
-
+*/
 }
