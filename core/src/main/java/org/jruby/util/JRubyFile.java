@@ -115,7 +115,7 @@ public class JRubyFile extends JavaSecuredFile {
         this(file.getAbsolutePath());
     }
 
-    protected JRubyFile(String filename) {
+    public JRubyFile(String filename) {
         super(filename);
     }
 
