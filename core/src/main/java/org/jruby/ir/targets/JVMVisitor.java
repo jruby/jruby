@@ -241,9 +241,9 @@ public class JVMVisitor extends IRVisitor {
 
         jvm.pushmethod(name, signature);
 
-        // UGLY hack for blocks, which still have their scopes pushed before invocation
-        // Scope management for blocks needs to be figured out
-        if (scope instanceof IRClosure) {
+        // UGLY hack for blocks and scripts, which still have their scopes pushed before invocation
+        // Scope management for blocks and scripts needs to be figured out
+        if (scope instanceof IRClosure || scope instanceof IRScriptBody) {
             jvm.method().loadContext();
             jvm.method().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("org.jruby.runtime.DynamicScope getCurrentScope()"));
             jvmStoreLocal(DYNAMIC_SCOPE);
