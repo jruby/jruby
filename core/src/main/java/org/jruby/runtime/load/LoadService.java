@@ -1768,13 +1768,15 @@ public class LoadService {
 
         @Override
         public void finalize() {
-            try {
-                loadPathWatcher.close();
-            } catch (IOException e) {
-                // Ignored.
-            }
+            if (loadPathWatcher != null) {
+                try {
+                    loadPathWatcher.close();
+                } catch (IOException e) {
+                    // Ignored.
+                }
 
-            loadPathWatcher = null;
+                loadPathWatcher = null;
+            }
         }
     }
 }
