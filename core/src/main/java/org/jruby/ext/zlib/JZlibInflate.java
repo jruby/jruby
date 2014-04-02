@@ -33,6 +33,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -69,7 +70,7 @@ public class JZlibInflate extends ZStream {
         try {
             inflate.append(string.convertToString().getByteList());
         } finally {
-            result = inflate.finish(context);
+            result = inflate.finish(context, Block.NULL_BLOCK);
             inflate.close();
         }
         return result;
@@ -98,18 +99,23 @@ public class JZlibInflate extends ZStream {
 
     @Override
     @JRubyMethod(name = "flush_next_out")
-    public IRubyObject flush_next_out(ThreadContext context) {
-        return flushOutput(context.getRuntime());
+    public IRubyObject flush_next_out(ThreadContext context, Block block) {
+        return flushOutput(context, block);
     }
 
-    private RubyString flushOutput(Ruby runtime) {
+    private IRubyObject flushOutput(ThreadContext context, Block block) {
         if (collectedIdx > 0) {
-            RubyString res = RubyString.newString(runtime, collected, 0, collectedIdx);
+            RubyString res = RubyString.newString(context.runtime, collected, 0, collectedIdx);
             collectedIdx = 0;
             flater.setOutput(collected);
+
+            if (block.isGiven()) {
+                block.yield(context, res);
+                return context.nil;
+            }
             return res;
         }
-        return RubyString.newEmptyString(runtime);
+        return RubyString.newEmptyString(context.runtime);
     }
 
     @JRubyMethod(name = "<<", required = 1)
@@ -173,20 +179,20 @@ public class JZlibInflate extends ZStream {
     }
 
     @JRubyMethod(name = "inflate", required = 1)
-    public IRubyObject inflate(ThreadContext context, IRubyObject string) {
+    public IRubyObject inflate(ThreadContext context, IRubyObject string, Block block) {
         ByteList data = null;
         if (!string.isNil()) {
             data = string.convertToString().getByteList();
         }
-        return inflate(context, data);
+        return inflate(context, data, block);
     }
 
-    public IRubyObject inflate(ThreadContext context, ByteList str) {
+    public IRubyObject inflate(ThreadContext context, ByteList str, Block block) {
         if (null == str) {
-            return internalFinish();
+            return internalFinish(block);
         } else {
             append(str);
-            return flushOutput(context.getRuntime());
+            return flushOutput(context, block);
         }
     }
 
@@ -304,7 +310,7 @@ public class JZlibInflate extends ZStream {
     }
 
     @Override
-    protected IRubyObject internalFinish() {
+    protected IRubyObject internalFinish(Block block) {
         run(true);
         // MRI behavior: in finished mode, we work as pass-through
         if (internalFinished()) {
@@ -319,7 +325,7 @@ public class JZlibInflate extends ZStream {
                 resetBuffer(input);
             }
         }
-        return flushOutput(getRuntime());
+        return flushOutput(getRuntime().getCurrentContext(), block);
     }
 
     @Override
