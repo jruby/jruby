@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.methods.arguments;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.respondto.RespondToNode;
 import org.jruby.truffle.runtime.*;
@@ -31,6 +32,9 @@ public class BlockDestructureSwitchNode extends RubyNode {
     @Child protected RubyNode destructureArguments;
     @Child protected RubyNode body;
 
+    private final BranchProfile destructureProfile = new BranchProfile();
+    private final BranchProfile dontDestructureProfile = new BranchProfile();
+
     public BlockDestructureSwitchNode(RubyContext context, SourceSection sourceSection, Arity arity, RubyNode loadIndividualArguments, RespondToNode respondToCheck, RubyNode destructureArguments, RubyNode body) {
         super(context, sourceSection);
         this.arity = arity;
@@ -43,8 +47,10 @@ public class BlockDestructureSwitchNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         if (shouldDestructure(frame)) {
+            destructureProfile.enter();
             destructureArguments.executeVoid(frame);
         } else {
+            dontDestructureProfile.enter();
             loadIndividualArguments.executeVoid(frame);
         }
 
