@@ -365,9 +365,7 @@ class Net::HTTPResponse
 
     def inflate_adapter(dest)
       block = proc do |compressed_chunk|
-        @inflate.inflate(compressed_chunk) do |chunk|
-          dest << chunk
-        end
+        dest << @inflate.inflate(compressed_chunk)
       end
 
       Net::ReadAdapter.new(block)
