@@ -33,6 +33,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
+import org.jruby.Finalizable;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyFile;
+import org.jruby.RubyHash;
+import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyString;
 import org.jruby.util.collections.StringArraySet;
 import java.io.File;
 import java.io.FileDescriptor;
@@ -42,13 +49,23 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.ClosedWatchServiceException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.jar.JarFile;
@@ -56,19 +73,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipException;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyFile;
-import org.jruby.RubyHash;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.log.Logger;
@@ -213,6 +223,10 @@ public class LoadService {
     protected final Map<String, Library> builtinLibraries = new HashMap<String, Library>();
 
     protected final Map<String, JarFile> jarFiles = new HashMap<String, JarFile>();
+    private final ConcurrentMap<String, Set<File>> filesystemLookups = new ConcurrentHashMap<String, Set<File>>();
+
+    private WatchService loadPathWatcher = null;
+    private Set<String> watchedLoadPaths = new HashSet<String>();
 
     protected final Ruby runtime;
 
@@ -223,6 +237,18 @@ public class LoadService {
         } else {
             loadTimer = new LoadTimer();
         }
+
+        try {
+            loadPathWatcher = FileSystems.getDefault().newWatchService();
+        } catch (IOException e) {
+            // Ignored.
+        }
+
+        final LoadPathWatcherThread loadPathWatcherThread = new LoadPathWatcherThread();
+
+        runtime.addInternalFinalizer(loadPathWatcherThread);
+
+        loadPathWatcherThread.start();
     }
 
     /**
@@ -1051,27 +1077,27 @@ public class LoadService {
         Library library = null;
 
         switch (suffixType) {
-        case Both:
-            library = findBuiltinLibrary(state, baseName, SuffixType.Source);
-            if (library == null) library = createLibrary(state, tryResourceFromJarURL(state, baseName, SuffixType.Source));
-            if (library == null) library = createLibrary(state, tryResourceFromLoadPathOrURL(state, baseName, SuffixType.Source));
-            // If we fail to find as a normal Ruby script, we try to find as an extension,
-            // checking for a builtin first.
-            if (library == null) library = findBuiltinLibrary(state, baseName, SuffixType.Extension);
-            if (library == null) library = createLibrary(state, tryResourceFromJarURL(state, baseName, SuffixType.Extension));
-            if (library == null) library = createLibrary(state, tryResourceFromLoadPathOrURL(state, baseName, SuffixType.Extension));
-            break;
-        case Source:
-        case Extension:
-            // Check for a builtin first.
-            library = findBuiltinLibrary(state, baseName, suffixType);
-            if (library == null) library = createLibrary(state, tryResourceFromJarURL(state, baseName, suffixType));
-            if (library == null) library = createLibrary(state, tryResourceFromLoadPathOrURL(state, baseName, suffixType));
-            break;
-        case Neither:
-            library = createLibrary(state, tryResourceFromJarURL(state, baseName, SuffixType.Neither));
-            if (library == null) library = createLibrary(state, tryResourceFromLoadPathOrURL(state, baseName, SuffixType.Neither));
-            break;
+            case Both:
+                library = findBuiltinLibrary(state, baseName, SuffixType.Source);
+                if (library == null) library = createLibrary(state, tryResourceFromJarURL(state, baseName, SuffixType.Source));
+                if (library == null) library = createLibrary(state, tryResourceFromLoadPathOrURL(state, baseName, SuffixType.Source));
+                // If we fail to find as a normal Ruby script, we try to find as an extension,
+                // checking for a builtin first.
+                if (library == null) library = findBuiltinLibrary(state, baseName, SuffixType.Extension);
+                if (library == null) library = createLibrary(state, tryResourceFromJarURL(state, baseName, SuffixType.Extension));
+                if (library == null) library = createLibrary(state, tryResourceFromLoadPathOrURL(state, baseName, SuffixType.Extension));
+                break;
+            case Source:
+            case Extension:
+                // Check for a builtin first.
+                library = findBuiltinLibrary(state, baseName, suffixType);
+                if (library == null) library = createLibrary(state, tryResourceFromJarURL(state, baseName, suffixType));
+                if (library == null) library = createLibrary(state, tryResourceFromLoadPathOrURL(state, baseName, suffixType));
+                break;
+            case Neither:
+                library = createLibrary(state, tryResourceFromJarURL(state, baseName, SuffixType.Neither));
+                if (library == null) library = createLibrary(state, tryResourceFromLoadPathOrURL(state, baseName, SuffixType.Neither));
+                break;
         }
 
         return library;
@@ -1425,6 +1451,64 @@ public class LoadService {
         try {
             if (!Ruby.isSecurityRestricted()) {
                 String reportedPath = loadPathEntry + "/" + namePlusSuffix;
+                String[] nameParts = namePlusSuffix.split("/");
+
+                if (nameParts.length == 1) {
+                    if (! filesystemLookups.containsKey(loadPathEntry)) {
+                        File[] children = new File(loadPathEntry).listFiles();
+                        filesystemLookups.putIfAbsent(loadPathEntry, children == null ? Collections.emptySet() : new HashSet(Arrays.asList(children)));
+
+                        if (! watchedLoadPaths.contains(loadPathEntry)) {
+                            try {
+                                Paths.get(loadPathEntry).register(loadPathWatcher, StandardWatchEventKinds.ENTRY_CREATE);
+                            } catch (IOException e) {
+                                // Ignored.
+                            }
+
+                            watchedLoadPaths.add(loadPathEntry);
+                        }
+                    }
+
+                    if (!filesystemLookups.get(loadPathEntry).contains(new File(reportedPath))) {
+                        return null;
+                    }
+
+                } else {
+                    String path = loadPathEntry;
+
+                    for (int i = 0; i < nameParts.length - 1; i++) {
+                        path = path + "/" + nameParts[i];
+
+                        if (! filesystemLookups.containsKey(path)) {
+                            File[] children = new File(path).listFiles();
+                            filesystemLookups.putIfAbsent(path, children == null ? Collections.emptySet() : new HashSet(Arrays.asList(children)));
+
+                            if (! watchedLoadPaths.contains(path)) {
+                                try {
+                                    Paths.get(path).register(loadPathWatcher, StandardWatchEventKinds.ENTRY_CREATE);
+                                } catch (IOException e) {
+                                    // Ignored.
+                                }
+
+                                watchedLoadPaths.add(path);
+                            }
+
+                            // Since filesystem paths are nested, if any parent doesn't exist, we can assume any child also
+                            // does not exist and short-circuit the search here.
+                            if (children == null) {
+                                return null;
+                            }
+                        } else {
+                            if (!filesystemLookups.get(path).contains(new File(path + "/" + nameParts[i + 1]))) {
+                                return null;
+                            }
+                        }
+                    }
+
+                    if (!filesystemLookups.get(path).contains(new File(reportedPath))) {
+                        return null;
+                    }
+                }
 
                 JRubyFile actualPath = new JRubyFile(reportedPath);
                 if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
@@ -1628,5 +1712,58 @@ public class LoadService {
             s = "./" + s;
         }
         return s;
+    }
+
+    private class LoadPathWatcherThread extends Thread implements Finalizable {
+        public LoadPathWatcherThread() {
+            super("LoadPathWatcherThread");
+        }
+
+        @Override
+        public void run() {
+            while (loadPathWatcher != null) {
+                final WatchKey key;
+                try {
+                    key = loadPathWatcher.take();
+                } catch (InterruptedException e) {
+                    try {
+                        loadPathWatcher.close();
+                    } catch (IOException e1) {
+                        // Ignored.
+                    }
+
+                    loadPathWatcher = null;
+
+                    return;
+                } catch (ClosedWatchServiceException e) {
+                    loadPathWatcher = null;
+
+                    return;
+                }
+
+                if (key != null) {
+                    final Path directory = (Path) key.watchable();
+
+                    final File[] children = directory.toFile().listFiles();
+                    filesystemLookups.replace(directory.toString(), children == null ? Collections.emptySet() : new HashSet(Arrays.asList(children)));
+
+                    // Drain any events.
+                    key.pollEvents();
+
+                    key.reset();
+                }
+            }
+        }
+
+        @Override
+        public void finalize() {
+            try {
+                loadPathWatcher.close();
+            } catch (IOException e) {
+                // Ignored.
+            }
+
+            loadPathWatcher = null;
+        }
     }
 }
