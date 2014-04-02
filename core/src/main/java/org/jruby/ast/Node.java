@@ -115,9 +115,17 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
 
     @Override
     public String toString() {
+        return toString(false, 0);
+    }
+
+    public String toString(boolean indent, int indentation) {
         if (this instanceof InvisibleNode) return "";
-        
+
         StringBuilder builder = new StringBuilder(60);
+
+        if (indent) {
+            indent(indentation, builder);
+        }
 
         builder.append("(").append(getNodeName());
 
@@ -127,13 +135,51 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
 
         builder.append(" ").append(getPosition().getStartLine());
 
-        List<Node> children = childNodes();
-        for (int i = 0; i < children.size(); i++) {
-            builder.append(", ").append(children.get(i));
+        if (!childNodes().isEmpty() && indent) {
+            builder.append("\n");
         }
+
+        for (Node child : childNodes()) {
+            if (!indent) {
+                builder.append(", ");
+            }
+
+            if (child == null) {
+                if (indent) {
+                    indent(indentation + 1, builder);
+                }
+
+                builder.append("null");
+            } else {
+                if (indent && child instanceof NilImplicitNode) {
+                    if (indent) {
+                        indent(indentation + 1, builder);
+                    }
+
+                    builder.append(child.getClass().getSimpleName());
+                } else {
+                    builder.append(child.toString(indent, indentation + 1));
+                }
+            }
+
+            if (indent) {
+                builder.append("\n");
+            }
+        }
+
+        if (!childNodes().isEmpty() && indent) {
+            indent(indentation, builder);
+        }
+
         builder.append(")");
 
         return builder.toString();
+    }
+
+    private static void indent(int indentation, StringBuilder builder) {
+        for (int n = 0; n < indentation; n++) {
+            builder.append("  ");
+        }
     }
 
     protected String getNodeName() {
