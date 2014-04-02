@@ -244,10 +244,7 @@ public class LoadService {
             // Ignored.
         }
 
-        final LoadPathWatcherThread loadPathWatcherThread = new LoadPathWatcherThread();
-
-        runtime.addInternalFinalizer(loadPathWatcherThread);
-
+        loadPathWatcherThread = new LoadPathWatcherThread();
         loadPathWatcherThread.start();
     }
 
@@ -308,6 +305,20 @@ public class LoadService {
         // "." dir is used for relative path loads from a given file, as in require '../foo/bar'
         if (!runtime.is1_9()) {
             addPath(".");
+        }
+    }
+
+    public void tearDown() {
+        if (loadPathWatcher != null) {
+            try {
+                loadPathWatcher.close();
+            } catch (IOException e) {
+                // If we can't cleanly stop the thread, we'll take the heavy approach.
+                loadPathWatcherThread.tearDown();
+                loadPathWatcherThread.interrupt();
+            }
+
+            loadPathWatcher = null;
         }
     }
 
@@ -1726,14 +1737,16 @@ public class LoadService {
         return s;
     }
 
-    private class LoadPathWatcherThread extends Thread implements Finalizable {
+    private class LoadPathWatcherThread extends Thread {
+        private boolean keepRunning = true;
+
         public LoadPathWatcherThread() {
             super("LoadPathWatcherThread");
         }
 
         @Override
         public void run() {
-            while (loadPathWatcher != null) {
+            while ((loadPathWatcher != null) && keepRunning) {
                 final WatchKey key;
                 try {
                     key = loadPathWatcher.take();
@@ -1766,17 +1779,8 @@ public class LoadService {
             }
         }
 
-        @Override
-        public void finalize() {
-            if (loadPathWatcher != null) {
-                try {
-                    loadPathWatcher.close();
-                } catch (IOException e) {
-                    // Ignored.
-                }
-
-                loadPathWatcher = null;
-            }
+        public void tearDown() {
+            keepRunning = false;
         }
     }
 }
