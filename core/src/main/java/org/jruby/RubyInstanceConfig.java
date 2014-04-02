@@ -136,7 +136,10 @@ public class RubyInstanceConfig {
         excludedMethods = parentConfig.excludedMethods;
         threadDumpSignal = parentConfig.threadDumpSignal;
         updateNativeENVEnabled = parentConfig.updateNativeENVEnabled;
-        
+
+        profilingService = parentConfig.profilingService;
+        profilingMode = parentConfig.profilingMode;
+
         classCache = new ClassCache<Script>(loader, jitMax);
 
         try {
