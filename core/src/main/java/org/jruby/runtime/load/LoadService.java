@@ -1510,7 +1510,7 @@ public class LoadService {
                         }
 
                         final Set<String> cachedEntries = filesystemLookups.get(path);
-                        if ((cachedEntries != null) && (cachedEntries.contains(path) == false)) {
+                        if ((cachedEntries != null) && (cachedEntries.contains(reportedPath) == false)) {
                             return null;
                         }
                     }
