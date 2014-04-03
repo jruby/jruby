@@ -34,7 +34,7 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
     public Object execute(VirtualFrame frame) {
         final RubyContext context = getContext();
 
-        MaterializedFrame declarationFrame;
+        final MaterializedFrame declarationFrame;
 
         if (requiresDeclarationFrame) {
             declarationFrame = frame.materialize();
