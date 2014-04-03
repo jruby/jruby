@@ -4,7 +4,7 @@ require 'rake'
 require 'rexml/document'
 require 'rexml/xpath'
 
-version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
+version = File.read( File.join( File.dirname(File.expand_path(__FILE__)), '..', '..', 'VERSION' ) ).strip
 version.gsub!( /-SNAPSHOT$/, '' )
 
 Gem::Specification.new do |s|
