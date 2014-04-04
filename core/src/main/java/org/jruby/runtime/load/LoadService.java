@@ -1462,6 +1462,7 @@ public class LoadService {
         try {
             if (!Ruby.isSecurityRestricted()) {
                 String reportedPath = loadPathEntry + "/" + namePlusSuffix;
+                JRubyFile actualPath = null;
 
                 if (loadPathWatcher != null) {
                     String[] nameParts = namePlusSuffix.split("/");
@@ -1477,46 +1478,80 @@ public class LoadService {
                         }
 
                     } else {
-                        final File loadPathEntryFile = new File(loadPathEntry);
-                        String path = loadPathEntryFile.getParent();
+                        File loadPathEntryFile = new File(loadPathEntry);
+
+                        // If the load path entry contains path backtracking, we need to canonicalize the path because
+                        // we use this value as a substring search through another canonical file name.  If this weren't
+                        // also canonical, the substring offset would be incorrect.  Also, since we use the parent
+                        // as the base of the search, we need to guard against load path entries that end in "/..",
+                        // otherwise the search base would be off by at least one level.
+                        if (loadPathEntry.contains("/..")) {
+                            try {
+                                loadPathEntryFile = loadPathEntryFile.getCanonicalFile();
+                            } catch (IOException e) {
+                                // Ignored.
+                            }
+                        }
+
+                        // If the required file uses path backtracking, we need to canonicalize the search.  Since we're
+                        // caching the output from a directory listing, it will never contain ".." and our name lookup
+                        // will fail to match if we don't canonicalize.
+                        if (namePlusSuffix.contains("/..")) {
+                            actualPath = new JRubyFile(reportedPath);
+
+                            try {
+                                // Strip out the load path entry + the joining "/".
+                                String canonicalName = actualPath.getCanonicalPath().substring(loadPathEntryFile.getPath().length() + 1);
+                                nameParts = canonicalName.split("/");
+                            } catch (IOException e) {
+                                // Ignored.
+                            }
+                        }
+
+                        // This is ugly and should probably be revisited.  But in order to keep the following search
+                        // loop clean, we treat the last path component of the load path entry as if it were part of
+                        // the require statement itself.  This way if any load path entries don't have any children,
+                        // we can catch that situation and bail out a bit earlier.
                         final List<String> descendantPaths = new ArrayList<String>(nameParts.length + 1);
 
-                        // This is ugly and should probably be revisited.  But in order to keep the following for loop
-                        // clean, we treat the last path component of the load path entry as if it were part of the
-                        // require statement itself.  This way if any load path entries don't have any children, we
-                        // can catch that situation and bail out a bit earlier.
+                        String searchPath = loadPathEntryFile.getParent();
+
                         descendantPaths.add(loadPathEntryFile.getName());
                         for (String part : nameParts) {
                             descendantPaths.add(part);
                         }
 
                         for (int i = 0; i < descendantPaths.size() - 1; i++) {
-                            path = path + "/" + descendantPaths.get(i);
+                            searchPath = searchPath + "/" + descendantPaths.get(i);
 
-                            if (!filesystemLookups.containsKey(path)) {
-                                File[] children = cacheFileSystemEntries(path, false);
+                            if (!filesystemLookups.containsKey(searchPath)) {
+                                File[] children = cacheFileSystemEntries(searchPath, false);
 
-                                // Since filesystem paths are nested, if any parent doesn't exist, we can assume any child also
-                                // does not exist and short-circuit the search here.
+                                // Since filesystem paths are nested, if any parent doesn't exist, we can assume any
+                                // child also does not exist and short-circuit the search here.
                                 if (children == null) {
                                     return null;
                                 }
                             } else {
-                                final Set<String> cachedEntries = filesystemLookups.get(path);
-                                if ((cachedEntries != null) && (cachedEntries.contains(path + "/" + descendantPaths.get(i + 1)) == false)) {
+                                final Set<String> cachedEntries = filesystemLookups.get(searchPath);
+                                if ((cachedEntries != null) && (cachedEntries.contains(searchPath + "/" + descendantPaths.get(i + 1)) == false)) {
                                     return null;
                                 }
                             }
                         }
 
-                        final Set<String> cachedEntries = filesystemLookups.get(path);
-                        if ((cachedEntries != null) && (cachedEntries.contains(reportedPath) == false)) {
+                        // All sub-path searches have been exhausted, so the only component left is the final namePart.
+                        final Set<String> cachedEntries = filesystemLookups.get(searchPath);
+                        if ((cachedEntries != null) && (cachedEntries.contains(searchPath + "/" + nameParts[nameParts.length - 1]) == false)) {
                             return null;
                         }
                     }
                 }
 
-                JRubyFile actualPath = new JRubyFile(reportedPath);
+                if (actualPath == null) {
+                    actualPath = new JRubyFile(reportedPath);
+                }
+
                 if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
                     debugLogTry("resourceFromLoadPath", "'" + actualPath.toString() + "' " + actualPath.isFile() + " " + actualPath.canRead());
                 }
