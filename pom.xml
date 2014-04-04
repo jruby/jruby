@@ -82,6 +82,24 @@
     <github.global.server>github</github.global.server>
     <bundle.name>JRuby</bundle.name>
     <bundle.symbolic_name>org.jruby.jruby</bundle.symbolic_name>
+    <!-- 
+	 these version are used by eclipse, IDEA ,etc 
+	 and get overwritten by default.build.properties
+    -->
+    <version.ruby>1.8.7</version.ruby>
+    <version.ruby.major>1.8</version.ruby.major>
+    <version.ruby.minor>7</version.ruby.minor>
+    <version.ruby.patchlevel>370</version.ruby.patchlevel>
+
+    <version.ruby1_9.major>1.9</version.ruby1_9.major>
+    <version.ruby1_9>1.9.3</version.ruby1_9>
+    <version.ruby1_9.patchlevel>3922</version.ruby1_9.patchlevel>
+    <version.ruby1_9.revision>39386</version.ruby1_9.revision>
+
+    <version.ruby2_0.major>2.0</version.ruby2_0.major>
+    <version.ruby2_0>2.0.0</version.ruby2_0>
+    <version.ruby2_0.patchlevel>195</version.ruby2_0.patchlevel>
+    <version.ruby2_0.revision>40734</version.ruby2_0.revision>
   </properties>
 
     <mailingLists>
