@@ -26,6 +26,13 @@ import org.jruby.ast.PreExeNode;
  * </code>
  */
 public class InstanceVariableFinder extends AbstractNodeVisitor {
+
+    @Override
+    protected Object defaultVisit(Node iVisited) {
+        visitChildren(iVisited);
+        return null;
+    }
+
     /** The set of instance variables found during walking. */
     private final Set<String> foundVariables = new HashSet<String>();
     

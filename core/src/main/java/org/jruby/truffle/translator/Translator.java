@@ -17,6 +17,7 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import org.joni.Regex;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.ArgumentNode;
+import org.jruby.ast.Node;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.DefinedNode;
 import org.jruby.truffle.nodes.ReadNode;
@@ -66,7 +67,7 @@ import java.util.*;
  * Ruby parser. Therefore there is some namespace contention here! We make all references to JRuby
  * explicit. This is the only place though - it doesn't leak out elsewhere.
  */
-public class Translator implements org.jruby.ast.visitor.NodeVisitor {
+public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
 
     protected final Translator parent;
 
@@ -198,18 +199,8 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     }
 
     @Override
-    public Object visitArgsNode(org.jruby.ast.ArgsNode node) {
-        return unimplemented(node);
-    }
-
-    @Override
     public Object visitArgsPushNode(org.jruby.ast.ArgsPushNode node) {
         return new ArrayPushNode(context, translate(node.getPosition()), (RubyNode) node.getFirstNode().accept(this), (RubyNode) node.getSecondNode().accept(this));
-    }
-
-    @Override
-    public Object visitArgumentNode(ArgumentNode node) {
-        return unimplemented(node);
     }
 
     @Override
@@ -239,11 +230,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     }
 
     @Override
-    public Object visitBackRefNode(org.jruby.ast.BackRefNode node) {
-        return unimplemented(node);
-    }
-
-    @Override
     public Object visitBeginNode(org.jruby.ast.BeginNode node) {
         return node.getBodyNode().accept(this);
     }
@@ -251,11 +237,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     @Override
     public Object visitBignumNode(org.jruby.ast.BignumNode node) {
         return new BignumLiteralNode(context, translate(node.getPosition()), node.getValue());
-    }
-
-    @Override
-    public Object visitBlockArgNode(org.jruby.ast.BlockArgNode node) {
-        return unimplemented(node);
     }
 
     @Override
@@ -277,11 +258,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         } else {
             return new SequenceNode(context, translate(node.getPosition()), translatedChildren.toArray(new RubyNode[translatedChildren.size()]));
         }
-    }
-
-    @Override
-    public Object visitBlockPassNode(org.jruby.ast.BlockPassNode node) {
-        return unimplemented(node);
     }
 
     @Override
@@ -618,11 +594,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     }
 
     @Override
-    public Object visitClassVarDeclNode(org.jruby.ast.ClassVarDeclNode node) {
-        return unimplemented(node);
-    }
-
-    @Override
     public Object visitClassVarNode(org.jruby.ast.ClassVarNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
         final RubyNode receiver;
@@ -650,11 +621,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         final ObjectLiteralNode root = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getMainObject());
 
         return new UninitializedReadConstantNode(context, sourceSection, node.getName(), root);
-    }
-    
-    @Override
-    public Object visitComplexNode(org.jruby.ast.ComplexNode node) {
-        return unimplemented(node);
     }
 
     @Override
@@ -1175,11 +1141,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     }
 
     @Override
-    public Object visitLiteralNode(org.jruby.ast.LiteralNode node) {
-        return unimplemented(node);
-    }
-
-    @Override
     public Object visitLocalAsgnNode(org.jruby.ast.LocalAsgnNode node) {
 
         final SourceSection sourceSection = translate(node.getPosition());
@@ -1252,11 +1213,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), node.getValueNode());
         final org.jruby.ast.Node callNode = new org.jruby.ast.CallNode(node.getPosition(), node.getReceiverNode(), "=~", argsNode, null);
         return callNode.accept(this);
-    }
-
-    @Override
-    public Object visitMatchNode(org.jruby.ast.MatchNode node) {
-        return unimplemented(node);
     }
 
     @Override
@@ -1693,21 +1649,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     }
 
     @Override
-    public Object visitPostExeNode(org.jruby.ast.PostExeNode node) {
-        return unimplemented(node);
-    }
-
-    @Override
-    public Object visitPreExeNode(org.jruby.ast.PreExeNode node) {
-        return unimplemented(node);
-    }
-    
-    @Override
-    public Object visitRationalNode(org.jruby.ast.RationalNode node) {
-        return unimplemented(node);
-    }
-
-    @Override
     public Object visitRedoNode(org.jruby.ast.RedoNode node) {
         return new RedoNode(context, translate(node.getPosition()));
     }
@@ -1725,11 +1666,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         final RubyRegexp regexp = new RubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, node.getValue().toString());
         final ObjectLiteralNode literalNode = new ObjectLiteralNode(context, translate(node.getPosition()), regexp);
         return literalNode;
-    }
-
-    @Override
-    public Object visitRescueBodyNode(org.jruby.ast.RescueBodyNode node) {
-        return unimplemented(node);
     }
 
     @Override
@@ -1821,11 +1757,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     }
 
     @Override
-    public Object visitRestArgNode(org.jruby.ast.RestArgNode node) {
-        return unimplemented(node);
-    }
-
-    @Override
     public Object visitRetryNode(org.jruby.ast.RetryNode node) {
         return new RetryNode(context, translate(node.getPosition()));
     }
@@ -1843,11 +1774,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         }
 
         return new ReturnNode(context, sourceSection, environment.getReturnID(), translatedChild);
-    }
-
-    @Override
-    public Object visitRootNode(org.jruby.ast.RootNode node) {
-        return unimplemented(node);
     }
 
     @Override
@@ -1898,18 +1824,8 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     }
 
     @Override
-    public Object visitSuperNode(org.jruby.ast.SuperNode node) {
-        return unimplemented(node);
-    }
-
-    @Override
     public Object visitSymbolNode(org.jruby.ast.SymbolNode node) {
         return new ObjectLiteralNode(context, translate(node.getPosition()), context.newSymbol(node.getName()));
-    }
-
-    @Override
-    public Object visitToAryNode(org.jruby.ast.ToAryNode node) {
-        return unimplemented(node);
     }
 
     @Override
@@ -1950,22 +1866,12 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
     }
 
     @Override
-    public Object visitVAliasNode(org.jruby.ast.VAliasNode node) {
-        return unimplemented(node);
-    }
-
-    @Override
     public Object visitVCallNode(org.jruby.ast.VCallNode node) {
         final org.jruby.ast.Node receiver = new org.jruby.ast.SelfNode(node.getPosition());
         final org.jruby.ast.Node args = null;
         final org.jruby.ast.Node callNode = new org.jruby.ast.CallNode(node.getPosition(), receiver, node.getName(), args);
 
         return callNode.accept(this);
-    }
-
-    @Override
-    public Object visitWhenNode(org.jruby.ast.WhenNode node) {
-        return unimplemented(node);
     }
 
     @Override
@@ -2038,31 +1944,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         return new UninitialisedArrayLiteralNode(context, translate(node.getPosition()), values);
     }
 
-    @Override
-    public Object visitZSuperNode(org.jruby.ast.ZSuperNode node) {
-        return unimplemented(node);
-    }
-
-    public Object visitKeywordArgNode(org.jruby.ast.KeywordArgNode node) {
-        return unimplemented(node);
-    }
-
-    public Object visitRequiredKeywordArgumentValueNode(org.jruby.ast.RequiredKeywordArgumentValueNode node) {
-        return unimplemented(node);
-    }
-
-    public Object visitKeywordRestArgNode(org.jruby.ast.KeywordRestArgNode node) {
-        return unimplemented(node);
-    }
-
-    public Object visitListNode(org.jruby.ast.ListNode node) {
-        return unimplemented(node);
-    }
-
-    public Object visitOptArgNode(org.jruby.ast.OptArgNode node) {
-        return unimplemented(node);
-    }
-
     public Object visitLambdaNode(org.jruby.ast.LambdaNode node) {
         // TODO(cs): code copied and modified from visitIterNode - extract common
 
@@ -2086,11 +1967,6 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         final MethodDefinitionNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), "(lambda)", node, argsNode, node.getBodyNode(), false);
 
         return new LambdaNode(context, translate(node.getPosition()), definitionNode);
-    }
-
-    protected Object unimplemented(org.jruby.ast.Node node) {
-        context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), node + " does nothing - translating as nil");
-        return new NilNode(context, translate(node.getPosition()));
     }
 
     protected SourceSection translate(final org.jruby.lexer.yacc.ISourcePosition sourcePosition) {
@@ -2118,6 +1994,16 @@ public class Translator implements org.jruby.ast.visitor.NodeVisitor {
         }
 
         return new SequenceNode(context, sourceSection, initNodes);
+    }
+
+    @Override
+    protected Object defaultVisit(Node node) {
+        return unimplemented(node);
+    }
+
+    protected Object unimplemented(Node node) {
+        context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), node + " does nothing - translating as nil");
+        return new NilNode(context, translate(node.getPosition()));
     }
 
 }

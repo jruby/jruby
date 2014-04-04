@@ -29,543 +29,549 @@ package org.jruby.ast.visitor;
 import org.jruby.ast.*;
 
 /**
- * Abstract implementation of NodeVisitor that simply walks each node's
- * childNodes() in sequence and returns null from all visit methods.
+ * An abstract implementation of {@link NodeVisitor} that has an abstract default visit method, and provides a utility
+ * method to visit children.
  */
-public class AbstractNodeVisitor implements NodeVisitor {    
-    private Object defaultVisit(Node iVisited) {
-        for (Node node : iVisited.childNodes()) node.accept(this);
-        return null;
+public abstract class AbstractNodeVisitor implements NodeVisitor {
+
+    abstract protected Object defaultVisit(Node node);
+
+    protected void visitChildren(Node node) {
+        for (Node child: node.childNodes()) {
+            if (child != null) {
+                child.accept(this);
+            }
+        }
     }
-    
+
     @Override
-    public Object visitAliasNode(AliasNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitAliasNode(AliasNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitAndNode(AndNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitAndNode(AndNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitArgsNode(ArgsNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitArgsNode(ArgsNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitArgsCatNode(ArgsCatNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitArgsCatNode(ArgsCatNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitArgsPushNode(ArgsPushNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitArgsPushNode(ArgsPushNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitArgumentNode(ArgumentNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitArgumentNode(ArgumentNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitArrayNode(ArrayNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitArrayNode(ArrayNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitAttrAssignNode(AttrAssignNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitAttrAssignNode(AttrAssignNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitBackRefNode(BackRefNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitBackRefNode(BackRefNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitBeginNode(BeginNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitBeginNode(BeginNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitBignumNode(BignumNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitBignumNode(BignumNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitBlockArgNode(BlockArgNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitBlockArgNode(BlockArgNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitBlockNode(BlockNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitBlockNode(BlockNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitBlockPassNode(BlockPassNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitBlockPassNode(BlockPassNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitBreakNode(BreakNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitBreakNode(BreakNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitComplexNode(ComplexNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitConstDeclNode(ConstDeclNode node) {
+        return defaultVisit(node);
     }
-    
+
     @Override
-    public Object visitConstDeclNode(ConstDeclNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitClassVarAsgnNode(ClassVarAsgnNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitClassVarDeclNode(ClassVarDeclNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitClassVarDeclNode(ClassVarDeclNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitClassVarNode(ClassVarNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitClassVarNode(ClassVarNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitCallNode(CallNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitCallNode(CallNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitCaseNode(CaseNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitCaseNode(CaseNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitClassNode(ClassNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitClassNode(ClassNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitColon2Node(Colon2Node node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitColon2Node(Colon2Node iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitColon3Node(Colon3Node node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitColon3Node(Colon3Node iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitComplexNode(ComplexNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitConstNode(ConstNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitConstNode(ConstNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitDAsgnNode(DAsgnNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitDAsgnNode(DAsgnNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitDRegxNode(DRegexpNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitDRegxNode(DRegexpNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitDStrNode(DStrNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitDStrNode(DStrNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitDSymbolNode(DSymbolNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitDSymbolNode(DSymbolNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitDVarNode(DVarNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitDVarNode(DVarNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitDXStrNode(DXStrNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitDXStrNode(DXStrNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitDefinedNode(DefinedNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitDefinedNode(DefinedNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitDefnNode(DefnNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitDefnNode(DefnNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitDefsNode(DefsNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitDefsNode(DefsNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitDotNode(DotNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitDotNode(DotNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitEncodingNode(EncodingNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitEncodingNode(EncodingNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitEnsureNode(EnsureNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitEnsureNode(EnsureNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitEvStrNode(EvStrNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitEvStrNode(EvStrNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitFCallNode(FCallNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitFCallNode(FCallNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitFalseNode(FalseNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitFalseNode(FalseNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitFixnumNode(FixnumNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitFixnumNode(FixnumNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitFlipNode(FlipNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitFlipNode(FlipNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitFloatNode(FloatNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitFloatNode(FloatNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitForNode(ForNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitForNode(ForNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitGlobalAsgnNode(GlobalAsgnNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitGlobalVarNode(GlobalVarNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitGlobalVarNode(GlobalVarNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitHashNode(HashNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitHashNode(HashNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitInstAsgnNode(InstAsgnNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitInstAsgnNode(InstAsgnNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitInstVarNode(InstVarNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitInstVarNode(InstVarNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitIfNode(IfNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitIfNode(IfNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitIterNode(IterNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitIterNode(IterNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitKeywordArgNode(KeywordArgNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitKeywordArgNode(KeywordArgNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitKeywordRestArgNode(KeywordRestArgNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitKeywordRestArgNode(KeywordRestArgNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitLambdaNode(LambdaNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitLambdaNode(LambdaNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitListNode(ListNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitListNode(ListNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitLiteralNode(LiteralNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitLiteralNode(LiteralNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitLocalAsgnNode(LocalAsgnNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitLocalAsgnNode(LocalAsgnNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitLocalVarNode(LocalVarNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitLocalVarNode(LocalVarNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitMultipleAsgnNode(MultipleAsgnNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitMultipleAsgnNode(MultipleAsgn19Node iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitMultipleAsgnNode(MultipleAsgn19Node node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitMatch2Node(Match2Node iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitMatch2Node(Match2Node node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitMatch3Node(Match3Node iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitMatch3Node(Match3Node node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitMatchNode(MatchNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitMatchNode(MatchNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitModuleNode(ModuleNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitModuleNode(ModuleNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitNewlineNode(NewlineNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitNewlineNode(NewlineNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitNextNode(NextNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitNextNode(NextNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitNilNode(NilNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitNilNode(NilNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitNthRefNode(NthRefNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitNthRefNode(NthRefNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitOpElementAsgnNode(OpElementAsgnNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitOpAsgnNode(OpAsgnNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitOpAsgnNode(OpAsgnNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitOpAsgnAndNode(OpAsgnAndNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitOpAsgnAndNode(OpAsgnAndNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitOpAsgnOrNode(OpAsgnOrNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitOptArgNode(OptArgNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitOptArgNode(OptArgNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitOrNode(OrNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitOrNode(OrNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitPreExeNode(PreExeNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitPreExeNode(PreExeNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitPostExeNode(PostExeNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitPostExeNode(PostExeNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitRationalNode(RationalNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitRationalNode(RationalNode node) {
+        return defaultVisit(node);
     }
-    
+
     @Override
-    public Object visitRedoNode(RedoNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitRedoNode(RedoNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitRegexpNode(RegexpNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitRegexpNode(RegexpNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitRequiredKeywordArgumentValueNode(RequiredKeywordArgumentValueNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitRequiredKeywordArgumentValueNode(RequiredKeywordArgumentValueNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitRescueBodyNode(RescueBodyNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitRescueBodyNode(RescueBodyNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitRescueNode(RescueNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitRescueNode(RescueNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitRestArgNode(RestArgNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitRestArgNode(RestArgNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitRetryNode(RetryNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitRetryNode(RetryNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitReturnNode(ReturnNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitReturnNode(ReturnNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitRootNode(RootNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitRootNode(RootNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitSClassNode(SClassNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitSClassNode(SClassNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitSelfNode(SelfNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitSelfNode(SelfNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitSplatNode(SplatNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitSplatNode(SplatNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitStrNode(StrNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitStrNode(StrNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitSuperNode(SuperNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitSuperNode(SuperNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitSValueNode(SValueNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitSValueNode(SValueNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitSymbolNode(SymbolNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitSymbolNode(SymbolNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitToAryNode(ToAryNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitToAryNode(ToAryNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitTrueNode(TrueNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitTrueNode(TrueNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitUndefNode(UndefNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitUndefNode(UndefNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitUntilNode(UntilNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitUntilNode(UntilNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitVAliasNode(VAliasNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitVAliasNode(VAliasNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitVCallNode(VCallNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitVCallNode(VCallNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitWhenNode(WhenNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitWhenNode(WhenNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitWhileNode(WhileNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitWhileNode(WhileNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitXStrNode(XStrNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitXStrNode(XStrNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitYieldNode(YieldNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitYieldNode(YieldNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitZArrayNode(ZArrayNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitZArrayNode(ZArrayNode node) {
+        return defaultVisit(node);
     }
 
     @Override
-    public Object visitZSuperNode(ZSuperNode iVisited) {
-        return defaultVisit(iVisited);
+    public Object visitZSuperNode(ZSuperNode node) {
+        return defaultVisit(node);
     }
-    
+
 }
