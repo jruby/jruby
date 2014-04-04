@@ -58,7 +58,7 @@ public class BlockNode extends ListNode {
      * @param iVisitor the visitor to accept
      **/
     @Override
-    public Object accept(NodeVisitor iVisitor) {
+    public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitBlockNode(this);
     }
     

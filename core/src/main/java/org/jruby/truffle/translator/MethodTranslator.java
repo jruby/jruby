@@ -352,7 +352,7 @@ class MethodTranslator extends Translator {
     }
 
     @Override
-    public Object visitSuperNode(org.jruby.ast.SuperNode node) {
+    public RubyNode visitSuperNode(org.jruby.ast.SuperNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, node.getIterNode(), node.getArgsNode(), null);
@@ -363,7 +363,7 @@ class MethodTranslator extends Translator {
     }
 
     @Override
-    public Object visitZSuperNode(org.jruby.ast.ZSuperNode node) {
+    public RubyNode visitZSuperNode(org.jruby.ast.ZSuperNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final String name = environment.getMethodName();

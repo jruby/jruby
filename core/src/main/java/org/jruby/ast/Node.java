@@ -73,7 +73,7 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
         this.position = position;
     }
     
-    public abstract Object accept(NodeVisitor visitor);
+    public abstract <T> T accept(NodeVisitor<T> visitor);
     public abstract List<Node> childNodes();
 
     protected static List<Node> createList(Node node) {

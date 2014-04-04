@@ -16,7 +16,6 @@ import com.oracle.truffle.api.impl.DefaultSourceSection;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.joni.Regex;
 import org.jruby.ast.NthRefNode;
-import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.Node;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.DefinedNode;
@@ -25,23 +24,12 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.WriteNode;
 import org.jruby.truffle.nodes.call.RubyCallNode;
 import org.jruby.truffle.nodes.cast.*;
-import org.jruby.truffle.nodes.cast.LambdaNode;
 import org.jruby.truffle.nodes.constants.EncodingPseudoVariableNode;
 import org.jruby.truffle.nodes.constants.UninitializedReadConstantNode;
 import org.jruby.truffle.nodes.constants.WriteConstantNode;
 import org.jruby.truffle.nodes.control.*;
-import org.jruby.truffle.nodes.control.BreakNode;
-import org.jruby.truffle.nodes.control.EnsureNode;
-import org.jruby.truffle.nodes.control.IfNode;
-import org.jruby.truffle.nodes.control.NextNode;
-import org.jruby.truffle.nodes.control.RedoNode;
-import org.jruby.truffle.nodes.control.RescueNode;
-import org.jruby.truffle.nodes.control.RetryNode;
-import org.jruby.truffle.nodes.control.ReturnNode;
-import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.literal.*;
-import org.jruby.truffle.nodes.literal.NilNode;
 import org.jruby.truffle.nodes.literal.array.UninitialisedArrayLiteralNode;
 import org.jruby.truffle.nodes.methods.AddMethodNode;
 import org.jruby.truffle.nodes.methods.AliasNode;
@@ -49,9 +37,6 @@ import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
 import org.jruby.truffle.nodes.methods.UndefNode;
 import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.objects.*;
-import org.jruby.truffle.nodes.objects.ClassNode;
-import org.jruby.truffle.nodes.objects.SelfNode;
-import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyFixnum;
@@ -63,11 +48,10 @@ import java.math.BigInteger;
 import java.util.*;
 
 /**
- * A JRuby parser node visitor which translates JRuby AST nodes into our Ruby nodes, implementing a
- * Ruby parser. Therefore there is some namespace contention here! We make all references to JRuby
- * explicit. This is the only place though - it doesn't leak out elsewhere.
+ * A JRuby parser node visitor which translates JRuby AST nodes into truffle Nodes. Therefore there is some namespace
+ * contention here! We make all references to JRuby explicit.
  */
-public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
+public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor<RubyNode> {
 
     protected final Translator parent;
 
@@ -137,7 +121,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitAliasNode(org.jruby.ast.AliasNode node) {
+    public RubyNode visitAliasNode(org.jruby.ast.AliasNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final org.jruby.ast.LiteralNode oldName = (org.jruby.ast.LiteralNode) node.getOldName();
@@ -147,7 +131,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitAndNode(org.jruby.ast.AndNode node) {
+    public RubyNode visitAndNode(org.jruby.ast.AndNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode x;
@@ -155,7 +139,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         if (node.getFirstNode() == null) {
             x = new NilNode(context, sourceSection);
         } else {
-            x = (RubyNode) node.getFirstNode().accept(this);
+            x = node.getFirstNode().accept(this);
         }
 
         RubyNode y;
@@ -163,21 +147,21 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         if (node.getSecondNode() == null) {
             y = new NilNode(context, sourceSection);
         } else {
-            y = (RubyNode) node.getSecondNode().accept(this);
+            y = node.getSecondNode().accept(this);
         }
 
         return AndNodeFactory.create(context, sourceSection, x, y);
     }
 
     @Override
-    public Object visitArgsCatNode(org.jruby.ast.ArgsCatNode node) {
+    public RubyNode visitArgsCatNode(org.jruby.ast.ArgsCatNode node) {
         final List<org.jruby.ast.Node> nodes = new ArrayList<>();
         collectArgsCatNodes(nodes, node);
 
         final List<RubyNode> translatedNodes = new ArrayList<>();
 
         for (org.jruby.ast.Node catNode : nodes) {
-            translatedNodes.add((RubyNode) catNode.accept(this));
+            translatedNodes.add(catNode.accept(this));
         }
 
         return new ArrayConcatNode(context, translate(node.getPosition()), translatedNodes.toArray(new RubyNode[translatedNodes.size()]));
@@ -199,25 +183,25 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitArgsPushNode(org.jruby.ast.ArgsPushNode node) {
-        return new ArrayPushNode(context, translate(node.getPosition()), (RubyNode) node.getFirstNode().accept(this), (RubyNode) node.getSecondNode().accept(this));
+    public RubyNode visitArgsPushNode(org.jruby.ast.ArgsPushNode node) {
+        return new ArrayPushNode(context, translate(node.getPosition()), node.getFirstNode().accept(this), node.getSecondNode().accept(this));
     }
 
     @Override
-    public Object visitArrayNode(org.jruby.ast.ArrayNode node) {
+    public RubyNode visitArrayNode(org.jruby.ast.ArrayNode node) {
         final List<org.jruby.ast.Node> values = node.childNodes();
 
         final RubyNode[] translatedValues = new RubyNode[values.size()];
 
         for (int n = 0; n < values.size(); n++) {
-            translatedValues[n] = (RubyNode) values.get(n).accept(this);
+            translatedValues[n] = values.get(n).accept(this);
         }
 
         return new UninitialisedArrayLiteralNode(context, translate(node.getPosition()), translatedValues);
     }
 
     @Override
-    public Object visitAttrAssignNode(org.jruby.ast.AttrAssignNode node) {
+    public RubyNode visitAttrAssignNode(org.jruby.ast.AttrAssignNode node) {
         return visitAttrAssignNodeExtraArgument(node, null);
     }
 
@@ -230,23 +214,23 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitBeginNode(org.jruby.ast.BeginNode node) {
+    public RubyNode visitBeginNode(org.jruby.ast.BeginNode node) {
         return node.getBodyNode().accept(this);
     }
 
     @Override
-    public Object visitBignumNode(org.jruby.ast.BignumNode node) {
+    public RubyNode visitBignumNode(org.jruby.ast.BignumNode node) {
         return new BignumLiteralNode(context, translate(node.getPosition()), node.getValue());
     }
 
     @Override
-    public Object visitBlockNode(org.jruby.ast.BlockNode node) {
+    public RubyNode visitBlockNode(org.jruby.ast.BlockNode node) {
         final List<org.jruby.ast.Node> children = node.childNodes();
 
         final List<RubyNode> translatedChildren = new ArrayList<>();
 
         for (int n = 0; n < children.size(); n++) {
-            final RubyNode translatedChild = (RubyNode) children.get(n).accept(this);
+            final RubyNode translatedChild = children.get(n).accept(this);
 
             if (!(translatedChild instanceof DeadNode)) {
                 translatedChildren.add(translatedChild);
@@ -261,7 +245,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitBreakNode(org.jruby.ast.BreakNode node) {
+    public RubyNode visitBreakNode(org.jruby.ast.BreakNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode resultNode;
@@ -269,14 +253,14 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         if (node.getValueNode() == null) {
             resultNode = new NilNode(context, sourceSection);
         } else {
-            resultNode = (RubyNode) node.getValueNode().accept(this);
+            resultNode = node.getValueNode().accept(this);
         }
 
         return new BreakNode(context, sourceSection, resultNode);
     }
 
     @Override
-    public Object visitCallNode(org.jruby.ast.CallNode node) {
+    public RubyNode visitCallNode(org.jruby.ast.CallNode node) {
         return visitCallNodeExtraArgument(node, null);
     }
 
@@ -286,7 +270,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     public RubyNode visitCallNodeExtraArgument(org.jruby.ast.CallNode node, RubyNode extraArgument) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final RubyNode receiverTranslated = (RubyNode) node.getReceiverNode().accept(this);
+        final RubyNode receiverTranslated = node.getReceiverNode().accept(this);
 
         org.jruby.ast.Node args = node.getArgsNode();
         org.jruby.ast.Node block = node.getIterNode();
@@ -340,14 +324,14 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         boolean isSplatted = false;
 
         if (argsNode instanceof org.jruby.ast.ListNode) {
-            arguments.addAll(((org.jruby.ast.ListNode) argsNode).childNodes());
+            arguments.addAll(argsNode.childNodes());
         } else if (argsNode instanceof org.jruby.ast.BlockPassNode) {
             final org.jruby.ast.BlockPassNode blockPass = (org.jruby.ast.BlockPassNode) argsNode;
 
             final org.jruby.ast.Node blockPassArgs = blockPass.getArgsNode();
 
             if (blockPassArgs instanceof org.jruby.ast.ListNode) {
-                arguments.addAll(((org.jruby.ast.ListNode) blockPassArgs).childNodes());
+                arguments.addAll(blockPassArgs.childNodes());
             } else if (blockPassArgs instanceof org.jruby.ast.ArgsCatNode) {
                 arguments.add(blockPassArgs);
             } else if (blockPassArgs != null) {
@@ -373,9 +357,9 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         RubyNode blockTranslated;
 
         if (blockPassNode != null) {
-            blockTranslated = ProcCastNodeFactory.create(context, sourceSection, (RubyNode) blockPassNode.accept(this));
+            blockTranslated = ProcCastNodeFactory.create(context, sourceSection, blockPassNode.accept(this));
         } else if (iterNode != null) {
-            blockTranslated = (RubyNode) iterNode.accept(this);
+            blockTranslated = iterNode.accept(this);
 
             if (blockTranslated instanceof NilNode) {
                 blockTranslated = null;
@@ -387,7 +371,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         final List<RubyNode> argumentsTranslated = new ArrayList<>();
 
         for (org.jruby.ast.Node argument : arguments) {
-            argumentsTranslated.add((RubyNode) argument.accept(this));
+            argumentsTranslated.add(argument.accept(this));
         }
 
         if (extraArgument != null) {
@@ -400,13 +384,13 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitCaseNode(org.jruby.ast.CaseNode node) {
+    public RubyNode visitCaseNode(org.jruby.ast.CaseNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode elseNode;
 
         if (node.getElseNode() != null) {
-            elseNode = (RubyNode) node.getElseNode().accept(this);
+            elseNode = node.getElseNode().accept(this);
         } else {
             elseNode = new NilNode(context, sourceSection);
         }
@@ -423,7 +407,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
 
             final RubyNode readTemp = environment.findLocalVarNode(tempName, sourceSection);
 
-            final RubyNode assignTemp = ((ReadNode) readTemp).makeWriteNode((RubyNode) node.getCaseNode().accept(this));
+            final RubyNode assignTemp = ((ReadNode) readTemp).makeWriteNode(node.getCaseNode().accept(this));
 
             /*
              * Build an if expression from the whens and else. Work backwards because the first if
@@ -446,7 +430,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
                 final List<RubyNode> comparisons = new ArrayList<>();
 
                 for (org.jruby.ast.Node expressionNode : expressions) {
-                    final RubyNode rubyExpression = (RubyNode) expressionNode.accept(this);
+                    final RubyNode rubyExpression = expressionNode.accept(this);
 
                     if (expressionNode instanceof org.jruby.ast.SplatNode) {
                         final SplatCastNode splatCastNode = (SplatCastNode) rubyExpression;
@@ -476,7 +460,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
                 if (when.getBodyNode() == null) {
                     thenNode = new NilNode(context, sourceSection);
                 } else {
-                    thenNode = (RubyNode) when.getBodyNode().accept(this);
+                    thenNode = when.getBodyNode().accept(this);
                 }
 
                 final IfNode ifNode = new IfNode(context, sourceSection, conditionCastNode, thenNode, elseNode);
@@ -500,7 +484,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
                 final List<org.jruby.ast.Node> expressions;
 
                 if (when.getExpressionNodes() instanceof org.jruby.ast.ListNode) {
-                    expressions = ((org.jruby.ast.ListNode) when.getExpressionNodes()).childNodes();
+                    expressions = when.getExpressionNodes().childNodes();
                 } else {
                     expressions = Arrays.asList(when.getExpressionNodes());
                 }
@@ -508,7 +492,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
                 final List<RubyNode> tests = new ArrayList<>();
 
                 for (org.jruby.ast.Node expressionNode : expressions) {
-                    final RubyNode rubyExpression = (RubyNode) expressionNode.accept(this);
+                    final RubyNode rubyExpression = expressionNode.accept(this);
                     tests.add(rubyExpression);
                 }
 
@@ -524,7 +508,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
 
                 final BooleanCastNode conditionCastNode = BooleanCastNodeFactory.create(context, sourceSection, conditionNode);
 
-                final RubyNode thenNode = (RubyNode) when.getBodyNode().accept(this);
+                final RubyNode thenNode = when.getBodyNode().accept(this);
 
                 final IfNode ifNode = new IfNode(context, sourceSection, conditionCastNode, thenNode, elseNode);
 
@@ -538,7 +522,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitClassNode(org.jruby.ast.ClassNode node) {
+    public RubyNode visitClassNode(org.jruby.ast.ClassNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
@@ -554,7 +538,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         RubyNode superClass;
 
         if (node.getSuperNode() != null) {
-            superClass = (RubyNode) node.getSuperNode().accept(this);
+            superClass = node.getSuperNode().accept(this);
         } else {
             superClass = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getObjectClass());
         }
@@ -571,7 +555,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
             if (node.childNodes().isEmpty()) {
                 return new ClassNode(context, sourceSection, new BoxingNode(context, sourceSection, new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getMainObject())));
             } else {
-                return (RubyNode) node.childNodes().get(0).accept(this);
+                return node.childNodes().get(0).accept(this);
             }
         }
     }
@@ -581,7 +565,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node) {
+    public RubyNode visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
         final RubyNode receiver;
         if (useClassVariablesAsIfInClass) {
@@ -589,12 +573,12 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         } else {
             receiver = new ClassNode(context, sourceSection, new BoxingNode(context, sourceSection, new SelfNode(context, sourceSection)));
         }
-        final RubyNode rhs = (RubyNode) node.getValueNode().accept(this);
+        final RubyNode rhs = node.getValueNode().accept(this);
         return new WriteClassVariableNode(context, sourceSection, node.getName(), receiver, rhs);
     }
 
     @Override
-    public Object visitClassVarNode(org.jruby.ast.ClassVarNode node) {
+    public RubyNode visitClassVarNode(org.jruby.ast.ClassVarNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
         final RubyNode receiver;
         if (useClassVariablesAsIfInClass) {
@@ -606,14 +590,14 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitColon2Node(org.jruby.ast.Colon2Node node) {
-        final RubyNode lhs = (RubyNode) node.getLeftNode().accept(this);
+    public RubyNode visitColon2Node(org.jruby.ast.Colon2Node node) {
+        final RubyNode lhs = node.getLeftNode().accept(this);
 
         return new UninitializedReadConstantNode(context, translate(node.getPosition()), node.getName(), lhs);
     }
 
     @Override
-    public Object visitColon3Node(org.jruby.ast.Colon3Node node) {
+    public RubyNode visitColon3Node(org.jruby.ast.Colon3Node node) {
         // Colon3 means the root namespace, as in ::Foo
 
         final SourceSection sourceSection = translate(node.getPosition());
@@ -624,28 +608,28 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitConstDeclNode(org.jruby.ast.ConstDeclNode node) {
+    public RubyNode visitConstDeclNode(org.jruby.ast.ConstDeclNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final ClassNode classNode = new ClassNode(context, sourceSection, new BoxingNode(context, sourceSection, new SelfNode(context, sourceSection)));
 
-        return new WriteConstantNode(context, sourceSection, node.getName(), classNode, (RubyNode) node.getValueNode().accept(this));
+        return new WriteConstantNode(context, sourceSection, node.getName(), classNode, node.getValueNode().accept(this));
     }
 
     @Override
-    public Object visitConstNode(org.jruby.ast.ConstNode node) {
+    public RubyNode visitConstNode(org.jruby.ast.ConstNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         return new UninitializedReadConstantNode(context, sourceSection, node.getName(), new SelfNode(context, sourceSection));
     }
 
     @Override
-    public Object visitDAsgnNode(org.jruby.ast.DAsgnNode node) {
+    public RubyNode visitDAsgnNode(org.jruby.ast.DAsgnNode node) {
         return new org.jruby.ast.LocalAsgnNode(node.getPosition(), node.getName(), node.getDepth(), node.getValueNode()).accept(this);
     }
 
     @Override
-    public Object visitDRegxNode(org.jruby.ast.DRegexpNode node) {
+    public RubyNode visitDRegxNode(org.jruby.ast.DRegexpNode node) {
         SourceSection sourceSection = translate(node.getPosition());
 
         final RubyNode stringNode = translateInterpolatedString(sourceSection, node.childNodes());
@@ -654,12 +638,12 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitDStrNode(org.jruby.ast.DStrNode node) {
+    public RubyNode visitDStrNode(org.jruby.ast.DStrNode node) {
         return translateInterpolatedString(translate(node.getPosition()), node.childNodes());
     }
 
     @Override
-    public Object visitDSymbolNode(org.jruby.ast.DSymbolNode node) {
+    public RubyNode visitDSymbolNode(org.jruby.ast.DSymbolNode node) {
         SourceSection sourceSection = translate(node.getPosition());
 
         final RubyNode stringNode = translateInterpolatedString(sourceSection, node.childNodes());
@@ -671,14 +655,14 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         final List<RubyNode> children = new ArrayList<>();
 
         for (org.jruby.ast.Node child : childNodes) {
-            children.add((RubyNode) child.accept(this));
+            children.add(child.accept(this));
         }
 
         return new InterpolatedStringNode(context, sourceSection, children.toArray(new RubyNode[children.size()]));
     }
 
     @Override
-    public Object visitDVarNode(org.jruby.ast.DVarNode node) {
+    public RubyNode visitDVarNode(org.jruby.ast.DVarNode node) {
         RubyNode readNode = environment.findLocalVarNode(node.getName(), translate(node.getPosition()));
 
         if (readNode == null) {
@@ -690,7 +674,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitDXStrNode(org.jruby.ast.DXStrNode node) {
+    public RubyNode visitDXStrNode(org.jruby.ast.DXStrNode node) {
         SourceSection sourceSection = translate(node.getPosition());
 
         final RubyNode string = translateInterpolatedString(sourceSection, node.childNodes());
@@ -699,7 +683,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitDefinedNode(org.jruby.ast.DefinedNode node) {
+    public RubyNode visitDefinedNode(org.jruby.ast.DefinedNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         org.jruby.ast.Node expressionNode = node.getExpressionNode();
@@ -720,21 +704,21 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
             return literal;
         }
 
-        return new DefinedNode(context, sourceSection, (RubyNode) node.getExpressionNode().accept(this));
+        return new DefinedNode(context, sourceSection, node.getExpressionNode().accept(this));
     }
 
     @Override
-    public Object visitDefnNode(org.jruby.ast.DefnNode node) {
+    public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
         final SelfNode classNode = new SelfNode(context, sourceSection);
         return translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode(), false);
     }
 
     @Override
-    public Object visitDefsNode(org.jruby.ast.DefsNode node) {
+    public RubyNode visitDefsNode(org.jruby.ast.DefsNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final RubyNode objectNode = (RubyNode) node.getReceiverNode().accept(this);
+        final RubyNode objectNode = node.getReceiverNode().accept(this);
 
         final SingletonClassNode singletonClassNode = new SingletonClassNode(context, sourceSection, new BoxingNode(context, sourceSection, objectNode));
 
@@ -763,9 +747,9 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitDotNode(org.jruby.ast.DotNode node) {
-        final RubyNode begin = (RubyNode) node.getBeginNode().accept(this);
-        final RubyNode end = (RubyNode) node.getEndNode().accept(this);
+    public RubyNode visitDotNode(org.jruby.ast.DotNode node) {
+        final RubyNode begin = node.getBeginNode().accept(this);
+        final RubyNode end = node.getEndNode().accept(this);
         SourceSection sourceSection = translate(node.getPosition());
 
         if (begin instanceof FixnumLiteralNode && end instanceof FixnumLiteralNode) {
@@ -779,25 +763,25 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitEncodingNode(org.jruby.ast.EncodingNode node) {
+    public RubyNode visitEncodingNode(org.jruby.ast.EncodingNode node) {
         SourceSection sourceSection = translate(node.getPosition());
         return new EncodingPseudoVariableNode(context, sourceSection);
     }
 
     @Override
-    public Object visitEnsureNode(org.jruby.ast.EnsureNode node) {
-        final RubyNode tryPart = (RubyNode) node.getBodyNode().accept(this);
-        final RubyNode ensurePart = (RubyNode) node.getEnsureNode().accept(this);
+    public RubyNode visitEnsureNode(org.jruby.ast.EnsureNode node) {
+        final RubyNode tryPart = node.getBodyNode().accept(this);
+        final RubyNode ensurePart = node.getEnsureNode().accept(this);
         return new EnsureNode(context, translate(node.getPosition()), tryPart, ensurePart);
     }
 
     @Override
-    public Object visitEvStrNode(org.jruby.ast.EvStrNode node) {
+    public RubyNode visitEvStrNode(org.jruby.ast.EvStrNode node) {
         return node.getBody().accept(this);
     }
 
     @Override
-    public Object visitFCallNode(org.jruby.ast.FCallNode node) {
+    public RubyNode visitFCallNode(org.jruby.ast.FCallNode node) {
         final org.jruby.ast.Node receiver = new org.jruby.ast.SelfNode(node.getPosition());
         final org.jruby.ast.Node callNode = new org.jruby.ast.CallNode(node.getPosition(), receiver, node.getName(), node.getArgsNode(), node.getIterNode());
 
@@ -805,12 +789,12 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitFalseNode(org.jruby.ast.FalseNode node) {
+    public RubyNode visitFalseNode(org.jruby.ast.FalseNode node) {
         return new BooleanLiteralNode(context, translate(node.getPosition()), false);
     }
 
     @Override
-    public Object visitFixnumNode(org.jruby.ast.FixnumNode node) {
+    public RubyNode visitFixnumNode(org.jruby.ast.FixnumNode node) {
         final long value = node.getValue();
 
         if (value >= RubyFixnum.MIN_VALUE && value <= RubyFixnum.MAX_VALUE) {
@@ -820,11 +804,11 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitFlipNode(org.jruby.ast.FlipNode node) {
+    public RubyNode visitFlipNode(org.jruby.ast.FlipNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final RubyNode begin = (RubyNode) node.getBeginNode().accept(this);
-        final RubyNode end = (RubyNode) node.getEndNode().accept(this);
+        final RubyNode begin = node.getBeginNode().accept(this);
+        final RubyNode end = node.getEndNode().accept(this);
 
         final BooleanCastNode beginCast = BooleanCastNodeFactory.create(context, sourceSection, begin);
         final BooleanCastNode endCast = BooleanCastNodeFactory.create(context, sourceSection, end);
@@ -845,12 +829,12 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitFloatNode(org.jruby.ast.FloatNode node) {
+    public RubyNode visitFloatNode(org.jruby.ast.FloatNode node) {
         return new FloatLiteralNode(context, translate(node.getPosition()), node.getValue());
     }
 
     @Override
-    public Object visitForNode(org.jruby.ast.ForNode node) {
+    public RubyNode visitForNode(org.jruby.ast.ForNode node) {
         /**
          * A Ruby for-loop, such as:
          * 
@@ -943,7 +927,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         final org.jruby.ast.CallNode callNode = new org.jruby.ast.CallNode(node.getPosition(), receiver, "each", null, block);
 
         translatingForStatement = true;
-        final RubyNode translated = (RubyNode) callNode.accept(this);
+        final RubyNode translated = callNode.accept(this);
         translatingForStatement = false;
 
         return translated;
@@ -976,11 +960,11 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitGlobalAsgnNode(org.jruby.ast.GlobalAsgnNode node) {
+    public RubyNode visitGlobalAsgnNode(org.jruby.ast.GlobalAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final String name = node.getName();
-        final RubyNode rhs = (RubyNode) node.getValueNode().accept(this);
+        final RubyNode rhs = node.getValueNode().accept(this);
 
         if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
             context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), "assigning to frame local global variables not implemented");
@@ -993,7 +977,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitGlobalVarNode(org.jruby.ast.GlobalVarNode node) {
+    public RubyNode visitGlobalVarNode(org.jruby.ast.GlobalVarNode node) {
         final String name = node.getName();
         final SourceSection sourceSection = translate(node.getPosition());
 
@@ -1013,7 +997,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitHashNode(org.jruby.ast.HashNode node) {
+    public RubyNode visitHashNode(org.jruby.ast.HashNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final List<RubyNode> keys = new ArrayList<>();
@@ -1028,14 +1012,14 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
                 final NilNode nilNode = new NilNode(context, sourceSection);
                 keys.add(nilNode);
             } else {
-                keys.add((RubyNode) entries.get(n).accept(this));
+                keys.add(entries.get(n).accept(this));
             }
 
             if (entries.get(n + 1) == null) {
                 final NilNode nilNode = new NilNode(context, sourceSection);
                 values.add(nilNode);
             } else {
-                values.add((RubyNode) entries.get(n + 1).accept(this));
+                values.add(entries.get(n + 1).accept(this));
             }
         }
 
@@ -1043,7 +1027,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitIfNode(org.jruby.ast.IfNode node) {
+    public RubyNode visitIfNode(org.jruby.ast.IfNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         org.jruby.ast.Node thenBody = node.getThenBody();
@@ -1063,19 +1047,19 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         if (node.getCondition() == null) {
             condition = new NilNode(context, sourceSection);
         } else {
-            condition = (RubyNode) node.getCondition().accept(this);
+            condition = node.getCondition().accept(this);
         }
 
         final BooleanCastNode conditionCast = BooleanCastNodeFactory.create(context, sourceSection, condition);
 
-        final RubyNode thenBodyTranslated = (RubyNode) thenBody.accept(this);
-        final RubyNode elseBodyTranslated = (RubyNode) elseBody.accept(this);
+        final RubyNode thenBodyTranslated = thenBody.accept(this);
+        final RubyNode elseBodyTranslated = elseBody.accept(this);
 
         return new IfNode(context, sourceSection, conditionCast, thenBodyTranslated, elseBodyTranslated);
     }
 
     @Override
-    public Object visitInstAsgnNode(org.jruby.ast.InstAsgnNode node) {
+    public RubyNode visitInstAsgnNode(org.jruby.ast.InstAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
         final String nameWithoutSigil = node.getName();
 
@@ -1086,14 +1070,14 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         if (node.getValueNode() == null) {
             rhs = new DeadNode(context, sourceSection);
         } else {
-            rhs = (RubyNode) node.getValueNode().accept(this);
+            rhs = node.getValueNode().accept(this);
         }
 
         return new WriteInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver, rhs, false);
     }
 
     @Override
-    public Object visitInstVarNode(org.jruby.ast.InstVarNode node) {
+    public RubyNode visitInstVarNode(org.jruby.ast.InstVarNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
         final String nameWithoutSigil = node.getName();
 
@@ -1103,7 +1087,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitIterNode(org.jruby.ast.IterNode node) {
+    public RubyNode visitIterNode(org.jruby.ast.IterNode node) {
         /*
          * In a block we do NOT allocate a new return ID - returns will return from the method, not
          * the block (in the general case, see Proc and the difference between Proc and Lambda for
@@ -1141,8 +1125,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitLocalAsgnNode(org.jruby.ast.LocalAsgnNode node) {
-
+    public RubyNode visitLocalAsgnNode(org.jruby.ast.LocalAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         if (environment.getNeverAssignInParentScope()) {
@@ -1175,7 +1158,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         if (node.getValueNode() == null) {
             rhs = new DeadNode(context, sourceSection);
         } else {
-            rhs = (RubyNode) node.getValueNode().accept(this);
+            rhs = node.getValueNode().accept(this);
         }
 
         RubyNode translated = ((ReadNode) lhs).makeWriteNode(rhs);
@@ -1186,7 +1169,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitLocalVarNode(org.jruby.ast.LocalVarNode node) {
+    public RubyNode visitLocalVarNode(org.jruby.ast.LocalVarNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final String name = node.getName();
@@ -1202,21 +1185,21 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitMatch2Node(org.jruby.ast.Match2Node node) {
+    public RubyNode visitMatch2Node(org.jruby.ast.Match2Node node) {
         final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), node.getValueNode());
         final org.jruby.ast.Node callNode = new org.jruby.ast.CallNode(node.getPosition(), node.getReceiverNode(), "=~", argsNode, null);
         return callNode.accept(this);
     }
 
     @Override
-    public Object visitMatch3Node(org.jruby.ast.Match3Node node) {
+    public RubyNode visitMatch3Node(org.jruby.ast.Match3Node node) {
         final org.jruby.ast.Node argsNode = buildArrayNode(node.getPosition(), node.getValueNode());
         final org.jruby.ast.Node callNode = new org.jruby.ast.CallNode(node.getPosition(), node.getReceiverNode(), "=~", argsNode, null);
         return callNode.accept(this);
     }
 
     @Override
-    public Object visitModuleNode(org.jruby.ast.ModuleNode node) {
+    public RubyNode visitModuleNode(org.jruby.ast.ModuleNode node) {
         // See visitClassNode
 
         final SourceSection sourceSection = translate(node.getPosition());
@@ -1235,12 +1218,12 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitMultipleAsgnNode(org.jruby.ast.MultipleAsgnNode node) {
+    public RubyNode visitMultipleAsgnNode(org.jruby.ast.MultipleAsgnNode node) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Object visitMultipleAsgnNode(org.jruby.ast.MultipleAsgn19Node node) {
+    public RubyNode visitMultipleAsgnNode(org.jruby.ast.MultipleAsgn19Node node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final org.jruby.ast.ArrayNode preArray = (org.jruby.ast.ArrayNode) node.getPre();
@@ -1252,7 +1235,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
             context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), "no RHS for multiple assignment - using nil");
             rhsTranslated = new NilNode(context, sourceSection);
         } else {
-            rhsTranslated = (RubyNode) rhs.accept(this);
+            rhsTranslated = rhs.accept(this);
         }
 
         /*
@@ -1372,7 +1355,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
              * a = *b
              */
 
-            final RubyNode restTranslated = ((RubyNode) node.getRest().accept(this)).getNonProxyNode();
+            final RubyNode restTranslated = (node.getRest().accept(this)).getNonProxyNode();
 
             /*
              * Sometimes rest is a corrupt write with no RHS, like in other multiple assignments,
@@ -1401,7 +1384,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
              * a = [b, c]
              */
 
-            final RubyNode restTranslated = ((RubyNode) node.getRest().accept(this)).getNonProxyNode();
+            final RubyNode restTranslated = (node.getRest().accept(this)).getNonProxyNode();
 
             /*
              * Sometimes rest is a corrupt write with no RHS, like in other multiple assignments,
@@ -1443,7 +1426,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
              * write which allows us to set the RHS.
              */
 
-            final WriteNode dummyTranslated = (WriteNode) ((RubyNode) dummyAssignment.accept(this)).getNonProxyNode();
+            final WriteNode dummyTranslated = (WriteNode) (dummyAssignment.accept(this)).getNonProxyNode();
             translated = ((ReadNode) dummyTranslated.makeReadNode()).makeWriteNode(rhs);
         } else if (dummyAssignment instanceof org.jruby.ast.InstAsgnNode) {
             /*
@@ -1464,7 +1447,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
             final org.jruby.ast.AttrAssignNode dummyAttrAssignment = (org.jruby.ast.AttrAssignNode) dummyAssignment;
             translated = visitAttrAssignNodeExtraArgument(dummyAttrAssignment, rhs);
         } else if (dummyAssignment instanceof org.jruby.ast.DAsgnNode) {
-            final RubyNode dummyTranslated = (RubyNode) dummyAssignment.accept(this);
+            final RubyNode dummyTranslated = dummyAssignment.accept(this);
 
             if (dummyTranslated.getNonProxyNode() instanceof WriteLevelVariableNode) {
                 translated = ((ReadNode) ((WriteLevelVariableNode) dummyTranslated.getNonProxyNode()).makeReadNode()).makeWriteNode(rhs);
@@ -1479,13 +1462,13 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitNewlineNode(org.jruby.ast.NewlineNode node) {
-        final RubyNode translated = (RubyNode) node.getNextNode().accept(this);
+    public RubyNode visitNewlineNode(org.jruby.ast.NewlineNode node) {
+        final RubyNode translated = node.getNextNode().accept(this);
         return instrumenter.instrumentAsStatement(translated);
     }
 
     @Override
-    public Object visitNextNode(org.jruby.ast.NextNode node) {
+    public RubyNode visitNextNode(org.jruby.ast.NextNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode resultNode;
@@ -1493,19 +1476,19 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         if (node.getValueNode() == null) {
             resultNode = new NilNode(context, sourceSection);
         } else {
-            resultNode = (RubyNode) node.getValueNode().accept(this);
+            resultNode = node.getValueNode().accept(this);
         }
 
         return new NextNode(context, sourceSection, resultNode);
     }
 
     @Override
-    public Object visitNilNode(org.jruby.ast.NilNode node) {
+    public RubyNode visitNilNode(org.jruby.ast.NilNode node) {
         return new NilNode(context, translate(node.getPosition()));
     }
 
     @Override
-    public Object visitNthRefNode(org.jruby.ast.NthRefNode node) {
+    public RubyNode visitNthRefNode(org.jruby.ast.NthRefNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final String name = "$" + node.getMatchNumber();
@@ -1521,15 +1504,15 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitOpAsgnAndNode(org.jruby.ast.OpAsgnAndNode node) {
+    public RubyNode visitOpAsgnAndNode(org.jruby.ast.OpAsgnAndNode node) {
         final org.jruby.ast.Node lhs = node.getFirstNode();
         final org.jruby.ast.Node rhs = node.getSecondNode();
 
-        return AndNodeFactory.create(context, translate(node.getPosition()), (RubyNode) lhs.accept(this), (RubyNode) rhs.accept(this));
+        return AndNodeFactory.create(context, translate(node.getPosition()), lhs.accept(this), rhs.accept(this));
     }
 
     @Override
-    public Object visitOpAsgnNode(org.jruby.ast.OpAsgnNode node) {
+    public RubyNode visitOpAsgnNode(org.jruby.ast.OpAsgnNode node) {
         /*
          * We're going to de-sugar a.foo += c into a.foo = a.foo + c. Note that we can't evaluate a
          * more than once, so we put it into a temporary, and we're doing something more like:
@@ -1554,7 +1537,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitOpAsgnOrNode(org.jruby.ast.OpAsgnOrNode node) {
+    public RubyNode visitOpAsgnOrNode(org.jruby.ast.OpAsgnOrNode node) {
         /*
          * De-sugar x ||= y into x || x = y. No repeated evaluations there so it's easy. It's also
          * basically how jruby-parser represents it already. We'll do it directly, rather than via
@@ -1564,11 +1547,11 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         final org.jruby.ast.Node lhs = node.getFirstNode();
         final org.jruby.ast.Node rhs = node.getSecondNode();
 
-        return OrNodeFactory.create(context, translate(node.getPosition()), (RubyNode) lhs.accept(this), (RubyNode) rhs.accept(this));
+        return OrNodeFactory.create(context, translate(node.getPosition()), lhs.accept(this), rhs.accept(this));
     }
 
     @Override
-    public Object visitOpElementAsgnNode(org.jruby.ast.OpElementAsgnNode node) {
+    public RubyNode visitOpElementAsgnNode(org.jruby.ast.OpElementAsgnNode node) {
         /*
          * We're going to de-sugar a[b] += c into a[b] = a[b] + c. See discussion in
          * visitOpAsgnNode.
@@ -1626,7 +1609,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitOrNode(org.jruby.ast.OrNode node) {
+    public RubyNode visitOrNode(org.jruby.ast.OrNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode x;
@@ -1634,7 +1617,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         if (node.getFirstNode() == null) {
             x = new NilNode(context, sourceSection);
         } else {
-            x = (RubyNode) node.getFirstNode().accept(this);
+            x = node.getFirstNode().accept(this);
         }
 
         RubyNode y;
@@ -1642,19 +1625,19 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         if (node.getSecondNode() == null) {
             y = new NilNode(context, sourceSection);
         } else {
-            y = (RubyNode) node.getSecondNode().accept(this);
+            y = node.getSecondNode().accept(this);
         }
 
         return OrNodeFactory.create(context, sourceSection, x, y);
     }
 
     @Override
-    public Object visitRedoNode(org.jruby.ast.RedoNode node) {
+    public RubyNode visitRedoNode(org.jruby.ast.RedoNode node) {
         return new RedoNode(context, translate(node.getPosition()));
     }
 
     @Override
-    public Object visitRegexpNode(org.jruby.ast.RegexpNode node) {
+    public RubyNode visitRegexpNode(org.jruby.ast.RegexpNode node) {
         Regex regex;
 
         if (node.getPattern() != null) {
@@ -1669,13 +1652,13 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitRescueNode(org.jruby.ast.RescueNode node) {
+    public RubyNode visitRescueNode(org.jruby.ast.RescueNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode tryPart;
 
         if (node.getBodyNode() != null) {
-            tryPart = (RubyNode) node.getBodyNode().accept(this);
+            tryPart = node.getBodyNode().accept(this);
         } else {
             tryPart = new NilNode(context, sourceSection);
         }
@@ -1692,7 +1675,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
                     final RubyNode[] handlingClasses = new RubyNode[exceptionNodes.size()];
 
                     for (int n = 0; n < handlingClasses.length; n++) {
-                        handlingClasses[n] = (RubyNode) exceptionNodes.get(n).accept(this);
+                        handlingClasses[n] = exceptionNodes.get(n).accept(this);
                     }
 
                     RubyNode translatedBody;
@@ -1700,7 +1683,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
                     if (rescueBody.getBodyNode() == null) {
                         translatedBody = new NilNode(context, sourceSection);
                     } else {
-                        translatedBody = (RubyNode) rescueBody.getBodyNode().accept(this);
+                        translatedBody = rescueBody.getBodyNode().accept(this);
                     }
 
                     final RescueClassesNode rescueNode = new RescueClassesNode(context, sourceSection, handlingClasses, translatedBody);
@@ -1713,7 +1696,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
                     if (splat.getValue() == null) {
                         splatTranslated = new NilNode(context, sourceSection);
                     } else {
-                        splatTranslated = (RubyNode) splat.getValue().accept(this);
+                        splatTranslated = splat.getValue().accept(this);
                     }
 
                     RubyNode bodyTranslated;
@@ -1721,7 +1704,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
                     if (rescueBody.getBodyNode() == null) {
                         bodyTranslated = new NilNode(context, sourceSection);
                     } else {
-                        bodyTranslated = (RubyNode) rescueBody.getBodyNode().accept(this);
+                        bodyTranslated = rescueBody.getBodyNode().accept(this);
                     }
 
                     final RescueSplatNode rescueNode = new RescueSplatNode(context, sourceSection, splatTranslated, bodyTranslated);
@@ -1735,7 +1718,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
                 if (rescueBody.getBodyNode() == null) {
                     bodyNode = new NilNode(context, sourceSection);
                 } else {
-                    bodyNode = (RubyNode) rescueBody.getBodyNode().accept(this);
+                    bodyNode = rescueBody.getBodyNode().accept(this);
                 }
 
                 final RescueAnyNode rescueNode = new RescueAnyNode(context, sourceSection, bodyNode);
@@ -1748,7 +1731,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         RubyNode elsePart;
 
         if (node.getElseNode() != null) {
-            elsePart = (RubyNode) node.getElseNode().accept(this);
+            elsePart = node.getElseNode().accept(this);
         } else {
             elsePart = new NilNode(context, sourceSection);
         }
@@ -1757,12 +1740,12 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitRetryNode(org.jruby.ast.RetryNode node) {
+    public RubyNode visitRetryNode(org.jruby.ast.RetryNode node) {
         return new RetryNode(context, translate(node.getPosition()));
     }
 
     @Override
-    public Object visitReturnNode(org.jruby.ast.ReturnNode node) {
+    public RubyNode visitReturnNode(org.jruby.ast.ReturnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode translatedChild;
@@ -1770,14 +1753,14 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         if (node.getValueNode() == null) {
             translatedChild = new NilNode(context, sourceSection);
         } else {
-            translatedChild = (RubyNode) node.getValueNode().accept(this);
+            translatedChild = node.getValueNode().accept(this);
         }
 
         return new ReturnNode(context, sourceSection, environment.getReturnID(), translatedChild);
     }
 
     @Override
-    public Object visitSClassNode(org.jruby.ast.SClassNode node) {
+    public RubyNode visitSClassNode(org.jruby.ast.SClassNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
@@ -1786,7 +1769,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
 
         final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), "singleton", node, node.getBodyNode());
 
-        final RubyNode receiverNode = (RubyNode) node.getReceiverNode().accept(this);
+        final RubyNode receiverNode = node.getReceiverNode().accept(this);
 
         final SingletonClassNode singletonClassNode = new SingletonClassNode(context, sourceSection, new BoxingNode(context, sourceSection, receiverNode));
 
@@ -1794,17 +1777,17 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitSValueNode(org.jruby.ast.SValueNode node) {
+    public RubyNode visitSValueNode(org.jruby.ast.SValueNode node) {
         return node.getValue().accept(this);
     }
 
     @Override
-    public Object visitSelfNode(org.jruby.ast.SelfNode node) {
+    public RubyNode visitSelfNode(org.jruby.ast.SelfNode node) {
         return new SelfNode(context, translate(node.getPosition()));
     }
 
     @Override
-    public Object visitSplatNode(org.jruby.ast.SplatNode node) {
+    public RubyNode visitSplatNode(org.jruby.ast.SplatNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode value;
@@ -1812,36 +1795,36 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         if (node.getValue() == null) {
             value = new NilNode(context, sourceSection);
         } else {
-            value = (RubyNode) node.getValue().accept(this);
+            value = node.getValue().accept(this);
         }
 
         return SplatCastNodeFactory.create(context, sourceSection, value);
     }
 
     @Override
-    public Object visitStrNode(org.jruby.ast.StrNode node) {
+    public RubyNode visitStrNode(org.jruby.ast.StrNode node) {
         return new StringLiteralNode(context, translate(node.getPosition()), node.getValue().toString());
     }
 
     @Override
-    public Object visitSymbolNode(org.jruby.ast.SymbolNode node) {
+    public RubyNode visitSymbolNode(org.jruby.ast.SymbolNode node) {
         return new ObjectLiteralNode(context, translate(node.getPosition()), context.newSymbol(node.getName()));
     }
 
     @Override
-    public Object visitTrueNode(org.jruby.ast.TrueNode node) {
+    public RubyNode visitTrueNode(org.jruby.ast.TrueNode node) {
         return new BooleanLiteralNode(context, translate(node.getPosition()), true);
     }
 
     @Override
-    public Object visitUndefNode(org.jruby.ast.UndefNode node) {
+    public RubyNode visitUndefNode(org.jruby.ast.UndefNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
         final SelfNode classNode = new SelfNode(context, sourceSection);
         return new UndefNode(context, sourceSection, classNode, ((org.jruby.ast.LiteralNode) node.getName()).getName());
     }
 
     @Override
-    public Object visitUntilNode(org.jruby.ast.UntilNode node) {
+    public RubyNode visitUntilNode(org.jruby.ast.UntilNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode condition;
@@ -1849,14 +1832,14 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         if (node.getConditionNode() == null) {
             condition = new NilNode(context, sourceSection);
         } else {
-            condition = (RubyNode) node.getConditionNode().accept(this);
+            condition = node.getConditionNode().accept(this);
         }
 
         final BooleanCastNode conditionCast = BooleanCastNodeFactory.create(context, sourceSection, condition);
         final NotNode conditionCastNot = new NotNode(context, sourceSection, conditionCast);
         final BooleanCastNode conditionCastNotCast = BooleanCastNodeFactory.create(context, sourceSection, conditionCastNot);
 
-        final RubyNode body = (RubyNode) node.getBodyNode().accept(this);
+        final RubyNode body = node.getBodyNode().accept(this);
 
         if (node.evaluateAtStart()) {
             return new WhileNode(context, sourceSection, conditionCastNotCast, body);
@@ -1866,7 +1849,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitVCallNode(org.jruby.ast.VCallNode node) {
+    public RubyNode visitVCallNode(org.jruby.ast.VCallNode node) {
         final org.jruby.ast.Node receiver = new org.jruby.ast.SelfNode(node.getPosition());
         final org.jruby.ast.Node args = null;
         final org.jruby.ast.Node callNode = new org.jruby.ast.CallNode(node.getPosition(), receiver, node.getName(), args);
@@ -1875,7 +1858,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitWhileNode(org.jruby.ast.WhileNode node) {
+    public RubyNode visitWhileNode(org.jruby.ast.WhileNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode condition;
@@ -1883,12 +1866,12 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         if (node.getConditionNode() == null) {
             condition = new NilNode(context, sourceSection);
         } else {
-            condition = (RubyNode) node.getConditionNode().accept(this);
+            condition = node.getConditionNode().accept(this);
         }
 
         final BooleanCastNode conditionCast = BooleanCastNodeFactory.create(context, sourceSection, condition);
 
-        final RubyNode body = (RubyNode) node.getBodyNode().accept(this);
+        final RubyNode body = node.getBodyNode().accept(this);
 
         if (node.evaluateAtStart()) {
             return new WhileNode(context, sourceSection, conditionCast, body);
@@ -1898,7 +1881,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitXStrNode(org.jruby.ast.XStrNode node) {
+    public RubyNode visitXStrNode(org.jruby.ast.XStrNode node) {
         SourceSection sourceSection = translate(node.getPosition());
 
         final StringLiteralNode literal = new StringLiteralNode(context, sourceSection, node.getValue().toString());
@@ -1907,7 +1890,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitYieldNode(org.jruby.ast.YieldNode node) {
+    public RubyNode visitYieldNode(org.jruby.ast.YieldNode node) {
         final List<org.jruby.ast.Node> arguments = new ArrayList<>();
 
         org.jruby.ast.Node argsNode = node.getArgsNode();
@@ -1929,7 +1912,7 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
         final List<RubyNode> argumentsTranslated = new ArrayList<>();
 
         for (org.jruby.ast.Node argument : arguments) {
-            argumentsTranslated.add((RubyNode) argument.accept(this));
+            argumentsTranslated.add(argument.accept(this));
         }
 
         final RubyNode[] argumentsTranslatedArray = argumentsTranslated.toArray(new RubyNode[argumentsTranslated.size()]);
@@ -1938,13 +1921,13 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    public Object visitZArrayNode(org.jruby.ast.ZArrayNode node) {
+    public RubyNode visitZArrayNode(org.jruby.ast.ZArrayNode node) {
         final RubyNode[] values = new RubyNode[0];
 
         return new UninitialisedArrayLiteralNode(context, translate(node.getPosition()), values);
     }
 
-    public Object visitLambdaNode(org.jruby.ast.LambdaNode node) {
+    public RubyNode visitLambdaNode(org.jruby.ast.LambdaNode node) {
         // TODO(cs): code copied and modified from visitIterNode - extract common
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getReturnID(), false, false, new UniqueMethodIdentifier());
@@ -1997,11 +1980,11 @@ public class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor {
     }
 
     @Override
-    protected Object defaultVisit(Node node) {
+    protected RubyNode defaultVisit(Node node) {
         return unimplemented(node);
     }
 
-    protected Object unimplemented(Node node) {
+    protected RubyNode unimplemented(Node node) {
         context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), node + " does nothing - translating as nil");
         return new NilNode(context, translate(node.getPosition()));
     }

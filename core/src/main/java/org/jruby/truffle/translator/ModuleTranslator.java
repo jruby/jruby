@@ -47,7 +47,7 @@ class ModuleTranslator extends Translator {
         RubyNode body;
 
         if (bodyNode != null) {
-            body = (RubyNode) bodyNode.accept(this);
+            body = bodyNode.accept(this);
         } else {
             body = new NilNode(context, sourceSection);
         }
@@ -67,7 +67,7 @@ class ModuleTranslator extends Translator {
     }
 
     @Override
-    public Object visitConstDeclNode(org.jruby.ast.ConstDeclNode node) {
+    public RubyNode visitConstDeclNode(org.jruby.ast.ConstDeclNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final SelfNode selfNode = new SelfNode(context, sourceSection);
@@ -76,7 +76,7 @@ class ModuleTranslator extends Translator {
     }
 
     @Override
-    public Object visitConstNode(org.jruby.ast.ConstNode node) {
+    public RubyNode visitConstNode(org.jruby.ast.ConstNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final SelfNode selfNode = new SelfNode(context, sourceSection);
@@ -85,7 +85,7 @@ class ModuleTranslator extends Translator {
     }
 
     @Override
-    public Object visitDefnNode(org.jruby.ast.DefnNode node) {
+    public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
         /*
          * The top-level translator puts methods into Object. We put ours into the self, which is
          * the class being defined.
@@ -101,20 +101,20 @@ class ModuleTranslator extends Translator {
     }
 
     @Override
-    public Object visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node) {
+    public RubyNode visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final RubyNode rhs = (RubyNode) node.getValueNode().accept(this);
+        final RubyNode rhs = node.getValueNode().accept(this);
         return new WriteClassVariableNode(context, sourceSection, node.getName(), new SelfNode(context, sourceSection), rhs);
     }
 
     @Override
-    public Object visitClassVarNode(org.jruby.ast.ClassVarNode node) {
+    public RubyNode visitClassVarNode(org.jruby.ast.ClassVarNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
         return new ReadClassVariableNode(context, sourceSection, node.getName(), new SelfNode(context, sourceSection));
     }
 
     @Override
-    public Object visitAliasNode(org.jruby.ast.AliasNode node) {
+    public RubyNode visitAliasNode(org.jruby.ast.AliasNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final org.jruby.ast.LiteralNode oldName = (org.jruby.ast.LiteralNode) node.getOldName();
