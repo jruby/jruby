@@ -62,10 +62,10 @@ class MethodTranslator extends BodyTranslator {
             body = new NilNode(context, sourceSection);
         }
 
-        RubyNode originalBody = loadArgumentsIntoLocals(arity, body);
+        RubyNode originalBody = loadArgumentsIntoLocals(sourceSection, arity, body);
 
         /*final RubyNode newCheckArity = new CheckArityNode(context, sourceSection, arity);
-        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(context, source, environment);
+        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(context, source, isBlock, environment);
         final RubyNode newLoadArguments = argsNode.accept(loadArgumentsTranslator);
 
         final RubyNode newBlock;
@@ -78,7 +78,7 @@ class MethodTranslator extends BodyTranslator {
                 final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
                 final RubyNode writeArrayNode = WriteLocalVariableNodeFactory.create(context, sourceSection, arraySlot, castArrayNode);
 
-                final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(context, source, environment);
+                final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(context, source, isBlock, environment);
                 destructureArgumentsTranslator.pushArraySlot(arraySlot);
                 final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
@@ -93,13 +93,13 @@ class MethodTranslator extends BodyTranslator {
 
         final RubyNode newBody = SequenceNode.sequence(context, sourceSection, newBlock, body);
 
-        if (!NodeUtil.printCompactTreeToString(originalBody).equals(NodeUtil.printCompactTreeToString(newBody))) {
+        if (!norm(NodeUtil.printTreeToString(originalBody)).equals(norm(NodeUtil.printTreeToString(newBody)))) {
             System.err.println(sourceSection);
             System.err.println(argsNode.toString());
             System.err.println("original");
-            NodeUtil.printCompactTree(System.err, originalBody);
+            NodeUtil.printTree(System.err, originalBody);
             System.err.println("new");
-            NodeUtil.printCompactTree(System.err, newBody);
+            NodeUtil.printTree(System.err, newBody);
         }*/
 
         body = originalBody;
@@ -135,9 +135,7 @@ class MethodTranslator extends BodyTranslator {
         return new Arity(minimum, maximum == -1 ? Arity.NO_MAXIMUM : maximum);
     }
 
-    private RubyNode loadArgumentsIntoLocals(Arity arity, RubyNode body) {
-        final SourceSection sourceSection = body.getEncapsulatingSourceSection();
-
+    private RubyNode loadArgumentsIntoLocals(SourceSection sourceSection, Arity arity, RubyNode body) {
         final List<RubyNode> loadIndividualArgumentsNodes = new ArrayList<>();
 
         if (!isBlock) {
@@ -221,7 +219,7 @@ class MethodTranslator extends BodyTranslator {
 
         final RubyNode loadIndividualArguments = SequenceNode.sequence(context, sourceSection, loadIndividualArgumentsNodes.toArray(new RubyNode[loadIndividualArgumentsNodes.size()]));
 
-        final RubyNode noSwitch = SequenceNode.sequence(context, body.getSourceSection(), loadIndividualArguments, body);
+        final RubyNode noSwitch = SequenceNode.sequence(context, sourceSection, loadIndividualArguments, body);
 
         if (!isBlock) {
             return noSwitch;
@@ -421,6 +419,13 @@ class MethodTranslator extends BodyTranslator {
         } else {
             return super.createFlipFlopState(sourceSection, depth);
         }
+    }
+
+    private String norm(String tree) {
+        return tree
+                .replaceAll("@[0-9a-f]+", "@somewhere")
+                .replaceAll("rubytruffle_temp_destructure_\\d+", "rubytruffle_temp_destructure_n")
+                .replaceAll("frameSlot = \\[\\d+", "frameSlot = [n");
     }
 
 }

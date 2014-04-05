@@ -28,6 +28,7 @@ import java.util.List;
 
 public class LoadArgumentsTranslator extends Translator {
 
+    private final boolean isBlock;
     private final TranslatorEnvironment environment;
     private final List<FrameSlot> arraySlotStack = new ArrayList<>();
 
@@ -40,8 +41,9 @@ public class LoadArgumentsTranslator extends Translator {
 
     private org.jruby.ast.ArgsNode argsNode;
 
-    public LoadArgumentsTranslator(RubyContext context, Source source, TranslatorEnvironment environment) {
+    public LoadArgumentsTranslator(RubyContext context, Source source, boolean isBlock, TranslatorEnvironment environment) {
         super(context, source);
+        this.isBlock = isBlock;
         this.environment = environment;
     }
 
@@ -85,9 +87,9 @@ public class LoadArgumentsTranslator extends Translator {
             readNode = ArrayIndexNodeFactory.create(context, sourceSection, node.getIndex(), loadArray(sourceSection));
         } else {
             if (state == State.PRE) {
-                readNode = new ReadPreArgumentNode(context, sourceSection, node.getIndex(), MissingArgumentBehaviour.RUNTIME_ERROR);
+                readNode = new ReadPreArgumentNode(context, sourceSection, node.getIndex(), isBlock ? MissingArgumentBehaviour.NIL : MissingArgumentBehaviour.RUNTIME_ERROR);
             } else if (state == State.POST) {
-                readNode = new ReadPostArgumentNode(context, sourceSection, argsNode.getPostCount() - node.getIndex() - 1);
+                readNode = new ReadPostArgumentNode(context, sourceSection, node.getIndex() - argsNode.getPostCount() - 1);
             } else {
                 throw new IllegalStateException();
             }
