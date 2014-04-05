@@ -30,7 +30,7 @@ public class CallTargetMethodImplementation implements MethodImplementation {
         assert RubyContext.shouldObjectBeVisible(self);
         assert RubyContext.shouldObjectsBeVisible(args);
 
-        RubyArguments arguments = new RubyArguments(declarationFrame, self, block, args);
+        RubyArguments arguments = new RubyArguments(RubyArguments.create(declarationFrame, self, block, args));
 
         final Object result = callTarget.call(caller, arguments);
 

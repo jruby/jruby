@@ -59,7 +59,7 @@ public class GeneralSuperReCallNode extends RubyNode {
 
         // Call the method
 
-        return method.call(frame.pack(), arguments.getSelf(), arguments.getBlock(), arguments.getArguments());
+        return method.call(frame.pack(), arguments.getSelf(), arguments.getBlock(), arguments.getArgumentsClone());
     }
 
     @Override

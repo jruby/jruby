@@ -32,7 +32,7 @@ public class CheckArityNode extends RubyNode {
     @Override
     public void executeVoid(VirtualFrame frame) {
         final RubyArguments arguments = frame.getArguments(RubyArguments.class);
-        arity.checkArguments(getContext(), getSourceSection(), arguments.getArguments());
+        arity.checkArguments(getContext(), getSourceSection(), arguments.getUserArgumentsCount());
     }
 
     @Override

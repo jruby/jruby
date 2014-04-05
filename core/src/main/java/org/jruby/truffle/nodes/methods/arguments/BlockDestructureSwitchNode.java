@@ -62,14 +62,14 @@ public class BlockDestructureSwitchNode extends RubyNode {
 
         // If the caller supplied no arguments, or more than one argument, there's no need to destructure this time
 
-        if (arguments.getArguments().length != 1) {
+        if (arguments.getUserArgumentsCount() != 1) {
             return false;
         }
 
         // If the single argument is a RubyArray, destructure
         // TODO(CS): can we not just reply on the respondToCheck? Should experiment.
 
-        if (arguments.getArguments()[0] instanceof RubyArray) {
+        if (arguments.getUserArgument(0) instanceof RubyArray) {
             return true;
         }
 
