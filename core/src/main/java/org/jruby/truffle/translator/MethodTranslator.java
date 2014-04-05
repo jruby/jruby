@@ -50,7 +50,9 @@ class MethodTranslator extends BodyTranslator {
             environment.declareVar(parameter);
         }
 
-        final Arity arity = findParameters(argsNode);
+        findParameters(argsNode);
+
+        final Arity arity = getArity(argsNode);
 
         RubyNode body;
 
@@ -85,6 +87,12 @@ class MethodTranslator extends BodyTranslator {
             return new MethodDefinitionNode(context, sourceSection, methodName, environment.getUniqueMethodIdentifier(), environment.getFrameDescriptor(), environment.needsDeclarationFrame(),
                             pristineRootNode, callTarget, ignoreLocalVisiblity);
         }
+    }
+
+    private static Arity getArity(org.jruby.ast.ArgsNode argsNode) {
+        final int minimum = argsNode.getRequiredArgsCount();
+        final int maximum = argsNode.getMaxArgumentsCount();
+        return new Arity(minimum, maximum == -1 ? Arity.NO_MAXIMUM : maximum);
     }
 
     private RubyNode loadArgumentsIntoLocals(Arity arity, RubyNode body) {
@@ -181,7 +189,7 @@ class MethodTranslator extends BodyTranslator {
 
         /*
          * See the test testBlockArgumentsDestructure for a motivation for this. See
-         * BlockDestructureSwitchNode for how it works.
+         * DestructureSwitchNode for how it works.
          */
 
         if (preCount + postCount == 1 && environment.getOptionalParameters().size() == 0 && environment.getRestParameter() == null) {
@@ -191,8 +199,6 @@ class MethodTranslator extends BodyTranslator {
         if (preCount == 0 && environment.getRestParameter() != null) {
             return noSwitch;
         }
-
-        final RespondToNode respondToConvertAry = new RespondToNode(context, sourceSection, new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR), "to_ary");
 
         final List<RubyNode> destructureLoadArgumentsNodes = new ArrayList<>();
 
@@ -227,13 +233,15 @@ class MethodTranslator extends BodyTranslator {
 
         final RubyNode destructureLoadArguments = SequenceNode.sequence(context, body.getSourceSection(), destructureLoadArgumentsNodes.toArray(new RubyNode[destructureLoadArgumentsNodes.size()]));
 
+        final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
+        final RespondToNode respondToConvertAry = new RespondToNode(context, sourceSection, readArrayNode, "to_ary");
         return SequenceNode.sequence(context, sourceSection, new DestructureSwitchNode(context, body.getEncapsulatingSourceSection(), arity, loadIndividualArguments, respondToConvertAry, destructureLoadArguments), body);
 
     }
 
-    private Arity findParameters(org.jruby.ast.ArgsNode args) {
+    private void findParameters(org.jruby.ast.ArgsNode args) {
         if (args == null) {
-            return Arity.NO_ARGS;
+            return;
         }
 
         final SourceSection sourceSection = translate(args.getPosition());
@@ -325,16 +333,6 @@ class MethodTranslator extends BodyTranslator {
             assert slot != null;
             environment.setBlockParameter(slot);
         }
-
-        final int minimum = environment.getPreParameters().size() + environment.getPostParameters().size();
-
-        int maximum = minimum + environment.getOptionalParameters().size();
-
-        if (args.getRestArgNode() != null) {
-            maximum = Arity.NO_MAXIMUM;
-        }
-
-        return new Arity(minimum, maximum);
     }
 
     private void getNamesFromMultipleAssignment(org.jruby.ast.MultipleAsgn19Node multAsgn, List<String> names) {
