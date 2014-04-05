@@ -64,45 +64,55 @@ class MethodTranslator extends BodyTranslator {
 
         RubyNode originalBody = loadArgumentsIntoLocals(sourceSection, arity, body);
 
-        /*final RubyNode newCheckArity = new CheckArityNode(context, sourceSection, arity);
-        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(context, source, isBlock, environment);
-        final RubyNode newLoadArguments = argsNode.accept(loadArgumentsTranslator);
+        try {
+            final RubyNode newCheckArity = new CheckArityNode(context, sourceSection, arity);
+            final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(context, source, isBlock, environment);
+            final RubyNode newLoadArguments = argsNode.accept(loadArgumentsTranslator);
 
-        final RubyNode newBlock;
+            final RubyNode newBlock;
 
-        if (isBlock) {
-            // TODO(CS): maybe > 1 is more correct
-            if (arity.getMinimum() != 1 && !environment.hasRestParameter) {
-                final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
-                final RubyNode castArrayNode = ArrayCastNodeFactory.create(context, sourceSection, readArrayNode);
-                final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
-                final RubyNode writeArrayNode = WriteLocalVariableNodeFactory.create(context, sourceSection, arraySlot, castArrayNode);
+            if (isBlock) {
+                // TODO(CS): maybe > 1 is more correct
+                if (arity.getMinimum() != 1 && !environment.hasRestParameter) {
+                    final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
+                    final RubyNode castArrayNode = ArrayCastNodeFactory.create(context, sourceSection, readArrayNode);
+                    final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
+                    final RubyNode writeArrayNode = WriteLocalVariableNodeFactory.create(context, sourceSection, arraySlot, castArrayNode);
 
-                final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(context, source, isBlock, environment);
-                destructureArgumentsTranslator.pushArraySlot(arraySlot);
-                final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
+                    final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(context, source, isBlock, environment);
+                    destructureArgumentsTranslator.pushArraySlot(arraySlot);
+                    final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
-                final RespondToNode respondToConvertAry = new RespondToNode(context, sourceSection, readArrayNode, "to_ary");
-                newBlock = new DestructureSwitchNode(context, sourceSection, arity, newLoadArguments, respondToConvertAry, SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments));
+                    final RespondToNode respondToConvertAry = new RespondToNode(context, sourceSection, readArrayNode, "to_ary");
+                    newBlock = new DestructureSwitchNode(context, sourceSection, arity, newLoadArguments, respondToConvertAry, SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments));
+                } else {
+                    newBlock = newLoadArguments;
+                }
             } else {
-                newBlock = newLoadArguments;
+                newBlock = SequenceNode.sequence(context, sourceSection, newCheckArity, newLoadArguments);
             }
-        } else {
-            newBlock =  SequenceNode.sequence(context, sourceSection, newCheckArity, newLoadArguments);
-        }
 
-        final RubyNode newBody = SequenceNode.sequence(context, sourceSection, newBlock, body);
+            final RubyNode newBody = SequenceNode.sequence(context, sourceSection, newBlock, body);
 
-        if (!norm(NodeUtil.printTreeToString(originalBody)).equals(norm(NodeUtil.printTreeToString(newBody)))) {
+            if (norm(NodeUtil.printTreeToString(originalBody)).equals(norm(NodeUtil.printTreeToString(newBody)))) {
+                body = newBody;
+            } else {
+                System.err.println("NEW LOAD FAILED");
+                System.err.println(sourceSection);
+                System.err.println(argsNode.toString());
+                System.err.println("original");
+                NodeUtil.printTree(System.err, originalBody);
+                System.err.println("new");
+                NodeUtil.printTree(System.err, newBody);
+                body = originalBody;
+            }
+        } catch (Exception e) {
+            System.err.println("NEW LOAD FAILED");
             System.err.println(sourceSection);
             System.err.println(argsNode.toString());
-            System.err.println("original");
-            NodeUtil.printTree(System.err, originalBody);
-            System.err.println("new");
-            NodeUtil.printTree(System.err, newBody);
-        }*/
-
-        body = originalBody;
+            e.printStackTrace();
+            body = originalBody;
+        }
 
         if (environment.getFlipFlopStates().size() > 0) {
             body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
