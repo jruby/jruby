@@ -17,6 +17,7 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ArrayIndexNodeFactory;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.nodes.methods.arguments.ReadRestArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNodeFactory;
 import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -46,6 +47,11 @@ public class LoadArgumentsTranslator extends Translator {
             }
         }
 
+        if (node.getRestArgNode() != null) {
+            environment.hasRestParameter = true;
+            sequence.add(node.getRestArgNode().accept(this));
+        }
+
         return SequenceNode.sequence(context, sourceSection, sequence);
     }
 
@@ -61,6 +67,15 @@ public class LoadArgumentsTranslator extends Translator {
             readNode = new ReadPreArgumentNode(context, sourceSection, node.getIndex(), MissingArgumentBehaviour.RUNTIME_ERROR);
         }
 
+        final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(node.getName());
+        return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
+    }
+
+    @Override
+    public RubyNode visitRestArgNode(org.jruby.ast.RestArgNode node) {
+        final SourceSection sourceSection = translate(node.getPosition());
+
+        final RubyNode readNode = new ReadRestArgumentNode(context, sourceSection, node.getIndex());
         final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(node.getName());
         return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
     }

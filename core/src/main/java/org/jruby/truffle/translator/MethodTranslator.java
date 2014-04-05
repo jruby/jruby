@@ -71,17 +71,22 @@ class MethodTranslator extends BodyTranslator {
         final RubyNode newBlock;
 
         if (isBlock) {
-            final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
-            final RubyNode castArrayNode = ArrayCastNodeFactory.create(context, sourceSection, readArrayNode);
-            final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
-            final RubyNode writeArrayNode = WriteLocalVariableNodeFactory.create(context, sourceSection, arraySlot, castArrayNode);
+            // TODO(CS): maybe > 1 is more correct
+            if (arity.getMinimum() != 1 && !environment.hasRestParameter) {
+                final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
+                final RubyNode castArrayNode = ArrayCastNodeFactory.create(context, sourceSection, readArrayNode);
+                final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
+                final RubyNode writeArrayNode = WriteLocalVariableNodeFactory.create(context, sourceSection, arraySlot, castArrayNode);
 
-            final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(context, source, environment);
-            destructureArgumentsTranslator.pushArraySlot(arraySlot);
-            final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
+                final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(context, source, environment);
+                destructureArgumentsTranslator.pushArraySlot(arraySlot);
+                final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
-            final RespondToNode respondToConvertAry = new RespondToNode(context, sourceSection, readArrayNode, "to_ary");
-            newBlock = new DestructureSwitchNode(context, sourceSection, arity, newLoadArguments, respondToConvertAry, SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments));
+                final RespondToNode respondToConvertAry = new RespondToNode(context, sourceSection, readArrayNode, "to_ary");
+                newBlock = new DestructureSwitchNode(context, sourceSection, arity, newLoadArguments, respondToConvertAry, SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments));
+            } else {
+                newBlock = newLoadArguments;
+            }
         } else {
             newBlock =  SequenceNode.sequence(context, sourceSection, newCheckArity, newLoadArguments);
         }
@@ -89,6 +94,8 @@ class MethodTranslator extends BodyTranslator {
         final RubyNode newBody = SequenceNode.sequence(context, sourceSection, newBlock, body);
 
         if (!NodeUtil.printCompactTreeToString(originalBody).equals(NodeUtil.printCompactTreeToString(newBody))) {
+            System.err.println(sourceSection);
+            System.err.println(argsNode.toString());
             System.err.println("original");
             NodeUtil.printCompactTree(System.err, originalBody);
             System.err.println("new");
