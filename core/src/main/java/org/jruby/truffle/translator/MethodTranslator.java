@@ -227,7 +227,7 @@ class MethodTranslator extends BodyTranslator {
 
         final RubyNode destructureLoadArguments = SequenceNode.sequence(context, body.getSourceSection(), destructureLoadArgumentsNodes.toArray(new RubyNode[destructureLoadArgumentsNodes.size()]));
 
-        return new BlockDestructureSwitchNode(context, body.getEncapsulatingSourceSection(), arity, loadIndividualArguments, respondToConvertAry, destructureLoadArguments, body);
+        return SequenceNode.sequence(context, sourceSection, new DestructureSwitchNode(context, body.getEncapsulatingSourceSection(), arity, loadIndividualArguments, respondToConvertAry, destructureLoadArguments), body);
 
     }
 

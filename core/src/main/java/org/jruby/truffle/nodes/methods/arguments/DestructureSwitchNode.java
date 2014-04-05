@@ -20,32 +20,29 @@ import org.jruby.truffle.runtime.core.array.*;
 import org.jruby.truffle.runtime.methods.Arity;
 
 /**
- * Switches between loading arguments as normal and doing a destructure. See
- * testBlockArgumentsDestructure and MethodTranslator.
+ * Switches between loading arguments as normal and doing a destructure.
  */
-@NodeInfo(shortName = "block-destructure-switch")
-public class BlockDestructureSwitchNode extends RubyNode {
+@NodeInfo(shortName = "destructure-switch")
+public class DestructureSwitchNode extends RubyNode {
 
     private final Arity arity;
     @Child protected RubyNode loadIndividualArguments;
     @Child protected RespondToNode respondToCheck;
     @Child protected RubyNode destructureArguments;
-    @Child protected RubyNode body;
 
     private final BranchProfile destructureProfile = new BranchProfile();
     private final BranchProfile dontDestructureProfile = new BranchProfile();
 
-    public BlockDestructureSwitchNode(RubyContext context, SourceSection sourceSection, Arity arity, RubyNode loadIndividualArguments, RespondToNode respondToCheck, RubyNode destructureArguments, RubyNode body) {
+    public DestructureSwitchNode(RubyContext context, SourceSection sourceSection, Arity arity, RubyNode loadIndividualArguments, RespondToNode respondToCheck, RubyNode destructureArguments) {
         super(context, sourceSection);
         this.arity = arity;
         this.loadIndividualArguments = loadIndividualArguments;
         this.respondToCheck = respondToCheck;
         this.destructureArguments = destructureArguments;
-        this.body = body;
     }
 
     @Override
-    public Object execute(VirtualFrame frame) {
+    public void executeVoid(VirtualFrame frame) {
         if (shouldDestructure(frame)) {
             destructureProfile.enter();
             destructureArguments.executeVoid(frame);
@@ -53,8 +50,12 @@ public class BlockDestructureSwitchNode extends RubyNode {
             dontDestructureProfile.enter();
             loadIndividualArguments.executeVoid(frame);
         }
+    }
 
-        return body.execute(frame);
+    @Override
+    public Object execute(VirtualFrame frame) {
+        executeVoid(frame);
+        return NilPlaceholder.INSTANCE;
     }
 
     private boolean shouldDestructure(VirtualFrame frame) {
