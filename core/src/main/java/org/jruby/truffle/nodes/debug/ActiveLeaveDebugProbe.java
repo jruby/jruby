@@ -44,7 +44,11 @@ public abstract class ActiveLeaveDebugProbe extends RubyProbe {
             return;
         }
 
-        final RubyArguments arguments = new RubyArguments(inlinable.getDeclarationFrame(), NilPlaceholder.INSTANCE, null, result);
+        Object[] internalArguments = RubyArguments.create(1);
+        RubyArguments.setDeclarationFrame(internalArguments, inlinable.getDeclarationFrame());
+        RubyArguments.setSelf(internalArguments, NilPlaceholder.INSTANCE);
+        RubyArguments.setUserArgument(internalArguments, 0, result);
+        final RubyArguments arguments = new RubyArguments(internalArguments);
         final VirtualFrame inlinedFrame = Truffle.getRuntime().createVirtualFrame(frame.pack(), arguments, inlinable.getFrameDescriptor());
         inlinedRoot.execute(inlinedFrame);
     }

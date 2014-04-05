@@ -44,8 +44,9 @@ public class RubySymbol extends RubyObject {
             @Override
             public Object call(PackedFrame frame, Arguments args) {
                 final RubyArguments rubyArgs = (RubyArguments) args;
-                final Object receiver = rubyArgs.getArguments()[0];
-                final Object[] sendArgs = Arrays.copyOfRange(rubyArgs.getArguments(), 1, rubyArgs.getArguments().length);
+                final Object receiver = rubyArgs.getUserArgument(0);
+                final Object[] arguments = rubyArgs.getArgumentsClone();
+                final Object[] sendArgs = Arrays.copyOfRange(arguments, 1, arguments.length);
                 final RubyBasicObject receiverObject = context.getCoreLibrary().box(receiver);
                 return receiverObject.send(symbol, rubyArgs.getBlock(), sendArgs);
             }

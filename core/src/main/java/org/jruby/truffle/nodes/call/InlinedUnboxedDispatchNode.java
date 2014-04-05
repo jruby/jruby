@@ -71,7 +71,7 @@ public class InlinedUnboxedDispatchNode extends UnboxedDispatchNode {
             modifiedArgumentsObjects = argumentsObjects;
         }
 
-        final RubyArguments arguments = new RubyArguments(method.getDeclarationFrame(), receiverObject, blockObject, modifiedArgumentsObjects);
+        final RubyArguments arguments = new RubyArguments(RubyArguments.create(method.getDeclarationFrame(), receiverObject, blockObject, modifiedArgumentsObjects));
         final VirtualFrame inlinedFrame = Truffle.getRuntime().createVirtualFrame(frame.pack(), arguments, method.getFrameDescriptor());
         return rootNode.execute(inlinedFrame);
     }

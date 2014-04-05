@@ -186,7 +186,7 @@ public class RubyContext implements ExecutionContext {
     public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame) {
         try {
             final RubyParserResult parseResult = translator.parse(context, source, parserContext, parentFrame);
-            final RubyArguments arguments = new RubyArguments(parentFrame, self, null);
+            final RubyArguments arguments = new RubyArguments(RubyArguments.create(parentFrame, self, null));
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
 
             return callTarget.call(null, arguments);

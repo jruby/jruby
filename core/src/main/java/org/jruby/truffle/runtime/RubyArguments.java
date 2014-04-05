@@ -30,16 +30,21 @@ public final class RubyArguments extends Arguments {
 
     private final Object[] internalArguments;
 
-    public RubyArguments(MaterializedFrame declarationFrame, Object self, RubyProc block, Object... arguments) {
+    public RubyArguments(Object[] internalArguments) {
+        this.internalArguments = internalArguments;
+    }
+
+    public static Object[] create(MaterializedFrame declarationFrame, Object self, RubyProc block, Object... arguments) {
         assert self != null;
         assert arguments != null;
-        internalArguments = create(arguments.length);
+        Object[] internalArguments = create(arguments.length);
         setDeclarationFrame(internalArguments, declarationFrame);
         setSelf(internalArguments, self);
         setBlock(internalArguments, block);
         for (int i = RUNTIME_ARGUMENT_COUNT; i < internalArguments.length; ++i) {
             internalArguments[i] = arguments[i - RUNTIME_ARGUMENT_COUNT];
         }
+        return internalArguments;
     }
 
     public static Object[] create(int userArgumentCount) {
@@ -115,8 +120,23 @@ public final class RubyArguments extends Arguments {
         return getBlock(internalArguments);
     }
 
-    public Object[] getArguments() {
+    public Object[] getArgumentsClone() {
         return extractUserArguments(internalArguments);
     }
 
+    public static void setUserArgument(Object[] internalArguments, int index, Object arg) {
+        internalArguments[RUNTIME_ARGUMENT_COUNT + index] = arg;
+    }
+
+    public static Object getUserArgument(Object[] internalArguments, int index) {
+        return internalArguments[RUNTIME_ARGUMENT_COUNT + index];
+    }
+
+    public int getUserArgumentsCount() {
+        return internalArguments.length - RUNTIME_ARGUMENT_COUNT;
+    }
+
+    public Object getUserArgument(int index) {
+        return getUserArgument(internalArguments, index);
+    }
 }
