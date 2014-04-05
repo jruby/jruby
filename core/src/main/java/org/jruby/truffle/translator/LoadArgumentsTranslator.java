@@ -16,6 +16,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ArrayIndexNodeFactory;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.nodes.methods.arguments.ReadPostArgumentNode;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.arguments.ReadRestArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNodeFactory;
@@ -30,6 +31,15 @@ public class LoadArgumentsTranslator extends Translator {
     private final TranslatorEnvironment environment;
     private final List<FrameSlot> arraySlotStack = new ArrayList<>();
 
+    private enum State {
+        PRE,
+        POST
+    }
+
+    private State state;
+
+    private org.jruby.ast.ArgsNode argsNode;
+
     public LoadArgumentsTranslator(RubyContext context, Source source, TranslatorEnvironment environment) {
         super(context, source);
         this.environment = environment;
@@ -37,12 +47,22 @@ public class LoadArgumentsTranslator extends Translator {
 
     @Override
     public RubyNode visitArgsNode(org.jruby.ast.ArgsNode node) {
+        argsNode = node;
+
         final SourceSection sourceSection = translate(node.getPosition());
 
         final List<RubyNode> sequence = new ArrayList<>();
 
         if (node.getPre() != null) {
+            state = State.PRE;
             for (org.jruby.ast.Node arg : node.getPre().childNodes()) {
+                sequence.add(arg.accept(this));
+            }
+        }
+
+        if (node.getPost() != null) {
+            state = State.POST;
+            for (org.jruby.ast.Node arg : node.getPost().childNodes()) {
                 sequence.add(arg.accept(this));
             }
         }
@@ -64,7 +84,13 @@ public class LoadArgumentsTranslator extends Translator {
         if (useArray()) {
             readNode = ArrayIndexNodeFactory.create(context, sourceSection, node.getIndex(), loadArray(sourceSection));
         } else {
-            readNode = new ReadPreArgumentNode(context, sourceSection, node.getIndex(), MissingArgumentBehaviour.RUNTIME_ERROR);
+            if (state == State.PRE) {
+                readNode = new ReadPreArgumentNode(context, sourceSection, node.getIndex(), MissingArgumentBehaviour.RUNTIME_ERROR);
+            } else if (state == State.POST) {
+                readNode = new ReadPostArgumentNode(context, sourceSection, argsNode.getPostCount() - node.getIndex() - 1);
+            } else {
+                throw new IllegalStateException();
+            }
         }
 
         final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(node.getName());
