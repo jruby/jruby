@@ -57,12 +57,45 @@ class MethodTranslator extends BodyTranslator {
         RubyNode body;
 
         if (bodyNode != null) {
-            body = (RubyNode) bodyNode.accept(this);
+            body = bodyNode.accept(this);
         } else {
             body = new NilNode(context, sourceSection);
         }
 
-        body = loadArgumentsIntoLocals(arity, body);
+        RubyNode originalBody = loadArgumentsIntoLocals(arity, body);
+
+        /*final RubyNode newCheckArity = new CheckArityNode(context, sourceSection, arity);
+        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(context, source, environment);
+        final RubyNode newLoadArguments = argsNode.accept(loadArgumentsTranslator);
+
+        final RubyNode newBlock;
+
+        if (isBlock) {
+            final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
+            final RubyNode castArrayNode = ArrayCastNodeFactory.create(context, sourceSection, readArrayNode);
+            final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
+            final RubyNode writeArrayNode = WriteLocalVariableNodeFactory.create(context, sourceSection, arraySlot, castArrayNode);
+
+            final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(context, source, environment);
+            destructureArgumentsTranslator.pushArraySlot(arraySlot);
+            final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
+
+            final RespondToNode respondToConvertAry = new RespondToNode(context, sourceSection, readArrayNode, "to_ary");
+            newBlock = new DestructureSwitchNode(context, sourceSection, arity, newLoadArguments, respondToConvertAry, SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments));
+        } else {
+            newBlock =  SequenceNode.sequence(context, sourceSection, newCheckArity, newLoadArguments);
+        }
+
+        final RubyNode newBody = SequenceNode.sequence(context, sourceSection, newBlock, body);
+
+        if (!NodeUtil.printCompactTreeToString(originalBody).equals(NodeUtil.printCompactTreeToString(newBody))) {
+            System.err.println("original");
+            NodeUtil.printCompactTree(System.err, originalBody);
+            System.err.println("new");
+            NodeUtil.printCompactTree(System.err, newBody);
+        }*/
+
+        body = originalBody;
 
         if (environment.getFlipFlopStates().size() > 0) {
             body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
@@ -229,6 +262,10 @@ class MethodTranslator extends BodyTranslator {
             final RubyNode readRestNode = ArrayGetTailNodeFactory.create(context, sourceSection, preCount, NodeUtil.cloneNode(readArrayFromTemp));
             final WriteLocalVariableNode writeLocal = WriteLocalVariableNodeFactory.create(context, sourceSection, environment.getRestParameter(), readRestNode);
             destructureLoadArgumentsNodes.add(writeLocal);
+        }
+
+        if (destructureLoadArgumentsNodes.size() == 1) {
+            destructureLoadArgumentsNodes.add(new NilNode(context, sourceSection));
         }
 
         final RubyNode destructureLoadArguments = SequenceNode.sequence(context, body.getSourceSection(), destructureLoadArgumentsNodes.toArray(new RubyNode[destructureLoadArgumentsNodes.size()]));
