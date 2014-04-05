@@ -120,12 +120,12 @@ public class TranslatorDriver {
 
         // Translate to Ruby Truffle nodes
 
-        final Translator translator;
+        final BodyTranslator translator;
 
         if (parserContext == TranslatorDriver.ParserContext.MODULE) {
             translator = new ModuleTranslator(context, null, environment, source);
         } else {
-            translator = new Translator(context, null, environment, source);
+            translator = new BodyTranslator(context, null, environment, source);
         }
 
         RubyNode truffleNode;
@@ -146,7 +146,7 @@ public class TranslatorDriver {
             // Load flip-flop states
 
             if (environment.getFlipFlopStates().size() > 0) {
-                truffleNode = new SequenceNode(context, truffleNode.getSourceSection(), translator.initFlipFlopStates(truffleNode.getSourceSection()), truffleNode);
+                truffleNode = SequenceNode.sequence(context, truffleNode.getSourceSection(), translator.initFlipFlopStates(truffleNode.getSourceSection()), truffleNode);
             }
 
             // Catch next

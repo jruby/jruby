@@ -31,11 +31,11 @@ import org.jruby.truffle.nodes.respondto.RespondToNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.methods.*;
 
-class MethodTranslator extends Translator {
+class MethodTranslator extends BodyTranslator {
 
     private boolean isBlock;
 
-    public MethodTranslator(RubyContext context, Translator parent, TranslatorEnvironment environment, boolean isBlock, Source source) {
+    public MethodTranslator(RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, Source source) {
         super(context, parent, environment, source);
         this.isBlock = isBlock;
     }
@@ -63,7 +63,7 @@ class MethodTranslator extends Translator {
         body = loadArgumentsIntoLocals(arity, body);
 
         if (environment.getFlipFlopStates().size() > 0) {
-            body = new SequenceNode(context, sourceSection, initFlipFlopStates(sourceSection), body);
+            body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
         }
 
         if (isBlock) {
@@ -171,9 +171,9 @@ class MethodTranslator extends Translator {
             loadIndividualArgumentsNodes.add(writeLocal);
         }
 
-        final RubyNode loadIndividualArguments = new SequenceNode(context, sourceSection, loadIndividualArgumentsNodes.toArray(new RubyNode[loadIndividualArgumentsNodes.size()]));
+        final RubyNode loadIndividualArguments = SequenceNode.sequence(context, sourceSection, loadIndividualArgumentsNodes.toArray(new RubyNode[loadIndividualArgumentsNodes.size()]));
 
-        final RubyNode noSwitch = new SequenceNode(context, body.getSourceSection(), loadIndividualArguments, body);
+        final RubyNode noSwitch = SequenceNode.sequence(context, body.getSourceSection(), loadIndividualArguments, body);
 
         if (!isBlock) {
             return noSwitch;
@@ -225,7 +225,7 @@ class MethodTranslator extends Translator {
             destructureLoadArgumentsNodes.add(writeLocal);
         }
 
-        final RubyNode destructureLoadArguments = new SequenceNode(context, body.getSourceSection(), destructureLoadArgumentsNodes.toArray(new RubyNode[destructureLoadArgumentsNodes.size()]));
+        final RubyNode destructureLoadArguments = SequenceNode.sequence(context, body.getSourceSection(), destructureLoadArgumentsNodes.toArray(new RubyNode[destructureLoadArgumentsNodes.size()]));
 
         return new BlockDestructureSwitchNode(context, body.getEncapsulatingSourceSection(), arity, loadIndividualArguments, respondToConvertAry, destructureLoadArguments, body);
 

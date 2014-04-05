@@ -29,9 +29,9 @@ import org.jruby.truffle.runtime.methods.*;
  * newly allocated module or class. We then have to treat at least method and constant definitions
  * differently.
  */
-class ModuleTranslator extends Translator {
+class ModuleTranslator extends BodyTranslator {
 
-    public ModuleTranslator(RubyContext context, Translator parent, TranslatorEnvironment environment, Source source) {
+    public ModuleTranslator(RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source) {
         super(context, parent, environment, source);
         useClassVariablesAsIfInClass = true;
     }
@@ -53,7 +53,7 @@ class ModuleTranslator extends Translator {
         }
 
         if (environment.getFlipFlopStates().size() > 0) {
-            body = new SequenceNode(context, sourceSection, initFlipFlopStates(sourceSection), body);
+            body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
         }
 
         body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID(), false);
