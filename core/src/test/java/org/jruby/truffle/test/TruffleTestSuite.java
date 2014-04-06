@@ -46,9 +46,7 @@ public class TruffleTestSuite extends TestSuite {
         suite.addTestSuite(AndTests.class);
         suite.addTestSuite(BlockTests.class);
         suite.addTestSuite(CaseTests.class);
-        suite.addTestSuite(ClassLocalTests.class);
         suite.addTestSuite(ClassTests.class);
-        suite.addTestSuite(ClassLocalTests.class);
         suite.addTestSuite(ConstantTests.class);
         suite.addTestSuite(ForTests.class);
         suite.addTestSuite(GlobalVariableTests.class);
