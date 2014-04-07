@@ -84,15 +84,11 @@ public class OSGiScriptingContainer extends ScriptingContainer {
         super(scope, behavior);
         if (creator != null) {
             super.setClassLoader(new JRubyOSGiBundleClassLoader(creator));
-        } else {
+        } 
+        else {
             super.setClassLoader(new JRubyOSGiBundleClassLoader());
         }
         super.setLoadServiceCreator(OSGiLoadService.OSGI_DEFAULT);
-        try {
-            super.setHomeDirectory(OSGiFileLocator.getJRubyHomeFolder().getAbsolutePath());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     /**
