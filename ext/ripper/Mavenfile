@@ -9,6 +9,14 @@ parent 'org.jruby:jruby-ext', version
 
 if model.version.to_s.match /[a-zA-Z]/
   model.group_id = 'org.jruby.gems'
+
+  plugin :deploy do
+    execute_goals :deploy, :skip => false
+  end
+end
+
+jruby_plugin! :gem do
+  execute_goals :id => 'default-push', :skip => true
 end
 
 # we need the jruby API here, the version should be less important here

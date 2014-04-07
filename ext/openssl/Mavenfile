@@ -9,12 +9,17 @@ parent 'org.jruby:jruby-ext', version
 
 if model.version.to_s.match /[a-zA-Z]/
   model.group_id = 'org.jruby.gems'
+
+  plugin :deploy do
+    execute_goals :deploy, :skip => false
+  end
 end
 
 jruby_plugin! :gem do
   # avoid adding this not yet built openssl to the load_path
   # when installing dependent gems
   execute_goal :initialize, :lib => 'non-existing'
+  execute_goals :id => 'default-push', :skip => true
 end
 
 # we need the jruby API here, the version should be less important here

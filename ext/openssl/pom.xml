@@ -99,11 +99,30 @@
               <lib>non-existing</lib>
             </configuration>
           </execution>
+          <execution>
+            <id>default-push</id>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </execution>
         </executions>
         <configuration>
           <gemspec>jruby-openssl.gemspec</gemspec>
           <includeDependencies>true</includeDependencies>
         </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>deploy</goal>
+            </goals>
+            <configuration>
+              <skip>false</skip>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
