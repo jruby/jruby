@@ -587,6 +587,16 @@ public class RubyTime extends RubyObject {
         return context.getRuntime().getFalse();
     }
 
+    @JRubyMethod(name = "<=>", required = 1, compat = CompatVersion.RUBY1_8)
+    @Override
+    public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
+        if (other instanceof RubyTime) {
+            return context.runtime.newBoolean(RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) == 0);
+        }
+
+        return context.getRuntime().getFalse();
+    }
+
     @JRubyMethod(name = "<=>", required = 1)
     @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
