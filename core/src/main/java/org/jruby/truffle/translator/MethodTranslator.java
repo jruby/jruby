@@ -10,6 +10,8 @@
 package org.jruby.truffle.translator;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
@@ -34,6 +36,8 @@ import org.jruby.truffle.runtime.methods.*;
 class MethodTranslator extends BodyTranslator {
 
     private boolean isBlock;
+
+    private static AtomicInteger translationFailureCount = new AtomicInteger();
 
     public MethodTranslator(RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, Source source) {
         super(context, parent, environment, source);
@@ -104,6 +108,7 @@ class MethodTranslator extends BodyTranslator {
                 NodeUtil.printTree(System.err, originalBody);
                 System.err.println("new");
                 NodeUtil.printTree(System.err, newBody);
+                System.err.println("translation failures: " + translationFailureCount.incrementAndGet());
                 body = originalBody;
             }
         } catch (Exception e) {
