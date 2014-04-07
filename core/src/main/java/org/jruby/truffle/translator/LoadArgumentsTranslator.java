@@ -12,15 +12,14 @@ package org.jruby.truffle.translator;
 import com.oracle.truffle.api.Source;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
+import org.jruby.ast.BlockArgNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ArrayIndexNodeFactory;
-import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
-import org.jruby.truffle.nodes.methods.arguments.ReadPostArgumentNode;
-import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
-import org.jruby.truffle.nodes.methods.arguments.ReadRestArgumentNode;
+import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNodeFactory;
 import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeFactory;
+import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.util.ArrayList;
@@ -74,6 +73,10 @@ public class LoadArgumentsTranslator extends Translator {
             sequence.add(node.getRestArgNode().accept(this));
         }
 
+        if (node.getBlock() != null) {
+            sequence.add(node.getBlock().accept(this));
+        }
+
         return SequenceNode.sequence(context, sourceSection, sequence);
     }
 
@@ -104,6 +107,15 @@ public class LoadArgumentsTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final RubyNode readNode = new ReadRestArgumentNode(context, sourceSection, node.getIndex());
+        final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(node.getName());
+        return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
+    }
+
+    @Override
+    public RubyNode visitBlockArgNode(org.jruby.ast.BlockArgNode node) {
+        final SourceSection sourceSection = translate(node.getPosition());
+
+        final RubyNode readNode = new ReadBlockNode(context, sourceSection, NilPlaceholder.INSTANCE);
         final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(node.getName());
         return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
     }

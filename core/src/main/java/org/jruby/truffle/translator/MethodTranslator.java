@@ -440,7 +440,8 @@ class MethodTranslator extends BodyTranslator {
         return tree
                 .replaceAll("@[0-9a-f]+", "@somewhere")
                 .replaceAll("rubytruffle_temp_destructure_\\d+", "rubytruffle_temp_destructure_n")
-                .replaceAll("frameSlot = \\[\\d+", "frameSlot = [n");
+                .replaceAll("frameSlot = \\[\\d+", "frameSlot = [n")
+                .replaceAll(".rb:\\d+", ".rb:n");
     }
 
 }
