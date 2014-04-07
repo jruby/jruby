@@ -41,5 +41,4 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
             return translate(new org.jruby.lexer.yacc.SimpleSourcePosition("(unknown)", 0));
         }
     }
-
 }

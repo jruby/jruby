@@ -1962,4 +1962,8 @@ public class BodyTranslator extends Translator {
         return new NilNode(context, translate(node.getPosition()));
     }
 
+    public TranslatorEnvironment getEnvironment() {
+        return environment;
+    }
+
 }

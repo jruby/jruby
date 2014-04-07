@@ -70,7 +70,7 @@ class MethodTranslator extends BodyTranslator {
 
         try {
             final RubyNode newCheckArity = new CheckArityNode(context, sourceSection, arity);
-            final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(context, source, isBlock, environment);
+            final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(context, source, isBlock, this);
             final RubyNode newLoadArguments = argsNode.accept(loadArgumentsTranslator);
 
             final RubyNode newBlock;
@@ -83,7 +83,7 @@ class MethodTranslator extends BodyTranslator {
                     final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
                     final RubyNode writeArrayNode = WriteLocalVariableNodeFactory.create(context, sourceSection, arraySlot, castArrayNode);
 
-                    final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(context, source, isBlock, environment);
+                    final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(context, source, isBlock, this);
                     destructureArgumentsTranslator.pushArraySlot(arraySlot);
                     final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
