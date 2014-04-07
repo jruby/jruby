@@ -42,16 +42,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 
 public class PsychLibrary implements Library {
+    // NOTE: we add the last .0 for format compat with libyaml version numbers
+    // TODO: This should always reflect the SnakeYAML version
+    private static final String SNAKEYAML_VERSION = "1.13.0";
     public void load(final Ruby runtime, boolean wrap) {
         RubyModule psych = runtime.defineModule("Psych");
         
-        RubyString version = runtime.newString("0.1.4");
+        RubyString version = runtime.newString(SNAKEYAML_VERSION);
         version.setFrozen(true);
         
-        final RubyArray versionElements = runtime.newArray(runtime.newFixnum(0), runtime.newFixnum(1), runtime.newFixnum(4));
+        final RubyArray versionElements = runtime.newArray(runtime.newFixnum(1), runtime.newFixnum(13), runtime.newFixnum(0));
         versionElements.setFrozen(true);
-        
-        psych.setConstant("LIBYAML_VERSION", runtime.newString("0.1.4"));
+
+        psych.setConstant("LIBYAML_VERSION", version);
         psych.getSingletonClass().addMethod("libyaml_version", new JavaMethodZero(psych, Visibility.PUBLIC) {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
