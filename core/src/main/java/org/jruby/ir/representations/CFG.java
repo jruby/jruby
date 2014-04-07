@@ -133,6 +133,9 @@ public class CFG {
         return scope;
     }
 
+    /**
+     * How many BasicBlocks are there in this CFG?
+     */
     public int size() {
         return graph.size();
     }
