@@ -96,6 +96,12 @@ public class ParameterCollector extends AbstractNodeVisitor {
     }
 
     @Override
+    public Object visitLocalAsgnNode(LocalAsgnNode node) {
+        parameters.add(node.getName());
+        return null;
+    }
+
+    @Override
     public Object visitRestArgNode(RestArgNode node) {
         parameters.add(node.getName());
         return null;

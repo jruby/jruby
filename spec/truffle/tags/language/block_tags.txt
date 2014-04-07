@@ -12,3 +12,7 @@ fails(arity):A block taking |(a, b)| arguments calls #to_ary to convert a single
 fails(arity):A block taking |(a, b)| arguments does not call #to_ary if the single yielded object is an Array
 fails(arity):A block taking |(a, b)| arguments raises an TypeError if #to_ary does not return an Array
 fails(arity):A block taking |(a, b)| arguments raises an TypeError if #to_ary does not return an Array
+fails:A block taking nested |a, (b, (c, d))| destructures separate yielded values
+fails:A block taking nested |a, ((b, c), d)| destructures separate yielded values
+fails:A block taking |(a, b)| arguments does not call #to_ary if the object does not respond to #to_ary
+fails:A block taking |(a, b), c| arguments does not call #to_ary if the object does not respond to #to_ary

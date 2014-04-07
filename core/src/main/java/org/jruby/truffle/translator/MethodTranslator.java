@@ -76,8 +76,17 @@ class MethodTranslator extends BodyTranslator {
             final RubyNode newBlock;
 
             if (isBlock) {
-                // TODO(CS): maybe > 1 is more correct
-                if (arity.getMinimum() != 1 && !environment.hasRestParameter) {
+                boolean shouldSwitch = true;
+
+                if (argsNode.getPreCount() + argsNode.getPostCount() == 1 && argsNode.getOptionalArgsCount() == 0 && argsNode.getRestArgNode() == null) {
+                    shouldSwitch = false;
+                }
+
+                if (argsNode.getPreCount() == 0 && argsNode.getRestArgNode() != null) {
+                    shouldSwitch = false;
+                }
+
+                if (shouldSwitch) {
                     final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
                     final RubyNode castArrayNode = ArrayCastNodeFactory.create(context, sourceSection, readArrayNode);
                     final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
@@ -98,8 +107,10 @@ class MethodTranslator extends BodyTranslator {
 
             final RubyNode newBody = SequenceNode.sequence(context, sourceSection, newBlock, body);
 
-            if (norm(NodeUtil.printTreeToString(originalBody)).equals(norm(NodeUtil.printTreeToString(newBody)))) {
+            if (norm(NodeUtil.printTreeToString(originalBody)).equals(norm(NodeUtil.printTreeToString(newBody))) || argsNode.toString().contains("MultipleAsgn19Node")) {
                 body = newBody;
+                System.err.println(argsNode.toString());
+                NodeUtil.printTree(System.err, newBody);
             } else {
                 System.err.println("NEW LOAD FAILED");
                 System.err.println(sourceSection);
