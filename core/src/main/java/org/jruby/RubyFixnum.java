@@ -1227,6 +1227,11 @@ public class RubyFixnum extends RubyInteger {
         return RubyBoolean.newBoolean(getRuntime(), value == 0);
     }
 
+    @JRubyMethod
+    public IRubyObject succ(ThreadContext context) {
+        return ((RubyFixnum) this).op_plus_one(context);
+    }
+
     @Override
     public IRubyObject id() {
         if (value <= Long.MAX_VALUE / 2 && value >= Long.MIN_VALUE / 2) {
