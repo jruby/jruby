@@ -2598,9 +2598,8 @@ public class IRBuilder {
             if (thenResult != U_NIL) { // thenResult can be U_NIL if then-body ended with a return!
                 // SSS FIXME: Can look at the last instr and short-circuit this jump if it is a break rather
                 // than wait for dead code elimination to do it
-                Label tgt = doneLabel;
                 result = getValueInTemporaryVariable(s, thenResult);
-                addInstr(s, new JumpInstr(tgt));
+                addInstr(s, new JumpInstr(doneLabel));
             } else {
                 result = s.getNewTemporaryVariable();
                 thenUnil = true;
