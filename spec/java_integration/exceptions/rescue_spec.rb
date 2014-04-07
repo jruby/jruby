@@ -48,6 +48,30 @@ describe "A non-wrapped Java throwable" do
 
     (obj.go rescue 'foo').should == 'foo'
   end
+
+  it "can be rescued dynamically using Module" do
+    mod = Module.new
+    (class << mod; self; end).instance_eval do
+      define_method(:===) { |exception| true }
+    end
+    begin
+      raise java.lang.NullPointerException.new
+    rescue mod => e
+      e.should be_kind_of(java.lang.NullPointerException)
+    end
+  end
+
+  it "can be rescued dynamically using Class" do
+    cls = Class.new
+    (class << cls; self; end).instance_eval do
+      define_method(:===) { |exception| true }
+    end
+    begin
+      raise java.lang.NullPointerException.new
+    rescue cls => e
+      e.should be_kind_of(java.lang.NullPointerException)
+    end
+  end
 end
 
 describe "A Ruby-level exception" do
