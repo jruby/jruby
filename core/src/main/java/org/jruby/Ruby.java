@@ -2595,23 +2595,6 @@ public final class Ruby {
         // FIXME: Get rid of laziness and handle restricted access elsewhere
         if (!Ruby.isSecurityRestricted() && jrubyClassLoader == null) {
             jrubyClassLoader = new JRubyClassLoader(config.getLoader());
-
-            // if jit code cache is used, we need to add the cache directory to the classpath
-            // so the previously generated class files can be reused.
-            if( config.JIT_CODE_CACHE != null && !config.JIT_CODE_CACHE.trim().isEmpty() ) {
-                File file = new File( config.JIT_CODE_CACHE );
-
-                if( file.exists() == false || file.isDirectory() == false ) {
-                    getWarnings().warning("The jit.codeCache '" + config.JIT_CODE_CACHE + "' directory doesn't exit.");
-                } else {
-                    try {
-                        URL url = file.toURI().toURL();
-                        jrubyClassLoader.addURL( url );
-                    } catch (MalformedURLException e) {
-                        getWarnings().warning("Unable to add the jit.codeCache '" + config.JIT_CODE_CACHE + "' directory to the classpath." + e.getMessage());
-                    }
-                }
-            }
         }
 
         return jrubyClassLoader;
