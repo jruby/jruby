@@ -5,14 +5,16 @@ gemspec :jar => 'jopenssl', :include_jars => true
 version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 version.gsub!( /-SNAPSHOT$/, '' )
 
-parent 'org.jruby:jruby-ext', version
-
 if model.version.to_s.match /[a-zA-Z]/
   model.group_id = 'org.jruby.gems'
 
   plugin :deploy do
-    execute_goals :deploy, :skip => false
+    execute_goals( :deploy, 
+                  :skip => false,
+                  :altDeploymentRepository => 'sonatype-nexus-snapshots::default::https://oss.sonatype.org/content/repositories/snapshots/' )
   end
+else
+  parent 'org.jruby:jruby-ext', version
 end
 
 jruby_plugin! :gem do

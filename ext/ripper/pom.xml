@@ -2,11 +2,6 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.jruby</groupId>
-    <artifactId>jruby-ext</artifactId>
-    <version>9000.dev</version>
-  </parent>
   <groupId>org.jruby.gems</groupId>
   <artifactId>jruby-ripper</artifactId>
   <version>2.1.0.dev-SNAPSHOT</version>
@@ -101,6 +96,7 @@
             </goals>
             <configuration>
               <skip>false</skip>
+              <altDeploymentRepository>sonatype-nexus-snapshots::default::https://oss.sonatype.org/content/repositories/snapshots/</altDeploymentRepository>
             </configuration>
           </execution>
         </executions>
