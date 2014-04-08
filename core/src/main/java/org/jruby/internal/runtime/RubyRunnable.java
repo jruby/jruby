@@ -123,7 +123,7 @@ public class RubyRunnable implements ThreadedRunnable {
 
                 // dump profile, if any
                 if (runtime.getInstanceConfig().isProfilingEntireRun()) {
-                    runtime.printProfileData(context.getProfileData());
+                    runtime.printProfileData(context.getProfileCollection());
                 }
             }
         } catch (ThreadKill tk) {

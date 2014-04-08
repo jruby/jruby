@@ -1,14 +1,14 @@
 package org.jruby.runtime.backtrace;
 
+import org.jruby.Ruby;
+import org.jruby.compiler.JITCompiler;
+import org.jruby.util.JavaNameMangler;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import org.jruby.Ruby;
-import org.jruby.compiler.JITCompiler;
-import org.jruby.util.JavaNameMangler;
 
 public class BacktraceData implements Serializable {
     private RubyStackTraceElement[] backtraceElements;
@@ -86,7 +86,9 @@ public class BacktraceData implements Serializable {
                         int start = JITCompiler.RUBY_JIT_PREFIX.length() + 1;
                         int hash = tmpClassName.indexOf(JITCompiler.CLASS_METHOD_DELIMITER, start);
                         int end = tmpClassName.lastIndexOf("_");
-                        className = tmpClassName.substring(start, hash);
+                        if( hash != -1 ) { // TODO in case the class file was loaded by jit codeCache. Is this right
+                            className = tmpClassName.substring(start, hash);
+                        }
                         methodName = tmpClassName.substring(hash + JITCompiler.CLASS_METHOD_DELIMITER.length(), end);
 
                     } else if ((index = methodName.indexOf("$RUBY$")) >= 0) {
