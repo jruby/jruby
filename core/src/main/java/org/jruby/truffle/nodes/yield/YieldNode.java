@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 
@@ -47,8 +48,7 @@ public class YieldNode extends RubyNode {
 
         if (block == null) {
             CompilerDirectives.transferToInterpreter();
-            // TODO(CS): convert to the proper Ruby exception
-            throw new RuntimeException("No block to yield to");
+            throw new RaiseException(getContext().getCoreLibrary().noBlockToYieldTo());
         }
 
         if (unsplat) {

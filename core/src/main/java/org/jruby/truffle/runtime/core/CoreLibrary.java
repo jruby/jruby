@@ -389,6 +389,10 @@ public class CoreLibrary {
         return localJumpError("unexpected return");
     }
 
+    public RubyException noBlockToYieldTo() {
+        return localJumpError("no block given (yield)");
+    }
+
     public RubyException typeError(String message) {
         return new RubyException(typeErrorClass, message);
     }
