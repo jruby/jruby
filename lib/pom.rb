@@ -42,6 +42,23 @@ default_gems =
 
 project 'JRuby Lib Setup' do
 
+  # TODO move those to method to ruby-maven
+  class ::Java::JavaIo::File
+    def to_pathname
+      to_s.gsub( /\\/, '/' )
+    end
+  end
+  class ::Java::JavaLang::String
+    def to_pathname
+      to_s.gsub( /\\/, '/' )
+    end
+  end
+  class ::String
+    def to_pathname
+      self.gsub( /\\/, '/' )
+    end
+  end
+
   version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
@@ -97,15 +114,15 @@ project 'JRuby Lib Setup' do
 
     puts "using jruby #{JRUBY_VERSION}"
 
-    target = ctx.project.build.directory.to_s
+    target = ctx.project.build.directory.to_pathname
     gem_home = File.join( target, 'rubygems' )
     gems = File.join( gem_home, 'gems' )
     specs = File.join( gem_home, 'specifications' )
-    default_specs = File.join( ctx.project.basedir.to_s, 'ruby', 'gems', 'shared', 
+    default_specs = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared', 
                                'specifications', 'default' )
-    bin_stubs = File.join( ctx.project.basedir.to_s, 'ruby', 'gems', 'shared', 
+    bin_stubs = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared', 
                            'gems' )
-    ruby_dir = File.join( ctx.project.basedir.to_s, 'ruby' )
+    ruby_dir = File.join( ctx.project.basedir.to_pathname, 'ruby' )
     FileUtils.mkdir_p( default_specs )
 
     # have an empty openssl.rb so we do not run in trob=uble with not having
@@ -125,7 +142,7 @@ project 'JRuby Lib Setup' do
 
       # install the gem unless already installed
       if Dir[ File.join( specs, "#{g.name}-#{version}*.gemspec" ) ].empty?
-        installer = Gem::Installer.new( File.join( ctx.project.build.directory.to_s, 
+        installer = Gem::Installer.new( File.join( ctx.project.build.directory.to_pathname, 
                                                    "#{g.name}-#{pom_version}.gem" ),
                                         :ignore_dependencies => true,
                                         :install_dir => gem_home )
