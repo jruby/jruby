@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.RubyString;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -14,11 +15,8 @@ public class ConstantStringLiteral extends StringLiteral {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-        // FIXME: Add constant pool + retrieval
-        IRubyObject string = (IRubyObject) super.retrieve(context, self, currDynScope, temp);
+        RubyString string = (RubyString) super.retrieve(context, self, currDynScope, temp);
 
-        string.setFrozen(true);
-
-        return string;
+        return context.runtime.freezeAndDedupString(string);
     }
 }
