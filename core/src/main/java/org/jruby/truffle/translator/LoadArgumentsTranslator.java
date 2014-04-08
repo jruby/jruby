@@ -14,6 +14,7 @@ import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.call.RubyCallNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.IfNode;
@@ -26,6 +27,7 @@ import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNodeFactory;
 import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNode;
 import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeFactory;
+import org.jruby.truffle.nodes.respondto.RespondToNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -188,7 +190,12 @@ public class LoadArgumentsTranslator extends Translator {
 
         if (valueNode instanceof org.jruby.ast.NilImplicitNode) {
             // Multiple assignment
-            readNode = ArrayIndexNodeFactory.create(context, sourceSection, index, loadArray(sourceSection));
+
+            if (useArray()) {
+                readNode = ArrayIndexNodeFactory.create(context, sourceSection, index, loadArray(sourceSection));
+            } else {
+                readNode = readArgument(sourceSection, index);
+            }
         } else {
             // Optional argument
             final RubyNode defaultValue = valueNode.accept(this);
@@ -217,31 +224,39 @@ public class LoadArgumentsTranslator extends Translator {
         final String arrayName = methodBodyTranslator.getEnvironment().allocateLocalTemp("destructure");
         final FrameSlot arraySlot = methodBodyTranslator.getEnvironment().declareVar(arrayName);
 
-        final List<RubyNode> sequence = new ArrayList<>();
-
-        sequence.add(WriteLocalVariableNodeFactory.create(context, sourceSection, arraySlot,
-                ArrayCastNodeFactory.create(context, sourceSection,
-                        ReadLocalVariableNodeFactory.create(context, sourceSection, arraySlot))));
-
         pushArraySlot(arraySlot);
 
         final List<org.jruby.ast.Node> childNodes = node.childNodes().get(0).childNodes();
 
+        final List<RubyNode> notNilSequence = new ArrayList<>();
+
         for (int n = 0; n < childNodes.size(); n++) {
             index = n;
-            sequence.add(childNodes.get(n).accept(this));
+            notNilSequence.add(childNodes.get(n).accept(this));
         }
 
-        final RubyNode notNil = SequenceNode.sequence(context, sourceSection, sequence);
+        final RubyNode notNil = SequenceNode.sequence(context, sourceSection, notNilSequence);
 
         popArraySlot(arraySlot);
 
+        final List<RubyNode> nilSequence = new ArrayList<>();
+
+        if (!childNodes.isEmpty()) {
+            // We haven't pushed a new array slot, so this will read the value which we couldn't convert to an array into the first destructured argument
+            index = arrayIndex;
+            nilSequence.add(childNodes.get(0).accept(this));
+        }
+
+        final RubyNode nil = SequenceNode.sequence(context, sourceSection, nilSequence);
+
         return SequenceNode.sequence(context, sourceSection,
-                WriteLocalVariableNodeFactory.create(context, sourceSection, arraySlot, readArgument(sourceSection, arrayIndex)),
+                WriteLocalVariableNodeFactory.create(context, sourceSection, arraySlot,
+                        ArrayCastNodeFactory.create(context, sourceSection,
+                                readArgument(sourceSection, arrayIndex))),
                 new IfNode(context, sourceSection,
                         BooleanCastNodeFactory.create(context, sourceSection,
                                 new IsNilNode(context, sourceSection, ReadLocalVariableNodeFactory.create(context, sourceSection, arraySlot))),
-                        new NilNode(context, sourceSection),
+                        nil,
                         notNil));
     }
 

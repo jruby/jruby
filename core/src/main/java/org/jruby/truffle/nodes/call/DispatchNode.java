@@ -62,6 +62,8 @@ public class DispatchNode extends Node {
      * The central point for method lookup.
      */
     protected RubyMethod lookup(VirtualFrame frame, RubyBasicObject receiverBasicObject, String name) throws UseMethodMissingException {
+        // TODO(CS): why are we using an exception to convey method missing here?
+
         CompilerAsserts.neverPartOfCompilation();
 
         final RubyBasicObject boxedCallingSelf = context.getCoreLibrary().box(frame.getArguments(RubyArguments.class).getSelf());
@@ -78,15 +80,6 @@ public class DispatchNode extends Node {
 
         if (method.isUndefined()) {
             throw new RaiseException(context.getCoreLibrary().noMethodError(name, receiverBasicObject.toString()));
-        }
-
-        /**
-         * If there was still nothing found it's an error. Normally we should at least find BasicObject#method_missing,
-         * but it might have been removed or something.
-         */
-
-        if (method == null) {
-            throw new RaiseException(context.getCoreLibrary().nameErrorNoMethod(name, receiverBasicObject.toString()));
         }
 
         // Check visibility

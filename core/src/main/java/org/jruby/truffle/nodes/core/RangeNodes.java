@@ -138,9 +138,9 @@ public abstract class RangeNodes {
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            callLess = new DispatchHeadNode(context, getSourceSection(), "<", false);
-            callGreater = new DispatchHeadNode(context, getSourceSection(), ">", false);
-            callGreaterEqual = new DispatchHeadNode(context, getSourceSection(), ">=", false);
+            callLess = new DispatchHeadNode(context, getSourceSection(), "<", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            callGreater = new DispatchHeadNode(context, getSourceSection(), ">", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            callGreaterEqual = new DispatchHeadNode(context, getSourceSection(), ">=", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public IncludeNode(IncludeNode prev) {

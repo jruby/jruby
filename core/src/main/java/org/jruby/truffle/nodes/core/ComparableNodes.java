@@ -25,7 +25,7 @@ public abstract class ComparableNodes {
 
         public ComparableCoreMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareNode = new DispatchHeadNode(context, getSourceSection(), "<=>", false);
+            compareNode = new DispatchHeadNode(context, getSourceSection(), "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public ComparableCoreMethodNode(ComparableCoreMethodNode prev) {

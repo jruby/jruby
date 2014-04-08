@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.respondto;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.nodes.RubyNode;
@@ -27,6 +28,10 @@ public class RespondToNode extends RubyNode {
     }
 
     public boolean executeBoolean(VirtualFrame frame) {
+        // TODO(CS): need a fast path version of this using caching
+
+        CompilerAsserts.neverPartOfCompilation();
+
         final Object receiver = child.execute(frame);
 
         final RubyBasicObject boxed = getContext().getCoreLibrary().box(receiver);

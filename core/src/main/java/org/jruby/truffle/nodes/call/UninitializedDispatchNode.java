@@ -33,13 +33,13 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
     private static final int MAX_DEPTH = 5;
 
     private final String name;
+    private final DispatchHeadNode.MissingBehavior missingBehavior;
 
-    public UninitializedDispatchNode(RubyContext context, SourceSection sourceSection, String name) {
+    public UninitializedDispatchNode(RubyContext context, SourceSection sourceSection, String name, DispatchHeadNode.MissingBehavior missingBehavior) {
         super(context, sourceSection);
-
         assert name != null;
-
         this.name = name;
+        this.missingBehavior = missingBehavior;
     }
 
     @Override
@@ -72,17 +72,30 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
         try {
             method = lookup(frame, receiverObject, name);
         } catch (UseMethodMissingException e) {
-            try {
-                method = lookup(frame, receiverObject, "method_missing");
-            } catch (UseMethodMissingException e2) {
-                throw new RaiseException(context.getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing"));
+            final UninitializedDispatchNode newUninitializedDispatch = new UninitializedDispatchNode(getContext(), getSourceSection(), name, missingBehavior);
+
+            switch (missingBehavior) {
+                case RETURN_MISSING: {
+                    BoxedDispatchNode newDispatch = new CachedBoxedReturnMissingDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), newUninitializedDispatch);
+                    replace(newDispatch, "appending new boxed return nil dispatch node to chain");
+                    return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
+                }
+
+                case CALL_METHOD_MISSING: {
+                    try {
+                        method = lookup(frame, receiverObject, "method_missing");
+                    } catch (UseMethodMissingException e2) {
+                        throw new RaiseException(context.getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing"));
+                    }
+
+                    BoxedDispatchNode newDispatch = new CachedBoxedMethodMissingDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), method, name, newUninitializedDispatch);
+                    replace(newDispatch, "appending new boxed method missing dispatch node to chain");
+                    return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
+                }
+
+                default:
+                    throw new UnsupportedOperationException(missingBehavior.toString());
             }
-
-            final UninitializedDispatchNode newUninitializedDispatch = new UninitializedDispatchNode(getContext(), getSourceSection(), name);
-
-            BoxedDispatchNode newDispatch = new CachedBoxedMethodMissingDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), method, name, newUninitializedDispatch);
-            replace(newDispatch, "appending new boxed method missing dispatch node to chain");
-            return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
         }
 
         if (receiverObject instanceof Unboxable) {
@@ -130,7 +143,7 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
          * the point where receivers are guaranteed to be boxed.
         */
 
-        final UninitializedDispatchNode newUninitializedDispatch = new UninitializedDispatchNode(getContext(), getSourceSection(), name);
+        final UninitializedDispatchNode newUninitializedDispatch = new UninitializedDispatchNode(getContext(), getSourceSection(), name, missingBehavior);
 
         BoxedDispatchNode newDispatch;
 

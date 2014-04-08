@@ -54,7 +54,7 @@ public abstract class ClassNodes {
 
         public NewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = new DispatchHeadNode(context, getSourceSection(), "initialize", false);
+            initialize = new DispatchHeadNode(context, getSourceSection(), "initialize", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public NewNode(NewNode prev) {

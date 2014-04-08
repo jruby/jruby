@@ -27,7 +27,7 @@ public abstract class ArrayCastNode extends RubyNode {
 
     public ArrayCastNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        toArrayNode = new DispatchHeadNode(context, sourceSection, "to_ary", false);
+        toArrayNode = new DispatchHeadNode(context, sourceSection, "to_ary", false, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
     }
 
     public ArrayCastNode(ArrayCastNode prev) {
@@ -43,18 +43,24 @@ public abstract class ArrayCastNode extends RubyNode {
     }
 
     @Specialization
-    public RubyArray doObject(VirtualFrame frame, Object object) {
+    public Object doObject(VirtualFrame frame, Object object) {
         if (object instanceof RubyArray) {
-            return (RubyArray) object;
+            return object;
+        } else if (object instanceof NilPlaceholder) {
+            return object;
         } else {
             final Object result = toArrayNode.dispatch(frame, object, null, new Object[]{});
+
+            if (result == DispatchHeadNode.MISSING) {
+                return NilPlaceholder.INSTANCE;
+            }
 
             if (!(result instanceof RubyArray)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorShouldReturn(object.toString(), toArrayNode.getName(), "Array"));
             }
 
-            return (RubyArray) result;
+            return result;
         }
     }
 
