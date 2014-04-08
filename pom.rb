@@ -84,7 +84,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   modules [ 'core', 'lib' ]
 
-  overrides do
+  plugin_management do
     jar( 'junit:junit:4.11',
          :scope => 'test' )
 
@@ -163,10 +163,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   profile 'ext' do
 
-    activation do
-      file( :missing => 'ext/openssl/pkg' )
-    end
-    
     modules [ 'ext' ]
 
     build do
@@ -188,7 +184,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   [ 'bootstrap', 'bootstrap-no-launcher' ].each do |name|
     profile name do
 
-      modules [ 'test', 'ext' ]
+      modules [ 'test' ]
       
     end
   end
@@ -219,7 +215,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  all_modules = [ 'test', 'docs', 'maven', 'ext' ]
+  all_modules = [ 'test', 'docs', 'maven' ]
 
   profile 'all' do
 
@@ -241,6 +237,24 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   profile 'release' do
     modules [ 'test', 'maven' ]
+  end
+
+  profile 'snapshots' do
+    snapshot_dir = '/builds/snapshots'
+
+    activation do
+      file( :exists => snapshot_dir )
+    end
+
+    distribution_management do
+      repository( "file:#{snapshot_dir}/maven", :id => 'local releases' )
+      snapshot_repository( "file:#{snapshot_dir}/maven",
+                           :id => 'local snapshots' )
+    end
+    build do
+      default_goal :deploy
+    end
+
   end
 
   reporting do

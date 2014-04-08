@@ -497,11 +497,6 @@
   <profiles>
     <profile>
       <id>ext</id>
-      <activation>
-        <file>
-          <missing>ext/openssl/pkg</missing>
-        </file>
-      </activation>
       <build>
         <defaultGoal>install</defaultGoal>
       </build>
@@ -540,14 +535,12 @@
       <id>bootstrap</id>
       <modules>
         <module>test</module>
-        <module>ext</module>
       </modules>
     </profile>
     <profile>
       <id>bootstrap-no-launcher</id>
       <modules>
         <module>test</module>
-        <module>ext</module>
       </modules>
     </profile>
     <profile>
@@ -610,7 +603,6 @@
         <module>test</module>
         <module>docs</module>
         <module>maven</module>
-        <module>ext</module>
       </modules>
     </profile>
     <profile>
@@ -622,7 +614,6 @@
         <module>test</module>
         <module>docs</module>
         <module>maven</module>
-        <module>ext</module>
       </modules>
     </profile>
     <profile>
@@ -631,6 +622,27 @@
         <module>test</module>
         <module>maven</module>
       </modules>
+    </profile>
+    <profile>
+      <id>snapshots</id>
+      <activation>
+        <file>
+          <exists>/builds/snapshots</exists>
+        </file>
+      </activation>
+      <build>
+        <defaultGoal>deploy</defaultGoal>
+      </build>
+      <distributionManagement>
+        <repository>
+          <id>local releases</id>
+          <url>file:/builds/snapshots/maven</url>
+        </repository>
+        <snapshotRepository>
+          <id>local snapshots</id>
+          <url>file:/builds/snapshots/maven</url>
+        </snapshotRepository>
+      </distributionManagement>
     </profile>
   </profiles>
 </project>
