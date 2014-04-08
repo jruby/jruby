@@ -1,21 +1,12 @@
 fails:A block taking |(a, b)| arguments calls #to_ary to convert a single yielded object to an Array
-fails:A block taking |(a, b)| arguments does not call #to_ary if the single yielded object is an Array
 fails:A block taking |(a, b)| arguments does not call #to_ary if the object does not respond to #to_ary
 fails:A block taking |(a, b)| arguments raises an TypeError if #to_ary does not return an Array
 fails:A block taking |(a, b), c| arguments destructures a single one-level Array value yielded
-fails:A block taking |(a, b), c| arguments destructures a single multi-level Array value yielded
 fails:A block taking |(a, b), c| arguments calls #to_ary to convert a single yielded object to an Array
 fails:A block taking |(a, b), c| arguments does not call #to_ary if the single yielded object is an Array
 fails:A block taking |(a, b), c| arguments does not call #to_ary if the object does not respond to #to_ary
-fails:A block taking |(a, b), c| arguments raises an TypeError if #to_ary does not return an Array
-fails:A block taking nested |a, (b, (c, d))| destructures a single multi-level Array value yielded
-fails:A block taking nested |a, (b, (c, d))| destructures a single multi-level Array value yielded
-fails:A block taking nested |a, ((b, c), d)| destructures a single multi-level Array value yielded
-fails:A block taking nested |a, ((b, c), d)| destructures a single multi-level Array value yielded
-fails:A block arguments with _ extracts arguments with _
-fails:A block taking |(a, b)| arguments destructures a single Array value yielded
-fails:A block taking |(a, b)| arguments destructures a single Array value yielded when shadowing an outer variable
-fails:A block taking nested |a, (b, (c, d))| assigns nil to the arguments when yielded no values
 fails:A block taking nested |a, (b, (c, d))| destructures separate yielded values
-fails:A block taking nested |a, ((b, c), d)| assigns nil to the arguments when yielded no values
+fails:fails:A block taking nested |a, (b, (c, d))| destructures a single multi-level Array value yielded
 fails:A block taking nested |a, ((b, c), d)| destructures separate yielded values
+fails:A block taking nested |a, ((b, c), d)| destructures a single multi-level Array value yielded
+fails:A block taking nested |a, (b, (c, d))| destructures a single multi-level Array value yielded

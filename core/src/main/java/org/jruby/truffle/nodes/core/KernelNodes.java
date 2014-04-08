@@ -461,7 +461,9 @@ public abstract class
                 for (Object arg : args) {
                     final String string;
 
-                    if (arg instanceof RubyBasicObject) {
+                    if (arg instanceof NilPlaceholder) {
+                        string = "nil";
+                    } else if (arg instanceof RubyBasicObject) {
                         string = ((RubyBasicObject) arg).inspect();
                     } else {
                         string = arg.toString();

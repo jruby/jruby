@@ -593,6 +593,7 @@ public class RubyTime extends RubyObject {
         if (other instanceof RubyTime) {
             return context.runtime.newFixnum(cmp((RubyTime) other));
         }
+        
         return invcmp(context, this, other);
     }
 

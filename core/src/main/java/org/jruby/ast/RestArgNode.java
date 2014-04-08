@@ -51,7 +51,7 @@ public class RestArgNode extends ArgumentNode implements INameNode {
     }
 
     @Override
-    public Object accept(NodeVisitor iVisitor) {
+    public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitRestArgNode(this);
     }
 }

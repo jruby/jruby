@@ -15,3 +15,4 @@ fails:The defined? keyword for super for a method taking no arguments returns 's
 fails:The defined? keyword for super for a method taking no arguments returns 'super' when the method exists in a supermodule
 fails:The defined? keyword for super for a method taking arguments returns 'super' from a #define_method when a superclass method exists
 fails:The defined? keyword for super within an included module's method returns 'super' when a superclass method exists in the including hierarchy
+fails:The defined? keyword for variables when a String does not match a Regexp returns nil for $1-$9

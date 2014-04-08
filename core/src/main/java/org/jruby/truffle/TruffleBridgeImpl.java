@@ -75,7 +75,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
     }
 
     @Override public TruffleMethod truffelize(DynamicMethod originalMethod, ArgsNode argsNode, Node bodyNode) {
-        final MethodDefinitionNode methodDefinitionNode = truffleContext.getTranslator().parse(truffleContext, argsNode, bodyNode);
+        final MethodDefinitionNode methodDefinitionNode = truffleContext.getTranslator().parse(truffleContext, null, argsNode, bodyNode);
         return new TruffleMethod(originalMethod, methodDefinitionNode.getCallTarget());
     }
 

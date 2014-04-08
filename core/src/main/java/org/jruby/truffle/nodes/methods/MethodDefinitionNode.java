@@ -52,7 +52,7 @@ public class MethodDefinitionNode extends RubyNode {
     public RubyMethod executeMethod(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        MaterializedFrame declarationFrame;
+        final MaterializedFrame declarationFrame;
 
         if (requiresDeclarationFrame) {
             declarationFrame = frame.materialize();

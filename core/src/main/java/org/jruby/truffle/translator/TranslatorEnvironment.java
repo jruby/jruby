@@ -50,7 +50,10 @@ public class TranslatorEnvironment {
     private boolean needsDeclarationFrame = false;
     private UniqueMethodIdentifier methodIdentifier;
 
+    // TODO(CS): overflow?
     private static AtomicInteger tempIndex = new AtomicInteger();
+
+    public boolean hasRestParameter = false;
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, FrameDescriptor frameDescriptor, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments,
                     boolean neverAssignInParentScope, UniqueMethodIdentifier methodIdentifier) {

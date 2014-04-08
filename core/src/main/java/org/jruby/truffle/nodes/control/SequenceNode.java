@@ -13,7 +13,12 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.literal.NilNode;
 import org.jruby.truffle.runtime.*;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * A sequence of statements to be executed in serial.
@@ -23,7 +28,44 @@ public final class SequenceNode extends RubyNode {
 
     @Children protected final RubyNode[] body;
 
-    public SequenceNode(RubyContext context, SourceSection sourceSection, RubyNode... body) {
+    public static RubyNode sequence(RubyContext context, SourceSection sourceSection, RubyNode... sequence) {
+        return sequence(context, sourceSection, Arrays.asList(sequence));
+    }
+
+    public static RubyNode sequence(RubyContext context, SourceSection sourceSection, List<RubyNode> sequence) {
+        final List<RubyNode> flattened = flatten(sequence, true);
+
+        if (flattened.isEmpty()) {
+            return new NilNode(context, sourceSection);
+        } else if (flattened.size() == 1) {
+            return flattened.get(0);
+        } else {
+            return new SequenceNode(context, sourceSection, flattened.toArray(new RubyNode[flattened.size()]));
+        }
+    }
+
+    private static List<RubyNode> flatten(List<RubyNode> sequence, boolean allowTrailingNil) {
+        final List<RubyNode> flattened = new ArrayList<>();
+
+        for (int n = 0; n < sequence.size(); n++) {
+            final boolean lastNode = n == sequence.size() - 1;
+            final RubyNode node = sequence.get(n);
+
+            if (node instanceof NilNode) {
+                if (allowTrailingNil && lastNode) {
+                    flattened.add(node);
+                }
+            } else if (node instanceof SequenceNode) {
+                flattened.addAll(flatten(Arrays.asList(((SequenceNode) node).body), lastNode));
+            } else {
+                flattened.add(node);
+            }
+        }
+
+        return flattened;
+    }
+
+    protected SequenceNode(RubyContext context, SourceSection sourceSection, RubyNode... body) {
         super(context, sourceSection);
         this.body = body;
     }
