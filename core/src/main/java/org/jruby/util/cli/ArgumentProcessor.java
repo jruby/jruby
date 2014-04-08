@@ -32,14 +32,14 @@ import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.exceptions.MainExitException;
-import org.jruby.runtime.profile.ProfileOutput;
+import org.jruby.runtime.profile.builtin.ProfileOutput;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -119,7 +119,7 @@ public class ArgumentProcessor {
                 if (arg.indexOf('=') > 0) {
                     String[] keyvalue = arg.split("=", 2);
 
-                    // argv globals get their dashes replaced with underscores
+                    // argv globals getService their dashes replaced with underscores
                     String globalName = keyvalue[0].replaceAll("-", "_");
                     config.getOptionGlobals().put(globalName, keyvalue[1]);
                 } else {
@@ -199,7 +199,7 @@ public class ArgumentProcessor {
                     config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
                     break;
                 case 'e':
-                    config.getInlineScript().append(grabValue(getArgumentError(" -e must be followed by an expression to evaluate")));
+                    config.getInlineScript().append(grabValue(getArgumentError(" -e must be followed by an expression to report")));
                     config.getInlineScript().append('\n');
                     config.setHasInlineScript(true);
                     break FOR;
@@ -413,7 +413,14 @@ public class ArgumentProcessor {
                                 } catch (FileNotFoundException e) {
                                     throw new MainExitException(1, String.format("jruby: %s", e.getMessage()));
                                 }
-                                
+
+                            } else if (profilingMode.equals("service")) {
+                                // service class name
+                                String service = grabValue(getArgumentError("--profile.service requires an class name argument"));
+
+                                config.setProfilingMode( RubyInstanceConfig.ProfilingMode.SERVICE);
+                                config.setProfilingService(service);
+
                             } else {
                                 try {
                                     config.setProfilingMode(RubyInstanceConfig.ProfilingMode.valueOf(profilingMode.toUpperCase()));

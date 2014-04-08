@@ -25,64 +25,31 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.profile;
 
-import java.util.List;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 
-class InvocationSet {
-    
-    final List<Invocation> invocations;
+/**
+ * Implementations of this interface will be used to enhance methods with profiling information/ callbacks.
+ * TODO This can be moved, I think it's also useful outside the profile package.
+ *
+ * @author Andre Kullmann
+ */
+public interface MethodEnhancer {
 
-    InvocationSet(List<Invocation> invocations) {
-        this.invocations = invocations;
-    }
-
-    public long totalTime() {
-        long t = 0;
-        for (Invocation inv : invocations) {
-            t += inv.getDuration();
-        }
-        return t;
-    }
-
-    public long selfTime() {
-        return totalTime() - childTime();
-    }
-
-    public long childTime() {
-        long t = 0;
-        for (Invocation inv : invocations) {
-            t += inv.childTime();
-        }
-        return t;
-    }
-
-    public int totalCalls() {
-        int t = 0;
-        for (Invocation inv : invocations) {
-            t += inv.getCount();
-        }
-        return t;
-    }
-
-    public long timeSpentInChild(int serial) {
-        long t = 0;
-        for (Invocation inv : invocations) {
-            Invocation childInv = inv.getChildren().get(serial);
-            if (childInv != null) {
-                t += childInv.getDuration();
-            }
-        }
-        return t;
-    }
-
-    public int callsOfChild(int serial) {
-        int c = 0;
-        for (Invocation inv : invocations) {
-            Invocation childInv = inv.getChildren().get(serial);
-            if (childInv != null) {
-                c += childInv.getCount();
-            }
-        }
-        return c;
-    }
-    
+    /**
+     * Will be called with a method which should be enhanced.
+     * e.g. with information or callback invocations required by the profiling.
+     * In most cases you don't want to profile all methods, just the methods of your own code.
+     * So you can add a simple filter here
+     * <pre>
+     * if( isMyCode( delegate ) ) {
+     *     return new ProfilingDynamicMethod( delegate );
+     * } else {
+     *     return delegate;
+     * }
+     * </pre>
+     * @param name the name of the given delegate
+     * @param delegate the method to enhance
+     * @return the enhanced method. if nothing is to be done, the delegate itself can be returned
+     */
+    public DynamicMethod enhance( String name, DynamicMethod delegate );
 }

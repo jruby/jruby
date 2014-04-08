@@ -35,14 +35,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import java.lang.ref.WeakReference;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -53,6 +45,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.JumpException.ReturnJump;
+import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.ext.fiber.ThreadFiber;
@@ -61,13 +54,23 @@ import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.backtrace.TraceType.Gather;
 import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
+import org.jruby.runtime.backtrace.TraceType;
+import org.jruby.runtime.backtrace.TraceType.Gather;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.profile.ProfileData;
+import org.jruby.runtime.profile.ProfileCollection;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.RubyDateFormatter;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.lang.ref.WeakReference;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 public final class ThreadContext {
 
@@ -120,8 +123,11 @@ public final class ThreadContext {
     private int catchIndex = -1;
     
     private boolean isProfiling = false;
+
     // The flat profile data for this thread
-	private ProfileData profileData;
+	// private ProfileData profileData;
+
+    private ProfileCollection profileCollection;
 	
     private boolean eventHooksEnabled = true;
 
@@ -155,8 +161,9 @@ public final class ThreadContext {
         this.runtime = runtime;
         this.nil = runtime.getNil();
         this.is19 = runtime.is1_9();
-        if (runtime.getInstanceConfig().isProfilingEntireRun())
+        if (runtime.getInstanceConfig().isProfilingEntireRun()) {
             startProfiling();
+        }
 
         this.runtimeCache = runtime.getRuntimeCache();
         
@@ -701,13 +708,13 @@ public final class ThreadContext {
     }
     
     public RubyModule getRubyClass() {
-        assert parentIndex != -1 : "Trying to get RubyClass from empty stack";
+        assert parentIndex != -1 : "Trying to getService RubyClass from empty stack";
         RubyModule parentModule = parentStack[parentIndex];
         return parentModule.getNonIncludedClass();
     }
 
     public RubyModule getPreviousRubyClass() {
-        assert parentIndex != 0 : "Trying to get RubyClass from too-shallow stack";
+        assert parentIndex != 0 : "Trying to getService RubyClass from too-shallow stack";
         RubyModule parentModule = parentStack[parentIndex - 1];
         return parentModule.getNonIncludedClass();
     }
@@ -1376,22 +1383,20 @@ public final class ThreadContext {
     }
 
     /**
-     * Get the profile data for this thread (ThreadContext).
+     * Get the profile collection for this thread (ThreadContext).
      *
-     * @return the thread's profile data
+     * @return the thread's profile collection
+     *
      */
-    public ProfileData getProfileData() {
-        if (profileData == null) {
-            profileData = new ProfileData(this);
-        }
-        return profileData;
+    public ProfileCollection getProfileCollection() {
+        return profileCollection;
     }
 
     public void startProfiling() {
         isProfiling = true;
-        // use new profiling data every time profiling is started, useful in 
+        // use new profiling data every time profiling is started, useful in
         // case users keep a reference to previous data after profiling stop
-        profileData = new ProfileData(this);
+        profileCollection = getRuntime().getProfilingService().newProfileCollection( this );
     }
     
     public void stopProfiling() {
@@ -1408,14 +1413,15 @@ public final class ThreadContext {
         int previousMethodSerial = currentMethodSerial;
         currentMethodSerial = nextMethod;
         if (isProfiling()) {
-            getProfileData().profileEnter(nextMethod);
+            getProfileCollection().profileEnter(nextMethod);
         }
         return previousMethodSerial;
     }
 
     public int profileEnter(String name, DynamicMethod nextMethod) {
         if (isProfiling()) {
-            getProfileData().addProfiledMethod(name, nextMethod);
+            // TODO This can be removed, because the profiled method will be added in the MethodEnhancer if necessary
+            getRuntime().getProfiledMethods().addProfiledMethod( name, nextMethod );
         }
         return profileEnter((int) nextMethod.getSerialNumber());
     }
@@ -1424,7 +1430,7 @@ public final class ThreadContext {
         int previousMethodSerial = currentMethodSerial;
         currentMethodSerial = nextMethod;
         if (isProfiling()) {
-            getProfileData().profileExit(nextMethod, startTime);
+            getProfileCollection().profileExit(nextMethod, startTime);
         }
         return previousMethodSerial;
     }
