@@ -46,6 +46,21 @@ class MethodTranslator extends BodyTranslator {
 
         final Arity arity = getArity(argsNode);
 
+        final Arity arityForCheck;
+
+        /*
+         * If you have a block with parameters |a,| Ruby checks the arity as if was minimum 1, maximum 1. That's
+         * counter-intuitive - as you'd expect the anonymous rest argument to cause it to have no maximum. Indeed,
+         * that's how JRuby reports it, and by the look of their failing spec they consider this to be correct. We'll
+         * follow the specs for now until we see a reason to do something else.
+         */
+
+        if (isBlock && argsNode.childNodes().size() == 2 && argsNode.getRestArgNode() instanceof org.jruby.ast.UnnamedRestArgNode) {
+            arityForCheck = new Arity(arity.getMinimum(), arity.getMinimum());
+        } else {
+            arityForCheck = arity;
+        }
+
         RubyNode body;
 
         if (bodyNode != null) {
@@ -100,10 +115,10 @@ class MethodTranslator extends BodyTranslator {
                             BooleanCastNodeFactory.create(context, sourceSection,
                                     new BehaveAsBlockNode(context, sourceSection, true)),
                             new NilNode(context, sourceSection),
-                            new CheckArityNode(context, sourceSection, arity)), preludeBuilder);
+                            new CheckArityNode(context, sourceSection, arityForCheck)), preludeBuilder);
         } else {
             prelude = SequenceNode.sequence(context, sourceSection,
-                    new CheckArityNode(context, sourceSection, arity),
+                    new CheckArityNode(context, sourceSection, arityForCheck),
                     loadArguments);
         }
 
