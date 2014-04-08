@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.methods.arguments;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
-import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.respondto.RespondToNode;
 import org.jruby.truffle.runtime.*;
@@ -23,42 +22,19 @@ import org.jruby.truffle.runtime.methods.Arity;
  * Switches between loading arguments as normal and doing a destructure.
  */
 @NodeInfo(shortName = "destructure-switch")
-public class DestructureSwitchNode extends RubyNode {
+public class ShouldDestructureNode extends RubyNode {
 
     private final Arity arity;
-    @Child protected RubyNode loadIndividualArguments;
     @Child protected RespondToNode respondToCheck;
-    @Child protected RubyNode destructureArguments;
 
-    private final BranchProfile destructureProfile = new BranchProfile();
-    private final BranchProfile dontDestructureProfile = new BranchProfile();
-
-    public DestructureSwitchNode(RubyContext context, SourceSection sourceSection, Arity arity, RubyNode loadIndividualArguments, RespondToNode respondToCheck, RubyNode destructureArguments) {
+    public ShouldDestructureNode(RubyContext context, SourceSection sourceSection, Arity arity, RespondToNode respondToCheck) {
         super(context, sourceSection);
         this.arity = arity;
-        this.loadIndividualArguments = loadIndividualArguments;
         this.respondToCheck = respondToCheck;
-        this.destructureArguments = destructureArguments;
     }
 
     @Override
-    public void executeVoid(VirtualFrame frame) {
-        if (shouldDestructure(frame)) {
-            destructureProfile.enter();
-            destructureArguments.executeVoid(frame);
-        } else {
-            dontDestructureProfile.enter();
-            loadIndividualArguments.executeVoid(frame);
-        }
-    }
-
-    @Override
-    public Object execute(VirtualFrame frame) {
-        executeVoid(frame);
-        return NilPlaceholder.INSTANCE;
-    }
-
-    private boolean shouldDestructure(VirtualFrame frame) {
+    public boolean executeBoolean(VirtualFrame frame) {
         final RubyArguments arguments = frame.getArguments(RubyArguments.class);
 
         // If we only accept one argument, there's never any need to destructure
@@ -83,6 +59,11 @@ public class DestructureSwitchNode extends RubyNode {
         // If the single argument responds to #to_ary, then destructure
 
         return respondToCheck.executeBoolean(frame);
+    }
+
+    @Override
+    public Object execute(VirtualFrame frame) {
+        return executeBoolean(frame);
     }
 
 }

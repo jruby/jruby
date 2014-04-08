@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.methods.*;
@@ -81,7 +82,11 @@ class MethodTranslator extends BodyTranslator {
                 final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
                 final RespondToNode respondToConvertAry = new RespondToNode(context, sourceSection, readArrayNode, "to_ary");
-                prelude = new DestructureSwitchNode(context, sourceSection, arity, loadArguments, respondToConvertAry, SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments));
+                prelude = new IfNode(context, sourceSection,
+                        BooleanCastNodeFactory.create(context, sourceSection,
+                                new ShouldDestructureNode(context, sourceSection, arity, respondToConvertAry)),
+                        SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments),
+                        loadArguments);
             } else {
                 prelude = loadArguments;
             }
