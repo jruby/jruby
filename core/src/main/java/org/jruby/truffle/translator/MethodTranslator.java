@@ -105,6 +105,9 @@ class MethodTranslator extends BodyTranslator {
 
         final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), methodName, parseTree, body);
 
+        //System.err.println(sourceSection);
+        //NodeUtil.printTree(System.err, pristineRootNode);
+
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRootNode));
 
         if (isBlock) {
