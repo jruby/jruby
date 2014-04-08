@@ -50,7 +50,7 @@ public abstract class ProcNodes {
         @Specialization
         public NilPlaceholder initialize(VirtualFrame frame, RubyProc proc, RubyProc block) {
             final RubyArguments callerArguments = frame.getCaller().unpack().getArguments(RubyArguments.class);
-            proc.initialize(RubyProc.Type.PROC, callerArguments.getSelf(), callerArguments.getBlock(), block.getMethod());
+            proc.initialize(RubyProc.Type.PROC, callerArguments.getSelf(), callerArguments.getBlock(), block.getMethod().withoutBlockDestructureSemantics());
             return NilPlaceholder.INSTANCE;
         }
 

@@ -11,7 +11,11 @@ package org.jruby.truffle.runtime.methods;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.InlinableMethodImplementation;
+import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.methods.arguments.BehaveAsBlockNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -100,6 +104,26 @@ public class RubyMethod {
         }
 
         return new RubyMethod(sourceSection, newDeclaringModule, uniqueIdentifier, name, visibility, undefined, implementation);
+    }
+
+    public RubyMethod withoutBlockDestructureSemantics() {
+        final InlinableMethodImplementation inlinableMethodImplementation = (InlinableMethodImplementation) implementation;
+
+        final RubyRootNode modifiedRootNode = inlinableMethodImplementation.getCloneOfPristineRootNode();
+
+        for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(modifiedRootNode, BehaveAsBlockNode.class)) {
+            behaveAsBlockNode.setBehaveAsBlock(false);
+        }
+
+        final InlinableMethodImplementation newImplementation = new InlinableMethodImplementation(
+                Truffle.getRuntime().createCallTarget(modifiedRootNode),
+                inlinableMethodImplementation.getDeclarationFrame(),
+                inlinableMethodImplementation.getFrameDescriptor(),
+                modifiedRootNode,
+                inlinableMethodImplementation.alwaysInline(),
+                inlinableMethodImplementation.getShouldAppendCallNode());
+
+        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, name, visibility, undefined, newImplementation);
     }
 
     public RubyMethod undefined() {

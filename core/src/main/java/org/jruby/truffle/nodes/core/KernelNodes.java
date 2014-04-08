@@ -393,7 +393,7 @@ public abstract class
 
         @Specialization
         public RubyProc proc(Object self, RubyProc block) {
-            return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA, self, block, block.getMethod());
+            return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA, self, block, block.getMethod().withoutBlockDestructureSemantics());
 
         }
     }

@@ -54,7 +54,6 @@ class MethodTranslator extends BodyTranslator {
             body = new NilNode(context, sourceSection);
         }
 
-        final RubyNode newCheckArity = new CheckArityNode(context, sourceSection, arity);
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(context, source, isBlock, this);
         final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
 
@@ -82,16 +81,27 @@ class MethodTranslator extends BodyTranslator {
                 final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
                 final RespondToNode respondToConvertAry = new RespondToNode(context, sourceSection, readArrayNode, "to_ary");
-                prelude = new IfNode(context, sourceSection,
+
+                prelude = SequenceNode.sequence(context, sourceSection,
+                        new IfNode(context, sourceSection,
+                            BooleanCastNodeFactory.create(context, sourceSection,
+                                new BehaveAsBlockNode(context, sourceSection, true)),
+                            new NilNode(context, sourceSection),
+                            new CheckArityNode(context, sourceSection, arity)),
+                        new IfNode(context, sourceSection,
                         BooleanCastNodeFactory.create(context, sourceSection,
-                                new ShouldDestructureNode(context, sourceSection, arity, respondToConvertAry)),
+                                AndNodeFactory.create(context, sourceSection,
+                                    new BehaveAsBlockNode(context, sourceSection, true),
+                                    new ShouldDestructureNode(context, sourceSection, arity, respondToConvertAry))),
                         SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments),
-                        loadArguments);
+                        loadArguments));
             } else {
                 prelude = loadArguments;
             }
         } else {
-            prelude = SequenceNode.sequence(context, sourceSection, newCheckArity, loadArguments);
+            prelude = SequenceNode.sequence(context, sourceSection,
+                    new CheckArityNode(context, sourceSection, arity),
+                    loadArguments);
         }
 
         body = SequenceNode.sequence(context, sourceSection, prelude, body);

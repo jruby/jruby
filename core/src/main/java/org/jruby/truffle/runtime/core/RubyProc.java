@@ -44,42 +44,38 @@ public class RubyProc extends RubyObject {
     }
 
     @CompilationFinal private Type type;
-    @CompilationFinal private Object self;
-    @CompilationFinal private RubyProc block;
+    @CompilationFinal private Object selfCapturedInScope;
+    @CompilationFinal private RubyProc blockCapturedInScope;
     @CompilationFinal private RubyMethod method;
 
     public RubyProc(RubyClass procClass) {
         super(procClass);
     }
 
-    public RubyProc(RubyClass procClass, Type type, Object self, RubyProc block, RubyMethod method) {
+    public RubyProc(RubyClass procClass, Type type, Object selfCapturedInScope, RubyProc blockCapturedInScope, RubyMethod method) {
         super(procClass);
-        initialize(type, self, block, method);
+        initialize(type, selfCapturedInScope, blockCapturedInScope, method);
     }
 
-    public void initialize(Type setType, Object setSelf, RubyProc setBlock, RubyMethod setMethod) {
-        assert setSelf != null;
-        assert RubyContext.shouldObjectBeVisible(setSelf);
+    public void initialize(Type setType, Object selfCapturedInScope, RubyProc blockCapturedInScope, RubyMethod setMethod) {
+        assert selfCapturedInScope != null;
+        assert RubyContext.shouldObjectBeVisible(selfCapturedInScope);
         type = setType;
-        self = setSelf;
-        block = setBlock;
+        this.selfCapturedInScope = selfCapturedInScope;
+        this.blockCapturedInScope = blockCapturedInScope;
         method = setMethod;
-    }
-
-    public Object getSelf() {
-        return self;
     }
 
     @CompilerDirectives.SlowPath
     public Object call(PackedFrame caller, Object... args) {
-        return callWithModifiedSelf(caller, self, args);
+        return callWithModifiedSelf(caller, selfCapturedInScope, args);
     }
 
     public Object callWithModifiedSelf(PackedFrame caller, Object modifiedSelf, Object... args) {
         assert modifiedSelf != null;
 
         try {
-            return method.call(caller, modifiedSelf, block, args);
+            return method.call(caller, modifiedSelf, blockCapturedInScope, args);
         } catch (ReturnException e) {
             switch (type) {
                 case PROC:
@@ -92,16 +88,20 @@ public class RubyProc extends RubyObject {
         }
     }
 
-    public RubyMethod getMethod() {
-        return method;
-    }
-
     public Type getType() {
         return type;
     }
 
-    public RubyProc getBlock() {
-        return block;
+    public Object getSelfCapturedInScope() {
+        return selfCapturedInScope;
+    }
+
+    public RubyProc getBlockCapturedInScope() {
+        return blockCapturedInScope;
+    }
+
+    public RubyMethod getMethod() {
+        return method;
     }
 
 }
