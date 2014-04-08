@@ -24,6 +24,7 @@ import org.jruby.ir.operands.BacktickString;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.CompoundArray;
 import org.jruby.ir.operands.CompoundString;
+import org.jruby.ir.operands.ConstantStringLiteral;
 import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.DynamicSymbol;
@@ -1362,13 +1363,13 @@ public class IRBuilder {
         switch (node.getNodeType()) {
             case ORNODE:
             case ANDNODE: {
-                return new StringLiteral("expression");
+                return new ConstantStringLiteral("expression");
             }
             case MULTIPLEASGN19NODE: {
-                return new StringLiteral("assignment");
+                return new ConstantStringLiteral("assignment");
             }
             case DVARNODE: {
-                return new StringLiteral("local-variable");
+                return new ConstantStringLiteral("local-variable");
             }
             case BACKREFNODE: {
                 return buildDefinitionCheck(s, new BackrefIsMatchDataInstr(s.getNewTemporaryVariable()), "global-variable");
@@ -1379,7 +1380,7 @@ public class IRBuilder {
                 Label doneLabel = s.getNewLabel();
                 Variable tmpVar = getValueInTemporaryVariable(s, v);
                 addInstr(s, BNEInstr.create(tmpVar, manager.getNil(), doneLabel));
-                addInstr(s, new CopyInstr(tmpVar, new StringLiteral("expression")));
+                addInstr(s, new CopyInstr(tmpVar, new ConstantStringLiteral("expression")));
                 addInstr(s, new LabelInstr(doneLabel));
                 return tmpVar;
             }
@@ -1411,7 +1412,7 @@ public class IRBuilder {
                 // This matters because if String.nil? is monkey-patched, the two sequences can behave differently.
                 addInstr(s, CallInstr.create(tmpVar, new MethAddr("nil?"), new NthRef(n), NO_ARGS, null));
                 addInstr(s, BEQInstr.create(tmpVar, manager.getTrue(), undefLabel));
-                return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral("global-variable"));
+                return buildDefnCheckIfThenPaths(s, undefLabel, new ConstantStringLiteral("global-variable"));
             }
             default: {
                 return buildGetDefinition(node, s);
@@ -1464,13 +1465,13 @@ public class IRBuilder {
         Label undefLabel = s.getNewLabel();
         addInstr(s, (Instr) definedInstr);
         addInstr(s, BEQInstr.create(definedInstr.getResult(), manager.getFalse(), undefLabel));
-        return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral(definedReturnValue));
+        return buildDefnCheckIfThenPaths(s, undefLabel, new ConstantStringLiteral(definedReturnValue));
     }
 
     public Operand buildGetArgumentDefinition(final Node node, IRScope s, String type) {
         if (node == null) return new StringLiteral(type);
 
-        Operand rv = new StringLiteral(type);
+        Operand rv = new ConstantStringLiteral(type);
         boolean failPathReqd = false;
         Label failLabel = s.getNewLabel();
         if (node instanceof ArrayNode) {
@@ -1515,22 +1516,22 @@ public class IRBuilder {
             case OPASGNORNODE:
             case OPELEMENTASGNNODE:
             case INSTASGNNODE: // simple assignment cases
-                return new StringLiteral("assignment");
+                return new ConstantStringLiteral("assignment");
             case DVARNODE:
-                return new StringLiteral("local-variable(in-block)");
+                return new ConstantStringLiteral("local-variable(in-block)");
             case FALSENODE:
-                return new StringLiteral("false");
+                return new ConstantStringLiteral("false");
             case TRUENODE:
-                return new StringLiteral("true");
+                return new ConstantStringLiteral("true");
             case LOCALVARNODE:
-                return new StringLiteral("local-variable");
+                return new ConstantStringLiteral("local-variable");
             case MATCH2NODE:
             case MATCH3NODE:
-                return new StringLiteral("method");
+                return new ConstantStringLiteral("method");
             case NILNODE:
-                return new StringLiteral("nil");
+                return new ConstantStringLiteral("nil");
             case SELFNODE:
-                return new StringLiteral("self");
+                return new ConstantStringLiteral("self");
             case CONSTNODE: {
                 Label defLabel = s.getNewLabel();
                 Label doneLabel = s.getNewLabel();
@@ -1543,7 +1544,7 @@ public class IRBuilder {
                 addInstr(s, new CopyInstr(tmpVar, manager.getNil()));
                 addInstr(s, new JumpInstr(doneLabel));
                 addInstr(s, new LabelInstr(defLabel));
-                addInstr(s, new CopyInstr(tmpVar, new StringLiteral("constant")));
+                addInstr(s, new CopyInstr(tmpVar, new ConstantStringLiteral("constant")));
                 addInstr(s, new LabelInstr(doneLabel));
                 return tmpVar;
             }
@@ -1583,7 +1584,7 @@ public class IRBuilder {
                 // This matters because if String.nil? is monkey-patched, the two sequences can behave differently.
                 addInstr(s, CallInstr.create(tmpVar, new MethAddr("nil?"), new NthRef(n), NO_ARGS, null));
                 addInstr(s, BEQInstr.create(tmpVar, manager.getTrue(), undefLabel));
-                return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral("$" + n));
+                return buildDefnCheckIfThenPaths(s, undefLabel, new ConstantStringLiteral("$" + n));
             }
             case COLON3NODE:
             case COLON2NODE: {
@@ -1607,7 +1608,7 @@ public class IRBuilder {
                         Operand v    = (n instanceof Colon2Node) ? build(((Colon2Node)n).getLeftNode(), s) : new ObjectClass();
 
                         Variable tmpVar = s.getNewTemporaryVariable();
-                        addInstr(s, new GetDefinedConstantOrMethodInstr(tmpVar, v, new StringLiteral(name)));
+                        addInstr(s, new GetDefinedConstantOrMethodInstr(tmpVar, v, new ConstantStringLiteral(name)));
                         return tmpVar;
                     }
                 };
