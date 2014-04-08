@@ -13,7 +13,7 @@ public class ProfileMethodsTest extends TestCase {
     public ProfileMethodsTest(final String testName) {
         super(testName);
     }
-/*
+
     public void testSimplePutAndGetWorks() {
 
         Ruby runtime = Ruby.getGlobalRuntime();
@@ -39,5 +39,4 @@ public class ProfileMethodsTest extends TestCase {
 
         assertNull( pMethod );
     }
-*/
 }
