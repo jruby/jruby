@@ -1,15 +1,3 @@
-# TODO move those to method to ruby-maven
-class Java::JavaIo::File
-  def to_pathname
-    to_s.gsub( /\\/, '/' )
-  end
-end
-class Java::JavaLang::String
-  def to_pathname
-    to_s.gsub( /\\/, '/' )
-  end
-end
-
 class ImportedGem
   attr_reader :name, :default_gem, :pom_version_key, :ruby_version, :only_spec
 
@@ -109,15 +97,15 @@ project 'JRuby Lib Setup' do
 
     puts "using jruby #{JRUBY_VERSION}"
 
-    target = ctx.project.build.directory.to_pathname
+    target = ctx.project.build.directory.to_s
     gem_home = File.join( target, 'rubygems' )
     gems = File.join( gem_home, 'gems' )
     specs = File.join( gem_home, 'specifications' )
-    default_specs = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared', 
+    default_specs = File.join( ctx.project.basedir.to_s, 'ruby', 'gems', 'shared', 
                                'specifications', 'default' )
-    bin_stubs = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared', 
+    bin_stubs = File.join( ctx.project.basedir.to_s, 'ruby', 'gems', 'shared', 
                            'gems' )
-    ruby_dir = File.join( ctx.project.basedir.to_pathname, 'ruby' )
+    ruby_dir = File.join( ctx.project.basedir.to_s, 'ruby' )
     FileUtils.mkdir_p( default_specs )
 
     # have an empty openssl.rb so we do not run in trob=uble with not having
@@ -137,7 +125,7 @@ project 'JRuby Lib Setup' do
 
       # install the gem unless already installed
       if Dir[ File.join( specs, "#{g.name}-#{version}*.gemspec" ) ].empty?
-        installer = Gem::Installer.new( File.join( ctx.project.build.directory.to_pathname, 
+        installer = Gem::Installer.new( File.join( ctx.project.build.directory.to_s, 
                                                    "#{g.name}-#{pom_version}.gem" ),
                                         :ignore_dependencies => true,
                                         :install_dir => gem_home )
