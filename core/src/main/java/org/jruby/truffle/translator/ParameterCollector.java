@@ -29,7 +29,7 @@ public class ParameterCollector extends AbstractNodeVisitor {
 
     @Override
     protected Object defaultVisit(Node node) {
-        throw new UnsupportedOperationException(node.toString());
+       return null;
     }
 
     @Override
@@ -92,12 +92,14 @@ public class ParameterCollector extends AbstractNodeVisitor {
     @Override
     public Object visitOptArgNode(OptArgNode node) {
         parameters.add(node.getName());
+        node.getValue().accept(this);
         return null;
     }
 
     @Override
     public Object visitLocalAsgnNode(LocalAsgnNode node) {
         parameters.add(node.getName());
+        node.getValueNode().accept(this);
         return null;
     }
 
