@@ -1,3 +1,1 @@
-fails:Splat operator used to assign a splatted object to an object assigns the returned value of to_a when the splatted object responds to to_a
-fails:Splat operator used to assign a splatted object to an object assigns the object in a new array when it responds to to_a but to_a returns nil
 fails:Splat operator used to assign an object to a splatted reference assigns an array with a nil object when the object is nil
