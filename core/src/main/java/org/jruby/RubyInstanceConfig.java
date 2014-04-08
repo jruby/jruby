@@ -28,7 +28,25 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.ast.executable.Script;
+import org.jruby.compiler.ASTCompiler;
+import org.jruby.embed.util.SystemPropertyCatcher;
+import org.jruby.exceptions.MainExitException;
+import org.jruby.runtime.Constants;
+import org.jruby.runtime.backtrace.TraceType;
+import org.jruby.runtime.load.LoadService;
+import org.jruby.runtime.profile.builtin.ProfileOutput;
+import org.jruby.util.ClassCache;
+import org.jruby.util.InputStreamMarkCursor;
+import org.jruby.util.JRubyFile;
+import org.jruby.util.KCode;
+import org.jruby.util.NormalizedFile;
+import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.ArgumentProcessor;
+import org.jruby.util.cli.Options;
+import org.jruby.util.cli.OutputStrings;
+import org.objectweb.asm.Opcodes;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -52,24 +70,6 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
-
-import org.jruby.ast.executable.Script;
-import org.jruby.compiler.ASTCompiler;
-import org.jruby.exceptions.MainExitException;
-import org.jruby.embed.util.SystemPropertyCatcher;
-import org.jruby.runtime.Constants;
-import org.jruby.runtime.backtrace.TraceType;
-import org.jruby.runtime.load.LoadService;
-import org.jruby.runtime.profile.ProfileOutput;
-import org.jruby.util.ClassCache;
-import org.jruby.util.InputStreamMarkCursor;
-import org.jruby.util.JRubyFile;
-import org.jruby.util.KCode;
-import org.jruby.util.NormalizedFile;
-import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.cli.OutputStrings;
-import org.jruby.util.cli.Options;
-import org.objectweb.asm.Opcodes;
 
 /**
  * A structure used to configure new JRuby instances. All publicly-tweakable
@@ -136,7 +136,10 @@ public class RubyInstanceConfig {
         excludedMethods = parentConfig.excludedMethods;
         threadDumpSignal = parentConfig.threadDumpSignal;
         updateNativeENVEnabled = parentConfig.updateNativeENVEnabled;
-        
+
+        profilingService = parentConfig.profilingService;
+        profilingMode = parentConfig.profilingMode;
+
         classCache = new ClassCache<Script>(loader, jitMax);
 
         try {
@@ -1331,7 +1334,7 @@ public class RubyInstanceConfig {
     }
     
     /**
-     * get whether IPv4 is preferred
+     * getService whether IPv4 is preferred
      * 
      * @see Options.PREFER_IPV4
      */
@@ -1340,7 +1343,7 @@ public class RubyInstanceConfig {
     }
 
     /**
-     * get whether uppercase package names will be honored
+     * getService whether uppercase package names will be honored
      */
     public boolean getAllowUppercasePackageNames() {
         return allowUppercasePackageNames;
@@ -1352,7 +1355,15 @@ public class RubyInstanceConfig {
     public void setAllowUppercasePackageNames(boolean allow) {
         allowUppercasePackageNames = allow;
     }
-    
+
+    public String getProfilingService() {
+        return profilingService;
+    }
+
+    public void setProfilingService( String service )  {
+        this.profilingService = service;
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // Configuration fields.
     ////////////////////////////////////////////////////////////////////////////
@@ -1395,6 +1406,7 @@ public class RubyInstanceConfig {
 
     private ProfilingMode profilingMode = Options.CLI_PROFILING_MODE.load();
     private ProfileOutput profileOutput = new ProfileOutput(System.err);
+    private String profilingService;
     
     private ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
     private ClassLoader loader = contextLoader == null ? RubyInstanceConfig.class.getClassLoader() : contextLoader;
@@ -1481,7 +1493,7 @@ public class RubyInstanceConfig {
     }
 
     public enum ProfilingMode {
-		OFF, API, FLAT, GRAPH, HTML, JSON
+		OFF, API, FLAT, GRAPH, HTML, JSON, SERVICE
 	}
 
     public enum CompileMode {
