@@ -120,6 +120,7 @@
               <goal>copy</goal>
             </goals>
             <configuration>
+              <useBaseVersion>true</useBaseVersion>
               <artifactItems>
                 <artifactItem>
                   <groupId>org.jruby.gems</groupId>

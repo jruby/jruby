@@ -105,6 +105,7 @@ project 'JRuby Lib Setup' do
       end
       execute_goals( 'copy',
                      :id => 'copy gems',
+                     :useBaseVersion => true,
                      'artifactItems' => items )
     end
   end
