@@ -29,7 +29,7 @@ public abstract class ProcCastNode extends RubyNode {
 
     public ProcCastNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        toProc = new DispatchHeadNode(context, getSourceSection(), "to_proc", false);
+        toProc = new DispatchHeadNode(context, getSourceSection(), "to_proc", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
     }
 
     public ProcCastNode(ProcCastNode prev) {
