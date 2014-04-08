@@ -1,3 +1,1 @@
-fails:A Proc taking |a| arguments raises an ArgumentError if no value is passed
 fails(inherited):A Proc taking |a, | arguments raises an ArgumentError when passed more than one value
-fails:A Proc taking |(a, b)| arguments raises an ArgumentError when passed no values

@@ -70,6 +70,8 @@ class MethodTranslator extends BodyTranslator {
                 shouldSwitch = false;
             }
 
+            RubyNode preludeBuilder;
+
             if (shouldSwitch) {
                 final RubyNode readArrayNode = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
                 final RubyNode castArrayNode = ArrayCastNodeFactory.create(context, sourceSection, readArrayNode);
@@ -82,22 +84,23 @@ class MethodTranslator extends BodyTranslator {
 
                 final RespondToNode respondToConvertAry = new RespondToNode(context, sourceSection, readArrayNode, "to_ary");
 
-                prelude = SequenceNode.sequence(context, sourceSection,
-                        new IfNode(context, sourceSection,
-                            BooleanCastNodeFactory.create(context, sourceSection,
-                                new BehaveAsBlockNode(context, sourceSection, true)),
-                            new NilNode(context, sourceSection),
-                            new CheckArityNode(context, sourceSection, arity)),
-                        new IfNode(context, sourceSection,
+                preludeBuilder = new IfNode(context, sourceSection,
                         BooleanCastNodeFactory.create(context, sourceSection,
                                 AndNodeFactory.create(context, sourceSection,
                                     new BehaveAsBlockNode(context, sourceSection, true),
                                     new ShouldDestructureNode(context, sourceSection, arity, respondToConvertAry))),
                         SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments),
-                        loadArguments));
+                        loadArguments);
             } else {
-                prelude = loadArguments;
+                preludeBuilder = loadArguments;
             }
+
+            prelude = SequenceNode.sequence(context, sourceSection,
+                    new IfNode(context, sourceSection,
+                            BooleanCastNodeFactory.create(context, sourceSection,
+                                    new BehaveAsBlockNode(context, sourceSection, true)),
+                            new NilNode(context, sourceSection),
+                            new CheckArityNode(context, sourceSection, arity)), preludeBuilder);
         } else {
             prelude = SequenceNode.sequence(context, sourceSection,
                     new CheckArityNode(context, sourceSection, arity),
