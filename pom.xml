@@ -9,7 +9,7 @@
   </parent>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-parent</artifactId>
-  <version>9000.dev</version>
+  <version>9000.dev-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>JRuby</name>
   <description>JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter in Java.</description>

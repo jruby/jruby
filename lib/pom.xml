@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9000.dev</version>
+    <version>9000.dev-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-lib</artifactId>
   <packaging>pom</packaging>
@@ -20,7 +20,7 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
-      <version>9000.dev</version>
+      <version>9000.dev-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.gems</groupId>

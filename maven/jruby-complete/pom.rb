@@ -24,6 +24,10 @@ project 'JRuby Complete' do
                         'org.ow2.asm:asm-util' ] )
   jar 'org.jruby:jruby-stdlib:${project.version}'
 
+  build do
+    final_name "#{model.artifact_id}-#{version.sub(/-SNAPSHOT/,'')}"
+  end
+
   plugin( 'org.apache.felix:maven-bundle-plugin',
           :archive => {
             :manifest => {
