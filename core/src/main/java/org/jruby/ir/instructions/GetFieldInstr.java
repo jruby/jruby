@@ -36,14 +36,6 @@ public class GetFieldInstr extends GetInstr implements FixedArityInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        IRubyObject object = (IRubyObject) getSource().retrieve(context, self, currDynScope, temp);
-        VariableAccessor a = getAccessor(object);
-        IRubyObject value = a == null ? context.nil : (IRubyObject)a.get(object);
-        return value == null ? context.nil : value;
-    }
-
-    @Override
     public void visit(IRVisitor visitor) {
         visitor.GetFieldInstr(this);
     }

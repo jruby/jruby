@@ -70,6 +70,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.jruby.common.IRubyWarnings.ID;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
@@ -451,6 +452,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             VariableAccessor a = gfi.getAccessor(object);
             result = a == null ? null : (IRubyObject)a.get(object);
             if (result == null) {
+                if (context.runtime.isVerbose()) {
+                    context.runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, "instance variable " + gfi.getRef() + " not initialized");
+                }
                 result = context.nil;
             }
             setResult(temp, currDynScope, gfi.getResult(), result);
