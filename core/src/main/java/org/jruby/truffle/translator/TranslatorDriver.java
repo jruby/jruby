@@ -46,7 +46,7 @@ public class TranslatorDriver {
         this.instrumenter = instrumenter;
     }
 
-    public MethodDefinitionNode parse(RubyContext context, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
+    public MethodDefinitionNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
         // TODO(cs) should this get a new unique method identifier or not?
         final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, null), this, allocateReturnID(), true, true, new UniqueMethodIdentifier());
 
@@ -58,7 +58,7 @@ public class TranslatorDriver {
 
         final MethodTranslator translator = new MethodTranslator(context, null, environment, false, context.getSourceManager().get(bodyNode.getPosition().getFile()));
 
-        return translator.compileFunctionNode(new DefaultSourceSection(context.getSourceManager().get(bodyNode.getPosition().getFile()), "(unknown)", bodyNode.getPosition().getStartLine() + 1, -1, -1, -1), "(unknown)", argsNode, bodyNode, false);
+        return translator.compileFunctionNode(new DefaultSourceSection(context.getSourceManager().get(bodyNode.getPosition().getFile()), "(unknown)", bodyNode.getPosition().getStartLine() + 1, -1, -1, -1), "(unknown)", parseTree, argsNode, bodyNode, false);
     }
 
     public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame) {
@@ -185,7 +185,7 @@ public class TranslatorDriver {
                     throw new UnsupportedOperationException();
             }
 
-            final RootNode root = new RubyRootNode(truffleNode.getSourceSection(), environment.getFrameDescriptor(), indicativeName, truffleNode);
+            final RootNode root = new RubyRootNode(truffleNode.getSourceSection(), environment.getFrameDescriptor(), indicativeName, rootNode, truffleNode);
 
             // Return the root and the frame descriptor
 

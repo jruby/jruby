@@ -40,7 +40,7 @@ class MethodTranslator extends Translator {
         this.isBlock = isBlock;
     }
 
-    public MethodDefinitionNode compileFunctionNode(SourceSection sourceSection, String methodName, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity) {
+    public MethodDefinitionNode compileFunctionNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity) {
         environment.setMethodName(methodName);
 
         final Arity arity = findParameters(argsNode);
@@ -67,7 +67,7 @@ class MethodTranslator extends Translator {
         body = new CatchNextNode(context, sourceSection, body);
         body = new CatchRetryAsErrorNode(context, sourceSection, body);
 
-        final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), methodName, body);
+        final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), methodName, parseTree, body);
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRootNode));
 

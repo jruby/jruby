@@ -36,7 +36,7 @@ class ModuleTranslator extends Translator {
         useClassVariablesAsIfInClass = true;
     }
 
-    public MethodDefinitionNode compileClassNode(org.jruby.lexer.yacc.ISourcePosition sourcePosition, String name, org.jruby.ast.Node bodyNode) {
+    public MethodDefinitionNode compileClassNode(org.jruby.lexer.yacc.ISourcePosition sourcePosition, String name, org.jruby.ast.Node parseTree, org.jruby.ast.Node bodyNode) {
         final SourceSection sourceSection = translate(sourcePosition);
 
         environment.addMethodDeclarationSlots();
@@ -58,7 +58,7 @@ class ModuleTranslator extends Translator {
 
         body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID(), false);
 
-        final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), methodName, body);
+        final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), methodName, parseTree, body);
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRootNode));
 
@@ -94,7 +94,7 @@ class ModuleTranslator extends Translator {
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
                         new UniqueMethodIdentifier());
         final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, source);
-        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), node.getName(), node.getArgsNode(), node.getBodyNode(), false);
+        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), node.getName(), node, node.getArgsNode(), node.getBodyNode(), false);
 
         final SourceSection sourceSection = translate(node.getPosition());
         return new AddMethodNode(context, sourceSection, new SelfNode(context, sourceSection), functionExprNode);

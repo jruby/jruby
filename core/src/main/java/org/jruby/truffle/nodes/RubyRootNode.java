@@ -19,17 +19,24 @@ import com.oracle.truffle.api.nodes.*;
  */
 public class RubyRootNode extends RootNode {
 
-    protected final String indicativeName;
+    private final String indicativeName;
+    private final org.jruby.ast.Node parseTree;
+
     @Child protected RubyNode body;
 
-    public RubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, String indicativeName, RubyNode body) {
+    public RubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, String indicativeName, org.jruby.ast.Node parseTree, RubyNode body) {
         super(sourceSection, frameDescriptor);
 
         assert indicativeName != null;
         assert body != null;
 
-        this.body = body;
         this.indicativeName = indicativeName;
+        this.parseTree = parseTree;
+        this.body = body;
+    }
+
+    public org.jruby.ast.Node getParseTree() {
+        return parseTree;
     }
 
     @Override

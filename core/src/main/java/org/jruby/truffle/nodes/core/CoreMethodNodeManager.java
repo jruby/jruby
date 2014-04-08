@@ -194,7 +194,7 @@ public abstract class CoreMethodNodeManager {
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         final SequenceNode block = new SequenceNode(context, sourceSection, checkArity, methodNode);
 
-        return new RubyRootNode(sourceSection, null, methodDetails.getClassAnnotation().name() + "#" + methodDetails.getMethodAnnotation().names()[0] + "(core)", block);
+        return new RubyRootNode(sourceSection, null, methodDetails.getClassAnnotation().name() + "#" + methodDetails.getMethodAnnotation().names()[0] + "(core)", null, block);
     }
 
     public static class MethodDetails {

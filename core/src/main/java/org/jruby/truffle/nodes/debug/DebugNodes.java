@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.source.*;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
@@ -106,9 +107,8 @@ public abstract class DebugNodes {
         }
 
         @Specialization
-        public NilPlaceholder tree(Node callNode) {
-            NodeUtil.printCompactTree(getContext().getRuntime().getOut(), callNode.getRootNode());
-            return NilPlaceholder.INSTANCE;
+        public RubyString tree(Node callNode) {
+            return getContext().makeString(NodeUtil.printCompactTreeToString(callNode.getRootNode()));
         }
 
     }
@@ -125,28 +125,26 @@ public abstract class DebugNodes {
         }
 
         @Specialization
-        public NilPlaceholder fullTree(Node callNode) {
-            NodeUtil.printTree(getContext().getRuntime().getOut(), callNode.getRootNode());
-            return NilPlaceholder.INSTANCE;
+        public RubyString fullTree(Node callNode) {
+            return getContext().makeString(NodeUtil.printTreeToString(callNode.getRootNode()));
         }
 
     }
 
-    @CoreMethod(names = "where", isModuleMethod = true, needsSelf = false, appendCallNode = true, minArgs = 1, maxArgs = 1)
-    public abstract static class WhereNode extends CoreMethodNode {
+    @CoreMethod(names = "parse_tree", isModuleMethod = true, needsSelf = false, appendCallNode = true, minArgs = 1, maxArgs = 1)
+    public abstract static class ParseTreeNode extends CoreMethodNode {
 
-        public WhereNode(RubyContext context, SourceSection sourceSection) {
+        public ParseTreeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public WhereNode(WhereNode prev) {
+        public ParseTreeNode(ParseTreeNode prev) {
             super(prev);
         }
 
         @Specialization
-        public NilPlaceholder where(Node callNode) {
-            getContext().getRuntime().getOutputStream().println(callNode.getSourceSection());
-            return NilPlaceholder.INSTANCE;
+        public RubyString parseTree(Node callNode) {
+            return getContext().makeString(((RubyRootNode) callNode.getRootNode()).getParseTree().toString());
         }
 
     }
@@ -175,6 +173,25 @@ public abstract class DebugNodes {
             final RubyMethod method = getContext().getCoreLibrary().getMainObject().getLookupNode().lookupMethod(methodName.toString());
             final MethodLocal methodLocal = new MethodLocal(method.getUniqueIdentifier(), localName.toString());
             getContext().getRubyDebugManager().removeBreakpoint(methodLocal);
+            return NilPlaceholder.INSTANCE;
+        }
+
+    }
+
+    @CoreMethod(names = "where", isModuleMethod = true, needsSelf = false, appendCallNode = true, minArgs = 1, maxArgs = 1)
+    public abstract static class WhereNode extends CoreMethodNode {
+
+        public WhereNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public WhereNode(WhereNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public NilPlaceholder where(Node callNode) {
+            getContext().getRuntime().getOutputStream().println(callNode.getSourceSection());
             return NilPlaceholder.INSTANCE;
         }
 
