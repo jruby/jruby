@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -59,6 +59,8 @@ import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTCTime;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.asn1.x509.X509Name;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -78,17 +80,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
 
+import static org.jruby.ext.openssl.OpenSSLReal.warn;
+
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class ASN1 {
+
     private static Map<Ruby, Map<String, ASN1ObjectIdentifier>> SYM_TO_OID = new IdentityHashMap<Ruby, Map<String, ASN1ObjectIdentifier>>();
     private static Map<Ruby, Map<ASN1ObjectIdentifier, String>> OID_TO_SYM = new IdentityHashMap<Ruby, Map<ASN1ObjectIdentifier, String>>();
     private static Map<Ruby, Map<ASN1ObjectIdentifier, Integer>> OID_TO_NID = new IdentityHashMap<Ruby, Map<ASN1ObjectIdentifier, Integer>>();
     private static Map<Ruby, Map<Integer, ASN1ObjectIdentifier>> NID_TO_OID = new IdentityHashMap<Ruby, Map<Integer, ASN1ObjectIdentifier>>();
     private static Map<Ruby, Map<Integer, String>> NID_TO_SN = new IdentityHashMap<Ruby, Map<Integer, String>>();
     private static Map<Ruby, Map<Integer, String>> NID_TO_LN = new IdentityHashMap<Ruby, Map<Integer, String>>();
-
 
     static void addObject(Ruby runtime, int nid, String sn, String ln, String oid) {
         Map<String, ASN1ObjectIdentifier> s2o = SYM_TO_OID.get(runtime);
@@ -110,13 +114,13 @@ public class ASN1 {
             n2o.put(nid,ident);
             n2s.put(nid,sn);
             n2l.put(nid,ln);
-        }        
+        }
     }
 
     @SuppressWarnings("unchecked")
     private synchronized static void initMaps(Ruby runtime) {
-        Map<String, ASN1ObjectIdentifier> val = new HashMap<String, ASN1ObjectIdentifier>(org.bouncycastle.asn1.x509.X509Name.DefaultLookUp);
-        Map<ASN1ObjectIdentifier, String> val2 = new HashMap<ASN1ObjectIdentifier, String>(org.bouncycastle.asn1.x509.X509Name.DefaultSymbols);
+        Map<String, ASN1ObjectIdentifier> val = new HashMap<String, ASN1ObjectIdentifier>(X509Name.DefaultLookUp);
+        Map<ASN1ObjectIdentifier, String> val2 = new HashMap<ASN1ObjectIdentifier, String>(X509Name.DefaultSymbols);
         SYM_TO_OID.put(runtime,val);
         OID_TO_SYM.put(runtime,val2);
         OID_TO_NID.put(runtime,new HashMap<ASN1ObjectIdentifier, Integer>());
@@ -171,7 +175,7 @@ public class ASN1 {
         }
         return n2l.get(nid);
     }
-    
+
     synchronized static Map<String, ASN1ObjectIdentifier> getOIDLookup(Ruby runtime) {
         Map<String, ASN1ObjectIdentifier> val = SYM_TO_OID.get(runtime);
         if(null == val) {
@@ -193,7 +197,7 @@ public class ASN1 {
     private final static Object[][] ASN1_INFO = {
         {"EOC", null, null },
         {"BOOLEAN", org.bouncycastle.asn1.DERBoolean.class, "Boolean" },
-        {"INTEGER", org.bouncycastle.asn1.ASN1Integer.class, "Integer" }, 
+        {"INTEGER", org.bouncycastle.asn1.ASN1Integer.class, "Integer" },
         {"BIT_STRING",  org.bouncycastle.asn1.DERBitString.class, "BitString" },
         {"OCTET_STRING",  org.bouncycastle.asn1.DEROctetString.class, "OctetString" },
         {"NULL",  org.bouncycastle.asn1.DERNull.class, "Null" },
@@ -225,7 +229,7 @@ public class ASN1 {
 
     private final static Map<Class, Integer> CLASS_TO_ID = new HashMap<Class, Integer>();
     private final static Map<String, Integer> RUBYNAME_TO_ID = new HashMap<String, Integer>();
-    
+
     static {
         for(int i=0;i<ASN1_INFO.length;i++) {
             if(ASN1_INFO[i][1] != null) {
@@ -258,7 +262,7 @@ public class ASN1 {
         Class<? extends ASN1Encodable> result = (Class<? extends ASN1Encodable>)(ASN1_INFO[id][1]);
         return result;
     }
-    
+
     public static void createASN1(Ruby runtime, RubyModule ossl) {
         RubyModule mASN1 = ossl.defineModuleUnder("ASN1");
         RubyClass openSSLError = ossl.getClass("OpenSSLError");
@@ -362,7 +366,7 @@ public class ASN1 {
         ASN1ObjectIdentifier val2 = new ASN1ObjectIdentifier(nameOrOid);
         return val2;
     }
-    
+
     @JRubyMethod(name="Boolean", module=true, rest=true)
     public static IRubyObject fact_Boolean(IRubyObject recv, IRubyObject[] args) {
         return ((RubyModule)recv).getClass("Boolean").callMethod(recv.getRuntime().getCurrentContext(),"new",args);
@@ -518,7 +522,7 @@ public class ASN1 {
                 bString.callMethod(tc,"unused_bits=",asnM.getRuntime().newFixnum(((DERBitString)v).getPadBits()));
                 return bString;
             } else if(v instanceof ASN1String) {
-                ByteList val; 
+                ByteList val;
                 if (v instanceof DERUTF8String) {
                     val = new ByteList(((DERUTF8String) v).getString().getBytes("UTF-8"));
                 } else {
@@ -593,17 +597,18 @@ public class ASN1 {
     }
 
     @JRubyMethod(meta = true)
-    public static IRubyObject decode(IRubyObject recv, IRubyObject obj) {
+    public static IRubyObject decode(final ThreadContext context,
+        final IRubyObject self, IRubyObject obj) {
+        final RubyModule asnModule = (RubyModule) self;
         try {
-            IRubyObject obj2 = OpenSSLImpl.to_der_if_possible(obj);
-            RubyModule asnM = (RubyModule)recv;
+            IRubyObject obj2 = OpenSSLImpl.to_der_if_possible(context, obj);
             ASN1InputStream asis = new ASN1InputStream(obj2.convertToString().getBytes());
-            IRubyObject ret = decodeObj(asnM, asis.readObject());
+            IRubyObject ret = decodeObj(asnModule, asis.readObject());
             return ret;
         } catch(IOException e) {
-            throw recv.getRuntime().newIOErrorFromException(e);
+            throw context.runtime.newIOErrorFromException(e);
         } catch(Exception e) {
-            throw recv.getRuntime().newArgumentError(e.getMessage());
+            throw context.runtime.newArgumentError(e.getMessage());
         }
     }
 
@@ -616,20 +621,21 @@ public class ASN1 {
     public static class ASN1Data extends RubyObject {
         private static final long serialVersionUID = 6117598347932209839L;
 
-        public static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-                public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                    return new ASN1Data(runtime, klass);
-                }
-            };
+        static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+                return new ASN1Data(runtime, klass);
+            }
+        };
+
         public ASN1Data(Ruby runtime, RubyClass type) {
             super(runtime,type);
         }
 
-        protected void asn1Error() {
+        void asn1Error() {
             asn1Error(null);
         }
 
-        protected void asn1Error(String msg) {
+        void asn1Error(String msg) {
             throw Utils.newError(getRuntime(), "OpenSSL::ASN1::ASN1Error", msg);
         }
 
@@ -649,32 +655,38 @@ public class ASN1 {
             return this;
         }
 
-        ASN1Encodable toASN1() {
-            ThreadContext tc = getRuntime().getCurrentContext();
-            int tag = RubyNumeric.fix2int(callMethod(tc,"tag"));
-            IRubyObject val = callMethod(tc,"value");
-            if(val instanceof RubyArray) {
-                RubyArray arr = (RubyArray)callMethod(tc,"value");
-                if(arr.size() > 1) {
+        ASN1Encodable toASN1(final ThreadContext context) {
+            final int tag = RubyNumeric.fix2int(callMethod(context, "tag"));
+            final IRubyObject val = callMethod(context, "value");
+            if ( val instanceof RubyArray ) {
+                RubyArray arr = (RubyArray) callMethod(context, "value");
+                if ( arr.size() > 1 ) {
                     ASN1EncodableVector vec = new ASN1EncodableVector();
                     for (IRubyObject obj : arr.toJavaArray()) {
                         vec.add(((ASN1Data)obj).toASN1());
                     }
                     return new DERTaggedObject(tag, new DLSequence(vec));
                 } else {
-                    return new DERTaggedObject(tag,((ASN1Data)(arr.getList().get(0))).toASN1());
+                    return new DERTaggedObject(tag, ((ASN1Data)(arr.getList().get(0))).toASN1(context));
                 }
             } else {
-                return new DERTaggedObject(tag, ((ASN1Data)val).toASN1());
+                return new DERTaggedObject(tag, ((ASN1Data) val).toASN1(context));
             }
         }
 
+        @Deprecated
+        final ASN1Encodable toASN1() {
+            return toASN1( getRuntime().getCurrentContext() );
+        }
+
         @JRubyMethod
-        public IRubyObject to_der() {
+        public IRubyObject to_der(final ThreadContext context) {
             try {
-                return getRuntime().newString(new ByteList(toASN1().toASN1Primitive().getEncoded(ASN1Encoding.DER),false));
-            } catch (IOException ex) {
-                throw Utils.newError(getRuntime(), "OpenSSL::ASN1::ASN1Error", ex.getMessage());
+                final byte[] encoded = toASN1(context).toASN1Primitive().getEncoded(ASN1Encoding.DER);
+                return context.runtime.newString(new ByteList(encoded ,false));
+            }
+            catch (IOException ex) {
+                throw Utils.newError(context.runtime, "OpenSSL::ASN1::ASN1Error", ex.getMessage());
             }
         }
 
@@ -701,86 +713,93 @@ public class ASN1 {
             printIndent(indent);
             System.out.println("ASN1Data: ");
             IRubyObject val = callMethod(getRuntime().getCurrentContext(),"value");
-            if(val instanceof RubyArray) {
+            if ( val instanceof RubyArray ) {
                 RubyArray arr = (RubyArray)val;
                 for (IRubyObject obj : arr.toJavaArray()) {
                     ((ASN1Data)obj).print(indent+1);
                 }
             } else {
-                ((ASN1Data)val).print(indent+1);
+                ((ASN1Data) val).print(indent+1);
             }
         }
+
+        static RaiseException createNativeRaiseException(final ThreadContext context, final Exception e) {
+            Throwable cause = e.getCause(); if ( cause == null ) cause = e;
+            return RaiseException.createNativeRaiseException(context.runtime, cause);
+        }
+
     }
 
     public static class ASN1Primitive extends ASN1Data {
         private static final long serialVersionUID = 8489625559339190259L;
 
-        public static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-                public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                    return new ASN1Primitive(runtime, klass);
-                }
-            };
+        static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+                return new ASN1Primitive(runtime, klass);
+            }
+        };
+
         public ASN1Primitive(Ruby runtime, RubyClass type) {
             super(runtime,type);
         }
 
+        @Override
         public String toString() {
             return this.callMethod(getRuntime().getCurrentContext(),"value").toString();
         }
 
+        @Override
         @JRubyMethod
-        public IRubyObject to_der() {
-            return super.to_der();
+        public IRubyObject to_der(final ThreadContext context) {
+            return super.to_der(context);
         }
 
         @JRubyMethod(required=1, optional=4, visibility = Visibility.PRIVATE)
-        public IRubyObject initialize(IRubyObject[] args) {
+        public IRubyObject initialize(final ThreadContext context, final IRubyObject[] args) {
+            final Ruby runtime = context.runtime;
             IRubyObject value = args[0];
-            IRubyObject tag = getRuntime().getNil();
-            IRubyObject tagging = getRuntime().getNil();
-            IRubyObject tag_class = getRuntime().getNil();
-            if(args.length>1) {
+            final IRubyObject tag;
+            IRubyObject tagging = runtime.getNil();
+            IRubyObject tag_class = runtime.getNil();
+
+            if ( args.length > 1 ) {
                 tag = args[1];
-                if(args.length>2) {
+                if ( args.length > 2 ) {
                     tagging = args[2];
-                    if(args.length>3) {
-                        tag_class = args[3];
-                    }
+                    if ( args.length > 3 ) tag_class = args[3];
                 }
-                if(tag.isNil()) {
-                    asn1Error("must specify tag number");
+
+                if ( tag.isNil() ) asn1Error("must specify tag number");
+
+                if ( tagging.isNil() ) {
+                    tagging = runtime.newSymbol("EXPLICIT");
                 }
-                if(tagging.isNil()) {
-                    tagging = getRuntime().newSymbol("EXPLICIT");
+
+                if ( ! (tagging instanceof RubySymbol) ) asn1Error("invalid tag default");
+
+                if ( tag_class.isNil() ) {
+                    tag_class = runtime.newSymbol("CONTEXT_SPECIFIC");
                 }
-                if(!(tagging instanceof RubySymbol)) {
-                    asn1Error("invalid tag default");
-                }
-                if(tag_class.isNil()) {
-                    tag_class = getRuntime().newSymbol("CONTEXT_SPECIFIC");
-                }
-                if(!(tag_class instanceof RubySymbol)) {
-                    asn1Error("invalid tag class");
-                }
-                if(tagging.toString().equals(":IMPLICIT") && RubyNumeric.fix2int(tag) > 31) {
+
+                if ( ! (tag_class instanceof RubySymbol) ) asn1Error("invalid tag class");
+
+                if ( tagging.toString().equals(":IMPLICIT") && RubyNumeric.fix2int(tag) > 31 ) {
                     asn1Error("tag number for Universal too large");
                 }
-            } else {
+            }
+            else {
                 tag = defaultTag();
-                tagging = getRuntime().getNil();
-                tag_class = getRuntime().newSymbol("UNIVERSAL");
+                tag_class = runtime.newSymbol("UNIVERSAL");
             }
-            if("ObjectId".equals(getMetaClass().getRealClass().getBaseName())) {
-                String v = getSymLookup(getRuntime()).get(getObjectIdentifier(value.toString()));
-                if(v != null) {
-                    value = getRuntime().newString(v);
-                }
+            if ( "ObjectId".equals( getMetaClass().getRealClass().getBaseName() ) ) {
+                String v = getSymLookup(runtime).get( getObjectIdentifier(value.toString()) );
+                if ( v != null ) value = runtime.newString(v);
             }
-            ThreadContext tc = getRuntime().getCurrentContext();
-            this.callMethod(tc,"tag=",tag);
-            this.callMethod(tc,"value=",value);
-            this.callMethod(tc,"tagging=",tagging);
-            this.callMethod(tc,"tag_class=",tag_class);
+
+            callMethod(context, "tag=", tag);
+            callMethod(context, "value=", value);
+            callMethod(context, "tagging=", tagging);
+            callMethod(context, "tag_class=", tag_class);
 
             return this;
         }
@@ -794,35 +813,42 @@ public class ASN1 {
             return val2;
         }
 
-        ASN1Encodable toASN1() {
-            //            System.err.println(getMetaClass().getRealClass().getBaseName()+"#toASN1");
-            int tag = idForRubyName(getMetaClass().getRealClass().getBaseName());
-            @SuppressWarnings("unchecked") Class<? extends ASN1Encodable> imp = (Class<? extends ASN1Encodable>)ASN1_INFO[tag][1];
-            IRubyObject val = callMethod(getRuntime().getCurrentContext(),"value");
-            if(imp == ASN1ObjectIdentifier.class) {
+        @Override
+        ASN1Encodable toASN1(final ThreadContext context) {
+            final int tag = idForRubyName(getMetaClass().getRealClass().getBaseName());
+            @SuppressWarnings("unchecked")
+            Class<? extends ASN1Encodable> imp = (Class<? extends ASN1Encodable>) ASN1_INFO[tag][1];
+            final IRubyObject val = callMethod(context, "value");
+            if ( imp == ASN1ObjectIdentifier.class ) {
                 return getObjectIdentifier(val.toString());
-            } else if(imp == DERNull.class) {
+            }
+            else if ( imp == DERNull.class ) {
                 return new DERNull();
-            } else if(imp == DERBoolean.class) {
+            }
+            else if ( imp == DERBoolean.class ) {
                 return new DERBoolean(val.isTrue());
-            } else if(imp == DERUTCTime.class) {
-                return new DERUTCTime(((RubyTime)val).getJavaDate());
-            } else if(imp == ASN1Integer.class && val instanceof RubyBignum) {
-                return new ASN1Integer(((RubyBignum)val).getValue());
-            } else if(imp == ASN1Integer.class) {
+            }
+            else if ( imp == DERUTCTime.class ) {
+                return new DERUTCTime(((RubyTime) val).getJavaDate());
+            }
+            else if ( imp == ASN1Integer.class && val instanceof RubyBignum ) {
+                return new ASN1Integer(((RubyBignum) val).getValue());
+            }
+            else if ( imp == ASN1Integer.class ) {
                 return new ASN1Integer(new BigInteger(val.toString()));
-            } else if(imp == DEROctetString.class) {
+            }
+            else if ( imp == DEROctetString.class ) {
                 return new DEROctetString(val.convertToString().getBytes());
-            } else if(imp == DERBitString.class) {
-                byte[] bs = val.convertToString().getBytes();
+            }
+            else if ( imp == DERBitString.class ) {
+                final byte[] bs = val.convertToString().getBytes();
                 int unused = 0;
-                for(int i = (bs.length-1); i>-1; i--) {
-                    if(bs[i] == 0) {
-                        unused += 8;
-                    } else {
+                for ( int i = (bs.length - 1); i > -1; i-- ) {
+                    if (bs[i] == 0) unused += 8;
+                    else {
                         byte v2 = bs[i];
                         int x = 8;
-                        while(v2 != 0) {
+                        while ( v2 != 0 ) {
                             v2 <<= 1;
                             x--;
                         }
@@ -831,130 +857,144 @@ public class ASN1 {
                     }
                 }
                 return new DERBitString(bs,unused);
-            } else if(val instanceof RubyString) {
+            }
+            else if ( val instanceof RubyString ) {
                 try {
                     return imp.getConstructor(String.class).newInstance(val.toString());
-                } catch (Exception ex) {
-                    throw RaiseException.createNativeRaiseException(getRuntime(), ex);
+                }
+                catch (Exception e) {
+                    throw createNativeRaiseException(context, e);
                 }
             }
-            
-            //TODO throw an exception here too?
+
+            // TODO throw an exception here too?
             System.err.println("object with tag: " + tag + " and value: " + val + " and val.class: " + val.getClass().getName() + " and impl: " + imp.getName());
-            System.err.println("WARNING: unimplemented method called: asn1data#toASN1");
-            return null;    
+            warn(context, "WARNING: unimplemented method called: asn1data#toASN1");
+            return null;
         }
 
+        @Override
         protected void print(int indent) {
             printIndent(indent);
             System.out.println(getMetaClass().getRealClass().getBaseName() + ": " + callMethod(getRuntime().getCurrentContext(),"value").callMethod(getRuntime().getCurrentContext(),"inspect").toString());
         }
+
     }
 
     public static class ASN1Constructive extends ASN1Data {
         private static final long serialVersionUID = -7166662655104776828L;
-        
-        public static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-                public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                    return new ASN1Constructive(runtime, klass);
-                }
-            };
+
+        static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+                return new ASN1Constructive(runtime, klass);
+            }
+        };
+
         public ASN1Constructive(Ruby runtime, RubyClass type) {
             super(runtime,type);
         }
 
+        @Override
         @JRubyMethod
-        public IRubyObject to_der() {
-            return super.to_der();
+        public IRubyObject to_der(final ThreadContext context) {
+            return super.to_der(context);
         }
 
         @JRubyMethod(required=1, optional=3, visibility = Visibility.PRIVATE)
-        public IRubyObject initialize(IRubyObject[] args) {
-            IRubyObject value = args[0];
-            IRubyObject tag = getRuntime().getNil();
-            IRubyObject tagging = getRuntime().getNil();
-            IRubyObject tag_class = getRuntime().getNil();
-            if(args.length>1) {
+        public IRubyObject initialize(final ThreadContext context, final IRubyObject[] args) {
+            final Ruby runtime = context.runtime;
+
+            final IRubyObject value = args[0];
+            final IRubyObject tag;
+            IRubyObject tagging = runtime.getNil();
+            IRubyObject tag_class = runtime.getNil();
+
+            if ( args.length > 1 ) {
                 tag = args[1];
-                if(args.length>2) {
+                if ( args.length > 2 ) {
                     tagging = args[2];
-                    if(args.length>3) {
-                        tag_class = args[3];
-                    }
+                    if ( args.length > 3 ) tag_class = args[3];
                 }
-                if(tag.isNil()) {
-                    asn1Error("must specify tag number");
+
+                if ( tag.isNil() ) asn1Error("must specify tag number");
+
+                if ( tagging.isNil() ) {
+                    tagging = runtime.newSymbol("EXPLICIT");
                 }
-                if(tagging.isNil()) {
-                    tagging = getRuntime().newSymbol("EXPLICIT");
+
+                if ( ! (tagging instanceof RubySymbol) ) asn1Error("invalid tag default");
+
+                if ( tag_class.isNil() ) {
+                    tag_class = runtime.newSymbol("CONTEXT_SPECIFIC");
                 }
-                if(!(tagging instanceof RubySymbol)) {
-                    asn1Error("invalid tag default");
-                }
-                if(tag_class.isNil()) {
-                    tag_class = getRuntime().newSymbol("CONTEXT_SPECIFIC");
-                }
-                if(!(tag_class instanceof RubySymbol)) {
-                    asn1Error("invalid tag class");
-                }
-                if(tagging.toString().equals(":IMPLICIT") && RubyNumeric.fix2int(tag) > 31) {
+
+                if ( ! (tag_class instanceof RubySymbol) ) asn1Error("invalid tag class");
+
+                if ( tagging.toString().equals(":IMPLICIT") && RubyNumeric.fix2int(tag) > 31 ) {
                     asn1Error("tag number for Universal too large");
                 }
-            } else {
+            }
+            else {
                 tag = defaultTag();
-                tagging = getRuntime().getNil();
                 tag_class = getRuntime().newSymbol("UNIVERSAL");
             }
-            ThreadContext tc = getRuntime().getCurrentContext();
-            this.callMethod(tc,"tag=",tag);
-            this.callMethod(tc,"value=",value);
-            this.callMethod(tc,"tagging=",tagging);
-            this.callMethod(tc,"tag_class=",tag_class);
+
+            callMethod(context, "tag=", tag);
+            callMethod(context, "value=", value);
+            callMethod(context, "tagging=", tagging);
+            callMethod(context, "tag_class=", tag_class);
 
             return this;
         }
 
-        ASN1Encodable toASN1() {
-            //            System.err.println(getMetaClass().getRealClass().getBaseName()+"#toASN1");
-            int id = idForRubyName(getMetaClass().getRealClass().getBaseName());
-            if(id != -1) {
+        @Override
+        ASN1Encodable toASN1(final ThreadContext context) {
+            final int id = idForRubyName(getMetaClass().getRealClass().getBaseName());
+            if ( id != -1 ) {
                 ASN1EncodableVector vec = new ASN1EncodableVector();
-                RubyArray arr = (RubyArray)callMethod(getRuntime().getCurrentContext(),"value");
+                RubyArray arr = (RubyArray) callMethod(context, "value");
                 for (IRubyObject obj : arr.toJavaArray()) {
                     if(obj instanceof ASN1Data) {
-                        vec.add(((ASN1Data)obj).toASN1());
+                        vec.add( ( (ASN1Data) obj ).toASN1(context) );
                     } else {
-                        vec.add(((ASN1Data) ASN1.decode(getRuntime().getClassFromPath("OpenSSL::ASN1"), OpenSSLImpl.to_der_if_possible(obj))).toASN1());
+                        vec.add( ( (ASN1Data) ASN1.decode(context,
+                            context.runtime.getClassFromPath("OpenSSL::ASN1"),
+                            OpenSSLImpl.to_der_if_possible(context, obj)) ).toASN1(context)
+                        );
                     }
                 }
                 try {
                     @SuppressWarnings("unchecked")
-                    ASN1Encodable result = ((Class<? extends ASN1Encodable>) (ASN1_INFO[id][1])).getConstructor(new Class[] { ASN1EncodableVector.class })
-                            .newInstance(new Object[] { vec });
+                    ASN1Encodable result = ((Class<? extends ASN1Encodable>)
+                        ( ASN1_INFO[id][1]) ).
+                            getConstructor(new Class[] { ASN1EncodableVector.class }).
+                            newInstance(new Object[] { vec });
                     return result;
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     // TODO: deprecated
-                    throw RaiseException.createNativeRaiseException(getRuntime(), e);
+                    throw createNativeRaiseException(context, e);
                 }
             }
             return null;
         }
 
         @JRubyMethod
-        public IRubyObject each(Block block) {
-            RubyArray arr = (RubyArray) callMethod(getRuntime().getCurrentContext(), "value");
+        public IRubyObject each(final ThreadContext context, Block block) {
+            RubyArray arr = (RubyArray) callMethod(context, "value");
             for (IRubyObject obj : arr.toJavaArray()) {
-                block.yield(getRuntime().getCurrentContext(), obj);
+                block.yield(context, obj);
             }
-            return getRuntime().getNil();
+            return context.runtime.getNil();
         }
 
+        @Override
         protected void print(int indent) {
             printIndent(indent);
             System.out.println(getMetaClass().getRealClass().getBaseName() + ": ");
-            RubyArray arr = (RubyArray)callMethod(getRuntime().getCurrentContext(),"value");
+            RubyArray arr = (RubyArray) callMethod(getRuntime().getCurrentContext(),"value");
             for (IRubyObject obj : arr.toJavaArray()) {
-                ((ASN1Data)obj).print(indent+1);
+                ((ASN1Data) obj).print(indent + 1);
             }
         }
     }

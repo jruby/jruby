@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -33,8 +33,10 @@ import java.security.MessageDigest;
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
-import org.jruby.ext.openssl.x509store.PEMInputOutput;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import org.jruby.ext.openssl.x509store.PEMInputOutput;
 
 /**
  * Static class that holds various OpenSSL methods that aren't
@@ -43,38 +45,40 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class OpenSSLImpl {
-    /**
-     * No instantiating this class...
-     */
-    private OpenSSLImpl() {}
 
-    public static IRubyObject to_der(IRubyObject obj) {
-        return obj.callMethod(obj.getRuntime().getCurrentContext(),"to_der");
-    }
+    private OpenSSLImpl() { /* no instances */ }
 
+    @Deprecated
     public static IRubyObject to_der_if_possible(IRubyObject obj) {
-        if(obj.respondsTo("to_der")) {
-            return to_der(obj);
-        } else {
-            return obj;
-        }
+        if ( ! obj.respondsTo("to_der"))  return obj;
+        return obj.callMethod(obj.getRuntime().getCurrentContext(), "to_der");
     }
 
-    public static byte[] readX509PEM(IRubyObject arg) {
-        arg = to_der_if_possible(arg);
+    static IRubyObject to_der_if_possible(final ThreadContext context, IRubyObject obj) {
+        if ( ! obj.respondsTo("to_der"))  return obj;
+        return obj.callMethod(context, "to_der");
+    }
+
+    @Deprecated
+    static byte[] readX509PEM(IRubyObject arg) {
+        return readX509PEM(arg.getRuntime().getCurrentContext(), arg);
+    }
+
+    static byte[] readX509PEM(final ThreadContext context, IRubyObject arg) {
+        arg = to_der_if_possible(context, arg);
 
         RubyString str;
         if (arg instanceof RubyIO) {
-            IRubyObject result = ((RubyIO)arg).read(arg.getRuntime().getCurrentContext());
+            IRubyObject result = ( (RubyIO) arg ).read(context);
             if (result instanceof RubyString) {
-                str = (RubyString)result;
+                str = (RubyString) result;
             } else {
-                throw arg.getRuntime().newArgumentError("IO stream `" + arg.inspect() + "' contained no data");
+                throw context.runtime.newArgumentError("IO stream `" + arg.inspect() + "' contained no data");
             }
         } else {
             str = arg.convertToString();
         }
-        
+
         StringReader in = null;
         try {
             in = new StringReader(str.getUnicodeValue());
@@ -303,7 +307,7 @@ ASN1.addObject(runtime, 186, "AES-256-CFB", "aes-256-cfb","2.16.840.1.101.3.4.1.
 
     public static PEMHandler getPEMHandler() {
         try {
-            return new org.jruby.ext.openssl.BouncyCastlePEMHandler();
+            return new BouncyCastlePEMHandler();
         } catch (Exception e) {
             // fallback to...
         }

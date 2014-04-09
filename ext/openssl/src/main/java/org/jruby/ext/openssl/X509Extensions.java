@@ -56,13 +56,15 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.openssl.impl.ASN1Registry;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
+
+import org.jruby.ext.openssl.impl.ASN1Registry;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -165,9 +167,9 @@ public class X509Extensions {
         }
 
         @JRubyMethod(rest=true)
-        public IRubyObject create_ext(IRubyObject[] args) {
-            IRubyObject critical = getRuntime().getFalse();
-            if(org.jruby.runtime.Arity.checkArgumentCount(getRuntime(),args,2,3) == 3 && !args[2].isNil()) {
+        public IRubyObject create_ext(final ThreadContext context, IRubyObject[] args) {
+            IRubyObject critical = context.runtime.getFalse();
+            if ( Arity.checkArgumentCount(getRuntime(), args, 2, 3) == 3 && ! args[2].isNil() ) {
                 critical = args[2];
             }
             String oid = args[0].toString();
@@ -182,7 +184,7 @@ public class X509Extensions {
                  throw newX509ExtError(getRuntime(), "unknown OID `" + oid + "'");
             }
 
-            Extension ext = (Extension) Utils.newRubyInstance(getRuntime(), "OpenSSL::X509::Extension");
+            Extension ext = (Extension) Utils.newRubyInstance(context, "OpenSSL::X509::Extension");
 
             if(valuex.startsWith("critical,")) {
                 critical = getRuntime().getTrue();
@@ -191,13 +193,13 @@ public class X509Extensions {
 
             try {
                 if(r_oid.equals(new ASN1ObjectIdentifier("2.5.29.14"))) { //subjectKeyIdentifier
-                    DEROctetString inp = parseSubjectKeyIdentifier(oid, valuex);
+                    DEROctetString inp = parseSubjectKeyIdentifier(context, oid, valuex);
                     value = new String(ByteList.plain(inp.getEncoded(ASN1Encoding.DER)));
                 } else if(r_oid.equals(new ASN1ObjectIdentifier("2.5.29.35"))) { //authorityKeyIdentifier
-                    DLSequence inp = parseAuthorityKeyIdentifier(valuex);
+                    DLSequence inp = parseAuthorityKeyIdentifier(context, valuex);
                     value = new String(ByteList.plain(inp.getEncoded(ASN1Encoding.DER)));
                 } else if(r_oid.equals(new ASN1ObjectIdentifier("2.5.29.18"))) { //issuerAltName
-                    value = parseIssuerAltName(valuex);
+                    value = parseIssuerAltName(context, valuex);
                 } else if(r_oid.equals(new ASN1ObjectIdentifier("2.5.29.19"))) { //basicConstraints
                     DLSequence inp = parseBasicConstrains(valuex);
                     value = new String(ByteList.plain(inp.getEncoded(ASN1Encoding.DER)));
@@ -363,54 +365,65 @@ public class X509Extensions {
             return new DLSequence(asnv);
         }
 
-        private DLSequence parseAuthorityKeyIdentifier(String valuex) {
-            ThreadContext tc = getRuntime().getCurrentContext();
-            ASN1EncodableVector asnv = new ASN1EncodableVector();
-            if(valuex.startsWith("keyid:always")) {
-                IRubyObject pkey = getInstanceVariable("@issuer_certificate").callMethod(tc,"public_key");
+        private DLSequence parseAuthorityKeyIdentifier(final ThreadContext context, final String valuex) {
+            final Ruby runtime = context.runtime;
+
+            final ASN1EncodableVector asnv = new ASN1EncodableVector();
+            if ( valuex.startsWith("keyid:always") ) {
+                IRubyObject pkey = getInstanceVariable("@issuer_certificate").callMethod(context, "public_key");
                 IRubyObject val;
                 if(pkey instanceof PKeyRSA) {
-                    val = pkey.callMethod(tc,"to_der");
+                    val = pkey.callMethod(context,"to_der");
                 } else {
-                    val = ASN1.decode(getRuntime().getClassFromPath("OpenSSL::ASN1"), pkey.callMethod(tc, "to_der")).callMethod(tc, "value")
-                            .callMethod(tc, "[]", getRuntime().newFixnum(1)).callMethod(tc, "value");
+                    val = ASN1.decode(context,
+                        runtime.getClassFromPath("OpenSSL::ASN1"),
+                        pkey.callMethod(context, "to_der")
+                    ).callMethod(context, "value")
+                     .callMethod(context, "[]", runtime.newFixnum(1))
+                     .callMethod(context, "value");
                 }
-                byte[] b = getSHA1Digest(getRuntime(), val.convertToString().getBytes());
+                byte[] b = getSHA1Digest(runtime, val.convertToString().getBytes());
                 asnv.add(new DEROctetString(b));
-            } else if(valuex.startsWith("keyid")) {
-                IRubyObject pkey = getInstanceVariable("@issuer_certificate").callMethod(tc,"public_key");
+            }
+            else if ( valuex.startsWith("keyid") ) {
+                IRubyObject pkey = getInstanceVariable("@issuer_certificate").callMethod(context, "public_key");
                 IRubyObject val;
                 if(pkey instanceof PKeyRSA) {
-                    val = pkey.callMethod(tc,"to_der");
+                    val = pkey.callMethod(context, "to_der");
                 } else {
-                    val = ASN1.decode(getRuntime().getClassFromPath("OpenSSL::ASN1"), pkey.callMethod(tc, "to_der")).callMethod(tc, "value")
-                            .callMethod(tc, "[]", getRuntime().newFixnum(1)).callMethod(tc, "value");
+                    val = ASN1.decode(context,
+                        runtime.getClassFromPath("OpenSSL::ASN1"),
+                        pkey.callMethod(context, "to_der")
+                    ).callMethod(context, "value")
+                     .callMethod(context, "[]", runtime.newFixnum(1))
+                     .callMethod(context, "value");
                 }
-                byte[] b = getSHA1Digest(getRuntime(), val.convertToString().getBytes());
+                byte[] b = getSHA1Digest(runtime, val.convertToString().getBytes());
                 asnv.add(new DEROctetString(b));
             }
             return new DLSequence(asnv);
         }
 
-        private Object parseIssuerAltName(String valuex) throws IOException {
-            ThreadContext tc = getRuntime().getCurrentContext();
-            if(valuex.startsWith("issuer:copy")) {
-                RubyArray exts = (RubyArray)getInstanceVariable("@issuer_certificate").callMethod(tc,"extensions");
+        private Object parseIssuerAltName(final ThreadContext context, final String valuex) throws IOException {
+            if ( valuex.startsWith("issuer:copy") ) {
+                RubyArray exts = (RubyArray) getInstanceVariable("@issuer_certificate")
+                    .callMethod(context, "extensions");
                 for (IRubyObject obj : exts.toJavaArray()) {
-                    Extension exta = (Extension)obj;
-                    if(exta.getRealOid().equals(new ASN1ObjectIdentifier("2.5.29.17"))) {
-                        return exta.getRealValue();
+                    Extension ext = (Extension) obj;
+                    if ( ext.getRealOid().equals(new ASN1ObjectIdentifier("2.5.29.17")) ) {
+                        return ext.getRealValue();
                     }
                 }
             }
             throw new IOException("Malformed IssuerAltName: " + valuex);
         }
 
-        private String parseSubjectAltName(String valuex) throws IOException {
-            if(valuex.startsWith("DNS:")) {
+        private String parseSubjectAltName(final String valuex) throws IOException {
+            if ( valuex.startsWith("DNS:") ) {
                 GeneralNames gn = new GeneralNames(new GeneralName(GeneralName.dNSName,new DERIA5String(valuex.substring(4))));
                 return new String(ByteList.plain(gn.getEncoded(ASN1Encoding.DER)));
-            } else if(valuex.startsWith("IP:")) {
+            }
+            else if ( valuex.startsWith("IP:") ) {
                 String[] numbers = valuex.substring(3).split("\\.");
                 byte[] bs = new byte[4];
                 bs[0] = (byte) (Integer.parseInt(numbers[0]) & 0xff);
@@ -419,7 +432,8 @@ public class X509Extensions {
                 bs[3] = (byte) (Integer.parseInt(numbers[3]) & 0xff);
                 GeneralNames gn = new GeneralNames(new GeneralName(GeneralName.iPAddress,new DEROctetString(bs)));
                 return new String(ByteList.plain(gn.getEncoded(ASN1Encoding.DER)));
-            } else if(valuex.startsWith("IP Address:")) {
+            }
+            else if ( valuex.startsWith("IP Address:") ) {
                 String[] numbers = valuex.substring(11).split("\\.");
                 byte[] bs = new byte[4];
                 bs[0] = (byte) (Integer.parseInt(numbers[0]) & 0xff);
@@ -428,48 +442,54 @@ public class X509Extensions {
                 bs[3] = (byte) (Integer.parseInt(numbers[3]) & 0xff);
                 GeneralNames gn = new GeneralNames(new GeneralName(GeneralName.iPAddress,new DEROctetString(bs)));
                 return new String(ByteList.plain(gn.getEncoded(ASN1Encoding.DER)));
-            } else {
+            }
+            else {
                 return valuex;
             }
         }
 
-        private DEROctetString parseSubjectKeyIdentifier(String oid, String valuex) {
-            ThreadContext tc = getRuntime().getCurrentContext();
-            if("hash".equalsIgnoreCase(valuex)) {
-                IRubyObject pkey = getInstanceVariable("@subject_certificate").callMethod(tc,"public_key");
+        private DEROctetString parseSubjectKeyIdentifier(final ThreadContext context,
+            final String oid, final String valuex) {
+            final Ruby runtime = context.runtime;
+
+            if ( "hash".equalsIgnoreCase(valuex) ) {
+                IRubyObject pkey = getInstanceVariable("@subject_certificate").callMethod(context, "public_key");
                 IRubyObject val;
                 if(pkey instanceof PKeyRSA) {
-                    val = pkey.callMethod(tc,"to_der");
+                    val = pkey.callMethod(context,"to_der");
                 } else {
-                    val = ASN1.decode(getRuntime().getClassFromPath("OpenSSL::ASN1"), pkey.callMethod(tc, "to_der")).callMethod(tc, "value")
-                            .callMethod(tc, "[]", getRuntime().newFixnum(1)).callMethod(tc, "value");
+                    val = ASN1.decode(context,
+                        runtime.getClassFromPath("OpenSSL::ASN1"), pkey.callMethod(context, "to_der")).callMethod(context, "value")
+                            .callMethod(context, "[]", runtime.newFixnum(1)).callMethod(context, "value");
                 }
-                byte[] b = getSHA1Digest(getRuntime(), val.convertToString().getBytes());
+                byte[] b = getSHA1Digest(runtime, val.convertToString().getBytes());
                 return new DEROctetString(b);
-            } else if(valuex.length() == 20 || !isHexString(valuex)) {
+            }
+            else if ( valuex.length() == 20 || ! isHexString(valuex) ) {
                 return new DEROctetString(ByteList.plain(valuex));
-            } else {
+            }
+            else {
                 StringBuilder nstr = new StringBuilder();
-                for(int i = 0; i < valuex.length(); i+=2) {
-                    if(i+1 >= valuex.length()) {
-                        throw newX509ExtError(getRuntime(), oid + " = " + valuex + ": odd number of digits");
+                for( int i = 0; i < valuex.length(); i+= 2 ) {
+                    if ( i+1 >= valuex.length() ) {
+                        throw newX509ExtError(runtime, oid + " = " + valuex + ": odd number of digits");
                     }
 
                     char c1 = valuex.charAt(i);
                     char c2 = valuex.charAt(i+1);
-                    if(isHexDigit(c1) && isHexDigit(c2)) {
+                    if ( isHexDigit(c1) && isHexDigit(c2) ) {
                         nstr.append(Character.toUpperCase(c1)).append(Character.toUpperCase(c2));
                     } else {
-                        throw newX509ExtError(getRuntime(), oid + " = " + valuex + ": illegal hex digit");
+                        throw newX509ExtError(runtime, oid + " = " + valuex + ": illegal hex digit");
                     }
-                    while((i+2) < valuex.length() && valuex.charAt(i+2) == ':') {
+                    while ( (i+2) < valuex.length() && valuex.charAt(i+2) == ':' ) {
                         i++;
                     }
                 }
                 String v = nstr.toString();
-                byte[] arr = new byte[v.length()/2];
-                for(int i=0;i<v.length();i+=2) {
-                    arr[i/2] = (byte)Integer.parseInt(v.substring(i,i+2),16);
+                byte[] arr = new byte[ v.length() / 2 ];
+                for ( int i=0; i<v.length(); i+=2 ) {
+                    arr[i / 2] = (byte) Integer.parseInt( v.substring(i, i+2), 16 );
                 }
                 return new DEROctetString(arr);
             }
@@ -559,11 +579,13 @@ public class X509Extensions {
         }
 
         @JRubyMethod(name = "initialize", rest = true, visibility = Visibility.PRIVATE)
-        public IRubyObject _initialize(IRubyObject[] args) {
+        public IRubyObject _initialize(final ThreadContext context, final IRubyObject[] args) {
             byte[] octets = null;
             if (args.length == 1) {
                 try {
-                    ASN1InputStream is = new ASN1InputStream(OpenSSLImpl.to_der_if_possible(args[0]).convertToString().getBytes());
+                    ASN1InputStream is = new ASN1InputStream(
+                        OpenSSLImpl.to_der_if_possible(context, args[0]).convertToString().getBytes()
+                    );
                     Object obj = is.readObject();
                     ASN1Sequence seq = (ASN1Sequence) obj;
                     setRealOid((ASN1ObjectIdentifier) (seq.getObjectAt(0)));
@@ -613,8 +635,8 @@ public class X509Extensions {
         }
 
         @JRubyMethod
-        public IRubyObject value() {
-            Ruby runtime = getRuntime();
+        public IRubyObject value(final ThreadContext context) {
+            final Ruby runtime = context.runtime;
             try {
                 if (getRealOid().equals(new ASN1ObjectIdentifier("2.5.29.19"))) { //basicConstraints
                     ASN1Sequence seq2 = (ASN1Sequence) (new ASN1InputStream(getRealValueBytes()).readObject());
@@ -730,7 +752,7 @@ public class X509Extensions {
                     }
                     return runtime.newString(out1.toString());
                 } else if (getRealOid().equals(new ASN1ObjectIdentifier("2.5.29.21"))) { // CRLReason
-                    switch (RubyNumeric.fix2int(((IRubyObject) value).callMethod(runtime.getCurrentContext(), "value"))) {
+                    switch (RubyNumeric.fix2int(((IRubyObject) value).callMethod(context, "value"))) {
                         case 0:
                             return runtime.newString("Unspecified");
                         case 1:
@@ -788,9 +810,12 @@ public class X509Extensions {
                     }
                 } else {
                     try {
-                        return ASN1.decode(runtime.getClassFromPath("OpenSSL::ASN1"), RubyString.newString(runtime, getRealValueBytes()))
-                                .callMethod(runtime.getCurrentContext(), "value").callMethod(runtime.getCurrentContext(), "to_s");
-                    } catch (Exception e) {
+                        return ASN1.decode(context,
+                            runtime.getClassFromPath("OpenSSL::ASN1"),
+                            RubyString.newString(runtime, getRealValueBytes())
+                        ).callMethod(context, "value").callMethod(context, "to_s");
+                    }
+                    catch (Exception e) {
                         return runtime.newString(getRealValue().toString());
                     }
                 }
