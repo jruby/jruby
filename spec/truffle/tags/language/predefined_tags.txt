@@ -13,7 +13,6 @@ fails:Predefined global $' is equivalent to MatchData#post_match on the last mat
 fails(inherited):Predefined global $' sets the encoding to the encoding of the source String
 fails(inherited):Predefined global $' sets an empty result to the encoding of the source String
 fails(inherited):Predefined global $+ sets the encoding to the encoding of the source String
-fails:Predefined globals $1..N are nil unless a match group occurs
 fails(inherited):Predefined globals $1..N sets the encoding to the encoding of the source String
 fails:Predefined global $stdout is the same as $DEFAULT_OUTPUT from 'English' library
 fails:Predefined global $stdout raises TypeError error if assigned to nil
