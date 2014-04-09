@@ -1097,6 +1097,24 @@ public abstract class ArrayNodes {
 
     }
 
+    @CoreMethod(names = "to_a", maxArgs = 0)
+    public abstract static class ToANode extends CoreMethodNode {
+
+        public ToANode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToANode(ToANode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray toA(RubyArray array) {
+            return array;
+        }
+
+    }
+
     @CoreMethod(names = "unshift", isSplatted = true)
     public abstract static class UnshiftNode extends CoreMethodNode {
 
