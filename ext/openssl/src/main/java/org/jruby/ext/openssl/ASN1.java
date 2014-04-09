@@ -80,6 +80,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
 
+import static org.jruby.ext.openssl.OpenSSLReal.isDebug;
 import static org.jruby.ext.openssl.OpenSSLReal.warn;
 
 /**
@@ -868,7 +869,9 @@ public class ASN1 {
             }
 
             // TODO throw an exception here too?
-            System.err.println("object with tag: " + tag + " and value: " + val + " and val.class: " + val.getClass().getName() + " and impl: " + imp.getName());
+            if ( isDebug(context.runtime) ) {
+                System.err.println("object with tag: " + tag + " and value: " + val + " and val.class: " + val.getClass().getName() + " and impl: " + imp.getName());
+            }
             warn(context, "WARNING: unimplemented method called: asn1data#toASN1");
             return null;
         }

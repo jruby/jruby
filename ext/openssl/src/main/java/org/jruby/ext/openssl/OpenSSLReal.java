@@ -146,7 +146,18 @@ public class OpenSSLReal {
         ossl.setConstant("OPENSSL_VERSION", runtime.newString("jruby-ossl " + jopensslVersion));
         ossl.setConstant("OPENSSL_VERSION_NUMBER", runtime.newFixnum(9469999));
 
-        OpenSSLModule.setDebug(ossl,  runtime.getFalse());
+        OpenSSLModule.setDebug(ossl, runtime.newBoolean( Boolean.getBoolean("jruby.openssl.debug") ) );
+    }
+
+    private static boolean debug;
+
+    static boolean isDebug() {
+        return debug;
+    }
+
+    static boolean isDebug(final Ruby runtime) {
+        RubyModule ossl = runtime.getModule("OpenSSL");
+        return OpenSSLModule.getDebug(ossl).isTrue();
     }
 
     static void warn(final ThreadContext context, final String msg) {
@@ -172,12 +183,13 @@ public class OpenSSLReal {
 
         @JRubyMethod(name = "debug", meta = true)
         public static IRubyObject getDebug(IRubyObject self) {
-            return (IRubyObject)((RubyModule) self).getInternalVariable("debug");
+            return (IRubyObject) ((RubyModule) self).getInternalVariable("debug");
         }
 
         @JRubyMethod(name = "debug=", meta = true)
         public static IRubyObject setDebug(IRubyObject self, IRubyObject debug) {
             ((RubyModule) self).setInternalVariable("debug", debug);
+            OpenSSLReal.debug = debug.isTrue();
             return debug;
         }
 
