@@ -91,7 +91,7 @@ public class RubyRegexp extends RubyObject {
 
             final Object[] values = new Object[region.numRegs];
 
-            for (int n = 1; n < region.numRegs + 1; n++) {
+            for (int n = 0; n < region.numRegs; n++) {
                 final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$" + n);
 
                 if (slot != null) {

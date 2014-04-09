@@ -31,7 +31,11 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public Object getIndex(RubyMatchData matchData, int index) {
-            return matchData.getValues()[index];
+            if (index >= matchData.getValues().length) {
+                return NilPlaceholder.INSTANCE;
+            } else {
+                return matchData.getValues()[index];
+            }
         }
 
     }
