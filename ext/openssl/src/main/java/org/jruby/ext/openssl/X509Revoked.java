@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -34,6 +34,7 @@ import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 
@@ -41,14 +42,13 @@ import org.jruby.runtime.Visibility;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class X509Revoked extends RubyObject {
-    private static final long serialVersionUID = 1L;
 
     private static ObjectAllocator X509REVOKED_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new X509Revoked(runtime, klass);
         }
     };
-    
+
     public static void createX509Revoked(Ruby runtime, RubyModule mX509) {
         RubyClass cX509Rev = mX509.defineClassUnder("Revoked",runtime.getObject(),X509REVOKED_ALLOCATOR);
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
@@ -107,8 +107,8 @@ public class X509Revoked extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject add_extension(IRubyObject val) {
-        this.extensions.callMethod(getRuntime().getCurrentContext(),"<<",val);
+    public IRubyObject add_extension(final ThreadContext context, final IRubyObject val) {
+        this.extensions.callMethod(context, "<<", val);
         return val;
     }
 }// X509Revoked
