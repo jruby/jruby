@@ -885,7 +885,7 @@ public abstract class IRScope implements ParseResult {
         if (reset || evalScopeVars == null) evalScopeVars = new HashMap<String, LocalVariable>();
     }
 
-    public TemporaryLocalVariable getNewTemporaryVariable() {
+    public TemporaryLocalVariable createTemporaryVariable() {
         return getNewTemporaryVariable(TemporaryVariableType.LOCAL);
     }
 
@@ -965,7 +965,7 @@ public abstract class IRScope implements ParseResult {
             LocalVariable lv = (LocalVariable)v;
             return getLocalVariable(inlinePrefix + lv.getName(), lv.getScopeDepth());
         } else {
-            return getNewTemporaryVariable();
+            return createTemporaryVariable();
         }
     }
 

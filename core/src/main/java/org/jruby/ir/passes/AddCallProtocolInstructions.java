@@ -7,7 +7,6 @@ import java.util.ListIterator;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRModuleBody;
-import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.Instr;
@@ -96,7 +95,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
 
                 // Allocate GEB if necessary for popping
                 if (geb == null && scopeHasUnrescuedExceptions) {
-                    Variable exc = scope.getNewTemporaryVariable();
+                    Variable exc = scope.createTemporaryVariable();
                     geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
                     geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby Implementation exception handling
                     geb.addInstr(new ThrowExceptionInstr(exc));

@@ -147,7 +147,7 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public TemporaryLocalVariable getNewTemporaryVariable() {
+    public TemporaryLocalVariable createTemporaryVariable() {
         return getNewTemporaryVariable(TemporaryVariableType.CLOSURE);
     }
 
@@ -342,10 +342,10 @@ public class IRClosure extends IRScope {
         BasicBlock geb = cfg.getGlobalEnsureBB();
         if (geb == null) {
             geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
-            Variable exc = getNewTemporaryVariable();
+            Variable exc = createTemporaryVariable();
             geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception
             // Handle uncaught break and non-local returns using runtime helpers
-            Variable ret = getNewTemporaryVariable();
+            Variable ret = createTemporaryVariable();
             geb.addInstr(new RuntimeHelperCall(ret, "handleBreakAndReturnsInLambdas", new Operand[]{exc} ));
             geb.addInstr(new ReturnInstr(ret));
             cfg.addGlobalEnsureBB(geb);
@@ -357,7 +357,7 @@ public class IRClosure extends IRScope {
 
             List<Instr> instrs = geb.getInstrs();
             Variable exc = ((ReceiveExceptionBase)instrs.get(0)).getResult();
-            Variable ret = getNewTemporaryVariable();
+            Variable ret = createTemporaryVariable();
             instrs.set(instrs.size()-1, new RuntimeHelperCall(ret, "handleBreakAndReturnsInLambdas", new Operand[]{exc} ));
             geb.addInstr(new ReturnInstr(ret));
         }

@@ -5,17 +5,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Stack;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnInstr;
-import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
@@ -55,7 +51,7 @@ public class OptimizeTempVarsPass extends CompilerPass {
         // If we dont have a var mapping, get a new var -- try the free list first
         // and if none available, allocate a fresh one
         if (newVarMap.get(oldVar) == null) {
-            newVarMap.put(oldVar, freeVarsList.isEmpty() ? s.getNewTemporaryVariable() : freeVarsList.remove(0));
+            newVarMap.put(oldVar, freeVarsList.isEmpty() ? s.createTemporaryVariable() : freeVarsList.remove(0));
         }
     }
 
