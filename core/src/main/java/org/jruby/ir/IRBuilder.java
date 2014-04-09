@@ -1368,10 +1368,8 @@ public class IRBuilder {
             return new ConstantStringLiteral("expression");
         case FALSENODE:
             return new ConstantStringLiteral("false");
-        case LOCALVARNODE:
+        case LOCALVARNODE: case DVARNODE:
             return new ConstantStringLiteral("local-variable");
-        case DVARNODE:
-            return new ConstantStringLiteral("local-variable(in-block)");
         case MATCH2NODE: case MATCH3NODE:
             return new ConstantStringLiteral("method");
         case NILNODE:
