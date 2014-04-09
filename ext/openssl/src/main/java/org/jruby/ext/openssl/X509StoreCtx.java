@@ -11,8 +11,9 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
- * 
+ * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,203 +28,24 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import java.security.cert.CertificateEncodingException;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyObject;
-import org.jruby.RubyObjectAdapter;
-import org.jruby.RubyString;
-import org.jruby.RubyTime;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.openssl.x509store.X509AuxCertificate;
-import org.jruby.ext.openssl.x509store.Store;
-import org.jruby.ext.openssl.x509store.StoreContext;
-import org.jruby.javasupport.JavaEmbedUtils;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Visibility;
 
 /**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
+ * @deprecated replace with {@link X509StoreContext}
+ * @author kares
  */
-public class X509StoreCtx extends RubyObject {
-    private static final long serialVersionUID = 2029690161026120504L;
+@Deprecated
+public class X509StoreCtx extends X509StoreContext {
 
-    private static ObjectAllocator X509STORECTX_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new X509StoreCtx(runtime, klass);
-        }
-    };
-
-    private static RubyObjectAdapter api = JavaEmbedUtils.newObjectAdapter();
-    
+    @Deprecated
     public static void createX509StoreCtx(Ruby runtime, RubyModule mX509) {
-        RubyClass cX509StoreContext = mX509.defineClassUnder("StoreContext",runtime.getObject(),X509STORECTX_ALLOCATOR);
-        cX509StoreContext.defineAnnotatedMethods(X509StoreCtx.class);
+        createX509StoreContext(runtime, mX509);
     }
-
-    private StoreContext ctx;
-    private RubyClass cX509Cert;
 
     public X509StoreCtx(Ruby runtime, RubyClass type) {
         super(runtime, type);
-        ctx = new StoreContext();
-        cX509Cert = Utils.getClassFromPath(runtime, "OpenSSL::X509::Certificate");
     }
 
-    // constructor for creating callback parameter object of verify_cb
-    X509StoreCtx(Ruby runtime, RubyClass type, StoreContext ctx) {
-        super(runtime, type);
-        this.ctx = ctx;
-        cX509Cert = Utils.getClassFromPath(runtime, "OpenSSL::X509::Certificate");
-    }
-
-    @JRubyMethod(name="initialize", rest=true, visibility = Visibility.PRIVATE)
-    public IRubyObject _initialize(IRubyObject[] args, Block block) {
-        IRubyObject store;
-        IRubyObject cert = getRuntime().getNil();
-        IRubyObject chain = getRuntime().getNil();
-        Store x509st;
-        X509AuxCertificate x509 = null;
-        List<X509AuxCertificate> x509s = new ArrayList<X509AuxCertificate>();
-
-        if(org.jruby.runtime.Arity.checkArgumentCount(getRuntime(),args,1,3) > 1) {
-            cert = args[1];
-        }
-        if(args.length > 2) {
-            chain = args[2];
-        }
-        store = args[0];
-        x509st = ((X509Store)store).getStore();
-        if(!cert.isNil()) {
-            x509 = ((X509Cert)cert).getAuxCert();
-        }
-        if(!chain.isNil()) {
-            x509s = new ArrayList<X509AuxCertificate>();
-            for (IRubyObject obj : ((RubyArray)chain).toJavaArray()) {
-                x509s.add(((X509Cert)obj).getAuxCert());
-            }
-        }
-        if(ctx.init(x509st,x509,x509s) != 1) {
-            throw newStoreError(getRuntime(), null);
-        }
-        IRubyObject t = api.getInstanceVariable(store,"@time");
-        if(!t.isNil()) {
-            set_time(t);
-        }
-        api.setInstanceVariable(this, "@verify_callback", api.getInstanceVariable(store, "@verify_callback"));
-        api.setInstanceVariable(this, "@cert", cert);
-        return this;
-    }
-
-    @JRubyMethod
-    public IRubyObject verify() {
-        ctx.setExtraData(1, getInstanceVariable("@verify_callback"));
-        try {
-            int result = ctx.verifyCertificate();
-            return result != 0 ? getRuntime().getTrue() : getRuntime().getFalse();
-        } catch (Exception e) {
-            // TODO: define suitable exception for jopenssl and catch it.
-            throw newStoreError(getRuntime(), e.getMessage());
-        }
-    }
-
-    @JRubyMethod
-    public IRubyObject chain() {
-        List<X509AuxCertificate> chain = ctx.getChain();
-        if (chain == null) {
-            return getRuntime().getNil();
-        }
-        List<IRubyObject> ary = new ArrayList<IRubyObject>();
-        try {
-            for (X509AuxCertificate x509 : chain) {
-                ary.add(cX509Cert.callMethod(getRuntime().getCurrentContext(), "new", RubyString.newString(getRuntime(), x509.getEncoded())));
-            }
-        } catch (CertificateEncodingException cee) {
-            throw newStoreError(getRuntime(), cee.getMessage());
-        }
-        return getRuntime().newArray(ary);
-    }
-
-    @JRubyMethod
-    public IRubyObject error() {
-        return getRuntime().newFixnum(ctx.getError());
-    }
-
-    @JRubyMethod(name="error=")
-    public IRubyObject set_error(IRubyObject arg) {
-        ctx.setError(RubyNumeric.fix2int(arg));
-        return arg;
-    }
-
-    @JRubyMethod
-    public IRubyObject error_string() {
-        int err = ctx.getError();
-        return getRuntime().newString(org.jruby.ext.openssl.x509store.X509Utils.verifyCertificateErrorString(err));
-    }
-
-    @JRubyMethod
-    public IRubyObject error_depth() {
-        System.err.println("WARNING: unimplemented method called: StoreContext#error_depth");
-        return getRuntime().getNil();
-    }
-
-    @JRubyMethod
-    public IRubyObject current_cert() {
-        Ruby rt = getRuntime();
-        X509AuxCertificate x509 = ctx.getCurrentCertificate();
-        try {
-            return cX509Cert.callMethod(rt.getCurrentContext(), "new", RubyString.newString(rt, x509.getEncoded()));
-        } catch (CertificateEncodingException cee) {
-            throw newStoreError(getRuntime(), cee.getMessage());
-        }
-    }
-
-    @JRubyMethod
-    public IRubyObject current_crl() {
-        System.err.println("WARNING: unimplemented method called: StoreContext#current_crl");
-        return getRuntime().getNil();
-    }
-
-    @JRubyMethod
-    public IRubyObject cleanup() {
-        System.err.println("WARNING: unimplemented method called: StoreContext#cleanup");
-        return getRuntime().getNil();
-    }
-
-    @JRubyMethod(name="flags=")
-    public IRubyObject set_flags(IRubyObject arg) {
-        System.err.println("WARNING: unimplemented method called: StoreContext#set_flags");
-        return getRuntime().getNil();
-    }
-
-    @JRubyMethod(name="purpose=")
-    public IRubyObject set_purpose(IRubyObject arg) {
-        System.err.println("WARNING: unimplemented method called: StoreContext#set_purpose");
-        return getRuntime().getNil();
-    }
-
-    @JRubyMethod(name="trust=")
-    public IRubyObject set_trust(IRubyObject arg) {
-        System.err.println("WARNING: unimplemented method called: StoreContext#set_trust");
-        return getRuntime().getNil();
-    }
-
-    @JRubyMethod(name="time=")
-    public IRubyObject set_time(IRubyObject arg) {
-        ctx.setTime(0,((RubyTime)arg).getJavaDate());
-        return arg;
-    }
-
-    private static RaiseException newStoreError(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::X509::StoreError", message);
-    }
-}// X509StoreCtx
+}
