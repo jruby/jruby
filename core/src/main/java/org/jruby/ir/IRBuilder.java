@@ -5,6 +5,7 @@ import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.instructions.*;
+import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
@@ -924,7 +925,7 @@ public class IRBuilder {
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.handleNonlocalReturn(scope, bj, blockType)
         Variable ret = s.createTemporaryVariable();
-        addInstr(s, new RuntimeHelperCall(ret, "handleNonlocalReturn", new Operand[]{exc} ));
+        addInstr(s, new RuntimeHelperCall(ret, HANDLE_NONLOCAL_RETURN, new Operand[]{exc} ));
         addInstr(s, new ReturnInstr(ret));
 
         // End
@@ -960,7 +961,7 @@ public class IRBuilder {
 
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.handlePropagatedBreak(context, scope, bj, blockType)
-        addInstr(s, new RuntimeHelperCall(callInstr.getResult(), "handlePropagatedBreak", new Operand[]{exc} ));
+        addInstr(s, new RuntimeHelperCall(callInstr.getResult(), HANDLE_PROPAGATE_BREAK, new Operand[]{exc} ));
 
         // End
         addInstr(s, new LabelInstr(rEndLabel));
@@ -1404,14 +1405,14 @@ public class IRBuilder {
         case BACKREFNODE: {
             Variable result = s.createTemporaryVariable();
 
-            s.addInstr(new RuntimeHelperCall(result, "isDefinedBackref", Operand.EMPTY_ARRAY));
+            s.addInstr(new RuntimeHelperCall(result, IS_DEFINED_BACKREF, Operand.EMPTY_ARRAY));
 
             return result;
         }
         case NTHREFNODE: {
              Variable result = s.createTemporaryVariable();
 
-             s.addInstr(new RuntimeHelperCall(result, "isDefinedNthRef",
+             s.addInstr(new RuntimeHelperCall(result, IS_DEFINED_NTH_REF,
                     new Operand[] { new Fixnum(((NthRefNode) node).getMatchNumber()) }));
 
              return result;

@@ -325,7 +325,7 @@ class InstrDecoderMap implements IRPersistenceValues {
 
     private Instr decodeRuntimeHelperCall() {
         Variable result = d.decodeVariable();
-        String name = d.decodeString();
+        String name = ""; // FIXME:
         int size = d.decodeInt();
         Operand[] args = new Operand[size];
 
@@ -333,7 +333,8 @@ class InstrDecoderMap implements IRPersistenceValues {
             args[i] = d.decodeOperand();
         }
 
-        return new RuntimeHelperCall(result, name, args);
+        // FIXME: fix up next persistence cycle
+        return new RuntimeHelperCall(result, null, args);
     }
 
     private Instr decodeSearchConst() {

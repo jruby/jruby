@@ -675,7 +675,7 @@ public class InstrEncoderMap {
     }
 
     private void encodeRuntimeHelperCall(RuntimeHelperCall instr) {
-        e.encode(instr.getHelperMethod());
+        e.encode(instr.getHelperMethod().ordinal());
         //FIXME: Probably make an Operand[] encoder
         Operand[] args = instr.getArgs();
         e.encode(args.length);

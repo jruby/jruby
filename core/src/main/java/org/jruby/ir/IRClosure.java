@@ -346,7 +346,8 @@ public class IRClosure extends IRScope {
             geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception
             // Handle uncaught break and non-local returns using runtime helpers
             Variable ret = createTemporaryVariable();
-            geb.addInstr(new RuntimeHelperCall(ret, "handleBreakAndReturnsInLambdas", new Operand[]{exc} ));
+            geb.addInstr(new RuntimeHelperCall(ret,
+                    RuntimeHelperCall.Methods.HANDLE_BREAK_AND_RETURNS_IN_LAMBDA, new Operand[]{exc} ));
             geb.addInstr(new ReturnInstr(ret));
             cfg.addGlobalEnsureBB(geb);
         } else {
@@ -358,7 +359,8 @@ public class IRClosure extends IRScope {
             List<Instr> instrs = geb.getInstrs();
             Variable exc = ((ReceiveExceptionBase)instrs.get(0)).getResult();
             Variable ret = createTemporaryVariable();
-            instrs.set(instrs.size()-1, new RuntimeHelperCall(ret, "handleBreakAndReturnsInLambdas", new Operand[]{exc} ));
+            instrs.set(instrs.size()-1, new RuntimeHelperCall(ret,
+                    RuntimeHelperCall.Methods.HANDLE_BREAK_AND_RETURNS_IN_LAMBDA, new Operand[]{exc} ));
             geb.addInstr(new ReturnInstr(ret));
         }
 
