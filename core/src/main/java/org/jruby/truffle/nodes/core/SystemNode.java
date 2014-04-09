@@ -63,10 +63,6 @@ public class SystemNode extends RubyNode {
             throw new RuntimeException(e);
         }
 
-        System.err.println("COMMAND");
-        System.err.println(command);
-        System.err.println("HERE " + resultBuilder.toString());
-
         return context.makeString(resultBuilder.toString());
     }
 }
