@@ -26,12 +26,21 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 @NodeChild("child")
 public abstract class SplatCastNode extends RubyNode {
 
-    public SplatCastNode(RubyContext context, SourceSection sourceSection) {
+    public static enum NilBehavior {
+        EMPTY_ARRAY,
+        ARRAY_WITH_NIL
+    }
+
+    private final NilBehavior nilBehavior;
+
+    public SplatCastNode(RubyContext context, SourceSection sourceSection, NilBehavior nilBehavior) {
         super(context, sourceSection);
+        this.nilBehavior = nilBehavior;
     }
 
     public SplatCastNode(SplatCastNode prev) {
         super(prev);
+        nilBehavior = prev.nilBehavior;
     }
 
     protected abstract RubyNode getChild();
@@ -44,7 +53,18 @@ public abstract class SplatCastNode extends RubyNode {
     @Specialization
     public RubyArray doObject(VirtualFrame frame, Object object) {
         if (object == NilPlaceholder.INSTANCE) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            switch (nilBehavior) {
+                case EMPTY_ARRAY:
+                    return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+
+                case ARRAY_WITH_NIL:
+                    return RubyArray.specializedFromObject(getContext().getCoreLibrary().getArrayClass(), NilPlaceholder.INSTANCE);
+
+                default: {
+                    CompilerAsserts.neverPartOfCompilation();
+                    throw new UnsupportedOperationException();
+                }
+            }
         } else if (object instanceof RubyArray) {
             return (RubyArray) object;
         } else {

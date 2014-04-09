@@ -58,6 +58,7 @@ public class BodyTranslator extends Translator {
 
     public boolean translatingForStatement = false;
     public boolean useClassVariablesAsIfInClass = false;
+    private boolean translatingNextExpression = false;
 
     private static final Map<Class, String> nodeDefinedNames = new HashMap<>();
 
@@ -1311,7 +1312,7 @@ public class BodyTranslator extends Translator {
 
             final List<RubyNode> sequence = new ArrayList<>();
 
-            final RubyNode splatCastNode = SplatCastNodeFactory.create(context, sourceSection, rhsTranslated);
+            final RubyNode splatCastNode = SplatCastNodeFactory.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, rhsTranslated);
 
             final RubyNode writeTemp = ((ReadNode) environment.findLocalVarNode(tempName, sourceSection)).makeWriteNode(splatCastNode);
 
@@ -1362,7 +1363,7 @@ public class BodyTranslator extends Translator {
                 throw new RuntimeException("Unknown form of multiple assignment " + node + " at " + node.getPosition());
             }
 
-            final SplatCastNode rhsSplatCast = SplatCastNodeFactory.create(context, sourceSection, rhsTranslated);
+            final SplatCastNode rhsSplatCast = SplatCastNodeFactory.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, rhsTranslated);
 
             return restRead.makeWriteNode(rhsSplatCast);
         } else if (node.getPre() == null && node.getPost() == null && node.getRest() != null && rhs != null && rhs instanceof org.jruby.ast.ArrayNode) {
@@ -1466,7 +1467,10 @@ public class BodyTranslator extends Translator {
         if (node.getValueNode() == null) {
             resultNode = new NilNode(context, sourceSection);
         } else {
+            final boolean t = translatingNextExpression;
+            translatingNextExpression = true;
             resultNode = node.getValueNode().accept(this);
+            translatingNextExpression = t;
         }
 
         return new NextNode(context, sourceSection, resultNode);
@@ -1788,7 +1792,7 @@ public class BodyTranslator extends Translator {
             value = node.getValue().accept(this);
         }
 
-        return SplatCastNodeFactory.create(context, sourceSection, value);
+        return SplatCastNodeFactory.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, value);
     }
 
     @Override

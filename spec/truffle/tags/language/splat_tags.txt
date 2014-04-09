@@ -1,1 +1,0 @@
-fails:Splat operator used to assign an object to a splatted reference assigns an array with a nil object when the object is nil
