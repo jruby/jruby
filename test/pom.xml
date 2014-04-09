@@ -1,49 +1,20 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-  
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9000.dev</version>
+    <version>9000.dev-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-tests</artifactId>
-  <packaging>jar</packaging>
-  
   <name>JRuby Integration Tests</name>
-  
-  <repositories>
-    <repository>
-      <id>rubygems-releases</id>
-      <url>http://rubygems-proxy.torquebox.org/releases</url>
-    </repository>
-    <repository>
-      <id>rubygems-prereleases</id>
-      <url>http://rubygems-proxy.torquebox.org/prereleases</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
-  <pluginRepositories>
-    <pluginRepository>
-      <id>sonatype</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </pluginRepository>
-    <pluginRepository>
-      <id>rubygems-releases</id>
-      <url>http://rubygems-proxy.torquebox.org/releases</url>
-    </pluginRepository>
-  </pluginRepositories>
-
+  <properties>
+    <jruby.home>${basedir}/..</jruby.home>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
+    <gem.home>${jruby.home}/lib/ruby/gems/shared</gem.home>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>org.jruby</groupId>
@@ -60,35 +31,30 @@
       <groupId>org.apache.ant</groupId>
       <artifactId>ant</artifactId>
       <version>${ant.version}</version>
-      <type>jar</type>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>bsf</groupId>
       <artifactId>bsf</artifactId>
       <version>2.4.0</version>
-      <type>jar</type>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
       <version>1.1.3</version>
-      <type>jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.livetribe</groupId>
       <artifactId>livetribe-jsr223</artifactId>
       <version>2.0.7</version>
-      <type>jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>requireTest</artifactId>
       <version>1.0</version>
-      <type>jar</type>
       <scope>system</scope>
       <systemPath>${project.basedir}/requireTest-1.0.jar</systemPath>
     </dependency>
@@ -110,7 +76,6 @@
       <version>${minitest-excludes.version}</version>
       <type>gem</type>
     </dependency>
-<!-- TODO those are default gems and should not be installed here -->
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rdoc</artifactId>
@@ -130,13 +95,69 @@
       <type>gem</type>
     </dependency>
   </dependencies>
-  <properties>
-    <jruby.home>${basedir}/..</jruby.home>
-    <gem.home>${jruby.home}/lib/ruby/gems/shared</gem.home>
-  </properties>
+  <repositories>
+    <repository>
+      <id>rubygems-releases</id>
+      <url>http://rubygems-proxy.torquebox.org/releases</url>
+    </repository>
+    <repository>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <id>rubygems-prereleases</id>
+      <url>http://rubygems-proxy.torquebox.org/prereleases</url>
+    </repository>
+  </repositories>
+  <pluginRepositories>
+    <pluginRepository>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <id>sonatype</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+    </pluginRepository>
+    <pluginRepository>
+      <id>rubygems-releases</id>
+      <url>http://rubygems-proxy.torquebox.org/releases</url>
+    </pluginRepository>
+  </pluginRepositories>
   <build>
     <testSourceDirectory>.</testSourceDirectory>
     <defaultGoal>test</defaultGoal>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>de.saumya.mojo</groupId>
+                    <artifactId>gem-maven-plugin</artifactId>
+                    <versionRange>[1.0.0-rc3,)</versionRange>
+                    <goals>
+                      <goal>initialize</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore></ignore>
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
@@ -145,7 +166,9 @@
         <executions>
           <execution>
             <phase>initialize</phase>
-            <goals><goal>initialize</goal></goals>
+            <goals>
+              <goal>initialize</goal>
+            </goals>
             <configuration>
               <gemPath>${gem.home}</gemPath>
               <gemHome>${gem.home}</gemHome>
@@ -227,39 +250,6 @@
         </configuration>
       </plugin>
     </plugins>
-    <pluginManagement>
-      <plugins>
-        <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
-        <plugin>
-          <groupId>org.eclipse.m2e</groupId>
-          <artifactId>lifecycle-mapping</artifactId>
-          <version>1.0.0</version>
-          <configuration>
-            <lifecycleMappingMetadata>
-              <pluginExecutions>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>de.saumya.mojo</groupId>
-                    <artifactId>
-                      gem-maven-plugin
-                    </artifactId>
-                    <versionRange>
-                      [1.0.0-rc3,)
-                    </versionRange>
-                    <goals>
-                      <goal>initialize</goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <ignore></ignore>
-                  </action>
-                </pluginExecution>
-              </pluginExecutions>
-            </lifecycleMappingMetadata>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
   </build>
   <profiles>
     <profile>
@@ -278,23 +268,24 @@
       <build>
         <plugins>
           <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-antrun-plugin</artifactId>
-          <executions>
-            <execution>
-              <id>rake</id>
-              <phase>validate</phase>
-              <goals><goal>run</goal></goals>
-              <configuration>
-                <target> 
-                  <exec executable="${jruby.home}/bin/jruby" dir="${jruby.home}" failonerror="true">
-                    <arg value="-S"/>
-                    <arg value="rake"/>
-                    <arg value="${task}"/>
-                  </exec>
-                </target>
-              </configuration>
-             </execution>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>rake</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                      <arg value="-S" />
+                      <arg value="rake" />
+                      <arg value="${task}" />
+                    </exec>
+                  </target>
+                </configuration>
+              </execution>
             </executions>
           </plugin>
         </plugins>
@@ -305,27 +296,28 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-antrun-plugin</artifactId>
             <executions>
               <execution>
                 <id>rake</id>
                 <phase>validate</phase>
-                <goals><goal>run</goal></goals>
+                <goals>
+                  <goal>run</goal>
+                </goals>
                 <configuration>
-                  <target> 
-                    <exec executable="${jruby.home}/bin/jruby" dir="${jruby.home}" failonerror="true">
-                      <arg value="-X+T"/>
-                      <arg value="spec/mspec/bin/mspec"/>
-                      <arg value="run"/>
-                      <arg value="-t"/>
-                      <arg value="bin/jruby"/>
-                      <arg value="-T"/>
-                      <arg value="-X+T"/>
-                      <arg value="--config"/>
-                      <arg value="spec/truffle/truffle.mspec"/>
-                      <arg value="--excl-tag"/>
-                      <arg value="fails"/>
+                  <target>
+                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                      <arg value="-X+T" />
+                      <arg value="spec/mspec/bin/mspec" />
+                      <arg value="run" />
+                      <arg value="-t" />
+                      <arg value="bin/jruby" />
+                      <arg value="-T" />
+                      <arg value="-X+T" />
+                      <arg value="--config" />
+                      <arg value="spec/truffle/truffle.mspec" />
+                      <arg value="--excl-tag" />
+                      <arg value="fails" />
                     </exec>
                   </target>
                 </configuration>
