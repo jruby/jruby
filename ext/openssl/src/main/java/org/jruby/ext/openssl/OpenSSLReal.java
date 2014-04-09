@@ -39,6 +39,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.ext.openssl.x509store.X509Error;
@@ -49,6 +50,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class OpenSSLReal {
+
+    private OpenSSLReal() { /* no instances */ }
 
     @Deprecated
     public static interface Runnable {
@@ -144,6 +147,14 @@ public class OpenSSLReal {
         ossl.setConstant("OPENSSL_VERSION_NUMBER", runtime.newFixnum(9469999));
 
         OpenSSLModule.setDebug(ossl,  runtime.getFalse());
+    }
+
+    static void warn(final ThreadContext context, final String msg) {
+        warn(context, RubyString.newString(context.runtime, msg));
+    }
+
+    static void warn(final ThreadContext context, final IRubyObject msg) {
+        context.runtime.getKernel().callMethod(context, "warn", msg);
     }
 
     @JRubyModule(name = "OpenSSL")

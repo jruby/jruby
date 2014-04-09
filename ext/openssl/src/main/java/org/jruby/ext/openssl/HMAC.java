@@ -131,7 +131,7 @@ public class HMAC extends RubyObject {
         checkFrozen();
         String name = ((HMAC)obj).mac.getAlgorithm();
         try {
-            mac = Mac.getInstance(name);
+            mac = SecurityHelper.getMac(name);
             key = ((HMAC)obj).key;
             mac.init(new SecretKeySpec(key, name));
         } catch(Exception e) {

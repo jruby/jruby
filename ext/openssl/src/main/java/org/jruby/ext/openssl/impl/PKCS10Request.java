@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2013 Matt Hauck <matthauck@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -28,52 +28,46 @@
 package org.jruby.ext.openssl.impl;
 
 import java.util.List;
-import java.util.Enumeration;
 import java.io.OutputStream;
 import java.io.IOException;
+
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.KeySpec;
+import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.DSAPublicKeySpec;
+import java.security.spec.InvalidKeySpecException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.x500.X500Name;
-
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.pkcs.CertificationRequest;
-import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.pkcs.Attribute;
-
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
-import java.security.spec.KeySpec;
-import java.security.spec.RSAPublicKeySpec;
-import java.security.spec.DSAPublicKeySpec;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.KeyFactory;
-
-import org.bouncycastle.pkcs.PKCSException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
-
-import java.security.Signature;
-import java.security.SignatureException;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 
+import org.jruby.ext.openssl.SecurityHelper;
+
 public class PKCS10Request {
-    
+
     private X500Name subject;
     private SubjectPublicKeyInfo publicKeyInfo;
     private PKCS10CertificationRequestBuilder builder;
@@ -82,8 +76,8 @@ public class PKCS10Request {
 
     // For generating new requests
 
-    public PKCS10Request(X500Name subject, 
-        SubjectPublicKeyInfo publicKeyInfo, 
+    public PKCS10Request(X500Name subject,
+        SubjectPublicKeyInfo publicKeyInfo,
         List<Attribute> attrs)
     {
         this.subject        = subject;
@@ -93,7 +87,7 @@ public class PKCS10Request {
         setAttributes(attrs);
     }
 
-    public PKCS10Request(X500Name subject, 
+    public PKCS10Request(X500Name subject,
         PublicKey publicKey,
         List<Attribute> attrs)
     {
@@ -107,7 +101,7 @@ public class PKCS10Request {
     // For reading existing requests
 
     public PKCS10Request(CertificationRequest req) {
-        
+
         subject       = req.getCertificationRequestInfo().getSubject();
         publicKeyInfo = req.getCertificationRequestInfo().getSubjectPublicKeyInfo();
         signedRequest = new PKCS10CertificationRequest(req);
@@ -122,8 +116,8 @@ public class PKCS10Request {
 
     // sign
 
-    public PKCS10CertificationRequest sign(PrivateKey privateKey, 
-        AlgorithmIdentifier sigAlg) 
+    public PKCS10CertificationRequest sign(PrivateKey privateKey,
+        AlgorithmIdentifier sigAlg)
         throws IOException
     {
         ContentSigner signer;
@@ -137,7 +131,7 @@ public class PKCS10Request {
 
         return signedRequest;
     }
-    public PKCS10CertificationRequest sign(PrivateKey privateKey, String digestAlg) 
+    public PKCS10CertificationRequest sign(PrivateKey privateKey, String digestAlg)
         throws IOException
     {
         PublicKey pk = getPublicKey();
@@ -149,7 +143,7 @@ public class PKCS10Request {
             new DefaultSignatureAlgorithmIdentifierFinder().find( sigAlg )
         );
     }
-    
+
     // verify
 
     public boolean verify(PublicKey publicKey) throws IOException, InvalidKeyException {
@@ -178,17 +172,17 @@ public class PKCS10Request {
     }
 
     private SubjectPublicKeyInfo makePublicKeyInfo(PublicKey publicKey) {
-        if (publicKey == null) 
+        if (publicKey == null)
             return null;
         else
             return SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
     }
 
-    // statics 
+    // statics
 
     // Have to obey some artificial constraints of the OpenSSL implementation. Stupid.
     public static boolean algorithmMismatch(String keyAlg, String digAlg, String digName) {
-        if(("DSA".equalsIgnoreCase(keyAlg) && "MD5".equalsIgnoreCase(digAlg)) || 
+        if(("DSA".equalsIgnoreCase(keyAlg) && "MD5".equalsIgnoreCase(digAlg)) ||
            ("RSA".equalsIgnoreCase(keyAlg) && "DSS1".equals(digName)) ||
            ("DSA".equalsIgnoreCase(keyAlg) && "SHA1".equals(digName))) {
             return true;
@@ -201,12 +195,12 @@ public class PKCS10Request {
 
     public ASN1Sequence toASN1Structure() {
         // TODO: outputting previous structure without checking isValid() is weird...
-        if (signedRequest != null) 
+        if (signedRequest != null)
             return ASN1Sequence.getInstance(signedRequest.toASN1Structure());
         else
             return new DLSequence();
     }
-    
+
     // getters and setters
 
     public void setSubject(X500Name subject) {
@@ -222,9 +216,9 @@ public class PKCS10Request {
         this.publicKeyInfo = makePublicKeyInfo(publicKey);
         resetBuilder();
     }
-    
+
     public PublicKey getPublicKey() throws IOException {
-        
+
         AsymmetricKeyParameter keyParams = PublicKeyFactory.createKey(publicKeyInfo);
 
         KeySpec keySpec = null;
@@ -236,7 +230,7 @@ public class PKCS10Request {
                 keySpec = new RSAPublicKeySpec(
                     rsa.getModulus(), rsa.getExponent()
                 );
-                keyFact = KeyFactory.getInstance("RSA");
+                keyFact = SecurityHelper.getKeyFactory("RSA");
 
             } else if (keyParams instanceof DSAPublicKeyParameters) {
                 DSAPublicKeyParameters dsa = (DSAPublicKeyParameters) keyParams;
@@ -244,16 +238,16 @@ public class PKCS10Request {
                 keySpec = new DSAPublicKeySpec(
                     dsa.getY(), params.getP(), params.getQ(), params.getG()
                 );
-                keyFact = KeyFactory.getInstance("DSA");
+                keyFact = SecurityHelper.getKeyFactory("DSA");
             }
 
             if (keySpec != null && keyFact != null) {
                 return keyFact.generatePublic(keySpec);
             }
         }
-        catch (NoSuchAlgorithmException e) { } 
-        catch (InvalidKeySpecException e) { } 
-        
+        catch (NoSuchAlgorithmException e) { }
+        catch (InvalidKeySpecException e) { }
+
         throw new IOException("Could not read public key");
     }
 
@@ -265,7 +259,7 @@ public class PKCS10Request {
         resetBuilder();
         addAttributes(attrs);
     }
-    
+
     private void addAttributes(List<Attribute> attrs) {
         if (attrs == null) return;
 
@@ -289,7 +283,7 @@ public class PKCS10Request {
         return signedRequest.toASN1Structure().getCertificationRequestInfo()
                     .getVersion().getValue().intValue();
     }
- 
+
 
     private class PKCS10Signer implements ContentSigner
     {
@@ -297,11 +291,11 @@ public class PKCS10Request {
         Signature sig;
         SignatureOutputStream sigOut;
 
-        public PKCS10Signer(PrivateKey pkey, AlgorithmIdentifier sigAlg) 
+        public PKCS10Signer(PrivateKey pkey, AlgorithmIdentifier sigAlg)
             throws NoSuchAlgorithmException, InvalidKeyException
         {
             this.sigAlg = sigAlg;
-            sig = Signature.getInstance( sigAlg.getAlgorithm().getId() );
+            sig = SecurityHelper.getSignature( sigAlg.getAlgorithm().getId() );
             sig.initSign( pkey );
             sigOut = new SignatureOutputStream(sig);
         }
@@ -338,7 +332,7 @@ public class PKCS10Request {
                 throw new RuntimeException("Could not create content verifier: " + e);
             }
         }
-        
+
         public boolean hasAssociatedCertificate() {
             return false;
         }
@@ -354,11 +348,11 @@ public class PKCS10Request {
         Signature sig;
         SignatureOutputStream sigOut;
 
-        public PKCS10Verifier(PublicKey publicKey, AlgorithmIdentifier sigAlg) 
+        public PKCS10Verifier(PublicKey publicKey, AlgorithmIdentifier sigAlg)
             throws NoSuchAlgorithmException, InvalidKeyException
         {
             this.sigAlg = sigAlg;
-            sig = Signature.getInstance( sigAlg.getAlgorithm().getId() );
+            sig = SecurityHelper.getSignature( sigAlg.getAlgorithm().getId() );
             sig.initVerify( publicKey );
             sigOut = new SignatureOutputStream(sig);
         }
@@ -387,7 +381,7 @@ public class PKCS10Request {
         public SignatureOutputStream(Signature sig) {
             this.sig = sig;
         }
-        
+
         public void write(byte[] bytes, int off, int len) throws IOException {
             try {
                 sig.update(bytes, off, len);

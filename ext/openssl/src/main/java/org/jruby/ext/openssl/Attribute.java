@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -32,12 +32,15 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DERSet;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 
@@ -52,7 +55,7 @@ public class Attribute extends RubyObject {
             return new Attribute(runtime, klass);
         }
     };
-    
+
     public static void createAttribute(Ruby runtime, RubyModule mX509) {
         RubyClass cAttribute = mX509.defineClassUnder("Attribute",runtime.getObject(), ATTRIBUTE_ALLOCATOR);
 
@@ -92,14 +95,13 @@ public class Attribute extends RubyObject {
     }
 
     @JRubyMethod(name="initialize", required=1, optional=1, visibility = Visibility.PRIVATE)
-    public IRubyObject _initialize(IRubyObject[] str) {
-        if(org.jruby.runtime.Arity.checkArgumentCount(getRuntime(),str,1,2) == 1) {
-            IRubyObject _oid = OpenSSLImpl.to_der_if_possible(str[0]);
-            set_oid(_oid);
+    public IRubyObject _initialize(final ThreadContext context, IRubyObject[] str) {
+        if ( Arity.checkArgumentCount(context.runtime, str, 1, 2) == 1 ) {
+            set_oid( OpenSSLImpl.to_der_if_possible(context, str[0]) );
             return this;
         }
         set_oid(str[0]);
-        set_value(str[1]);
+        set_value(context, str[1]);
         return this;
     }
 
@@ -126,9 +128,10 @@ public class Attribute extends RubyObject {
     }
 
     @JRubyMethod(name="value=")
-    public IRubyObject set_value(IRubyObject val) {
-        IRubyObject tmp = OpenSSLImpl.to_der_if_possible(val);
-        this.value = ASN1.decode(getRuntime().getClassFromPath("OpenSSL::ASN1"), tmp);
+    public IRubyObject set_value(final ThreadContext context, IRubyObject val) {
+        IRubyObject tmp = OpenSSLImpl.to_der_if_possible(context, val);
+        this.value = ASN1.decode(context, context.runtime.getClassFromPath("OpenSSL::ASN1"), tmp);
         return val;
     }
+
 }// Attribute

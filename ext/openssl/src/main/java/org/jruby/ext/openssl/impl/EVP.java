@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2008 Ola Bini <ola.bini@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -36,7 +36,10 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+
+import org.jruby.ext.openssl.SecurityHelper;
 
 /**
  *
@@ -46,7 +49,7 @@ public class EVP {
     // This is a class that will collect mappings from ASN1 stuff to
     // matching Cipher and other algorithms.
 
-    // Typical examples: 
+    // Typical examples:
     //  EVP_get_cipherbyobj
     //  EVP_get_digestbynid
 
@@ -57,7 +60,7 @@ public class EVP {
         String algorithm = getAlgorithmName(oid);
         String[] cipher = org.jruby.ext.openssl.Cipher.Algorithm.osslToJsse(algorithm);
         String realName = cipher[3];
-        return Cipher.getInstance(realName);
+        return SecurityHelper.getCipher(realName);
     }
 
     /* c: EVP_get_cipherbynid
@@ -72,7 +75,7 @@ public class EVP {
      */
     public static MessageDigest getDigest(ASN1ObjectIdentifier oid) throws GeneralSecurityException {
         String algorithm = getAlgorithmName(oid);
-        return MessageDigest.getInstance(algorithm);
+        return SecurityHelper.getMessageDigest(algorithm);
     }
 
     /* c: EVP_get_digestbynid
@@ -87,7 +90,7 @@ public class EVP {
      */
     public static MessageDigest sha1() {
         try {
-            return MessageDigest.getInstance("SHA1");
+            return SecurityHelper.getMessageDigest("SHA1");
         } catch(Exception e) {
             return null;
         }
@@ -118,9 +121,9 @@ public class EVP {
     public static byte[] decrypt(byte[] input, int offset, int len, Key key) throws InvalidKeyException,
                                                                                     NoSuchAlgorithmException,
                                                                                     NoSuchPaddingException,
-                                                                                    IllegalBlockSizeException, 
+                                                                                    IllegalBlockSizeException,
                                                                                     BadPaddingException {
-        Cipher cipher = Cipher.getInstance(key.getAlgorithm());
+        Cipher cipher = SecurityHelper.getCipher(key.getAlgorithm());
         cipher.init(Cipher.DECRYPT_MODE, key);
         return cipher.doFinal(input, offset, len);
     }
@@ -131,7 +134,7 @@ public class EVP {
     public static byte[] decrypt(byte[] input, Key key) throws InvalidKeyException,
                                                                NoSuchAlgorithmException,
                                                                NoSuchPaddingException,
-                                                               IllegalBlockSizeException, 
+                                                               IllegalBlockSizeException,
                                                                BadPaddingException {
         return decrypt(input, 0, input.length, key);
     }
