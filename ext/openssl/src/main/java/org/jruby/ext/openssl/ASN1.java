@@ -870,7 +870,7 @@ public class ASN1 {
 
             // TODO throw an exception here too?
             if ( isDebug(context.runtime) ) {
-                System.err.println("object with tag: " + tag + " and value: " + val + " and val.class: " + val.getClass().getName() + " and impl: " + imp.getName());
+                context.runtime.getOut().println("object with tag: " + tag + " and value: " + val + " and val.class: " + val.getClass().getName() + " and impl: " + imp.getName());
             }
             warn(context, "WARNING: unimplemented method called: asn1data#toASN1");
             return null;
