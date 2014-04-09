@@ -56,7 +56,7 @@ public class TranslatorDriver {
 
         // Translate to Ruby Truffle nodes
 
-        final MethodTranslator translator = new MethodTranslator(context, null, environment, false, context.getSourceManager().get(bodyNode.getPosition().getFile()));
+        final MethodTranslator translator = new MethodTranslator(context, null, environment, false, false, context.getSourceManager().get(bodyNode.getPosition().getFile()));
 
         return translator.compileFunctionNode(new DefaultSourceSection(context.getSourceManager().get(bodyNode.getPosition().getFile()), "(unknown)", bodyNode.getPosition().getStartLine() + 1, -1, -1, -1), "(unknown)", parseTree, argsNode, bodyNode, false);
     }
@@ -140,7 +140,7 @@ public class TranslatorDriver {
             if (rootNode.getBodyNode() == null) {
                 truffleNode = new NilNode(context, null);
             } else {
-                truffleNode = (RubyNode) rootNode.getBodyNode().accept(translator);
+                truffleNode = rootNode.getBodyNode().accept(translator);
             }
 
             // Load flip-flop states

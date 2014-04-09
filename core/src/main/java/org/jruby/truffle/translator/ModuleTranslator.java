@@ -93,7 +93,7 @@ class ModuleTranslator extends BodyTranslator {
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
                         new UniqueMethodIdentifier());
-        final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, source);
+        final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, false, source);
         final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), node.getName(), node, node.getArgsNode(), node.getBodyNode(), false);
 
         final SourceSection sourceSection = translate(node.getPosition());

@@ -721,7 +721,7 @@ public class BodyTranslator extends Translator {
 
         // ownScopeForAssignments is the same for the defined method as the current one.
 
-        final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, source);
+        final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, parent == null, source);
 
         final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(sourceSection, methodName, parseTree, argsNode, bodyNode, ignoreLocalVisiblity);
 
@@ -1090,7 +1090,7 @@ public class BodyTranslator extends Translator {
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getReturnID(), hasOwnScope, false,
                         new UniqueMethodIdentifier());
-        final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, true, source);
+        final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, true, parent == null, source);
         methodCompiler.translatingForStatement = translatingForStatement;
 
         org.jruby.ast.ArgsNode argsNode;
@@ -1921,7 +1921,7 @@ public class BodyTranslator extends Translator {
         // TODO(cs): code copied and modified from visitIterNode - extract common
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getReturnID(), false, false, new UniqueMethodIdentifier());
-        final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, source);
+        final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, parent == null, source);
 
         org.jruby.ast.ArgsNode argsNode;
 

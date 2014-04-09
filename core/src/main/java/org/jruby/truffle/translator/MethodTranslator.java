@@ -27,11 +27,13 @@ import org.jruby.truffle.runtime.methods.*;
 
 class MethodTranslator extends BodyTranslator {
 
+    private boolean isTopLevel;
     private boolean isBlock;
 
-    public MethodTranslator(RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, Source source) {
+    public MethodTranslator(RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, boolean isTopLevel, Source source) {
         super(context, parent, environment, source);
         this.isBlock = isBlock;
+        this.isTopLevel = isTopLevel;
     }
 
     public MethodDefinitionNode compileFunctionNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity) {
@@ -135,6 +137,10 @@ class MethodTranslator extends BodyTranslator {
         body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID(), isBlock);
         body = new CatchNextNode(context, sourceSection, body);
         body = new CatchRetryAsErrorNode(context, sourceSection, body);
+
+        if (isBlock && isTopLevel) {
+            body = new CatchBreakAsReturnNode(context, sourceSection, body);
+        }
 
         final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), methodName, parseTree, body);
 

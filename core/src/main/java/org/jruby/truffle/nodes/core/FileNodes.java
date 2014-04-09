@@ -14,6 +14,7 @@ import java.io.*;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.*;
@@ -230,7 +231,24 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyString join(Object[] parts) {
-            return getContext().makeString(RubyArray.join(parts, File.separator));
+            final StringBuilder builder = new StringBuilder();
+            join(builder, parts);
+            return getContext().makeString(builder.toString());
+        }
+
+        @SlowPath
+        public static void join(StringBuilder builder, Object[] parts) {
+            for (int n = 0; n < parts.length; n++) {
+                if (n > 0) {
+                    builder.append(File.separator);
+                }
+
+                if (parts[n] instanceof RubyArray) {
+                    join(builder, ((RubyArray) parts[n]).toObjectArray());
+                } else {
+                    builder.append(parts[n].toString());
+                }
+            }
         }
     }
 
