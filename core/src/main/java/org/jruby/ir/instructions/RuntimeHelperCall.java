@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import java.util.Arrays;
 
+import org.jruby.RubyFixnum;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -82,14 +83,22 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
     }
 
     public IRubyObject callHelper(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block.Type blockType) {
-        Object exc = args[0].retrieve(context, self, currDynScope, temp);
         IRStaticScope scope = (IRStaticScope)currDynScope.getStaticScope();
+        
         if (helperMethod.equals("handlePropagatedBreak")) {
+            Object exc = args[0].retrieve(context, self, currDynScope, temp);
             return IRRuntimeHelpers.handlePropagatedBreak(context, scope, exc, blockType);
         } else if (helperMethod.equals("handleNonlocalReturn")) {
+            Object exc = args[0].retrieve(context, self, currDynScope, temp);
             return IRRuntimeHelpers.handleNonlocalReturn(scope, exc, blockType);
         } else if (helperMethod.equals("handleBreakAndReturnsInLambdas")) {
+            Object exc = args[0].retrieve(context, self, currDynScope, temp);
             return IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, scope, exc, blockType);
+        } else if (helperMethod.equals("isBackrefDefined")) {
+            return IRRuntimeHelpers.isDefinedBackref(context);
+        } else if (helperMethod.equals("isDefinedNthRef")) {
+            Object exc = args[0].retrieve(context, self, currDynScope, temp);
+            return IRRuntimeHelpers.isDefinedNthRef(context, (int) ((RubyFixnum) exc).getLongValue());
         } else {
             // Unknown helper method!
             throw new RuntimeException("Unknown IR runtime helper method: " + helperMethod + "; INSTR: " + this);

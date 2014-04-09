@@ -5,6 +5,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
+import org.jruby.RubyMatchData;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyFixnum;
@@ -34,6 +35,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.util.DefinedMessage;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -497,6 +499,30 @@ public class IRRuntimeHelpers {
                 : method.call(context, self, superClass, methodName, args, block);
 
         return rVal;
+    }
+
+    public static IRubyObject isDefinedBackref(ThreadContext context) {
+        IRubyObject backref = context.getBackRef();
+
+        if (RubyMatchData.class.isInstance(backref)) {
+            return context.runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE);
+        }
+
+        return context.nil;
+    }
+
+    // FIXME: This checks for match data differently than isDefinedBackref.  Seems like they should use same mechanism?
+    public static IRubyObject isDefinedNthRef(ThreadContext context, int matchNumber) {
+        IRubyObject backref = context.getBackRef();
+
+        if (backref instanceof RubyMatchData) {
+            if (!((RubyMatchData) backref).group(matchNumber).isNil()) {
+                return context.runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE);
+            }
+        }
+
+        return context.nil;
+
     }
 
     protected static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule frameClass, String methodName) {

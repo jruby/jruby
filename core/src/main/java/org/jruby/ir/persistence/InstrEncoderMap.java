@@ -122,7 +122,6 @@ public class InstrEncoderMap {
         switch(instr.getOperation()) {
             case ALIAS: encodeAliasInstr((AliasInstr) instr); break;
             case ATTR_ASSIGN: encodeAttrAssignInstr((AttrAssignInstr) instr); break;
-            case BACKREF_IS_MATCH_DATA: /* no state */ break;
             case BEQ: encodeBEQInstr((BEQInstr) instr); break;
             case BINDING_LOAD: encodeLoadLocalVarInstr((LoadLocalVarInstr) instr); break;
             case BINDING_STORE:encodeStoreLocalVarInstr((StoreLocalVarInstr) instr); break;
