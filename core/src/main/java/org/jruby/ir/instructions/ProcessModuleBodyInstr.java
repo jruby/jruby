@@ -69,7 +69,7 @@ public class ProcessModuleBodyInstr extends Instr implements ResultInstr, FixedA
         Object blk = block.retrieve(context, self, currDynScope, temp);
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
-        return bodyMethod.call(context, implClass, implClass, "", new IRubyObject[]{}, (Block)blk);
+        return bodyMethod.call(context, implClass, implClass, null, new IRubyObject[]{}, (Block)blk);
     }
 
     @Override
