@@ -275,7 +275,7 @@ public class Lookup {
         String certsFile = System.getProperty("java.home") + "/lib/security/cacerts".replace('/', File.separatorChar);
         FileInputStream fin = new FileInputStream(certsFile);
         try {
-            KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
+            KeyStore keystore = SecurityHelper.getKeyStore(KeyStore.getDefaultType());
             // we pass a null password, as the cacerts file isn't password protected
             keystore.load(fin, null);
             PKIXParameters params = new PKIXParameters(keystore);

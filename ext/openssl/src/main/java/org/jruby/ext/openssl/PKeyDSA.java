@@ -60,6 +60,7 @@ import org.jruby.ext.openssl.x509store.PEMInputOutput;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 import static org.jruby.ext.openssl.OpenSSLReal.bcExceptionMessage;
@@ -158,7 +159,7 @@ public class PKeyDSA extends PKey {
     }
 
     @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(IRubyObject[] args) {
+    public IRubyObject initialize(final ThreadContext context, IRubyObject[] args) {
         IRubyObject arg;
         IRubyObject pass = null;
         char[] passwd = null;
@@ -177,7 +178,7 @@ public class PKeyDSA extends PKey {
                 if (pass != null && !pass.isNil()) {
                     passwd = pass.toString().toCharArray();
                 }
-                arg = OpenSSLImpl.to_der_if_possible(arg);
+                arg = OpenSSLImpl.to_der_if_possible(context, arg);
                 RubyString str = arg.convertToString();
 
                 Object val = null;

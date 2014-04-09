@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -52,6 +52,7 @@ import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.X509DefaultEntryConverter;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -64,17 +65,18 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.openssl.x509store.Name;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 
+import org.jruby.ext.openssl.x509store.Name;
+
 /**
- * 
+ *
  * TODO member variables and methods are based on BC X509 way of doing things (now deprecated). Change
  * it to do it the X500 way, with RDN and X500NameBuilder.
- * 
+ *
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 @JRubyClass(name="X509Name", include="Comparable")
@@ -86,7 +88,7 @@ public class X509Name extends RubyObject {
             return new X509Name(runtime, klass);
         }
     };
-    
+
     public static void createX509Name(Ruby runtime, RubyModule mX509) {
         RubyClass cX509Name = mX509.defineClassUnder("Name",runtime.getObject(),X509NAME_ALLOCATOR);
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
@@ -135,13 +137,13 @@ public class X509Name extends RubyObject {
         values.add(value);
         types.add(type);
     }
-    
+
     public static X509Name create(Ruby runtime, org.bouncycastle.asn1.x500.X500Name realName) {
         X509Name name = new X509Name(runtime, Utils.getClassFromPath(runtime, "OpenSSL::X509::Name"));
         name.fromASN1Sequence((ASN1Sequence)realName.toASN1Primitive());
         return name;
     }
-    
+
     void fromASN1Sequence(ASN1Sequence seq) {
         oids = new ArrayList<Object>();
         values = new ArrayList<Object>();
@@ -179,7 +181,7 @@ public class X509Name extends RubyObject {
             fromASN1Sequence(enumRdn.nextElement());
         }
     }
-    
+
     private void fromASN1Sequence(Object element) {
         ASN1Sequence typeAndValue = ASN1Sequence.getInstance(element);
         oids.add(typeAndValue.getObjectAt(0));
@@ -190,7 +192,7 @@ public class X509Name extends RubyObject {
         }
         types.add(getRuntime().newFixnum(ASN1.idForClass(typeAndValue.getObjectAt(1).getClass())));
     }
-    
+
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context) {
         return this;
@@ -205,10 +207,10 @@ public class X509Name extends RubyObject {
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject dn, IRubyObject template) {
-        Ruby runtime = context.runtime;
+    public IRubyObject initialize(final ThreadContext context, IRubyObject dn, IRubyObject template) {
+        final Ruby runtime = context.runtime;
 
-        if(dn instanceof RubyArray) {
+        if ( dn instanceof RubyArray ) {
             RubyArray ary = (RubyArray)dn;
 
             if(template.isNil()) {
@@ -236,7 +238,7 @@ public class X509Name extends RubyObject {
             }
         } else {
             try {
-                byte[] bytes = OpenSSLImpl.to_der_if_possible(dn).convertToString().getBytes();
+                byte[] bytes = OpenSSLImpl.to_der_if_possible(context, dn).convertToString().getBytes();
                 ASN1InputStream is = new ASN1InputStream(bytes);
                 ASN1Sequence seq = (ASN1Sequence)is.readObject();
                 //StringBuilder b = new StringBuilder();
@@ -249,7 +251,7 @@ public class X509Name extends RubyObject {
         return this;
     }
 
-    
+
     private void printASN(org.bouncycastle.asn1.ASN1Encodable obj, StringBuilder b) {
         printASN(obj,0, b);
     }
@@ -281,7 +283,7 @@ public class X509Name extends RubyObject {
             }
         }
     }
-    
+
 
     private ASN1ObjectIdentifier getObjectIdentifier(String nameOrOid) {
         Object val1 = ASN1.getOIDLookup(getRuntime()).get(nameOrOid.toLowerCase());
@@ -326,7 +328,7 @@ public class X509Name extends RubyObject {
     @JRubyMethod(name="to_s", rest=true)
     public IRubyObject _to_s(IRubyObject[] args) {
         /*
-Should follow parameters like this: 
+Should follow parameters like this:
 if 0 (COMPAT):
 irb(main):025:0> x.to_s(OpenSSL::X509::Name::COMPAT)
 => "CN=ola.bini, O=sweden/streetAddress=sweden, O=sweden/2.5.4.43343=sweden"
