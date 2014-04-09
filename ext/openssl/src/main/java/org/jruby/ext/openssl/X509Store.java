@@ -55,6 +55,8 @@ import static org.jruby.ext.openssl.OpenSSLReal.warn;
  */
 public class X509Store extends RubyObject {
 
+    private static final long serialVersionUID = -2969708892287379665L;
+
     private static ObjectAllocator X509STORE_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new X509Store(runtime, klass);
