@@ -12,8 +12,6 @@ fails(inherited):Predefined global $` sets an empty result to the encoding of th
 fails:Predefined global $' is equivalent to MatchData#post_match on the last match $~
 fails(inherited):Predefined global $' sets the encoding to the encoding of the source String
 fails(inherited):Predefined global $' sets an empty result to the encoding of the source String
-fails:Predefined global $+ is equivalent to $~.captures.last
-fails:Predefined global $+ captures the last non nil capture
 fails(inherited):Predefined global $+ sets the encoding to the encoding of the source String
 fails:Predefined globals $1..N are nil unless a match group occurs
 fails(inherited):Predefined globals $1..N sets the encoding to the encoding of the source String

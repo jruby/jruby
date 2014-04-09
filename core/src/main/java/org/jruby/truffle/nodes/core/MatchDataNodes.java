@@ -40,7 +40,7 @@ public abstract class MatchDataNodes {
 
     }
 
-    @CoreMethod(names = "to_a", maxArgs = 0)
+    @CoreMethod(names = {"to_a", "captures"}, maxArgs = 0)
     public abstract static class ToANode extends CoreMethodNode {
 
         public ToANode(RubyContext context, SourceSection sourceSection) {

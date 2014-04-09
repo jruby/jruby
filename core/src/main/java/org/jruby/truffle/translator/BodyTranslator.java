@@ -107,7 +107,7 @@ public class BodyTranslator extends Translator {
     /**
      * Global variables which in common usage have frame local semantics.
      */
-    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$~"));
+    public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$~", "$+"));
 
     public BodyTranslator(RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source) {
         super(context, source);
@@ -1919,6 +1919,11 @@ public class BodyTranslator extends Translator {
         final RubyNode[] values = new RubyNode[0];
 
         return new UninitialisedArrayLiteralNode(context, translate(node.getPosition()), values);
+    }
+
+    @Override
+    public RubyNode visitBackRefNode(org.jruby.ast.BackRefNode node) {
+       return new org.jruby.ast.GlobalVarNode(node.getPosition(), "$" + Character.toString(node.getType())).accept(this);
     }
 
     public RubyNode visitLambdaNode(org.jruby.ast.LambdaNode node) {

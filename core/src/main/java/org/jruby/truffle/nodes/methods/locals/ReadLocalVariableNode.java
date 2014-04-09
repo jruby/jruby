@@ -54,7 +54,11 @@ public abstract class ReadLocalVariableNode extends FrameSlotNode implements Rea
     @Override
     public Object isDefined(VirtualFrame frame) {
         if (BodyTranslator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(frameSlot.getIdentifier())) {
-            return getContext().makeString("global-variable");
+            if (frameSlot.getIdentifier().equals("$+") && getObject(frame) == NilPlaceholder.INSTANCE) {
+                return NilPlaceholder.INSTANCE;
+            } else {
+                return getContext().makeString("global-variable");
+            }
         } else {
             return getContext().makeString("local-variable");
         }

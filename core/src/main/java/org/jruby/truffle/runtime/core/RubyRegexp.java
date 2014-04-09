@@ -80,6 +80,8 @@ public class RubyRegexp extends RubyObject {
 
     @CompilerDirectives.SlowPath
     public Object matchOperator(Frame frame, String string) {
+        // TODO(CS) merge with match
+
         final RubyContext context = getRubyClass().getContext();
 
         final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
@@ -92,14 +94,37 @@ public class RubyRegexp extends RubyObject {
             final Object[] values = new Object[region.numRegs];
 
             for (int n = 0; n < region.numRegs; n++) {
+                final int start = region.beg[n];
+                final int end = region.end[n];
+
+                final Object groupString;
+
+                if (start > -1 && end > -1) {
+                    groupString = context.makeString(string.substring(start, end));
+                } else {
+                    groupString = NilPlaceholder.INSTANCE;
+                }
+
+                values[n] = groupString;
+
                 final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$" + n);
 
                 if (slot != null) {
-                    final int start = region.beg[n];
-                    final int end = region.end[n];
-                    final RubyString groupString = context.makeString(string.substring(start, end));
                     frame.setObject(slot, groupString);
-                    values[n] = groupString;
+                }
+            }
+
+            if (values.length > 0) {
+                final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$+");
+
+                int nonNil = values.length - 1;
+
+                while (values[nonNil] == NilPlaceholder.INSTANCE) {
+                    nonNil--;
+                }
+
+                if (slot != null) {
+                    frame.setObject(slot, values[nonNil]);
                 }
             }
 
