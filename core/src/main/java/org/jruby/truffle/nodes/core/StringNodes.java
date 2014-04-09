@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -39,6 +40,30 @@ public abstract class StringNodes {
         @Specialization
         public RubyString add(RubyString a, RubyString b) {
             return new RubyString(a.getRubyClass().getContext().getCoreLibrary().getStringClass(), a.toString() + b.toString());
+        }
+    }
+
+    @CoreMethod(names = "*", minArgs = 1, maxArgs = 1)
+    public abstract static class MulNode extends CoreMethodNode {
+
+        public MulNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public MulNode(MulNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.SlowPath
+        @Specialization
+        public RubyString add(RubyString string, int times) {
+            final StringBuilder builder = new StringBuilder();
+
+            for (int n = 0; n < times; n++) {
+                builder.append(string.toString());
+            }
+
+            return getContext().makeString(builder.toString());
         }
     }
 
