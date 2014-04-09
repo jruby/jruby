@@ -21,6 +21,7 @@ import org.jruby.truffle.runtime.core.array.ObjectArrayStore;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.hash.RubyHash;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
 import java.math.BigInteger;
@@ -302,6 +303,7 @@ public class CoreLibrary {
         objectClass.setConstant("STDOUT", globalVariablesObject.getInstanceVariable("$stdout"));
         objectClass.setConstant("STDERR", globalVariablesObject.getInstanceVariable("$stdout"));
         objectClass.setConstant("RUBY_RELEASE_DATE", context.makeString(Constants.COMPILE_DATE));
+        objectClass.setConstant("RUBY_DESCRIPTION", context.makeString(OutputStrings.getVersionString()));
 
         bignumClass.getSingletonClass().undefMethod("new");
         falseClass.getSingletonClass().undefMethod("new");

@@ -10,12 +10,16 @@
 package org.jruby.truffle.nodes.core;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.core.hash.RubyHash;
 
 /**
  * Represents an expression that is evaluated by running it as a system command via forking and
@@ -35,13 +39,21 @@ public class SystemNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         final RubyContext context = getContext();
 
+        final RubyHash env = (RubyHash) getContext().getCoreLibrary().getObjectClass().lookupConstant("ENV");
+
+        final List<String> envp = new ArrayList<>();
+
+        for (Map.Entry<Object, Object> entry : env.getMap().entrySet()) {
+            envp.add(entry.getKey().toString() + "=" + entry.getValue().toString());
+        }
+
         final String command = child.execute(frame).toString();
 
         Process process;
 
         try {
             // We need to run via bash to get the variable and other expansion we expect
-            process = Runtime.getRuntime().exec(new String[]{"bash", "-c", command});
+            process = Runtime.getRuntime().exec(new String[]{"bash", "-c", command}, envp.toArray(new String[envp.size()]));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

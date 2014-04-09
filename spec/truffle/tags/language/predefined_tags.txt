@@ -53,7 +53,6 @@ fails:The predefined standard objects includes ARGF
 fails:The predefined global constants includes TOPLEVEL_BINDING
 fails:Processing RUBYOPT adds the -I path to $LOAD_PATH
 fails:Processing RUBYOPT sets $DEBUG to true for '-d'
-fails:Processing RUBYOPT prints the version number for '-v'
 fails:Processing RUBYOPT sets $VERBOSE to true for '-w'
 fails:Processing RUBYOPT sets $VERBOSE to true for '-W'
 fails:Processing RUBYOPT sets $VERBOSE to nil for '-W0'
