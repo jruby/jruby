@@ -43,6 +43,8 @@ import org.jruby.runtime.Visibility;
  */
 public class X509Revoked extends RubyObject {
 
+    private static final long serialVersionUID = -6238325248555061878L;
+
     private static ObjectAllocator X509REVOKED_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new X509Revoked(runtime, klass);
@@ -66,10 +68,9 @@ public class X509Revoked extends RubyObject {
     }
 
     @JRubyMethod(name="initialize",rest=true, visibility = Visibility.PRIVATE)
-    public IRubyObject _initialize(IRubyObject[] args, Block unusedBlock) {
-        serial = getRuntime().getNil();
-        time = getRuntime().getNil();
-        extensions = getRuntime().newArray();
+    public IRubyObject _initialize(final ThreadContext context, final IRubyObject[] args, final Block unusedBlock) {
+        serial = time = context.runtime.getNil();
+        extensions = context.runtime.newArray();
         return this;
     }
 
