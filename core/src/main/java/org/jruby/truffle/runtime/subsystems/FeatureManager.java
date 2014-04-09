@@ -32,50 +32,60 @@ public class FeatureManager {
     }
 
     public boolean require(String feature) throws IOException {
-        // Some features are handled specially
+        final Object dataConstantBefore = context.getCoreLibrary().getObjectClass().lookupConstant("DATA");
 
-        if (feature.equals("stringio")) {
-            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "stringio not yet implemented");
-            return true;
-        }
+        try {
+            // Some features are handled specially
 
-        if (feature.equals("rbconfig")) {
-            // Kernel#rbconfig is always there
-            return true;
-        }
-
-        if (feature.equals("pp")) {
-            // Kernel#pretty_inspect is always there
-            return true;
-        }
-
-        // Get the load path
-
-        // Try as a full path
-
-        if (requireInPath("", feature)) {
-            return true;
-        }
-
-        // Try as a path relative to the current director
-
-        if (requireInPath(context.getRuntime().getCurrentDirectory(), feature)) {
-            return true;
-        }
-
-        // Try each load path in turn
-
-        for (Object pathObject : context.getCoreLibrary().getLoadPath().asList()) {
-            final String path = pathObject.toString();
-
-            if (requireInPath(path, feature)) {
+            if (feature.equals("stringio")) {
+                context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "stringio not yet implemented");
                 return true;
             }
+
+            if (feature.equals("rbconfig")) {
+                // Kernel#rbconfig is always there
+                return true;
+            }
+
+            if (feature.equals("pp")) {
+                // Kernel#pretty_inspect is always there
+                return true;
+            }
+
+            // Get the load path
+
+            // Try as a full path
+
+            if (requireInPath("", feature)) {
+                return true;
+            }
+
+            // Try as a path relative to the current director
+
+            if (requireInPath(context.getRuntime().getCurrentDirectory(), feature)) {
+                return true;
+            }
+
+            // Try each load path in turn
+
+            for (Object pathObject : context.getCoreLibrary().getLoadPath().asList()) {
+                final String path = pathObject.toString();
+
+                if (requireInPath(path, feature)) {
+                    return true;
+                }
+            }
+
+            // Didn't find the feature
+
+            throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature));
+        } finally {
+            if (dataConstantBefore == null) {
+                context.getCoreLibrary().getObjectClass().removeConstant("DATA");
+            } else {
+                context.getCoreLibrary().getObjectClass().setConstant("DATA", dataConstantBefore);
+            }
         }
-
-        // Didn't find the feature
-
-        throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature));
     }
 
     public boolean requireInPath(String path, String feature) throws IOException {

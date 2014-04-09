@@ -280,7 +280,43 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "write", maxArgs = 0)
+    @CoreMethod(names = "read", maxArgs = 0)
+    public abstract static class ReadNode extends CoreMethodNode {
+
+        public ReadNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ReadNode(ReadNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString read(RubyFile file) {
+            try {
+                final Reader reader = file.getReader();
+
+                final StringBuilder builder = new StringBuilder();
+
+                while (true) {
+                    final int c = reader.read();
+
+                    if (c == -1) {
+                        break;
+                    }
+
+                    builder.append((char) c);
+                }
+
+                return getContext().makeString(builder.toString());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+    }
+
+    @CoreMethod(names = "write", minArgs = 1, maxArgs = 1)
     public abstract static class WriteNode extends CoreMethodNode {
 
         public WriteNode(RubyContext context, SourceSection sourceSection) {

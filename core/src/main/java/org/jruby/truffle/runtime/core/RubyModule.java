@@ -128,12 +128,16 @@ public class RubyModule extends RubyObject implements LookupNode {
      */
     public void setConstant(String constantName, Object value) {
         assert RubyContext.shouldObjectBeVisible(value);
-
         checkFrozen();
-
         getConstants().put(constantName, value);
         newVersion();
         // TODO(CS): warn when redefining a constant
+    }
+
+    public void removeConstant(String data) {
+        checkFrozen();
+        getConstants().remove(data);
+        newVersion();
     }
 
     public void setClassVariable(String variableName, Object value) {

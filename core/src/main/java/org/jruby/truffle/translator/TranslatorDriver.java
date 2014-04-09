@@ -14,6 +14,7 @@ import com.oracle.truffle.api.debug.DebugManager;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.impl.DefaultSourceSection;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.literal.*;
@@ -25,6 +26,8 @@ import org.jruby.truffle.runtime.methods.*;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+
+import java.io.InputStreamReader;
 
 public class TranslatorDriver {
 
@@ -89,7 +92,7 @@ public class TranslatorDriver {
             }
         }
 
-        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(jruby, 0, false, org.jruby.CompatVersion.RUBY2_1);
+        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(jruby, 0, false, false, parserContext == ParserContext.TOP_LEVEL, true);
 
         // Parse to the JRuby AST
 
@@ -113,6 +116,14 @@ public class TranslatorDriver {
     public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
         // TODO(cs) should this get a new unique method identifier or not?
         final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, new UniqueMethodIdentifier());
+
+        // Get the DATA constant
+
+        final Object data = getData(context);
+
+        if (data != null) {
+            context.getCoreLibrary().getObjectClass().setConstant("DATA", data);
+        }
 
         // All parsing contexts have a visibility slot at their top level
 
@@ -195,6 +206,23 @@ public class TranslatorDriver {
                 debugManager.notifyFinishedLoading(source);
             }
         }
+    }
+
+    private Object getData(RubyContext context) {
+        // TODO(CS) how do we know this has been populated already?
+
+        // TODO(CS) rough translation of File object just to get up and running
+
+        final IRubyObject jrubyData = context.getRuntime().getObject().getConstantNoConstMissing("DATA", false, false);
+
+        if (jrubyData == null) {
+            return null;
+        }
+
+        final org.jruby.RubyFile jrubyFile = (org.jruby.RubyFile) jrubyData;
+        final RubyFile truffleFile = new RubyFile(context.getCoreLibrary().getFileClass(), new InputStreamReader(jrubyFile.getInStream()), null);
+
+        return truffleFile;
     }
 
     public long allocateReturnID() {
