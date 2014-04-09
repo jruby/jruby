@@ -108,11 +108,18 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // 1. In all cases, DynamicScope.getEvalScope wraps the executing static scope in a new local scope.
         // 2. For instance-eval (module-eval, class-eval) scenarios, there is an extra scope that is added to
         //    the stack in ThreadContext.java:preExecuteUnder
-        if (isModuleEval) {
-            return ((IRStaticScope)evalScope.getEnclosingScope().getEnclosingScope()).getIRScope();
-        } else {
-            return ((IRStaticScope)evalScope.getEnclosingScope()).getIRScope();
+
+        // SSS FIXME: Hack! Have to figure out why moduleEvals introduce an extra static scope
+        // and, if possible, eliminate it.
+        //
+        // The unwrapping is based on the binding that is used for the eval.
+        // If the binding came from an instance/module eval, we need to unpeel 3 layers.
+        // If the binding came from a non-module eval, we need to unpeel 2 layers.
+        IRScope s = ((IRStaticScope)evalScope.getEnclosingScope()).getIRScope();
+        if (s == null) {
+            s = ((IRStaticScope)evalScope.getEnclosingScope().getEnclosingScope()).getIRScope();
         }
+        return s;
     }
 
     public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, String backtraceName, RootNode rootNode, IRubyObject self, Block block, boolean isModuleEval) {
