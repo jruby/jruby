@@ -81,7 +81,10 @@ public class OutputStrings {
                 .append("  -X-O        run with ObjectSpace disabled (default; improves performance)\n")
                 .append("  -X+O        run with ObjectSpace enabled (reduces performance)\n")
                 .append("  -X-C        disable all compilation\n")
+                .append("  -X-CIR        disable all compilation and use IR runtime\n")
                 .append("  -X+C        force compilation of all scripts before they are run (except eval)\n")
+                .append("  -X+CIR      force compilation and use IR runtime\n")
+                .append("  -X+JIR      JIT compilation and use IR runtime\n")
                 .append("  -X+T        use Truffle\n");
 
         return sb.toString();

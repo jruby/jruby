@@ -345,6 +345,8 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
                     } else if (extendedOption.equals("+CIR")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCEIR);
+                    } else if (extendedOption.equals("+JIR")) {
+                        config.setCompileMode(RubyInstanceConfig.CompileMode.JITIR);
                     } else if (extendedOption.equals("+T")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
                     } else {

@@ -199,6 +199,8 @@ public class JVMVisitor extends IRVisitor {
     public void codegen(IRScope scope) {
         if (scope instanceof IRScriptBody) {
             codegen((IRScriptBody)scope);
+        } else if (scope instanceof IRMethod) {
+            emitJITTED((IRMethod)scope);
         }
     }
 
@@ -336,6 +338,21 @@ public class JVMVisitor extends IRVisitor {
         emitScope(method, name, METHOD_SIGNATURE);
 
         return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(METHOD_SIGNATURE.type().returnType(), METHOD_SIGNATURE.type().parameterArray()));
+    }
+
+    public Handle emitJITTED(IRMethod method) {
+        String name = JavaNameMangler.mangleMethodName(method.getName() + "_" + methodIndex++);
+        String clsName = jvm.scriptToClass(method.getName());
+        jvm.pushscript(clsName, method.getFileName());
+
+        emitScope(method, "__script__", METHOD_SIGNATURE);
+
+        Handle handle = new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(METHOD_SIGNATURE.type().returnType(), METHOD_SIGNATURE.type().parameterArray()));
+
+        jvm.cls().visitEnd();
+        jvm.popclass();
+
+        return handle;
     }
 
     private void emitClosures(IRScope s) {
@@ -775,7 +792,8 @@ public class JVMVisitor extends IRVisitor {
         jvm.method().adapter.ldc(checkarityinstr.opt);
         jvm.method().adapter.ldc(checkarityinstr.rest);
         jvm.method().adapter.ldc(checkarityinstr.receivesKeywords);
-        jvm.method().adapter.invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, Object[].class, int.class, int.class, int.class, boolean.class));
+        jvm.method().adapter.ldc(checkarityinstr.restKey);
+        jvm.method().adapter.invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, Object[].class, int.class, int.class, int.class, boolean.class, int.class));
     }
 
     @Override

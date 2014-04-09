@@ -225,8 +225,7 @@ public final class Ruby {
         
         getJRubyClassLoader(); // force JRubyClassLoader to init if possible
         
-        if (config.getCompileMode() == CompileMode.OFFIR ||
-                config.getCompileMode() == CompileMode.FORCEIR) {
+        if (config.getCompileMode().isIR()) {
             this.staticScopeFactory = new IRStaticScopeFactory(this);
         } else {
             this.staticScopeFactory = new StaticScopeFactory(this);
@@ -275,8 +274,7 @@ public final class Ruby {
     void reinitialize(boolean reinitCore) {
         this.doNotReverseLookupEnabled = true;
 
-        if (config.getCompileMode() == CompileMode.OFFIR ||
-                config.getCompileMode() == CompileMode.FORCEIR) {
+        if (config.getCompileMode().isIR()) {
             this.staticScopeFactory = new IRStaticScopeFactory(this);
         } else {
             this.staticScopeFactory = new StaticScopeFactory(this);
@@ -857,7 +855,7 @@ public final class Ruby {
            if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
                assert parseResult instanceof RootNode;
                return getTruffleBridge().toJRuby(getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) parseResult));
-           } else if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
+           } else if (getInstanceConfig().getCompileMode().isIR()) {
                return Interpreter.getInstance().execute(this, parseResult, self);
            } else {
                assert parseResult instanceof RootNode;
@@ -876,7 +874,7 @@ public final class Ruby {
             if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
                 assert rootNode instanceof RootNode;
                 return getTruffleBridge().toJRuby(getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) rootNode));
-            } else if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
+            } else if (getInstanceConfig().getCompileMode().isIR()) {
                 // FIXME: retrieve from IRManager unless lifus does it later
                 return Interpreter.getInstance().execute(this, rootNode, self);
             } else {

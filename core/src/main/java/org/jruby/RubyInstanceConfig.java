@@ -1497,7 +1497,7 @@ public class RubyInstanceConfig {
 	}
 
     public enum CompileMode {
-        JIT, FORCE, FORCEIR, OFF, OFFIR, TRUFFLE;
+        JIT, FORCE, FORCEIR, OFF, OFFIR, TRUFFLE, JITIR;
 
         public boolean shouldPrecompileCLI() {
             switch (this) {
@@ -1509,14 +1509,21 @@ public class RubyInstanceConfig {
 
         public boolean shouldJIT() {
             switch (this) {
-            case JIT: case FORCE: case FORCEIR:
+            case JIT: case FORCE: case FORCEIR: case JITIR:
                 return true;
             }
             return false;
         }
 
         public boolean shouldPrecompileAll() {
-            return this == FORCE;
+            return this == FORCE || this == FORCEIR;
+        }
+
+        /**
+         * Whether to use the JRuby 9000+ IR runtime instead of the earlier AST runtime.
+         */
+        public boolean isIR() {
+            return this == OFFIR || this == FORCEIR || this == JITIR;
         }
     }
     

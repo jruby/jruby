@@ -19,7 +19,9 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.ir.Interp;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
@@ -369,7 +371,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 0, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 0, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self);
@@ -386,7 +388,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 1, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 1, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0);
@@ -403,7 +405,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 2, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 2, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, arg1);
@@ -420,7 +422,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 3, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, arg1, arg2);
@@ -437,7 +439,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 3, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, args);
@@ -454,7 +456,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 0, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 0, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self);
@@ -472,7 +474,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 0, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 0, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, block);
@@ -490,7 +492,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 1, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 1, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, block);
@@ -508,7 +510,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 2, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 2, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, arg1, block);
@@ -526,7 +528,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 3, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, arg1, arg2, block);
@@ -544,7 +546,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 3, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, args, block);
@@ -562,7 +564,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 0, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 0, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, block);
@@ -599,7 +601,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 1, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 1, false);
 
         mh = foldArguments(
                 mh,
@@ -619,7 +621,7 @@ public class Bootstrap {
             new int[]{1, 0, 2, 3, 4},
     };
 
-    private static MethodHandle getHandle(RubyClass selfClass, SwitchPoint switchPoint, InvokeSite site, DynamicMethod method, int arity, boolean block) throws Throwable {
+    private static MethodHandle getHandle(RubyClass selfClass, String fallbackName, SwitchPoint switchPoint, InvokeSite site, DynamicMethod method, int arity, boolean block) throws Throwable {
         MethodHandle mh = null;
         SmartBinder binder = null;
         if (method.getNativeCall() != null) {
@@ -679,29 +681,38 @@ public class Bootstrap {
 
         // attempt IR direct binding
         // TODO: this will have to expand when we start specializing arities
-        if (mh == null && method instanceof CompiledIRMethod) {
-            // SSS FIXME: What about frame/scope/visibility?
-            mh = (MethodHandle)method.getHandle();
-
-            binder = SmartBinder.from(site.signature)
-                    .drop("caller");
-
-            // IR compiled methods only support varargs right now
-            if (site.arity == -1) {
-                // already [], nothing to do
-            } else if (site.arity == 0) {
-                binder = binder.insert(2, "args", IRubyObject.NULL_ARRAY);
-            } else {
-                binder = binder.collect("args", "arg.*");
+        CompiledIRMethod compiledIRMethod = null;
+        if (mh == null) {
+            if (method instanceof CompiledIRMethod) {
+                compiledIRMethod = (CompiledIRMethod)method;
+            } else if (method instanceof InterpretedIRMethod) {
+                compiledIRMethod = ((InterpretedIRMethod)method).getCompiledIRMethod();
             }
 
-            if (!block) {
-                binder = binder.append("block", Block.class, Block.NULL_BLOCK);
+            if (compiledIRMethod != null) {
+                // SSS FIXME: What about frame/scope/visibility?
+                mh = (MethodHandle)compiledIRMethod.getHandle();
+
+                binder = SmartBinder.from(site.signature)
+                        .drop("caller");
+
+                // IR compiled methods only support varargs right now
+                if (site.arity == -1) {
+                    // already [], nothing to do
+                } else if (site.arity == 0) {
+                    binder = binder.insert(2, "args", IRubyObject.NULL_ARRAY);
+                } else {
+                    binder = binder.collect("args", "arg.*");
+                }
+
+                if (!block) {
+                    binder = binder.append("block", Block.class, Block.NULL_BLOCK);
+                }
+
+                binder = binder.insert(1, "scope", StaticScope.class, compiledIRMethod.getStaticScope());
+
+                mh = binder.invoke(mh).handle();
             }
-
-            binder = binder.insert(1, "scope", StaticScope.class, ((CompiledIRMethod) method).getStaticScope());
-
-            mh = binder.invoke(mh).handle();
         }
 
         if (mh == null) {
@@ -723,7 +734,7 @@ public class Bootstrap {
         }
         fallback = fallbackBinder
                 .insert(0, "site", site)
-                .invokeStatic(LOOKUP, Bootstrap.class, "invokeSelf").handle();
+                .invokeStatic(LOOKUP, Bootstrap.class, fallbackName).handle();
 
         if (mh == null) {
             return fallback;
@@ -740,8 +751,12 @@ public class Bootstrap {
         return mh;
     }
 
-    public static IRubyObject invokeSelfSimple(String name, ThreadContext context, IRubyObject self) {
-        return self.getMetaClass().invoke(context, self, name, CallType.FUNCTIONAL);
+    public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
+        return self.getMetaClass().invoke(context, self, site.name, CallType.FUNCTIONAL, block);
+    }
+
+    public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self) {
+        return self.getMetaClass().invoke(context, self, site.name, CallType.FUNCTIONAL);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0) throws Throwable {
@@ -755,14 +770,14 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 1, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 1, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0);
     }
 
-    public static IRubyObject invokeSelfSimple(String name, ThreadContext context, IRubyObject self, IRubyObject arg0) {
-        return self.getMetaClass().invoke(context, self, name, arg0, CallType.FUNCTIONAL);
+    public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0) {
+        return self.getMetaClass().invoke(context, self, site.name, arg0, CallType.FUNCTIONAL);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1) throws Throwable {
@@ -776,14 +791,14 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0, arg1);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 2, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 2, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, arg1);
     }
 
-    public static IRubyObject invokeSelfSimple(String name, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
-        return self.getMetaClass().invoke(context, self, name, arg0, arg1, CallType.FUNCTIONAL);
+    public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
+        return self.getMetaClass().invoke(context, self, site.name, arg0, arg1, CallType.FUNCTIONAL);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) throws Throwable {
@@ -797,14 +812,14 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0, arg1, arg2);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 3, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, arg1, arg2);
     }
 
-    public static IRubyObject invokeSelfSimple(String name, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return self.getMetaClass().invoke(context, self, name, arg0, arg1, arg2, CallType.FUNCTIONAL);
+    public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return self.getMetaClass().invoke(context, self, site.name, arg0, arg1, arg2, CallType.FUNCTIONAL);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args) throws Throwable {
@@ -818,19 +833,14 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, args);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 3, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.asSpreader(IRubyObject[].class, args.length).invokeWithArguments(context, caller, self, args);
     }
 
-    public static IRubyObject invokeSelfSimple(String name, ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        return self.getMetaClass().invoke(context, self, name, args, CallType.FUNCTIONAL);
-    }
-
-    public static IRubyObject invokeSelfSimple(String name, ThreadContext context, IRubyObject self, Block block) throws Throwable {
-        // TODO: literal block wrapper for break, etc
-        return self.getMetaClass().invoke(context, self, name, CallType.FUNCTIONAL);
+    public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args) {
+        return self.getMetaClass().invoke(context, self, site.name, args, CallType.FUNCTIONAL);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
@@ -845,15 +855,15 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 1, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 1, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, block);
     }
 
-    public static IRubyObject invokeSelfSimple(String name, ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
+    public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
         // TODO: literal block wrapper for break, etc
-        return self.getMetaClass().invoke(context, self, name, arg0, CallType.FUNCTIONAL);
+        return self.getMetaClass().invoke(context, self, site.name, arg0, CallType.FUNCTIONAL, block);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
@@ -868,15 +878,15 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0, arg1);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 2, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 2, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, arg1, block);
     }
 
-    public static IRubyObject invokeSelfSimple(String name, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
+    public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
         // TODO: literal block wrapper for break, etc
-        return self.getMetaClass().invoke(context, self, name, arg0, arg1, CallType.FUNCTIONAL);
+        return self.getMetaClass().invoke(context, self, site.name, arg0, arg1, CallType.FUNCTIONAL, block);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
@@ -891,15 +901,15 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0, arg1, arg2);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 3, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, arg1, arg2, block);
     }
 
-    public static IRubyObject invokeSelfSimple(String name, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
+    public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
         // TODO: literal block wrapper for break, etc
-        return self.getMetaClass().invoke(context, self, name, arg0, arg1, arg2, CallType.FUNCTIONAL);
+        return self.getMetaClass().invoke(context, self, site.name, arg0, arg1, arg2, CallType.FUNCTIONAL, block);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
@@ -914,16 +924,16 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, args);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 3, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, true);
 
         site.setTarget(mh);
         // TODO: this is not efficient since it will create another new handle
         return (IRubyObject)MethodHandles.insertArguments(mh, site.signature.argCount() - 1, block).asSpreader(IRubyObject[].class, args.length).invokeWithArguments(context, caller, self, args);
     }
 
-    public static IRubyObject invokeSelfSimple(String name, ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
+    public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
         // TODO: literal block wrapper for break, etc
-        return self.getMetaClass().invoke(context, self, name, args, CallType.FUNCTIONAL);
+        return self.getMetaClass().invoke(context, self, site.name, args, CallType.FUNCTIONAL, block);
     }
 
     public static IRubyObject ivarGet(VariableSite site, IRubyObject self) throws Throwable {
