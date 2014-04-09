@@ -94,7 +94,7 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
         } else if (helperMethod.equals("handleBreakAndReturnsInLambdas")) {
             Object exc = args[0].retrieve(context, self, currDynScope, temp);
             return IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, scope, exc, blockType);
-        } else if (helperMethod.equals("isBackrefDefined")) {
+        } else if (helperMethod.equals("isDefinedBackref")) {
             return IRRuntimeHelpers.isDefinedBackref(context);
         } else if (helperMethod.equals("isDefinedNthRef")) {
             Object exc = args[0].retrieve(context, self, currDynScope, temp);
