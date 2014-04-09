@@ -131,7 +131,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             RubyInstanceConfig config = runtime.getInstanceConfig();
             if (config.getCompileMode() == RubyInstanceConfig.CompileMode.JITIR) {
                 try {
-                    final Class compiled = JVMVisitor.compile(runtime, method, context.runtime.getJRubyClassLoader());
+                    final Class compiled = JVMVisitor.compile(runtime, method, new ClassCache.OneShotClassLoader(context.runtime.getJRubyClassLoader()));
                     final StaticScope staticScope = method.getStaticScope();
                     final IRubyObject runtimeTopSelf = runtime.getTopSelf();
                     staticScope.setModule(runtimeTopSelf.getMetaClass());

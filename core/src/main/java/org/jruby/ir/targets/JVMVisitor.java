@@ -140,6 +140,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ByteList;
+import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JRubyClassLoader;
 
 import java.util.ArrayList;
@@ -175,7 +176,7 @@ public class JVMVisitor extends IRVisitor {
         this.jvm = new JVM();
     }
 
-    public static Class compile(Ruby ruby, IRScope scope, JRubyClassLoader jrubyClassLoader) {
+    public static Class compile(Ruby ruby, IRScope scope, ClassDefiningClassLoader jrubyClassLoader) {
         // run compiler
         JVMVisitor target = new JVMVisitor();
 
