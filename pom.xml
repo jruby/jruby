@@ -415,27 +415,6 @@
 
   <profiles>
     <profile>
-      <id>snapshots</id>
-      <activation>
-        <file>
-          <exists>/builds/snapshots</exists>
-        </file>
-      </activation>
-      <build>
-        <defaultGoal>deploy</defaultGoal>
-      </build>
-      <distributionManagement>
-        <repository>
-          <id>local releases</id>
-          <url>file:/builds/snapshots/maven</url>
-        </repository>
-        <snapshotRepository>
-          <id>local snapshots</id>
-          <url>file:/builds/snapshots/maven</url>
-        </snapshotRepository>
-      </distributionManagement>
-    </profile>
-    <profile>
       <id>bootstrap</id>
       <modules>
         <module>test</module>
@@ -515,20 +494,25 @@
       </modules>
     </profile>
     <profile>
-      <id>repo</id>
-      <distributionManagement>
-	<repository>
-	  <id>local releases</id>
-	  <url>file:///${jruby.basedir}/target</url>
-	</repository>
-	<snapshotRepository>
-	  <id>local snapshots</id>
-	  <url>file:///${jruby.basedir}/target</url>
-	</snapshotRepository>
-      </distributionManagement>
+      <id>snapshots</id>
+      <activation>
+        <file>
+          <exists>/builds/snapshots</exists>
+        </file>
+      </activation>
       <build>
-	<defaultGoal>deploy</defaultGoal>
+        <defaultGoal>deploy</defaultGoal>
       </build>
+      <distributionManagement>
+        <repository>
+          <id>local releases</id>
+          <url>file:/builds/snapshots/maven</url>
+        </repository>
+        <snapshotRepository>
+          <id>local snapshots</id>
+          <url>file:/builds/snapshots/maven</url>
+        </snapshotRepository>
+      </distributionManagement>
     </profile>
   </profiles>
   <reporting>
