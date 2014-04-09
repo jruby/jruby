@@ -213,8 +213,9 @@ public class X509CRL extends RubyObject {
 
     @Override
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    public IRubyObject initialize_copy(IRubyObject obj) {
-        System.err.println("WARNING: unimplemented method called: CRL#init_copy");
+    public IRubyObject initialize_copy(final IRubyObject obj) {
+        final ThreadContext context = getRuntime().getCurrentContext();
+        warn(context, "WARNING: unimplemented method called: CRL#init_copy");
         if ( this == obj ) return this;
         checkFrozen(); return this;
     }
