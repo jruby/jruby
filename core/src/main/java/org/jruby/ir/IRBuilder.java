@@ -1424,6 +1424,9 @@ public class IRBuilder {
             Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), s, "super");
             return buildDefnCheckIfThenPaths(s, undefLabel, superDefnVal);
         }
+        case VCALLNODE:
+            return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_METHOD,
+                    new Operand[] { s.getSelf(), new StringLiteral(((VCallNode) node).getName()) }));
         case YIELDNODE:
             return buildDefinitionCheck(s, new BlockGivenInstr(s.createTemporaryVariable(), getImplicitBlockArg(s)), "yield");
         case ZSUPERNODE:
@@ -1499,8 +1502,6 @@ public class IRBuilder {
             Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "method");
             return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
         }
-        case VCALLNODE:
-            return buildDefinitionCheck(s, new IsMethodBoundInstr(s.createTemporaryVariable(), s.getSelf(), new StringLiteral(((VCallNode) node).getName())), "method");
         case CALLNODE: {
             // SSS FIXME: Is there a reason to do this all with low-level IR?
             // Can't this all be folded into a Java method that would be part

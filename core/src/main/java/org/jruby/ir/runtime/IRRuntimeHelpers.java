@@ -542,6 +542,11 @@ public class IRRuntimeHelpers {
                 context.runtime.getDefinedMessage(DefinedMessage.INSTANCE_VARIABLE) : context.nil;
     }
 
+    public static IRubyObject isDefinedMethod(ThreadContext context, IRubyObject receiver, String name) {
+        return receiver.getMetaClass().isMethodBound(name, false) ?
+                context.runtime.getDefinedMessage(DefinedMessage.METHOD) : context.nil;
+    }
+
     public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver) {
         boolean flag = false;
         String frameName = context.getFrameName();
