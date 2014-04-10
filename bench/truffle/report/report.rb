@@ -157,6 +157,10 @@ end
 time_budget_per_run = time_budget / benchmarks.length / rubies_to_run.length
 puts time_budget_per_run.to_s + "s for each combination of benchmark and implementation"
 
+if time_budget_per_run < 10
+  puts "WARNING: time to run each benchmark is very low - increase the budget"
+end
+
 scores = {}
 
 benchmarks.each do |benchmark|
