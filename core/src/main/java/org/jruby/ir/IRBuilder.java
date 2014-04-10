@@ -1495,10 +1495,9 @@ public class IRBuilder {
              *    return mc.methodBound(meth) ? buildGetArgumentDefn(..) : false
              * ----------------------------------------------------------------- */
             Label undefLabel = s.getNewLabel();
-            Variable tmpVar = s.createTemporaryVariable();
-            StringLiteral mName = new StringLiteral(((FCallNode)node).getName());
-            addInstr(s, new IsMethodBoundInstr(tmpVar, s.getSelf(), mName));
-            addInstr(s, BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
+            Variable tmpVar = addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_METHOD,
+                    new Operand[] { s.getSelf(), new StringLiteral(((FCallNode) node).getName()) }));
+            addInstr(s, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
             Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "method");
             return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
         }
