@@ -119,7 +119,6 @@ import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
 import org.jruby.ir.instructions.defined.GetBackrefInstr;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
-import org.jruby.ir.instructions.defined.HasInstanceVarInstr;
 import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
@@ -1717,19 +1716,6 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void GetErrorInfoInstr(GetErrorInfoInstr geterrorinfoinstr) {
         super.GetErrorInfoInstr(geterrorinfoinstr);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void HasInstanceVarInstr(HasInstanceVarInstr hasinstancevarinstr) {
-        IRBytecodeAdapter m = jvm.method();
-        // TODO: This is suboptimal, not caching ivar offset at all
-        m.loadRuntime();
-        visit(hasinstancevarinstr.getObject());
-        m.adapter.invokeinterface(p(IRubyObject.class), "getInstanceVariables", sig(InstanceVariables.class));
-        m.adapter.ldc(hasinstancevarinstr.getName().string);
-        m.adapter.invokeinterface(p(InstanceVariables.class), "hasInstanceVariable", sig(boolean.class, String.class));
-        m.adapter.invokevirtual(p(Ruby.class), "newBoolean", sig(RubyBoolean.class, boolean.class));
-        jvmStoreLocal(hasinstancevarinstr.getResult());
     }
 
     @Override

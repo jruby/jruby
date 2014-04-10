@@ -6,7 +6,6 @@ import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
 import org.jruby.ir.instructions.defined.GetBackrefInstr;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
-import org.jruby.ir.instructions.defined.HasInstanceVarInstr;
 import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
@@ -118,7 +117,6 @@ public abstract class IRVisitor {
     public void GetBackrefInstr(GetBackrefInstr getbackrefinstr) { error(getbackrefinstr); }
     public void GetDefinedConstantOrMethodInstr(GetDefinedConstantOrMethodInstr getdefinedconstantormethodinstr) { error(getdefinedconstantormethodinstr); }
     public void GetErrorInfoInstr(GetErrorInfoInstr geterrorinfoinstr) { error(geterrorinfoinstr); }
-    public void HasInstanceVarInstr(HasInstanceVarInstr hasinstancevarinstr) { error(hasinstancevarinstr); }
     public void IsMethodBoundInstr(IsMethodBoundInstr ismethodboundinstr) { error(ismethodboundinstr); }
     public void MethodDefinedInstr(MethodDefinedInstr methoddefinedinstr) { error(methoddefinedinstr); }
     public void MethodIsPublicInstr(MethodIsPublicInstr methodispublicinstr) { error(methodispublicinstr); }

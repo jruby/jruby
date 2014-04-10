@@ -522,7 +522,11 @@ public class IRRuntimeHelpers {
         }
 
         return context.nil;
+    }
 
+    public static IRubyObject isDefinedInstanceVar(ThreadContext context, IRubyObject receiver, String name) {
+        return receiver.getInstanceVariables().hasInstanceVariable(name) ?
+                context.runtime.getDefinedMessage(DefinedMessage.INSTANCE_VARIABLE) : context.nil;
     }
 
     protected static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule frameClass, String methodName) {

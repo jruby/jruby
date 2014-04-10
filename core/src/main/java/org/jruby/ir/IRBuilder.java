@@ -9,7 +9,6 @@ import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
-import org.jruby.ir.instructions.defined.HasInstanceVarInstr;
 import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
@@ -1413,6 +1412,9 @@ public class IRBuilder {
             return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_NTH_REF,
                     new Operand[] { new Fixnum(((NthRefNode) node).getMatchNumber()) }));
         }
+        case INSTVARNODE:
+            return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_INSTANCE_VAR,
+                    new Operand[] { s.getSelf(), new StringLiteral(((InstVarNode) node).getName()) }));
         case CONSTNODE: {
             Label defLabel = s.getNewLabel();
             Label doneLabel = s.getNewLabel();
@@ -1429,8 +1431,6 @@ public class IRBuilder {
             addInstr(s, new LabelInstr(doneLabel));
             return tmpVar;
         }
-        case INSTVARNODE:
-            return buildDefinitionCheck(s, new HasInstanceVarInstr(s.createTemporaryVariable(), s.getSelf(), new StringLiteral(((InstVarNode) node).getName())), "instance-variable");
         case YIELDNODE:
             return buildDefinitionCheck(s, new BlockGivenInstr(s.createTemporaryVariable(), getImplicitBlockArg(s)), "yield");
         case COLON3NODE: case COLON2NODE: {

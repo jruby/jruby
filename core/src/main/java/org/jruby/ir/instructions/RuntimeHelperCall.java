@@ -24,7 +24,7 @@ import org.jruby.ir.operands.StringLiteral;
 public class RuntimeHelperCall extends Instr implements ResultInstr {
     public enum Methods {
         HANDLE_PROPAGATE_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
-        IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL,
+        IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL, IS_DEFINED_INSTANCE_VAR,
     };
 
     Variable  result;
@@ -104,6 +104,10 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
                         (int) ((RubyFixnum) args[0].retrieve(context, self, currDynScope, temp)).getLongValue());
             case IS_DEFINED_GLOBAL:
                 return IRRuntimeHelpers.isDefinedGlobal(context, args[0].retrieve(context, self, currDynScope, temp).toString());
+            case IS_DEFINED_INSTANCE_VAR:
+                return IRRuntimeHelpers.isDefinedInstanceVar(context,
+                        (IRubyObject) args[0].retrieve(context, self, currDynScope, temp),
+                        args[1].retrieve(context, self, currDynScope, temp).toString());
         }
 
         throw new RuntimeException("Unknown IR runtime helper method: " + helperMethod + "; INSTR: " + this);
