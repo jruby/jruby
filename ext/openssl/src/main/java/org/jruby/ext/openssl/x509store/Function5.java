@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -32,12 +32,12 @@ package org.jruby.ext.openssl.x509store;
  *
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
-public interface Function5 {
-    public static class Empty implements Function5 {
+interface Function5<T, U, V, X, Y> {
+    static class Empty implements Function5 {
         public int call(Object arg0,Object arg1,Object arg2,Object arg3,Object arg4) {
             return -1;
         }
     }
     public static final Function5.Empty EMPTY = new Empty();
-    int call(Object arg0,Object arg1,Object arg2,Object arg3,Object arg4) throws Exception;
+    int call(T arg0, U arg1, V arg2, X arg3, Y arg4) throws Exception;
 }// Function5
