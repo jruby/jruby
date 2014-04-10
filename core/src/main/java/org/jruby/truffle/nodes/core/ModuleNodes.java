@@ -765,4 +765,22 @@ public abstract class ModuleNodes {
 
     }
 
+    @CoreMethod(names = "const_set", minArgs = 2, maxArgs = 2)
+    public abstract static class ConstSetNode extends CoreMethodNode {
+
+        public ConstSetNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ConstSetNode(ConstSetNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyModule setConstant(RubyModule module, RubyString name, Object object) {
+            module.setConstant(name.toString(), object);
+            return module;
+        }
+
+    }
 }
