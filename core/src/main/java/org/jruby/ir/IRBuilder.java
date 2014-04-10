@@ -330,10 +330,8 @@ public class IRBuilder {
 
         if (s != null) {
             LocalVariable v = null;
-            if (s instanceof IRMethod) {
-                v = ((IRMethod)s).getLocalVariable(Variable.BLOCK, 0);
-            } else if (s instanceof IRMetaClassBody) {
-                v = ((IRMetaClassBody)s).getLocalVariable(Variable.BLOCK, 0);
+            if (s instanceof IRMethod || s instanceof IRMetaClassBody) {
+                v = s.getLocalVariable(Variable.BLOCK, 0);
             }
 
             if (v != null) {
