@@ -118,7 +118,6 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
-import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.BlockBody;
@@ -1704,11 +1703,6 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void MethodDefinedInstr(MethodDefinedInstr methoddefinedinstr) {
         super.MethodDefinedInstr(methoddefinedinstr);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void MethodIsPublicInstr(MethodIsPublicInstr methodispublicinstr) {
-        super.MethodIsPublicInstr(methodispublicinstr);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     @Override

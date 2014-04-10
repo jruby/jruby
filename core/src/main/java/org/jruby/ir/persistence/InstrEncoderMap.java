@@ -91,7 +91,6 @@ import org.jruby.ir.instructions.ZSuperInstr;
 import org.jruby.ir.instructions.defined.DefinedObjectNameInstr;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
-import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Operand;
@@ -161,7 +160,6 @@ public class InstrEncoderMap {
             case MATCH2: encodeMatch2Instr((Match2Instr) instr); break;
             case MATCH3: encodeMatch3Instr((Match3Instr) instr); break;
             case METHOD_DEFINED: encodeMethodDefinedInstr((MethodDefinedInstr) instr); break;
-            case METHOD_IS_PUBLIC: encodeMethodIsPublicInstr((MethodIsPublicInstr) instr); break;
             case METHOD_LOOKUP: encodeMethodLookupInstr((MethodLookupInstr) instr); break;
             case NONLOCAL_RETURN: encodeNonlocalReturnInstr((NonlocalReturnInstr) instr); break;
             case NOP: /* no state */ break;
@@ -423,10 +421,6 @@ public class InstrEncoderMap {
     }
 
     private void encodeMethodDefinedInstr(MethodDefinedInstr instr) {
-        encodeDefinedObjectNameInstr(instr);
-    }
-
-    private void encodeMethodIsPublicInstr(MethodIsPublicInstr instr) {
         encodeDefinedObjectNameInstr(instr);
     }
 
