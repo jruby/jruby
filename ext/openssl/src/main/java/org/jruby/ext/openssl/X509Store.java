@@ -28,7 +28,6 @@
 package org.jruby.ext.openssl;
 
 import org.jruby.Ruby;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
@@ -85,17 +84,23 @@ public class X509Store extends RubyObject {
     final Store getStore() { return store; }
 
     @JRubyMethod(name="initialize", rest=true, visibility = Visibility.PRIVATE)
-    public IRubyObject _initialize(IRubyObject[] args, Block block) {
-        store.setVerifyCallbackFunction(ossl_verify_cb);
-        this.set_verify_callback(getRuntime().getNil());
-        this.setInstanceVariable("@flags",RubyFixnum.zero(getRuntime()));
-        this.setInstanceVariable("@purpose",RubyFixnum.zero(getRuntime()));
-        this.setInstanceVariable("@trust",RubyFixnum.zero(getRuntime()));
+    public IRubyObject _initialize(final ThreadContext context, final IRubyObject[] args, final Block block) {
+        final Ruby runtime = context.runtime;
 
-        this.setInstanceVariable("@error",getRuntime().getNil());
-        this.setInstanceVariable("@error_string",getRuntime().getNil());
-        this.setInstanceVariable("@chain",getRuntime().getNil());
-        this.setInstanceVariable("@time",getRuntime().getNil());
+        final IRubyObject nil = runtime.getNil();
+        final IRubyObject zero = RubyFixnum.zero(runtime);
+
+        store.setVerifyCallbackFunction(verifyCallback);
+
+        this.set_verify_callback(nil);
+        this.setInstanceVariable("@flags", zero);
+        this.setInstanceVariable("@purpose", zero);
+        this.setInstanceVariable("@trust", zero);
+
+        this.setInstanceVariable("@error", nil);
+        this.setInstanceVariable("@error_string", nil);
+        this.setInstanceVariable("@chain", nil);
+        this.setInstanceVariable("@time", nil);
         return this;
     }
 
@@ -209,30 +214,31 @@ public class X509Store extends RubyObject {
         return result;
     }
 
-    public final static Store.VerifyCallbackFunction ossl_verify_cb = new Store.VerifyCallbackFunction() {
+    private static Store.VerifyCallbackFunction verifyCallback = new Store.VerifyCallbackFunction() {
 
-        public int call(Object a1, Object a2) throws Exception {
-            StoreContext ctx = (StoreContext) a2;
-            int ok = ((Integer) a1).intValue();
-            IRubyObject proc = (IRubyObject) ctx.getExtraData(1);
-            if (null == proc) {
-                proc = (IRubyObject) ctx.ctx.getExtraData(0);
+        public int call(final StoreContext context, Integer outcome) {
+            int ok = outcome.intValue();
+            IRubyObject proc = (IRubyObject) context.getExtraData(1);
+            if (proc == null) {
+                proc = (IRubyObject) context.getStore().getExtraData(0);
             }
-            if (null == proc) {
-                return ok;
-            }
-            if (!proc.isNil()) {
-                Ruby rt = proc.getRuntime();
-                RubyClass cStoreContext = Utils.getClassFromPath(rt, "OpenSSL::X509::StoreContext");
-                X509StoreContext rctx = new X509StoreContext(rt, cStoreContext, ctx);
-                RubyBoolean rok = rt.newBoolean(ok != 0);
-                IRubyObject ret = proc.callMethod(rt.getCurrentContext(), "call", new IRubyObject[]{rok, rctx});
+
+            if ( proc == null ) return ok;
+
+            if ( ! proc.isNil() ) {
+                final Ruby runtime = proc.getRuntime();
+                final RubyClass _StoreContext = getX509StoreContext(runtime);
+                X509StoreContext rubyContext = new X509StoreContext(runtime, _StoreContext, context);
+                IRubyObject ret = proc.callMethod(runtime.getCurrentContext(), "call",
+                    new IRubyObject[]{ runtime.newBoolean(ok != 0), rubyContext }
+                );
                 if (ret.isTrue()) {
-                    ctx.setError(X509Utils.V_OK);
+                    context.setError(X509Utils.V_OK);
                     ok = 1;
-                } else {
-                    if (ctx.getError() == X509Utils.V_OK) {
-                        ctx.setError(X509Utils.V_ERR_CERT_REJECTED);
+                }
+                else {
+                    if (context.getError() == X509Utils.V_OK) {
+                        context.setError(X509Utils.V_ERR_CERT_REJECTED);
                     }
                     ok = 0;
                 }

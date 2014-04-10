@@ -127,7 +127,7 @@ public class X509StoreContext extends RubyObject {
         final Ruby runtime = context.runtime;
         storeContext.setExtraData(1, getInstanceVariable("@verify_callback"));
         try {
-            int result = storeContext.verifyCertificate();
+            final int result = storeContext.verifyCertificate();
             return result != 0 ? runtime.getTrue() : runtime.getFalse();
         }
         catch (Exception e) {

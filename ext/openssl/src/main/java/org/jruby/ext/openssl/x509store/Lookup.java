@@ -64,11 +64,12 @@ import org.jruby.ext.openssl.SecurityHelper;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class Lookup {
-    public boolean init;
-    public boolean skip;
-    public LookupMethod method;
-    public Object methodData;
-    public Store store;
+
+    boolean init;
+    boolean skip;
+    LookupMethod method;
+    Object methodData;
+    Store store;
 
     /**
      * c: X509_LOOKUP_new
@@ -115,15 +116,13 @@ public class Lookup {
     /**
      * c: X509_LOOKUP_ctrl
      */
-    public int control(int cmd, String argc, long argl, String[] ret) throws Exception {
-        if(method == null) {
-            return -1;
+    public int control(final int cmd, final String argc, final long argl, final String[] ret) throws Exception {
+        if ( method == null ) return -1;
+
+        if ( method.control != null && method.control != Function5.EMPTY ) {
+            return method.control.call(this, Integer.valueOf(cmd), argc, Long.valueOf(argl), ret);
         }
-        if(method.control != null && method.control != Function5.EMPTY) {
-            return method.control.call(this,new Integer(cmd),argc,new Long(argl),ret);
-        } else {
-            return 1;
-        }
+        return 1;
     }
 
     /**
@@ -284,13 +283,12 @@ public class Lookup {
                 store.addCertificate(certificate);
                 count++;
             }
-        } finally {
-            if (fin != null) {
-                try {
-                    fin.close();
-                } catch (Exception ignored) {
-                }
+        }
+        finally {
+            try {
+                fin.close();
             }
+            catch (Exception ignored) {}
         }
         return count;
     }
@@ -317,7 +315,7 @@ public class Lookup {
      * c: X509_LOOKUP_free
      */
     public void free() throws Exception {
-        if(method != null && method.free != null && method.free != Function1.EMPTY) {
+        if ( method != null && method.free != null && method.free != Function1.EMPTY ) {
             method.free.call(this);
         }
     }
@@ -326,10 +324,8 @@ public class Lookup {
      * c: X509_LOOKUP_init
      */
     public int init() throws Exception {
-        if(method == null) {
-            return 0;
-        }
-        if(method.init != null && method.init != Function1.EMPTY) {
+        if ( method == null ) return 0;
+        if ( method.init != null && method.init != Function1.EMPTY ) {
             return method.init.call(this);
         }
         return 1;
@@ -338,54 +334,51 @@ public class Lookup {
     /**
      * c: X509_LOOKUP_by_subject
      */
-    public int bySubject(int type, Name name,X509Object[] ret) throws Exception {
-        if(method == null || method.getBySubject == null || method.getBySubject == Function4.EMPTY) {
+    public int bySubject(final int type, final Name name, final X509Object[] ret) throws Exception {
+        if ( method == null || method.getBySubject == null || method.getBySubject == Function4.EMPTY ) {
             return X509Utils.X509_LU_FAIL;
         }
-        if(skip) {
-            return 0;
-        }
-        return method.getBySubject.call(this,new Integer(type),name,ret);
+        if ( skip ) return 0;
+        return method.getBySubject.call(this, Integer.valueOf(type), name, ret);
     }
 
     /**
      * c: X509_LOOKUP_by_issuer_serial
      */
-    public int byIssuerSerialNumber(int type, Name name,BigInteger serial, X509Object[] ret) throws Exception {
-        if(method == null || method.getByIssuerSerialNumber == null || method.getByIssuerSerialNumber == Function5.EMPTY) {
+    public int byIssuerSerialNumber(final int type, final Name name, final BigInteger serial, final X509Object[] ret) throws Exception {
+        if ( method == null || method.getByIssuerSerialNumber == null || method.getByIssuerSerialNumber == Function5.EMPTY ) {
             return X509Utils.X509_LU_FAIL;
         }
-        return method.getByIssuerSerialNumber.call(this,new Integer(type),name,serial,ret);
+        return method.getByIssuerSerialNumber.call(this, Integer.valueOf(type), name, serial, ret);
     }
 
     /**
      * c: X509_LOOKUP_by_fingerprint
      */
-    public int byFingerprint(int type,String bytes, X509Object[] ret) throws Exception {
-        if(method == null || method.getByFingerprint == null || method.getByFingerprint == Function4.EMPTY) {
+    public int byFingerprint(final int type, final String bytes, final X509Object[] ret) throws Exception {
+        if ( method == null || method.getByFingerprint == null || method.getByFingerprint == Function4.EMPTY ) {
             return X509Utils.X509_LU_FAIL;
         }
-        return method.getByFingerprint.call(this,new Integer(type),bytes,ret);
+        return method.getByFingerprint.call(this, Integer.valueOf(type), bytes, ret);
     }
 
     /**
      * c: X509_LOOKUP_by_alias
      */
-    public int byAlias(int type, String str, X509Object[] ret) throws Exception {
-        if(method == null || method.getByAlias == null || method.getByAlias == Function4.EMPTY) {
+    public int byAlias(final int type, final String alias, final X509Object[] ret) throws Exception {
+        if ( method == null || method.getByAlias == null || method.getByAlias == Function4.EMPTY ) {
             return X509Utils.X509_LU_FAIL;
         }
-        return method.getByAlias.call(this,new Integer(type),str,ret);
+        return method.getByAlias.call(this, Integer.valueOf(type), alias, ret);
     }
 
     /**
      * c: X509_LOOKUP_shutdown
      */
     public int shutdown() throws Exception {
-        if(method == null) {
-            return 0;
-        }
-        if(method.shutdown != null && method.shutdown != Function1.EMPTY) {
+        if ( method == null ) return 0;
+
+        if ( method.shutdown != null && method.shutdown != Function1.EMPTY ) {
             return method.shutdown.call(this);
         }
         return 1;
@@ -416,18 +409,14 @@ public class Lookup {
      * c: by_file_ctrl
      */
     private static class ByFile implements LookupMethod.ControlFunction {
-        public int call(Object _ctx, Object _cmd, Object _argp, Object _argl, Object _ret) throws Exception {
-            Lookup ctx = (Lookup)_ctx;
-            int cmd = ((Integer)_cmd).intValue();
-            String argp = (String)_argp;
-            long argl = ((Long)_argl).longValue();
-
+        public int call(final Lookup ctx, final Integer cmd, final String argp, final Number argl, String[] ret) throws Exception {
             int ok = 0;
             String file = null;
+            final int arglInt = argl.intValue();
 
             switch(cmd) {
             case X509Utils.X509_L_FILE_LOAD:
-                if (argl == X509Utils.X509_FILETYPE_DEFAULT) {
+                if (arglInt == X509Utils.X509_FILETYPE_DEFAULT) {
                     try {
                         RubyHash env = (RubyHash)Ruby.getGlobalRuntime().getObject().getConstant("ENV");
                         file = (String)env.get(Ruby.getGlobalRuntime().newString(X509Utils.getDefaultCertificateFileEnvironment()));
@@ -442,10 +431,10 @@ public class Lookup {
                         X509Error.addError(X509Utils.X509_R_LOADING_DEFAULTS);
                     }
                 } else {
-                    if (argl == X509Utils.X509_FILETYPE_PEM) {
+                    if (arglInt == X509Utils.X509_FILETYPE_PEM) {
                         ok = (ctx.loadCertificateOrCRLFile(argp, X509Utils.X509_FILETYPE_PEM) != 0) ? 1 : 0;
                     } else {
-                        ok = (ctx.loadCertificateFile(argp, (int) argl) != 0) ? 1 : 0;
+                        ok = (ctx.loadCertificateFile(argp, arglInt) != 0) ? 1 : 0;
                     }
                 }
                 break;
@@ -467,12 +456,11 @@ public class Lookup {
      * c: new_dir
      */
     private static class NewLookupDir implements LookupMethod.NewItemFunction {
-        public int call(Object _lu) {
-            Lookup lu = (Lookup)_lu;
-            LookupDir a = new LookupDir();
-            a.dirs = new ArrayList<String>();
-            a.dirsType = new ArrayList<Integer>();
-            lu.methodData = a;
+        public int call(final Lookup lookup) {
+            final LookupDir lookupDir = new LookupDir();
+            lookupDir.dirs = new ArrayList<String>();
+            lookupDir.dirsType = new ArrayList<Integer>();
+            lookup.methodData = lookupDir;
             return 1;
         }
     }
@@ -481,12 +469,11 @@ public class Lookup {
      * c: free_dir
      */
     private static class FreeLookupDir implements LookupMethod.FreeFunction {
-        public int call(Object _lu) {
-            Lookup lu = (Lookup)_lu;
-            LookupDir a = (LookupDir)lu.methodData;
-            a.dirs = null;
-            a.dirsType = null;
-            lu.methodData = null;
+        public int call(final Lookup lookup) {
+            final LookupDir lookupDir = (LookupDir) lookup.methodData;
+            lookupDir.dirs = null;
+            lookupDir.dirsType = null;
+            lookup.methodData = null;
             return -1;
         }
     }
@@ -495,17 +482,13 @@ public class Lookup {
      * c: dir_ctrl
      */
     private static class LookupDirControl implements LookupMethod.ControlFunction {
-        public int call(Object _ctx, Object _cmd, Object _argp, Object _argl, Object _retp) {
-            Lookup ctx = (Lookup)_ctx;
-            int cmd = ((Integer)_cmd).intValue();
-            String argp = (String)_argp;
-            long argl = ((Long)_argl).longValue();
+        public int call(Lookup ctx, Integer cmd, String argp, Number argl, String[] retp) {
             int ret = 0;
             LookupDir ld = (LookupDir)ctx.methodData;
             String dir = null;
             switch(cmd) {
             case X509Utils.X509_L_ADD_DIR:
-                if(argl == X509Utils.X509_FILETYPE_DEFAULT) {
+                if ( argl.intValue() == X509Utils.X509_FILETYPE_DEFAULT ) {
                     try {
                         RubyHash env = (RubyHash)Ruby.getGlobalRuntime().getObject().getConstant("ENV");
                         dir = (String)env.get(Ruby.getGlobalRuntime().newString(X509Utils.getDefaultCertificateDirectoryEnvironment()));
@@ -520,7 +503,7 @@ public class Lookup {
                         X509Error.addError(X509Utils.X509_R_LOADING_CERT_DIR);
                     }
                 } else {
-                    ret = addCertificateDirectory(ld,argp,(int)argl);
+                    ret = addCertificateDirectory(ld,argp, argl.intValue());
                 }
                 break;
             }
@@ -557,55 +540,51 @@ public class Lookup {
      * c: get_cert_by_subject
      */
     private static class GetCertificateBySubject implements LookupMethod.BySubjectFunction {
-        public int call(Object _xl, Object _type, Object _name, Object _ret) throws Exception {
-            Lookup x1 = (Lookup)_xl;
-            int type = ((Integer)_type).intValue();
-            Name name = (Name)_name;
-            X509Object[] ret = (X509Object[])_ret;
+        public int call(final Lookup x1, final Integer type, final Name name, final X509Object[] ret) throws Exception {
+            if ( name == null ) return 0;
 
             int ok = 0;
-            StringBuffer b = new StringBuffer();
 
-            if(null == name) {
-                return 0;
+            final String postfix;
+            if ( type == X509Utils.X509_LU_X509 ) {
+                postfix = "";
             }
-
-            String postfix = "";
-            if(type == X509Utils.X509_LU_X509) {
-            } else if(type == X509Utils.X509_LU_CRL) {
+            else if ( type == X509Utils.X509_LU_CRL ) {
                 postfix = "r";
-            } else {
+            }
+            else {
                 X509Error.addError(X509Utils.X509_R_WRONG_LOOKUP_TYPE);
                 return ok;
             }
 
-            LookupDir ctx = (LookupDir)x1.methodData;
+            final LookupDir ctx = (LookupDir) x1.methodData;
 
-            long h = name.hash();
+            final long hash = name.hash();
+            final StringBuilder buffer = new StringBuilder();
 
             Iterator<Integer> iter = ctx.dirsType.iterator();
-            for(String cdir : ctx.dirs) {
+            for ( String cdir : ctx.dirs ) {
                 int tp = iter.next();
                 int k = 0;
                 for(;;) {
-                    b.append(String.format("%s%s%08x.%s%d", cdir, File.separator, h, postfix, k));
+                    buffer.append(String.format("%s%s%08x.%s%d", cdir, File.separator, hash, postfix, k));
                     k++;
-                    if(!(new File(b.toString()).exists())) {
+                    if(!(new File(buffer.toString()).exists())) {
                         break;
                     }
                     if(type == X509Utils.X509_LU_X509) {
-                        if((x1.loadCertificateFile(b.toString(),tp)) == 0) {
+                        if ( x1.loadCertificateFile(buffer.toString(), tp) == 0 ) {
                             break;
                         }
                     } else if(type == X509Utils.X509_LU_CRL) {
-                        if((x1.loadCRLFile(b.toString(),tp)) == 0) {
+                        if ( x1.loadCRLFile(buffer.toString(), tp) == 0 ) {
                             break;
                         }
                     }
                 }
                 X509Object tmp = null;
                 synchronized(X509Utils.CRYPTO_LOCK_X509_STORE) {
-                    for(X509Object o : x1.store.objs) {
+                    for(X509Object o : x1.store.objects) {
                         if(o.type() == type && o.isName(name)) {
                             tmp = o;
                             break;
@@ -622,4 +601,5 @@ public class Lookup {
             return ok;
         }
     }
+
 }// X509_LOOKUP

@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -33,25 +33,32 @@ package org.jruby.ext.openssl.x509store;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class Certificate extends X509Object {
+
     public X509AuxCertificate x509;
 
+    @Override
     public int type() {
         return X509Utils.X509_LU_X509;
     }
 
-    public boolean isName(Name nm) {
-        return nm.isEqual(x509.getSubjectX500Principal());
+    @Override
+    public boolean isName(final Name name) {
+        return name.isEqual( x509.getSubjectX500Principal() );
     }
 
-    public boolean matches(X509Object o) {
-        return o instanceof Certificate && x509.getSubjectX500Principal().equals(((Certificate)o).x509.getSubjectX500Principal());
+    @Override
+    public boolean matches(final X509Object other) {
+        return other instanceof Certificate &&
+            x509.getSubjectX500Principal().equals( ((Certificate) other).x509.getSubjectX500Principal() );
     }
 
-    public int compareTo(X509Object oth) {
-        int ret1 = super.compareTo(oth);
-        if(ret1 == 0) {
-            ret1 = x509.equals(((Certificate)oth).x509) ? 0 : -1;
+    @Override
+    public int compareTo(final X509Object other) {
+        int ret = super.compareTo(other);
+        if (ret == 0) {
+            ret = x509.equals( ( (Certificate) other ).x509 ) ? 0 : -1;
         }
-        return ret1;
+        return ret;
     }
+
 }// X509_OBJECT_CERT

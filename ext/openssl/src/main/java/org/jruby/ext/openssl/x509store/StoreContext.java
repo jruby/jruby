@@ -50,35 +50,37 @@ import org.bouncycastle.asn1.ASN1Sequence;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class StoreContext {
-    public Store ctx;
+
+    private Store store;
+
     public int currentMethod;
 
     public X509AuxCertificate certificate;
     public List<X509AuxCertificate> untrusted;
     public List<X509CRL> crls;
 
-    public VerifyParameter param;
+    public VerifyParameter verifyParameter;
 
     public List<X509AuxCertificate> otherContext;
 
-    public static interface CheckPolicyFunction extends Function1 {
+    public static interface CheckPolicyFunction extends Function1<StoreContext> {
         public static final CheckPolicyFunction EMPTY = new CheckPolicyFunction(){
-                public int call(Object arg0) {
-                    return -1;
-                }
-            };
+            public int call(StoreContext context) {
+                return -1;
+            }
+        };
     }
 
-    public Store.VerifyFunction verify;
-    public Store.VerifyCallbackFunction verifyCallback;
-    public Store.GetIssuerFunction getIssuer;
-    public Store.CheckIssuedFunction checkIssued;
-    public Store.CheckRevocationFunction checkRevocation;
-    public Store.GetCRLFunction getCRL;
-    public Store.CheckCRLFunction checkCRL;
-    public Store.CertificateCRLFunction certificateCRL;
-    public CheckPolicyFunction checkPolicy;
-    public Store.CleanupFunction cleanup;
+    Store.VerifyFunction verify;
+    Store.VerifyCallbackFunction verifyCallback;
+    Store.GetIssuerFunction getIssuer;
+    Store.CheckIssuedFunction checkIssued;
+    Store.CheckRevocationFunction checkRevocation;
+    Store.GetCRLFunction getCRL;
+    Store.CheckCRLFunction checkCRL;
+    Store.CertificateCRLFunction certificateCRL;
+    CheckPolicyFunction checkPolicy;
+    Store.CleanupFunction cleanup;
 
     public boolean isValid;
     public int lastUntrusted;
@@ -96,11 +98,15 @@ public class StoreContext {
 
     public List<Object> extraData;
 
+    public Store getStore() {
+        return store;
+    }
+
     /**
      * c: X509_STORE_CTX_set_depth
      */
     public void setDepth(int depth) {
-        param.setDepth(depth);
+        verifyParameter.setDepth(depth);
     }
 
     /**
@@ -120,77 +126,71 @@ public class StoreContext {
     /**
      * c: X509_STORE_CTX_get1_issuer
      */
-    public int getFirstIssuer(X509AuxCertificate[] issuer, X509AuxCertificate x) throws Exception {
-        Name xn = new Name(x.getIssuerX500Principal());
-        X509Object[] s_obj = new X509Object[1];
-        int ok = ctx == null ? 0 : getBySubject(X509Utils.X509_LU_X509,xn,s_obj);
-        if(ok != X509Utils.X509_LU_X509) {
-            if(ok == X509Utils.X509_LU_RETRY) {
+    int getFirstIssuer(final X509AuxCertificate[] issuers, final X509AuxCertificate x) throws Exception {
+        final Name xn = new Name( x.getIssuerX500Principal() );
+        final X509Object[] s_obj = new X509Object[1];
+        int ok = store == null ? 0 : getBySubject(X509Utils.X509_LU_X509, xn, s_obj);
+        if ( ok != X509Utils.X509_LU_X509 ) {
+            if ( ok == X509Utils.X509_LU_RETRY ) {
                 X509Error.addError(X509Utils.X509_R_SHOULD_RETRY);
                 return -1;
-            } else if (ok != X509Utils.X509_LU_FAIL) {
+            }
+            else if ( ok != X509Utils.X509_LU_FAIL ) {
                 return -1;
             }
             return 0;
         }
+
         X509Object obj = s_obj[0];
-        if(this.checkIssued.call(this,x,((Certificate)obj).x509) != 0) {
-            issuer[0] = ((Certificate)obj).x509;
+        if ( checkIssued.call(this, x, ((Certificate) obj).x509) != 0 ) {
+            issuers[0] = ((Certificate) obj).x509;
             return 1;
         }
 
-        int idx = X509Object.indexBySubject(ctx.objs,X509Utils.X509_LU_X509, xn);
-        if(idx == -1) {
-            return 0;
-        }
+        int idx = X509Object.indexBySubject(store.objects, X509Utils.X509_LU_X509, xn);
+        if ( idx == -1 ) return 0;
 
         /* Look through all matching certificates for a suitable issuer */
-        for(int i = idx; i < ctx.objs.size(); i++) {
-            X509Object pobj = ctx.objs.get(i);
-            if(pobj.type() != X509Utils.X509_LU_X509) {
+        for ( int i = idx; i < store.objects.size(); i++ ) {
+            final X509Object pobj = store.objects.get(i);
+            if ( pobj.type() != X509Utils.X509_LU_X509 ) {
                 return 0;
             }
-            if(!xn.isEqual((((Certificate)pobj).x509).getSubjectX500Principal())) {
+            final X509AuxCertificate x509 = ((Certificate) pobj).x509;
+            if ( ! xn.isEqual( x509.getSubjectX500Principal() ) ) {
                 return 0;
             }
-            if(this.checkIssued.call(this,x,((Certificate)pobj).x509) != 0) {
-                issuer[0] = ((Certificate)pobj).x509;
+            if ( checkIssued.call(this, x, x509) != 0 ) {
+                issuers[0] = x509;
                 return 1;
             }
         }
         return 0;
     }
 
-    public static List<X509AuxCertificate> ensureAux(Collection<X509Certificate> inp) {
-        if (inp == null) {
-            return null;
-        }
-        List<X509AuxCertificate> out = new ArrayList<X509AuxCertificate>();
-        for(X509Certificate o : inp) {
-            out.add(ensureAux(o));
-        }
+    public static List<X509AuxCertificate> ensureAux(final Collection<X509Certificate> input) {
+        if ( input == null ) return null;
+
+        List<X509AuxCertificate> out = new ArrayList<X509AuxCertificate>(input.size());
+        for ( X509Certificate cert : input ) out.add( ensureAux(cert) );
         return out;
     }
 
-    public static List<X509AuxCertificate> ensureAux(X509Certificate[] inp) {
-        if (inp == null) {
-            return null;
-        }
-        List<X509AuxCertificate> o = new ArrayList<X509AuxCertificate>();
-        for(X509Certificate c : inp) {
-            o.add(ensureAux(c));
-        }
-        return o;
+    public static List<X509AuxCertificate> ensureAux(final X509Certificate[] input) {
+        if ( input == null ) return null;
+
+        List<X509AuxCertificate> out = new ArrayList<X509AuxCertificate>(input.length);
+        for ( X509Certificate cert : input ) out.add( ensureAux(cert) );
+        return out;
     }
 
-    public static X509AuxCertificate ensureAux(X509Certificate i) {
-        if (i == null) {
-            return null;
-        }
-        if(i instanceof X509AuxCertificate) {
-            return (X509AuxCertificate)i;
+    public static X509AuxCertificate ensureAux(final X509Certificate input) {
+        if ( input == null ) return null;
+
+        if ( input instanceof X509AuxCertificate ) {
+            return (X509AuxCertificate)input;
         } else {
-            return new X509AuxCertificate(i);
+            return new X509AuxCertificate(input);
         }
     }
 
@@ -199,7 +199,7 @@ public class StoreContext {
      */
     public int init(Store store, X509AuxCertificate x509, List<X509AuxCertificate> chain) {
         int ret = 1;
-        this.ctx=store;
+        this.store = store;
         this.currentMethod=0;
         this.certificate=x509;
         this.untrusted=chain;
@@ -215,86 +215,71 @@ public class StoreContext {
         this.currentIssuer=null;
         this.tree = null;
 
-        this.param = new VerifyParameter();
+        this.verifyParameter = new VerifyParameter();
 
-        if(store != null) {
-            ret = param.inherit(store.param);
+        if ( store != null ) {
+            ret = verifyParameter.inherit(store.verifyParameter);
         } else {
-            param.flags |= X509Utils.X509_VP_FLAG_DEFAULT | X509Utils.X509_VP_FLAG_ONCE;
+            verifyParameter.flags |= X509Utils.X509_VP_FLAG_DEFAULT | X509Utils.X509_VP_FLAG_ONCE;
         }
-        if(store != null) {
-            verifyCallback = store.verifyCallback;
+
+        if ( store != null ) {
+            verifyCallback = store.getVerifyCallback();
             cleanup = store.cleanup;
         } else {
             cleanup = Store.CleanupFunction.EMPTY;
         }
 
-        if(ret != 0) {
-            ret = param.inherit(VerifyParameter.lookup("default"));
+        if ( ret != 0 ) {
+            ret = verifyParameter.inherit(VerifyParameter.lookup("default"));
         }
 
-        if(ret == 0) {
+        if ( ret == 0 ) {
             X509Error.addError(X509Utils.ERR_R_MALLOC_FAILURE);
             return 0;
         }
 
-        if(store != null && store.checkIssued != null && store.checkIssued != Store.CheckIssuedFunction.EMPTY) {
-            this.checkIssued = store.checkIssued;
-        } else {
-            this.checkIssued = defaultCheckIssued;
-        }
+        this.checkIssued = defaultCheckIssued;
+        this.getIssuer = getFirstIssuer;
+        this.verifyCallback = nullCallback;
+        this.verify = internalVerify;
+        this.checkRevocation = defaultCheckRevocation;
+        this.getCRL = defaultGetCRL;
+        this.checkCRL = defaultCheckCRL;
+        this.certificateCRL = defaultCertificateCRL;
 
-        if(store != null && store.getIssuer != null && store.getIssuer != Store.GetIssuerFunction.EMPTY) {
-            this.getIssuer = store.getIssuer;
-        } else {
-            this.getIssuer = new Store.GetIssuerFunction() {
-                    public int call(Object arg1, Object arg2, Object arg3) throws Exception {
-                        return ((StoreContext)arg2).getFirstIssuer((X509AuxCertificate[])arg1,(X509AuxCertificate)arg3);
-                    }
-                };
-        }
-
-        if(store != null && store.verifyCallback != null && store.verifyCallback != Store.VerifyCallbackFunction.EMPTY) {
-            this.verifyCallback = store.verifyCallback;
-        } else {
-            this.verifyCallback = NullCallback;
-        }
-
-        if(store != null && store.verify != null && store.verify != Store.VerifyFunction.EMPTY) {
-            this.verify = store.verify;
-        } else {
-            this.verify = internalVerify;
-        }
-
-        if(store != null && store.checkRevocation != null && store.checkRevocation != Store.CheckRevocationFunction.EMPTY) {
-            this.checkRevocation = store.checkRevocation;
-        } else {
-            this.checkRevocation = defaultCheckRevocation;
-        }
-
-        if(store != null && store.getCRL != null && store.getCRL != Store.GetCRLFunction.EMPTY) {
-            this.getCRL = store.getCRL;
-        } else {
-            this.getCRL = defaultGetCRL;
-        }
-
-        if(store != null && store.checkCRL != null && store.checkCRL != Store.CheckCRLFunction.EMPTY) {
-            this.checkCRL = store.checkCRL;
-        } else {
-            this.checkCRL = defaultCheckCRL;
-        }
-
-        if(store != null && store.certificateCRL != null && store.certificateCRL != Store.CertificateCRLFunction.EMPTY) {
-            this.certificateCRL = store.certificateCRL;
-        } else {
-            this.certificateCRL = defaultCertificateCRL;
+        if ( store != null ) {
+            if ( store.checkIssued != null && store.checkIssued != Store.CheckIssuedFunction.EMPTY ) {
+                this.checkIssued = store.checkIssued;
+            }
+            if ( store.getIssuer != null && store.getIssuer != Store.GetIssuerFunction.EMPTY ) {
+                this.getIssuer = store.getIssuer;
+            }
+            if ( store.verifyCallback != null && store.verifyCallback != Store.VerifyCallbackFunction.EMPTY ) {
+                this.verifyCallback = store.verifyCallback;
+            }
+            if ( store.verify != null && store.verify != Store.VerifyFunction.EMPTY) {
+                this.verify = store.verify;
+            }
+            if ( store.checkRevocation != null && store.checkRevocation != Store.CheckRevocationFunction.EMPTY) {
+                this.checkRevocation = store.checkRevocation;
+            }
+            if ( store.getCRL != null && store.getCRL != Store.GetCRLFunction.EMPTY) {
+                this.getCRL = store.getCRL;
+            }
+            if( store.checkCRL != null && store.checkCRL != Store.CheckCRLFunction.EMPTY) {
+                this.checkCRL = store.checkCRL;
+            }
+            if ( store.certificateCRL != null && store.certificateCRL != Store.CertificateCRLFunction.EMPTY) {
+                this.certificateCRL = store.certificateCRL;
+            }
         }
 
         this.checkPolicy = defaultCheckPolicy;
 
         this.extraData = new ArrayList<Object>();
-        this.extraData.add(null);this.extraData.add(null);this.extraData.add(null);
-        this.extraData.add(null);this.extraData.add(null);this.extraData.add(null);
+        this.extraData.add(null); this.extraData.add(null); this.extraData.add(null);
+        this.extraData.add(null); this.extraData.add(null); this.extraData.add(null);
         return 1;
     }
 
@@ -310,10 +295,10 @@ public class StoreContext {
      * c: X509_STORE_CTX_cleanup
      */
     public void cleanup() throws Exception {
-        if(cleanup != null && cleanup != Store.CleanupFunction.EMPTY) {
+        if (cleanup != null && cleanup != Store.CleanupFunction.EMPTY) {
             cleanup.call(this);
         }
-        param = null;
+        verifyParameter = null;
         tree = null;
         chain = null;
         extraData = null;
@@ -322,9 +307,9 @@ public class StoreContext {
     /**
      * c: find_issuer
      */
-    public X509AuxCertificate findIssuer(List<X509AuxCertificate> sk, X509AuxCertificate x) throws Exception {
-        for(X509AuxCertificate issuer : sk) {
-            if(checkIssued.call(this,x,issuer) != 0) {
+    public X509AuxCertificate findIssuer(final List<X509AuxCertificate> certs, final X509AuxCertificate cert) throws Exception {
+        for ( X509AuxCertificate issuer : certs ) {
+            if ( checkIssued.call(this, cert, issuer) != 0 ) {
                 return issuer;
             }
         }
@@ -435,18 +420,14 @@ public class StoreContext {
     }
 
     private void resetSettingsToWithoutStore() {
-        ctx = null;
-        this.param = new VerifyParameter();
-        this.param.flags |= X509Utils.X509_VP_FLAG_DEFAULT | X509Utils.X509_VP_FLAG_ONCE;
-        this.param.inherit(VerifyParameter.lookup("default"));
+        store = null;
+        this.verifyParameter = new VerifyParameter();
+        this.verifyParameter.flags |= X509Utils.X509_VP_FLAG_DEFAULT | X509Utils.X509_VP_FLAG_ONCE;
+        this.verifyParameter.inherit(VerifyParameter.lookup("default"));
         this.cleanup = Store.CleanupFunction.EMPTY;
         this.checkIssued = defaultCheckIssued;
-        this.getIssuer = new Store.GetIssuerFunction() {
-                public int call(Object arg1, Object arg2, Object arg3) throws Exception {
-                    return ((StoreContext)arg2).getFirstIssuer((X509AuxCertificate[])arg1,(X509AuxCertificate)arg3);
-                }
-            };
-        this.verifyCallback = NullCallback;
+        this.getIssuer = getFirstIssuer;
+        this.verifyCallback = nullCallback;
         this.verify = internalVerify;
         this.checkRevocation = defaultCheckRevocation;
         this.getCRL = defaultGetCRL;
@@ -460,52 +441,46 @@ public class StoreContext {
     public int loadVerifyLocations(String CAfile, String CApath) {
         boolean reset = false;
         try {
-            if(ctx == null) {
+            if ( store == null ) {
                 reset = true;
-                ctx = new Store();
-                this.param.inherit(ctx.param);
-                param.inherit(VerifyParameter.lookup("default"));
-                this.cleanup = ctx.cleanup;
-                if(ctx.checkIssued != null && ctx.checkIssued != Store.CheckIssuedFunction.EMPTY) {
-                    this.checkIssued = ctx.checkIssued;
+                store = new Store();
+                this.verifyParameter.inherit(store.verifyParameter);
+                verifyParameter.inherit(VerifyParameter.lookup("default"));
+                this.cleanup = store.cleanup;
+                if ( store.checkIssued != null && store.checkIssued != Store.CheckIssuedFunction.EMPTY ) {
+                    this.checkIssued = store.checkIssued;
                 }
-                if(ctx.getIssuer != null && ctx.getIssuer != Store.GetIssuerFunction.EMPTY) {
-                    this.getIssuer = ctx.getIssuer;
+                if ( store.getIssuer != null && store.getIssuer != Store.GetIssuerFunction.EMPTY ) {
+                    this.getIssuer = store.getIssuer;
                 }
-
-                if(ctx.verifyCallback != null && ctx.verifyCallback != Store.VerifyCallbackFunction.EMPTY) {
-                    this.verifyCallback = ctx.verifyCallback;
+                if ( store.verify != null && store.verify != Store.VerifyFunction.EMPTY ) {
+                    this.verify = store.verify;
                 }
-
-                if(ctx.verify != null && ctx.verify != Store.VerifyFunction.EMPTY) {
-                    this.verify = ctx.verify;
+                if ( store.verifyCallback != null && store.verifyCallback != Store.VerifyCallbackFunction.EMPTY ) {
+                    this.verifyCallback = store.verifyCallback;
                 }
-
-                if(ctx.checkRevocation != null && ctx.checkRevocation != Store.CheckRevocationFunction.EMPTY) {
-                    this.checkRevocation = ctx.checkRevocation;
+                if ( store.checkRevocation != null && store.checkRevocation != Store.CheckRevocationFunction.EMPTY ) {
+                    this.checkRevocation = store.checkRevocation;
                 }
-
-                if(ctx.getCRL != null && ctx.getCRL != Store.GetCRLFunction.EMPTY) {
-                    this.getCRL = ctx.getCRL;
+                if ( store.getCRL != null && store.getCRL != Store.GetCRLFunction.EMPTY ) {
+                    this.getCRL = store.getCRL;
                 }
-
-                if(ctx.checkCRL != null && ctx.checkCRL != Store.CheckCRLFunction.EMPTY) {
-                    this.checkCRL = ctx.checkCRL;
+                if ( store.checkCRL != null && store.checkCRL != Store.CheckCRLFunction.EMPTY ) {
+                    this.checkCRL = store.checkCRL;
                 }
-
-                if(ctx.certificateCRL != null && ctx.certificateCRL != Store.CertificateCRLFunction.EMPTY) {
-                    this.certificateCRL = ctx.certificateCRL;
+                if ( store.certificateCRL != null && store.certificateCRL != Store.CertificateCRLFunction.EMPTY ) {
+                    this.certificateCRL = store.certificateCRL;
                 }
             }
 
-            int ret = ctx.loadLocations(CAfile, CApath);
-            if(ret == 0 && reset) resetSettingsToWithoutStore();
+            final int ret = store.loadLocations(CAfile, CApath);
+            if ( ret == 0 && reset ) resetSettingsToWithoutStore();
 
             return ret;
-        } catch(Exception e) {
-            if(reset) {
-                resetSettingsToWithoutStore();
-            }
+        }
+        catch (Exception e) {
+
+            if ( reset ) resetSettingsToWithoutStore();
             return 0;
         }
     }
@@ -545,11 +520,11 @@ public class StoreContext {
             }
         }
 
-        if(purpose != 0 && param.purpose == 0) {
-            param.purpose = purpose;
+        if(purpose != 0 && verifyParameter.purpose == 0) {
+            verifyParameter.purpose = purpose;
         }
-        if(trust != 0 && param.trust == 0) {
-            param.trust = trust;
+        if(trust != 0 && verifyParameter.trust == 0) {
+            verifyParameter.trust = trust;
         }
         return 1;
     }
@@ -558,14 +533,14 @@ public class StoreContext {
      * c: X509_STORE_CTX_set_flags
      */
     public void setFlags(long flags) {
-        param.setFlags(flags);
+        verifyParameter.setFlags(flags);
     }
 
     /**
      * c: X509_STORE_CTX_set_time
      */
     public void setTime(long flags,Date t) {
-        param.setTime(t);
+        verifyParameter.setTime(t);
     }
 
     /**
@@ -593,14 +568,14 @@ public class StoreContext {
      * c: X509_STORE_CTX_get0_param
      */
     public VerifyParameter getParam() {
-        return param;
+        return verifyParameter;
     }
 
     /**
      * c: X509_STORE_CTX_set0_param
      */
     public void setParam(VerifyParameter param) {
-        this.param = param;
+        this.verifyParameter = param;
     }
 
     /**
@@ -611,33 +586,33 @@ public class StoreContext {
         if(p == null) {
             return 0;
         }
-        return param.inherit(p);
+        return verifyParameter.inherit(p);
     }
 
     /**
      * c: X509_STORE_get_by_subject (it gets X509_STORE_CTX as the first parameter)
      */
     public int getBySubject(int type,Name name,X509Object[] ret) throws Exception {
-        Store c = ctx;
+        Store c = store;
 
-        X509Object tmp = X509Object.retrieveBySubject(c.objs,type,name);
-        if(tmp == null) {
+        X509Object tmp = X509Object.retrieveBySubject(c.objects,type,name);
+        if ( tmp == null ) {
             for(int i=currentMethod; i<c.certificateMethods.size(); i++) {
                 Lookup lu = c.certificateMethods.get(i);
                 X509Object[] stmp = new X509Object[1];
                 int j = lu.bySubject(type,name,stmp);
-                if(j<0) {
+                if ( j < 0 ) {
                     currentMethod = i;
                     return j;
-                } else if(j>0) {
+                }
+                else if( j > 0 ) {
                     tmp = stmp[0];
                     break;
                 }
             }
             currentMethod = 0;
-            if(tmp == null) {
-                return 0;
-            }
+
+            if ( tmp == null ) return 0;
         }
         ret[0] = tmp;
         return 1;
@@ -647,36 +622,32 @@ public class StoreContext {
      * c: X509_verify_cert
      */
     public int verifyCertificate() throws Exception {
-        X509AuxCertificate x,xtmp=null,chain_ss = null;
+        X509AuxCertificate x, xtmp = null, chain_ss = null;
         //X509_NAME xn;
-        int bad_chain = 0;
-        int depth,i,ok=0;
-        int num;
-        Store.VerifyCallbackFunction cb;
+        int bad_chain = 0, depth, i, num;
         List<X509AuxCertificate> sktmp = null;
-        if(certificate == null) {
+        if ( certificate == null ) {
             X509Error.addError(X509Utils.X509_R_NO_CERT_SET_FOR_US_TO_VERIFY);
             return -1;
         }
-        cb=verifyCallback;
 
-        /* first we make sure the chain we are going to build is
-         * present and that the first entry is in place */
+        // first we make sure the chain we are going to build is
+        // present and that the first entry is in place
 
-        if(null == chain) {
+        if ( chain == null ) {
             chain = new ArrayList<X509AuxCertificate>();
             chain.add(certificate);
             lastUntrusted = 1;
         }
 
-        /* We use a temporary STACK so we can chop and hack at it */
+        // We use a temporary STACK so we can chop and hack at it
 
-        if(untrusted != null) {
+        if ( untrusted != null ) {
             sktmp = new ArrayList<X509AuxCertificate>(untrusted);
         }
         num = chain.size();
         x = chain.get(num-1);
-        depth = param.depth;
+        depth = verifyParameter.depth;
         for(;;) {
             if(depth < num) {
                 break;
@@ -686,9 +657,9 @@ public class StoreContext {
                 break;
             }
 
-            if(untrusted != null) {
-                xtmp = findIssuer(sktmp,x);
-                if(xtmp != null) {
+            if ( untrusted != null ) {
+                xtmp = findIssuer(sktmp, x);
+                if ( xtmp != null ) {
                     chain.add(xtmp);
                     sktmp.remove(xtmp);
                     lastUntrusted++;
@@ -700,72 +671,61 @@ public class StoreContext {
             break;
         }
 
-        /* at this point, chain should contain a list of untrusted
-         * certificates.  We now need to add at least one trusted one,
-         * if possible, otherwise we complain. */
+        // at this point, chain should contain a list of untrusted
+        // certificates.  We now need to add at least one trusted one,
+        // if possible, otherwise we complain.
 
-        /* Examine last certificate in chain and see if it
-         * is self signed.
-         */
+        // Examine last certificate in chain and see if it is self signed.
 
         i = chain.size();
         x = chain.get(i-1);
 
-        if(checkIssued.call(this,x,x) != 0) {
-            /* we have a self signed certificate */
-            if(chain.size() == 1) {
-                /* We have a single self signed certificate: see if
-                 * we can find it in the store. We must have an exact
-                 * match to avoid possible impersonation.
-                 */
-                X509AuxCertificate[] p_xtmp = new X509AuxCertificate[]{xtmp};
-                ok = getIssuer.call(p_xtmp,this,x);
+        if ( checkIssued.call(this, x, x) != 0 ) {
+            // we have a self signed certificate
+            if ( chain.size() == 1 ) {
+                // We have a single self signed certificate: see if
+                // we can find it in the store. We must have an exact
+                // match to avoid possible impersonation.
+                X509AuxCertificate[] p_xtmp = new X509AuxCertificate[]{ xtmp };
+                int ok = getIssuer.call(this, p_xtmp, x);
                 xtmp = p_xtmp[0];
-                if(ok <= 0 || !x.equals(xtmp)) {
+                if ( ok <= 0 || ! x.equals(xtmp) ) {
                     error = X509Utils.V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT;
                     currentCertificate = x;
                     errorDepth = i-1;
                     bad_chain = 1;
-                    ok = cb.call(new Integer(0),this);
-                    if(ok == 0) {
-                        return ok;
-                    }
+                    ok = verifyCallback.call(this, Integer.valueOf(0));
+                    if ( ok == 0 ) return ok;
                 } else {
-                    /* We have a match: replace certificate with store version
-                     * so we get any trust settings.
-                     */
+                    // We have a match: replace certificate with store version
+                    // so we get any trust settings.
                     x = xtmp;
                     chain.set(i-1,x);
                     lastUntrusted = 0;
                 }
             } else {
-                /* extract and save self signed certificate for later use */
+                // extract and save self signed certificate for later use
                 chain_ss = chain.remove(chain.size()-1);
                 lastUntrusted--;
                 num--;
                 x = chain.get(num-1);
             }
         }
-        /* We now lookup certs from the certificate store */
+        // We now lookup certs from the certificate store
         for(;;) {
-            /* If we have enough, we break */
-            if(depth<num) {
-                break;
-            }
+            // If we have enough, we break
+            if ( depth < num ) break;
             //xn = new X509_NAME(x.getIssuerX500Principal());
-            /* If we are self signed, we break */
-            if(checkIssued.call(this,x,x) != 0) {
-                break;
-            }
-            X509AuxCertificate[] p_xtmp = new X509AuxCertificate[]{xtmp};
-            ok = getIssuer.call(p_xtmp,this,x);
+            // If we are self signed, we break
+            if ( checkIssued.call(this, x, x) != 0 ) break;
+
+            X509AuxCertificate[] p_xtmp = new X509AuxCertificate[]{ xtmp };
+            int ok = getIssuer.call(this, p_xtmp, x);
             xtmp = p_xtmp[0];
-            if(ok < 0) {
-                return ok;
-            }
-            if(ok == 0) {
-                break;
-            }
+
+            if ( ok < 0 ) return ok;
+            if ( ok == 0 ) break;
+
             x = xtmp;
             chain.add(x);
             num++;
@@ -775,8 +735,8 @@ public class StoreContext {
 
         //xn = new X509_NAME(x.getIssuerX500Principal());
         /* Is last certificate looked up self signed? */
-        if(checkIssued.call(this,x,x) == 0) {
-            if(chain_ss == null || checkIssued.call(this,x,chain_ss) == 0) {
+        if ( checkIssued.call(this, x, x) == 0 ) {
+            if ( chain_ss == null || checkIssued.call(this, x, chain_ss) == 0 ) {
                 if(lastUntrusted >= num) {
                     error = X509Utils.V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY;
                 } else {
@@ -793,50 +753,37 @@ public class StoreContext {
             }
             errorDepth = num-1;
             bad_chain = 1;
-            ok = cb.call(new Integer(0),this);
-            if(ok == 0) {
-                return ok;
-            }
+            int ok = verifyCallback.call(this, Integer.valueOf(0));
+            if ( ok == 0 ) return ok;
         }
 
-        /* We have the chain complete: now we need to check its purpose */
-        ok = checkChainExtensions();
-        if(ok == 0) {
-            return ok;
-        }
+        // We have the chain complete: now we need to check its purpose
+        int ok = checkChainExtensions();
+        if ( ok == 0 ) return ok;
 
         /* TODO: Check name constraints (from 1.0.0) */
 
-        /* The chain extensions are OK: check trust */
-        if(param.trust > 0) {
-            ok = checkTrust();
-        }
-        if(ok == 0) {
-            return ok;
-        }
+        // The chain extensions are OK: check trust
+        if ( verifyParameter.trust > 0 ) ok = checkTrust();
+        if ( ok == 0 ) return ok;
 
-        /* Check revocation status: we do this after copying parameters
-         * because they may be needed for CRL signature verification.
-         */
+        // Check revocation status: we do this after copying parameters
+        // because they may be needed for CRL signature verification.
         ok = checkRevocation.call(this);
-        if(ok == 0) {
-            return ok;
-        }
+        if ( ok == 0 ) return ok;
 
         /* At this point, we have a chain and need to verify it */
-        if(verify != null && verify != Store.VerifyFunction.EMPTY) {
+        if ( verify != null && verify != Store.VerifyFunction.EMPTY ) {
             ok = verify.call(this);
         } else {
             ok = internalVerify.call(this);
         }
-        if(ok == 0) {
-            return ok;
-        }
+        if ( ok == 0 ) return ok;
 
         /* TODO: RFC 3779 path validation, now that CRL check has been done (from 1.0.0) */
 
         /* If we get this far evaluate policies */
-        if(bad_chain == 0 && (param.flags & X509Utils.V_FLAG_POLICY_CHECK) != 0) {
+        if ( bad_chain == 0 && (verifyParameter.flags & X509Utils.V_FLAG_POLICY_CHECK) != 0 ) {
             ok = checkPolicy.call(this);
         }
         return ok;
@@ -873,12 +820,10 @@ public class StoreContext {
      * c: check_chain_extensions
      */
     public int checkChainExtensions() throws Exception {
-        int ok=0, must_be_ca;
+        int ok, must_be_ca;
         X509AuxCertificate x;
-        Store.VerifyCallbackFunction cb;
         int proxy_path_length = 0;
-        int allow_proxy_certs = (param.flags & X509Utils.V_FLAG_ALLOW_PROXY_CERTS) != 0 ? 1 : 0;
-        cb = verifyCallback;
+        int allow_proxy_certs = (verifyParameter.flags & X509Utils.V_FLAG_ALLOW_PROXY_CERTS) != 0 ? 1 : 0;
         must_be_ca = -1;
 
         try {
@@ -892,29 +837,25 @@ public class StoreContext {
         for(int i = 0; i<lastUntrusted;i++) {
             int ret;
             x = chain.get(i);
-            if((param.flags & X509Utils.V_FLAG_IGNORE_CRITICAL) == 0 && unhandledCritical(x)) {
+            if((verifyParameter.flags & X509Utils.V_FLAG_IGNORE_CRITICAL) == 0 && unhandledCritical(x)) {
                 error = X509Utils.V_ERR_UNHANDLED_CRITICAL_EXTENSION;
                 errorDepth = i;
                 currentCertificate = x;
-                ok = cb.call(new Integer(0),this);
-                if(ok == 0) {
-                    return ok;
-                }
+                ok = verifyCallback.call(this, Integer.valueOf(0));
+                if ( ok == 0 ) return ok;
             }
             if(allow_proxy_certs == 0 && x.getExtensionValue("1.3.6.1.5.5.7.1.14") != null) {
                 error = X509Utils.V_ERR_PROXY_CERTIFICATES_NOT_ALLOWED;
                 errorDepth = i;
                 currentCertificate = x;
-                ok = cb.call(new Integer(0),this);
-                if(ok == 0) {
-                    return ok;
-                }
+                ok = verifyCallback.call(this, Integer.valueOf(0));
+                if ( ok == 0 ) return ok;
             }
 
             ret = Purpose.checkCA(x);
             switch(must_be_ca) {
             case -1:
-                if((param.flags & X509Utils.V_FLAG_X509_STRICT) != 0 && ret != 1 && ret != 0) {
+                if((verifyParameter.flags & X509Utils.V_FLAG_X509_STRICT) != 0 && ret != 1 && ret != 0) {
                     ret = 0;
                     error = X509Utils.V_ERR_INVALID_CA;
                 } else {
@@ -930,7 +871,7 @@ public class StoreContext {
                 }
                 break;
             default:
-                if(ret == 0 || ((param.flags & X509Utils.V_FLAG_X509_STRICT) != 0 && ret != 1)) {
+                if(ret == 0 || ((verifyParameter.flags & X509Utils.V_FLAG_X509_STRICT) != 0 && ret != 1)) {
                     ret = 0;
                     error = X509Utils.V_ERR_INVALID_CA;
                 } else {
@@ -941,18 +882,16 @@ public class StoreContext {
             if(ret == 0) {
                 errorDepth = i;
                 currentCertificate = x;
-                ok = cb.call(new Integer(0),this);
-                if(ok == 0) {
-                    return ok;
-                }
+                ok = verifyCallback.call(this, Integer.valueOf(0));
+                if ( ok == 0 ) return ok;
             }
-            if(param.purpose > 0) {
-                ret = Purpose.checkPurpose(x,param.purpose, must_be_ca > 0 ? 1 : 0);
-                if(ret == 0 || ((param.flags & X509Utils.V_FLAG_X509_STRICT) != 0 && ret != 1)) {
+            if(verifyParameter.purpose > 0) {
+                ret = Purpose.checkPurpose(x,verifyParameter.purpose, must_be_ca > 0 ? 1 : 0);
+                if(ret == 0 || ((verifyParameter.flags & X509Utils.V_FLAG_X509_STRICT) != 0 && ret != 1)) {
                     error = X509Utils.V_ERR_INVALID_PURPOSE;
                     errorDepth = i;
                     currentCertificate = x;
-                    ok = cb.call(new Integer(0),this);
+                    ok = verifyCallback.call(this, Integer.valueOf(0));
                     if(ok == 0) {
                         return ok;
                     }
@@ -963,10 +902,8 @@ public class StoreContext {
                 error = X509Utils.V_ERR_PATH_LENGTH_EXCEEDED;
                 errorDepth = i;
                 currentCertificate = x;
-                ok = cb.call(new Integer(0),this);
-                if(ok == 0) {
-                    return ok;
-                }
+                ok = verifyCallback.call(this, Integer.valueOf(0));
+                if ( ok == 0 ) return ok;
             }
 
             if(x.getExtensionValue("1.3.6.1.5.5.7.1.14") != null) {
@@ -977,10 +914,8 @@ public class StoreContext {
                         error = X509Utils.V_ERR_PROXY_PATH_LENGTH_EXCEEDED;
                         errorDepth = i;
                         currentCertificate = x;
-                        ok = cb.call(new Integer(0),this);
-                        if(ok == 0) {
-                            return ok;
-                        }
+                        ok = verifyCallback.call(this, Integer.valueOf(0));
+                        if ( ok == 0 ) return ok;
                     }
                 }
                 proxy_path_length++;
@@ -998,11 +933,9 @@ public class StoreContext {
     public int checkTrust() throws Exception {
         int i,ok;
         X509AuxCertificate x;
-        Store.VerifyCallbackFunction cb;
-        cb = verifyCallback;
         i = chain.size()-1;
         x = chain.get(i);
-        ok = Trust.checkTrust(x,param.trust,0);
+        ok = Trust.checkTrust(x,verifyParameter.trust,0);
         if(ok == X509Utils.X509_TRUST_TRUSTED) {
             return 1;
         }
@@ -1013,31 +946,31 @@ public class StoreContext {
         } else {
             error = X509Utils.V_ERR_CERT_UNTRUSTED;
         }
-        return cb.call(new Integer(0),this);
+        return verifyCallback.call(this, Integer.valueOf(0));
     }
 
     /**
      * c: check_cert_time
      */
     public int checkCertificateTime(X509AuxCertificate x) throws Exception {
-        Date ptime = null;
-
-        if((param.flags & X509Utils.V_FLAG_USE_CHECK_TIME) != 0) {
-            ptime = this.param.checkTime;
+        final Date pTime;
+        if ( (verifyParameter.flags & X509Utils.V_FLAG_USE_CHECK_TIME) != 0 ) {
+            pTime = this.verifyParameter.checkTime;
         } else {
-            ptime = Calendar.getInstance().getTime();
+            pTime = Calendar.getInstance().getTime();
         }
-        if(!x.getNotBefore().before(ptime)) {
+
+        if ( ! x.getNotBefore().before(pTime) ) {
             error = X509Utils.V_ERR_CERT_NOT_YET_VALID;
             currentCertificate = x;
-            if(verifyCallback.call(new Integer(0),this) == 0) {
+            if ( verifyCallback.call(this, Integer.valueOf(0)) == 0 ) {
                 return 0;
             }
         }
-        if(!x.getNotAfter().after(ptime)) {
+        if ( ! x.getNotAfter().after(pTime) ) {
             error = X509Utils.V_ERR_CERT_HAS_EXPIRED;
             currentCertificate = x;
-            if(verifyCallback.call(new Integer(0),this) == 0) {
+            if ( verifyCallback.call(this, Integer.valueOf(0)) == 0 ) {
                 return 0;
             }
         }
@@ -1048,26 +981,26 @@ public class StoreContext {
      * c: check_cert
      */
     public int checkCertificate() throws Exception {
-        X509CRL[] crl = new X509CRL[1];
+        final X509CRL[] crl = new X509CRL[1];
         X509AuxCertificate x;
-        int ok,cnum;
+        int ok, cnum;
         cnum = errorDepth;
         x = chain.get(cnum);
         currentCertificate = x;
-        ok = getCRL.call(this,crl,x);
-        if(ok == 0) {
+        ok = getCRL.call(this, crl, x);
+        if ( ok == 0 ) {
             error = X509Utils.V_ERR_UNABLE_TO_GET_CRL;
-            ok = verifyCallback.call(new Integer(0), this);
+            ok = verifyCallback.call(this, Integer.valueOf(0));
             currentCRL = null;
             return ok;
         }
         currentCRL = crl[0];
         ok = checkCRL.call(this, crl[0]);
-        if(ok == 0) {
+        if ( ok == 0 ) {
             currentCRL = null;
             return ok;
         }
-        ok = certificateCRL.call(this,crl[0],x);
+        ok = certificateCRL.call(this, crl[0], x);
         currentCRL = null;
         return ok;
     }
@@ -1077,23 +1010,22 @@ public class StoreContext {
      */
     public int checkCRLTime(X509CRL crl, int notify) throws Exception {
         currentCRL = crl;
-        Date ptime = null;
-
-        if((param.flags & X509Utils.V_FLAG_USE_CHECK_TIME) != 0) {
-            ptime = this.param.checkTime;
+        final Date pTime;
+        if ( (verifyParameter.flags & X509Utils.V_FLAG_USE_CHECK_TIME) != 0 ) {
+            pTime = this.verifyParameter.checkTime;
         } else {
-            ptime = Calendar.getInstance().getTime();
+            pTime = Calendar.getInstance().getTime();
         }
 
-        if(!crl.getThisUpdate().before(ptime)) {
-            error=X509Utils.V_ERR_CRL_NOT_YET_VALID;
-            if(notify == 0 || verifyCallback.call(new Integer(0),this) == 0) {
+        if ( ! crl.getThisUpdate().before(pTime) ) {
+            error = X509Utils.V_ERR_CRL_NOT_YET_VALID;
+            if ( notify == 0 || verifyCallback.call(this, Integer.valueOf(0)) == 0 ) {
                 return 0;
             }
         }
-        if(crl.getNextUpdate() != null && !crl.getNextUpdate().after(ptime)) {
-            error=X509Utils.V_ERR_CRL_HAS_EXPIRED;
-            if(notify == 0 || verifyCallback.call(new Integer(0),this) == 0) {
+        if ( crl.getNextUpdate() != null && !crl.getNextUpdate().after(pTime) ) {
+            error = X509Utils.V_ERR_CRL_HAS_EXPIRED;
+            if ( notify == 0 || verifyCallback.call(this, Integer.valueOf(0)) == 0 ) {
                 return 0;
             }
         }
@@ -1105,296 +1037,278 @@ public class StoreContext {
     /**
      * c: get_crl_sk
      */
-    public int getCRLStack(X509CRL[] pcrl, Name nm, List<X509CRL> crls) throws Exception {
-        X509CRL best_crl = null;
-        if(null != crls) {
-            for(X509CRL crl : crls) {
-                if(!nm.isEqual(crl.getIssuerX500Principal())) {
+    public int getCRLStack(X509CRL[] pcrl, Name name, List<X509CRL> crls) throws Exception {
+        X509CRL bestCrl = null;
+        if ( crls != null ) {
+            for ( final X509CRL crl : crls ) {
+                if( ! name.isEqual( crl.getIssuerX500Principal() ) ) {
                     continue;
                 }
-                if(checkCRLTime(crl,0) != 0) {
+                if ( checkCRLTime(crl, 0) != 0 ) {
                     pcrl[0] = crl;
                     return 1;
                 }
-                best_crl = crl;
+                bestCrl = crl;
             }
         }
-        if(best_crl != null) {
-            pcrl[0] = best_crl;
+        if ( bestCrl != null ) {
+            pcrl[0] = bestCrl;
         }
         return 0;
     }
 
+    final static Store.GetIssuerFunction getFirstIssuer = new Store.GetIssuerFunction() {
+        public int call(StoreContext context, X509AuxCertificate[] issuer, X509AuxCertificate cert) throws Exception {
+            return context.getFirstIssuer(issuer, cert);
+        }
+    };
+
     /**
      * c: get_issuer_sk
      */
-    public final static Store.GetIssuerFunction getIssuerStack = new Store.GetIssuerFunction() {
-            public int call(Object a1, Object a2, Object a3) throws Exception {
-                X509AuxCertificate[] issuer = (X509AuxCertificate[])a1;
-                StoreContext ctx = (StoreContext)a2;
-                X509AuxCertificate x = (X509AuxCertificate)a3;
-                issuer[0] = ctx.findIssuer(ctx.otherContext,x);
-                if(issuer[0] != null) {
-                    return 1;
-                } else {
-                    return 0;
-                }
+    final static Store.GetIssuerFunction getIssuerStack = new Store.GetIssuerFunction() {
+        public int call(StoreContext context, X509AuxCertificate[] issuer, X509AuxCertificate x) throws Exception {
+            issuer[0] = context.findIssuer(context.otherContext, x);
+            if ( issuer[0] != null ) {
+                return 1;
+            } else {
+                return 0;
             }
-        };
+        }
+    };
 
     /**
      * c: check_issued
      */
-    public final static Store.CheckIssuedFunction defaultCheckIssued = new Store.CheckIssuedFunction() {
-            public int call(Object a1, Object a2, Object a3) throws Exception {
-                StoreContext ctx = (StoreContext)a1;
-                X509AuxCertificate x = (X509AuxCertificate)a2;
-                X509AuxCertificate issuer = (X509AuxCertificate)a3;
-                int ret = X509Utils.checkIfIssuedBy(issuer,x);
-                if(ret == X509Utils.V_OK) {
-                    return 1;
-                }
-                if((ctx.param.flags & X509Utils.V_FLAG_CB_ISSUER_CHECK) == 0) {
-                    return 0;
-                }
-                ctx.error = ret;
-                ctx.currentCertificate = x;
-                ctx.currentIssuer = issuer;
-                return ctx.verifyCallback.call(new Integer(0),ctx);
+    final static Store.CheckIssuedFunction defaultCheckIssued = new Store.CheckIssuedFunction() {
+        public int call(StoreContext context, X509AuxCertificate cert, X509AuxCertificate issuer) throws Exception {
+            int ret = X509Utils.checkIfIssuedBy(issuer, cert);
+            if ( ret == X509Utils.V_OK ) return 1;
+
+            if ( (context.verifyParameter.flags & X509Utils.V_FLAG_CB_ISSUER_CHECK) == 0 ) {
+                return 0;
             }
-        };
+            context.error = ret;
+            context.currentCertificate = cert;
+            context.currentIssuer = issuer;
+
+            return context.verifyCallback.call(context, Integer.valueOf(0));
+        }
+    };
 
     /**
      * c: null_callback
      */
-    public final static Store.VerifyCallbackFunction NullCallback = new Store.VerifyCallbackFunction() {
-            public int call(Object a1, Object a2) {
-                return ((Integer)a1).intValue();
-            }
-        };
+    final static Store.VerifyCallbackFunction nullCallback = new Store.VerifyCallbackFunction() {
+        public int call(StoreContext context, Integer outcome) {
+            return outcome.intValue();
+        }
+    };
 
     /**
      * c: internal_verify
      */
-    public final static Store.VerifyFunction internalVerify = new Store.VerifyFunction() {
-            public int call(Object a1) throws Exception {
-                StoreContext ctx = (StoreContext)a1;
-                Store.VerifyCallbackFunction cb = ctx.verifyCallback;
-                int n = ctx.chain.size();
-                ctx.errorDepth = n-1;
-                n--;
-                X509AuxCertificate xi = ctx.chain.get(n);
-                X509AuxCertificate xs = null;
-                int ok = 0;
-                if(ctx.checkIssued.call(ctx,xi,xi) != 0) {
-                    xs = xi;
-                } else {
-                    if(n<=0) {
-                        ctx.error = X509Utils.V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE;
-                        ctx.currentCertificate = xi;
-                        ok = cb.call(new Integer(0),ctx);
-                        return ok;
-                    } else {
-                        n--;
-                        ctx.errorDepth = n;
-                        xs = ctx.chain.get(n);
-                    }
-                }
-                while(n>=0) {
-                    ctx.errorDepth = n;
-                    if(!xs.isValid()) {
-                        try {
-                            xs.verify(xi.getPublicKey());
-                        } catch(Exception e) {
-                            /*
-                            System.err.println("n: " + n);
-                            System.err.println("verifying: " + xs);
-                            System.err.println("verifying with issuer?: " + xi);
-                            System.err.println("verifying with issuer.key?: " + xi.getPublicKey());
-                            System.err.println("exception: " + e);
-                            */
-                            ctx.error = X509Utils.V_ERR_CERT_SIGNATURE_FAILURE;
-                            ctx.currentCertificate = xs;
-                            ok = cb.call(new Integer(0),ctx);
-                            if(ok == 0) {
-                                return ok;
-                            }
-                        }
-                    }
-                    xs.setValid(true);
-                    ok = ctx.checkCertificateTime(xs);
-                    if(ok == 0) {
-                        return ok;
-                    }
-                    ctx.currentIssuer = xi;
-                    ctx.currentCertificate = xs;
-                    ok = cb.call(new Integer(1),ctx);
-                    if(ok == 0) {
-                        return ok;
-                    }
-                    n--;
-                    if(n>=0) {
-                        xi = xs;
-                        xs = ctx.chain.get(n);
-                    }
-                }
-                ok = 1;
-                return ok;
+    final static Store.VerifyFunction internalVerify = new Store.VerifyFunction() {
+        public int call(final StoreContext context) throws Exception {
+            Store.VerifyCallbackFunction verifyCallback = context.verifyCallback;
+
+            int n = context.chain.size();
+            context.errorDepth = n - 1;
+            n--;
+            X509AuxCertificate xi = context.chain.get(n);
+            X509AuxCertificate xs = null;
+            int ok = 0;
+
+            if ( context.checkIssued.call(context,xi,xi) != 0 ) {
+                xs = xi;
             }
-        };
+            else {
+                if ( n <= 0 ) {
+                    context.error = X509Utils.V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE;
+                    context.currentCertificate = xi;
+                    ok = verifyCallback.call(context, Integer.valueOf(0));
+                    return ok;
+                }
+                else {
+                    n--;
+                    context.errorDepth = n;
+                    xs = context.chain.get(n);
+                }
+            }
+
+            while ( n >= 0 ) {
+                context.errorDepth = n;
+                if ( ! xs.isValid() ) {
+                    try {
+                        xs.verify(xi.getPublicKey());
+                    }
+                    catch(Exception e) {
+                        /*
+                        System.err.println("n: " + n);
+                        System.err.println("verifying: " + xs);
+                        System.err.println("verifying with issuer?: " + xi);
+                        System.err.println("verifying with issuer.key?: " + xi.getPublicKey());
+                        System.err.println("exception: " + e);
+                        */
+                        context.error = X509Utils.V_ERR_CERT_SIGNATURE_FAILURE;
+                        context.currentCertificate = xs;
+                        ok = verifyCallback.call(context, Integer.valueOf(0));
+                        if ( ok == 0 ) return ok;
+                    }
+                }
+
+                xs.setValid(true);
+                ok = context.checkCertificateTime(xs);
+                if ( ok == 0 ) return ok;
+
+                context.currentIssuer = xi;
+                context.currentCertificate = xs;
+                ok = verifyCallback.call(context, Integer.valueOf(1));
+                if ( ok == 0 ) return ok;
+
+                n--;
+                if ( n >= 0 ) {
+                    xi = xs;
+                    xs = context.chain.get(n);
+                }
+            }
+            ok = 1;
+            return ok;
+        }
+    };
 
     /**
      * c: check_revocation
      */
-    public final static Store.CheckRevocationFunction defaultCheckRevocation = new Store.CheckRevocationFunction() {
-            public int call(Object a1) throws Exception {
-                StoreContext ctx = (StoreContext)a1;
-                int last,ok=0;
-                if((ctx.param.flags & X509Utils.V_FLAG_CRL_CHECK) == 0) {
-                    return 1;
-                }
-                if((ctx.param.flags & X509Utils.V_FLAG_CRL_CHECK_ALL) != 0) {
-                    last = ctx.chain.size() -1;
-                } else {
-                    last = 0;
-                }
-                for(int i=0;i<=last;i++) {
-                    ctx.errorDepth = i;
-                    ok = ctx.checkCertificate();
-                    if(ok == 0) {
-                        return 0;
-                    }
-                }
+    final static Store.CheckRevocationFunction defaultCheckRevocation = new Store.CheckRevocationFunction() {
+        public int call(final StoreContext context) throws Exception {
+            if ( (context.verifyParameter.flags & X509Utils.V_FLAG_CRL_CHECK) == 0 ) {
                 return 1;
             }
-        };
+            final int last;
+            if ( (context.verifyParameter.flags & X509Utils.V_FLAG_CRL_CHECK_ALL) != 0 ) {
+                last = context.chain.size() - 1;
+            }
+            else {
+                last = 0;
+            }
+            int ok;
+            for ( int i=0; i<=last; i++ ) {
+                context.errorDepth = i;
+                ok = context.checkCertificate();
+                if ( ok == 0 ) return 0;
+            }
+            return 1;
+        }
+    };
 
     /**
      * c: get_crl
      */
-    public final static Store.GetCRLFunction defaultGetCRL = new Store.GetCRLFunction() {
-            public int call(Object a1, Object a2, Object a3) throws Exception {
-                StoreContext ctx = (StoreContext)a1;
-                X509CRL[] pcrl = (X509CRL[])a2;
-                X509AuxCertificate x = (X509AuxCertificate)a3;
-                Name nm = new Name(x.getIssuerX500Principal());
-                X509CRL[] crl = new X509CRL[1];
-                int ok = ctx.getCRLStack(crl,nm,ctx.crls);
-                if(ok != 0) {
-                    pcrl[0] = crl[0];
-                    return 1;
-                }
-                X509Object[] xobj = new X509Object[1];
-                ok = ctx.getBySubject(X509Utils.X509_LU_CRL,nm,xobj);
-                if(ok == 0) {
-                    if(crl[0] != null) {
-                        pcrl[0] = crl[0];
-                        return 1;
-                    }
-                    return 0;
-                }
-                pcrl[0] = (X509CRL)(((CRL)xobj[0]).crl);
+    final static Store.GetCRLFunction defaultGetCRL = new Store.GetCRLFunction() {
+        public int call(final StoreContext context, final X509CRL[] crls, X509AuxCertificate x) throws Exception {
+            final Name name = new Name( x.getIssuerX500Principal() );
+            final X509CRL[] crl = new X509CRL[1];
+            int ok = context.getCRLStack(crl, name, context.crls);
+            if ( ok != 0 ) {
+                crls[0] = crl[0];
                 return 1;
             }
-        };
+            final X509Object[] xobj = new X509Object[1];
+            ok = context.getBySubject(X509Utils.X509_LU_CRL, name, xobj);
+            if ( ok == 0 ) {
+                if ( crl[0] != null ) {
+                    crls[0] = crl[0];
+                    return 1;
+                }
+                return 0;
+            }
+            crls[0] = (X509CRL) ( (CRL) xobj[0] ).crl;
+            return 1;
+        }
+    };
 
     /**
      * c: check_crl
      */
-    public final static Store.CheckCRLFunction defaultCheckCRL = new Store.CheckCRLFunction() {
-            public int call(Object a1, Object a2) throws Exception {
-                StoreContext ctx = (StoreContext)a1;
-                final X509CRL crl = (X509CRL)a2;
-                X509AuxCertificate issuer = null;
-                int ok = 0,chnum,cnum;
-                cnum = ctx.errorDepth;
-                chnum = ctx.chain.size()-1;
-                if(cnum < chnum) {
-                    issuer = ctx.chain.get(cnum+1);
-                } else {
-                    issuer = ctx.chain.get(chnum);
-                    if(ctx.checkIssued.call(ctx,issuer,issuer) == 0) {
-                        ctx.error = X509Utils.V_ERR_UNABLE_TO_GET_CRL_ISSUER;
-                        ok = ctx.verifyCallback.call(new Integer(0),ctx);
-                        if(ok == 0) {
-                            return ok;
-                        }
-                    }
-                }
+    final static Store.CheckCRLFunction defaultCheckCRL = new Store.CheckCRLFunction() {
+        public int call(final StoreContext context, final X509CRL crl) throws Exception {
+            final int errorDepth = context.errorDepth;
+            final int lastInChain = context.chain.size() - 1;
 
-                if (issuer != null) {
-                    if (issuer.getKeyUsage() != null && !issuer.getKeyUsage()[6]) {
-                        ctx.error = X509Utils.V_ERR_KEYUSAGE_NO_CRL_SIGN;
-                        ok = ctx.verifyCallback.call(new Integer(0), ctx);
-                        if (ok == 0) {
-                            return ok;
-                        }
-                    }
-                    final PublicKey ikey = issuer.getPublicKey();
-                    if (ikey == null) {
-                        ctx.error = X509Utils.V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY;
-                        ok = ctx.verifyCallback.call(new Integer(0), ctx);
-                        if (ok == 0) {
-                            return ok;
-                        }
-                    } else {
-                        try {
-                            crl.verify(ikey);
-                        } catch (Exception ignored) {
-                            ctx.error = X509Utils.V_ERR_CRL_SIGNATURE_FAILURE;
-                            ok = ctx.verifyCallback.call(new Integer(0), ctx);
-                            if (ok == 0) {
-                                return ok;
-                            }
-                        }
-                    }
-                }
-
-                ok = ctx.checkCRLTime(crl,1);
-                if(ok == 0) {
-                    return ok;
-                }
-                return 1;
+            int ok;
+            final X509AuxCertificate issuer;
+            if ( errorDepth < lastInChain ) {
+                issuer = context.chain.get(errorDepth + 1);
             }
-        };
+            else {
+                issuer = context.chain.get(lastInChain);
+                if ( context.checkIssued.call(context,issuer,issuer) == 0 ) {
+                    context.error = X509Utils.V_ERR_UNABLE_TO_GET_CRL_ISSUER;
+                    ok = context.verifyCallback.call(context, Integer.valueOf(0));
+                    if ( ok == 0 ) return ok;
+                }
+            }
+
+            if ( issuer != null ) {
+                if ( issuer.getKeyUsage() != null && !issuer.getKeyUsage()[6] ) {
+                    context.error = X509Utils.V_ERR_KEYUSAGE_NO_CRL_SIGN;
+                    ok = context.verifyCallback.call(context, Integer.valueOf(0));
+                    if ( ok == 0 ) return ok;
+                }
+                final PublicKey ikey = issuer.getPublicKey();
+                if (ikey == null) {
+                    context.error = X509Utils.V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY;
+                    ok = context.verifyCallback.call(context, Integer.valueOf(0));
+                    if ( ok == 0 ) return ok;
+                } else {
+                    try {
+                        crl.verify(ikey);
+                    }
+                    catch (Exception ignored) {
+                        context.error = X509Utils.V_ERR_CRL_SIGNATURE_FAILURE;
+                        ok = context.verifyCallback.call(context, Integer.valueOf(0));
+                        if ( ok == 0 ) return ok;
+                    }
+                }
+            }
+
+            ok = context.checkCRLTime(crl, 1);
+            if ( ok == 0 ) return ok;
+
+            return 1;
+        }
+    };
 
     /**
      * c: cert_crl
      */
-    public final static Store.CertificateCRLFunction defaultCertificateCRL = new Store.CertificateCRLFunction() {
-            public int call(Object a1, Object a2, Object a3) throws Exception {
-                StoreContext ctx = (StoreContext)a1;
-                X509CRL crl = (X509CRL)a2;
-                X509AuxCertificate x = (X509AuxCertificate)a3;
-                int ok;
-                if(crl.getRevokedCertificate(x.getSerialNumber()) != null) {
-                    ctx.error = X509Utils.V_ERR_CERT_REVOKED;
-                    ok = ctx.verifyCallback.call(new Integer(0), ctx);
-                    if(ok == 0) {
-                        return 0;
-                    }
-                }
-                if((ctx.param.flags & X509Utils.V_FLAG_IGNORE_CRITICAL) != 0) {
-                    return 1;
-                }
-
-                if(crl.getCriticalExtensionOIDs() != null && crl.getCriticalExtensionOIDs().size()>0) {
-                    ctx.error = X509Utils.V_ERR_UNHANDLED_CRITICAL_CRL_EXTENSION;
-                    ok = ctx.verifyCallback.call(new Integer(0), ctx);
-                    if(ok == 0) {
-                        return 0;
-                    }
-                }
+    final static Store.CertificateCRLFunction defaultCertificateCRL = new Store.CertificateCRLFunction() {
+        public int call(final StoreContext context, final X509CRL crl, X509AuxCertificate x) throws Exception {
+            int ok;
+            if ( crl.getRevokedCertificate( x.getSerialNumber() ) != null ) {
+                context.error = X509Utils.V_ERR_CERT_REVOKED;
+                ok = context.verifyCallback.call(context, Integer.valueOf(0));
+                if ( ok == 0 ) return 0;
+            }
+            if ( (context.verifyParameter.flags & X509Utils.V_FLAG_IGNORE_CRITICAL) != 0 ) {
                 return 1;
             }
-        };
+            if ( crl.getCriticalExtensionOIDs() != null && crl.getCriticalExtensionOIDs().size() > 0 ) {
+                context.error = X509Utils.V_ERR_UNHANDLED_CRITICAL_CRL_EXTENSION;
+                ok = context.verifyCallback.call(context, Integer.valueOf(0));
+                if ( ok == 0 ) return 0;
+            }
+            return 1;
+        }
+    };
 
     /**
      * c: check_policy
      */
-    public final static CheckPolicyFunction defaultCheckPolicy = new CheckPolicyFunction() {
-            public int call(Object a1) throws Exception {
-                return 1;
-            }
-        };
+    final static CheckPolicyFunction defaultCheckPolicy = new CheckPolicyFunction() {
+        public int call(StoreContext context) throws Exception {
+            return 1;
+        }
+    };
 }// X509_STORE_CTX
