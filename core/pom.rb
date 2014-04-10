@@ -259,8 +259,7 @@ project 'JRuby Core' do
           },
           'argLine' =>  '-Xmx${jruby.test.memory} -XX:MaxPermSize=${jruby.test.memory.permgen} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
           'includes' => [ 'org/jruby/test/MainTestSuite.java',
-                          'org/jruby/embed/**/*Test*.java',
-                          'org/jruby/truffle/test/TruffleTestSuite.java' ],
+                          'org/jruby/embed/**/*Test*.java' ],
           'additionalClasspathElements' => [ '${basedir}/src/test/ruby' ] )
 
   build do

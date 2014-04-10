@@ -594,7 +594,6 @@
           <includes>
             <include>org/jruby/test/MainTestSuite.java</include>
             <include>org/jruby/embed/**/*Test*.java</include>
-            <include>org/jruby/truffle/test/TruffleTestSuite.java</include>
           </includes>
           <additionalClasspathElements>
             <additionalClasspathElement>${basedir}/src/test/ruby</additionalClasspathElement>
