@@ -90,7 +90,6 @@ import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.instructions.ZSuperInstr;
 import org.jruby.ir.instructions.defined.DefinedObjectNameInstr;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
-import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
@@ -150,7 +149,6 @@ public class InstrEncoderMap {
             case GET_GLOBAL_VAR: encodeGetGlobalVariableInstr((GetGlobalVariableInstr) instr); break;
             case GVAR_ALIAS: encodeGVarAliasInstr((GVarAliasInstr) instr); break;
             case INHERITANCE_SEARCH_CONST: encodeInheritanceSearchConstInstr((InheritanceSearchConstInstr) instr); break;
-            case IS_METHOD_BOUND: encodeIsMethodBoundInstr((IsMethodBoundInstr) instr); break;
             case JUMP: encodeJumpInstr((JumpInstr) instr); break;
             case LABEL: encodeLabelInstr((LabelInstr) instr); break;
             case LAMBDA: encodeBuildLambdaInstr((BuildLambdaInstr) instr); break;
@@ -363,10 +361,6 @@ public class InstrEncoderMap {
         e.encode(instr.getCurrentModule());
         e.encode(instr.getConstName());
         e.encode(instr.isNoPrivateConsts());
-    }
-
-    private void encodeIsMethodBoundInstr(IsMethodBoundInstr instr) {
-        encodeDefinedObjectNameInstr(instr);
     }
 
     private void encodeJumpInstr(JumpInstr instr) {

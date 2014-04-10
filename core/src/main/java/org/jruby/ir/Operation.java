@@ -156,7 +156,6 @@ public enum Operation {
     BLOCK_GIVEN(0),
     DEFINED_CONSTANT_OR_METHOD(OpFlags.f_can_raise_exception),
     GET_ERROR_INFO(0),
-    IS_METHOD_BOUND(0),
     METHOD_DEFINED(OpFlags.f_can_raise_exception),
     METHOD_IS_PUBLIC(0),
     RESTORE_ERROR_INFO(OpFlags.f_has_side_effect), // SSS FIXME: Side effecting? Really?

@@ -117,7 +117,6 @@ import org.jruby.ir.operands.MethodHandle;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
-import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
@@ -1700,11 +1699,6 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void GetErrorInfoInstr(GetErrorInfoInstr geterrorinfoinstr) {
         super.GetErrorInfoInstr(geterrorinfoinstr);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void IsMethodBoundInstr(IsMethodBoundInstr ismethodboundinstr) {
-        super.IsMethodBoundInstr(ismethodboundinstr);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     @Override

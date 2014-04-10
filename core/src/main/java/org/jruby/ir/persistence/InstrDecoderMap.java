@@ -92,7 +92,6 @@ import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.instructions.ZSuperInstr;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
-import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
@@ -168,7 +167,6 @@ class InstrDecoderMap implements IRPersistenceValues {
             case GET_GLOBAL_VAR: return new GetGlobalVariableInstr(d.decodeVariable(), d.decodeString());
             case GVAR_ALIAS: return new GVarAliasInstr(d.decodeOperand(), d.decodeOperand());
             case INHERITANCE_SEARCH_CONST: return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.decodeBoolean());
-            case IS_METHOD_BOUND: return new IsMethodBoundInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
             case JUMP: return new JumpInstr((Label) d.decodeOperand());
             case LABEL: return new LabelInstr((Label) d.decodeOperand());
             case LAMBDA: return decodeLambda();
