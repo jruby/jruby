@@ -1496,7 +1496,7 @@ public class IRBuilder {
              * ----------------------------------------------------------------- */
             Label undefLabel = s.getNewLabel();
             Variable tmpVar = addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_METHOD,
-                    new Operand[] { s.getSelf(), new StringLiteral(((FCallNode) node).getName()) }));
+                    new Operand[]{s.getSelf(), new StringLiteral(((FCallNode) node).getName())}));
             addInstr(s, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
             Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "method");
             return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
@@ -1563,8 +1563,8 @@ public class IRBuilder {
                     Operand  receiver   = build(iVisited.getReceiverNode(), s);
                     addInstr(s, new MethodIsPublicInstr(tmpVar, receiver, attrMethodName));
                     addInstr(s, BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
-                    addInstr(s, new IsMethodBoundInstr(tmpVar, s.getSelf(), attrMethodName));
-                    addInstr(s, BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
+                    addInstr(s, new RuntimeHelperCall(tmpVar, IS_DEFINED_METHOD, new Operand[] { s.getSelf(), attrMethodName }));
+                    addInstr(s, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
                     Operand argsCheckDefn = buildGetArgumentDefinition(iVisited.getArgsNode(), s, "assignment");
                     return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
                 }
