@@ -79,6 +79,10 @@ class MethodTranslator extends BodyTranslator {
         if (isBlock) {
             boolean shouldSwitch = true;
 
+            if (argsNode.getPreCount() == 0 && argsNode.getOptionalArgsCount() == 0 && argsNode.getPostCount() == 0 && argsNode.getRestArgNode() == null) {
+                shouldSwitch = false;
+            }
+
             if (argsNode.getPreCount() + argsNode.getPostCount() == 1 && argsNode.getOptionalArgsCount() == 0 && argsNode.getRestArgNode() == null) {
                 shouldSwitch = false;
             }
@@ -99,13 +103,12 @@ class MethodTranslator extends BodyTranslator {
                 destructureArgumentsTranslator.pushArraySlot(arraySlot);
                 final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
-                final RespondToNode respondToConvertAry = new RespondToNode(context, sourceSection, readArrayNode, "to_ary");
-
                 preludeBuilder = new IfNode(context, sourceSection,
                         BooleanCastNodeFactory.create(context, sourceSection,
                                 AndNodeFactory.create(context, sourceSection,
                                     new BehaveAsBlockNode(context, sourceSection, true),
-                                    new ShouldDestructureNode(context, sourceSection, arity, respondToConvertAry))),
+                                    new ShouldDestructureNode(context, sourceSection, arity,
+                                            new RespondToNode(context, sourceSection, readArrayNode, "to_ary")))),
                         SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments),
                         loadArguments);
             } else {
