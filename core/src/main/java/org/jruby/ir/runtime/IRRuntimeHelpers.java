@@ -542,6 +542,19 @@ public class IRRuntimeHelpers {
                 context.runtime.getDefinedMessage(DefinedMessage.INSTANCE_VARIABLE) : context.nil;
     }
 
+    public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver) {
+        boolean flag = false;
+        String frameName = context.getFrameName();
+
+        if (frameName != null) {
+            RubyModule frameClass = context.getFrameKlazz();
+            if (frameClass != null) {
+                flag = Helpers.findImplementerIfNecessary(receiver.getMetaClass(), frameClass).getSuperClass().isMethodBound(frameName, false);
+            }
+        }
+        return flag ? context.runtime.getDefinedMessage(DefinedMessage.SUPER) : context.nil;
+    }
+
     protected static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule frameClass, String methodName) {
         // FIXME: super/zsuper in top-level script still seems to have a frameClass so it will not make it into this if
         if (frameClass == null) {

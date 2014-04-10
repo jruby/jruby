@@ -1416,7 +1416,20 @@ public class IRBuilder {
                     new Operand[] { s.getSelf(), new StringLiteral(((InstVarNode) node).getName()) }));
         case CLASSVARNODE:
             return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_CLASS_VAR,
-                    new Operand[] { classVarDefinitionContainer(s), new StringLiteral(((ClassVarNode) node).getName()) }));
+                    new Operand[]{classVarDefinitionContainer(s), new StringLiteral(((ClassVarNode) node).getName())}));
+        case SUPERNODE: {
+            Label undefLabel = s.getNewLabel();
+            Variable tmpVar  = s.createTemporaryVariable();
+            addInstr(s, new SuperMethodBoundInstr(tmpVar, s.getSelf()));
+            addInstr(s, BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
+            Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), s, "super");
+            return buildDefnCheckIfThenPaths(s, undefLabel, superDefnVal);
+        }
+        case YIELDNODE:
+            return buildDefinitionCheck(s, new BlockGivenInstr(s.createTemporaryVariable(), getImplicitBlockArg(s)), "yield");
+        case ZSUPERNODE:
+            return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_SUPER,
+                    new Operand[] { s.getSelf() } ));
         case CONSTNODE: {
             Label defLabel = s.getNewLabel();
             Label doneLabel = s.getNewLabel();
@@ -1433,8 +1446,6 @@ public class IRBuilder {
             addInstr(s, new LabelInstr(doneLabel));
             return tmpVar;
         }
-        case YIELDNODE:
-            return buildDefinitionCheck(s, new BlockGivenInstr(s.createTemporaryVariable(), getImplicitBlockArg(s)), "yield");
         case COLON3NODE: case COLON2NODE: {
             // SSS FIXME: Is there a reason to do this all with low-level IR?
             // Can't this all be folded into a Java method that would be part
@@ -1567,16 +1578,6 @@ public class IRBuilder {
 
             // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
             return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, undefLabel}, rescueBlock, null);
-        }
-        case ZSUPERNODE:
-            return buildDefinitionCheck(s, new SuperMethodBoundInstr(s.createTemporaryVariable(), s.getSelf()), "super");
-        case SUPERNODE: {
-            Label undefLabel = s.getNewLabel();
-            Variable tmpVar  = s.createTemporaryVariable();
-            addInstr(s, new SuperMethodBoundInstr(tmpVar, s.getSelf()));
-            addInstr(s, BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
-            Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), s, "super");
-            return buildDefnCheckIfThenPaths(s, undefLabel, superDefnVal);
         }
         default: {
             // protected code
