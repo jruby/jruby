@@ -135,7 +135,7 @@ public class SSLContext extends RubyObject {
         cSSLContext.defineAlias("ssl_timeout=", "timeout=");
 
         cSSLContext.defineAnnotatedMethods(SSLContext.class);
-        
+
         cSSLContext.defineConstant("METHODS", runtime.newEmptyArray());
     }
 
@@ -596,21 +596,20 @@ public class SSLContext extends RubyObject {
         }
 
         // part of ssl_verify_cert_chain
-        StoreContext createStoreContext(String purpose) {
-            if (store == null) {
-                return null;
-            }
-            StoreContext ctx = new StoreContext();
-            if (ctx.init(store, null, null) == 0) {
+        StoreContext createStoreContext(final String purpose) {
+            if ( store == null ) return null;
+
+            final StoreContext storeContext = new StoreContext();
+            if ( storeContext.init(store, null, null) == 0 ) {
                 return null;
             }
             // for verify_cb
-            ctx.setExtraData(1, store.getExtraData(1));
-            if (purpose != null) {
-                ctx.setDefault(purpose);
+            storeContext.setExtraData(1, store.getExtraData(1));
+            if ( purpose != null ) {
+                storeContext.setDefault(purpose);
             }
-            ctx.param.inherit(store.param);
-            return ctx;
+            storeContext.verifyParameter.inherit(store.verifyParameter);
+            return storeContext;
         }
     }
 
