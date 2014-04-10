@@ -146,7 +146,6 @@ public class InstrEncoderMap {
             case EQQ: encodeEQQInstr((EQQInstr) instr); break;
             case EXC_REGION_END: /* no state */ break;
             case EXC_REGION_START: encodeExceptionRegionStartMarkerInstr((ExceptionRegionStartMarkerInstr) instr); break;
-            case GET_BACKREF: /* no state */ break;
             case GET_CVAR: encodeGetClassVariableInstr((GetClassVariableInstr) instr); break;
             case GET_ENCODING: encodeGetEncodingInstr((GetEncodingInstr) instr); break;
             case GET_ERROR_INFO: /* no state */ break;

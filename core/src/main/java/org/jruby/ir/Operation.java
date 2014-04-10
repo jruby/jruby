@@ -156,7 +156,6 @@ public enum Operation {
     BLOCK_GIVEN(0),
     CLASS_VAR_IS_DEFINED(0),
     DEFINED_CONSTANT_OR_METHOD(OpFlags.f_can_raise_exception),
-    GET_BACKREF(0),
     GET_ERROR_INFO(0),
     IS_METHOD_BOUND(0),
     METHOD_DEFINED(OpFlags.f_can_raise_exception),
