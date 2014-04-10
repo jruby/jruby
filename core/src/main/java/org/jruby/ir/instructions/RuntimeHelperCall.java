@@ -7,6 +7,7 @@ import org.jruby.RubyModule;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -102,25 +103,24 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
             case IS_DEFINED_BACKREF:
                 return IRRuntimeHelpers.isDefinedBackref(context);
             case IS_DEFINED_NTH_REF:
-                return IRRuntimeHelpers.isDefinedNthRef(context,
-                        (int) ((RubyFixnum) args[0].retrieve(context, self, currDynScope, temp)).getLongValue());
+                return IRRuntimeHelpers.isDefinedNthRef(context, (int) ((Fixnum) args[0]).getValue());
             case IS_DEFINED_GLOBAL:
-                return IRRuntimeHelpers.isDefinedGlobal(context, args[0].retrieve(context, self, currDynScope, temp).toString());
+                return IRRuntimeHelpers.isDefinedGlobal(context, ((StringLiteral) args[0]).getString());
             case IS_DEFINED_INSTANCE_VAR:
                 return IRRuntimeHelpers.isDefinedInstanceVar(context,
                         (IRubyObject) args[0].retrieve(context, self, currDynScope, temp),
-                        args[1].retrieve(context, self, currDynScope, temp).toString());
+                        ((StringLiteral) args[1]).getString());
             case IS_DEFINED_CLASS_VAR:
                 return IRRuntimeHelpers.isDefinedClassVar(context,
                         (RubyModule) args[0].retrieve(context, self, currDynScope, temp),
-                        args[1].retrieve(context, self, currDynScope, temp).toString());
+                        ((StringLiteral) args[1]).getString());
             case IS_DEFINED_SUPER:
                 return IRRuntimeHelpers.isDefinedSuper(context,
                         (IRubyObject) args[0].retrieve(context, self, currDynScope, temp));
             case IS_DEFINED_METHOD:
                 return IRRuntimeHelpers.isDefinedMethod(context,
                         (IRubyObject) args[0].retrieve(context, self, currDynScope, temp),
-                        args[1].retrieve(context, self, currDynScope, temp).toString());
+                        ((StringLiteral) args[1]).getString());
         }
 
         throw new RuntimeException("Unknown IR runtime helper method: " + helperMethod + "; INSTR: " + this);
