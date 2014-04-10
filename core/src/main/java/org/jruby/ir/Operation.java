@@ -158,7 +158,6 @@ public enum Operation {
     DEFINED_CONSTANT_OR_METHOD(OpFlags.f_can_raise_exception),
     GET_BACKREF(0),
     GET_ERROR_INFO(0),
-    GLOBAL_IS_DEFINED(0),
     HAS_INSTANCE_VAR(0),
     IS_METHOD_BOUND(0),
     METHOD_DEFINED(OpFlags.f_can_raise_exception),

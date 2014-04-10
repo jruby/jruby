@@ -9,7 +9,6 @@ import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
-import org.jruby.ir.instructions.defined.GlobalIsDefinedInstr;
 import org.jruby.ir.instructions.defined.HasInstanceVarInstr;
 import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
@@ -1401,11 +1400,15 @@ public class IRBuilder {
             addInstr(s, BNEInstr.create(tmpVar, manager.getNil(), doneLabel));
             addInstr(s, new CopyInstr(tmpVar, new ConstantStringLiteral("expression")));
             addInstr(s, new LabelInstr(doneLabel));
+
             return tmpVar;
         }
         case BACKREFNODE:
             return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_BACKREF,
                     Operand.EMPTY_ARRAY));
+        case GLOBALVARNODE:
+            return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_GLOBAL,
+                    new Operand[] { new StringLiteral(((GlobalVarNode) node).getName()) } ));
         case NTHREFNODE: {
             return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_NTH_REF,
                     new Operand[] { new Fixnum(((NthRefNode) node).getMatchNumber()) }));
@@ -1426,8 +1429,6 @@ public class IRBuilder {
             addInstr(s, new LabelInstr(doneLabel));
             return tmpVar;
         }
-        case GLOBALVARNODE:
-            return buildDefinitionCheck(s, new GlobalIsDefinedInstr(s.createTemporaryVariable(), new StringLiteral(((GlobalVarNode) node).getName())), "global-variable");
         case INSTVARNODE:
             return buildDefinitionCheck(s, new HasInstanceVarInstr(s.createTemporaryVariable(), s.getSelf(), new StringLiteral(((InstVarNode) node).getName())), "instance-variable");
         case YIELDNODE:

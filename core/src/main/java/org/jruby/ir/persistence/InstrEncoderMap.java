@@ -91,7 +91,6 @@ import org.jruby.ir.instructions.ZSuperInstr;
 import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
 import org.jruby.ir.instructions.defined.DefinedObjectNameInstr;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
-import org.jruby.ir.instructions.defined.GlobalIsDefinedInstr;
 import org.jruby.ir.instructions.defined.HasInstanceVarInstr;
 import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
@@ -154,7 +153,6 @@ public class InstrEncoderMap {
             case GET_ERROR_INFO: /* no state */ break;
             case GET_FIELD: encodeGetFieldInstr((GetFieldInstr) instr); break;
             case GET_GLOBAL_VAR: encodeGetGlobalVariableInstr((GetGlobalVariableInstr) instr); break;
-            case GLOBAL_IS_DEFINED: encodeGlobalIsDefinedInstr((GlobalIsDefinedInstr) instr); break;
             case GVAR_ALIAS: encodeGVarAliasInstr((GVarAliasInstr) instr); break;
             case HAS_INSTANCE_VAR: encodeHasInstanceVarInstr((HasInstanceVarInstr) instr); break;
             case INHERITANCE_SEARCH_CONST: encodeInheritanceSearchConstInstr((InheritanceSearchConstInstr) instr); break;
@@ -365,10 +363,6 @@ public class InstrEncoderMap {
 
     private void encodeGetGlobalVariableInstr(GetGlobalVariableInstr instr) {
         e.encode(((GlobalVariable) instr.getSource()).getName());
-    }
-
-    private void encodeGlobalIsDefinedInstr(GlobalIsDefinedInstr instr) {
-        e.encode(instr.getName());
     }
 
     private void encodeGVarAliasInstr(GVarAliasInstr instr) {

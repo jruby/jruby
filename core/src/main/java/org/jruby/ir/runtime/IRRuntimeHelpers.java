@@ -502,13 +502,13 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject isDefinedBackref(ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
+        return RubyMatchData.class.isInstance(context.getBackRef()) ?
+                context.runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE) : context.nil;
+    }
 
-        if (RubyMatchData.class.isInstance(backref)) {
-            return context.runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE);
-        }
-
-        return context.nil;
+    public static IRubyObject isDefinedGlobal(ThreadContext context, String name) {
+        return context.runtime.getGlobalVariables().isDefined(name) ?
+                context.runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE) : context.nil;
     }
 
     // FIXME: This checks for match data differently than isDefinedBackref.  Seems like they should use same mechanism?
