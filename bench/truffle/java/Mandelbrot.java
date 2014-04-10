@@ -112,6 +112,8 @@ class Mandelbrot {
    }
 
    public static void main(String[] args) {
+      int budget = Integer.parseInt(args[0]);
+
       int iterations = 0;
 
       long start = System.nanoTime();
@@ -126,13 +128,13 @@ class Mandelbrot {
 
          elapsed = System.nanoTime() - start;
 
-         if (elapsed > 30 * 1e9)
+         if (elapsed > budget * 1e9)
             break;
       }
 
       double score = iterations / (elapsed / 1e9) * 1000.0;
 
-      System.err.println(score);
+      System.out.println(score);
    }
 
 }

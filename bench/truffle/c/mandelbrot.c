@@ -116,6 +116,8 @@ int sample() {
 double secondtime();
 
 int main(int argc, char** argv) {
+  int budget = atoi(argv[0]);
+
   int iterations = 0;
 
   double start = secondtime();
@@ -130,7 +132,7 @@ int main(int argc, char** argv) {
 
      elapsed = secondtime() - start;
 
-     if (elapsed > 30)
+     if (elapsed > budget)
         break;
   }
 
