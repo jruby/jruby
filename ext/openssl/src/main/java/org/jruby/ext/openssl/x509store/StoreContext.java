@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.x509store;
 
+import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
@@ -43,6 +44,7 @@ import java.util.HashSet;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.jruby.ext.openssl.SecurityHelper;
 
 /**
  * c: X509_STORE_CTX
@@ -827,12 +829,11 @@ public class StoreContext {
         must_be_ca = -1;
 
         try {
-            if (System.getenv("OPENSSL_ALLOW_PROXY_CERTS") != null && !"false".equalsIgnoreCase(System.getenv("OPENSSL_ALLOW_PROXY_CERTS"))) {
+            final String allowProxyCerts = System.getenv("OPENSSL_ALLOW_PROXY_CERTS");
+            if ( allowProxyCerts != null && ! "false".equalsIgnoreCase(allowProxyCerts) ) {
                 allow_proxy_certs = 1;
             }
-        } catch (Error e) {
-            // just ignore if we can't use System.getenv
-        }
+        } catch (SecurityException e) { /* ignore if we can't use System.getenv */ }
 
         for(int i = 0; i<lastUntrusted;i++) {
             int ret;
@@ -1251,21 +1252,22 @@ public class StoreContext {
             }
 
             if ( issuer != null ) {
-                if ( issuer.getKeyUsage() != null && !issuer.getKeyUsage()[6] ) {
+                if ( issuer.getKeyUsage() != null && ! issuer.getKeyUsage()[6] ) {
                     context.error = X509Utils.V_ERR_KEYUSAGE_NO_CRL_SIGN;
                     ok = context.verifyCallback.call(context, Integer.valueOf(0));
                     if ( ok == 0 ) return ok;
                 }
                 final PublicKey ikey = issuer.getPublicKey();
-                if (ikey == null) {
+                if ( ikey == null ) {
                     context.error = X509Utils.V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY;
                     ok = context.verifyCallback.call(context, Integer.valueOf(0));
                     if ( ok == 0 ) return ok;
-                } else {
+                }
+                else {
                     try {
-                        crl.verify(ikey);
+                        SecurityHelper.verify(crl, ikey);
                     }
-                    catch (Exception ignored) {
+                    catch (GeneralSecurityException ex) {
                         context.error = X509Utils.V_ERR_CRL_SIGNATURE_FAILURE;
                         ok = context.verifyCallback.call(context, Integer.valueOf(0));
                         if ( ok == 0 ) return ok;
