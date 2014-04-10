@@ -160,7 +160,6 @@ public enum Operation {
     METHOD_DEFINED(OpFlags.f_can_raise_exception),
     METHOD_IS_PUBLIC(0),
     RESTORE_ERROR_INFO(OpFlags.f_has_side_effect), // SSS FIXME: Side effecting? Really?
-    SUPER_METHOD_BOUND(0),
 
     /* Boxing/Unboxing between Ruby <--> Java types */
     BOX_FIXNUM(0),

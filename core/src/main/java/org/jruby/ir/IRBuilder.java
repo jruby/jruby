@@ -12,7 +12,6 @@ import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
-import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Backref;
@@ -1419,9 +1418,9 @@ public class IRBuilder {
                     new Operand[]{classVarDefinitionContainer(s), new StringLiteral(((ClassVarNode) node).getName())}));
         case SUPERNODE: {
             Label undefLabel = s.getNewLabel();
-            Variable tmpVar  = s.createTemporaryVariable();
-            addInstr(s, new SuperMethodBoundInstr(tmpVar, s.getSelf()));
-            addInstr(s, BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
+            Variable tmpVar  = addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_SUPER,
+                    new Operand[] { s.getSelf() }));
+            addInstr(s, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
             Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), s, "super");
             return buildDefnCheckIfThenPaths(s, undefLabel, superDefnVal);
         }

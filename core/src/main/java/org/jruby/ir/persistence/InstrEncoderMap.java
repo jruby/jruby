@@ -94,7 +94,6 @@ import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
-import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Operand;
 
@@ -198,7 +197,6 @@ public class InstrEncoderMap {
             case CLASS_SUPER: encodeClassSuperInstr((ClassSuperInstr) instr); break;
             case INSTANCE_SUPER: encodeInstanceSuperInstr((InstanceSuperInstr) instr); break;
             case UNRESOLVED_SUPER: encodeUnresolvedSuperInstr((UnresolvedSuperInstr) instr); break;
-            case SUPER_METHOD_BOUND: encodeSuperMethodBoundInstr((SuperMethodBoundInstr) instr); break;
             case THREAD_POLL: encodeThreadPollInstr((ThreadPollInstr) instr); break;
             case THROW: encodeThrowExceptionInstr((ThrowExceptionInstr) instr); break;
             case TO_ARY: encodeToAryInstr((ToAryInstr) instr); break;
@@ -574,10 +572,6 @@ public class InstrEncoderMap {
         }
 
         if (hasClosure) e.encode(instr.getClosureArg(null));
-    }
-
-    private void encodeSuperMethodBoundInstr(SuperMethodBoundInstr instr) {
-        e.encode(instr.getObject());
     }
 
     private void encodeThreadPollInstr(ThreadPollInstr instr) {

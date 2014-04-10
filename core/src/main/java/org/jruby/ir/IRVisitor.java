@@ -8,7 +8,6 @@ import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
-import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 
@@ -117,7 +116,6 @@ public abstract class IRVisitor {
     public void MethodDefinedInstr(MethodDefinedInstr methoddefinedinstr) { error(methoddefinedinstr); }
     public void MethodIsPublicInstr(MethodIsPublicInstr methodispublicinstr) { error(methodispublicinstr); }
     public void RestoreErrorInfoInstr(RestoreErrorInfoInstr restoreerrorinfoinstr) { error(restoreerrorinfoinstr); }
-    public void SuperMethodBoundInstr(SuperMethodBoundInstr supermethodboundinstr) { error(supermethodboundinstr); }
 
     // ruby 1.9 specific
     public void BuildLambdaInstr(BuildLambdaInstr buildlambdainstr) { error(buildlambdainstr); }

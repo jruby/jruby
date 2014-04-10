@@ -121,7 +121,6 @@ import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
-import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CompiledIRBlockBody;
@@ -1721,11 +1720,6 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void RestoreErrorInfoInstr(RestoreErrorInfoInstr restoreerrorinfoinstr) {
         super.RestoreErrorInfoInstr(restoreerrorinfoinstr);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void SuperMethodBoundInstr(SuperMethodBoundInstr supermethodboundinstr) {
-        super.SuperMethodBoundInstr(supermethodboundinstr);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     // ruby 1.9 specific
