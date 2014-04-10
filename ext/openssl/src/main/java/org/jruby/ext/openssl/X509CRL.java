@@ -30,7 +30,6 @@ package org.jruby.ext.openssl;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -41,10 +40,8 @@ import java.util.List;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.CRLException;
 import java.security.cert.CertificateFactory;
@@ -59,9 +56,6 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERBoolean;
 import org.bouncycastle.asn1.DLSequence;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.CertificateList;
-import org.bouncycastle.jce.provider.X509CRLObject;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -483,56 +477,21 @@ public class X509CRL extends RubyObject {
         if ( changed ) return context.runtime.getFalse();
         final PublicKey publicKey = ((PKey) key).getPublicKey();
         try {
-            if (crl instanceof X509CRLObject) {
-                final CertificateList crlList = (CertificateList) getCertificateList(crl);
-                final AlgorithmIdentifier tbsSignatureId = crlList.getTBSCertList().getSignature();
-                if ( ! crlList.getSignatureAlgorithm().equals(tbsSignatureId) ) {
-                    throw new CRLException("Signature algorithm on CertificateList does not match TBSCertList.");
-                }
-
-                final Signature signature = SecurityHelper.getSignature(crl.getSigAlgName());
-
-                signature.initVerify(publicKey);
-                signature.update(crl.getTBSCertList());
-
-                boolean valid = signature.verify(crl.getSignature());
-                return context.runtime.newBoolean(valid);
-            }
-
-            crl.verify(((PKey) key).getPublicKey());
+            boolean valid = SecurityHelper.verify(crl, publicKey, true);
+            return context.runtime.newBoolean(valid);
         }
         catch (CRLException e) {
-            return printExceptionAndGetFalse(context.runtime, e);
+            return context.runtime.getFalse();
         }
         catch (InvalidKeyException e) {
-            return printExceptionAndGetFalse(context.runtime, e);
+            return context.runtime.getFalse();
         }
         catch (SignatureException e) {
-            return printExceptionAndGetFalse(context.runtime, e);
+            return context.runtime.getFalse();
         }
         catch (NoSuchAlgorithmException e) {
-            return printExceptionAndGetFalse(context.runtime, e);
+            return context.runtime.getFalse();
         }
-        catch (NoSuchProviderException e) {
-            warn(context, "WARNING: verify() expected provider to be installed: " + e);
-            return printExceptionAndGetFalse(context.runtime, e);
-        }
-        return context.runtime.getTrue();
-    }
-
-    private static Object getCertificateList(final Object crl) { // X509CRLObject
-        try {
-            // private CertificateList c;
-            final Field cField = X509CRLObject.class.getDeclaredField("c");
-            cField.setAccessible(true);
-            return cField.get(crl);
-        }
-        catch (NoSuchFieldException ex) {
-            if ( isDebug() ) ex.printStackTrace(System.out);
-            return null;
-        }
-        catch (IllegalAccessException e) { return null; }
-        catch (SecurityException e) { return null; }
     }
 
     private static RubyBoolean printExceptionAndGetFalse(final Ruby runtime, final Exception e) {

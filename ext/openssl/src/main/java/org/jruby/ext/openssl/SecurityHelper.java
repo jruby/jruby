@@ -28,6 +28,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Locale;
 
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyFactorySpi;
 import java.security.KeyPairGenerator;
@@ -37,15 +38,20 @@ import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.MessageDigestSpi;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Provider;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.SecureRandomSpi;
 import java.security.Security;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.security.SignatureSpi;
+import java.security.cert.CRLException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateFactorySpi;
+import java.security.cert.X509CRL;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -55,8 +61,13 @@ import javax.crypto.MacSpi;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.SecretKeyFactorySpi;
-
 import javax.net.ssl.SSLContext;
+
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.CertificateList;
+import org.bouncycastle.jce.provider.X509CRLObject;
+
+import static org.jruby.ext.openssl.OpenSSLReal.isDebug;
 
 /**
  * Java Security (and JCE) helpers.
@@ -434,6 +445,70 @@ public abstract class SecurityHelper {
     private static SSLContext getSSLContext(final String protocol, final Provider provider)
         throws NoSuchAlgorithmException {
         return SSLContext.getInstance(protocol, provider);
+    }
+
+    public static boolean verify(final X509CRL crl, final PublicKey publicKey)
+        throws NoSuchAlgorithmException, CRLException, InvalidKeyException, SignatureException {
+        return verify(crl, publicKey, false);
+    }
+
+    static boolean verify(final X509CRL crl, final PublicKey publicKey, final boolean silent)
+        throws NoSuchAlgorithmException, CRLException, InvalidKeyException, SignatureException {
+
+        if ( crl instanceof X509CRLObject ) {
+            final CertificateList crlList = (CertificateList) getCertificateList(crl);
+            final AlgorithmIdentifier tbsSignatureId = crlList.getTBSCertList().getSignature();
+            if ( ! crlList.getSignatureAlgorithm().equals(tbsSignatureId) ) {
+                if ( silent ) return false;
+                throw new CRLException("Signature algorithm on CertificateList does not match TBSCertList.");
+            }
+
+            final Signature signature = getSignature(crl.getSigAlgName(), securityProvider);
+
+            signature.initVerify(publicKey);
+            signature.update(crl.getTBSCertList());
+
+            if ( ! signature.verify( crl.getSignature() ) ) {
+                if ( silent ) return false;
+                throw new SignatureException("CRL does not verify with supplied public key.");
+            }
+            return true;
+        }
+
+        try {
+            crl.verify(publicKey);
+            return true;
+        }
+        catch (NoSuchAlgorithmException ex) {
+            if ( silent ) return false; throw ex;
+        }
+        catch (CRLException ex) {
+            if ( silent ) return false; throw ex;
+        }
+        catch (InvalidKeyException ex) {
+            if ( silent ) return false; throw ex;
+        }
+        catch (SignatureException ex) {
+            if ( silent ) return false; throw ex;
+        }
+        catch (NoSuchProviderException ex) {
+            if ( isDebug() ) ex.printStackTrace();
+            throw new RuntimeException(ex); // unexpected - might hide a bug
+        }
+    }
+
+    private static Object getCertificateList(final Object crl) { // X509CRLObject
+        try { // private CertificateList c;
+            final Field cField = X509CRLObject.class.getDeclaredField("c");
+            cField.setAccessible(true);
+            return cField.get(crl);
+        }
+        catch (NoSuchFieldException ex) {
+            if ( isDebug() ) ex.printStackTrace(System.out);
+            return null;
+        }
+        catch (IllegalAccessException e) { return null; }
+        catch (SecurityException e) { return null; }
     }
 
     // these are BC JCE (@see javax.crypto.JCEUtil) inspired internals :
