@@ -11,38 +11,9 @@ import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
-import org.jruby.ir.operands.Array;
-import org.jruby.ir.operands.AsString;
-import org.jruby.ir.operands.Backref;
-import org.jruby.ir.operands.BacktickString;
-import org.jruby.ir.operands.Bignum;
-import org.jruby.ir.operands.CompoundArray;
-import org.jruby.ir.operands.CompoundString;
-import org.jruby.ir.operands.ConstantStringLiteral;
-import org.jruby.ir.operands.ScopeModule;
-import org.jruby.ir.operands.CurrentScope;
-import org.jruby.ir.operands.DynamicSymbol;
-import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.*;
+import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.operands.Hash;
-import org.jruby.ir.operands.IRException;
-import org.jruby.ir.operands.KeyValuePair;
-import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.MethAddr;
-import org.jruby.ir.operands.NthRef;
-import org.jruby.ir.operands.ObjectClass;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Range;
-import org.jruby.ir.operands.Regexp;
-import org.jruby.ir.operands.SValue;
-import org.jruby.ir.operands.Splat;
-import org.jruby.ir.operands.StringLiteral;
-import org.jruby.ir.operands.Symbol;
-import org.jruby.ir.operands.UndefinedValue;
-import org.jruby.ir.operands.UnexecutableNil;
-import org.jruby.ir.operands.Variable;
-import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.transformations.inlining.CloneMode;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
@@ -58,7 +29,6 @@ import java.io.IOException;
 import java.util.*;
 
 import org.jruby.ir.listeners.IRScopeListener;
-import org.jruby.ir.operands.TemporaryVariable;
 
 // This class converts an AST into a bunch of IR instructions
 
@@ -1425,7 +1395,7 @@ public class IRBuilder {
         }
         case VCALLNODE:
             return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_METHOD,
-                    new Operand[] { s.getSelf(), new StringLiteral(((VCallNode) node).getName()) }));
+                    new Operand[] { s.getSelf(), new StringLiteral(((VCallNode) node).getName()), Boolean.FALSE}));
         case YIELDNODE:
             return buildDefinitionCheck(s, new BlockGivenInstr(s.createTemporaryVariable(), getImplicitBlockArg(s)), "yield");
         case ZSUPERNODE:
@@ -1495,7 +1465,7 @@ public class IRBuilder {
              * ----------------------------------------------------------------- */
             Label undefLabel = s.getNewLabel();
             Variable tmpVar = addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_METHOD,
-                    new Operand[]{s.getSelf(), new StringLiteral(((FCallNode) node).getName())}));
+                    new Operand[]{s.getSelf(), new StringLiteral(((FCallNode) node).getName()), Boolean.FALSE}));
             addInstr(s, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
             Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "method");
             return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
@@ -1557,12 +1527,10 @@ public class IRBuilder {
                     IRScope s = (IRScope)args[0];
                     AttrAssignNode iVisited = (AttrAssignNode)args[1];
                     Label undefLabel = (Label)args[2];
-                    StringLiteral attrMethodName = new StringLiteral(iVisited.getName());
                     Variable tmpVar     = s.createTemporaryVariable();
                     Operand  receiver   = build(iVisited.getReceiverNode(), s);
-                    addInstr(s, new MethodIsPublicInstr(tmpVar, receiver, attrMethodName));
-                    addInstr(s, BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
-                    addInstr(s, new RuntimeHelperCall(tmpVar, IS_DEFINED_METHOD, new Operand[] { s.getSelf(), attrMethodName }));
+                    addInstr(s, new RuntimeHelperCall(tmpVar, IS_DEFINED_METHOD,
+                            new Operand[] { receiver, new StringLiteral(iVisited.getName()), Boolean.TRUE }));
                     addInstr(s, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
                     Operand argsCheckDefn = buildGetArgumentDefinition(iVisited.getArgsNode(), s, "assignment");
                     return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);

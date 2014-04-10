@@ -2,14 +2,11 @@ package org.jruby.ir.instructions;
 
 import java.util.Arrays;
 
-import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.*;
+import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.IRStaticScope;
@@ -21,7 +18,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.parser.IRStaticScope;
 
 import java.util.Map;
-import org.jruby.ir.operands.StringLiteral;
 
 public class RuntimeHelperCall extends Instr implements ResultInstr {
     public enum Methods {
@@ -120,7 +116,8 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
             case IS_DEFINED_METHOD:
                 return IRRuntimeHelpers.isDefinedMethod(context,
                         (IRubyObject) args[0].retrieve(context, self, currDynScope, temp),
-                        ((StringLiteral) args[1]).getString());
+                        ((StringLiteral) args[1]).getString(),
+                        ((Boolean) args[2]).isTrue());
         }
 
         throw new RuntimeException("Unknown IR runtime helper method: " + helperMethod + "; INSTR: " + this);

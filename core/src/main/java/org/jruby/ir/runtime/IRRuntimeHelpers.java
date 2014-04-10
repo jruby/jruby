@@ -542,9 +542,15 @@ public class IRRuntimeHelpers {
                 context.runtime.getDefinedMessage(DefinedMessage.INSTANCE_VARIABLE) : context.nil;
     }
 
-    public static IRubyObject isDefinedMethod(ThreadContext context, IRubyObject receiver, String name) {
-        return receiver.getMetaClass().isMethodBound(name, false) ?
-                context.runtime.getDefinedMessage(DefinedMessage.METHOD) : context.nil;
+    public static IRubyObject isDefinedMethod(ThreadContext context, IRubyObject receiver, String name, boolean checkIfPublic) {
+        DynamicMethod method = receiver.getMetaClass().searchMethod(name);
+
+        // If we find the method we optionally check if it is public before returning "method".
+        if (!method.isUndefined() &&  (!checkIfPublic || method.getVisibility() == Visibility.PUBLIC)) {
+            return context.runtime.getDefinedMessage(DefinedMessage.METHOD);
+        }
+
+        return context.nil;
     }
 
     public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver) {
