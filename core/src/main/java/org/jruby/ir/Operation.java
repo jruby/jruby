@@ -154,7 +154,6 @@ public enum Operation {
     /* Instructions to support defined? */
     BACKREF_IS_MATCH_DATA(0),
     BLOCK_GIVEN(0),
-    CLASS_VAR_IS_DEFINED(0),
     DEFINED_CONSTANT_OR_METHOD(OpFlags.f_can_raise_exception),
     GET_ERROR_INFO(0),
     IS_METHOD_BOUND(0),

@@ -88,7 +88,6 @@ import org.jruby.ir.instructions.UndefMethodInstr;
 import org.jruby.ir.instructions.UnresolvedSuperInstr;
 import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.instructions.ZSuperInstr;
-import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
 import org.jruby.ir.instructions.defined.DefinedObjectNameInstr;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
@@ -133,7 +132,6 @@ public class InstrEncoderMap {
             case CALL: encodeCallBaseInstr((CallInstr) instr); break;
             case CHECK_ARGS_ARRAY_ARITY: encodeCheckArgsArrayArityInstr((CheckArgsArrayArityInstr) instr); break;
             case CHECK_ARITY: encodeCheckArityInstr((CheckArityInstr) instr); break;
-            case CLASS_VAR_IS_DEFINED: encodeClassVarIsDefinedInstr((ClassVarIsDefinedInstr) instr); break;
             case CLASS_VAR_MODULE: encodeGetClassVarContainerModuleInstr((GetClassVarContainerModuleInstr) instr); break;
             case CONST_MISSING: encodeConstMissingInstr((ConstMissingInstr) instr); break;
             case COPY: encodeCopyInstr((CopyInstr) instr); break;
@@ -286,10 +284,6 @@ public class InstrEncoderMap {
         e.encode(instr.opt);
         e.encode(instr.rest);
         e.encode(instr.receivesKeywords);
-    }
-
-    private void encodeClassVarIsDefinedInstr(ClassVarIsDefinedInstr instr) {
-        encodeDefinedObjectNameInstr(instr);
     }
 
     private void encodeGetClassVarContainerModuleInstr(GetClassVarContainerModuleInstr instr) {

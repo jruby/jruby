@@ -6,7 +6,6 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.instructions.*;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
-import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
@@ -1407,7 +1406,7 @@ public class IRBuilder {
                     Operand.EMPTY_ARRAY));
         case GLOBALVARNODE:
             return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_GLOBAL,
-                    new Operand[] { new StringLiteral(((GlobalVarNode) node).getName()) } ));
+                    new Operand[] { new StringLiteral(((GlobalVarNode) node).getName()) }));
         case NTHREFNODE: {
             return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_NTH_REF,
                     new Operand[] { new Fixnum(((NthRefNode) node).getMatchNumber()) }));
@@ -1415,6 +1414,9 @@ public class IRBuilder {
         case INSTVARNODE:
             return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_INSTANCE_VAR,
                     new Operand[] { s.getSelf(), new StringLiteral(((InstVarNode) node).getName()) }));
+        case CLASSVARNODE:
+            return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_CLASS_VAR,
+                    new Operand[] { classVarDefinitionContainer(s), new StringLiteral(((ClassVarNode) node).getName()) }));
         case CONSTNODE: {
             Label defLabel = s.getNewLabel();
             Label doneLabel = s.getNewLabel();
@@ -1519,20 +1521,6 @@ public class IRBuilder {
 
             // Try verifying definition, and if we get an exception, throw it out, and return nil
             return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, undefLabel}, rescueBlock, null);
-        }
-        case CLASSVARNODE: {
-            // SSS FIXME: Is there a reason to do this all with low-level IR?
-            // Can't this all be folded into a Java method that would be part
-            // of the runtime library, which would be used both by the interpreter & the compiled code!
-
-            /* --------------------------------------------------------------------------
-             * Generate IR for this ruby pseudo-code:
-             *   cm = tc.getCurrentScope.getStaticScope.getModule || self.metaclass
-             *   cm.isClassVarDefined ? "class variable" : nil
-             * ------------------------------------------------------------------------------ */
-            ClassVarNode iVisited = (ClassVarNode) node;
-            Operand cm = classVarDefinitionContainer(s);
-            return buildDefinitionCheck(s, new ClassVarIsDefinedInstr(s.createTemporaryVariable(), cm, new StringLiteral(iVisited.getName())), "class variable");
         }
         case ATTRASSIGNNODE: {
             Label  undefLabel = s.getNewLabel();

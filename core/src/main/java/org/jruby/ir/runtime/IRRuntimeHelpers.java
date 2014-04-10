@@ -1,5 +1,6 @@
 package org.jruby.ir.runtime;
 
+import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -522,6 +523,18 @@ public class IRRuntimeHelpers {
         }
 
         return context.nil;
+    }
+
+    public static IRubyObject isDefinedClassVar(ThreadContext context, RubyModule receiver, String name) {
+        boolean defined = receiver.isClassVarDefined(name);
+
+        if (!defined && receiver.isSingleton()) { // Look for class var in singleton if it is one.
+            IRubyObject attached = ((MetaClass) receiver).getAttached();
+
+            if (attached instanceof RubyModule) defined = ((RubyModule) attached).isClassVarDefined(name);
+        }
+
+        return defined ? context.runtime.getDefinedMessage(DefinedMessage.CLASS_VARIABLE) : context.nil;
     }
 
     public static IRubyObject isDefinedInstanceVar(ThreadContext context, IRubyObject receiver, String name) {
