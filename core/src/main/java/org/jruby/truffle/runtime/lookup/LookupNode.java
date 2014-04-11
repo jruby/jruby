@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.lookup;
 import java.util.*;
 
 import com.oracle.truffle.api.*;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.*;
 
 /**
@@ -33,5 +34,7 @@ public interface LookupNode {
     Set<String> getClassVariables();
 
     void getMethods(Map<String, RubyMethod> methods);
+
+    RubyModule.RubyConstant lookupRubyConstant(String constantName);
 
 }

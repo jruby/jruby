@@ -648,7 +648,11 @@ public abstract class ModuleNodes {
         @Specialization
         public RubyModule privateConstant(RubyModule module, Object[] args) {
             final Node callNode = (Node) args[args.length - 1];
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "private_constant does nothing at the moment");
+            for (Object ob : args) {
+                if (ob instanceof RubySymbol){
+                    module.setConstantPrivate((RubySymbol) ob);
+                }
+            }
             return module;
         }
     }

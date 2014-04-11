@@ -53,6 +53,16 @@ public class LookupFork implements LookupNode {
         return second.lookupConstant(constantName);
     }
 
+    public RubyModule.RubyConstant lookupRubyConstant(String constantName) {
+        final Object firstResult = first.lookupConstant(constantName);
+
+        if (firstResult instanceof RubyModule.RubyConstant) {
+            return ((RubyModule.RubyConstant) firstResult);
+        }
+
+        return second.lookupRubyConstant(constantName);
+    }
+
     @Override
     public Object lookupClassVariable(String classVariable) {
         final Object firstResult = first.lookupClassVariable(classVariable);

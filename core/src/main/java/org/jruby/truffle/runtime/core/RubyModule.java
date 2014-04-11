@@ -251,6 +251,35 @@ public class RubyModule extends RubyObject implements LookupNode {
         return lookupParent.lookupConstant(constantName);
     }
 
+    public RubyConstant lookupRubyConstant(String constantName) {
+        Object value;
+        value = getConstants().get(constantName);
+
+        if (value instanceof RubyConstant) {
+            return ((RubyConstant) value);
+        }
+
+        if (parentModule != null) {
+            value = parentModule.lookupRubyConstant(constantName);
+        }
+
+        if (value instanceof RubyConstant) {
+            return ((RubyConstant) value);
+        }
+
+        return lookupParent.lookupRubyConstant(constantName);
+    }
+
+    public void setConstantPrivate(RubySymbol constant) {
+        RubyConstant rubyConstant = lookupRubyConstant(constant.toString());
+
+        if (rubyConstant != null) {
+            rubyConstant.isPrivate = true;
+        } else {
+            // raises an exception
+        }
+    }
+
     @Override
     public Object lookupClassVariable(String variableName) {
         // Look in this module
