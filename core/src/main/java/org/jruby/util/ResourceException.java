@@ -1,4 +1,4 @@
-package org.jruby.util.io;
+package org.jruby.util;
 
 import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;

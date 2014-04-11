@@ -53,6 +53,7 @@ import org.jruby.Ruby;
 import org.jruby.platform.Platform;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.ResourceException;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 

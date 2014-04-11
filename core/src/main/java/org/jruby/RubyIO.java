@@ -36,12 +36,12 @@
 package org.jruby;
 
 import org.jruby.runtime.Helpers;
+import org.jruby.util.ResourceException;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.DirectoryAsFileException;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.ModeFlags;
-import org.jruby.util.io.ResourceException;
 import org.jruby.util.io.SelectBlob;
 import jnr.constants.platform.Fcntl;
 import java.io.EOFException;

@@ -37,12 +37,6 @@ package org.jruby;
 
 import jnr.constants.platform.OpenFlags;
 import org.jcodings.Encoding;
-import org.jruby.util.io.ChannelDescriptor;
-import org.jruby.util.io.DirectoryAsFileException;
-import org.jruby.util.io.FileExistsException;
-import org.jruby.util.io.ModeFlags;
-import org.jruby.util.io.OpenFile;
-import org.jruby.util.io.ResourceException;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
@@ -79,20 +73,26 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.util.ByteList;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.ResourceException;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.io.Stream;
-import org.jruby.util.io.ChannelStream;
-import org.jruby.util.io.IOOptions;
+import org.jruby.util.encoding.Transcoder;
 import org.jruby.util.io.BadDescriptorException;
+import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.ChannelStream;
+import org.jruby.util.io.DirectoryAsFileException;
+import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.io.FileExistsException;
+import org.jruby.util.io.IOEncodable;
+import org.jruby.util.io.IOOptions;
 import org.jruby.util.io.InvalidValueException;
+import org.jruby.util.io.ModeFlags;
+import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PipeException;
+import org.jruby.util.io.Stream;
 import static org.jruby.CompatVersion.*;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.encoding.EncodingService;
-import org.jruby.util.encoding.Transcoder;
-import org.jruby.util.io.EncodingUtils;
-import org.jruby.util.io.IOEncodable;
 
 /**
  * Ruby File class equivalent in java.
