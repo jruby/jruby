@@ -283,7 +283,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
             'detectOfflineLinks' =>  'false',
             'show' =>  'package',
             'level' =>  'package',
-            'maxmemory' =>  '512M' ) do
+            'maxmemory' =>  '1g' ) do
       report_set( 'javadoc',
                   'quiet' =>  'true',
                   'failOnError' =>  'false',

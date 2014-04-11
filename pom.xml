@@ -426,7 +426,7 @@
           <detectOfflineLinks>false</detectOfflineLinks>
           <show>package</show>
           <level>package</level>
-          <maxmemory>512M</maxmemory>
+          <maxmemory>1g</maxmemory>
         </configuration>
       </plugin>
       <plugin>
