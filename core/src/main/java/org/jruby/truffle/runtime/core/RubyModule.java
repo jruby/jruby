@@ -77,7 +77,7 @@ public class RubyModule extends RubyObject implements LookupNode {
 
     private final String name;
     private final Map<String, RubyMethod> methods = new HashMap<>();
-    private final Map<String, Object> constants = new HashMap<>();
+    private final Map<String, RubyConstant> constants = new HashMap<>();
     private final Map<String, Object> classVariables = new HashMap<>();
 
     private final CyclicAssumption unmodifiedAssumption;
@@ -129,7 +129,7 @@ public class RubyModule extends RubyObject implements LookupNode {
     public void setConstant(String constantName, Object value) {
         assert RubyContext.shouldObjectBeVisible(value);
         checkFrozen();
-        getConstants().put(constantName, value);
+        getConstants().put(constantName, new RubyConstant(value, false));
         newVersion();
         // TODO(CS): warn when redefining a constant
     }
@@ -226,6 +226,9 @@ public class RubyModule extends RubyObject implements LookupNode {
 
         value = getConstants().get(constantName);
 
+        if (value instanceof RubyConstant) {
+            return ((RubyConstant) value).value;
+        }
         if (value != null) {
             return value;
         }
@@ -240,6 +243,9 @@ public class RubyModule extends RubyObject implements LookupNode {
             }
         }
 
+        if (value instanceof RubyConstant) {
+            return ((RubyConstant) value).value;
+        }
         // Look in the lookup parent
 
         return lookupParent.lookupConstant(constantName);
@@ -287,9 +293,9 @@ public class RubyModule extends RubyObject implements LookupNode {
     public void appendFeatures(RubyModule other) {
         // TODO(CS): check only run once
 
-        for (Map.Entry<String, Object> constantEntry : getConstants().entrySet()) {
+        for (Map.Entry<String, RubyConstant> constantEntry : getConstants().entrySet()) {
             final String constantName = constantEntry.getKey();
-            final Object constantValue = constantEntry.getValue();
+            final Object constantValue = constantEntry.getValue().value;
             other.setModuleConstant(constantName, constantValue);
         }
 
@@ -378,12 +384,23 @@ public class RubyModule extends RubyObject implements LookupNode {
         getRubyClass().getContext().eval(source, this);
     }
 
-    public Map<String, Object> getConstants() {
+    public Map<String, RubyConstant> getConstants() {
         return constants;
     }
 
     public Map<String, RubyMethod> getMethods() {
         return methods;
+    }
+
+    public static class RubyConstant {
+        public final Object value;
+        public boolean isPrivate;
+
+        public RubyConstant(Object value, boolean isPrivate) {
+            this.value = value;
+            this.isPrivate = isPrivate;
+        }
+
     }
 
 }
