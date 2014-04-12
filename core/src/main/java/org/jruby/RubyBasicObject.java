@@ -1099,7 +1099,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             
             // if RubyBasicObject#op_cmp is used, the result may be nil
             if (!cmp.isNil()) {
-            } else {
                 return (int) cmp.convertToInteger().getLongValue();
             }
         } catch (RaiseException ex) {
