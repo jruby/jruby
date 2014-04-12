@@ -13,6 +13,7 @@ import java.util.*;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.utilities.*;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.*;
 
 /**
@@ -27,7 +28,7 @@ public class LookupTerminal implements LookupNode {
     }
 
     @Override
-    public Object lookupConstant(String constantName) {
+    public RubyModule.RubyConstant lookupConstant(String constantName) {
         return null;
     }
 
@@ -52,5 +53,4 @@ public class LookupTerminal implements LookupNode {
 
     public void getMethods(Map<String, RubyMethod> methods) {
     }
-
 }

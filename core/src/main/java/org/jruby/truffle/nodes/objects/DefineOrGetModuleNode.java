@@ -47,7 +47,7 @@ public class DefineOrGetModuleNode extends RubyNode {
             throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(e.getResult().toString(), "module"));
         }
 
-        final Object constantValue = parentModuleObject.lookupConstant(name);
+        final RubyModule.RubyConstant constantValue = parentModuleObject.lookupConstant(name);
 
         RubyModule definingModule;
 
@@ -56,8 +56,8 @@ public class DefineOrGetModuleNode extends RubyNode {
             parentModuleObject.setConstant(name, definingModule);
             parentModuleObject.getSingletonClass().setConstant(name, definingModule);
         } else {
-            if (constantValue instanceof RubyModule && !(constantValue instanceof RubyClass)) {
-                definingModule = (RubyModule) constantValue;
+            if (constantValue.value instanceof RubyModule && !(constantValue.value instanceof RubyClass)) {
+                definingModule = (RubyModule) constantValue.value;
             } else {
                 throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(name, "module"));
             }

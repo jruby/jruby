@@ -127,7 +127,7 @@ public abstract class CoreMethodNodeManager {
         if (methodDetails.getClassAnnotation().name().equals("main")) {
             module = context.getCoreLibrary().getMainObject().getSingletonClass();
         } else {
-            module = (RubyModule) rubyObjectClass.lookupConstant(methodDetails.getClassAnnotation().name());
+            module = (RubyModule) rubyObjectClass.lookupConstant(methodDetails.getClassAnnotation().name()).value;
         }
 
         assert module != null : methodDetails.getClassAnnotation().name();

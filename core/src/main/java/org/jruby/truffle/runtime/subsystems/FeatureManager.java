@@ -16,6 +16,7 @@ import java.util.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.array.*;
 
 /**
@@ -32,7 +33,7 @@ public class FeatureManager {
     }
 
     public boolean require(String feature) throws IOException {
-        final Object dataConstantBefore = context.getCoreLibrary().getObjectClass().lookupConstant("DATA");
+        final RubyModule.RubyConstant dataConstantBefore = context.getCoreLibrary().getObjectClass().lookupConstant("DATA");
 
         try {
             // Some features are handled specially
@@ -83,7 +84,7 @@ public class FeatureManager {
             if (dataConstantBefore == null) {
                 context.getCoreLibrary().getObjectClass().removeConstant("DATA");
             } else {
-                context.getCoreLibrary().getObjectClass().setConstant("DATA", dataConstantBefore);
+                context.getCoreLibrary().getObjectClass().setConstant("DATA", dataConstantBefore.value);
             }
         }
     }

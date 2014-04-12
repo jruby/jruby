@@ -216,7 +216,7 @@ public abstract class
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
 
-            final RubyHash env = (RubyHash) context.getCoreLibrary().getObjectClass().lookupConstant("ENV");
+            final RubyHash env = (RubyHash) context.getCoreLibrary().getObjectClass().lookupConstant("ENV").value;
 
             for (Map.Entry<Object, Object> entry : env.getMap().entrySet()) {
                 builder.environment().put(entry.getKey().toString(), entry.getValue().toString());
