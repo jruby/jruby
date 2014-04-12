@@ -38,29 +38,14 @@ public class LookupFork implements LookupNode {
     }
 
     @Override
-    public Object lookupConstant(String constantName) {
-        final Object firstResult = first.lookupConstant(constantName);
-
-
-        if (firstResult instanceof RubyModule.RubyConstant) {
-            return ((RubyModule.RubyConstant) firstResult).value;
-        }
+    public RubyModule.RubyConstant lookupConstant(String constantName) {
+        final RubyModule.RubyConstant firstResult = first.lookupConstant(constantName);
 
         if (firstResult != null) {
             return firstResult;
         }
 
         return second.lookupConstant(constantName);
-    }
-
-    public RubyModule.RubyConstant lookupRubyConstant(String constantName) {
-        final Object firstResult = first.lookupConstant(constantName);
-
-        if (firstResult instanceof RubyModule.RubyConstant) {
-            return ((RubyModule.RubyConstant) firstResult);
-        }
-
-        return second.lookupRubyConstant(constantName);
     }
 
     @Override

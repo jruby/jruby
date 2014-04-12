@@ -28,7 +28,7 @@ public class LookupTerminal implements LookupNode {
     }
 
     @Override
-    public Object lookupConstant(String constantName) {
+    public RubyModule.RubyConstant lookupConstant(String constantName) {
         return null;
     }
 
@@ -53,6 +53,4 @@ public class LookupTerminal implements LookupNode {
 
     public void getMethods(Map<String, RubyMethod> methods) {
     }
-    public RubyModule.RubyConstant lookupRubyConstant(String name) { return null; }
-
 }

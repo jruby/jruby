@@ -37,29 +37,29 @@ public class UninitializedReadConstantNode extends ReadConstantNode {
 
         final RubyContext context = receiverObject.getRubyClass().getContext();
 
-        Object value;
+        RubyModule.RubyConstant constant;
 
-        value = receiverObject.getLookupNode().lookupConstant(name);
+        constant = receiverObject.getLookupNode().lookupConstant(name);
 
-        if (value == null && receiverObject instanceof RubyModule) {
+        if (constant == null && receiverObject instanceof RubyModule) {
             /*
              * FIXME(CS): I'm obviously doing something wrong with constant lookup in nested modules
              * here, but explicitly looking in the Module itself, not its lookup node, seems to fix
              * it for now.
              */
 
-            value = ((RubyModule) receiverObject).lookupConstant(name);
+            constant = ((RubyModule) receiverObject).lookupConstant(name);
         }
 
-        if (value == null) {
+        if (constant == null) {
             throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(name));
         }
 
-        replace(new CachedReadConstantNode(context, getSourceSection(), name, receiver, receiverObject.getRubyClass(), value));
+        replace(new CachedReadConstantNode(context, getSourceSection(), name, receiver, receiverObject.getRubyClass(), constant.value));
 
-        assert RubyContext.shouldObjectBeVisible(value);
+        assert RubyContext.shouldObjectBeVisible(constant.value);
 
-        return value;
+        return constant.value;
     }
 
     @Override

@@ -49,11 +49,11 @@ public class DefineOrGetClassNode extends RubyNode {
 
         // Look for a current definition of the class, or create a new one
 
-        final Object constantValue = parentModuleObject.lookupConstant(name);
+        final RubyModule.RubyConstant constant = parentModuleObject.lookupConstant(name);
 
         RubyClass definingClass;
 
-        if (constantValue == null) {
+        if (constant == null) {
             final RubyClass superClassObject = (RubyClass) superClass.execute(frame);
 
             if (superClassObject instanceof RubyException.RubyExceptionClass) {
@@ -67,10 +67,10 @@ public class DefineOrGetClassNode extends RubyNode {
             parentModuleObject.setConstant(name, definingClass);
             parentModuleObject.getSingletonClass().setConstant(name, definingClass);
         } else {
-            if (constantValue instanceof RubyClass) {
-                definingClass = (RubyClass) constantValue;
+            if (constant.value instanceof RubyClass) {
+                definingClass = (RubyClass) constant.value;
             } else {
-                throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constantValue.toString(), "class"));
+                throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constant.value.toString(), "class"));
             }
         }
 

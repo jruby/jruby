@@ -23,7 +23,7 @@ public interface LookupNode {
 
     boolean setClassVariableIfAlreadySet(String variableName, Object value);
 
-    Object lookupConstant(String constantName);
+    RubyModule.RubyConstant lookupConstant(String constantName);
 
     Object lookupClassVariable(String variableName);
 
@@ -34,7 +34,4 @@ public interface LookupNode {
     Set<String> getClassVariables();
 
     void getMethods(Map<String, RubyMethod> methods);
-
-    RubyModule.RubyConstant lookupRubyConstant(String constantName);
-
 }
