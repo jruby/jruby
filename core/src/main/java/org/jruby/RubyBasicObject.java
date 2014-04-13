@@ -1465,9 +1465,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return true if so
      */
     public boolean isBuiltin(String methodName) {
-        DynamicMethod method = getMetaClass().searchMethodInner(methodName);
-
-        return method != null && method.isBuiltin();
+        return getMetaClass().isMethodBuiltin(methodName);
     }
 
     @JRubyMethod(name = "singleton_method_added", module = true, visibility = PRIVATE, compat = RUBY1_9)

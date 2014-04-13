@@ -3919,6 +3919,19 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    /**
+     * Return true if the given method is defined on this class and is a builtin
+     * (defined in Java at boot).
+     *
+     * @param methodName
+     * @return
+     */
+    public boolean isMethodBuiltin(String methodName) {
+        DynamicMethod method = searchMethodInner(methodName);
+
+        return method != null && method.isBuiltin();
+    }
+
     @Deprecated
     public void checkMethodBound(ThreadContext context, IRubyObject[] args, Visibility visibility) {
     }
