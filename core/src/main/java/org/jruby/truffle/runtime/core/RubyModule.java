@@ -245,11 +245,11 @@ public class RubyModule extends RubyObject implements LookupNode {
         return lookupParent.lookupConstant(constantName);
     }
 
-    public void setConstantPrivate(RubySymbol constant) {
+    public void changeConstantVisibility(RubySymbol constant, boolean isPrivate) {
         RubyConstant rubyConstant = lookupConstant(constant.toString());
 
         if (rubyConstant != null) {
-            rubyConstant.isPrivate = true;
+            rubyConstant.isPrivate = isPrivate;
         } else {
             // raises an exception
         }

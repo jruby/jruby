@@ -650,7 +650,30 @@ public abstract class ModuleNodes {
             final Node callNode = (Node) args[args.length - 1];
             for (Object ob : args) {
                 if (ob instanceof RubySymbol){
-                    module.setConstantPrivate((RubySymbol) ob);
+                    module.changeConstantVisibility((RubySymbol) ob, true);
+                }
+            }
+            return module;
+        }
+    }
+
+    @CoreMethod(names = "public_constant", appendCallNode = true, isSplatted = true)
+    public abstract static class PublicConstantNode extends CoreMethodNode {
+
+        public PublicConstantNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PublicConstantNode(PublicConstantNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyModule publicConstant(RubyModule module, Object[] args) {
+            final Node callNode = (Node) args[args.length - 1];
+            for (Object ob : args) {
+                if (ob instanceof RubySymbol){
+                    module.changeConstantVisibility((RubySymbol) ob, false);
                 }
             }
             return module;
