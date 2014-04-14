@@ -73,7 +73,7 @@ rubies = []
 
 # "mruby-1.0.0"
 
-["1.8.7-p374", "1.9.3-p484", "2.0.0-p353", "2.1.1", "ree-1.8.7-2012.02", "rbx-1.2.4", "rbx-2.2.6"].each do |name|
+["1.8.7-p374", "1.9.3-p484", "2.0.0-p353", "2.1.1", "ree-1.8.7-2012.02", "rbx-2.2.6"].each do |name|
   dir = "~/.rbenv/versions/" + name
 
   if Dir.exists? File.expand_path(dir)
@@ -90,9 +90,6 @@ rubies = []
     if name == "rbx-2.2.6"
       relevant_reports.push("competition")
       relevant_reports.push("java-c")
-    end
-
-    if ["rbx-1.2.4", "rbx-2.2.6"].include? name
       rubies.push Ruby.new(name + "-interpreter", dir + "/bin/ruby -Xint", ["interpreters"])
     end
 
