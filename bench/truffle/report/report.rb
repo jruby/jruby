@@ -89,6 +89,7 @@ rubies = []
 
     if name == "rbx-2.2.6"
       relevant_reports.push("competition")
+      relevant_reports.push("java-c")
     end
 
     if ["rbx-1.2.4", "rbx-2.2.6"].include? name
@@ -127,7 +128,7 @@ end
 if not ENV["JRUBY_DIR"].nil? and not ENV["GRAAL_DIR"].nil? and Dir.exists? File.expand_path(ENV["JRUBY_DIR"]) and Dir.exists? File.expand_path(ENV["GRAAL_DIR"])
   rubies.push Ruby.new("jruby-head-server-interpreter", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server -Xcompile.mode=OFF", ["almost-all", "all", "jruby", "jruby-head", "interpreters"])
   rubies.push Ruby.new("jruby-head-server", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server", ["almost-all", "all", "jruby", "jruby-head"])
-  rubies.push Ruby.new("jruby-head-server-indy", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server -Xcompile.invokedynamic=true", ["almost-all", "all", "competition", "jruby", "jruby-head", "summary"])
+  rubies.push Ruby.new("jruby-head-server-indy", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server -Xcompile.invokedynamic=true", ["almost-all", "all", "competition", "jruby", "jruby-head", "summary", "java-c"])
   rubies.push Ruby.new("jruby-head-server-ir-interpreter", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server -X-CIR", ["all", "jruby", "jruby-head", "interpreters"])
   rubies.push Ruby.new("jruby-head-server-ir-compiler", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server -X+CIR", ["all", "jruby", "jruby-head"])
   rubies.push Ruby.new("jruby-head+truffle-server-original", "JAVACMD=$GRAAL_DIR/bin/java $JRUBY_DIR/bin/jruby -J-original -J-d64 -X+T -Xtruffle.printRuntime=true", ["interpreters", "jruby", "jruby-head"])

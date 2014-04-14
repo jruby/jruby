@@ -49,11 +49,11 @@ int mandelbrot(double size) {
  int byte_acc = 0;
  int bit_num = 0;
 
- double y = 0;
+ int y = 0;
  while (y < size) {
    double ci = (2.0*y/size)-1.0;
 
-   double x = 0;
+   int x = 0;
    while (x < size) {
      double zr = 0.0;
      double zrzr = zr;
@@ -62,7 +62,7 @@ int mandelbrot(double size) {
      double cr = (2.0*x/size)-1.5;
      int escape = 1;
 
-     double z = 0;
+     int z = 0;
      while (z < 50) {
        double tr = zrzr - zizi + cr;
        double ti = 2.0*zr*zi + ci;
