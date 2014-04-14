@@ -1,2 +1,2 @@
 mandelbrot: mandelbrot.c
-	$(CC) -O3 -o $@ $^
+	$(CC) -std=c99 -O3 -o $@ $^
