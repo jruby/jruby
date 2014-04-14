@@ -377,6 +377,10 @@ public class Pack {
                 byte c = (byte) (RubyNumeric.num2long(o) & 0xff);
                 result.append(c);
             }
+            public void encode19(Ruby runtime, IRubyObject o, ByteList result) {
+                byte c = (byte) (num2quad19(o) & 0xff);
+                result.append(c);
+            }
         };
         // unsigned char
         converters['C'] = new Converter(1, "Integer") {
@@ -385,6 +389,10 @@ public class Pack {
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 byte c = o == runtime.getNil() ? 0 : (byte) (RubyNumeric.num2long(o) & 0xff);
+                result.append(c);
+            }
+            public void encode19(Ruby runtime, IRubyObject o, ByteList result){
+                byte c = o == runtime.getNil() ? 0 : (byte) (num2quad19(o) & 0xff);
                 result.append(c);
             }
         };
