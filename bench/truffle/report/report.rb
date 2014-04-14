@@ -79,7 +79,7 @@ rubies = []
   if Dir.exists? File.expand_path(dir)
     relevant_reports = ["all"]
 
-    if ["1.8.7-p374", "1.9.3-p484", "2.0.0-p353", "2.1.1", "ree-1.8.7-2012.02", "mruby-1.0.0"].include? name
+    if ["1.8.7-p374", "1.9.3-p484", "2.0.0-p353", "2.1.1", "ree-1.8.7-2012.02"].include? name
       relevant_reports.push("interpreters")
     end
 
@@ -92,7 +92,7 @@ rubies = []
     end
 
     if ["rbx-1.2.4", "rbx-2.2.6"].include? name
-      rubies.push Ruby.new(name, dir + "/bin/ruby -Xint", ["interpreters"])
+      rubies.push Ruby.new(name + "-interpreter", dir + "/bin/ruby -Xint", ["interpreters"])
     end
 
     if name == "2.1.1"
@@ -167,6 +167,7 @@ benchmarks.each do |benchmark|
   scores[benchmark] = {}
 
   rubies_to_run.each do |ruby|
+    puts "#{ruby.command} $JRUBY_DIR/bench/truffle/harness.rb -s #{time_budget_per_run} $JRUBY_DIR/bench/truffle/#{benchmark}.rb"
     output = `#{ruby.command} $JRUBY_DIR/bench/truffle/harness.rb -s #{time_budget_per_run} $JRUBY_DIR/bench/truffle/#{benchmark}.rb`
     score_match = /[a-z\-]+: (\d+\.\d+)/.match(output)
     if score_match.nil?
