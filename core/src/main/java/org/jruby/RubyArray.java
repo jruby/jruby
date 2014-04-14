@@ -3366,9 +3366,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     private IRubyObject sortInternal(final ThreadContext context, boolean honorOverride) {
+        Ruby runtime = context.runtime;
+
         // One check per specialized fast-path to make the check invariant.
-        final boolean fixnumBypass = !honorOverride || context.runtime.newFixnum(0).isBuiltin("<=>");
-        final boolean stringBypass = !honorOverride || context.runtime.newString("").isBuiltin("<=>");
+        final boolean fixnumBypass = !honorOverride || runtime.getFixnum().isMethodBuiltin("<=>");
+        final boolean stringBypass = !honorOverride || runtime.getString().isMethodBuiltin("<=>");
 
         try {
             Qsort.sort(values, begin, begin + realLength, new Comparator() {

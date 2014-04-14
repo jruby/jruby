@@ -43,6 +43,8 @@
 	  <environmentVariables>
 	    <PATH>${basedir}</PATH>
 	    <HOME>${basedir}</HOME>
+	    <GEM_PATH>${basedir}</GEM_PATH>
+	    <GEM_HOME>${basedir}</GEM_HOME>
 	  </environmentVariables>
 	</configuration>
 	<executions>
