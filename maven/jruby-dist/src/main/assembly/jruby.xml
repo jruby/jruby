@@ -26,6 +26,8 @@
         <include>tool/nailgun/**/*.c</include>
       </includes>
       <excludes>
+        <exclude>test/**/*</exclude>
+        <exclude>test/JRUBY-6606/**/*</exclude>
         <exclude>**/*.ac</exclude>
         <exclude>**/.*</exclude>
         <exclude>**/target/**/*</exclude>
