@@ -152,7 +152,6 @@ public enum Operation {
     TO_ARY(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
 
     /* Instructions to support defined? */
-    BACKREF_IS_MATCH_DATA(0),
     BLOCK_GIVEN(0),
     DEFINED_CONSTANT_OR_METHOD(OpFlags.f_can_raise_exception),
     GET_ERROR_INFO(0),
