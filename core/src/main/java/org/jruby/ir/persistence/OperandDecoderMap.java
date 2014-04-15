@@ -14,7 +14,6 @@ import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Backref;
 import org.jruby.ir.operands.BacktickString;
 import org.jruby.ir.operands.Bignum;
-import org.jruby.ir.operands.CompoundArray;
 import org.jruby.ir.operands.CompoundString;
 import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.DynamicSymbol;
@@ -76,7 +75,6 @@ class OperandDecoderMap {
             case BACKTICK_STRING: return new BacktickString(d.decodeOperandList());
             case BIGNUM: return new Bignum(new BigInteger(d.decodeString()));
             case BOOLEAN: return new UnboxedBoolean(d.decodeBoolean());
-            case COMPOUND_ARRAY: return new CompoundArray(d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case COMPOUND_STRING: return decodeCompoundString();
             case CURRENT_SCOPE: return new CurrentScope(d.decodeScope());
             case DYNAMIC_SYMBOL: return new DynamicSymbol((CompoundString) d.decodeOperand());

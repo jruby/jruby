@@ -539,15 +539,21 @@ public class IRBuilder {
         args = skipOverNewlines(s, args);
         switch (args.getNodeType()) {
             case ARGSCATNODE: {
-                CompoundArray a = (CompoundArray)build(args, s);
-                argsList.add(new Splat(a, true));
-                return a.getAppendedArg();
+                ArgsCatNode argsCatNode = (ArgsCatNode)args;
+                Operand v1 = build(argsCatNode.getFirstNode(), s);
+                Operand v2 = build(argsCatNode.getSecondNode(), s);
+                Variable res = s.createTemporaryVariable();
+                addInstr(s, new BuildCompoundArrayInstr(res, v1, v2, false));
+                argsList.add(new Splat(res, true));
+                return v2;
             }
             case ARGSPUSHNODE:  {
-                ArgsPushNode ap = (ArgsPushNode)args;
-                Operand v1 = build(ap.getFirstNode(), s);
-                Operand v2 = build(ap.getSecondNode(), s);
-                argsList.add(new Splat(new CompoundArray(v1, v2, true), true));
+                ArgsPushNode argsPushNode = (ArgsPushNode)args;
+                Operand v1 = build(argsPushNode.getFirstNode(), s);
+                Operand v2 = build(argsPushNode.getSecondNode(), s);
+                Variable res = s.createTemporaryVariable();
+                addInstr(s, new BuildCompoundArrayInstr(res, v1, v2, true));
+                argsList.add(new Splat(res, true));
                 return v2;
             }
             case ARRAYNODE: {
@@ -783,13 +789,17 @@ public class IRBuilder {
     public Operand buildArgsCat(final ArgsCatNode argsCatNode, IRScope s) {
         Operand v1 = build(argsCatNode.getFirstNode(), s);
         Operand v2 = build(argsCatNode.getSecondNode(), s);
-        return new CompoundArray(v1, v2);
+        Variable res = s.createTemporaryVariable();
+        addInstr(s, new BuildCompoundArrayInstr(res, v1, v2, false));
+        return res;
     }
 
     public Operand buildArgsPush(final ArgsPushNode node, IRScope s) {
         Operand v1 = build(node.getFirstNode(), s);
         Operand v2 = build(node.getSecondNode(), s);
-        return new CompoundArray(v1, v2, true);
+        Variable res = s.createTemporaryVariable();
+        addInstr(s, new BuildCompoundArrayInstr(res, v1, v2, true));
+        return res;
     }
 
     private Operand buildAttrAssign(final AttrAssignNode attrAssignNode, IRScope s) {

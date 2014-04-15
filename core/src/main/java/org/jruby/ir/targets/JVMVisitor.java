@@ -31,6 +31,7 @@ import org.jruby.ir.instructions.BNEInstr;
 import org.jruby.ir.instructions.BNilInstr;
 import org.jruby.ir.instructions.BTrueInstr;
 import org.jruby.ir.instructions.BUndefInstr;
+import org.jruby.ir.instructions.BuildCompoundArrayInstr;
 import org.jruby.ir.instructions.BlockGivenInstr;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.BuildLambdaInstr;
@@ -726,6 +727,19 @@ public class JVMVisitor extends IRVisitor {
         visit(bundefinstr.getArg1());
         jvm.method().pushUndefined();
         jvm.method().adapter.if_acmpeq(getJVMLabel(bundefinstr.getJumpTarget()));
+    }
+
+    @Override
+    public void BuildCompoundArrayInstr(BuildCompoundArrayInstr instr) {
+        visit(instr.getAppendingArg());
+        if (instr.isArgsPush()) jvm.method().adapter.checkcast("org/jruby/RubyArray");
+        visit(instr.getAppendedArg());
+        if (instr.isArgsPush()) {
+            jvm.method().invokeHelper("argsPush", RubyArray.class, RubyArray.class, IRubyObject.class);
+        } else {
+            jvm.method().invokeHelper("argsCat", RubyArray.class, IRubyObject.class, IRubyObject.class);
+        }
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override
@@ -1767,18 +1781,6 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void ClosureLocalVariable(ClosureLocalVariable closurelocalvariable) {
         super.ClosureLocalVariable(closurelocalvariable);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void CompoundArray(CompoundArray compoundarray) {
-        visit(compoundarray.getAppendingArg());
-        if (compoundarray.isArgsPush()) jvm.method().adapter.checkcast("org/jruby/RubyArray");
-        visit(compoundarray.getAppendedArg());
-        if (compoundarray.isArgsPush()) {
-            jvm.method().invokeHelper("argsPush", RubyArray.class, RubyArray.class, IRubyObject.class);
-        } else {
-            jvm.method().invokeHelper("argsCat", RubyArray.class, IRubyObject.class, IRubyObject.class);
-        }
     }
 
     @Override

@@ -57,7 +57,6 @@ public class YieldInstr extends Instr implements ResultInstr, FixedArityInstr {
         return unwrapArray;
     }
 
-    // if unwrapArray, maybe convert yieldArg into a CompoundArray operand?
     @Override
     public Operand[] getOperands() {
         return new Operand[] {blockArg, yieldArg, new UnboxedBoolean(unwrapArray) };
