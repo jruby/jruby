@@ -26,6 +26,7 @@ package org.jruby.ext.openssl;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Locale;
 
 import java.security.InvalidKeyException;
@@ -52,8 +53,10 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateFactorySpi;
 import java.security.cert.X509CRL;
+import java.util.StringTokenizer;
 
 import javax.crypto.Cipher;
+import javax.crypto.CipherSpi;
 import javax.crypto.KeyGenerator;
 import javax.crypto.KeyGeneratorSpi;
 import javax.crypto.Mac;
@@ -300,23 +303,86 @@ public abstract class SecurityHelper {
         return null;
     }
 
+    private static Boolean tryCipherInternal = Boolean.FALSE;
+
     /**
      * @note code calling this should not assume BC provider internals !
      */
     public static Cipher getCipher(final String transformation)
         throws NoSuchAlgorithmException, NoSuchPaddingException {
         try {
-            final Provider provider = getSecurityProvider();
-            if ( securityProvider != null ) return getCipher(transformation, provider);
+            if ( tryCipherInternal == Boolean.FALSE ) {
+                final Provider provider = getSecurityProvider();
+                if ( provider != null ) {
+                    return getCipher(transformation, provider);
+                }
+            }
         }
         catch (NoSuchAlgorithmException e) { }
         catch (NoSuchPaddingException e) { }
+        catch (SecurityException e) {
+            // java.lang.SecurityException: JCE cannot authenticate the provider BC
+            if ( tryCipherInternal != null ) tryCipherInternal = Boolean.TRUE;
+            if ( OpenSSLReal.isDebug() ) e.printStackTrace();
+        }
+        if ( tryCipherInternal == Boolean.TRUE ) {
+            try {
+                final Provider provider = getSecurityProvider();
+                if ( provider != null ) {
+                    return getCipherInternal(transformation, provider);
+                }
+            }
+            catch (NoSuchAlgorithmException e) { }
+            catch (RuntimeException e) {
+                // likely javax.crypto.JceSecurityManager.isCallerTrusted gets
+                // us a NPE from javax.crypto.Cipher.<init>(Cipher.java:264)
+                tryCipherInternal = null; // do not try BC at all
+                if ( OpenSSLReal.isDebug() ) e.printStackTrace();
+            }
+        }
         return Cipher.getInstance(transformation);
     }
 
     static Cipher getCipher(final String transformation, final Provider provider)
         throws NoSuchAlgorithmException, NoSuchPaddingException {
         return Cipher.getInstance(transformation, provider);
+    }
+
+    private static final Class<?>[] STRING_PARAM = { String.class };
+
+    private static Cipher getCipherInternal(String transformation, final Provider provider)
+        throws NoSuchAlgorithmException {
+        CipherSpi spi = (CipherSpi) getImplEngine("Cipher", transformation);
+        if ( spi == null ) {
+            //
+            // try the long way
+            //
+            StringTokenizer tok = new StringTokenizer(transformation, "/");
+            final String algorithm = tok.nextToken();
+
+            spi = (CipherSpi) getImplEngine("Cipher", algorithm);
+            if ( spi == null ) {
+                // if ( silent ) return null;
+                throw new NoSuchAlgorithmException(transformation + " not found");
+            }
+
+            //
+            // make sure we don't get fooled by a "//" in the string
+            //
+            if ( tok.hasMoreTokens() && ! transformation.regionMatches(algorithm.length(), "//", 0, 2) ) {
+                // spi.engineSetMode(tok.nextToken()) :
+                invoke(spi, CipherSpi.class, "engineSetMode", STRING_PARAM, tok.nextToken());
+            }
+            if ( tok.hasMoreTokens() ) {
+                // spi.engineSetPadding(tok.nextToken()) :
+                invoke(spi, CipherSpi.class, "engineSetPadding", STRING_PARAM, tok.nextToken());
+            }
+
+        }
+        return newInstance(Cipher.class,
+            new Class[] { CipherSpi.class, Provider.class, String.class },
+            new Object[] { spi, provider, transformation }
+        );
     }
 
     /**
@@ -394,6 +460,9 @@ public abstract class SecurityHelper {
             if ( provider != null ) return getKeyGenerator(algorithm, provider);
         }
         catch (NoSuchAlgorithmException e) { }
+        catch (SecurityException e) {
+            if ( OpenSSLReal.isDebug() ) e.printStackTrace();
+        }
         return KeyGenerator.getInstance(algorithm);
     }
 
@@ -417,6 +486,9 @@ public abstract class SecurityHelper {
             if ( provider != null ) return getSecretKeyFactory(algorithm, provider);
         }
         catch (NoSuchAlgorithmException e) { }
+        catch (SecurityException e) {
+            if ( OpenSSLReal.isDebug() ) e.printStackTrace();
+        }
         return SecretKeyFactory.getInstance(algorithm);
     }
 
@@ -496,9 +568,9 @@ public abstract class SecurityHelper {
         catch (SignatureException ex) {
             if ( silent ) return false; throw ex;
         }
-        catch (NoSuchProviderException ex) {
-            if ( isDebug() ) ex.printStackTrace();
-            throw new RuntimeException(ex); // unexpected - might hide a bug
+        catch (NoSuchProviderException e) {
+            if ( isDebug() ) e.printStackTrace();
+            throw new RuntimeException(e); // unexpected - might hide a bug
         }
     }
 
@@ -569,6 +641,21 @@ public abstract class SecurityHelper {
             throw new IllegalStateException(e.getTargetException());
         } catch (InstantiationException e) {
             throw new IllegalStateException(e);
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static <T> T invoke(Object object, Class<?> klass, String methodName, Class<?>[] paramTypes, Object... params) {
+        final Method method;
+        try {
+            method = klass.getDeclaredMethod(methodName, paramTypes);
+            method.setAccessible(true);
+            return (T) method.invoke(object, params);
+        } catch (NoSuchMethodException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        } catch (InvocationTargetException e) {
+            throw new IllegalStateException(e.getTargetException());
         } catch (IllegalAccessException e) {
             throw new IllegalStateException(e);
         }
