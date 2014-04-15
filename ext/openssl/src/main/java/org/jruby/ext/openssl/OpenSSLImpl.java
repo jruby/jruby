@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.security.MessageDigest;
 
@@ -68,7 +69,7 @@ public class OpenSSLImpl {
     static byte[] readX509PEM(final ThreadContext context, IRubyObject arg) {
         arg = to_der_if_possible(context, arg);
 
-        RubyString str;
+        final RubyString str;
         if (arg instanceof RubyIO) {
             IRubyObject result = ( (RubyIO) arg ).read(context);
             if (result instanceof RubyString) {
@@ -80,18 +81,15 @@ public class OpenSSLImpl {
             str = arg.convertToString();
         }
 
-        StringReader in = null;
+        StringReader in = new StringReader(str.getUnicodeValue());
         try {
-            in = new StringReader(str.getUnicodeValue());
             byte[] bytes = PEMInputOutput.readX509PEM(in);
             if (bytes != null) {
                 return bytes;
             }
-        } catch (Exception e) {
+        }
+        catch (IOException e) {
             // this is not PEM encoded, let's use the default argument
-            if (in != null) {
-                in.close();
-            }
         }
         return str.getBytes();
     }
