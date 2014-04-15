@@ -119,7 +119,8 @@ public class OpenSSLReal {
     }
 
     public static void createOpenSSL(final Ruby runtime) {
-        // SecurityHelper.setBouncyCastleProvider();
+        boolean registerProvider = Boolean.getBoolean("jruby.openssl.provider.register");
+        SecurityHelper.setRegisterProvider( registerProvider );
 
         RubyModule ossl = runtime.getOrCreateModule("OpenSSL");
         RubyClass standardError = runtime.getClass("StandardError");
@@ -217,5 +218,4 @@ public class OpenSSLReal {
         return SecurityHelper.getCertificateFactory("X.509");
     }
 
-}// OpenSSLReal
-
+}
