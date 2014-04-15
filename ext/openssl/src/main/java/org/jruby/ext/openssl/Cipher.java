@@ -49,7 +49,6 @@ import org.jruby.RubyObject;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
@@ -75,74 +74,65 @@ public class Cipher extends RubyObject {
     public static void createCipher(final Ruby runtime, final RubyModule mOSSL) {
         RubyClass cCipher = mOSSL.defineClassUnder("Cipher", runtime.getObject(), CIPHER_ALLOCATOR);
         cCipher.defineAnnotatedMethods(Cipher.class);
-        cCipher.defineAnnotatedMethods(CipherModule.class);
         RubyClass openSSLError = mOSSL.getClass("OpenSSLError");
         cCipher.defineClassUnder("CipherError", openSSLError, openSSLError.getAllocator());
     }
 
     public static boolean isSupportedCipher(final String name) {
-        return CipherModule.isSupportedCipher(name);
+        initializeCiphers();
+        return CIPHERS.contains( name.toUpperCase() );
     }
 
-    @JRubyModule(name = "OpenSSL::Cipher")
-    public static class CipherModule {
+    @JRubyMethod(meta = true)
+    public static IRubyObject ciphers(final ThreadContext context, final IRubyObject self) {
+        initializeCiphers();
+        final Ruby runtime = context.runtime;
 
-        @JRubyMethod(meta = true)
-        public static IRubyObject ciphers(final ThreadContext context, final IRubyObject self) {
-            initializeCiphers();
-            final Ruby runtime = context.runtime;
-
-            List<IRubyObject> result = new ArrayList<IRubyObject>(CIPHERS.size() * 2);
-            for (String cipher : CIPHERS) {
-                result.add( runtime.newString(cipher) );
-                result.add( runtime.newString(cipher.toLowerCase()) );
-            }
-            return runtime.newArray(result);
+        ArrayList<IRubyObject> result = new ArrayList<IRubyObject>(CIPHERS.size() * 2);
+        for (String cipher : CIPHERS) {
+            result.add( runtime.newString(cipher) );
+            result.add( runtime.newString(cipher.toLowerCase()) );
         }
+        return runtime.newArray(result);
+    }
 
-        private static boolean isSupportedCipher(final String name) {
-            initializeCiphers();
-            return CIPHERS.contains( name.toUpperCase() );
-        }
+    private static boolean initialized = false;
+    static final List<String> CIPHERS = new ArrayList<String>();
 
-        private static boolean initialized = false;
-        static final List<String> CIPHERS = new ArrayList<String>();
-
-        private static void initializeCiphers() {
+    private static void initializeCiphers() {
+        if ( initialized ) return;
+        synchronized (CIPHERS) {
             if ( initialized ) return;
-            synchronized (CIPHERS) {
-                if ( initialized ) return;
-                final String[] other = {
-                    "AES128", "AES192", "AES256",
-                    "BLOWFISH",
-                    "RC2-40-CBC", "RC2-64-CBC",
-                    "RC4", "RC4-40",
-                    "CAST", "CAST-CBC"
-                };
-                final String[] bases = {
-                    "AES-128", "AES-192", "AES-256",
-                    "BF", "DES", "DES-EDE", "DES-EDE3",
-                    "RC2", "CAST5"
-                };
-                final String[] suffixes = {
-                    "", "-CBC", "-CFB", "-CFB1", "-CFB8", "-ECB", "-OFB"
-                };
-                for ( int i = 0; i < bases.length; i++ ) {
-                    for ( int k = 0; k < suffixes.length; k++ ) {
-                        final String cipher;
-                        if ( tryCipher( cipher = bases[i] + suffixes[k]) ) {
-                            CIPHERS.add( cipher.toUpperCase() );
-                        }
-                    }
-                }
-                for ( int i = 0; i < other.length; i++ ) {
-                    final String cipher = other[i];
-                    if ( tryCipher( cipher ) ) {
+            final String[] other = {
+                "AES128", "AES192", "AES256",
+                "BLOWFISH",
+                "RC2-40-CBC", "RC2-64-CBC",
+                "RC4", "RC4-40",
+                "CAST", "CAST-CBC"
+            };
+            final String[] bases = {
+                "AES-128", "AES-192", "AES-256",
+                "BF", "DES", "DES-EDE", "DES-EDE3",
+                "RC2", "CAST5"
+            };
+            final String[] suffixes = {
+                "", "-CBC", "-CFB", "-CFB1", "-CFB8", "-ECB", "-OFB"
+            };
+            for ( int i = 0; i < bases.length; i++ ) {
+                for ( int k = 0; k < suffixes.length; k++ ) {
+                    final String cipher;
+                    if ( tryCipher( cipher = bases[i] + suffixes[k]) ) {
                         CIPHERS.add( cipher.toUpperCase() );
                     }
                 }
-                initialized = true;
             }
+            for ( int i = 0; i < other.length; i++ ) {
+                final String cipher = other[i];
+                if ( tryCipher( cipher ) ) {
+                    CIPHERS.add( cipher.toUpperCase() );
+                }
+            }
+            initialized = true;
         }
     }
 
@@ -387,7 +377,7 @@ public class Cipher extends RubyObject {
     @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(final ThreadContext context, final IRubyObject name) {
         final String nameStr = name.toString();
-        if ( ! CipherModule.isSupportedCipher(nameStr) ) {
+        if ( ! isSupportedCipher(nameStr) ) {
             throw newCipherError(context.runtime, String.format("unsupported cipher algorithm (%s)", nameStr));
         }
         if (cipher != null) {
