@@ -4028,18 +4028,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return arg.checkArrayType();
     }
 
-    /**
-     * @see org.jruby.util.Pack#pack
-     */
-    public RubyString pack(ThreadContext context, IRubyObject obj) {
-        return pack19(context, obj);
-    }
-
     @JRubyMethod(name = "pack", required = 1)
-    public RubyString pack19(ThreadContext context, IRubyObject obj) {
+    public RubyString pack(ThreadContext context, IRubyObject obj) {
         RubyString iFmt = obj.convertToString();
         try {
-            return Pack.pack19(context, context.runtime, this, iFmt);
+            return Pack.pack(context, context.runtime, this, iFmt);
         } catch (ArrayIndexOutOfBoundsException aioob) {
             concurrentModification();
             return null; // not reached
