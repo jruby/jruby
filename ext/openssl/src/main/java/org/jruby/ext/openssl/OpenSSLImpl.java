@@ -286,7 +286,7 @@ ASN1.addObject(runtime, 185, "AES-256-OFB", "aes-256-ofb","2.16.840.1.101.3.4.1.
 ASN1.addObject(runtime, 186, "AES-256-CFB", "aes-256-cfb","2.16.840.1.101.3.4.1.44");
     }
 
-    public static interface KeyAndIv {
+    static interface KeyAndIv {
         byte[] getKey();
         byte[] getIv();
     }
@@ -317,7 +317,7 @@ ASN1.addObject(runtime, 186, "AES-256-CFB", "aes-256-cfb","2.16.840.1.101.3.4.1.
         return new DefaultPEMHandler();
     }
 
-    public static KeyAndIv EVP_BytesToKey(int key_len, int iv_len, MessageDigest md, byte[] salt, byte[] data, int count) {
+    static KeyAndIv EVP_BytesToKey(int key_len, int iv_len, MessageDigest md, byte[] salt, byte[] data, int count) {
         byte[] key = new byte[key_len];
         byte[]  iv = new byte[iv_len];
         int key_ix = 0;
