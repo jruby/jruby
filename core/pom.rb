@@ -118,29 +118,6 @@ project 'JRuby Core' do
                                           'ignore' =>  ''
                                         } } ]
             } )
-    plugin :shade do
-      execute_goals( 'shade',
-                     :id => 'pack jruby-core-noasm.jar',
-                     :phase => 'verify',
-                     'shadedArtifactAttached' =>  'true',
-                     'shadedClassifierName' =>  'noasm',
-                     'artifactSet' => {
-                       'includes' => [ 'com.github.jnr:jnr-ffi',
-                                       'org.ow2.asm:*' ]
-                     },
-                     'relocations' => [ { 'pattern' =>  'org.objectweb',
-                                          'shadedPattern' =>  'org.jruby.org.objectweb' } ] )
-      execute_goals( 'shade',
-                     :id => 'pack jruby-core-complete.jar',
-                     :phase => 'verify',
-                     'shadedArtifactAttached' =>  'true',
-                     'shadedClassifierName' =>  'complete',
-                     'relocations' => [ { 'pattern' =>  'org.objectweb',
-                                          'shadedPattern' =>  'org.jruby.org.objectweb' } ],
-                     'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                           'mainClass' => 'org.jruby.Main' } ] )
-    end
-
   end
 
   plugin 'org.codehaus.mojo:properties-maven-plugin:1.0-alpha-2' do
@@ -280,6 +257,34 @@ project 'JRuby Core' do
       includes '${Constants.java}'
       target_path '${project.build.sourceDirectory}'
       filtering 'true'
+    end
+  end
+
+
+  [ :dist, :'jruby-jars', :main, :all, :complete, :release, :snapshots ].each do |name|
+    profile name do
+      plugin :shade do
+        execute_goals( 'shade',
+                       :id => 'pack jruby-core-noasm.jar',
+                       :phase => 'verify',
+                       'shadedArtifactAttached' =>  'true',
+                       'shadedClassifierName' =>  'noasm',
+                       'artifactSet' => {
+                         'includes' => [ 'com.github.jnr:jnr-ffi',
+                                         'org.ow2.asm:*' ]
+                       },
+                       'relocations' => [ { 'pattern' =>  'org.objectweb',
+                                            'shadedPattern' =>  'org.jruby.org.objectweb' } ] )
+        execute_goals( 'shade',
+                       :id => 'pack jruby-core-complete.jar',
+                       :phase => 'verify',
+                       'shadedArtifactAttached' =>  'true',
+                       'shadedClassifierName' =>  'complete',
+                       'relocations' => [ { 'pattern' =>  'org.objectweb',
+                                            'shadedPattern' =>  'org.jruby.org.objectweb' } ],
+                       'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
+                                             'mainClass' => 'org.jruby.Main' } ] )
+      end
     end
   end
 
