@@ -118,7 +118,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.cms.CMSSignedData;
 
 import org.jruby.ext.openssl.Cipher.Algorithm;
-import org.jruby.ext.openssl.Cipher.CipherModule;
+import static org.jruby.ext.openssl.Cipher.isSupportedCipher;
 import org.jruby.ext.openssl.impl.ASN1Registry;
 import org.jruby.ext.openssl.impl.CipherSpec;
 import org.jruby.ext.openssl.impl.PKCS10Request;
@@ -1017,7 +1017,7 @@ public class PEMInputOutput {
      */
     private static KeyPair readKeyPair(BufferedReader _in, char[] passwd, String type, String endMarker) throws Exception {
         boolean isEncrypted = false;
-        String line = null;
+        String line;
         String dekInfo = null;
         StringBuilder buf = new StringBuilder();
 
@@ -1032,7 +1032,7 @@ public class PEMInputOutput {
                 buf.append(line.trim());
             }
         }
-        byte[] keyBytes = null;
+        byte[] keyBytes;
         byte[] decoded = Base64.decode(buf.toString());
         if (isEncrypted) {
             keyBytes = decrypt(decoded, dekInfo, passwd);
@@ -1049,7 +1049,7 @@ public class PEMInputOutput {
         StringTokenizer tknz = new StringTokenizer(dekInfo, ",");
         String algorithm = tknz.nextToken();
         byte[] iv = Hex.decode(tknz.nextToken());
-        if (!CipherModule.isSupportedCipher(algorithm)) {
+        if ( ! isSupportedCipher(algorithm) ) {
             throw new IOException("Unknown algorithm: " + algorithm);
         }
         String[] cipherData = Algorithm.osslToJsse(algorithm);
