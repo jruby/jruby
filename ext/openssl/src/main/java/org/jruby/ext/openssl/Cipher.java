@@ -730,7 +730,7 @@ public class Cipher extends RubyObject {
 
     @JRubyMethod(name = "<<")
     public IRubyObject update_deprecated(final ThreadContext context, final IRubyObject data) {
-        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "" + this.getMetaClass().getRealClass().getName() + "#<< is deprecated; use " + this.getMetaClass().getRealClass().getName() + "#update instead");
+        context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD, this.getMetaClass().getRealClass().getName() + "#<< is deprecated; use " + this.getMetaClass().getRealClass().getName() + "#update instead");
         return update(context, data);
     }
 
