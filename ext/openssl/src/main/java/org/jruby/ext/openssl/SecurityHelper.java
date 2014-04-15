@@ -89,16 +89,7 @@ public abstract class SecurityHelper {
                 }
             }
         }
-        if ( registerProvider != null ) {
-            synchronized(SecurityHelper.class) {
-                if ( registerProvider != null && registerProvider.booleanValue() ) {
-                    if ( securityProvider != null ) {
-                        Security.addProvider(securityProvider);
-                    }
-                }
-            }
-            registerProvider = null;
-        }
+        doRegisterProvider();
         return securityProvider;
     }
 
@@ -119,7 +110,20 @@ public abstract class SecurityHelper {
     }
 
     public static synchronized void setRegisterProvider(boolean register) {
-        registerProvider = Boolean.valueOf(register);
+        registerProvider = Boolean.valueOf(register); doRegisterProvider();
+    }
+
+    private static void doRegisterProvider() {
+        if ( registerProvider != null ) {
+            synchronized(SecurityHelper.class) {
+                if ( registerProvider != null && registerProvider.booleanValue() ) {
+                    if ( securityProvider != null ) {
+                        Security.addProvider(securityProvider);
+                    }
+                }
+            }
+            registerProvider = null;
+        }
     }
 
     /**
