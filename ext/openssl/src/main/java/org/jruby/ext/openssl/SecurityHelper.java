@@ -306,6 +306,7 @@ public abstract class SecurityHelper {
             if ( securityProvider != null ) return getCipher(transformation, provider);
         }
         catch (NoSuchAlgorithmException e) { }
+        catch (NoSuchPaddingException e) { }
         return Cipher.getInstance(transformation);
     }
 
