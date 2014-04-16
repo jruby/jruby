@@ -193,6 +193,10 @@ public class JVMVisitor extends IRVisitor {
             codegen((IRScriptBody)scope);
         } else if (scope instanceof IRMethod) {
             emitJITTED((IRMethod)scope);
+        } else if (scope instanceof IRModuleBody) {
+            emitJITTED((IRModuleBody)scope);
+        } else {
+            throw new RuntimeException("don't know how to JIT: " + scope);
         }
     }
 
@@ -334,6 +338,28 @@ public class JVMVisitor extends IRVisitor {
 
     public Handle emitJITTED(IRMethod method) {
         String name = JavaNameMangler.mangleMethodName(method.getName() + "_" + methodIndex++);
+        String clsName = jvm.scriptToClass(method.getName());
+        jvm.pushscript(clsName, method.getFileName());
+
+        emitScope(method, "__script__", METHOD_SIGNATURE);
+
+        Handle handle = new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(METHOD_SIGNATURE.type().returnType(), METHOD_SIGNATURE.type().parameterArray()));
+
+        jvm.cls().visitEnd();
+        jvm.popclass();
+
+        return handle;
+    }
+
+    public Handle emitJITTED(IRModuleBody method) {
+        String baseName = method.getName() + "_" + methodIndex++;
+        String name;
+
+        if (baseName.indexOf("DUMMY_MC") != -1) {
+            name = "METACLASS_" + methodIndex++;
+        } else {
+            name = baseName + "_" + methodIndex++;
+        }
         String clsName = jvm.scriptToClass(method.getName());
         jvm.pushscript(clsName, method.getFileName());
 

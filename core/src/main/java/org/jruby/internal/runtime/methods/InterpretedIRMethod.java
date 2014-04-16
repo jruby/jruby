@@ -87,9 +87,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             if (tryCompile(context)) return box.actualMethod.call(context, self, clazz, name, args, block);
         }
 
-        // SSS FIXME: Move this out of here to some other place?
-        // Prepare method if not yet done so we know if the method has an explicit/implicit call protocol
-        if (method.getInstrsForInterpretation() == null) method.prepareForInterpretation(false);
+        ensureInstrsReady();
 
         if (IRRuntimeHelpers.isDebug()) {
             // FIXME: name should probably not be "" ever.
@@ -121,15 +119,26 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         }
     }
 
+    private void ensureInstrsReady() {
+        // SSS FIXME: Move this out of here to some other place?
+        // Prepare method if not yet done so we know if the method has an explicit/implicit call protocol
+        if (method.getInstrsForInterpretation() == null) method.prepareForInterpretation(false);
+    }
+
     private boolean tryCompile(ThreadContext context) {
         if (box.actualMethod != null) {
             return true;
         }
 
         if (box.callCount++ >= Options.JIT_THRESHOLD.load()) {
+
             Ruby runtime = context.runtime;
             RubyInstanceConfig config = runtime.getInstanceConfig();
+
             if (config.getCompileMode() == RubyInstanceConfig.CompileMode.JITIR) {
+
+                ensureInstrsReady();
+
                 try {
                     final Class compiled = JVMVisitor.compile(runtime, method, new ClassCache.OneShotClassLoader(context.runtime.getJRubyClassLoader()));
                     final StaticScope staticScope = method.getStaticScope();
