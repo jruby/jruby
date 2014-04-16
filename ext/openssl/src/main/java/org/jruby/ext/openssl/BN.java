@@ -32,8 +32,10 @@ import java.security.SecureRandom;
 import java.util.Random;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
@@ -43,6 +45,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.runtime.Visibility;
@@ -239,23 +242,34 @@ public class BN extends RubyObject {
     @JRubyMethod(name="coerce")
     // FIXME: is this right? don't see how it would be useful...
     public IRubyObject bn_coerce(IRubyObject other) {
-        Ruby runtime = getRuntime();
+        final Ruby runtime = getRuntime();
         IRubyObject self;
-        switch (other.getMetaClass().index) {
-        case ClassIndex.STRING:
+//        switch (other.getMetaClass().index) {
+//        case ClassIndex.STRING:
+//            self = runtime.newString(value.toString());
+//            break;
+//        case ClassIndex.FIXNUM:
+//        case ClassIndex.BIGNUM:
+//            // FIXME: s/b faster way to convert than going through RubyString
+//            self = RubyNumeric.str2inum(runtime, runtime.newString(value.toString()), 10, true);
+//            break;
+//        default:
+//            if (other instanceof BN) {
+//                self = this;
+//            } else {
+//                throw runtime.newTypeError("Don't know how to coerce");
+//            }
+        if ( other instanceof RubyString ) {
             self = runtime.newString(value.toString());
-            break;
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-            // FIXME: s/b faster way to convert than going through RubyString
-            self = RubyNumeric.str2inum(runtime, runtime.newString(value.toString()), 10, true);
-            break;
-        default:
-            if (other instanceof BN) {
-                self = this;
-            } else {
-                throw runtime.newTypeError("Don't know how to coerce");
-            }
+        }
+        else if ( other instanceof RubyInteger ) {
+            self = bn_to_i();
+        }
+        else if ( other instanceof BN ) {
+            self = this;
+        }
+        else {
+            throw runtime.newTypeError("don't know how to coerce to " + other.getMetaClass().getName());
         }
         return runtime.newArray(other, self);
     }
@@ -352,42 +366,57 @@ public class BN extends RubyObject {
     }
 
     @JRubyMethod(name="**")
-    public IRubyObject bn_exp(IRubyObject other) {
+    public IRubyObject bn_exp(final ThreadContext context, IRubyObject other) {
         // somewhat strangely, BigInteger takes int rather than BigInteger
         // as the argument to pow.  so we'll have to narrow the value, and
         // raise an exception if data would be lost. (on the other hand, an
         // exponent even approaching Integer.MAX_VALUE would be silly big, and
         // the value would take a very, very long time to calculate.)
         // we'll check for values < 0 (illegal) while we're at it
-        int exp;
-        switch(other.getMetaClass().index) {
-        case ClassIndex.FIXNUM: {
-            long val = ((RubyFixnum)other).getLongValue();
-            if (val >= 0 && val <= Integer.MAX_VALUE) {
-                exp = (int)val;
-                break;
+//        int exp;
+//        switch(other.getMetaClass().index) {
+//        case ClassIndex.FIXNUM: {
+//            long val = ((RubyFixnum)other).getLongValue();
+//            if (val >= 0 && val <= Integer.MAX_VALUE) {
+//                exp = (int)val;
+//                break;
+//            }
+//        }
+//        case ClassIndex.BIGNUM:
+//            // Bignum is inherently too big
+//            throw newBNError(getRuntime(), "invalid exponent");
+//        default: {
+//            if (!(other instanceof BN)) {
+//                throw getRuntime().newTypeError("Cannot convert into OpenSSL::BN");
+        int exp = -1;
+
+        if ( other instanceof RubyInteger ) {
+            long val = ((RubyInteger) other).getLongValue();
+            if ( val >= 0 && val <= Integer.MAX_VALUE ) {
+                exp = (int) val;
+            }
+            else if ( other instanceof RubyBignum ) { // inherently too big
+                throw newBNError(context.runtime, "invalid exponent");
             }
         }
-        case ClassIndex.BIGNUM:
-            // Bignum is inherently too big
-            throw newBNError(getRuntime(), "invalid exponent");
-        default: {
-            if (!(other instanceof BN)) {
-                throw getRuntime().newTypeError("Cannot convert into OpenSSL::BN");
+
+        if ( exp == -1 ) {
+            if ( ! (other instanceof BN) ) {
+                throw context.runtime.newTypeError("Cannot convert into " + other.getMetaClass().getName());
             }
-            BigInteger val = ((BN)other).value;
+            BigInteger val = ((BN) other).value;
             if (val.compareTo(BigInteger.ZERO) < 0 || val.compareTo(MAX_INT) > 0) {
-                throw newBNError(getRuntime(), "invalid exponent");
+                throw newBNError(context.runtime, "invalid exponent");
             }
             exp = val.intValue();
-            break;
         }
-        }
+
         try {
-            return newBN(getRuntime(), value.pow(exp));
-        } catch (ArithmeticException e) {
+            return newBN(context.runtime, value.pow(exp));
+        }
+        catch (ArithmeticException e) {
             // shouldn't happen, we've already checked for < 0
-            throw newBNError(getRuntime(), "invalid exponent");
+            throw newBNError(context.runtime, "invalid exponent");
         }
     }
 
@@ -785,18 +814,27 @@ public class BN extends RubyObject {
         return new RaiseException(runtime, runtime.getModule("OpenSSL").getClass("BNError"), message, true);
     }
 
-    public static BigInteger getBigInteger(IRubyObject arg) {
-        if (arg.isNil()) return null;
-        switch(arg.getMetaClass().index) {
-        case ClassIndex.FIXNUM:
-        case ClassIndex.BIGNUM:
-            return new BigInteger(arg.toString());
-        default:
-            if (arg instanceof BN) {
-                return ((BN)arg).value;
-            }
-            throw arg.getRuntime().newTypeError("Cannot convert into OpenSSL::BN");
+//    public static BigInteger getBigInteger(IRubyObject arg) {
+//        if (arg.isNil()) return null;
+//        switch(arg.getMetaClass().index) {
+//        case ClassIndex.FIXNUM:
+//        case ClassIndex.BIGNUM:
+//            return new BigInteger(arg.toString());
+//        default:
+//            if (arg instanceof BN) {
+//                return ((BN)arg).value;
+//            }
+//            throw arg.getRuntime().newTypeError("Cannot convert into OpenSSL::BN");
+    public static BigInteger getBigInteger(final IRubyObject arg) {
+        if ( arg.isNil() ) return null;
+
+        if ( arg instanceof RubyInteger ) {
+            return new BigInteger( arg.toString() );
         }
+
+        if ( arg instanceof BN ) return ((BN) arg).value;
+        
+        throw arg.getRuntime().newTypeError("Cannot convert into OpenSSL::BN");
     }
 
 }
