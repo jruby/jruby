@@ -53,6 +53,7 @@ import org.jruby.Ruby;
 import org.jruby.platform.Platform;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.ResourceException;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -1442,7 +1443,9 @@ public class ChannelStream implements Stream, Finalizable {
             String cwd = runtime.getCurrentDirectory();
             JRubyFile theFile = JRubyFile.create(cwd,path);
 
-            if (theFile.isDirectory() && modes.isWritable()) throw new DirectoryAsFileException();
+            if (theFile.isDirectory() && modes.isWritable()) {
+                throw runtime.newErrnoEISDirError(path);
+            }
 
             if (modes.isCreate()) {
                 if (theFile.exists() && modes.isExclusive()) {
@@ -1499,10 +1502,14 @@ public class ChannelStream implements Stream, Finalizable {
     }
 
     public static Stream fopen(Ruby runtime, String path, ModeFlags modes) throws FileNotFoundException, DirectoryAsFileException, FileExistsException, IOException, InvalidValueException, PipeException, BadDescriptorException {
-        ChannelDescriptor descriptor = ChannelDescriptor.open(runtime.getCurrentDirectory(), path, modes, runtime.getClassLoader());
-        Stream stream = fdopen(runtime, descriptor, modes);
+        try {
+            ChannelDescriptor descriptor = ChannelDescriptor.open(runtime.getCurrentDirectory(), path, modes, runtime.getClassLoader());
+            Stream stream = fdopen(runtime, descriptor, modes);
 
-        return stream;
+            return stream;
+        } catch (ResourceException resourceException) {
+            throw resourceException.newRaiseException(runtime);
+        }
     }
 
     public Channel getChannel() {

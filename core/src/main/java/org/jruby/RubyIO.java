@@ -36,8 +36,11 @@
 package org.jruby;
 
 import org.jruby.runtime.Helpers;
+import org.jruby.util.ResourceException;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.DirectoryAsFileException;
 import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.SelectBlob;
 import jnr.constants.platform.Fcntl;
@@ -87,8 +90,6 @@ import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.PipeException;
-import org.jruby.util.io.FileExistsException;
-import org.jruby.util.io.DirectoryAsFileException;
 import org.jruby.util.io.STDIO;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
@@ -348,11 +349,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             openFile.setPath(path);
 
             if (openFile.getMainStream() == null) {
-                try {
-                    openFile.setMainStream(ChannelStream.fopen(runtime, path, modes.getModeFlags()));
-                } catch (FileExistsException fee) {
-                    throw runtime.newErrnoEEXISTError(path);
-                }
+                openFile.setMainStream(ChannelStream.fopen(runtime, path, modes.getModeFlags()));
 
                 if (openFile.getPipeStream() != null) {
                     openFile.getPipeStream().fclose();
@@ -366,14 +363,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     // TODO: pipe handler to be reopened with path and "w" mode
                 }
             }
-        } catch (PipeException pe) {
-            throw runtime.newErrnoEPIPEError();
-        } catch (IOException ex) {
-            throw runtime.newIOErrorFromException(ex);
-        } catch (BadDescriptorException ex) {
-            throw runtime.newErrnoEBADFError();
         } catch (InvalidValueException e) {
             throw runtime.newErrnoEINVALError();
+        } catch (PipeException pe) {
+            throw new IllegalStateException("For compile compatibility only");
+        } catch (IOException ex) {
+            throw new IllegalStateException("For compile compatibility only");
+        } catch (BadDescriptorException ex) {
+            throw new IllegalStateException("For compile compatibility only");
+        } catch (FileExistsException fee) {
+            throw new IllegalStateException("For compile compatibility only");
         }
     }
 
@@ -1241,16 +1240,19 @@ public class RubyIO extends RubyObject implements IOEncodable {
                                        runtime.getJRubyClassLoader());
             // always a new fileno, so ok to use internal only
             fileno = descriptor.getFileno();
+        } catch (ResourceException resourceException) {
+            throw resourceException.newRaiseException(runtime);
+        } catch (FileNotFoundException ignored) {
+          throw new IllegalStateException("For compile compatibility only");
+        } catch (DirectoryAsFileException ignored) {
+          throw new IllegalStateException("For compile compatibility only");
+        } catch (FileExistsException ignored) {
+          throw new IllegalStateException("For compile compatibility only");
+        } catch (IOException ignored) {
+          throw new IllegalStateException("For compile compatibility only");
         }
-        catch (FileNotFoundException fnfe) {
-            throw runtime.newErrnoENOENTError(path);
-        } catch (DirectoryAsFileException dafe) {
-            throw runtime.newErrnoEISDirError(path);
-        } catch (FileExistsException fee) {
-            throw runtime.newErrnoEEXISTError(path);
-        } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
-        }
+
+
         return runtime.newFixnum(fileno);
     }
 
