@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -93,7 +93,13 @@ public class SSL {
         mSSL.setConstant("OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG", runtime.newFixnum(OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG));
     }
 
+    @Deprecated // confusing since it throws instead of returning
     public static RaiseException newSSLError(Ruby runtime, Throwable t) {
         throw Utils.newError(runtime, "OpenSSL::SSL::SSLError", t.getMessage());
     }
+
+    public static RaiseException newSSLError(Ruby runtime, Exception e) {
+        return SSLSocket.newSSLError(runtime, e);
+    }
+
 }// SSL

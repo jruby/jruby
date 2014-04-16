@@ -71,7 +71,8 @@ import org.jruby.runtime.Visibility;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class SSLSocket extends RubyObject {
-    private static final long serialVersionUID = -2276327900350542644L;
+
+    private static final long serialVersionUID = 5170831655279559707L;
 
     private static ObjectAllocator SSLSOCKET_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -79,15 +80,15 @@ public class SSLSocket extends RubyObject {
         }
     };
 
-    public static void createSSLSocket(Ruby runtime, RubyModule mSSL) {
+    public static void createSSLSocket(final Ruby runtime, final RubyModule _SSL) { // OpenSSL::SSL
         final ThreadContext context = runtime.getCurrentContext();
-        RubyClass cSSLSocket = mSSL.defineClassUnder("SSLSocket", runtime.getObject(), SSLSOCKET_ALLOCATOR);
-        cSSLSocket.addReadWriteAttribute(context, "io");
-        cSSLSocket.addReadWriteAttribute(context, "context");
-        cSSLSocket.addReadWriteAttribute(context, "sync_close");
-        cSSLSocket.addReadWriteAttribute(context, "hostname");
-        cSSLSocket.defineAlias("to_io","io");
-        cSSLSocket.defineAnnotatedMethods(SSLSocket.class);
+        RubyClass _SSLSocket = _SSL.defineClassUnder("SSLSocket", runtime.getObject(), SSLSOCKET_ALLOCATOR);
+        _SSLSocket.addReadWriteAttribute(context, "io");
+        _SSLSocket.addReadWriteAttribute(context, "context");
+        _SSLSocket.addReadWriteAttribute(context, "sync_close");
+        _SSLSocket.addReadWriteAttribute(context, "hostname");
+        _SSLSocket.defineAlias("to_io", "io");
+        _SSLSocket.defineAnnotatedMethods(SSLSocket.class);
     }
 
     public SSLSocket(Ruby runtime, RubyClass type) {
@@ -95,16 +96,28 @@ public class SSLSocket extends RubyObject {
         verifyResult = X509Utils.V_OK;
     }
 
+    static RaiseException newSSLError(Ruby runtime, Exception exception) {
+        return Utils.newRaiseException(runtime, getSSLNested(runtime, "SSLError"), exception);
+    }
+
     public static RaiseException newSSLError(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::SSL::SSLError", message, false);
+        return Utils.newRaiseException(runtime, getSSLNested(runtime, "SSLError"), message, false);
     }
 
     public static RaiseException newSSLErrorReadable(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::SSL::SSLErrorWaitReadable", message, false);
+        return Utils.newRaiseException(runtime, getSSLNested(runtime, "SSLErrorWaitReadable"), message, false);
     }
 
     public static RaiseException newSSLErrorWritable(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::SSL::SSLErrorWaitWritable", message, false);
+        return Utils.newRaiseException(runtime, getSSLNested(runtime, "SSLErrorWaitWritable"), message, false);
+    }
+
+    private static RubyModule getSSL(final Ruby runtime) {
+        return (RubyModule) runtime.getModule("OpenSSL").getConstant("SSL");
+    }
+
+    private static RubyClass getSSLNested(final Ruby runtime, final String name) {
+        return (RubyClass) getSSL(runtime).getConstant(name);
     }
 
     private org.jruby.ext.openssl.SSLContext sslContext;
@@ -129,7 +142,7 @@ public class SSLSocket extends RubyObject {
         final Ruby runtime = context.runtime;
 
         if ( Arity.checkArgumentCount(runtime, args, 1, 2) == 1 ) {
-            RubyModule _SSLContext = runtime.getClassFromPath("OpenSSL::SSL::SSLContext");
+            RubyModule _SSLContext = getSSLNested(runtime, "SSLContext");
             sslContext = (SSLContext) _SSLContext.callMethod(context, "new");
         } else {
             sslContext = (SSLContext) args[1];
@@ -196,24 +209,28 @@ public class SSLSocket extends RubyObject {
                 initialHandshake = true;
             }
             doHandshake(blocking);
-        } catch(SSLHandshakeException e) {
+        }
+        catch (SSLHandshakeException e) {
             // unlike server side, client should close outbound channel even if
             // we have remaining data to be sent.
             forceClose();
-            Throwable v = e;
-            while(v.getCause() != null && (v instanceof SSLHandshakeException)) {
-                v = v.getCause();
+            Exception cause = e;
+            while (cause.getCause() != null && (cause instanceof SSLHandshakeException)) {
+                cause = (Exception) cause.getCause();
             }
-            throw SSL.newSSLError(runtime, v);
-        } catch (NoSuchAlgorithmException ex) {
+            throw newSSLError(runtime, cause);
+        }
+        catch (NoSuchAlgorithmException e) {
             forceClose();
-            throw SSL.newSSLError(runtime, ex);
-        } catch (KeyManagementException ex) {
+            throw newSSLError(runtime, e);
+        }
+        catch (KeyManagementException e) {
             forceClose();
-            throw SSL.newSSLError(runtime, ex);
-        } catch (IOException ex) {
+            throw newSSLError(runtime, e);
+        }
+        catch (IOException e) {
             forceClose();
-            throw SSL.newSSLError(runtime, ex);
+            throw newSSLError(runtime, e);
         }
         return this;
     }
@@ -236,20 +253,21 @@ public class SSLSocket extends RubyObject {
         }
 
         try {
-            int vfy = 0;
             if ( ! initialHandshake ) {
                 ossl_ssl_setup(context);
                 engine.setUseClientMode(false);
-                if(!sslContext.isNil() && !sslContext.callMethod(context,"verify_mode").isNil()) {
-                    vfy = RubyNumeric.fix2int(sslContext.callMethod(context,"verify_mode"));
-                    if(vfy == 0) { //VERIFY_NONE
+                final IRubyObject verify_mode;
+                if( ! sslContext.isNil() &&
+                    ! ( verify_mode = sslContext.callMethod(context, "verify_mode") ).isNil() ) {
+                    final int vfy = RubyNumeric.fix2int(verify_mode);
+                    if ( vfy == 0 ) { // VERIFY_NONE
                         engine.setNeedClientAuth(false);
                         engine.setWantClientAuth(false);
                     }
-                    if((vfy & 1) != 0) { //VERIFY_PEER
+                    if ( ( vfy & 1 ) != 0 ) { // VERIFY_PEER
                         engine.setWantClientAuth(true);
                     }
-                    if((vfy & 2) != 0) { //VERIFY_FAIL_IF_NO_PEER_CERT
+                    if ( ( vfy & 2 ) != 0 ) { // VERIFY_FAIL_IF_NO_PEER_CERT
                         engine.setNeedClientAuth(true);
                     }
                 }
@@ -258,25 +276,30 @@ public class SSLSocket extends RubyObject {
                 initialHandshake = true;
             }
             doHandshake(blocking);
-        } catch(SSLHandshakeException e) {
-            throw SSL.newSSLError(runtime, e);
-        } catch (NoSuchAlgorithmException ex) {
-            throw SSL.newSSLError(runtime, ex);
-        } catch (KeyManagementException ex) {
-            throw SSL.newSSLError(runtime, ex);
-        } catch (IOException ex) {
-            throw SSL.newSSLError(runtime, ex);
+        }
+        catch (SSLHandshakeException e) {
+            throw newSSLError(runtime, e);
+        }
+        catch (NoSuchAlgorithmException e) {
+            throw newSSLError(runtime, e);
+        }
+        catch (KeyManagementException e) {
+            throw newSSLError(runtime, e);
+        }
+        catch (IOException e) {
+            throw newSSLError(runtime, e);
         }
         return this;
     }
 
     @JRubyMethod
-    public IRubyObject verify_result() {
+    public IRubyObject verify_result(final ThreadContext context) {
+        final Ruby runtime = context.runtime;
         if (engine == null) {
-            getRuntime().getWarnings().warn("SSL session is not started yet.");
-            return getRuntime().getNil();
+            runtime.getWarnings().warn("SSL session is not started yet.");
+            return runtime.getNil();
         }
-        return getRuntime().newFixnum(verifyResult);
+        return runtime.newFixnum(verifyResult);
     }
 
     // This select impl is a copy of RubyThread.select, then blockingLock is
