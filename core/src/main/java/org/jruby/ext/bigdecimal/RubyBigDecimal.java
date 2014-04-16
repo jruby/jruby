@@ -1456,7 +1456,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @JRubyMethod(name = "floor", optional = 1)
-    public IRubyObject floor(IRubyObject[]args) {
+    public IRubyObject floor(IRubyObject[] args) {
         if (isNaN) {
             return newNaN(getRuntime());
         }
@@ -1469,15 +1469,26 @@ public class RubyBigDecimal extends RubyNumeric {
             n = RubyNumeric.fix2int(args[0]);
         }
 
+        RubyBigDecimal floor = null;
         if (value.scale() > n) { // rounding neccessary
-            return new RubyBigDecimal(getRuntime(),
+            floor = new RubyBigDecimal(getRuntime(),
                     value.setScale(n, RoundingMode.FLOOR));
         } else {
-            return this;
+            floor = this;
+        }
+
+        if (getRuntime().is1_8()) {
+            return floor;
+        } else {
+            if (args.length == 0) {
+                return floor.to_int19();
+            } else {
+                return floor;
+            }
         }
     }
 
-    @JRubyMethod(name = "floor", optional =1, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "floor", optional = 1, compat = CompatVersion.RUBY1_9)
     public IRubyObject floor19(IRubyObject[] args) {
         if (isNaN || isInfinity()) {
             throw getRuntime().newFloatDomainError("Computation results to '" + to_s(args).asJavaString() + "'");
@@ -1557,6 +1568,7 @@ public class RubyBigDecimal extends RubyNumeric {
         int scale = args.length > 0 ? num2int(args[0]) : 0;
         RoundingMode mode = (args.length > 1) ? javaRoundingModeFromRubyRoundingMode(args[1]) : getRoundingMode(context.runtime);
         // JRUBY-914: Java 1.4 BigDecimal does not allow a negative scale, so we have to simulate it
+        RubyBigDecimal bigDecimal = null;
         if (scale < 0) {
           // shift the decimal point just to the right of the digit to be rounded to (divide by 10**(abs(scale)))
           // -1 -> 10's digit, -2 -> 100's digit, etc.
@@ -1564,9 +1576,18 @@ public class RubyBigDecimal extends RubyNumeric {
           // ...round to that digit
           BigDecimal rounded = normalized.setScale(0, mode);
           // ...and shift the result back to the left (multiply by 10**(abs(scale)))
-          return new RubyBigDecimal(getRuntime(), rounded.movePointLeft(scale));
+          bigDecimal = new RubyBigDecimal(getRuntime(), rounded.movePointLeft(scale));
         } else {
-          return new RubyBigDecimal(getRuntime(), value.setScale(scale, mode));
+          bigDecimal = new RubyBigDecimal(getRuntime(), value.setScale(scale, mode));
+        }
+        if (context.runtime.is1_8()) {
+            return bigDecimal;
+        } else {
+            if (args.length == 0) {
+                return bigDecimal.to_int19();
+            } else {
+                return bigDecimal;
+            }
         }
     }
 
