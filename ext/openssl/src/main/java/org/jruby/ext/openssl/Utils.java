@@ -78,16 +78,27 @@ public class Utils {
         }
     }
 
+    @Deprecated
     public static RubyClass getClassFromPath(Ruby rt, String path) {
         return (RubyClass) rt.getClassFromPath(path);
     }
 
+    @Deprecated
     public static RaiseException newError(Ruby rt, String path, String message) {
         return new RaiseException(rt, getClassFromPath(rt, path), message, true);
     }
 
+    @Deprecated
     public static RaiseException newError(Ruby rt, String path, String message, boolean nativeException) {
         return new RaiseException(rt, getClassFromPath(rt, path), message, nativeException);
+    }
+
+    static RaiseException newRaiseException(Ruby runtime, RubyClass errorClass, String message, boolean nativeException) {
+        return new RaiseException(runtime, errorClass, message, nativeException);
+    }
+
+    static RaiseException newRaiseException(Ruby runtime, RubyClass errorClass, Exception e) {
+        return new RaiseException(runtime, errorClass, e.getMessage(), true);
     }
 
     @Deprecated
