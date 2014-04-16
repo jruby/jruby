@@ -364,9 +364,13 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public Handle emit(IRModuleBody method) {
-        String name = method.getName() + "_" + methodIndex++;
-        if (name.indexOf("DUMMY_MC") != -1) {
-            name = "METACLASS";
+        String baseName = method.getName() + "_" + methodIndex++;
+        String name;
+
+        if (baseName.indexOf("DUMMY_MC") != -1) {
+            name = "METACLASS_" + methodIndex++;
+        } else {
+            name = baseName + "_" + methodIndex++;
         }
 
         emitScope(method, name, METHOD_SIGNATURE);
