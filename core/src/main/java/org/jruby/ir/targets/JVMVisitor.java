@@ -1902,7 +1902,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void NthRef(NthRef nthref) {
-        super.NthRef(nthref);    //To change body of overridden methods use File | Settings | File Templates.
+        jvm.method().loadContext();
+        jvm.method().adapter.pushInt(nthref.matchNumber);
+        jvm.method().invokeIRHelper("nthMatch", sig(IRubyObject.class, ThreadContext.class, int.class));
     }
 
     @Override

@@ -1,7 +1,7 @@
 package org.jruby.ir.operands;
 
-import org.jruby.RubyRegexp;
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -20,7 +20,7 @@ public class NthRef extends Reference {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-        return RubyRegexp.nth_match(matchNumber, context.getBackRef());
+        return IRRuntimeHelpers.nthMatch(context, matchNumber);
     }
 
     @Override

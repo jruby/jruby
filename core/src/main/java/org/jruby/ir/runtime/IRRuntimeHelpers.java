@@ -576,4 +576,8 @@ public class IRRuntimeHelpers {
             }
         }
     }
+
+    public static IRubyObject nthMatch(ThreadContext context, int matchNumber) {
+        return RubyRegexp.nth_match(matchNumber, context.getBackRef());
+    }
 }
