@@ -28,9 +28,9 @@
 package org.jruby.ext.openssl;
 
 import java.io.PrintStream;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import java.security.GeneralSecurityException;
@@ -42,11 +42,11 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.RC2ParameterSpec;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -79,30 +79,30 @@ public class Cipher extends RubyObject {
     }
 
     public static boolean isSupportedCipher(final String name) {
-        initializeCiphers();
-        return CIPHERS.contains( name.toUpperCase() );
+        final Collection<String> ciphers = getSupportedCiphers();
+        return ciphers.contains( name.toUpperCase() );
     }
 
     @JRubyMethod(meta = true)
     public static IRubyObject ciphers(final ThreadContext context, final IRubyObject self) {
-        initializeCiphers();
         final Ruby runtime = context.runtime;
 
-        ArrayList<IRubyObject> result = new ArrayList<IRubyObject>(CIPHERS.size() * 2);
-        for (String cipher : CIPHERS) {
-            result.add( runtime.newString(cipher) );
-            result.add( runtime.newString(cipher.toLowerCase()) );
+        final Collection<String> ciphers = getSupportedCiphers();
+        final RubyArray result = runtime.newArray(ciphers.size() * 2);
+        for ( final String cipher : ciphers ) {
+            result.append( runtime.newString(cipher) );
+            result.append( runtime.newString(cipher.toLowerCase()) );
         }
-        return runtime.newArray(result);
+        return result;
     }
 
-    private static boolean initialized = false;
-    static final List<String> CIPHERS = new ArrayList<String>();
+    private static boolean supportedCiphersInitialized = false;
+    static final Collection<String> supportedCiphers = new LinkedHashSet<String>(72);
 
-    private static void initializeCiphers() {
-        if ( initialized ) return;
-        synchronized (CIPHERS) {
-            if ( initialized ) return;
+    private static Collection<String> getSupportedCiphers() {
+        if ( supportedCiphersInitialized ) return supportedCiphers;
+        synchronized ( supportedCiphers ) {
+            if ( supportedCiphersInitialized ) return supportedCiphers;
             final String[] other = {
                 "AES128", "AES192", "AES256",
                 "BLOWFISH",
@@ -122,17 +122,18 @@ public class Cipher extends RubyObject {
                 for ( int k = 0; k < suffixes.length; k++ ) {
                     final String cipher;
                     if ( tryCipher( cipher = bases[i] + suffixes[k]) ) {
-                        CIPHERS.add( cipher.toUpperCase() );
+                        supportedCiphers.add( cipher.toUpperCase() );
                     }
                 }
             }
             for ( int i = 0; i < other.length; i++ ) {
                 final String cipher = other[i];
                 if ( tryCipher( cipher ) ) {
-                    CIPHERS.add( cipher.toUpperCase() );
+                    supportedCiphers.add( cipher.toUpperCase() );
                 }
             }
-            initialized = true;
+            supportedCiphersInitialized = true;
+            return supportedCiphers;
         }
     }
 
@@ -141,8 +142,7 @@ public class Cipher extends RubyObject {
         private static final Set<String> BLOCK_MODES;
 
         static {
-            BLOCK_MODES = new HashSet<String>();
-
+            BLOCK_MODES = new HashSet<String>(8);
             BLOCK_MODES.add("CBC");
             BLOCK_MODES.add("CFB");
             BLOCK_MODES.add("CFB1");
@@ -151,53 +151,52 @@ public class Cipher extends RubyObject {
             BLOCK_MODES.add("OFB");
         }
 
-        public static String jsseToOssl(String inName, int keyLen) {
+        public static String jsseToOssl(final String cipherName, final int keyLen) {
             String cryptoBase;
             String cryptoVersion = null;
             String cryptoMode = null;
-            String[] parts = inName.split("/");
-            if (parts.length != 1 && parts.length != 3) {
+            final String[] parts = cipherName.split("/");
+            if ( parts.length != 1 && parts.length != 3 ) {
                 return null;
             }
-            cryptoBase = parts[0];
-            if (parts.length > 2) {
+            if ( parts.length > 2 ) {
                 cryptoMode = parts[1];
                 // padding: parts[2] is not used
             }
-            if (!BLOCK_MODES.contains(cryptoMode)) {
+            cryptoBase = parts[0];
+            if ( ! BLOCK_MODES.contains(cryptoMode) ) {
                 cryptoVersion = cryptoMode;
                 cryptoMode = "CBC";
             }
             if (cryptoMode == null) {
                 cryptoMode = "CBC";
             }
-            if (cryptoBase.equals("DESede")) {
+            if ( "DESede".equals(cryptoBase) ) {
                 cryptoBase = "DES";
                 cryptoVersion = "EDE3";
-            } else if (cryptoBase.equals("Blowfish")) {
+            }
+            else if ( "Blowfish".equals(cryptoBase) ) {
                 cryptoBase = "BF";
             }
             if (cryptoVersion == null) {
                 cryptoVersion = String.valueOf(keyLen);
             }
-            return cryptoBase + "-" + cryptoVersion + "-" + cryptoMode;
+            return cryptoBase + '-' + cryptoVersion + '-' + cryptoMode;
         }
 
         public static String getAlgorithmBase(javax.crypto.Cipher cipher) {
-            String algoBase = cipher.getAlgorithm();
-            if (algoBase.indexOf('/') != -1) {
-                algoBase = algoBase.split("/")[0];
-            }
-            return algoBase;
+            final String algorithm = cipher.getAlgorithm();
+            final int idx = algorithm.indexOf('/');
+            if ( idx != -1 ) return algorithm.substring(0, idx);
+            return algorithm;
         }
 
-        public static String[] osslToJsse(String inName) {
-            // assume PKCS5Padding
-            return osslToJsse(inName, null);
+        public static String[] osslToJsse(final String osslName) {
+            return osslToJsse(osslName, null); // assume PKCS5Padding
         }
 
-        public static String[] osslToJsse(String inName, String padding) {
-            String[] split = inName.split("-");
+        public static String[] osslToJsse(final String osslName, final String padding) {
+            final String[] split = osslName.split("-");
             String cryptoBase = split[0];
             String cryptoVersion = null;
             String cryptoMode;
@@ -214,7 +213,7 @@ public class Cipher extends RubyObject {
                 paddingType = "PKCS5Padding";
             }
 
-            if ("bf".equalsIgnoreCase(cryptoBase)) {
+            if ( "BF".equalsIgnoreCase(cryptoBase) ) {
                 cryptoBase = "Blowfish";
             }
 
@@ -227,73 +226,71 @@ public class Cipher extends RubyObject {
                 cryptoMode = "CBC";
             }
 
-            if (cryptoBase.equalsIgnoreCase("CAST")) {
+            if ( "CAST".equalsIgnoreCase(cryptoBase) ) {
                 realName = "CAST5";
-            } else if (cryptoBase.equalsIgnoreCase("DES") && "EDE3".equalsIgnoreCase(cryptoVersion)) {
+            } else if ( "DES".equalsIgnoreCase(cryptoBase) && "EDE3".equalsIgnoreCase(cryptoVersion) ) {
                 realName = "DESede";
             } else {
                 realName = cryptoBase;
             }
 
-            if (!BLOCK_MODES.contains(cryptoMode.toUpperCase())) {
-                cryptoVersion = cryptoMode;
-                cryptoMode = "CBC";
-            } else if (cryptoMode.equalsIgnoreCase("CFB1")) {
-                // uglish SunJCE cryptoMode normalization.
-                cryptoMode = "CFB";
+            final String cryptoModeUpper = cryptoMode.toUpperCase();
+            if ( ! BLOCK_MODES.contains(cryptoModeUpper) ) {
+                cryptoVersion = cryptoMode; cryptoMode = "CBC";
+            } else if ( "CFB1".equals(cryptoModeUpper) ) {
+                cryptoMode = "CFB"; // uglish SunJCE cryptoMode normalization
             }
 
-            if (realName.equalsIgnoreCase("RC4")) {
-                realName = "RC4";
-                cryptoMode = "NONE";
-                paddingType = "NoPadding";
+            if ( "RC4".equalsIgnoreCase(realName) ) {
+                realName = "RC4"; cryptoMode = "NONE"; paddingType = "NoPadding";
             } else {
                 realName = realName + "/" + cryptoMode + "/" + paddingType;
             }
 
-            return new String[]{cryptoBase, cryptoVersion, cryptoMode, realName, paddingType};
+            return new String[]{ cryptoBase, cryptoVersion, cryptoMode, realName, paddingType };
         }
 
-        public static int[] osslKeyIvLength(String name) {
-            String[] values = Algorithm.osslToJsse(name);
-            String cryptoBase = values[0];
-            String cryptoVersion = values[1];
-            //String cryptoMode = values[2];
-            //String realName = values[3];
+        public static int[] osslKeyIvLength(final String cipherName) {
+            String[] name = Algorithm.osslToJsse(cipherName);
+            final String cryptoBaseUpper = name[0].toUpperCase();
+            final String cryptoVersion = name[1];
+            //final String cryptoMode = name[2];
+            //final String realName = name[3];
 
-            int keyLen = -1;
-            int ivLen = -1;
+            int keyLen = -1; int ivLen = -1;
 
-            if (hasLen(cryptoBase) && null != cryptoVersion) {
+            final boolean hasLen =
+                "AES".equals(cryptoBaseUpper) || "RC2".equals(cryptoBaseUpper) || "RC4".equals(cryptoBaseUpper);
+            if ( hasLen && cryptoVersion != null ) {
                 try {
                     keyLen = Integer.parseInt(cryptoVersion) / 8;
                 } catch (NumberFormatException e) {
                     keyLen = -1;
                 }
             }
-            if (keyLen == -1) {
-                if ("DES".equalsIgnoreCase(cryptoBase)) {
+            if ( keyLen == -1 ) {
+                if ( "DES".equals(cryptoBaseUpper) ) {
                     ivLen = 8;
-                    if ("EDE3".equalsIgnoreCase(cryptoVersion)) {
+                    if ( "EDE3".equalsIgnoreCase(cryptoVersion) ) {
                         keyLen = 24;
                     } else {
                         keyLen = 8;
                     }
-                } else if ("RC4".equalsIgnoreCase(cryptoBase)) {
+                } else if ( "RC4".equals(cryptoBaseUpper) ) {
                     ivLen = 0;
                     keyLen = 16;
                 } else {
                     keyLen = 16;
                     try {
-                        int maxLen = javax.crypto.Cipher.getMaxAllowedKeyLength(name) / 8;
+                        int maxLen = javax.crypto.Cipher.getMaxAllowedKeyLength(cipherName) / 8;
                         if (maxLen < keyLen) keyLen = maxLen;
                     }
                     catch (NoSuchAlgorithmException e) { }
                 }
             }
 
-            if (ivLen == -1) {
-                if ("AES".equalsIgnoreCase(cryptoBase)) {
+            if ( ivLen == -1 ) {
+                if ( "AES".equals(cryptoBaseUpper) ) {
                     ivLen = 16;
                 } else {
                     ivLen = 8;
@@ -302,15 +299,12 @@ public class Cipher extends RubyObject {
             return new int[] { keyLen, ivLen };
         }
 
-        public static boolean hasLen(String cryptoBase) {
-            return "AES".equalsIgnoreCase(cryptoBase) || "RC2".equalsIgnoreCase(cryptoBase) || "RC4".equalsIgnoreCase(cryptoBase);
-        }
     }
 
-    private static boolean tryCipher(final String rubyName) {
-        String transformation = Algorithm.osslToJsse(rubyName, null)[3];
+    private static boolean tryCipher(final String osslName) {
+        String realName = Algorithm.osslToJsse(osslName, null)[3];
         try {
-            return getCipher(transformation, true) != null;
+            return getCipher(realName, true) != null;
         }
         catch (GeneralSecurityException e) {
             return false;
@@ -770,7 +764,11 @@ public class Cipher extends RubyObject {
                 doInitialize(runtime);
             }
         }
-        catch (Exception e) {
+        catch (GeneralSecurityException e) { // cipher.doFinal
+            throw newCipherError(runtime, e.getMessage());
+        }
+        catch (RuntimeException e) {
+            if ( isDebug(runtime) ) e.printStackTrace( runtime.getOut() );
             throw newCipherError(runtime, e.getMessage());
         }
         return runtime.newString(str);
