@@ -84,7 +84,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         if (box.callCount >= 0) {
-            if (tryCompile(context)) return box.actualMethod.call(context, self, clazz, name, args, block);
+            if (tryCompile(context)) return callJitted(context, self, clazz, name, args, block);
         }
 
         ensureInstrsReady();
@@ -106,15 +106,40 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block, null, false);
         } else {
             try {
-                // update call stacks (push: frame, class, scope, etc.)
-                context.preMethodFrameAndScope(getImplementationClass(), name, self, block, method.getStaticScope());
-                context.setCurrentVisibility(getVisibility());
+                pre(context, self, name, block);
+
                 return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block, null, false);
             } finally {
+                post(context);
+
+            }
+        }
+    }
+
+    private void post(ThreadContext context) {
+        // update call stacks (pop: ..)
+        context.popFrame();
+        context.popRubyClass();
+        context.popScope();
+    }
+
+    private void pre(ThreadContext context, IRubyObject self, String name, Block block) {
+        // update call stacks (push: frame, class, scope, etc.)
+        context.preMethodFrameAndScope(getImplementationClass(), name, self, block, method.getStaticScope());
+        context.setCurrentVisibility(getVisibility());
+    }
+
+    private IRubyObject callJitted(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        if (method.hasExplicitCallProtocol()) {
+            return box.actualMethod.call(context, self, clazz, name, args, block);
+        } else {
+            try {
+                // update call stacks (push: frame, class, scope, etc.)
+                pre(context, self, name, block);
+                return box.actualMethod.call(context, self, clazz, name, args, block);
+            } finally {
                 // update call stacks (pop: ..)
-                context.popFrame();
-                context.popRubyClass();
-                context.popScope();
+                post(context);
             }
         }
     }
