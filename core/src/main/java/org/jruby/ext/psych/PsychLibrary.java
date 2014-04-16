@@ -54,7 +54,6 @@ public class PsychLibrary implements Library {
         final RubyArray versionElements = runtime.newArray(runtime.newFixnum(1), runtime.newFixnum(13), runtime.newFixnum(0));
         versionElements.setFrozen(true);
 
-        psych.setConstant("LIBYAML_VERSION", version);
         psych.getSingletonClass().addMethod("libyaml_version", new JavaMethodZero(psych, Visibility.PUBLIC) {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
