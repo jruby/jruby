@@ -189,10 +189,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  profile 'docs' do
-    modules [ 'docs' ]
-  end
-
   [ 'jruby-jars', 'main', 'complete', 'dist' ].each do |name|
 
     profile name do
@@ -215,7 +211,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  all_modules = [ 'test', 'docs', 'maven' ]
+  all_modules = [ 'test', 'maven' ]
 
   profile 'all' do
 

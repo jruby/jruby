@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.jruby</groupId>
+    <artifactId>jruby-artifacts</artifactId>
+    <version>1.7.13-SNAPSHOT</version>
+  </parent>
+  <artifactId>jruby-stdlib-complete</artifactId>
+  <name>JRuby Stdlib Complete</name>
+  <properties>
+    <jruby.basedir>${basedir}/../../</jruby.basedir>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-stdlib</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcpkix-jdk15on</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcprov-jdk15on</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
+  <build>
+    <resources>
+      <resource>
+        <directory>${jruby.basedir}/lib</directory>
+        <targetPath>${jruby.complete.home}/lib</targetPath>
+        <includes>
+          <include>lib/**/bc*.jar</include>
+        </includes>
+      </resource>
+    </resources> 
+    <plugins>
+      <plugin>
+	<artifactId>maven-deploy-plugin</artifactId>
+	<configuration>
+	  <skip>true</skip>
+	</configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>2.1</version>
+        <executions>
+          <execution>
+            <id>pack artifact</id>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

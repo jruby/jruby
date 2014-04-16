@@ -544,12 +544,6 @@
       </modules>
     </profile>
     <profile>
-      <id>docs</id>
-      <modules>
-        <module>docs</module>
-      </modules>
-    </profile>
-    <profile>
       <id>jruby-jars</id>
       <build>
         <defaultGoal>install</defaultGoal>
@@ -601,7 +595,6 @@
       </build>
       <modules>
         <module>test</module>
-        <module>docs</module>
         <module>maven</module>
       </modules>
     </profile>
@@ -612,7 +605,6 @@
       </build>
       <modules>
         <module>test</module>
-        <module>docs</module>
         <module>maven</module>
       </modules>
     </profile>

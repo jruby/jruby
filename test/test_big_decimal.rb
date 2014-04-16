@@ -158,7 +158,7 @@ class TestBigDecimal < Test::Unit::TestCase
     
     # Reject invalid arguments to #mode
     assert_raises(TypeError) { BigDecimal.mode(true) } # first argument must be a Fixnum
-    assert_raises(TypeError) { BigDecimal.mode(BigDecimal::EXCEPTION_OVERFLOW, 1) } # second argument must be [true|false]
+    assert_raises(ArgumentError) { BigDecimal.mode(BigDecimal::EXCEPTION_OVERFLOW, 1) } # second argument must be [true|false]
     assert_raises(TypeError) { BigDecimal.mode(512) } # first argument must be == 256, or return non-zero when AND-ed with 255
     
     # exception mode defaults to 0
@@ -198,7 +198,7 @@ class TestBigDecimal < Test::Unit::TestCase
     BigDecimal.mode(BigDecimal::ROUND_MODE, BigDecimal::ROUND_HALF_UP)
     
     assert_raises(TypeError) { BigDecimal.mode(BigDecimal::ROUND_MODE, true) } # second argument must be a Fixnum
-    assert_raises(TypeError) { BigDecimal.mode(BigDecimal::ROUND_MODE, 8) } # any Fixnum >= 8 should trigger this error, as the valid rounding modes are currently [0..6]
+    assert_raises(ArgumentError) { BigDecimal.mode(BigDecimal::ROUND_MODE, 8) } # any Fixnum >= 8 should trigger this error, as the valid rounding modes are currently [0..6]
   end
 
   def test_marshaling

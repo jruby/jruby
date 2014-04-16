@@ -38,9 +38,6 @@ package org.jruby;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.POSIX;
 import org.jcodings.Encoding;
-import org.jruby.util.io.ModeFlags;
-import org.jruby.util.io.OpenFile;
-import org.jruby.util.io.ChannelDescriptor;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
@@ -77,22 +74,25 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.util.ByteList;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.ResourceException;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.io.DirectoryAsFileException;
-import org.jruby.util.io.PermissionDeniedException;
-import org.jruby.util.io.Stream;
-import org.jruby.util.io.ChannelStream;
-import org.jruby.util.io.IOOptions;
+import org.jruby.util.encoding.Transcoder;
 import org.jruby.util.io.BadDescriptorException;
+import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.ChannelStream;
+import org.jruby.util.io.DirectoryAsFileException;
+import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.FileExistsException;
+import org.jruby.util.io.IOEncodable;
+import org.jruby.util.io.IOOptions;
 import org.jruby.util.io.InvalidValueException;
+import org.jruby.util.io.ModeFlags;
+import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PipeException;
+import org.jruby.util.io.Stream;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.encoding.EncodingService;
-import org.jruby.util.encoding.Transcoder;
-import org.jruby.util.io.EncodingUtils;
-import org.jruby.util.io.IOEncodable;
 
 /**
  * Ruby File class equivalent in java.
@@ -1317,23 +1317,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             // TODO: check if too many open files, GC and try again
 
             return descriptor;
-        } catch (PermissionDeniedException pde) {
-            // PDException can be thrown only when creating the file and
-            // permission is denied.  See JavaDoc of PermissionDeniedException.
-            throw getRuntime().newErrnoEACCESError(path);
-        } catch (FileNotFoundException fnfe) {
-            // FNFException can be thrown in both cases, when the file
-            // is not found, or when permission is denied.
-            if (Ruby.isSecurityRestricted() || new File(path).exists()) {
-                throw getRuntime().newErrnoEACCESError(path);
-            }
-            throw getRuntime().newErrnoENOENTError(path);
-        } catch (DirectoryAsFileException dafe) {
-            throw getRuntime().newErrnoEISDirError();
-        } catch (FileExistsException fee) {
-            throw getRuntime().newErrnoEEXISTError(path);
-        } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+        } catch (ResourceException resourceException) {
+            throw resourceException.newRaiseException(getRuntime());
+        } catch (FileNotFoundException ignored) {
+          throw new IllegalStateException("For compile compatibility only");
+        } catch (DirectoryAsFileException ignored) {
+          throw new IllegalStateException("For compile compatibility only");
+        } catch (FileExistsException ignored) {
+          throw new IllegalStateException("For compile compatibility only");
+        } catch (IOException ignored) {
+          throw new IllegalStateException("For compile compatibility only");
         }
     }
 
@@ -1343,34 +1336,18 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     getRuntime(),
                     path,
                     flags);
-        } catch (BadDescriptorException e) {
-            throw getRuntime().newErrnoEBADFError();
-        } catch (PermissionDeniedException pde) {
-            // PDException can be thrown only when creating the file and
-            // permission is denied.  See JavaDoc of PermissionDeniedException.
-            throw getRuntime().newErrnoEACCESError(path);
-        } catch (FileNotFoundException ex) {
-            // FNFException can be thrown in both cases, when the file
-            // is not found, or when permission is denied.
-            // FIXME: yes, this is indeed gross.
-            String message = ex.getMessage();
-            
-            if (message.contains(/*P*/"ermission denied") ||
-                message.contains(/*A*/"ccess is denied")) {
-                throw getRuntime().newErrnoEACCESError(path);
-            }
-            
-            throw getRuntime().newErrnoENOENTError(path);
-        } catch (DirectoryAsFileException ex) {
-            throw getRuntime().newErrnoEISDirError();
-        } catch (FileExistsException ex) {
-            throw getRuntime().newErrnoEEXISTError(path);
-        } catch (IOException ex) {
-            throw getRuntime().newIOErrorFromException(ex);
         } catch (InvalidValueException ex) {
             throw getRuntime().newErrnoEINVALError();
         } catch (PipeException ex) {
-            throw getRuntime().newErrnoEPIPEError();
+            throw new IllegalStateException("For compile compatibility only");
+        } catch (BadDescriptorException e) {
+            throw new IllegalStateException("For compile compatibility only");
+        } catch (FileNotFoundException ex) {
+            throw new IllegalStateException("For compile compatibility only");
+        } catch (FileExistsException ex) {
+            throw new IllegalStateException("For compile compatibility only");
+        } catch (IOException ex) {
+            throw new IllegalStateException("For compile compatibility only");
         } catch (SecurityException ex) {
             throw getRuntime().newErrnoEACCESError(path);
         }
