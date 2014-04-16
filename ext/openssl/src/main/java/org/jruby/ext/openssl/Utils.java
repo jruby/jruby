@@ -71,6 +71,7 @@ public class Utils {
         return out.toString().toUpperCase();
     }
 
+    @Deprecated
     public static void checkKind(Ruby rt, IRubyObject obj, String path) {
         if (((RubyObject) obj).kind_of_p(rt.getCurrentContext(), rt.getClassFromPath(path)).isFalse()) {
             throw rt.newTypeError(String.format("wrong argument (%s)! (Expected kind of %s)", obj.getMetaClass().getName(), path));
