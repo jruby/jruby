@@ -1533,7 +1533,8 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ReceiveSelfInstr(ReceiveSelfInstr receiveselfinstr) {
-        throw new RuntimeException("Self instr should have been stripped: " + receiveselfinstr);
+        jvm.method().loadSelf();
+        jvmStoreLocal(receiveselfinstr.getResult());
     }
 
     @Override

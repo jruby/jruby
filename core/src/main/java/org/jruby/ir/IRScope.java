@@ -662,11 +662,9 @@ public abstract class IRScope implements ParseResult {
             Label l = b.getLabel();
             ipcLabelMap.put(ipc, catLabels(ipcLabelMap.get(ipc), l));
             for (Instr i : b.getInstrs()) {
-                if (!(i instanceof ReceiveSelfInstr)) {
-                    newInstrs.add(i);
-                    i.setIPC(ipc);
-                    ipc++;
-                }
+                newInstrs.add(i);
+                i.setIPC(ipc);
+                ipc++;
             }
         }
 
