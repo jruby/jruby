@@ -95,7 +95,7 @@ public class JavaSupport {
                 // try to load the ClassValue class. If it succeeds, we can use our
                 // ClassValue-based cache.
                 Class.forName("java.lang.ClassValue");
-                constructor = (Constructor<ClassValue>)Class.forName("org.jruby.java.proxies.ClassValueProxyCache").getConstructor(ClassValueCalculator.class);
+                constructor = (Constructor<ClassValue>)Class.forName("org.jruby.util.collections.Java7ClassValue").getConstructor(ClassValueCalculator.class);
             }
             catch (Exception ex) {
                 // fall through to Map version
