@@ -32,6 +32,9 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -114,6 +117,48 @@ public class Utils {
     static IRubyObject newRubyInstance(final ThreadContext context, final String path, IRubyObject... args) {
         final RubyModule klass = context.runtime.getClassFromPath(path);
         return klass.callMethod(context, "new", args);
+    }
+
+    // reinvented parts of org.jruby.runtime.Helpers for compatibility with "older" JRuby :
+
+    static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, Block block) {
+        return self.getMetaClass().finvoke(context, self, name, block);
+    }
+    
+    static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        return invokeSuper(context, self, context.getFrameKlazz(), context.getFrameName(), args, block);
+    }
+
+    static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject[] args, Block block) {
+        checkSuperDisabledOrOutOfMethod(context, klass, name);
+
+        RubyClass superClass = findImplementerIfNecessary(self.getMetaClass(), klass).getSuperClass();
+        DynamicMethod method = superClass != null ? superClass.searchMethod(name) : UndefinedMethod.INSTANCE;
+        // NOTE: method_missing not implemented !
+        //if (method.isUndefined()) {
+        //    return callMethodMissing(context, self, method.getVisibility(), name, CallType.SUPER, args, block);
+        //}
+        return method.call(context, self, superClass, name, args, block);
+    }
+
+    private static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule klass, String name) {
+        if (klass == null) {
+            if (name != null) {
+                throw context.runtime.newNameError("superclass method '" + name + "' disabled", name);
+            } else {
+                throw context.runtime.newNoMethodError("super called outside of method", null, context.nil);
+            }
+        }
+    }
+
+    private static RubyModule findImplementerIfNecessary(RubyModule clazz, RubyModule implementationClass) {
+        if (implementationClass != null && implementationClass.needsImplementer()) {
+            // modules are included with a shim class; we must find that shim to handle super() appropriately
+            return clazz.findImplementer(implementationClass);
+        } else {
+            // classes are directly in the hierarchy, so no special logic is necessary for implementer
+            return implementationClass;
+        }
     }
 
 }// Utils

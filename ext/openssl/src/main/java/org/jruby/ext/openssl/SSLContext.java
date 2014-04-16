@@ -57,7 +57,6 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
@@ -562,7 +561,7 @@ public class SSLContext extends RubyObject {
         final ArrayList<X509Cert> result = new ArrayList<X509Cert>();
         final RubyModule _SSLContext = context.runtime.getClassFromPath("OpenSSL::SSL::SSLContext");
         final RubyModule _Certificate = context.runtime.getClassFromPath("OpenSSL::X509::Certificate");
-        Helpers.invoke(context, value, "each",
+        Utils.invoke(context, value, "each",
             CallBlock.newCallClosure(value, _SSLContext, Arity.NO_ARGUMENTS, new BlockCallback() {
 
                 public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
@@ -804,4 +803,5 @@ public class SSLContext extends RubyObject {
             }
         }
     }
+
 }// SSLContext
