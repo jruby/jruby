@@ -37,10 +37,10 @@ public class IRManager {
 
 
     // FIXME: Eventually make these attrs into either a) set b) part of state machine
-    private List<CompilerPass> compilerPasses = new ArrayList<CompilerPass>();
-    private List<CompilerPass> inliningCompilerPasses = new ArrayList<CompilerPass>();
-    private List<CompilerPass> jitPasses = new ArrayList<CompilerPass>();
-    private List<CompilerPass> safePasses = new ArrayList<CompilerPass>();
+    private List<CompilerPass> compilerPasses;
+    private List<CompilerPass> inliningCompilerPasses;
+    private List<CompilerPass> jitPasses;
+    private List<CompilerPass> safePasses;
 
     // If true then code will not execute (see ir/ast tool)
     private boolean dryRun = false;
@@ -48,7 +48,7 @@ public class IRManager {
     public IRManager() {
         compilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_COMPILER_PASSES);
         inliningCompilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_INLINING_COMPILER_PASSES);
-        jitPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_JIT_PASSES);
+        jitPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_JIT_PASSES, DEFAULT_JIT_PASSES);
         safePasses = CompilerPass.getPassesFromString(null, SAFE_COMPILER_PASSES);
     }
 
