@@ -442,7 +442,8 @@ public class Bootstrap {
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, false);
 
         site.setTarget(mh);
-        return (IRubyObject)mh.invokeWithArguments(context, caller, self, args);
+        // FIXME: this varargs path needs to splat to call against handle
+        return method.call(context, self, selfClass, methodName, args);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
@@ -549,7 +550,8 @@ public class Bootstrap {
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, true);
 
         site.setTarget(mh);
-        return (IRubyObject)mh.invokeWithArguments(context, caller, self, args, block);
+        // FIXME: this varargs path needs to splat to call against handle
+        return method.call(context, self, selfClass, methodName, args, block);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, Block block) throws Throwable {
@@ -836,7 +838,8 @@ public class Bootstrap {
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, false);
 
         site.setTarget(mh);
-        return (IRubyObject)mh.asSpreader(IRubyObject[].class, args.length).invokeWithArguments(context, caller, self, args);
+        // FIXME: this varargs path needs to splat to call against handle
+        return method.call(context, self, selfClass, methodName, args);
     }
 
     public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args) {
@@ -927,8 +930,8 @@ public class Bootstrap {
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, true);
 
         site.setTarget(mh);
-        // TODO: this is not efficient since it will create another new handle
-        return (IRubyObject)MethodHandles.insertArguments(mh, site.signature.argCount() - 1, block).asSpreader(IRubyObject[].class, args.length).invokeWithArguments(context, caller, self, args);
+        // FIXME: this varargs path needs to splat to call against handle
+        return method.call(context, self, selfClass, methodName, args, block);
     }
 
     public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
