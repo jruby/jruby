@@ -171,7 +171,7 @@ public class JVMVisitor extends IRVisitor {
         // run compiler
         JVMVisitor target = new JVMVisitor();
 
-        target.codegen(scope);
+        target.codegenScope(scope);
 
 //        try {
 //            FileOutputStream fos = new FileOutputStream("tmp.class");
@@ -188,20 +188,20 @@ public class JVMVisitor extends IRVisitor {
         return jvm.code();
     }
 
-    public void codegen(IRScope scope) {
+    public void codegenScope(IRScope scope) {
         if (scope instanceof IRScriptBody) {
-            codegen((IRScriptBody)scope);
+            codegenScriptBody((IRScriptBody)scope);
         } else if (scope instanceof IRMethod) {
-            emitJITTED((IRMethod)scope);
+            emitMethodJIT((IRMethod)scope);
         } else if (scope instanceof IRModuleBody) {
-            emitJITTED((IRModuleBody)scope);
+            emitModuleBodyJIT((IRModuleBody)scope);
         } else {
             throw new RuntimeException("don't know how to JIT: " + scope);
         }
     }
 
-    public void codegen(IRScriptBody script) {
-        emit(script);
+    public void codegenScriptBody(IRScriptBody script) {
+        emitScriptBody(script);
     }
 
     public void emitScope(IRScope scope, String name, Signature signature) {
@@ -254,7 +254,6 @@ public class JVMVisitor extends IRVisitor {
         }
 
         // set up try/catch table
-        int[][] tryCatchTable = new int[instrs.length][];
         List<int[]> allCatches = new ArrayList<int[]>();
         int[] rescueRange = null;
         for (int i = 0; i < instrs.length; i++) {
@@ -318,7 +317,7 @@ public class JVMVisitor extends IRVisitor {
             .returning(IRubyObject.class)
             .appendArgs(new String[]{"context", "scope", "self", "args", "block", "superName", "type"}, ThreadContext.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, String.class, Block.Type.class);
 
-    public void emit(IRScriptBody script) {
+    public void emitScriptBody(IRScriptBody script) {
         String clsName = jvm.scriptToClass(script.getName());
         jvm.pushscript(clsName, script.getFileName());
 
@@ -328,7 +327,7 @@ public class JVMVisitor extends IRVisitor {
         jvm.popclass();
     }
 
-    public Handle emit(IRMethod method) {
+    public Handle emitMethod(IRMethod method) {
         String name = JavaNameMangler.mangleMethodName(method.getName() + "_" + methodIndex++);
 
         emitScope(method, name, METHOD_SIGNATURE);
@@ -336,7 +335,7 @@ public class JVMVisitor extends IRVisitor {
         return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(METHOD_SIGNATURE.type().returnType(), METHOD_SIGNATURE.type().parameterArray()));
     }
 
-    public Handle emitJITTED(IRMethod method) {
+    public Handle emitMethodJIT(IRMethod method) {
         String name = JavaNameMangler.mangleMethodName(method.getName() + "_" + methodIndex++);
         String clsName = jvm.scriptToClass(method.getName());
         jvm.pushscript(clsName, method.getFileName());
@@ -351,7 +350,7 @@ public class JVMVisitor extends IRVisitor {
         return handle;
     }
 
-    public Handle emitJITTED(IRModuleBody method) {
+    public Handle emitModuleBodyJIT(IRModuleBody method) {
         String baseName = method.getName() + "_" + methodIndex++;
         String name;
 
@@ -376,11 +375,11 @@ public class JVMVisitor extends IRVisitor {
     private void emitClosures(IRScope s) {
         // Emit code for all nested closures
         for (IRClosure c: s.getClosures()) {
-            c.setHandle(emit(c));
+            c.setHandle(emitClosure(c));
         }
     }
 
-    public Handle emit(IRClosure closure) {
+    public Handle emitClosure(IRClosure closure) {
         /* Compile the closure like a method */
         String name = JavaNameMangler.mangleMethodName(closure.getName() + "__" + closure.getLexicalParent().getName() + "_" + methodIndex++);
 
@@ -389,7 +388,7 @@ public class JVMVisitor extends IRVisitor {
         return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(CLOSURE_SIGNATURE.type().returnType(), CLOSURE_SIGNATURE.type().parameterArray()));
     }
 
-    public Handle emit(IRModuleBody method) {
+    public Handle emitModuleBody(IRModuleBody method) {
         String baseName = method.getName() + "_" + methodIndex++;
         String name;
 
@@ -911,7 +910,7 @@ public class JVMVisitor extends IRVisitor {
         a.dup();
 
         // emit method body and get handle
-        a.ldc(emit(newIRClassBody)); // handle
+        a.ldc(emitModuleBody(newIRClassBody)); // handle
 
         // add'l args for CompiledIRMethod constructor
         a.ldc(newIRClassBody.getName());
@@ -977,7 +976,7 @@ public class JVMVisitor extends IRVisitor {
 
         a.aload(0); // ThreadContext
         visit(defineclassmethodinstr.getContainer());
-        jvm.method().pushHandle(emit(method)); // handle
+        jvm.method().pushHandle(emitMethod(method)); // handle
         a.ldc(method.getName());
         a.aload(1);
         a.ldc(scopeString);
@@ -1005,7 +1004,7 @@ public class JVMVisitor extends IRVisitor {
         List<String[]> parameters = method.getArgDesc();
 
         a.aload(0); // ThreadContext
-        jvm.method().pushHandle(emit(method)); // handle
+        jvm.method().pushHandle(emitMethod(method)); // handle
         a.ldc(method.getName());
         a.aload(1);
         a.ldc(scopeString);
@@ -1039,7 +1038,7 @@ public class JVMVisitor extends IRVisitor {
         a.dup();
 
         // emit method body and get handle
-        a.ldc(emit(metaClassBody)); // handle
+        a.ldc(emitModuleBody(metaClassBody)); // handle
 
         // add'l args for CompiledIRMethod constructor
         a.ldc(metaClassBody.getName());
@@ -1092,10 +1091,10 @@ public class JVMVisitor extends IRVisitor {
         a.dup();
 
         // emit method body and get handle
-        a.ldc(emit(newIRModuleBody)); // handle
+        a.ldc(emitModuleBody(newIRModuleBody)); // handle
 
         // emit method body and get handle
-        emit(newIRModuleBody); // handle
+        emitModuleBody(newIRModuleBody); // handle
 
         // add'l args for CompiledIRMethod constructor
         a.ldc(newIRModuleBody.getName());
