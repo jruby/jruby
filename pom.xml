@@ -103,7 +103,7 @@
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <jruby-launcher.version>1.0.19</jruby-launcher.version>
     <rspec-expectations.version>2.14.0</rspec-expectations.version>
-    <asm.version>4.2</asm.version>
+    <asm.version>5.0.1</asm.version>
     <base.javac.version>1.7</base.javac.version>
     <krypt.version>0.0.2.rc1</krypt.version>
     <rdoc.version>4.1.0</rdoc.version>
