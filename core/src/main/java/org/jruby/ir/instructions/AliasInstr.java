@@ -11,6 +11,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -61,15 +62,10 @@ public class AliasInstr extends Instr implements FixedArityInstr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject object = (IRubyObject) receiver.retrieve(context, self, currDynScope, temp);
 
-        if (object == null || object instanceof RubyFixnum || object instanceof RubySymbol) {
-            throw context.runtime.newTypeError("no class to make alias");
-        }
-
         String newNameString = getNewName().retrieve(context, self, currDynScope, temp).toString();
         String oldNameString = getOldName().retrieve(context, self, currDynScope, temp).toString();
 
-        RubyModule module = (object instanceof RubyModule) ? (RubyModule) object : object.getMetaClass();
-        module.defineAlias(newNameString, oldNameString);
+        IRRuntimeHelpers.defineAlias(context, object, newNameString, oldNameString);
 
         return null;
     }

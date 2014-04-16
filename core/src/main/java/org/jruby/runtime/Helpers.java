@@ -1661,10 +1661,8 @@ public class Helpers {
             throw runtime.newTypeError("no class to make alias");
         }
 
-        String newName = (newNameArg instanceof String) ?
-            (String) newNameArg : newNameArg.toString();
-        String oldName = (oldNameArg instanceof String) ? 
-            (String) oldNameArg : oldNameArg.toString();
+        String newName = newNameArg.toString();
+        String oldName = oldNameArg.toString();
 
         module.defineAlias(newName, oldName);
         module.callMethod(context, "method_added", runtime.newSymbol(newName));

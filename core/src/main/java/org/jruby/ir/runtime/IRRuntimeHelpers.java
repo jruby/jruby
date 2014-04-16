@@ -580,4 +580,13 @@ public class IRRuntimeHelpers {
     public static IRubyObject nthMatch(ThreadContext context, int matchNumber) {
         return RubyRegexp.nth_match(matchNumber, context.getBackRef());
     }
+
+    public static void defineAlias(ThreadContext context, IRubyObject object, String newNameString, String oldNameString) {
+        if (object == null || object instanceof RubyFixnum || object instanceof RubySymbol) {
+            throw context.runtime.newTypeError("no class to make alias");
+        }
+
+        RubyModule module = (object instanceof RubyModule) ? (RubyModule) object : object.getMetaClass();
+        module.defineAlias(newNameString, oldNameString);
+    }
 }
