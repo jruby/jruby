@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -50,7 +51,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyRational;
 import org.jruby.RubyString;
-
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
@@ -344,7 +345,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 return c.searchInternalModuleVariable("vpExceptionMode");
             }
             if (!(value.isNil()) && !(value instanceof RubyBoolean)) {
-                throw runtime.newTypeError("second argument must be true or false");
+                throw runtime.newArgumentError("second argument must be true or false");
             }
 
             RubyFixnum currentExceptionMode = (RubyFixnum)c.searchInternalModuleVariable("vpExceptionMode");
@@ -381,22 +382,10 @@ public class RubyBigDecimal extends RubyNumeric {
             if (value.isNil()) {
                 return c.searchInternalModuleVariable("vpRoundingMode");
             }
-            if (!(value instanceof RubyFixnum)) {
-                throw runtime.newTypeError("wrong argument type " + mode.getMetaClass() + " (expected Fixnum)");
-            }
-            
-            RubyFixnum roundingMode = (RubyFixnum)value;
-            if (roundingMode == clazz.getConstant("ROUND_UP") ||
-                    roundingMode == clazz.getConstant("ROUND_DOWN") ||
-                    roundingMode == clazz.getConstant("ROUND_FLOOR") ||
-                    roundingMode == clazz.getConstant("ROUND_CEILING") ||
-                    roundingMode == clazz.getConstant("ROUND_HALF_UP") ||
-                    roundingMode == clazz.getConstant("ROUND_HALF_DOWN") ||
-                    roundingMode == clazz.getConstant("ROUND_HALF_EVEN")) {
-                c.setInternalModuleVariable("vpRoundingMode", roundingMode);
-            } else {
-                throw runtime.newTypeError("invalid rounding mode");
-            }
+
+            RoundingMode javaRoundingMode = javaRoundingModeFromRubyRoundingMode(runtime, value);
+            RubyFixnum roundingMode = runtime.newFixnum(javaRoundingMode.ordinal());
+            c.setInternalModuleVariable("vpRoundingMode", roundingMode);
             return c.searchInternalModuleVariable("vpRoundingMode");
         }
         throw runtime.newTypeError("first argument for BigDecimal#mode invalid");
@@ -1566,7 +1555,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = "round", optional = 2)
     public IRubyObject round(ThreadContext context, IRubyObject[] args) {
         int scale = args.length > 0 ? num2int(args[0]) : 0;
-        RoundingMode mode = (args.length > 1) ? javaRoundingModeFromRubyRoundingMode(args[1]) : getRoundingMode(context.runtime);
+        RoundingMode mode = (args.length > 1) ? javaRoundingModeFromRubyRoundingMode(context.runtime, args[1]) : getRoundingMode(context.runtime);
         // JRUBY-914: Java 1.4 BigDecimal does not allow a negative scale, so we have to simulate it
         RubyBigDecimal bigDecimal = null;
         if (scale < 0) {
@@ -1592,8 +1581,34 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     //this relies on the Ruby rounding enumerations == Java ones, which they (currently) all are
-    private RoundingMode javaRoundingModeFromRubyRoundingMode(IRubyObject arg) {
-      return RoundingMode.valueOf(num2int(arg));
+    private static RoundingMode javaRoundingModeFromRubyRoundingMode(Ruby runtime, IRubyObject arg) {
+        if (arg instanceof RubySymbol) {
+            RubySymbol roundingModeSymbol = (RubySymbol) arg;
+            String roundingModeString = roundingModeSymbol.asJavaString();
+            if (roundingModeString.equals("up")) {
+                return RoundingMode.UP;
+            } else if (roundingModeString.equals("down") || roundingModeString.equals("truncate")) {
+                return RoundingMode.DOWN;
+            } else if (roundingModeString.equals("half_up") || roundingModeString.equals("default")) {
+                return RoundingMode.HALF_UP;
+            } else if (roundingModeString.equals("half_down")) {
+                return RoundingMode.HALF_DOWN;
+            } else if (roundingModeString.equals("half_even") || roundingModeString.equals("banker")) {
+                return RoundingMode.HALF_EVEN;
+            } else if (roundingModeString.equals("ceiling") || roundingModeString.equals("ceil")) {
+                return RoundingMode.CEILING;
+            } else if (roundingModeString.equals("floor")) {
+                return RoundingMode.FLOOR;
+            } else {
+                throw runtime.newArgumentError("invalid rounding mode");
+            }
+        } else {
+            try {
+                return RoundingMode.valueOf(num2int(arg));
+            } catch (IllegalArgumentException iae) {
+                throw runtime.newArgumentError("invalid rounding mode");
+            }
+        }
     }
     
     @JRubyMethod(name = "sign")
