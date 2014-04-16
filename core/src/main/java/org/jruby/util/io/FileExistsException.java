@@ -28,8 +28,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.io;
 
+@Deprecated // This class is fully deprecated and is retained in 1.7 branch only for compile compatibility
 public class FileExistsException extends Throwable {
     public FileExistsException(String path) {
-        super("file exists: " + path);
+      throw new UnsupportedOperationException("Deprecated!");
     }
 }

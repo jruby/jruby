@@ -30,5 +30,9 @@ package org.jruby.util.io;
 
 import java.io.IOException;
 
+@Deprecated // This class is fully deprecated and is retained in 1.7 branch only for compile compatibility
 public class DirectoryAsFileException extends IOException {
+  public DirectoryAsFileException() {
+    throw new UnsupportedOperationException("Deprecated!");
+  }
 }
