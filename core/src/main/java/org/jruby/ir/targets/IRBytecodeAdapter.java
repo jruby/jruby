@@ -167,12 +167,14 @@ public class IRBytecodeAdapter {
         adapter.invokestatic(p(IRRuntimeHelpers.class), name, sig);
     }
 
-    public void searchConst(String name) {
-        adapter.invokedynamic("searchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst());
+    public void searchConst(String name, boolean noPrivateConsts) {
+        adapter.ldc(name);
+        adapter.invokedynamic("searchConst", sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class, String.class)), Bootstrap.searchConst(), noPrivateConsts);
     }
 
-    public void inheritanceSearchConst(String name) {
-        adapter.invokedynamic("inheritanceSearchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), Bootstrap.inheritanceSearchConst());
+    public void inheritanceSearchConst(String name, boolean noPrivateConsts) {
+        adapter.ldc(name);
+        adapter.invokedynamic("inheritanceSearchConst", sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class, String.class)), Bootstrap.inheritanceSearchConst(), noPrivateConsts);
     }
 
     public void goTo(org.objectweb.asm.Label label) {

@@ -243,14 +243,12 @@ public class Bootstrap {
         return site;
     }
 
-    public static CallSite searchConst(Lookup lookup, String name, MethodType type) {
+    public static CallSite searchConst(Lookup lookup, String name, MethodType type, boolean noPrivateConsts) {
+        // TODO: do something with noPrivateConsts
         MutableCallSite site = new MutableCallSite(type);
-        String[] bits = name.split(":");
-        String constName = bits[1];
 
         MethodHandle handle = Binder
                 .from(type)
-                .insert(0, site, constName)
                 .invokeStaticQuiet(LOOKUP, Bootstrap.class, "searchConst");
 
         site.setTarget(handle);
@@ -258,14 +256,12 @@ public class Bootstrap {
         return site;
     }
 
-    public static CallSite inheritanceSearchConst(Lookup lookup, String name, MethodType type) {
+    public static CallSite inheritanceSearchConst(Lookup lookup, String name, MethodType type, boolean noPrivateConsts) {
+        // TODO: do something with noPrivateConsts
         MutableCallSite site = new MutableCallSite(type);
-        String[] bits = name.split(":");
-        String constName = bits[1];
 
         MethodHandle handle = Binder
                 .from(type)
-                .insert(0, site, constName)
                 .invokeStaticQuiet(LOOKUP, Bootstrap.class, "inheritanceSearchConst");
 
         site.setTarget(handle);
@@ -326,11 +322,11 @@ public class Bootstrap {
     }
 
     public static Handle searchConst() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, boolean.class));
     }
 
     public static Handle inheritanceSearchConst() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "inheritanceSearchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "inheritanceSearchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, boolean.class));
     }
 
     public static RubyString string(ByteList value, ThreadContext context) {
@@ -1031,13 +1027,22 @@ public class Bootstrap {
     ///////////////////////////////////////////////////////////////////////////
     // constant lookup
 
-    public static IRubyObject searchConst(MutableCallSite site, String constName, ThreadContext context, StaticScope staticScope) throws Throwable {
+    public static IRubyObject searchConst(MutableCallSite site, ThreadContext context, StaticScope staticScope, String constName) throws Throwable {
         Ruby runtime = context.runtime;
+        RubyModule object = runtime.getObject();
         SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator(constName).getData();
-        IRubyObject value = staticScope.getConstant(constName);
+        IRubyObject value = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
+
+        RubyModule module = null;
+        if (value == null) {
+            // SSS FIXME: Is this null check case correct?
+            module = staticScope == null ? object : staticScope.getModule();
+            // TODO: private consts
+            value = /*noPrivateConsts ?*/ module.getConstantFromNoConstMissing(constName, false) /*: module.getConstantNoConstMissing(constName)*/;
+        }
 
         if (value == null) {
-            return staticScope.getModule().callMethod(context, "const_missing", runtime.fastNewSymbol(constName));
+            return module.callMethod(context, "const_missing", runtime.fastNewSymbol(constName));
         }
 
         // bind constant until invalidated
@@ -1053,7 +1058,7 @@ public class Bootstrap {
         return value;
     }
 
-    public static IRubyObject inheritanceSearchConst(MutableCallSite site, String constName, ThreadContext context, IRubyObject cmVal) throws Throwable {
+    public static IRubyObject inheritanceSearchConst(MutableCallSite site, ThreadContext context, IRubyObject cmVal, String constName) throws Throwable {
         Ruby runtime = context.runtime;
         RubyModule module;
 

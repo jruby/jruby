@@ -210,7 +210,7 @@ public class JVMVisitor extends IRVisitor {
 
         boolean debug = false;
 
-        Instr[] instrs = scope.getInstrsForInterpretation();
+        Instr[] instrs = scope.getInstrsForInterpretation(false);
 
         Map<Integer, Integer> rescueTable = scope.getRescueMap();
 
@@ -1203,8 +1203,7 @@ public class JVMVisitor extends IRVisitor {
         jvm.method().loadLocal(0);
         visit(inheritancesearchconstinstr.getCurrentModule());
 
-        // TODO: private consts
-        jvm.method().inheritanceSearchConst(inheritancesearchconstinstr.getConstName());
+        jvm.method().inheritanceSearchConst(inheritancesearchconstinstr.getConstName(), inheritancesearchconstinstr.isNoPrivateConsts());
         jvmStoreLocal(inheritancesearchconstinstr.getResult());
     }
 
@@ -1605,10 +1604,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void SearchConstInstr(SearchConstInstr searchconstinstr) {
-        // TODO: private consts
         jvm.method().loadLocal(0);
         visit(searchconstinstr.getStartingScope());
-        jvm.method().searchConst(searchconstinstr.getConstName());
+        jvm.method().searchConst(searchconstinstr.getConstName(), searchconstinstr.isNoPrivateConsts());
         jvmStoreLocal(searchconstinstr.getResult());
     }
 
