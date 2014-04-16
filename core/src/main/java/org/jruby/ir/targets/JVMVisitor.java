@@ -115,6 +115,7 @@ import org.jruby.ir.instructions.boxing.UnboxFloatInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.MethodHandle;
+import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
@@ -209,10 +210,8 @@ public class JVMVisitor extends IRVisitor {
 
         boolean debug = false;
 
-        Tuple<Instr[], Map<Integer,Label[]>> t = scope.prepareForCompilation();
-        Instr[] instrs = t.a;
+        Instr[] instrs = scope.getInstrsForInterpretation();
 
-        Map<Integer, Label[]> jumpTable = t.b;
         Map<Integer, Integer> rescueTable = scope.getRescueMap();
 
         if (Options.IR_COMPILER_DEBUG.load()) {
@@ -221,12 +220,14 @@ public class JVMVisitor extends IRVisitor {
             b.append("\n\nLinearized instructions for JIT:\n");
 
             int i = 0;
-            for (Instr instr : instrs) {
-                if (i > 0) b.append("\n");
+            for (BasicBlock bb : scope.buildLinearization()) {
+                for (Instr instr : instrs) {
+                    if (i > 0) b.append("\n");
 
-                b.append("  ").append(i).append('\t').append(instr);
+                    b.append("  ").append(i).append('\t').append(instr);
 
-                i++;
+                    i++;
+                }
             }
 
             b.append("\n\nRescues: \n" + rescueTable);
@@ -258,20 +259,21 @@ public class JVMVisitor extends IRVisitor {
         int[] rescueRange = null;
         for (int i = 0; i < instrs.length; i++) {
             Instr instr = instrs[i];
+            int ipc = instr.getIPC();
 
             int rescueIPC = rescueTable.get(instr.getIPC());
             if (rescueIPC != -1) {
                 if (rescueRange == null) {
                     // new range
-                    rescueRange = new int[]{i, i+1, rescueIPC};
+                    rescueRange = new int[]{ipc, ipc+1, rescueIPC};
                     continue;
                 } else {
                     if (rescueIPC != rescueRange[2]) {
                         // new range
                         allCatches.add(rescueRange);
-                        rescueRange = new int[]{i, i+1, rescueIPC};
+                        rescueRange = new int[]{ipc, ipc+1, rescueIPC};
                     } else {
-                        rescueRange[1] = i + 1;
+                        rescueRange[1] = ipc + 1;
                     }
                 }
             } else {
@@ -288,19 +290,21 @@ public class JVMVisitor extends IRVisitor {
             jvm.method().adapter.trycatch(allLabels[range[0]], allLabels[range[1]], allLabels[range[2]], p(Throwable.class));
         }
 
-        for (int i = 0; i < instrs.length; i++) {
-            Instr instr = instrs[i];
-            if (debug) System.out.println("ipc " + instr.getIPC() + " rescued by " + rescueTable.get(instr.getIPC()));
-            if (debug) System.out.println("ipc " + instr.getIPC() + " is: " + instr + " (" + instr.getClass() + ")");
+        List<Instr> newInstrs = new ArrayList<Instr>();
+        int ipc = 0;
+        for (BasicBlock b : scope.buildLinearization()) {
+            Label l = b.getLabel();
+            if (l != null) m.mark(jvm.methodData().getLabel(l));
+            for (Instr instr : b.getInstrs()) {
+                newInstrs.add(instr);
+                instr.setIPC(ipc);
+                ipc++;
 
-            if (jumpTable.get(i) != null) {
-                for (Label label : jumpTable.get(i)) m.mark(jvm.methodData().getLabel(label));
+                // this is probably not efficient because it's putting a label at every instruction
+                m.mark(allLabels[instr.getIPC()]);
+
+                visit(instr);
             }
-
-            // this is probably not efficient because it's putting a label at every instruction
-            m.mark(allLabels[i]);
-
-            visit(instr);
         }
 
         // mark last label

@@ -629,7 +629,7 @@ public abstract class IRScope implements ParseResult {
 
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
-    public Tuple<Instr[], Map<Integer,Label[]>> prepareForCompilation() {
+    public void prepareForCompilation() {
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) {
             runCompilerPasses(getManager().getJITPasses(this));
@@ -652,23 +652,6 @@ public abstract class IRScope implements ParseResult {
         checkRelinearization();
 
         prepareInstructionsForInterpretation();
-
-        // Set up IPCs
-        // FIXME: Would be nice to collapse duplicate labels; for now, using Label[]
-        HashMap<Integer, Label[]> ipcLabelMap = new HashMap<Integer, Label[]>();
-        List<Instr> newInstrs = new ArrayList<Instr>();
-        int ipc = 0;
-        for (BasicBlock b : linearizedBBList) {
-            Label l = b.getLabel();
-            ipcLabelMap.put(ipc, catLabels(ipcLabelMap.get(ipc), l));
-            for (Instr i : b.getInstrs()) {
-                newInstrs.add(i);
-                i.setIPC(ipc);
-                ipc++;
-            }
-        }
-
-        return new Tuple<Instr[], Map<Integer,Label[]>>(newInstrs.toArray(new Instr[newInstrs.size()]), ipcLabelMap);
     }
 
     private void setupLinearization() {
