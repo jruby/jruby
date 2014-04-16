@@ -12,6 +12,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.runtime.opto.Invalidator;
 
 import java.util.Map;
@@ -30,7 +31,7 @@ public class SearchConstInstr extends Instr implements ResultInstr, FixedArityIn
 
     // Constant caching
     private volatile transient Object cachedConstant = null;
-    private Object generation = -1;
+    private ConstantCache cache;
     private Invalidator invalidator;
 
     public SearchConstInstr(Variable result, String constName, Operand startingScope, boolean noPrivateConsts) {
@@ -79,42 +80,45 @@ public class SearchConstInstr extends Instr implements ResultInstr, FixedArityIn
         Ruby runtime = context.getRuntime();
         RubyModule object = runtime.getObject();
         StaticScope staticScope = (StaticScope) startingScope.retrieve(context, self, currDynScope, temp);
-        Object constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
+        IRubyObject value = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
 
         // Inheritance lookup
         RubyModule module = null;
-        if (constant == null) {
+        if (value == null) {
             // SSS FIXME: Is this null check case correct?
             module = staticScope == null ? object : staticScope.getModule();
-            constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+            value = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
         }
+
+        Invalidator invalidator = context.runtime.getConstantInvalidator(constName);
+        Object newGeneration = invalidator.getData();
 
         // Call const_missing or cache
-        if (constant == null) {
-            constant = module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
+        if (value == null) {
+            value = module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
         } else {
             // recache
-            generation = runtime.getConstantInvalidator(constName).getData();
-            cachedConstant = constant;
+            cache = new ConstantCache(value, newGeneration, invalidator);
         }
 
-        return constant;
+        return value;
     }
 
     public Object getCachedConst() {
         return cachedConstant;
     }
 
-    public boolean isCached(ThreadContext context, Object value) {
-        return value != null && generation == invalidator(context.getRuntime()).getData();
+    public boolean isCached() {
+        ConstantCache cache = this.cache;
+
+        return ConstantCache.isCached(cache);
     }
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Object constant = cachedConstant; // Store to temp so it does null out on us mid-stream
-        if (!isCached(context, constant)) constant = cache(context, currDynScope, self, temp);
+        ConstantCache cache = this.cache;
 
-        return constant;
+        return ConstantCache.isCached(cache) ? cache.value : cache(context, currDynScope, self, temp);
     }
 
     @Override

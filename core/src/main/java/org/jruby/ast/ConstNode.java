@@ -105,14 +105,13 @@ public class ConstNode extends Node implements INameNode {
     public IRubyObject getValue(ThreadContext context) {
         ConstantCache cache = this.cache;
 
-        return ConstantCache.isCached(cache) ? cache.value : reCache(context, name);
+        return ConstantCache.isCached(cache) ? cache.value : reCache(context);
     }
     
-    public IRubyObject reCache(ThreadContext context, String name) {
+    private IRubyObject reCache(ThreadContext context) {
         Invalidator invalidator = context.runtime.getConstantInvalidator(name);
         Object newGeneration = invalidator.getData();
         IRubyObject value = context.getCurrentStaticScope().getConstant(name);
-        this.name = name;
         
         if (value != null) {
             cache = new ConstantCache(value, newGeneration, invalidator);
