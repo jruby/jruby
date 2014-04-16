@@ -212,44 +212,52 @@ public class SSLContext extends RubyObject {
         }
 
         IRubyObject value = getInstanceVariable("@extra_chain_cert");
-        if (value != null && !value.isNil()) {
+        if ( value != null && ! value.isNil() ) {
             internalContext.extraChainCert = new ArrayList<X509AuxCertificate>();
-            for (X509Cert ele : convertToX509Certs(context, value)) {
-                internalContext.extraChainCert.add(ele.getAuxCert());
+            for ( X509Cert x : convertToX509Certs(context, value) ) {
+                internalContext.extraChainCert.add( x.getAuxCert() );
             }
         }
 
         value = getInstanceVariable("@key");
         final PKey key;
-        if (value != null && !value.isNil()) {
-            Utils.checkKind(runtime, value, "OpenSSL::PKey::PKey");
+        if ( value != null && ! value.isNil() ) {
+            if ( ! ( value instanceof PKey ) ) {
+                throw runtime.newTypeError("OpenSSL::PKey::PKey expected but got @key = " + value.inspect());
+            }
             key = (PKey) value;
         } else {
             key = getCallbackKey(context);
         }
+
         value = getInstanceVariable("@cert");
         final X509Cert cert;
-        if (value != null && !value.isNil()) {
-            Utils.checkKind(runtime, value, "OpenSSL::X509::Certificate");
+        if ( value != null && ! value.isNil() ) {
+            if ( ! ( value instanceof X509Cert ) ) {
+                throw runtime.newTypeError("OpenSSL::X509::Certificate expected but got @cert = " + value.inspect());
+            }
             cert = (X509Cert) value;
         } else {
             cert = getCallbackCert(context);
         }
-        if (key != null && cert != null) {
+
+        if ( key != null && cert != null ) {
             internalContext.keyAlgorithm = key.getAlgorithm();
             internalContext.privateKey = key.getPrivateKey();
             internalContext.cert = cert.getAuxCert();
         }
 
         value = getInstanceVariable("@client_ca");
-        if (value != null && !value.isNil()) {
-            if (value.respondsTo("each")) {
-                for (X509Cert ele : convertToX509Certs(context, value)) {
-                    internalContext.clientCert.add(ele.getAuxCert());
+        if ( value != null && ! value.isNil() ) {
+            if ( value.respondsTo("each") ) {
+                for ( X509Cert x : convertToX509Certs(context, value) ) {
+                    internalContext.clientCert.add( x.getAuxCert() );
                 }
             } else {
-                Utils.checkKind(runtime, value, "OpenSSL::X509::Certificate");
-                internalContext.clientCert.add(((X509Cert) value).getAuxCert());
+                if ( ! ( value instanceof X509Cert ) ) {
+                    throw runtime.newTypeError("OpenSSL::X509::Certificate expected but got @client_ca = " + value.inspect());
+                }
+                internalContext.clientCert.add( ((X509Cert) value).getAuxCert() );
             }
         }
 

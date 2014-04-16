@@ -101,8 +101,8 @@ public class X509Cert extends RubyObject {
     }
 
     private IRubyObject serial;
-    private IRubyObject not_before;
-    private IRubyObject not_after;
+    private RubyTime not_before;
+    private RubyTime not_after;
     private IRubyObject issuer;
     private IRubyObject subject;
     private IRubyObject public_key;
@@ -167,8 +167,8 @@ public class X509Cert extends RubyObject {
         }
 
         set_serial(RubyNumeric.str2inum(runtime,runtime.newString(cert.getSerialNumber().toString()),10));
-        set_not_before(RubyTime.newTime(runtime,cert.getNotBefore().getTime()));
-        set_not_after(RubyTime.newTime(runtime,cert.getNotAfter().getTime()));
+        set_not_before(context, RubyTime.newTime(runtime,cert.getNotBefore().getTime()));
+        set_not_after(context, RubyTime.newTime(runtime,cert.getNotAfter().getTime()));
         set_subject(x509Name.callMethod(context,"new",RubyString.newString(runtime, cert.getSubjectX500Principal().getEncoded())));
         set_issuer(x509Name.callMethod(context,"new",RubyString.newString(runtime, cert.getIssuerX500Principal().getEncoded())));
 
@@ -343,12 +343,12 @@ public class X509Cert extends RubyObject {
     }
 
     @JRubyMethod(name="not_before=")
-    public IRubyObject set_not_before(IRubyObject arg) {
+    public IRubyObject set_not_before(final ThreadContext context, final IRubyObject time) {
         changed = true;
-        not_before = arg.callMethod(getRuntime().getCurrentContext(),"getutc");
-        ((RubyTime)not_before).setMicroseconds(0);
-        generator.setNotBefore(((RubyTime)not_before).getJavaDate());
-        return arg;
+        not_before = (RubyTime) time.callMethod(context, "getutc");
+        not_before.setMicroseconds(0);
+        generator.setNotBefore( not_before.getJavaDate() );
+        return time;
     }
 
     @JRubyMethod
@@ -357,59 +357,62 @@ public class X509Cert extends RubyObject {
     }
 
     @JRubyMethod(name="not_after=")
-    public IRubyObject set_not_after(IRubyObject arg) {
+    public IRubyObject set_not_after(final ThreadContext context, final IRubyObject time) {
         changed = true;
-        not_after = arg.callMethod(getRuntime().getCurrentContext(),"getutc");
-        ((RubyTime)not_after).setMicroseconds(0);
-        generator.setNotAfter(((RubyTime)not_after).getJavaDate());
-        return arg;
+        not_after = (RubyTime) time.callMethod(context, "getutc");
+        not_after.setMicroseconds(0);
+        generator.setNotAfter( not_after.getJavaDate() );
+        return time;
     }
 
     @JRubyMethod
-    public IRubyObject public_key() {
-        if (public_key == null) {
-            lazyInitializePublicKey();
+    public IRubyObject public_key(final ThreadContext context) {
+        if ( this.public_key == null ) {
+            lazyInitializePublicKey(context);
         }
-        return public_key.callMethod(getRuntime().getCurrentContext(), "public_key");
+        return public_key.callMethod(context, "public_key");
     }
 
     @JRubyMethod(name="public_key=")
     public IRubyObject set_public_key(IRubyObject arg) {
-        Utils.checkKind(getRuntime(), arg, "OpenSSL::PKey::PKey");
-        if(!arg.equals(this.public_key)) {
+        if ( ! ( arg instanceof PKey ) ) {
+            throw getRuntime().newTypeError("OpenSSL::PKey::PKey expected but got " + arg.getMetaClass().getName());
+        }
+        if ( ! arg.equals(this.public_key) ) {
             changed = true;
         }
-        public_key = arg;
-        generator.setPublicKey(((PKey)public_key).getPublicKey());
+        this.public_key = arg;
+        generator.setPublicKey(((PKey) public_key).getPublicKey());
         return arg;
     }
 
-    private void lazyInitializePublicKey() {
-        if (public_key_encoded == null || public_key_algorithm == null) {
+    private void lazyInitializePublicKey(final ThreadContext context) {
+        if ( public_key_encoded == null || public_key_algorithm == null ) {
             throw new IllegalStateException("lazy public key initialization failed");
         }
-        RubyModule ossl = getRuntime().getModule("OpenSSL");
-        RubyModule pkey = (RubyModule) ossl.getConstant("PKey");
-        ThreadContext tc = getRuntime().getCurrentContext();
-        boolean backupChanged = changed;
-        if ("RSA".equalsIgnoreCase(public_key_algorithm)) {
-            set_public_key(pkey.getConstant("RSA").callMethod(tc, "new", RubyString.newString(getRuntime(), public_key_encoded)));
-        } else if ("DSA".equalsIgnoreCase(public_key_algorithm)) {
-            set_public_key(pkey.getConstant("DSA").callMethod(tc, "new", RubyString.newString(getRuntime(), public_key_encoded)));
+        RubyModule _OpenSSL = context.runtime.getModule("OpenSSL");
+        RubyModule _PKey = (RubyModule) _OpenSSL.getConstant("PKey");
+        final boolean _changed = changed;
+        if ( "RSA".equalsIgnoreCase(public_key_algorithm) ) {
+            RubyString encoded = RubyString.newString(context.runtime, public_key_encoded);
+            set_public_key( _PKey.getConstant("RSA").callMethod(context, "new", encoded) );
+        } else if ( "DSA".equalsIgnoreCase(public_key_algorithm) ) {
+            RubyString encoded = RubyString.newString(context.runtime, public_key_encoded);
+            set_public_key( _PKey.getConstant("DSA").callMethod(context, "new", encoded) );
         } else {
-            throw newCertificateError(getRuntime(), "The algorithm " + public_key_algorithm + " is unsupported for public keys");
+            throw newCertificateError(context.runtime, "The algorithm " + public_key_algorithm + " is unsupported for public keys");
         }
-        changed = backupChanged;
+        changed = _changed;
     }
 
     @JRubyMethod
-    public IRubyObject sign(ThreadContext context, final IRubyObject key, IRubyObject digest) {
-        Ruby runtime = context.runtime;
+    public IRubyObject sign(final ThreadContext context, final IRubyObject key, final IRubyObject digest) {
+        final Ruby runtime = context.runtime;
 
         // Have to obey some artificial constraints of the OpenSSL implementation. Stupid.
-        String keyAlg = ((PKey)key).getAlgorithm();
-        String digAlg = ((Digest)digest).getShortAlgorithm();
-        String digName = ((Digest)digest).name().toString();
+        final String keyAlg = ((PKey) key).getAlgorithm();
+        final String digAlg = ((Digest) digest).getShortAlgorithm();
+        final String digName = ((Digest) digest).name().toString();
 
         if(("DSA".equalsIgnoreCase(keyAlg) && "MD5".equalsIgnoreCase(digAlg)) ||
            ("RSA".equalsIgnoreCase(keyAlg) && "DSS1".equals(digName))) {
@@ -427,9 +430,9 @@ public class X509Cert extends RubyObject {
         }
 
         generator.setSignatureAlgorithm(digAlg + "WITH" + keyAlg);
-        if (public_key == null) {
-            lazyInitializePublicKey();
-        }
+
+        if ( public_key == null ) lazyInitializePublicKey(context);
+
         try {
             cert = generator.generate(((PKey) key).getPrivateKey());
         } catch (Exception e) {
