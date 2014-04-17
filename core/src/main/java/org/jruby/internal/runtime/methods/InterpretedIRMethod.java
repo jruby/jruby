@@ -167,9 +167,6 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
                 try {
                     final Class compiled = JVMVisitor.compile(runtime, method, new ClassCache.OneShotClassLoader(context.runtime.getJRubyClassLoader()));
-                    final StaticScope staticScope = method.getStaticScope();
-                    final IRubyObject runtimeTopSelf = runtime.getTopSelf();
-                    staticScope.setModule(runtimeTopSelf.getMetaClass());
                     Method scriptMethod = compiled.getMethod("__script__", ThreadContext.class,
                             StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class);
                     MethodHandle handle = MethodHandles.publicLookup().unreflect(scriptMethod);
@@ -178,6 +175,8 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
                     if (config.isJitLogging()) {
                         LOG.info("done jitting: " + method);
                     }
+
+                    return true;
                 } catch (Exception e) {
                     if (config.isJitLoggingVerbose()) {
                         LOG.info("failed to jit: " + method);
