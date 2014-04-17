@@ -824,17 +824,9 @@ public class JVMVisitor extends IRVisitor {
         m.loadSelf();
         visit(classsuperinstr.getDefiningModule());
 
-        if (args.length == 0) {
-            m.adapter.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
-        } else {
-            m.adapter.ldc(args.length);
-            m.adapter.anewarray(p(IRubyObject.class));
-            m.adapter.dup();
-            for (int i = 0; i < args.length; i++) {
-                Operand operand = args[i];
-                if (i + 1 < args.length) m.adapter.dup();
-                visit(operand);
-            }
+        for (int i = 0; i < args.length; i++) {
+            Operand operand = args[i];
+            visit(operand);
         }
 
         Operand closure = classsuperinstr.getClosureArg(null);
@@ -847,7 +839,7 @@ public class JVMVisitor extends IRVisitor {
             m.adapter.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
         }
 
-        m.invokeClassSuper(name);
+        m.invokeClassSuper(name, args.length, hasClosure);
 
         jvmStoreLocal(classsuperinstr.getResult());
     }
@@ -1195,17 +1187,9 @@ public class JVMVisitor extends IRVisitor {
         m.loadSelf();
         visit(instancesuperinstr.getDefiningModule());
 
-        if (args.length == 0) {
-            m.adapter.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
-        } else {
-            m.adapter.ldc(args.length);
-            m.adapter.anewarray(p(IRubyObject.class));
-            m.adapter.dup();
-            for (int i = 0; i < args.length; i++) {
-                Operand operand = args[i];
-                if (i + 1 < args.length) m.adapter.dup();
-                visit(operand);
-            }
+        for (int i = 0; i < args.length; i++) {
+            Operand operand = args[i];
+            visit(operand);
         }
 
         Operand closure = instancesuperinstr.getClosureArg(null);
@@ -1218,7 +1202,7 @@ public class JVMVisitor extends IRVisitor {
             m.adapter.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
         }
 
-        m.invokeInstanceSuper(name);
+        m.invokeInstanceSuper(name, args.length, hasClosure);
 
         jvmStoreLocal(instancesuperinstr.getResult());
     }
