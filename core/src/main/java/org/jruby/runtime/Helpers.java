@@ -2962,7 +2962,10 @@ public class Helpers {
 
         RubyClass sc = null;
 
-        if (superClass != null) {
+
+        if (superClass == UndefinedValue.UNDEFINED) {
+            sc = context.runtime.getObject();
+        } else if (superClass != null) {
             if (!(superClass instanceof RubyClass)) {
                 throw context.runtime.newTypeError("superclass must be Class (" + superClass + " given)");
             }
