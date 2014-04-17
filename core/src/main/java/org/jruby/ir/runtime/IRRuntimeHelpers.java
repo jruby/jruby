@@ -18,6 +18,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.NativeException;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
@@ -589,5 +590,25 @@ public class IRRuntimeHelpers {
 
         RubyModule module = (object instanceof RubyModule) ? (RubyModule) object : object.getMetaClass();
         module.defineAlias(newNameString, oldNameString);
+    }
+
+    public static RubyModule getModuleFromScope(ThreadContext context, StaticScope scope) {
+        Ruby runtime = context.runtime;
+        RubyModule rubyClass = scope.getModule();
+
+        // SSS FIXME: Copied from ASTInterpreter.getClassVariableBase and adapted
+        while (scope != null && (rubyClass.isSingleton() || rubyClass == runtime.getDummy())) {
+            scope = scope.getPreviousCRefScope();
+            rubyClass = scope.getModule();
+            if (scope.getPreviousCRefScope() == null) {
+                runtime.getWarnings().warn(IRubyWarnings.ID.CVAR_FROM_TOPLEVEL_SINGLETON_METHOD, "class variable access from toplevel singleton method");
+            }
+        }
+
+        if (rubyClass == null) {
+            throw context.runtime.newTypeError("no class/module to define class variable");
+        }
+
+        return rubyClass;
     }
 }

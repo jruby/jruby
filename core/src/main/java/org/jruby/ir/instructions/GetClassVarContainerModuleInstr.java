@@ -7,6 +7,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -76,30 +77,36 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Ruby        runtime   = context.runtime;
-        StaticScope scope     = (StaticScope) startingScope.retrieve(context, self, currDynScope, temp);
-        RubyModule  rubyClass = scope.getModule();
+        if (object == null) {
+            StaticScope scope     = (StaticScope) startingScope.retrieve(context, self, currDynScope, temp);
 
-        // SSS FIXME: Copied from ASTInterpreter.getClassVariableBase and adapted
-        while (scope != null && (rubyClass.isSingleton() || rubyClass == runtime.getDummy())) {
-            scope = scope.getPreviousCRefScope();
-            rubyClass = scope.getModule();
-            if (scope.getPreviousCRefScope() == null) {
-                runtime.getWarnings().warn(ID.CVAR_FROM_TOPLEVEL_SINGLETON_METHOD, "class variable access from toplevel singleton method");
+            return IRRuntimeHelpers.getModuleFromScope(context, scope);
+        } else {
+            Ruby        runtime   = context.runtime;
+            StaticScope scope     = (StaticScope) startingScope.retrieve(context, self, currDynScope, temp);
+            RubyModule  rubyClass = scope.getModule();
+
+            // SSS FIXME: Copied from ASTInterpreter.getClassVariableBase and adapted
+            while (scope != null && (rubyClass.isSingleton() || rubyClass == runtime.getDummy())) {
+                scope = scope.getPreviousCRefScope();
+                rubyClass = scope.getModule();
+                if (scope.getPreviousCRefScope() == null) {
+                    runtime.getWarnings().warn(ID.CVAR_FROM_TOPLEVEL_SINGLETON_METHOD, "class variable access from toplevel singleton method");
+                }
             }
-        }
 
-        if ((scope == null) && (object != null)) {
-            // We ran out of scopes to check -- look in arg's metaclass
-            IRubyObject arg = (IRubyObject) object.retrieve(context, self, currDynScope, temp);
-            rubyClass = arg.getMetaClass();
-        }
+            if ((scope == null) && (object != null)) {
+                // We ran out of scopes to check -- look in arg's metaclass
+                IRubyObject arg = (IRubyObject) object.retrieve(context, self, currDynScope, temp);
+                rubyClass = arg.getMetaClass();
+            }
 
-        if (rubyClass == null) {
-            throw context.runtime.newTypeError("no class/module to define class variable");
-        }
+            if (rubyClass == null) {
+                throw context.runtime.newTypeError("no class/module to define class variable");
+            }
 
-        return rubyClass;
+            return rubyClass;
+        }
     }
 
     @Override

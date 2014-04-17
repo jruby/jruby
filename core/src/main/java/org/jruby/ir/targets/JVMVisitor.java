@@ -1130,15 +1130,27 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetClassVarContainerModuleInstr(GetClassVarContainerModuleInstr getclassvarcontainermoduleinstr) {
-        // This appears to require a reference to a StaticScope from...somewhere. It's not clear what scope this is
-        // nor how we would get access to it from the compiled code.
-        super.GetClassVarContainerModuleInstr(getclassvarcontainermoduleinstr);
+        // Logic here has to diverge a lot due to down stream checks for null "object" operand
+
+        if (getclassvarcontainermoduleinstr.getObject() == null) {
+            // simple path
+            jvm.method().loadContext();
+            visit(getclassvarcontainermoduleinstr.getStartingScope());
+            jvm.method().invokeIRHelper("getModuleFromScope", sig(RubyModule.class, ThreadContext.class, StaticScope.class));
+            jvmStoreLocal(getclassvarcontainermoduleinstr.getResult());
+        } else {
+            // bail
+            super.GetClassVarContainerModuleInstr(getclassvarcontainermoduleinstr);
+        }
     }
 
     @Override
     public void GetClassVariableInstr(GetClassVariableInstr getclassvariableinstr) {
-        // Does it make sense to try to implement this without GetClassVarContainerModuleInstr working?
-        super.GetClassVariableInstr(getclassvariableinstr);
+        visit(getclassvariableinstr.getSource());
+        jvm.method().adapter.checkcast(p(RubyModule.class));
+        jvm.method().adapter.ldc(getclassvariableinstr.getRef());
+        jvm.method().adapter.invokevirtual(p(RubyModule.class), "getClassVar", sig(IRubyObject.class, String.class));
+        jvmStoreLocal(getclassvariableinstr.getResult());
     }
 
     @Override
