@@ -178,12 +178,14 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
                     return true;
                 } catch (Exception e) {
-                    if (config.isJitLoggingVerbose()) {
+                    if (config.isJitLogging()) {
                         LOG.info("failed to jit: " + method);
-                        StringWriter trace = new StringWriter();
-                        PrintWriter writer = new PrintWriter(trace);
-                        e.printStackTrace(writer);
-                        LOG.info(trace.toString());
+                        if (config.isJitLoggingVerbose()) {
+                            StringWriter trace = new StringWriter();
+                            PrintWriter writer = new PrintWriter(trace);
+                            e.printStackTrace(writer);
+                            LOG.info(trace.toString());
+                        }
                     }
                 }
             }
