@@ -816,6 +816,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ClassSuperInstr(ClassSuperInstr classsuperinstr) {
+        // disable for now
+        super.ClassSuperInstr(classsuperinstr);
+
         IRBytecodeAdapter m = jvm.method();
         String name = classsuperinstr.getMethodAddr().getName();
         Operand[] args = classsuperinstr.getCallArgs();
@@ -1179,6 +1182,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void InstanceSuperInstr(InstanceSuperInstr instancesuperinstr) {
+        // disable for now
+        super.InstanceSuperInstr(instancesuperinstr);
+
         IRBytecodeAdapter m = jvm.method();
         String name = instancesuperinstr.getMethodAddr().getName();
         Operand[] args = instancesuperinstr.getCallArgs();
@@ -1536,13 +1542,14 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) {
-        // just returns nil for now
-        jvm.method().pushNil();
-        jvm.method().adapter.areturn();
+        super.RuntimeHelperCall(runtimehelpercall);
     }
 
     @Override
     public void NonlocalReturnInstr(NonlocalReturnInstr returninstr) {
+        // disable for now
+        super.NonlocalReturnInstr(returninstr);
+
         if (this.currentScope instanceof IRClosure) {
             /* generate run-time call to check non-local-return, errors, etc */
             SkinnyMethodAdapter a = jvm.method().adapter;
@@ -1650,6 +1657,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void UnresolvedSuperInstr(UnresolvedSuperInstr unresolvedsuperinstr) {
+        // disable for now
+        super.UnresolvedSuperInstr(unresolvedsuperinstr);
+
         IRBytecodeAdapter m = jvm.method();
         m.loadLocal(0); // tc
         m.loadSelf();
