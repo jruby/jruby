@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -31,10 +31,9 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.security.spec.InvalidParameterSpecException;
 import java.util.HashMap;
 
+import java.security.SecureRandom;
 import javax.crypto.spec.DHParameterSpec;
 
 import org.jruby.Ruby;
@@ -52,14 +51,16 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.runtime.Visibility;
 
+import static org.jruby.ext.openssl.PKey._PKey;
+
 /**
  * OpenSSL::PKey::DH implementation.
- * 
+ *
  * @author <a href="mailto:bill.dortch@gmail.com">Bill Dortch</a>
  */
 public class PKeyDH extends PKey {
     private static final long serialVersionUID = 293266329939132250L;
-    
+
     // parameters used in generating 'p'; see [ossl]/crypto/dh/dh_gen.c #dh_builtin_genparams
     private static final BigInteger GEN_2_ADD_PARAM = BigInteger.valueOf(24);
     private static final BigInteger GEN_2_REM_PARAM = BigInteger.valueOf(11);
@@ -69,7 +70,7 @@ public class PKeyDH extends PKey {
     private static final BigInteger DEFAULT_REM_PARAM = BigInteger.ONE;
 
     private static final BigInteger TWO = BigInteger.valueOf(2);
-    
+
     // from [ossl]/crypto/dh/dh.h
     private static final int OPENSSL_DH_MAX_MODULUS_BITS = 10000;
 
@@ -78,22 +79,22 @@ public class PKeyDH extends PKey {
             return new PKeyDH(runtime, klass);
         }
     };
-    
+
     public static void createPKeyDH(Ruby runtime, RubyModule pkeyModule, RubyClass pkeyClass) {
         RubyClass dh = pkeyModule.defineClassUnder("DH", pkeyClass, PKEYDH_ALLOCATOR);
 
         RubyClass pkeyError = pkeyModule.getClass("PKeyError");
         pkeyModule.defineClassUnder("DHError",pkeyError,pkeyError.getAllocator());
-        
+
         dh.defineAnnotatedMethods(PKeyDH.class);
     }
-    
+
     public static RaiseException newDHError(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::PKey::DHError", message);
+        return Utils.newError(runtime, _PKey(runtime).getClass("DHError"), message);
     }
-    
+
     private static SecureRandom _secureRandom;
-    
+
     private static SecureRandom getSecureRandom() {
         SecureRandom rand;
         if ((rand = _secureRandom) != null) {
@@ -109,13 +110,13 @@ public class PKeyDH extends PKey {
     private transient volatile BigInteger dh_g;
     private transient volatile BigInteger dh_pub_key;
     private transient volatile BigInteger dh_priv_key;
-    
+
     // FIXME! need to figure out what it means in MRI/OSSL code to
     // claim a DH is(/has) private if an engine is present -- doesn't really
     // map to Java implementation.
 
     //private volatile boolean haveEngine;
-    
+
     public PKeyDH(Ruby runtime, RubyClass clazz) {
         super(runtime, clazz);
     }
@@ -166,20 +167,20 @@ public class PKeyDH extends PKey {
         }
         return this;
     }
-    
+
     public static BigInteger generateP(int bits, int g) {
-        
+
         // FIXME? I'm following algorithms used in OpenSSL, could use JCE provider instead.
         // (Note that I tried that, but got mystifying values of g returned by the param generator.
         // In any case, in OpenSSL/MRI-OpenSSL, the caller supplies g, or it defaults to 2.)
-        
+
         // see [ossl]/crypto/dh/dh_gen.c #dh_builtin_genparams
-        
+
         if (bits < 2) throw new IllegalArgumentException("invalid bit length");
         if (g < 2) throw new IllegalArgumentException("invalid generator");
-        
+
         // generate safe prime meeting appropriate add/rem (mod) criteria
-        
+
         switch(g) {
         case 2:
             // add = 24, rem = 11
@@ -192,15 +193,15 @@ public class PKeyDH extends PKey {
             return BN.generatePrime(bits, true, DEFAULT_ADD_PARAM, DEFAULT_REM_PARAM);
         }
     }
-    
+
     public static BigInteger generateX(BigInteger p, int limit) {
         if (limit < 0) throw new IllegalArgumentException("invalid limit");
-        
+
         BigInteger x;
         SecureRandom secureRandom = getSecureRandom();
         // adapting algorithm from org.bouncycastle.crypto.generators.DHKeyGeneratorHelper,
         // which seems a little stronger (?) than OpenSSL's (OSSL just generates a random,
-        // while BC generates a random potential prime [for limit > 0], though it's not 
+        // while BC generates a random potential prime [for limit > 0], though it's not
         // subject to Miller-Rabin [certainty = 0], but is subject to other constraints)
         // see also [ossl]/crypto/dh/dh_key.c #generate_key
         if (limit == 0) {
@@ -216,20 +217,20 @@ public class PKeyDH extends PKey {
         }
         return x;
     }
-    
+
     public static BigInteger generateX(BigInteger p) {
         // OpenSSL default l(imit) is p bits - 1 -- see [ossl]/crypto/dh/dh_key.c #generate_key
         return generateX(p, p.bitLength() - 1);
     }
-    
+
     public static BigInteger generateY(BigInteger p, BigInteger g, BigInteger x) {
         return g.modPow(x, p);
     }
-    
+
     public static BigInteger generateY(BigInteger p, int g, BigInteger x) {
         return generateY(p, BigInteger.valueOf(g), x);
     }
-    
+
     @JRubyMethod(name="generate_key!")
     public synchronized IRubyObject dh_generate_key() {
         BigInteger p, g, x, y;
@@ -244,7 +245,7 @@ public class PKeyDH extends PKey {
         this.dh_pub_key = y;
         return this;
     }
-    
+
     @JRubyMethod(name="compute_key")
     public synchronized IRubyObject dh_compute_key(IRubyObject other_pub_key) {
         BigInteger x, y, p;
@@ -264,12 +265,12 @@ public class PKeyDH extends PKey {
     public static byte[] computeKey(BigInteger y, BigInteger x, BigInteger p) {
         return y.modPow(x, p).toByteArray();
     }
-    
+
     @JRubyMethod(name="public?")
     public IRubyObject dh_is_public() {
         return getRuntime().newBoolean(dh_pub_key != null);
     }
-    
+
     @JRubyMethod(name="private?")
     public IRubyObject dh_is_private() {
         // FIXME! need to figure out what it means in MRI/OSSL code to
@@ -277,7 +278,7 @@ public class PKeyDH extends PKey {
         // map to Java implementation.
         return getRuntime().newBoolean(dh_priv_key != null /* || haveEngine */);
     }
-    
+
     @JRubyMethod(name={"export", "to_pem", "to_s"})
     public IRubyObject dh_export() {
         BigInteger p, g;
@@ -298,7 +299,7 @@ public class PKeyDH extends PKey {
         }
         return getRuntime().newString(w.toString());
     }
-    
+
     @JRubyMethod(name = "to_der")
     public IRubyObject dh_to_der() {
         BigInteger p, g;
@@ -315,7 +316,7 @@ public class PKeyDH extends PKey {
             throw newDHError(getRuntime(), ioe.getMessage());
         }
     }
-    
+
     @JRubyMethod(name="params")
     public IRubyObject dh_get_params() {
         BigInteger p, g, x, y;
@@ -327,21 +328,21 @@ public class PKeyDH extends PKey {
         }
         Ruby runtime = getRuntime();
         HashMap<IRubyObject, IRubyObject> params = new HashMap<IRubyObject, IRubyObject>();
-        
+
         params.put(runtime.newString("p"), BN.newBN(runtime, p));
         params.put(runtime.newString("g"), BN.newBN(runtime, g));
         params.put(runtime.newString("pub_key"), BN.newBN(runtime, x));
         params.put(runtime.newString("priv_key"), BN.newBN(runtime, y));
-        
+
         return RubyHash.newHash(runtime, params, runtime.getNil());
     }
-    
+
     // don't need synchronized as value is volatile
     @JRubyMethod(name="p")
     public IRubyObject dh_get_p() {
         return getBN(dh_p);
     }
-    
+
     @JRubyMethod(name="p=")
     public synchronized IRubyObject dh_set_p(IRubyObject arg) {
         this.dh_p = BN.getBigInteger(arg);
@@ -353,7 +354,7 @@ public class PKeyDH extends PKey {
     public IRubyObject dh_get_g() {
         return getBN(dh_g);
     }
-    
+
     @JRubyMethod(name="g=")
     public synchronized IRubyObject dh_set_g(IRubyObject arg) {
         this.dh_g = BN.getBigInteger(arg);
@@ -391,7 +392,7 @@ public class PKeyDH extends PKey {
         return getRuntime().getNil();
     }
 
-    // override differently-named abstract method from PKey
+    @Override // override differently-named abstract method from PKey
     public IRubyObject to_der() {
         return dh_to_der();
     }
