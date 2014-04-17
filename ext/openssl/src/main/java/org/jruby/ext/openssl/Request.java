@@ -63,13 +63,18 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 
 import org.jruby.ext.openssl.impl.PKCS10Request;
-import static org.jruby.ext.openssl.Utils.newRubyInstance;
+import static org.jruby.ext.openssl.ASN1._ASN1;
+import static org.jruby.ext.openssl.Attribute._Attribute;
+import static org.jruby.ext.openssl.OpenSSLReal.warn;
+import static org.jruby.ext.openssl.PKey._PKey;
+import static org.jruby.ext.openssl.X509._X509;
+import static org.jruby.ext.openssl.X509Name._Name;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class Request extends RubyObject {
-    private static final long serialVersionUID = -5551557929791764918L;
+    private static final long serialVersionUID = -2886532636278901502L;
 
     private static ObjectAllocator REQUEST_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -77,28 +82,27 @@ public class Request extends RubyObject {
         }
     };
 
-    public static void createRequest(Ruby runtime, RubyModule mX509) {
-        RubyClass cRequest = mX509.defineClassUnder("Request",runtime.getObject(),REQUEST_ALLOCATOR);
-        RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
-        mX509.defineClassUnder("RequestError",openSSLError,openSSLError.getAllocator());
-
-        cRequest.defineAnnotatedMethods(Request.class);
+    public static void createRequest(final Ruby runtime, final RubyModule _X509) {
+        RubyClass _Request = _X509.defineClassUnder("Request", runtime.getObject(), REQUEST_ALLOCATOR);
+        RubyClass _OpenSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
+        _X509.defineClassUnder("RequestError", _OpenSSLError, _OpenSSLError.getAllocator());
+        _Request.defineAnnotatedMethods(Request.class);
     }
 
     private IRubyObject subject;
     private IRubyObject public_key;
 
-    private List<IRubyObject> attrs;
+    private final List<org.jruby.ext.openssl.Attribute> attributes;
 
-    private PKCS10Request req;
+    private PKCS10Request request;
 
     public Request(Ruby runtime, RubyClass type) {
-        super(runtime,type);
-        attrs = new ArrayList<IRubyObject>();
-        req = new PKCS10Request((X500Name) null, (PublicKey) null, null);
+        super(runtime, type);
+        attributes = new ArrayList<org.jruby.ext.openssl.Attribute>();
+        request = new PKCS10Request((X500Name) null, (PublicKey) null, null);
     }
 
-    @JRubyMethod(name="initialize", rest=true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject _initialize(final ThreadContext context,
         final IRubyObject[] args, final Block block) {
         final Ruby runtime = context.runtime;
@@ -106,64 +110,70 @@ public class Request extends RubyObject {
         if ( Arity.checkArgumentCount(runtime, args, 0, 1) == 0 ) return this;
 
         try {
-          req = new PKCS10Request( OpenSSLImpl.readX509PEM(context, args[0]) );
+            request = new PKCS10Request( OpenSSLImpl.readX509PEM(context, args[0]) );
         }
         catch (ArrayIndexOutOfBoundsException e) {
-            throw newX509ReqError(runtime, "invalid certificate request data");
+            throw newRequestError(runtime, "invalid certificate request data");
         }
 
         final String algorithm;
         final byte[] encoded;
         try {
-            PublicKey pkey = req.getPublicKey();
+            PublicKey pkey = request.getPublicKey();
             algorithm = pkey.getAlgorithm();
             encoded = pkey.getEncoded();
         }
         catch (IOException e) {
-            throw newX509ReqError(runtime, e.getMessage());
+            throw newRequestError(runtime, e.getMessage());
         }
 
-        final IRubyObject enc = RubyString.newString(runtime, encoded);
+        final RubyString enc = RubyString.newString(runtime, encoded);
         if ( "RSA".equalsIgnoreCase(algorithm) ) {
-            this.public_key = newRubyInstance(context, "OpenSSL::PKey::RSA", enc);
+            this.public_key = newPKeyImplInstance(context, "RSA", enc);
         }
         else if ( "DSA".equalsIgnoreCase(algorithm) ) {
-            this.public_key = newRubyInstance(context, "OpenSSL::PKey::DSA", enc);
+            this.public_key = newPKeyImplInstance(context, "DSA", enc);
         }
         else {
             throw runtime.newLoadError("not implemented algo for public key: " + algorithm);
         }
 
-        this.subject = makeRubyName( context, req.getSubject() );
-        this.attrs = new ArrayList<IRubyObject>(req.getAttributes().length);
+        this.subject = newX509Name( context, request.getSubject() );
 
         try {
-            for ( Attribute attr : req.getAttributes() ) {
-                attrs.add( makeRubyAttr( context, attr.getAttrType(), attr.getAttrValues() ) );
+            for ( Attribute attr : request.getAttributes() ) {
+                attributes.add( (org.jruby.ext.openssl.Attribute)
+                    newX509Attribute( context, attr.getAttrType(), attr.getAttrValues() )
+                );
             }
-        } catch (IOException ex) {
-            throw newX509ReqError(runtime, ex.getMessage());
+        }
+        catch (IOException ex) {
+            throw newRequestError(runtime, ex.getMessage());
         }
 
         return this;
     }
 
-    private static IRubyObject makeRubyAttr(final ThreadContext context, ASN1ObjectIdentifier type, ASN1Set values)
-        throws IOException {
-        final Ruby runtime = context.runtime;
-        IRubyObject rubyType = runtime.newString( ASN1.getSymLookup(runtime).get(type) );
-        IRubyObject rubyValue = ASN1.decode(context,
-            runtime.getClassFromPath("OpenSSL::ASN1"),
-            RubyString.newString( runtime, ((ASN1Object) values).getEncoded() )
-        );
-        return newRubyInstance(context, "OpenSSL::X509::Attribute", rubyType, rubyValue);
+    private static IRubyObject newPKeyImplInstance(final ThreadContext context,
+        final String className, final RubyString encoded) { // OpenSSL::PKey::RSA.new(encoded)
+        return _PKey(context.runtime).getClass(className).callMethod(context, "new", encoded);
     }
 
-    private static IRubyObject makeRubyName(final ThreadContext context, X500Name name) {
+    private static IRubyObject newX509Attribute(final ThreadContext context,
+        final ASN1ObjectIdentifier type, final ASN1Set values) throws IOException {
+        final Ruby runtime = context.runtime;
+        IRubyObject attrType = runtime.newString( ASN1.getSymLookup(runtime).get(type) );
+        IRubyObject attrValue = ASN1.decode(context, _ASN1(runtime),
+            RubyString.newString( runtime, ((ASN1Object) values).getEncoded() )
+        );
+        return _Attribute(runtime).callMethod(context, "new", new IRubyObject[] { attrType, attrValue });
+    }
+
+    private static IRubyObject newX509Name(final ThreadContext context, X500Name name) {
         final Ruby runtime = context.runtime;
         if ( name == null ) return context.runtime.getNil();
 
-        IRubyObject newName = newRubyInstance(context, "OpenSSL::X509::Name");
+        final X509Name newName = (X509Name) _Name(runtime).callMethod(context, "new");
 
         for ( RDN rdn: name.getRDNs() ) {
             for ( AttributeTypeAndValue tv : rdn.getTypesAndValues() ) {
@@ -173,7 +183,7 @@ public class Request extends RubyObject {
                     val = ( (ASN1String) tv.getValue() ).getString();
                 }
                 RubyFixnum typef = runtime.newFixnum( ASN1.idForClass(tv.getValue().getClass()) ); //TODO correct?
-                ((X509Name) newName).addEntry(oid, val, typef);
+                newName.addEntry(oid, val, typef);
             }
         }
 
@@ -183,55 +193,54 @@ public class Request extends RubyObject {
     @Override
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject obj) {
-        System.err.println("WARNING: unimplemented method called: init_copy");
-        if (this == obj) {
-            return this;
-        }
+        final Ruby runtime = getRuntime();
+        warn(runtime.getCurrentContext(), "WARNING: unimplemented method called: request#initialize_copy");
+
+        if ( this == obj ) return this;
+
         checkFrozen();
-        subject = getRuntime().getNil();
-        public_key = getRuntime().getNil();
+        subject = public_key = runtime.getNil();
         return this;
     }
 
     @JRubyMethod(name={"to_pem","to_s"})
     public IRubyObject to_pem() {
-        StringWriter w = new StringWriter();
+        StringWriter writer = new StringWriter();
         try {
-            PEMInputOutput.writeX509Request(w, req);
-            return getRuntime().newString(w.toString());
-        } catch (IOException ex) {
-            throw getRuntime().newIOErrorFromException(ex);
+            PEMInputOutput.writeX509Request(writer, request);
+            return getRuntime().newString( writer.toString() );
         }
-        finally {
-            try { w.close(); } catch( Exception e ) {}
+        catch (IOException e) {
+            throw Utils.newIOError(getRuntime(), e);
         }
     }
 
     @JRubyMethod
     public IRubyObject to_der() {
         try {
-            return RubyString.newString(getRuntime(), req.toASN1Structure().getEncoded());
-        } catch (IOException ex) {
+            return RubyString.newString(getRuntime(), request.toASN1Structure().getEncoded());
+        }
+        catch (IOException ex) {
             throw getRuntime().newIOErrorFromException(ex);
         }
     }
 
     @JRubyMethod
-    public IRubyObject to_text() {
-        System.err.println("WARNING: unimplemented method called: to_text");
-        return getRuntime().getNil();
+    public IRubyObject to_text(final ThreadContext context) {
+        warn(context, "WARNING: unimplemented method called: request#to_text");
+        return context.runtime.getNil();
     }
 
     @JRubyMethod
    public IRubyObject version() {
-        return getRuntime().newFixnum(req.getVersion());
+        return getRuntime().newFixnum(request.getVersion());
     }
 
     @JRubyMethod(name="version=")
-    public IRubyObject set_version(IRubyObject val) {
+    public IRubyObject set_version(final ThreadContext context, IRubyObject val) {
         // NOTE: This is meaningless, it doesn't do anything...
-        //System.err.println("WARNING: meaningless method called: version=");
-        return val;
+        // warn(context, "WARNING: meaningless method called: request#version=");
+        return context.runtime.getNil();
     }
 
     @JRubyMethod
@@ -246,16 +255,16 @@ public class Request extends RubyObject {
     @JRubyMethod(name="subject=")
     public IRubyObject set_subject(IRubyObject val) {
         if (val != subject) {
-            req.setSubject( x500Name(val) );
+            request.setSubject( x500Name(val) );
             this.subject = val;
         }
         return val;
     }
 
     @JRubyMethod
-    public IRubyObject signature_algorithm() {
-        System.err.println("WARNING: unimplemented method called: signature_algorithm");
-        return getRuntime().getNil();
+    public IRubyObject signature_algorithm(final ThreadContext context) {
+        warn(context, "WARNING: unimplemented method called: request#signature_algorithm");
+        return context.runtime.getNil();
     }
 
     @JRubyMethod
@@ -264,12 +273,12 @@ public class Request extends RubyObject {
     }
 
     @JRubyMethod(name="public_key=")
-    public IRubyObject set_public_key(IRubyObject val) {
-        if (val != subject) {
-            req.setPublicKey( ((PKey) val).getPublicKey() );
-            this.public_key = val;
+    public IRubyObject set_public_key(final IRubyObject pkey) {
+        if (pkey != subject) {
+            request.setPublicKey( ((PKey) pkey).getPublicKey() );
+            this.public_key = pkey;
         }
-        return val;
+        return pkey;
     }
 
     @JRubyMethod
@@ -284,13 +293,13 @@ public class Request extends RubyObject {
         final String digName = ((Digest)digest).name().toString();
 
         if (PKCS10Request.algorithmMismatch(keyAlg, digAlg, digName))
-            throw newX509ReqError(context.runtime, null);
+            throw newRequestError(context.runtime, null);
 
         // String sigAlgStr = digAlg + "WITH" + keyAlg;
-        req = new PKCS10Request(x500Name(subject), publicKey, makeAttrList(attrs));
+        request = new PKCS10Request(x500Name(subject), publicKey, newAttributes(attributes));
 
         try {
-            req.sign(privateKey, digAlg);
+            request.sign(privateKey, digAlg);
         }
         catch(IOException e) {
             throw context.runtime.newIOErrorFromException(e);
@@ -299,16 +308,16 @@ public class Request extends RubyObject {
         return this;
     }
 
-    private static List<Attribute> makeAttrList(final List<IRubyObject> list) {
-        ArrayList<Attribute> realList = new ArrayList<Attribute>(list.size());
-        for (IRubyObject attr : list) {
-            realList.add( makeAttr(attr) );
+    private static List<Attribute> newAttributes(final List<org.jruby.ext.openssl.Attribute> attributes) {
+        ArrayList<Attribute> attrs = new ArrayList<Attribute>(attributes.size());
+        for (org.jruby.ext.openssl.Attribute attribute : attributes) {
+            attrs.add( newAttribute(attribute) );
         }
-        return realList;
+        return attrs;
     }
 
-    private static Attribute makeAttr(IRubyObject attr) {
-        return Attribute.getInstance( ((org.jruby.ext.openssl.Attribute) attr).toASN1() );
+    private static Attribute newAttribute(final IRubyObject attribute) {
+        return Attribute.getInstance( ((org.jruby.ext.openssl.Attribute) attribute).toASN1() );
     }
 
     @JRubyMethod
@@ -316,10 +325,10 @@ public class Request extends RubyObject {
         PublicKey publicKey;
         try {
             publicKey = ( (PKey) key.callMethod(context, "public_key") ).getPublicKey();
-            return req.verify(publicKey) ? context.runtime.getTrue() : context.runtime.getFalse();
+            return request.verify(publicKey) ? context.runtime.getTrue() : context.runtime.getFalse();
         }
         catch (InvalidKeyException e) {
-            throw newX509ReqError(context.runtime, e.getMessage());
+            throw newRequestError(context.runtime, e.getMessage());
         }
         catch(Exception e) {
             return context.runtime.getFalse();
@@ -328,32 +337,35 @@ public class Request extends RubyObject {
 
     @JRubyMethod
     public IRubyObject attributes() {
-        return getRuntime().newArray(attrs);
+        @SuppressWarnings("unchecked")
+        List<IRubyObject> attributes = (List) this.attributes;
+        return getRuntime().newArray(attributes);
     }
 
-    @SuppressWarnings("unchecked")
     @JRubyMethod(name="attributes=")
-    public IRubyObject set_attributes(IRubyObject val) {
-        attrs.clear();
-        attrs.addAll(((RubyArray)val).getList());
-
-        if (req != null) {
-            req.setAttributes( makeAttrList(attrs) );
+    public IRubyObject set_attributes(final IRubyObject attributes) {
+        this.attributes.clear();
+        final RubyArray attrs = (RubyArray) attributes;
+        for ( int i = 0; i < attrs.size(); i++ ) {
+            this.attributes.add( (org.jruby.ext.openssl.Attribute) attrs.entry(i) );
         }
-        return val;
+        //if (request != null) {
+            request.setAttributes( newAttributes(this.attributes) );
+        //}
+        return attributes;
     }
 
     @JRubyMethod
-    public IRubyObject add_attribute(IRubyObject val) {
-        attrs.add(val);
-
-        if (req != null) {
-            req.addAttribute( makeAttr(val) );
-        }
-        return val;
+    public IRubyObject add_attribute(final IRubyObject attribute) {
+        attributes.add( (org.jruby.ext.openssl.Attribute) attribute );
+        //if (request != null) {
+            request.addAttribute( newAttribute(attribute) );
+        //}
+        return attribute;
     }
 
-    private static RaiseException newX509ReqError(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::X509::RequestError", message);
+    private static RaiseException newRequestError(Ruby runtime, String message) {
+        return Utils.newError(runtime, _X509(runtime).getClass("RequestError"), message);
     }
+
 }// Request

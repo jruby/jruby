@@ -54,6 +54,7 @@ import org.jruby.ext.openssl.x509store.StoreContext;
 
 import static org.jruby.ext.openssl.OpenSSLReal.isDebug;
 import static org.jruby.ext.openssl.OpenSSLReal.warn;
+import static org.jruby.ext.openssl.X509._X509;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -144,7 +145,7 @@ public class X509StoreContext extends RubyObject {
         if ( chain == null ) return runtime.getNil();
 
         final RubyArray result = runtime.newArray(chain.size());
-        final RubyClass _Certificate = getX509Certificate(runtime);
+        final RubyClass _Certificate = _Certificate(runtime);
         try {
             for (X509AuxCertificate x509 : chain) {
                 RubyString encoded = RubyString.newString(runtime, x509.getEncoded());
@@ -185,7 +186,7 @@ public class X509StoreContext extends RubyObject {
         final Ruby runtime = context.runtime;
         final X509AuxCertificate x509 = storeContext.getCurrentCertificate();
         try {
-            final RubyClass _Certificate = getX509Certificate(runtime);
+            final RubyClass _Certificate = _Certificate(runtime);
             return _Certificate.callMethod(context, "new", RubyString.newString(runtime, x509.getEncoded()));
         }
         catch (CertificateEncodingException e) {
@@ -230,11 +231,11 @@ public class X509StoreContext extends RubyObject {
     }
 
     private static RaiseException newStoreError(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::X509::StoreError", message);
+        return Utils.newError(runtime, _X509(runtime).getClass("StoreError"), message);
     }
 
-    private static RubyClass getX509Certificate(final Ruby runtime) {
-        return (RubyClass) runtime.getClassFromPath("OpenSSL::X509::Certificate");
+    private static RubyClass _Certificate(final Ruby runtime) {
+        return _X509(runtime).getClass("Certificate");
     }
 
 }// X509StoreContext

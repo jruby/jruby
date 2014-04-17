@@ -713,7 +713,7 @@ public class ASN1 {
         return Utils.newError(runtime, _ASN1(runtime).getClass("ASN1Error"), message, false);
     }
 
-    private static RubyModule _ASN1(final Ruby runtime) {
+    static RubyModule _ASN1(final Ruby runtime) {
         return (RubyModule) runtime.getModule("OpenSSL").getConstant("ASN1");
     }
 
@@ -775,8 +775,8 @@ public class ASN1 {
                 final byte[] encoded = toASN1(context).toASN1Primitive().getEncoded(ASN1Encoding.DER);
                 return context.runtime.newString(new ByteList(encoded ,false));
             }
-            catch (IOException ex) {
-                throw Utils.newError(context.runtime, "OpenSSL::ASN1::ASN1Error", ex.getMessage());
+            catch (IOException e) {
+                throw newASN1Error(context.runtime, e.getMessage());
             }
         }
 

@@ -66,6 +66,7 @@ import org.jruby.runtime.Visibility;
 import static org.jruby.ext.openssl.OpenSSLReal.bcExceptionMessage;
 import static org.jruby.ext.openssl.impl.PKey.readDSAPrivateKey;
 import static org.jruby.ext.openssl.impl.PKey.readDSAPublicKey;
+import static org.jruby.ext.openssl.PKey._PKey;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -89,7 +90,7 @@ public class PKeyDSA extends PKey {
     }
 
     public static RaiseException newDSAError(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::PKey::DSAError", message);
+        return Utils.newError(runtime, _PKey(runtime).getClass("DSAError"), message);
     }
 
     public PKeyDSA(Ruby runtime, RubyClass type) {

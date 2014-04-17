@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
+import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -131,6 +132,10 @@ public class Utils {
     @Deprecated
     public static RaiseException newError(Ruby rt, String path, String message, boolean nativeException) {
         return new RaiseException(rt, getClassFromPath(rt, path), message, nativeException);
+    }
+
+    static RaiseException newIOError(Ruby runtime, IOException e) {
+        return new RaiseException(runtime, runtime.getIOError(), e.getMessage(), true);
     }
 
     static RaiseException newRuntimeError(Ruby runtime, Exception e) {
