@@ -243,12 +243,15 @@ public class Bootstrap {
         return site;
     }
 
-    public static CallSite searchConst(Lookup lookup, String name, MethodType type, boolean noPrivateConsts) {
-        // TODO: do something with noPrivateConsts
+    public static CallSite searchConst(Lookup lookup, String name, MethodType type, int noPrivateConsts) {
         MutableCallSite site = new MutableCallSite(type);
+        String[] bits = name.split(":");
+        String constName = bits[1];
 
         MethodHandle handle = Binder
-                .from(type)
+                .from(lookup, type)
+                .append(site, constName)
+                .append(noPrivateConsts==0?false:true)
                 .invokeStaticQuiet(LOOKUP, Bootstrap.class, "searchConst");
 
         site.setTarget(handle);
@@ -256,12 +259,15 @@ public class Bootstrap {
         return site;
     }
 
-    public static CallSite inheritanceSearchConst(Lookup lookup, String name, MethodType type, boolean noPrivateConsts) {
-        // TODO: do something with noPrivateConsts
+    public static CallSite inheritanceSearchConst(Lookup lookup, String name, MethodType type, int noPrivateConsts) {
         MutableCallSite site = new MutableCallSite(type);
+        String[] bits = name.split(":");
+        String constName = bits[1];
 
         MethodHandle handle = Binder
-                .from(type)
+                .from(lookup, type)
+                .append(site, constName)
+                .append(noPrivateConsts==0?false:true)
                 .invokeStaticQuiet(LOOKUP, Bootstrap.class, "inheritanceSearchConst");
 
         site.setTarget(handle);
@@ -322,11 +328,11 @@ public class Bootstrap {
     }
 
     public static Handle searchConst() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, boolean.class));
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
     }
 
     public static Handle inheritanceSearchConst() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "inheritanceSearchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, boolean.class));
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "inheritanceSearchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class));
     }
 
     public static RubyString string(ByteList value, ThreadContext context) {
@@ -1027,38 +1033,43 @@ public class Bootstrap {
     ///////////////////////////////////////////////////////////////////////////
     // constant lookup
 
-    public static IRubyObject searchConst(MutableCallSite site, ThreadContext context, StaticScope staticScope, String constName) throws Throwable {
-        Ruby runtime = context.runtime;
-        RubyModule object = runtime.getObject();
-        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator(constName).getData();
-        IRubyObject value = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
+    public static IRubyObject searchConst(ThreadContext context, StaticScope staticScope, MutableCallSite site, String constName, boolean noPrivateConsts) throws Throwable {
 
+        // Lexical lookup
+        Ruby runtime = context.getRuntime();
+        RubyModule object = runtime.getObject();
+        IRubyObject constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
+
+        // Inheritance lookup
         RubyModule module = null;
-        if (value == null) {
+        if (constant == null) {
             // SSS FIXME: Is this null check case correct?
             module = staticScope == null ? object : staticScope.getModule();
-            // TODO: private consts
-            value = /*noPrivateConsts ?*/ module.getConstantFromNoConstMissing(constName, false) /*: module.getConstantNoConstMissing(constName)*/;
+            constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
         }
 
-        if (value == null) {
-            return module.callMethod(context, "const_missing", runtime.fastNewSymbol(constName));
+        // Call const_missing or cache
+        if (constant == null) {
+            return module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
         }
+
+        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator(constName).getData();
 
         // bind constant until invalidated
         MethodHandle target = Binder.from(site.type())
                 .drop(0, 2)
-                .constant(value);
+                .constant(constant);
         MethodHandle fallback = Binder.from(site.type())
-                .insert(0, site, constName)
+                .append(site, constName)
+                .append(noPrivateConsts)
                 .invokeStatic(LOOKUP, Bootstrap.class, "searchConst");
 
         site.setTarget(switchPoint.guardWithTest(target, fallback));
 
-        return value;
+        return constant;
     }
 
-    public static IRubyObject inheritanceSearchConst(MutableCallSite site, ThreadContext context, IRubyObject cmVal, String constName) throws Throwable {
+    public static IRubyObject inheritanceSearchConst(ThreadContext context, IRubyObject cmVal, MutableCallSite site, String constName, boolean noPrivateConsts) throws Throwable {
         Ruby runtime = context.runtime;
         RubyModule module;
 
@@ -1068,24 +1079,26 @@ public class Bootstrap {
             throw runtime.newTypeError(cmVal + " is not a type/class");
         }
 
-        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator(constName).getData();
+        IRubyObject constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
 
-        IRubyObject value = module.getConstantFromNoConstMissing(constName, false);
-        if (value == null) {
-            return (IRubyObject)UndefinedValue.UNDEFINED;
+        if (constant == null) {
+            constant = UndefinedValue.UNDEFINED;
         }
+
+        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator(constName).getData();
 
         // bind constant until invalidated
         MethodHandle target = Binder.from(site.type())
                 .drop(0, 2)
-                .constant(value);
+                .constant(constant);
         MethodHandle fallback = Binder.from(site.type())
-                .insert(0, site, constName)
+                .append(site, constName)
+                .append(noPrivateConsts)
                 .invokeStatic(LOOKUP, Bootstrap.class, "inheritanceSearchConst");
 
         site.setTarget(switchPoint.guardWithTest(target, fallback));
 
-        return value;
+        return constant;
     }
 
     ///////////////////////////////////////////////////////////////////////////
