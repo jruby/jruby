@@ -27,6 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
+import java.io.IOException;
+import java.io.PrintStream;
 import java.math.BigInteger;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -34,9 +36,8 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.Map;
-import java.io.IOException;
+import java.util.IdentityHashMap;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -406,7 +407,8 @@ public class ASN1 {
         return name;
     }
 
-    private static ASN1ObjectIdentifier getObjectIdentifier(final Ruby runtime, final String nameOrOid) {
+    static ASN1ObjectIdentifier getObjectIdentifier(final Ruby runtime, final String nameOrOid)
+        throws IllegalArgumentException {
         Object val1 = getOIDLookup(runtime).get( nameOrOid.toLowerCase() );
         if ( val1 != null ) return (ASN1ObjectIdentifier) val1;
         return new ASN1ObjectIdentifier(nameOrOid);
@@ -569,7 +571,7 @@ public class ASN1 {
     private static final DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmssz");
 
     private static IRubyObject decodeObject(final ThreadContext context, final RubyModule _ASN1, final Object obj)
-        throws IOException, ParseException {
+        throws IOException, IllegalArgumentException {
 
         int ix = idForClass(obj.getClass());
         final String className = ix == -1 ? null : (String) ( ASN1_INFO[ix][2] );
@@ -608,7 +610,9 @@ public class ASN1 {
             }
             else if ( obj instanceof DERUTCTime ) {
                 final Calendar calendar = Calendar.getInstance();
-                calendar.setTime( dateFormat.parse(((DERUTCTime) obj).getAdjustedTime()) );
+                try {
+                    calendar.setTime( dateFormat.parse(((DERUTCTime) obj).getAdjustedTime()) );
+                } catch (ParseException e) { throw new IOException(e); }
                 IRubyObject[] argv = new IRubyObject[] {
                     context.runtime.newFixnum(calendar.get(Calendar.YEAR)),
                     context.runtime.newFixnum(calendar.get(Calendar.MONTH) + 1),
@@ -662,7 +666,7 @@ public class ASN1 {
     }
 
     private static RubyArray decodeObjects(final ThreadContext context, final RubyModule _ASN1, final Enumeration e)
-        throws IOException, ParseException {
+        throws IOException {
         final RubyArray arr = context.runtime.newArray();
         while ( e.hasMoreElements() ) {
             arr.append( decodeObject(context, _ASN1, e.nextElement()) );
@@ -673,24 +677,44 @@ public class ASN1 {
     @JRubyMethod(meta = true)
     public static IRubyObject decode(final ThreadContext context,
         final IRubyObject self, final IRubyObject obj) {
-        final RubyModule _ASN1 = (RubyModule) self;
         try {
-            IRubyObject obj2 = OpenSSLImpl.to_der_if_possible(context, obj);
-            ASN1InputStream asis = new ASN1InputStream(obj2.convertToString().getBytes());
-            return decodeObject(context, _ASN1, asis.readObject());
+            return decodeImpl(context, (RubyModule) self, obj);
         }
         catch (IOException e) {
             throw context.runtime.newIOErrorFromException(e);
         }
-        catch (Exception e) {
+        catch (IllegalArgumentException e) {
             throw context.runtime.newArgumentError(e.getMessage());
+        }
+        catch (RuntimeException e) {
+            throw Utils.newRuntimeError(context.runtime, e);
         }
     }
 
-    @JRubyMethod(meta=true, required=1)
+    static IRubyObject decodeImpl(final ThreadContext context, IRubyObject obj)
+        throws IOException, IllegalArgumentException {
+        return decodeImpl(context, _ASN1(context.runtime), obj);
+    }
+
+    static IRubyObject decodeImpl(final ThreadContext context,
+        final RubyModule _ASN1, IRubyObject obj) throws IOException, IllegalArgumentException {
+        obj = OpenSSLImpl.to_der_if_possible(context, obj);
+        ASN1InputStream asis = new ASN1InputStream(obj.convertToString().getBytes());
+        return decodeObject(context, _ASN1, asis.readObject());
+    }
+
+    @JRubyMethod(meta = true, required = 1)
     public static IRubyObject decode_all(final ThreadContext context, final IRubyObject self, IRubyObject arg) {
         warn(context, "WARNING: unimplemented method called: ASN1#decode_all");
         return context.runtime.getNil();
+    }
+
+    public static RaiseException newASN1Error(Ruby runtime, String message) {
+        return Utils.newError(runtime, _ASN1(runtime).getClass("ASN1Error"), message, false);
+    }
+
+    private static RubyModule _ASN1(final Ruby runtime) {
+        return (RubyModule) runtime.getModule("OpenSSL").getConstant("ASN1");
     }
 
     public static class ASN1Data extends RubyObject {
@@ -704,18 +728,6 @@ public class ASN1 {
 
         public ASN1Data(Ruby runtime, RubyClass type) {
             super(runtime,type);
-        }
-
-        protected static RaiseException newASN1Error(Ruby runtime, String message) {
-            return Utils.newRaiseException(runtime, getASN1Nested(runtime, "ASN1Error"), message, false);
-        }
-
-        private static RubyModule getASN1(final Ruby runtime) {
-            return (RubyModule) runtime.getModule("OpenSSL").getConstant("ASN1");
-        }
-
-        private static RubyClass getASN1Nested(final Ruby runtime, final String name) {
-            return (RubyClass) getASN1(runtime).getConstant(name);
         }
 
         @JRubyMethod(visibility = Visibility.PRIVATE)
@@ -777,27 +789,38 @@ public class ASN1 {
             }
         }
 
-        protected void print() {
+        IRubyObject value() {
+            return this.callMethod(getRuntime().getCurrentContext(), "value");
+        }
+
+        @Override
+        public String toString() {
+            return value().toString();
+        }
+
+        protected final void print() {
             print(0);
         }
 
-        protected void printIndent(int indent) {
-            for(int i=0;i<indent;i++) {
-                System.out.print(" ");
+        protected void print(int indent) {
+            final PrintStream out = getRuntime().getOut();
+            printIndent(out, indent);
+            final IRubyObject value = value();
+            out.println("ASN1Data: ");
+            if ( value instanceof RubyArray ) {
+                printArray(out, indent, (RubyArray) value);
+            } else {
+                ((ASN1Data) value).print(indent + 1);
             }
         }
 
-        protected void print(int indent) {
-            printIndent(indent);
-            System.out.println("ASN1Data: ");
-            IRubyObject val = callMethod(getRuntime().getCurrentContext(),"value");
-            if ( val instanceof RubyArray ) {
-                RubyArray arr = (RubyArray)val;
-                for (IRubyObject obj : arr.toJavaArray()) {
-                    ((ASN1Data)obj).print(indent+1);
-                }
-            } else {
-                ((ASN1Data) val).print(indent+1);
+        static void printIndent(final PrintStream out, final int indent) {
+            for ( int i = 0; i < indent; i++) out.print(" ");
+        }
+
+        static void printArray(final PrintStream out, final int indent, final RubyArray array) {
+            for ( int i = 0; i < array.size(); i++ ) {
+                ((ASN1Data) array.entry(i)).print(indent + 1);
             }
         }
 
@@ -819,11 +842,6 @@ public class ASN1 {
 
         public ASN1Primitive(Ruby runtime, RubyClass type) {
             super(runtime,type);
-        }
-
-        @Override
-        public String toString() {
-            return this.callMethod(getRuntime().getCurrentContext(),"value").toString();
         }
 
         @Override
@@ -944,14 +962,17 @@ public class ASN1 {
             if ( isDebug(context.runtime) ) {
                 context.runtime.getOut().println("object with tag: " + tag + " and value: " + val + " and val.class: " + val.getClass().getName() + " and impl: " + impl.getName());
             }
-            warn(context, "WARNING: unimplemented method called: asn1data#toASN1");
+            warn(context, "WARNING: unimplemented method called: asn1data#toASN1 (" + impl + ")");
             return null;
         }
 
         @Override
         protected void print(int indent) {
-            printIndent(indent);
-            System.out.println(getMetaClass().getRealClass().getBaseName() + ": " + callMethod(getRuntime().getCurrentContext(),"value").callMethod(getRuntime().getCurrentContext(),"inspect").toString());
+            final PrintStream out = getRuntime().getOut();
+            printIndent(out, indent);
+            out.print(getMetaClass().getRealClass().getBaseName());
+            out.print(": ");
+            out.println(value().callMethod(getRuntime().getCurrentContext(), "inspect").toString());
         }
 
     }
@@ -1030,16 +1051,19 @@ public class ASN1 {
         ASN1Encodable toASN1(final ThreadContext context) {
             final int id = idForRubyName(getMetaClass().getRealClass().getBaseName());
             if ( id != -1 ) {
-                ASN1EncodableVector vec = new ASN1EncodableVector();
-                RubyArray arr = (RubyArray) callMethod(context, "value");
-                for (IRubyObject obj : arr.toJavaArray()) {
-                    if(obj instanceof ASN1Data) {
-                        vec.add( ( (ASN1Data) obj ).toASN1(context) );
-                    } else {
-                        vec.add( ( (ASN1Data) ASN1.decode(context,
-                            context.runtime.getClassFromPath("OpenSSL::ASN1"),
-                            OpenSSLImpl.to_der_if_possible(context, obj)) ).toASN1(context)
-                        );
+                final ASN1EncodableVector vec = new ASN1EncodableVector();
+                final RubyArray value = value(context);
+                for ( int i = 0; i < value.size(); i++ ) {
+                    final IRubyObject entry = value.entry(i);
+                    try {
+                        if ( entry instanceof ASN1Data) {
+                            vec.add( ( (ASN1Data) entry ).toASN1(context) );
+                        } else {
+                            vec.add( ( (ASN1Data) decodeImpl(context, entry) ).toASN1(context) );
+                        }
+                    }
+                    catch (Exception e) { // TODO: deprecated
+                        throw createNativeRaiseException(context, e);
                     }
                 }
                 try {
@@ -1050,8 +1074,7 @@ public class ASN1 {
                             newInstance(new Object[] { vec });
                     return result;
                 }
-                catch (Exception e) {
-                    // TODO: deprecated
+                catch (Exception e) { // TODO: deprecated
                     throw createNativeRaiseException(context, e);
                 }
             }
@@ -1059,22 +1082,25 @@ public class ASN1 {
         }
 
         @JRubyMethod
-        public IRubyObject each(final ThreadContext context, Block block) {
-            RubyArray arr = (RubyArray) callMethod(context, "value");
-            for (IRubyObject obj : arr.toJavaArray()) {
-                block.yield(context, obj);
+        public IRubyObject each(final ThreadContext context, final Block block) {
+            final RubyArray value = value(context);
+            for ( int i = 0; i < value.size(); i++ ) {
+                block.yield(context, value.entry(i));
             }
             return context.runtime.getNil();
         }
 
         @Override
         protected void print(int indent) {
-            printIndent(indent);
-            System.out.println(getMetaClass().getRealClass().getBaseName() + ": ");
-            RubyArray arr = (RubyArray) callMethod(getRuntime().getCurrentContext(),"value");
-            for (IRubyObject obj : arr.toJavaArray()) {
-                ((ASN1Data) obj).print(indent + 1);
-            }
+            final PrintStream out = getRuntime().getOut();
+            printIndent(out, indent);
+            out.print(getMetaClass().getRealClass().getBaseName()); out.println(": ");
+            printArray( out, indent, value( getRuntime().getCurrentContext() ) );
         }
+
+        private RubyArray value(final ThreadContext context) {
+            return (RubyArray) this.callMethod(context, "value");
+        }
+
     }
 }// ASN1
