@@ -207,31 +207,29 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public void emitScope(IRScope scope, String name, Signature signature) {
+        CFG cfg = scope.getCFG();
+
         this.currentScope = scope;
 
-        boolean debug = false;
-
         Instr[] instrs = scope.getInstrsForInterpretation(false);
-
-        Map<Integer, Integer> rescueTable = scope.getRescueMap();
 
         if (Options.IR_COMPILER_DEBUG.load()) {
             StringBuilder b = new StringBuilder();
 
             b.append("\n\nLinearized instructions for JIT:\n");
 
-            int i = 0;
             for (BasicBlock bb : scope.buildLinearization()) {
+                int instrIdx = 0;
+                b.append("Block #" + bb.getID() + "\n");
+                BasicBlock rescueBB = cfg.getRescuerBBFor(bb);
+                if (rescueBB != null) b.append("Rescued by #" + rescueBB.getID() + "\n");
+
                 for (Instr instr : instrs) {
-                    if (i > 0) b.append("\n");
-
-                    b.append("  ").append(i).append('\t').append(instr);
-
-                    i++;
+                    b.append("  ").append(instrIdx++).append('\t').append(instr).append("\n");
                 }
+                
+                b.append("\n");
             }
-
-            b.append("\n\nRescues: \n" + rescueTable);
 
             LOG.info("Starting JVM compilation on scope " + scope);
             LOG.info(b.toString());
@@ -253,30 +251,28 @@ public class JVMVisitor extends IRVisitor {
 
         IRBytecodeAdapter m = jvm.method();
 
-        List<Instr> newInstrs = new ArrayList<Instr>();
-        int ipc = 0;
-        CFG cfg = scope.getCFG();
         for (BasicBlock b : scope.buildLinearization()) {
-            Label l = b.getLabel();
-            BasicBlock rescuerBB = cfg.getRescuerBBFor(b);
+
+            // always mark start of block
             org.objectweb.asm.Label start = jvm.methodData().getLabel(b.getLabel());
+            m.mark(start);
+
+            // if block is rescued, prepare end of block and set up try/catch
+            BasicBlock rescuerBB = cfg.getRescuerBBFor(b);
             org.objectweb.asm.Label finish = null, target = null;
             if (rescuerBB != null) {
                 finish = new org.objectweb.asm.Label();
                 target = jvm.methodData().getLabel(rescuerBB.getLabel());
-                m.mark(start);
 
                 jvm.method().adapter.trycatch(start, finish, target, p(Throwable.class));
             }
 
+            // visit all instrs
             for (Instr instr : b.getInstrs()) {
-                newInstrs.add(instr);
-                instr.setIPC(ipc);
-                ipc++;
-
                 visit(instr);
             }
 
+            // if block is rescued, mark end
             if (rescuerBB != null) {
                 m.mark(finish);
             }
