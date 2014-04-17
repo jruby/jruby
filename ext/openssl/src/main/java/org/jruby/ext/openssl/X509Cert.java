@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
 
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -43,7 +44,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -57,6 +57,7 @@ import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -150,62 +151,67 @@ public class X509Cert extends RubyObject {
         byte[] bytes = OpenSSLImpl.readX509PEM(context, args[0]);
         ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
 
-        RubyModule  _OpenSSL = runtime.getModule("OpenSSL");
-        RubyModule _X509 = (RubyModule) _OpenSSL.getConstant("X509");
-        IRubyObject _Name = _X509.getConstant("Name");
+        final RubyModule _OpenSSL = runtime.getModule("OpenSSL");
+        final RubyModule _X509 = (RubyModule) _OpenSSL.getConstant("X509");
+        final IRubyObject _Name = _X509.getConstant("Name");
 
         try {
             cert = (X509Certificate) SecurityHelper.getCertificateFactory("X.509").generateCertificate(bis);
         }
-        catch (CertificateException ex) {
-            throw newCertificateError(runtime, ex);
+        catch (CertificateException e) {
+            throw newCertificateError(runtime, e);
         }
 
-        if (cert == null) {
+        if ( cert == null ) {
             throw newCertificateError(runtime, (String) null);
         }
 
-        set_serial(RubyNumeric.str2inum(runtime,runtime.newString(cert.getSerialNumber().toString()),10));
-        set_not_before(context, RubyTime.newTime(runtime,cert.getNotBefore().getTime()));
-        set_not_after(context, RubyTime.newTime(runtime,cert.getNotAfter().getTime()));
-        set_subject(_Name.callMethod(context,"new",RubyString.newString(runtime, cert.getSubjectX500Principal().getEncoded())));
-        set_issuer(_Name.callMethod(context,"new",RubyString.newString(runtime, cert.getIssuerX500Principal().getEncoded())));
+        set_serial( RubyNumeric.str2inum(runtime, runtime.newString(cert.getSerialNumber().toString()), 10) );
+        set_not_before( context, RubyTime.newTime( runtime, cert.getNotBefore().getTime() ) );
+        set_not_after( context, RubyTime.newTime( runtime, cert.getNotAfter().getTime() ) );
+        bytes = cert.getSubjectX500Principal().getEncoded();
+        set_subject( _Name.callMethod(context, "new", RubyString.newString(runtime, bytes) ) );
+        bytes = cert.getIssuerX500Principal().getEncoded();
+        set_issuer( _Name.callMethod(context, "new", RubyString.newString(runtime, bytes) ) );
 
-        String algorithm = cert.getPublicKey().getAlgorithm();
-        set_public_key(algorithm, cert.getPublicKey().getEncoded());
+        final String algorithm = cert.getPublicKey().getAlgorithm();
+        set_public_key( algorithm, cert.getPublicKey().getEncoded() );
 
         IRubyObject extFact = ((RubyClass)(_X509.getConstant("ExtensionFactory"))).callMethod(context,"new");
         extFact.callMethod(context,"subject_certificate=",this);
 
-        Set<String> crit = cert.getCriticalExtensionOIDs();
-        if (crit != null) {
-            for (Iterator<String> iter = crit.iterator(); iter.hasNext();) {
-                String critOid = iter.next();
-                byte[] value = cert.getExtensionValue(critOid);
-                IRubyObject rValue = ASN1.decode(context,  _OpenSSL.getConstant("ASN1"), runtime.newString(new ByteList(value, false))).callMethod(context, "value");
-                X509Extensions.Extension ext = (X509Extensions.Extension) _X509.getConstant("Extension").callMethod(context, "new",
-                        new IRubyObject[] { runtime.newString(critOid), rValue, runtime.getTrue() });
-                add_extension(ext);
+        final RubyModule _ASN1 = (RubyModule) _OpenSSL.getConstant("ASN1");
+        final RubyClass _Extension = _X509.getClass("Extension");
+
+        final Set<String> criticalExtOIDs = cert.getCriticalExtensionOIDs();
+        if ( criticalExtOIDs != null ) {
+            for ( final String extOID : criticalExtOIDs ) {
+                addExtension(context, _ASN1, _Extension, extOID, runtime.getTrue());
             }
         }
 
-        Set<String> ncrit = cert.getNonCriticalExtensionOIDs();
-        if (ncrit != null) {
-            for (Iterator<String> iter = ncrit.iterator(); iter.hasNext();) {
-                String ncritOid = iter.next();
-                byte[] value = cert.getExtensionValue(ncritOid);
-                // TODO: wired. J9 returns null for an OID given in getNonCriticalExtensionOIDs()
-                if (value != null) {
-                    IRubyObject rValue = ASN1.decode(context,  _OpenSSL.getConstant("ASN1"), runtime.newString(new ByteList(value, false))).callMethod(context, "value");
-                    X509Extensions.Extension ext = (X509Extensions.Extension) _X509.getConstant("Extension").callMethod(context, "new",
-                            new IRubyObject[] { runtime.newString(ncritOid), rValue, runtime.getFalse() });
-                    add_extension(ext);
-                }
+        final Set<String> nonCriticalExtOIDs = cert.getNonCriticalExtensionOIDs();
+        if ( nonCriticalExtOIDs != null ) {
+            for ( final String extOID : nonCriticalExtOIDs ) {
+                addExtension(context, _ASN1, _Extension, extOID, runtime.getFalse());
             }
         }
         changed = false;
 
         return this;
+    }
+
+    private void addExtension(final ThreadContext context, final RubyModule _ASN1,
+        final RubyClass _Extension, final String extOID, final RubyBoolean critical) {
+        final byte[] extValue = cert.getExtensionValue(extOID);
+        // TODO: wired. J9 returns null for an OID given in getNonCriticalExtensionOIDs()
+        if ( extValue == null ) return;
+
+        RubyString extValueStr = context.runtime.newString( new ByteList(extValue, false) );
+        IRubyObject rValue = ASN1.decode(context, _ASN1, extValueStr).callMethod(context, "value");
+        IRubyObject extension = _Extension.callMethod(context, "new",
+            new IRubyObject[] { context.runtime.newString(extOID), rValue, critical });
+        add_extension(extension);
     }
 
     //Lazy method for public key instantiation
@@ -214,20 +220,25 @@ public class X509Cert extends RubyObject {
         this.public_key_encoded = encoded;
     }
 
-    public static RaiseException newCertificateError(Ruby runtime, Exception ex) {
-        return newCertificateError(runtime, ex.getMessage());
+    private static RubyClass _CertificateError(final Ruby runtime) {
+        final RubyModule _OpenSSL = runtime.getModule("OpenSSL");
+        final RubyModule _X509 = (RubyModule) _OpenSSL.getConstant("X509");
+        return _X509.getClass("CertificateError");
     }
 
-    public static RaiseException newCertificateError(Ruby runtime, String message) {
-        throw Utils.newError(runtime, "OpenSSL::X509::CertificateError", message);
+    static RaiseException newCertificateError(final Ruby runtime, Exception e) {
+        return Utils.newRaiseException(runtime, _CertificateError(runtime), e);
+    }
+
+    static RaiseException newCertificateError(final Ruby runtime, String msg) {
+        return Utils.newRaiseException(runtime, _CertificateError(runtime), msg, false);
     }
 
     @Override
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(IRubyObject obj) {
-        if(this == obj) {
-            return this;
-        }
+        if ( this == obj ) return this;
+
         checkFrozen();
         return this;
     }
@@ -236,26 +247,27 @@ public class X509Cert extends RubyObject {
     public IRubyObject to_der() {
         try {
             return RubyString.newString(getRuntime(), cert.getEncoded());
-        } catch (CertificateEncodingException ex) {
+        }
+        catch (CertificateEncodingException ex) {
             throw newCertificateError(getRuntime(), ex);
         }
     }
 
     @JRubyMethod(name={"to_pem","to_s"})
     public IRubyObject to_pem() {
+        final StringWriter str = new StringWriter();
         try {
-            StringWriter w = new StringWriter();
-            PEMInputOutput.writeX509Certificate(w, getAuxCert());
-            w.close();
-            return getRuntime().newString(w.toString());
-        } catch (IOException ex) {
+            PEMInputOutput.writeX509Certificate(str, getAuxCert());
+            return getRuntime().newString( str.toString() );
+        }
+        catch (IOException ex) {
             throw getRuntime().newIOErrorFromException(ex);
         }
     }
 
     @JRubyMethod
     public IRubyObject to_text() {
-        return getRuntime().newString(getAuxCert().toString());
+        return getRuntime().newString( getAuxCert().toString() );
     }
 
     @Override
@@ -270,12 +282,11 @@ public class X509Cert extends RubyObject {
     }
 
     @JRubyMethod(name="version=")
-    public IRubyObject set_version(IRubyObject arg) {
-        if(!arg.equals(this.version)) {
-            changed = true;
+    public IRubyObject set_version(final IRubyObject version) {
+        if ( ! version.equals(this.version) ) {
+            this.changed = true;
         }
-        this.version = arg;
-        return arg;
+        return this.version = version;
     }
 
     @JRubyMethod
@@ -289,21 +300,20 @@ public class X509Cert extends RubyObject {
     }
 
     @JRubyMethod(name="serial=")
-    public IRubyObject set_serial(IRubyObject num) {
-        if(!num.equals(this.serial)) {
-            changed = true;
+    public IRubyObject set_serial(final IRubyObject serial) {
+        if ( ! serial.equals(this.serial) ) {
+            this.changed = true;
         }
-        serial = num;
-        String s = serial.toString();
 
-        BigInteger bi;
-        if (s.equals("0")) { // MRI compatibility: allow 0 serial number
-            bi = BigInteger.ONE;
+        final String serialStr = serial.toString();
+        final BigInteger serialInt;
+        if ( serialStr.equals("0") ) { // MRI compatibility: allow 0 serial number
+            serialInt = BigInteger.ONE;
         } else {
-            bi = new BigInteger(s);
+            serialInt = new BigInteger(serialStr);
         }
-	generator.setSerialNumber(new BigInteger(1, bi.toByteArray()));
-        return num;
+        generator.setSerialNumber(new BigInteger(1, serialInt.toByteArray()));
+        return this.serial = serial;
     }
 
     @JRubyMethod
@@ -312,13 +322,12 @@ public class X509Cert extends RubyObject {
     }
 
     @JRubyMethod(name="subject=")
-    public IRubyObject set_subject(IRubyObject arg) {
-        if(!arg.equals(this.subject)) {
-            changed = true;
+    public IRubyObject set_subject(final IRubyObject subject) {
+        if ( ! subject.equals(this.subject) ) {
+            this.changed = true;
         }
-        subject = arg;
-        generator.setSubjectDN(((X509Name)subject).getRealName());
-        return arg;
+        generator.setSubjectDN( ((X509Name) subject).getRealName() );
+        return this.subject = subject;
     }
 
     @JRubyMethod
@@ -327,13 +336,12 @@ public class X509Cert extends RubyObject {
     }
 
     @JRubyMethod(name="issuer=")
-    public IRubyObject set_issuer(IRubyObject arg) {
-        if(!arg.equals(this.issuer)) {
-            changed = true;
+    public IRubyObject set_issuer(final IRubyObject issuer) {
+        if ( ! issuer.equals(this.issuer) ) {
+            this.changed = true;
         }
-        issuer = arg;
-        generator.setIssuerDN(((X509Name)issuer).getRealName());
-        return arg;
+        generator.setIssuerDN( ((X509Name) issuer).getRealName() );
+        return this.issuer = issuer;
     }
 
     @JRubyMethod
@@ -373,16 +381,15 @@ public class X509Cert extends RubyObject {
     }
 
     @JRubyMethod(name="public_key=")
-    public IRubyObject set_public_key(IRubyObject arg) {
-        if ( ! ( arg instanceof PKey ) ) {
-            throw getRuntime().newTypeError("OpenSSL::PKey::PKey expected but got " + arg.getMetaClass().getName());
+    public IRubyObject set_public_key(IRubyObject public_key) {
+        if ( ! ( public_key instanceof PKey ) ) {
+            throw getRuntime().newTypeError("OpenSSL::PKey::PKey expected but got " + public_key.getMetaClass().getName());
         }
-        if ( ! arg.equals(this.public_key) ) {
-            changed = true;
+        if ( ! public_key.equals(this.public_key) ) {
+            this.changed = true;
         }
-        this.public_key = arg;
         generator.setPublicKey(((PKey) public_key).getPublicKey());
-        return arg;
+        return this.public_key = public_key;
     }
 
     private void lazyInitializePublicKey(final ThreadContext context) {
@@ -413,8 +420,8 @@ public class X509Cert extends RubyObject {
         final String digAlg = ((Digest) digest).getShortAlgorithm();
         final String digName = ((Digest) digest).name().toString();
 
-        if(("DSA".equalsIgnoreCase(keyAlg) && "MD5".equalsIgnoreCase(digAlg)) ||
-           ("RSA".equalsIgnoreCase(keyAlg) && "DSS1".equals(digName))) {
+        if( ( "DSA".equalsIgnoreCase(keyAlg) && "MD5".equalsIgnoreCase(digAlg) ) ||
+            ( "RSA".equalsIgnoreCase(keyAlg) && "DSS1".equals(digName) ) ) {
             throw newCertificateError(runtime, "signature_algorithm not supported");
         }
 
@@ -422,7 +429,8 @@ public class X509Cert extends RubyObject {
             try {
                 final byte[] bytes = ext.getRealValueBytes();
                 generator.addExtension(ext.getRealOid(), ext.getRealCritical(), bytes);
-            } catch (IOException ioe) {
+            }
+            catch (IOException ioe) {
                 throw runtime.newIOErrorFromException(ioe);
             }
         }
@@ -433,8 +441,9 @@ public class X509Cert extends RubyObject {
 
         try {
             cert = generator.generate(((PKey) key).getPrivateKey());
-        } catch (Exception e) {
-            throw newCertificateError(getRuntime(), e.getMessage());
+        }
+        catch (GeneralSecurityException e) {
+            throw newCertificateError(getRuntime(), e);
         }
         if (cert == null) {
             throw newCertificateError(runtime, (String) null);
@@ -443,39 +452,42 @@ public class X509Cert extends RubyObject {
         if (name == null) {
             name = cert.getSigAlgOID();
         }
-        sig_alg = runtime.newString(name);
-        changed = false;
+        this.sig_alg = runtime.newString(name);
+        this.changed = false;
         return this;
     }
 
     @JRubyMethod
     public IRubyObject verify(IRubyObject key) {
-        if(changed) {
-            return getRuntime().getFalse();
-        }
+        if ( changed ) return getRuntime().getFalse();
+
         try {
             cert.verify(((PKey)key).getPublicKey());
             return getRuntime().getTrue();
-        } catch (CertificateException ce) {
-            throw newCertificateError(getRuntime(), ce);
-        } catch (NoSuchAlgorithmException nsae) {
-            throw newCertificateError(getRuntime(), nsae);
-        } catch (NoSuchProviderException nspe) {
-            throw newCertificateError(getRuntime(), nspe);
-        } catch (SignatureException se) {
+        }
+        catch (CertificateException e) {
+            throw newCertificateError(getRuntime(), e);
+        }
+        catch (NoSuchAlgorithmException e) {
+            throw newCertificateError(getRuntime(), e);
+        }
+        catch (NoSuchProviderException e) {
+            throw newCertificateError(getRuntime(), e);
+        }
+        catch (SignatureException e) {
             return getRuntime().getFalse();
-        } catch(InvalidKeyException e) {
+        }
+        catch (InvalidKeyException e) {
             return getRuntime().getFalse();
         }
     }
 
     @JRubyMethod
     public IRubyObject check_private_key(IRubyObject arg) {
-        PKey key = (PKey)arg;
-        PublicKey pkey = key.getPublicKey();
+        PKey key = (PKey) arg;
+        PublicKey pubKey = key.getPublicKey();
         PublicKey certPubKey = getAuxCert().getPublicKey();
-        if (certPubKey.equals(pkey))
-            return getRuntime().getTrue();
+        if ( certPubKey.equals(pubKey) ) return getRuntime().getTrue();
         return getRuntime().getFalse();
     }
 
@@ -488,49 +500,45 @@ public class X509Cert extends RubyObject {
 
     @SuppressWarnings("unchecked")
     @JRubyMethod(name="extensions=")
-    public IRubyObject set_extensions(final IRubyObject arg) {
+    public IRubyObject set_extensions(final IRubyObject array) {
         extensions.clear(); // RubyArray is a List :
-        extensions.addAll( (List<X509Extensions.Extension>) arg );
-        return arg;
+        extensions.addAll( (List<X509Extensions.Extension>) array );
+        return array;
     }
 
     @JRubyMethod
-    public IRubyObject add_extension(final IRubyObject arg) {
+    public IRubyObject add_extension(final IRubyObject ext) {
         changed = true;
-        final X509Extensions.Extension extension = (X509Extensions.Extension) arg;
-        final ASN1ObjectIdentifier oid = extension.getRealOid();
-        final ASN1ObjectIdentifier _2_5_29_17 = new ASN1ObjectIdentifier("2.5.29.17");
-        if ( oid.equals( _2_5_29_17 ) ) {
+        final X509Extensions.Extension newExtension = (X509Extensions.Extension) ext;
+        final ASN1ObjectIdentifier oid = newExtension.getRealOid();
+        if ( oid.getId().equals( "2.5.29.17" ) ) {
             boolean one = true;
-            for ( X509Extensions.Extension ext : extensions ) {
-                if ( ext.getRealOid().equals( _2_5_29_17 ) ) {
-                    ASN1EncodableVector v1 = new ASN1EncodableVector();
-
+            for ( final X509Extensions.Extension curExtension : extensions ) {
+                if ( curExtension.getRealOid().equals( oid ) ) {
+                    final ASN1EncodableVector v1 = new ASN1EncodableVector();
                     try {
-                        GeneralName[] n1 = GeneralNames.getInstance(new ASN1InputStream(ext.getRealValueBytes()).readObject()).getNames();
-                        GeneralName[] n2 = GeneralNames.getInstance(new ASN1InputStream(extension.getRealValueBytes()).readObject()).getNames();
+                        GeneralName[] n1 = GeneralNames.getInstance(new ASN1InputStream(curExtension.getRealValueBytes()).readObject()).getNames();
+                        GeneralName[] n2 = GeneralNames.getInstance(new ASN1InputStream(newExtension.getRealValueBytes()).readObject()).getNames();
 
-                        for(int i=0;i<n1.length;i++) {
-                            v1.add(n1[i]);
-                        }
-                        for(int i=0;i<n2.length;i++) {
-                            v1.add(n2[i]);
-                        }
+                        for ( int i = 0; i < n1.length; i++ ) v1.add( n1[i] );
+                        for ( int i = 0; i < n2.length; i++ ) v1.add( n2[i] );
 
-                        ext.setRealValue(new String(ByteList.plain(GeneralNames.getInstance(new DLSequence(v1)).getEncoded(ASN1Encoding.DER))));
-                    } catch (IOException ex) {
+                        GeneralNames v1Names = GeneralNames.getInstance(new DLSequence(v1));
+                        curExtension.setRealValue( new String( ByteList.plain( v1Names.getEncoded(ASN1Encoding.DER) ) ) );
+                    }
+                    catch (IOException ex) {
                         throw getRuntime().newIOErrorFromException(ex);
                     }
                     one = false;
                     break;
                 }
             }
-            if ( one ) extensions.add(extension);
+            if ( one ) extensions.add(newExtension);
         }
         else {
-            extensions.add(extension);
+            extensions.add(newExtension);
         }
-        return arg;
+        return ext;
     }
-}// X509Cert
 
+}// X509Cert
