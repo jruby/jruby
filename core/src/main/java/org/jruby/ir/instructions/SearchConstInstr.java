@@ -30,7 +30,6 @@ public class SearchConstInstr extends Instr implements ResultInstr, FixedArityIn
     private Variable result;
 
     // Constant caching
-    private volatile transient Object cachedConstant = null;
     private ConstantCache cache;
     private Invalidator invalidator;
 
@@ -102,16 +101,6 @@ public class SearchConstInstr extends Instr implements ResultInstr, FixedArityIn
         }
 
         return value;
-    }
-
-    public Object getCachedConst() {
-        return cachedConstant;
-    }
-
-    public boolean isCached() {
-        ConstantCache cache = this.cache;
-
-        return ConstantCache.isCached(cache);
     }
 
     @Override
