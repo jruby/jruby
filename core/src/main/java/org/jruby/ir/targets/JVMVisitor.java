@@ -115,8 +115,10 @@ import org.jruby.ir.instructions.boxing.UnboxFixnumInstr;
 import org.jruby.ir.instructions.boxing.UnboxFloatInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
+import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.MethodHandle;
 import org.jruby.ir.representations.BasicBlock;
+import org.jruby.ir.representations.CFG;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
@@ -152,9 +154,7 @@ import org.jruby.util.JavaNameMangler;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-import org.objectweb.asm.Handle;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 import org.objectweb.asm.commons.Method;
 
 /**
@@ -252,66 +252,35 @@ public class JVMVisitor extends IRVisitor {
         }
 
         IRBytecodeAdapter m = jvm.method();
-        org.objectweb.asm.Label[] allLabels = new org.objectweb.asm.Label[instrs.length + 1];
-        for (int i = 0; i < allLabels.length; i++) {
-            allLabels[i] = new org.objectweb.asm.Label();
-        }
-
-        // set up try/catch table
-        List<int[]> allCatches = new ArrayList<int[]>();
-        int[] rescueRange = null;
-        for (int i = 0; i < instrs.length; i++) {
-            Instr instr = instrs[i];
-            int ipc = instr.getIPC();
-
-            int rescueIPC = rescueTable.get(instr.getIPC());
-            if (rescueIPC != -1) {
-                if (rescueRange == null) {
-                    // new range
-                    rescueRange = new int[]{ipc, ipc+1, rescueIPC};
-                    continue;
-                } else {
-                    if (rescueIPC != rescueRange[2]) {
-                        // new range
-                        allCatches.add(rescueRange);
-                        rescueRange = new int[]{ipc, ipc+1, rescueIPC};
-                    } else {
-                        rescueRange[1] = ipc + 1;
-                    }
-                }
-            } else {
-                if (rescueRange == null) continue;
-
-                // found end of range, done
-                allCatches.add(rescueRange);
-                rescueRange = null;
-            }
-        }
-
-        for (int[] range : allCatches) {
-            if (debug) System.out.println("rescue range: " + Arrays.toString(range));
-            jvm.method().adapter.trycatch(allLabels[range[0]], allLabels[range[1]], allLabels[range[2]], p(Throwable.class));
-        }
 
         List<Instr> newInstrs = new ArrayList<Instr>();
         int ipc = 0;
+        CFG cfg = scope.getCFG();
         for (BasicBlock b : scope.buildLinearization()) {
             Label l = b.getLabel();
-            if (l != null) m.mark(jvm.methodData().getLabel(l));
+            BasicBlock rescuerBB = cfg.getRescuerBBFor(b);
+            org.objectweb.asm.Label start = jvm.methodData().getLabel(b.getLabel());
+            org.objectweb.asm.Label finish = null, target = null;
+            if (rescuerBB != null) {
+                finish = new org.objectweb.asm.Label();
+                target = jvm.methodData().getLabel(rescuerBB.getLabel());
+                m.mark(start);
+
+                jvm.method().adapter.trycatch(start, finish, target, p(Throwable.class));
+            }
+
             for (Instr instr : b.getInstrs()) {
                 newInstrs.add(instr);
                 instr.setIPC(ipc);
                 ipc++;
 
-                // this is probably not efficient because it's putting a label at every instruction
-                m.mark(allLabels[instr.getIPC()]);
-
                 visit(instr);
             }
-        }
 
-        // mark last label
-        m.mark(allLabels[allLabels.length - 1]);
+            if (rescuerBB != null) {
+                m.mark(finish);
+            }
+        }
 
         jvm.popmethod();
     }
