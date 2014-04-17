@@ -35,6 +35,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -80,8 +81,13 @@ public class SizedQueue extends Queue {
         return RubyNumeric.int2fix(context.runtime, capacity);
     }
 
-    @JRubyMethod(name = {"max=", "initialize"})
+    @JRubyMethod(name = {"max="})
     public synchronized IRubyObject max_set(ThreadContext context, IRubyObject arg) {
+        return initialize(context, arg);
+    }
+
+    @JRubyMethod(name = {"initialize"}, visibility = Visibility.PRIVATE)
+    public synchronized IRubyObject initialize(ThreadContext context, IRubyObject arg) {
         int new_capacity = RubyNumeric.fix2int(arg);
         if (new_capacity <= 0) {
             context.runtime.newArgumentError("queue size must be positive");

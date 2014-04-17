@@ -1988,7 +1988,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
     }
     
-    @JRubyMethod(name = "initialize_copy", required = 1)
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original){
         Ruby runtime = getRuntime();

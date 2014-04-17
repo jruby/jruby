@@ -59,6 +59,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.ByteList;
@@ -136,7 +137,7 @@ public class RubyIconv extends RubyObject {
             super(runtime, rubyClass, message);
         }
 
-        @JRubyMethod(required = 1, optional = 2)
+        @JRubyMethod(required = 1, optional = 2, visibility = Visibility.PRIVATE)
         @Override
         public IRubyObject initialize(IRubyObject[] args, Block block) {
             super.initialize(args, block);
@@ -209,7 +210,7 @@ public class RubyIconv extends RubyObject {
                 context, new IRubyObject[] {to, from}, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject arg1, IRubyObject arg2, Block unusedBlock) {
         Ruby runtime = getRuntime();
         if (!arg1.respondsTo("to_str")) {

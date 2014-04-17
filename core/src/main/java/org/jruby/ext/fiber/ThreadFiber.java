@@ -15,6 +15,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ThreadFiber extends RubyObject implements ExecutionContext {
@@ -33,7 +34,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         context.setRootFiber(rootFiber);
     }
     
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
         

@@ -196,7 +196,7 @@ public class RubyPathname extends RubyObject {
         return newInstance(context, context.runtime.getClass("Pathname"), path);
     }
 
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject path) {
         String toPath = toPathMethod(context.runtime);
         if (path.respondsTo(toPath)) {
@@ -217,7 +217,7 @@ public class RubyPathname extends RubyObject {
         return runtime.is1_8() ? "to_str" : "to_path";
     }
 
-    @JRubyMethod
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject pathname) {
         super.initialize_copy(pathname);
         initialize(context, pathname);

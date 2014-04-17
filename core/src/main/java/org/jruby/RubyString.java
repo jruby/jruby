@@ -1434,15 +1434,30 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     /** rb_str_replace_m
      *
      */
-    @JRubyMethod(name = {"replace", "initialize_copy"}, required = 1, compat = RUBY1_8)
+    @JRubyMethod(name = {"replace"}, required = 1, compat = RUBY1_8)
     public IRubyObject replace(IRubyObject other) {
         if (this == other) return this;
         replaceCommon(other);
         return this;
     }
 
-    @JRubyMethod(name = {"replace", "initialize_copy"}, required = 1, compat = RUBY1_9)
+    @JRubyMethod(name = {"replace"}, required = 1, compat = RUBY1_9)
     public RubyString replace19(IRubyObject other) {
+        modifyCheck();
+        if (this == other) return this;
+        setCodeRange(replaceCommon(other).getCodeRange()); // encoding doesn't have to be copied.
+        return this;
+    }
+
+    @JRubyMethod(name = {"initialize_copy"}, required = 1, compat = RUBY1_8, visibility = PRIVATE)
+    public IRubyObject initialize_copy(IRubyObject other) {
+        if (this == other) return this;
+        replaceCommon(other);
+        return this;
+    }
+
+    @JRubyMethod(name = {"initialize_copy"}, required = 1, compat = RUBY1_9, visibility = PRIVATE)
+    public RubyString initialize_copy19(IRubyObject other) {
         modifyCheck();
         if (this == other) return this;
         setCodeRange(replaceCommon(other).getCodeRange()); // encoding doesn't have to be copied.
