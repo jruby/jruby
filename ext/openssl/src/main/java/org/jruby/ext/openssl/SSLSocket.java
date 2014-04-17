@@ -67,6 +67,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.runtime.Visibility;
 
+import static org.jruby.ext.openssl.SSL._SSL;
+import static org.jruby.ext.openssl.SSL.newSSLErrorWaitReadable;
+import static org.jruby.ext.openssl.SSL.newSSLErrorWaitWritable;
+
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
@@ -96,28 +100,12 @@ public class SSLSocket extends RubyObject {
         verifyResult = X509Utils.V_OK;
     }
 
-    static RaiseException newSSLError(Ruby runtime, Exception exception) {
-        return Utils.newRaiseException(runtime, getSSLNested(runtime, "SSLError"), exception);
+    private static RaiseException newSSLError(Ruby runtime, Exception exception) {
+        return SSL.newSSLError(runtime, exception);
     }
 
-    public static RaiseException newSSLError(Ruby runtime, String message) {
-        return Utils.newRaiseException(runtime, getSSLNested(runtime, "SSLError"), message, false);
-    }
-
-    public static RaiseException newSSLErrorReadable(Ruby runtime, String message) {
-        return Utils.newRaiseException(runtime, getSSLNested(runtime, "SSLErrorWaitReadable"), message, false);
-    }
-
-    public static RaiseException newSSLErrorWritable(Ruby runtime, String message) {
-        return Utils.newRaiseException(runtime, getSSLNested(runtime, "SSLErrorWaitWritable"), message, false);
-    }
-
-    private static RubyModule getSSL(final Ruby runtime) {
-        return (RubyModule) runtime.getModule("OpenSSL").getConstant("SSL");
-    }
-
-    private static RubyClass getSSLNested(final Ruby runtime, final String name) {
-        return (RubyClass) getSSL(runtime).getConstant(name);
+    private static RaiseException newSSLError(Ruby runtime, String message) {
+        return SSL.newSSLError(runtime, message);
     }
 
     private org.jruby.ext.openssl.SSLContext sslContext;
@@ -142,7 +130,7 @@ public class SSLSocket extends RubyObject {
         final Ruby runtime = context.runtime;
 
         if ( Arity.checkArgumentCount(runtime, args, 1, 2) == 1 ) {
-            RubyModule _SSLContext = getSSLNested(runtime, "SSLContext");
+            RubyModule _SSLContext = _SSL(runtime).getClass("SSLContext");
             sslContext = (SSLContext) _SSLContext.callMethod(context, "new");
         } else {
             sslContext = (SSLContext) args[1];
@@ -401,13 +389,11 @@ public class SSLSocket extends RubyObject {
     }
 
     private void readWouldBlock() {
-        Ruby runtime = getRuntime();
-        throw newSSLErrorReadable(runtime, "read would block");
+        throw newSSLErrorWaitReadable(getRuntime(), "read would block");
     }
 
     private void writeWouldBlock() {
-        Ruby runtime = getRuntime();
-        throw newSSLErrorWritable(runtime, "write would block");
+        throw newSSLErrorWaitWritable(getRuntime(), "write would block");
     }
 
     private void doHandshake(boolean blocking) throws IOException {
