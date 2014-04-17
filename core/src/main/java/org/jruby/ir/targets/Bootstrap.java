@@ -724,7 +724,7 @@ public class Bootstrap {
             mh = SmartBinder.from(site.signature)
                     .drop("caller")
                     .insert(2, new String[]{"rubyClass", "name"}, new Class[]{RubyModule.class, String.class}, selfClass, site.name)
-                    .insert(0, "method", method)
+                    .insert(0, "method", DynamicMethod.class, method)
                     .invokeVirtualQuiet(LOOKUP, "call")
                     .handle();
         }
