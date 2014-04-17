@@ -252,23 +252,37 @@ public class JVMVisitor extends IRVisitor {
         IRBytecodeAdapter m = jvm.method();
 
         int numberOfLabels = bbs.size();
-        org.objectweb.asm.Label previous = null;
         for (int i = 0; i < numberOfLabels; i++) {
-            Label label = bbs.get(i).getLabel();
-            org.objectweb.asm.Label current = jvm.methodData().getLabel(label);
+            BasicBlock bb = bbs.get(i);
+            org.objectweb.asm.Label start = jvm.methodData().getLabel(bb.getLabel());
+            Label rescueLabel = exceptionTable.get(bb);
+            org.objectweb.asm.Label end = null;
 
-            if (previous != null) {
-                jvm.method().adapter.trycatch(previous, current, jvm.methodData().getLabel(exceptionTable.get(bbs.get(i-1))), p(Throwable.class));
+            m.mark(start);
+
+            boolean newEnd = false;
+            if (rescueLabel != null) {
+                if (i+1 < numberOfLabels) {
+                    end = jvm.methodData().getLabel(bbs.get(i+1).getLabel());
+                } else {
+                    newEnd = true;
+                    end = new org.objectweb.asm.Label();
+                }
+
+                org.objectweb.asm.Label rescue = jvm.methodData().getLabel(rescueLabel);
+                jvm.method().adapter.trycatch(start, end, rescue, p(Throwable.class));
             }
 
-            previous = current;
-        }
+            // ensure there's at least one instr per block
+            m.adapter.nop();
 
-        for (BasicBlock bb : bbs) {
-            m.mark(jvm.methodData().getLabel(bb.getLabel()));
-
+            // visit remaining instrs
             for (Instr instr : bb.getInstrs()) {
                 visit(instr);
+            }
+
+            if (newEnd) {
+                m.mark(end);
             }
         }
 
