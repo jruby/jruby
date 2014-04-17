@@ -18,8 +18,8 @@ import org.jruby.ir.passes.CompilerPassScheduler;
  */
 public class IRManager {
     public static String SAFE_COMPILER_PASSES = "LinearizeCFG";
-    public static String DEFAULT_COMPILER_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,AddLocalVarLoadStoreInstructions,LinearizeCFG";
-    public static String DEFAULT_JIT_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,AddLocalVarLoadStoreInstructions,AddCallProtocolInstructions,LinearizeCFG";
+    public static String DEFAULT_COMPILER_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,AddLocalVarLoadStoreInstructions,EnsureTempsAssigned,LinearizeCFG";
+    public static String DEFAULT_JIT_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,AddLocalVarLoadStoreInstructions,EnsureTempsAssigned,AddCallProtocolInstructions,LinearizeCFG";
     public static String DEFAULT_INLINING_COMPILER_PASSES = "LocalOptimizationPass";
 
     private int dummyMetaClassCount = 0;
