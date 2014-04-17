@@ -470,7 +470,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         case SEARCH_CONST: {
             SearchConstInstr sci = (SearchConstInstr)instr;
-            result = sci.interpret(context, currDynScope, self, temp);
+            result = sci.getCachedConst();
+            if (!sci.isCached(context, result)) result = sci.cache(context, currDynScope, self, temp);
             setResult(temp, currDynScope, sci.getResult(), result);
             break;
         }
