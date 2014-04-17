@@ -251,7 +251,7 @@ public class Bootstrap {
         MethodHandle handle = Binder
                 .from(lookup, type)
                 .append(site, constName)
-                .append(noPrivateConsts==0?false:true)
+                .append(noPrivateConsts == 0 ? false : true)
                 .invokeStaticQuiet(LOOKUP, Bootstrap.class, "searchConst");
 
         site.setTarget(handle);
@@ -267,7 +267,7 @@ public class Bootstrap {
         MethodHandle handle = Binder
                 .from(lookup, type)
                 .append(site, constName)
-                .append(noPrivateConsts==0?false:true)
+                .append(noPrivateConsts == 0 ? false : true)
                 .invokeStaticQuiet(LOOKUP, Bootstrap.class, "inheritanceSearchConst");
 
         site.setTarget(handle);
