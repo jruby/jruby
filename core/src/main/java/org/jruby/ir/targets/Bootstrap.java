@@ -721,12 +721,16 @@ public class Bootstrap {
 
         if (mh == null) {
             // use DynamicMethod binding
-            mh = SmartBinder.from(site.signature)
+            binder = SmartBinder.from(site.signature)
                     .drop("caller")
                     .insert(2, new String[]{"rubyClass", "name"}, new Class[]{RubyModule.class, String.class}, selfClass, site.name)
-                    .insert(0, "method", DynamicMethod.class, method)
-                    .invokeVirtualQuiet(LOOKUP, "call")
-                    .handle();
+                    .insert(0, "method", DynamicMethod.class, method);
+
+            if (site.arity > 3) {
+                binder = binder.collect("args", "arg.*");
+            }
+              
+            mh = binder.invokeVirtualQuiet(LOOKUP, "call").handle();
         }
 
         SmartBinder fallbackBinder = SmartBinder
