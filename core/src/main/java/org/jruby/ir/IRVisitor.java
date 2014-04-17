@@ -28,6 +28,7 @@ public abstract class IRVisitor {
     // standard instructions
     public void AliasInstr(AliasInstr aliasinstr) { error(aliasinstr); }
     public void AttrAssignInstr(AttrAssignInstr attrassigninstr) { error(attrassigninstr); }
+    public void BacktickInstr(BacktickInstr instr) { error(instr); }
     public void BEQInstr(BEQInstr beqinstr) { error(beqinstr); }
     public void BFalseInstr(BFalseInstr bfalseinstr) { error(bfalseinstr); }
     public void BlockGivenInstr(BlockGivenInstr blockgiveninstr) { error(blockgiveninstr); }
@@ -132,7 +133,6 @@ public abstract class IRVisitor {
     public void Array(Array array) { error(array); }
     public void AsString(AsString asstring) { error(asstring); }
     public void Backref(Backref backref) { error(backref); }
-    public void BacktickString(BacktickString backtickstring) { error(backtickstring); }
     public void Bignum(Bignum bignum) { error(bignum); }
     public void Boolean(Boolean bool) { error(bool); }
     public void UnboxedBoolean(UnboxedBoolean bool) { error(bool); }

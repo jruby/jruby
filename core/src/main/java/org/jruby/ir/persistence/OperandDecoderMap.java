@@ -12,7 +12,6 @@ import static org.jruby.ir.operands.UnexecutableNil.U_NIL;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Backref;
-import org.jruby.ir.operands.BacktickString;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.CompoundString;
 import org.jruby.ir.operands.CurrentScope;
@@ -72,7 +71,6 @@ class OperandDecoderMap {
             case ARRAY: return new Array(d.decodeOperandList());
             case AS_STRING: return new AsString(d.decodeOperand());
             case BACKREF: return new Backref(d.decodeChar());
-            case BACKTICK_STRING: return new BacktickString(d.decodeOperandList());
             case BIGNUM: return new Bignum(new BigInteger(d.decodeString()));
             case BOOLEAN: return new UnboxedBoolean(d.decodeBoolean());
             case COMPOUND_STRING: return decodeCompoundString();

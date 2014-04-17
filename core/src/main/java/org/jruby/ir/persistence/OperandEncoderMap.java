@@ -6,7 +6,6 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Backref;
-import org.jruby.ir.operands.BacktickString;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.ClosureLocalVariable;
@@ -77,15 +76,6 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void Backref(Backref backref) { encoder.encode(backref.type); }
 
-    @Override public void BacktickString(BacktickString backtickstring) {
-        List<Operand> operands = backtickstring.pieces;
-
-        encoder.encode(operands.size());
-
-        for (Operand operand: operands) {
-            encode(operand);
-        }
-    }
     @Override public void Bignum(Bignum bignum) { encoder.encode(bignum.value.toString()); }
 
     @Override public void Boolean(Boolean booleanliteral) { encoder.encode(booleanliteral.isTrue()); }

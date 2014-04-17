@@ -2117,7 +2117,9 @@ public class IRBuilder {
             strPieces.add(dynamicPiece(nextNode, s));
         }
 
-        return copyAndReturnValue(s, new BacktickString(strPieces));
+        Variable res = s.createTemporaryVariable();
+        addInstr(s, new BacktickInstr(res, strPieces));
+        return res;
     }
 
     /* ****************************************************************
@@ -3436,7 +3438,9 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node, IRScope s) {
-        return copyAndReturnValue(s, new BacktickString(new StringLiteral(node.getValue())));
+        Variable res = s.createTemporaryVariable();
+        addInstr(s, new BacktickInstr(res, new StringLiteral(node.getValue())));
+        return res;
     }
 
     public Operand buildYield(YieldNode node, IRScope s) {

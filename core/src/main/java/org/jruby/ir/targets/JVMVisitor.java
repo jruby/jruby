@@ -25,6 +25,7 @@ import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.AliasInstr;
 import org.jruby.ir.instructions.AttrAssignInstr;
+import org.jruby.ir.instructions.BacktickInstr;
 import org.jruby.ir.instructions.BEQInstr;
 import org.jruby.ir.instructions.BFalseInstr;
 import org.jruby.ir.instructions.BNEInstr;
@@ -710,6 +711,11 @@ public class JVMVisitor extends IRVisitor {
 
         // Store it
         jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
+    public void BacktickInstr(BacktickInstr instr) {
+        super.BacktickInstr(instr);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     @Override
@@ -1790,11 +1796,6 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void Backref(Backref backref) {
         super.Backref(backref);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void BacktickString(BacktickString backtickstring) {
-        super.BacktickString(backtickstring);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     @Override

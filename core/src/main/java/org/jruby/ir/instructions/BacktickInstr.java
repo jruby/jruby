@@ -1,9 +1,12 @@
-package org.jruby.ir.operands;
+package org.jruby.ir.instructions;
 
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Variable;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -17,61 +20,60 @@ import java.util.Map;
 //
 // NOTE: This operand is only used in the initial stages of optimization.
 // Further down the line, this string operand could get converted to calls
-public class BacktickString extends Operand {
-    final public List<Operand> pieces;
+public class BacktickInstr extends Instr implements ResultInstr {
+    private Variable result;
+    private List<Operand> pieces;
 
-    public BacktickString(Operand val) {
-        super(OperandType.BACKTICK_STRING);
+    public BacktickInstr(Variable result, Operand val) {
+        super(Operation.BACKTICK_STRING);
+        this.result = result;
         pieces = new ArrayList<Operand>();
         pieces.add(val);
     }
 
-    public BacktickString(List<Operand> pieces) {
-        super(OperandType.BACKTICK_STRING);
+    public BacktickInstr(Variable result, List<Operand> pieces) {
+        super(Operation.BACKTICK_STRING);
+        this.result = result;
         this.pieces = pieces;
     }
 
     @Override
-    public boolean hasKnownValue() {
-        for (Operand o : pieces) {
-            if (!o.hasKnownValue()) return false;
-        }
-
-        return true;
+    public Variable getResult() {
+        return result;
     }
 
     @Override
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
+
+    @Override
+    public Operand[] getOperands() {
+        return pieces.toArray(new Operand[pieces.size()]);
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         List<Operand> newPieces = new ArrayList<Operand>();
         for (Operand p : pieces) {
             newPieces.add(p.getSimplifiedOperand(valueMap, force));
         }
 
-        return new BacktickString(newPieces);
-    }
-
-    /** Append the list of variables used in this operand to the input list */
-    @Override
-    public void addUsedVariables(List<Variable> l) {
-        for (Operand o : pieces) {
-            o.addUsedVariables(l);
-        }
+       pieces = newPieces;
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
-        if (hasKnownValue()) return this;
-
+    public Instr cloneForInlining(InlinerInfo ii) {
         List<Operand> newPieces = new ArrayList<Operand>();
         for (Operand p : pieces) {
             newPieces.add(p.cloneForInlining(ii));
         }
 
-        return new BacktickString(newPieces);
+        return new BacktickInstr(ii.getRenamedVariable(result), newPieces);
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         RubyString newString = context.runtime.newString();
 
         for (Operand p: pieces) {
@@ -84,11 +86,11 @@ public class BacktickString extends Operand {
 
     @Override
     public void visit(IRVisitor visitor) {
-        visitor.BacktickString(this);
+        visitor.BacktickInstr(this);
     }
 
     @Override
     public String toString() {
-        return "`" + (pieces == null ? "[]" : pieces) + "`";
+        return result + "`" + (pieces == null ? "[]" : pieces) + "`";
     }
 }

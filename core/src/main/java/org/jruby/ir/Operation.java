@@ -133,6 +133,7 @@ public enum Operation {
     /** JRuby-impl instructions **/
     // FIXME: BUILD_COMPOUND_ARRAY is marked side-effecting since it *can* call to_a methods
     BUILD_COMPOUND_ARRAY(OpFlags.f_has_side_effect),
+    BACKTICK_STRING(OpFlags.f_has_side_effect),
     CHECK_ARGS_ARRAY_ARITY(OpFlags.f_can_raise_exception),
     CHECK_ARITY(OpFlags.f_is_book_keeping_op | OpFlags.f_can_raise_exception),
     CLASS_VAR_MODULE(0),
