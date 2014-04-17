@@ -252,30 +252,16 @@ public class JVMVisitor extends IRVisitor {
         IRBytecodeAdapter m = jvm.method();
 
         int numberOfLabels = bbs.size();
-        org.objectweb.asm.Label[] labels = new org.objectweb.asm.Label[numberOfLabels];
-        org.objectweb.asm.Label[] starts = new org.objectweb.asm.Label[numberOfLabels];
-        org.objectweb.asm.Label[] ends = new org.objectweb.asm.Label[numberOfLabels];
-        Map<Label, org.objectweb.asm.Label> mappings = new HashMap<Label, org.objectweb.asm.Label>();
-
         org.objectweb.asm.Label previous = null;
         for (int i = 0; i < numberOfLabels; i++) {
             Label label = bbs.get(i).getLabel();
-            labels[i] = jvm.methodData().getLabel(label);
-            mappings.put(label, labels[i]);
+            org.objectweb.asm.Label current = jvm.methodData().getLabel(label);
 
             if (previous != null) {
-                starts[i-1] = previous;
-                ends[i-1] = labels[i];
+                jvm.method().adapter.trycatch(previous, current, jvm.methodData().getLabel(exceptionTable.get(bbs.get(i-1))), p(Throwable.class));
             }
 
-            previous = labels[i];
-        }
-        org.objectweb.asm.Label lastLabel = new org.objectweb.asm.Label();
-        starts[numberOfLabels - 1] = previous;
-        ends[numberOfLabels - 1] = lastLabel;
-
-        for (int i = 0; i < numberOfLabels; i++) {
-            jvm.method().adapter.trycatch(starts[i], ends[1], mappings.get(exceptionTable.get(bbs.get(i))), p(Throwable.class));
+            previous = current;
         }
 
         for (BasicBlock bb : bbs) {
@@ -285,8 +271,6 @@ public class JVMVisitor extends IRVisitor {
                 visit(instr);
             }
         }
-
-        m.mark(lastLabel);
 
         jvm.popmethod();
     }
