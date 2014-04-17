@@ -71,9 +71,7 @@ public class DefineInstanceMethodInstr extends Instr {
         Visibility visibility = context.getCurrentVisibility();
         if ("initialize".equals(name) || "initialize_copy".equals(name) || "method_missing".equals(name) || visibility == Visibility.MODULE_FUNCTION) {
             visibility = Visibility.PRIVATE;
-        } else if (!runtime.is1_8() && "respond_to_missing?".equals(name)){
-            visibility = Visibility.PRIVATE;
-        } else if (runtime.is2_0() && ("initialize_clone".equals(name) || "initialize_dup".equals(name))) {
+        } else if (runtime.is2_0() && ("respond_to_missing?".equals(name) || "initialize_clone".equals(name) || "initialize_dup".equals(name))) {
             visibility = Visibility.PRIVATE;
         }
 
