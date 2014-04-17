@@ -37,12 +37,15 @@ import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class Utils {
     private Utils() {}
+
+    @Deprecated
     public static String toHex(byte[] val) {
         final StringBuilder out = new StringBuilder();
         for ( int i=0,j=val.length; i<j; i++ ) {
@@ -55,13 +58,14 @@ public class Utils {
         return out.toString();
     }
 
+    @Deprecated
     public static String toHex(byte[] val, char sep) {
         final StringBuilder out = new StringBuilder();
         final String sepStr = Character.toString(sep);
         String separator = "";
         for ( int i=0,j=val.length; i<j; i++ ) {
             out.append(separator);
-            String ve = Integer.toString( ( ((int)((char)val[i])) & 0xFF ) , 16);
+            String ve = Integer.toString( ( ((int)((char) val[i])) & 0xFF ) , 16);
             if (ve.length() == 1) {
                 out.append('0'); // "0#{ve}"
             }
@@ -69,6 +73,42 @@ public class Utils {
             separator = sepStr;
         }
         return out.toString().toUpperCase();
+    }
+
+    static ByteList hexBytes(final byte[] data) {
+        return hexBytes(data, 0);
+    }
+
+    static ByteList hexBytes(final byte[] data, final int off) {
+        final int len = data.length - off;
+        return hexBytes(data, off, len, new ByteList( len * 3 ));
+    }
+
+    static ByteList hexBytes(final byte[] data, final ByteList out) {
+        return hexBytes(data, 0, data.length, out);
+    }
+
+    @SuppressWarnings("deprecation")
+    static ByteList hexBytes(final ByteList data, final ByteList out) {
+        return hexBytes(data.bytes, data.begin, data.realSize, out);
+    }
+
+    private static final char[] digits = {
+        '0' , '1' , '2' , '3' , '4' , '5' , '6' , '7' ,
+        '8' , '9' , 'A' , 'B' , 'C' , 'D' , 'E' , 'F'
+    };
+
+    private static ByteList hexBytes(final byte[] data, final int off, final int len, final ByteList out) {
+        boolean notFist = false;
+        out.ensure( len * 3 - 1 );
+        for ( int i = off; i < (off + len); i++ ) {
+            if ( notFist ) out.append(':');
+            final byte b = data[i];
+            out.append( digits[ (b >> 4) & 0xF ] );
+            out.append( digits[ b & 0xF ] );
+            notFist = true;
+        }
+        return out;
     }
 
     @Deprecated
