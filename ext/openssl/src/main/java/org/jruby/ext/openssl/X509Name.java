@@ -71,6 +71,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 
 import org.jruby.ext.openssl.x509store.Name;
+import static org.jruby.ext.openssl.X509._X509;
 
 /**
  *
@@ -89,31 +90,35 @@ public class X509Name extends RubyObject {
         }
     };
 
-    public static void createX509Name(Ruby runtime, RubyModule mX509) {
-        RubyClass cX509Name = mX509.defineClassUnder("Name",runtime.getObject(),X509NAME_ALLOCATOR);
-        RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
-        mX509.defineClassUnder("NameError",openSSLError,openSSLError.getAllocator());
+    public static void createX509Name(final Ruby runtime, final RubyModule _X509) {
+        RubyClass _Name = _X509.defineClassUnder("Name", runtime.getObject(), X509NAME_ALLOCATOR);
+        RubyClass _OpenSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
+        _X509.defineClassUnder("NameError", _OpenSSLError, _OpenSSLError.getAllocator());
 
-        cX509Name.defineAnnotatedMethods(X509Name.class);
+        _Name.defineAnnotatedMethods(X509Name.class);
+        _Name.includeModule(runtime.getComparable());
 
-        cX509Name.setConstant("COMPAT",runtime.newFixnum(COMPAT));
-        cX509Name.setConstant("RFC2253",runtime.newFixnum(RFC2253));
-        cX509Name.setConstant("ONELINE",runtime.newFixnum(ONELINE));
-        cX509Name.setConstant("MULTILINE",runtime.newFixnum(MULTILINE));
+        _Name.setConstant("COMPAT", runtime.newFixnum(COMPAT));
+        _Name.setConstant("RFC2253", runtime.newFixnum(RFC2253));
+        _Name.setConstant("ONELINE", runtime.newFixnum(ONELINE));
+        _Name.setConstant("MULTILINE", runtime.newFixnum(MULTILINE));
 
-        cX509Name.setConstant("DEFAULT_OBJECT_TYPE",runtime.newFixnum(BERTags.UTF8_STRING));
+        _Name.setConstant("DEFAULT_OBJECT_TYPE", runtime.newFixnum(BERTags.UTF8_STRING));
 
+        final ThreadContext context = runtime.getCurrentContext();
         RubyHash hash = new RubyHash(runtime, runtime.newFixnum(BERTags.UTF8_STRING));
-        hash.op_aset(runtime.getCurrentContext(), runtime.newString("C"),runtime.newFixnum(BERTags.PRINTABLE_STRING));
-        hash.op_aset(runtime.getCurrentContext(), runtime.newString("countryName"),runtime.newFixnum(BERTags.PRINTABLE_STRING));
-        hash.op_aset(runtime.getCurrentContext(), runtime.newString("serialNumber"),runtime.newFixnum(BERTags.PRINTABLE_STRING));
-        hash.op_aset(runtime.getCurrentContext(), runtime.newString("dnQualifier"),runtime.newFixnum(BERTags.PRINTABLE_STRING));
-        hash.op_aset(runtime.getCurrentContext(), runtime.newString("DC"),runtime.newFixnum(BERTags.IA5_STRING));
-        hash.op_aset(runtime.getCurrentContext(), runtime.newString("domainComponent"),runtime.newFixnum(BERTags.IA5_STRING));
-        hash.op_aset(runtime.getCurrentContext(), runtime.newString("emailAddress"),runtime.newFixnum(BERTags.IA5_STRING));
-        cX509Name.setConstant("OBJECT_TYPE_TEMPLATE", hash);
+        hash.op_aset(context, runtime.newString("C"), runtime.newFixnum(BERTags.PRINTABLE_STRING));
+        hash.op_aset(context, runtime.newString("countryName"), runtime.newFixnum(BERTags.PRINTABLE_STRING));
+        hash.op_aset(context, runtime.newString("serialNumber"), runtime.newFixnum(BERTags.PRINTABLE_STRING));
+        hash.op_aset(context, runtime.newString("dnQualifier"), runtime.newFixnum(BERTags.PRINTABLE_STRING));
+        hash.op_aset(context, runtime.newString("DC"), runtime.newFixnum(BERTags.IA5_STRING));
+        hash.op_aset(context, runtime.newString("domainComponent"), runtime.newFixnum(BERTags.IA5_STRING));
+        hash.op_aset(context, runtime.newString("emailAddress"), runtime.newFixnum(BERTags.IA5_STRING));
+        _Name.setConstant("OBJECT_TYPE_TEMPLATE", hash);
+    }
 
-        cX509Name.includeModule(runtime.getComparable());
+    static RubyClass _Name(final Ruby runtime) {
+        return _X509(runtime).getClass("Name");
     }
 
     public static final int COMPAT = 0;
@@ -213,9 +218,9 @@ public class X509Name extends RubyObject {
         if ( dn instanceof RubyArray ) {
             RubyArray ary = (RubyArray)dn;
 
-            if(template.isNil()) {
-                template = runtime.getClassFromPath("OpenSSL::X509::Name").getConstant("OBJECT_TYPE_TEMPLATE");
-            }
+            final RubyClass _Name = _Name(runtime);
+
+            if ( template.isNil() ) template = _Name.getConstant("OBJECT_TYPE_TEMPLATE");
 
             for (int i = 0; i < ary.size(); i++) {
                 IRubyObject obj = ary.eltOk(i);
@@ -232,7 +237,7 @@ public class X509Name extends RubyObject {
                 entry2 = arr.size() > 2 ? arr.eltOk(2) : context.nil;
 
                 if (entry2.isNil()) entry2 = template.callMethod(context, "[]", entry0);
-                if (entry2.isNil()) entry2 = runtime.getClassFromPath("OpenSSL::X509::Name").getConstant("DEFAULT_OBJECT_TYPE");
+                if (entry2.isNil()) entry2 = _Name.getConstant("DEFAULT_OBJECT_TYPE");
 
                 add_entry(context, entry0, entry1, entry2);
             }
@@ -244,8 +249,9 @@ public class X509Name extends RubyObject {
                 //StringBuilder b = new StringBuilder();
                 //printASN(seq, b);
                 fromASN1Sequence(seq);
-            } catch(IOException e) { //Do not catch Exception. Want to see nullpointer stacktrace.
-                throw newX509NameError(runtime, e.getClass().getName() + ":" + e.getLocalizedMessage());
+            }
+            catch (IOException e) { //Do not catch Exception. Want to see nullpointer stacktrace.
+                throw newNameError(runtime, e.getClass().getName() + ":" + e.getLocalizedMessage());
             }
         }
         return this;
@@ -311,11 +317,11 @@ public class X509Name extends RubyObject {
         try {
             oid_v = getObjectIdentifier(oid);
         } catch (IllegalArgumentException e) {
-            throw newX509NameError(getRuntime(), "invalid field name: " + e.getMessage());
+            throw newNameError(getRuntime(), "invalid field name: " + e.getMessage());
         }
 
         if (null == oid_v) {
-            throw newX509NameError(getRuntime(), null);
+            throw newNameError(getRuntime(), null);
         }
 
         oids.add(oid_v);
@@ -350,8 +356,8 @@ else
 
         StringBuilder sb = new StringBuilder();
         Map<ASN1ObjectIdentifier, String>  lookup = ASN1.getSymLookup(getRuntime());
-        Iterator<Object> oiter = null;
-        Iterator<Object> viter = null;
+        Iterator<Object> oiter;
+        Iterator<Object> viter;
         if(flag == RFC2253) {
             List<Object> ao = new ArrayList<Object>(oids);
             List<Object> av = new ArrayList<Object>(values);
@@ -469,7 +475,7 @@ else
         try {
             return RubyString.newString(getRuntime(), seq.getEncoded(ASN1Encoding.DER));
         } catch (IOException ex) {
-            throw newX509NameError(getRuntime(), ex.getMessage());
+            throw newNameError(getRuntime(), ex.getMessage());
         }
     }
 
@@ -484,12 +490,12 @@ else
             }
             return new X509DefaultEntryConverter().getConvertedValue(oid, value);
         } catch (Exception e) {
-            throw newX509NameError(getRuntime(), e.getMessage());
+            throw newNameError(getRuntime(), e.getMessage());
         }
     }
 
-    private static RaiseException newX509NameError(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::X509::NameError", message);
+    private static RaiseException newNameError(Ruby runtime, String message) {
+        return Utils.newError(runtime, _X509(runtime).getClass("NameError"), message);
     }
 
 }// X509Name

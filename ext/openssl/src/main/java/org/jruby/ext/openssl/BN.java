@@ -34,7 +34,6 @@ import java.util.Random;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -43,7 +42,6 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -112,16 +110,16 @@ public class BN extends RubyObject {
         return newBN(getRuntime(), this.value);
     }
 
-    public IRubyObject initialize_copy(IRubyObject original) {
-        super.initialize_copy(original);
-        if (this != original) {
-            this.value = ((BN)original).value;
+    public IRubyObject initialize_copy(IRubyObject that) {
+        super.initialize_copy(that);
+        if (this != that) {
+            this.value = ((BN) that).value;
         }
         return this;
     }
 
     @JRubyMethod(name="initialize", required=1, optional=1, visibility = Visibility.PRIVATE)
-    public synchronized IRubyObject bn_initialize(IRubyObject[] args) {
+    public synchronized IRubyObject _initialize(IRubyObject[] args) {
         Ruby runtime = getRuntime();
         if (this.value != BigInteger.ZERO) { // already initialized
             throw newBNError(runtime, "illegal initialization");
@@ -833,7 +831,7 @@ public class BN extends RubyObject {
         }
 
         if ( arg instanceof BN ) return ((BN) arg).value;
-        
+
         throw arg.getRuntime().newTypeError("Cannot convert into OpenSSL::BN");
     }
 

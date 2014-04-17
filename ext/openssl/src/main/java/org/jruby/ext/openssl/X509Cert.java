@@ -76,6 +76,8 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
+import static org.jruby.ext.openssl.X509._X509;
+
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
@@ -221,9 +223,7 @@ public class X509Cert extends RubyObject {
     }
 
     private static RubyClass _CertificateError(final Ruby runtime) {
-        final RubyModule _OpenSSL = runtime.getModule("OpenSSL");
-        final RubyModule _X509 = (RubyModule) _OpenSSL.getConstant("X509");
-        return _X509.getClass("CertificateError");
+        return _X509(runtime).getClass("CertificateError");
     }
 
     public static RaiseException newCertificateError(final Ruby runtime, Exception e) {
