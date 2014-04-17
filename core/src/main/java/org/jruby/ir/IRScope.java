@@ -629,7 +629,7 @@ public abstract class IRScope implements ParseResult {
 
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
-    public void prepareForCompilation() {
+    public List<BasicBlock> prepareForCompilation() {
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) {
             runCompilerPasses(getManager().getJITPasses(this));
@@ -652,6 +652,8 @@ public abstract class IRScope implements ParseResult {
         checkRelinearization();
 
         prepareInstructionsForInterpretation();
+
+        return buildLinearization();
     }
 
     private void setupLinearization() {
@@ -667,19 +669,20 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    private List<Object[]> buildJVMExceptionTable() {
-        List<Object[]> etEntries = new ArrayList<Object[]>();
-        for (BasicBlock b: linearizedBBList) {
-            BasicBlock rBB = cfg().getRescuerBBFor(b);
-            if (rBB != null) {
-                etEntries.add(new Object[] {b.getLabel(), rBB.getLabel(), Throwable.class});
+    public Map<BasicBlock, Label> buildJVMExceptionTable() {
+        Map<BasicBlock, Label> map = new HashMap<BasicBlock, Label>();
+
+        for (BasicBlock bb: buildLinearization()) {
+            BasicBlock rescueBB = cfg().getRescuerBBFor(bb);
+            if (rescueBB != null) {
+                map.put(bb, rescueBB.getLabel());
             }
         }
 
         // SSS FIXME: This could be optimized by compressing entries for adjacent BBs that have identical handlers
         // This could be optimized either during generation or as another pass over the table.  But, if the JVM
         // does that already, do we need to bother with it?
-        return etEntries;
+        return map;
     }
 
     private static Label[] catLabels(Label[] labels, Label cat) {

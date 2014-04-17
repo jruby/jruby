@@ -1,6 +1,7 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
+import java.util.HashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -206,34 +207,33 @@ public class JVMVisitor extends IRVisitor {
         emitScriptBody(script);
     }
 
-    public void emitScope(IRScope scope, String name, Signature signature) {
-        CFG cfg = scope.getCFG();
+    private void logScope(IRScope scope) {
+        StringBuilder b = new StringBuilder();
 
+        b.append("\n\nLinearized instructions for JIT:\n");
+
+        int i = 0;
+        for (BasicBlock bb : scope.buildLinearization()) {
+            for (Instr instr : bb.getInstrsArray()) {
+                if (i > 0) b.append("\n");
+
+                b.append("  ").append(i).append('\t').append(instr);
+
+                i++;
+            }
+        }
+
+        LOG.info("Starting JVM compilation on scope " + scope);
+        LOG.info(b.toString());
+    }
+
+    public void emitScope(IRScope scope, String name, Signature signature) {
         this.currentScope = scope;
 
-        Instr[] instrs = scope.getInstrsForInterpretation(false);
+        List <BasicBlock> bbs = scope.prepareForCompilation();
+        Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
 
-        if (Options.IR_COMPILER_DEBUG.load()) {
-            StringBuilder b = new StringBuilder();
-
-            b.append("\n\nLinearized instructions for JIT:\n");
-
-            for (BasicBlock bb : scope.buildLinearization()) {
-                int instrIdx = 0;
-                b.append("Block #" + bb.getID() + "\n");
-                BasicBlock rescueBB = cfg.getRescuerBBFor(bb);
-                if (rescueBB != null) b.append("Rescued by #" + rescueBB.getID() + "\n");
-
-                for (Instr instr : instrs) {
-                    b.append("  ").append(instrIdx++).append('\t').append(instr).append("\n");
-                }
-                
-                b.append("\n");
-            }
-
-            LOG.info("Starting JVM compilation on scope " + scope);
-            LOG.info(b.toString());
-        }
+        if (Options.IR_COMPILER_DEBUG.load()) logScope(scope);
 
         emitClosures(scope);
 
@@ -251,32 +251,42 @@ public class JVMVisitor extends IRVisitor {
 
         IRBytecodeAdapter m = jvm.method();
 
-        for (BasicBlock b : scope.buildLinearization()) {
+        int numberOfLabels = bbs.size();
+        org.objectweb.asm.Label[] labels = new org.objectweb.asm.Label[numberOfLabels];
+        org.objectweb.asm.Label[] starts = new org.objectweb.asm.Label[numberOfLabels];
+        org.objectweb.asm.Label[] ends = new org.objectweb.asm.Label[numberOfLabels];
+        Map<Label, org.objectweb.asm.Label> mappings = new HashMap<Label, org.objectweb.asm.Label>();
 
-            // always mark start of block
-            org.objectweb.asm.Label start = jvm.methodData().getLabel(b.getLabel());
-            m.mark(start);
+        org.objectweb.asm.Label previous = null;
+        for (int i = 0; i < numberOfLabels; i++) {
+            Label label = bbs.get(i).getLabel();
+            labels[i] = jvm.methodData().getLabel(label);
+            mappings.put(label, labels[i]);
 
-            // if block is rescued, prepare end of block and set up try/catch
-            BasicBlock rescuerBB = cfg.getRescuerBBFor(b);
-            org.objectweb.asm.Label finish = null, target = null;
-            if (rescuerBB != null) {
-                finish = new org.objectweb.asm.Label();
-                target = jvm.methodData().getLabel(rescuerBB.getLabel());
-
-                jvm.method().adapter.trycatch(start, finish, target, p(Throwable.class));
+            if (previous != null) {
+                starts[i-1] = previous;
+                ends[i-1] = labels[i];
             }
 
-            // visit all instrs
-            for (Instr instr : b.getInstrs()) {
+            previous = labels[i];
+        }
+        org.objectweb.asm.Label lastLabel = new org.objectweb.asm.Label();
+        starts[numberOfLabels - 1] = previous;
+        ends[numberOfLabels - 1] = lastLabel;
+
+        for (int i = 0; i < numberOfLabels; i++) {
+            jvm.method().adapter.trycatch(starts[i], ends[1], mappings.get(exceptionTable.get(bbs.get(i))), p(Throwable.class));
+        }
+
+        for (BasicBlock bb : bbs) {
+            m.mark(jvm.methodData().getLabel(bb.getLabel()));
+
+            for (Instr instr : bb.getInstrs()) {
                 visit(instr);
             }
-
-            // if block is rescued, mark end
-            if (rescuerBB != null) {
-                m.mark(finish);
-            }
         }
+
+        m.mark(lastLabel);
 
         jvm.popmethod();
     }
@@ -1223,7 +1233,6 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void LabelInstr(LabelInstr labelinstr) {
-        jvm.method().mark(getJVMLabel(labelinstr.getLabel()));
     }
 
     @Override
