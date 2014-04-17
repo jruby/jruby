@@ -1,7 +1,6 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
-import java.util.HashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -23,7 +22,6 @@ import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
-import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.AliasInstr;
 import org.jruby.ir.instructions.AttrAssignInstr;
 import org.jruby.ir.instructions.BacktickInstr;
@@ -119,7 +117,6 @@ import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.MethodHandle;
 import org.jruby.ir.representations.BasicBlock;
-import org.jruby.ir.representations.CFG;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
@@ -139,8 +136,6 @@ import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningClassLoader;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.jruby.RubyArray;
@@ -1407,8 +1402,22 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void PutClassVariableInstr(PutClassVariableInstr putclassvariableinstr) {
-        // Does it make sense to try to implement this without GetClassVarContainerModuleInstr working?
-        super.PutClassVariableInstr(putclassvariableinstr);
+        visit(putclassvariableinstr.getValue());
+        visit(putclassvariableinstr.getTarget());
+
+        // don't understand this logic; duplicated from interpreter
+        if (putclassvariableinstr.getValue() instanceof CurrentScope) {
+            jvm.method().adapter.pop2();
+            return;
+        }
+
+        // hmm.
+        jvm.method().adapter.checkcast(p(RubyModule.class));
+        jvm.method().adapter.swap();
+        jvm.method().adapter.ldc(putclassvariableinstr.getRef());
+        jvm.method().adapter.swap();
+        jvm.method().adapter.invokevirtual(p(RubyModule.class), "setClassVar", sig(IRubyObject.class, String.class, IRubyObject.class));
+        jvm.method().adapter.pop();
     }
 
     @Override
