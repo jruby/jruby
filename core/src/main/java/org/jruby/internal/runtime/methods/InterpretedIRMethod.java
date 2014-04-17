@@ -157,6 +157,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
         if (box.callCount++ >= Options.JIT_THRESHOLD.load()) {
 
+            box.callCount = -1; // disable...we get one shot
             Ruby runtime = context.runtime;
             RubyInstanceConfig config = runtime.getInstanceConfig();
 
@@ -178,8 +179,6 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
                         LOG.info("done jitting: " + method);
                     }
                 } catch (Exception e) {
-                    box.callCount = -1; // disable
-
                     if (config.isJitLoggingVerbose()) {
                         LOG.info("failed to jit: " + method);
                         StringWriter trace = new StringWriter();
