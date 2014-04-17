@@ -1130,18 +1130,15 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetClassVarContainerModuleInstr(GetClassVarContainerModuleInstr getclassvarcontainermoduleinstr) {
-        // Logic here has to diverge a lot due to down stream checks for null "object" operand
-
-        if (getclassvarcontainermoduleinstr.getObject() == null) {
-            // simple path
-            jvm.method().loadContext();
-            visit(getclassvarcontainermoduleinstr.getStartingScope());
-            jvm.method().invokeIRHelper("getModuleFromScope", sig(RubyModule.class, ThreadContext.class, StaticScope.class));
-            jvmStoreLocal(getclassvarcontainermoduleinstr.getResult());
+        jvm.method().loadContext();
+        visit(getclassvarcontainermoduleinstr.getStartingScope());
+        if (getclassvarcontainermoduleinstr.getObject() != null) {
+            visit(getclassvarcontainermoduleinstr.getObject());
         } else {
-            // bail
-            super.GetClassVarContainerModuleInstr(getclassvarcontainermoduleinstr);
+            jvm.method().adapter.aconst_null();
         }
+        jvm.method().invokeIRHelper("getModuleFromScope", sig(RubyModule.class, ThreadContext.class, StaticScope.class, IRubyObject.class));
+        jvmStoreLocal(getclassvarcontainermoduleinstr.getResult());
     }
 
     @Override

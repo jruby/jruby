@@ -592,7 +592,7 @@ public class IRRuntimeHelpers {
         module.defineAlias(newNameString, oldNameString);
     }
 
-    public static RubyModule getModuleFromScope(ThreadContext context, StaticScope scope) {
+    public static RubyModule getModuleFromScope(ThreadContext context, StaticScope scope, IRubyObject arg) {
         Ruby runtime = context.runtime;
         RubyModule rubyClass = scope.getModule();
 
@@ -603,6 +603,11 @@ public class IRRuntimeHelpers {
             if (scope.getPreviousCRefScope() == null) {
                 runtime.getWarnings().warn(IRubyWarnings.ID.CVAR_FROM_TOPLEVEL_SINGLETON_METHOD, "class variable access from toplevel singleton method");
             }
+        }
+
+        if ((scope == null) && (arg != null)) {
+            // We ran out of scopes to check -- look in arg's metaclass
+            rubyClass = arg.getMetaClass();
         }
 
         if (rubyClass == null) {
