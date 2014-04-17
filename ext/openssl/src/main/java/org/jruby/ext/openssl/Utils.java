@@ -93,12 +93,20 @@ public class Utils {
         return new RaiseException(rt, getClassFromPath(rt, path), message, nativeException);
     }
 
-    static RaiseException newRaiseException(Ruby runtime, RubyClass errorClass, String message, boolean nativeException) {
+    static RaiseException newRuntimeError(Ruby runtime, Exception e) {
+        return new RaiseException(runtime, runtime.getRuntimeError(), e.getMessage(), true);
+    }
+
+    static RaiseException newError(Ruby runtime, RubyClass errorClass, String message, boolean nativeException) {
         return new RaiseException(runtime, errorClass, message, nativeException);
     }
 
-    static RaiseException newRaiseException(Ruby runtime, RubyClass errorClass, Exception e) {
+    static RaiseException newError(Ruby runtime, RubyClass errorClass, Exception e) {
         return new RaiseException(runtime, errorClass, e.getMessage(), true);
+    }
+
+    static RaiseException newError(Ruby runtime, RubyClass errorClass, String msg) {
+        return new RaiseException(runtime, errorClass, msg, true);
     }
 
     @Deprecated
@@ -136,7 +144,7 @@ public class Utils {
     static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, Block block) {
         return self.getMetaClass().finvoke(context, self, name, block);
     }
-    
+
     static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         return invokeSuper(context, self, context.getFrameKlazz(), context.getFrameName(), args, block);
     }

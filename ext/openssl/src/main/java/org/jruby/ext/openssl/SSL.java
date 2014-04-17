@@ -98,8 +98,24 @@ public class SSL {
         throw Utils.newError(runtime, "OpenSSL::SSL::SSLError", t.getMessage());
     }
 
-    public static RaiseException newSSLError(Ruby runtime, Exception e) {
-        return SSLSocket.newSSLError(runtime, e);
+    public static RaiseException newSSLError(Ruby runtime, Exception exception) {
+        return Utils.newError(runtime, _SSL(runtime).getClass("SSLError"), exception);
+    }
+
+    public static RaiseException newSSLError(Ruby runtime, String message) {
+        return Utils.newError(runtime, _SSL(runtime).getClass("SSLError"), message, false);
+    }
+
+    public static RaiseException newSSLErrorWaitReadable(Ruby runtime, String message) {
+        return Utils.newError(runtime, _SSL(runtime).getClass("SSLErrorWaitReadable"), message, false);
+    }
+
+    public static RaiseException newSSLErrorWaitWritable(Ruby runtime, String message) {
+        return Utils.newError(runtime, _SSL(runtime).getClass("SSLErrorWaitWritable"), message, false);
+    }
+
+    static RubyModule _SSL(final Ruby runtime) {
+        return (RubyModule) runtime.getModule("OpenSSL").getConstant("SSL");
     }
 
 }// SSL

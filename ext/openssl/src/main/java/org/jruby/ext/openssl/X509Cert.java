@@ -226,12 +226,12 @@ public class X509Cert extends RubyObject {
         return _X509.getClass("CertificateError");
     }
 
-    static RaiseException newCertificateError(final Ruby runtime, Exception e) {
-        return Utils.newRaiseException(runtime, _CertificateError(runtime), e);
+    public static RaiseException newCertificateError(final Ruby runtime, Exception e) {
+        return Utils.newError(runtime, _CertificateError(runtime), e);
     }
 
     static RaiseException newCertificateError(final Ruby runtime, String msg) {
-        return Utils.newRaiseException(runtime, _CertificateError(runtime), msg, false);
+        return Utils.newError(runtime, _CertificateError(runtime), msg);
     }
 
     @Override
