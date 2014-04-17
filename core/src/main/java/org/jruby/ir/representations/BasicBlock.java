@@ -25,11 +25,15 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
     private boolean     isRescueEntry;  // Is this basic block entry of a rescue?
     private Instr[]     instrsArray;
 
-    public BasicBlock(CFG c, Label l) {
-        label         = l;
-        cfg           = c;
-        id            = c.getNextBBID();
+    public BasicBlock(CFG cfg, Label label) {
+        this.label = label;
+        this.cfg = cfg;
+        id = cfg.getNextBBID();
         isRescueEntry = false;
+
+        assert label != null : "label is null";
+        assert cfg != null : "cfg is null";
+
         initInstrs();
     }
 
