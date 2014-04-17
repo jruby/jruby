@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
+import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -41,6 +42,9 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.runtime.Visibility;
+
+import static org.jruby.ext.openssl.OpenSSLReal.isDebug;
+import static org.jruby.ext.openssl.OpenSSLReal.warn;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -62,42 +66,62 @@ public class HMAC extends RubyObject {
         cHMAC.defineAnnotatedMethods(HMAC.class);
     }
 
-    private static Mac getMacInstance(String algorithmName) throws NoSuchAlgorithmException {
-        final String algorithmSuffix = algorithmName.replaceAll("-", "");
+    private static Mac getMacInstance(final String algorithmName) throws NoSuchAlgorithmException {
+        // final String algorithmSuffix = algorithmName.replaceAll("-", "");
+        final StringBuilder algName = new StringBuilder(5 + algorithmName.length());
+        algName.append("HMAC"); // .append(algorithmSuffix);
+        for ( int i = 0; i < algorithmName.length(); i++ ) {
+            char c = algorithmName.charAt(i);
+            if ( c != '-' ) algName.append(c);
+        }
         try {
-            return SecurityHelper.getMac("HMAC" + algorithmSuffix);
+            return SecurityHelper.getMac(algName.toString());
         } // some algorithms need the - removed; this is ugly, I know.
-        catch (NoSuchAlgorithmException nsae) {
-            return SecurityHelper.getMac("HMAC-" + algorithmSuffix);
+        catch (NoSuchAlgorithmException e) {
+            algName.insert(5, '-'); // "HMAC-" + algorithmSuffix
+            return SecurityHelper.getMac(algName.toString());
         }
     }
 
     @JRubyMethod(name = "digest", meta = true)
-    public static IRubyObject s_digest(IRubyObject recv, IRubyObject digest, IRubyObject key, IRubyObject data) {
-        final String algorithm = getDigestAlgorithmName(digest);
+    public static IRubyObject digest(IRubyObject self, IRubyObject digest, IRubyObject key, IRubyObject data) {
+        final Ruby runtime = self.getRuntime();
+        final String algName = getDigestAlgorithmName(digest);
         final byte[] keyBytes = key.convertToString().getBytes();
+        final ByteList bytes = data.convertToString().getByteList();
         try {
-            Mac mac = getMacInstance(algorithm);
-            mac.init(new SecretKeySpec(keyBytes, mac.getAlgorithm()));
-            return RubyString.newString(recv.getRuntime(), mac.doFinal(data.convertToString().getBytes()));
+            Mac mac = getMacInstance(algName);
+            mac.init( new SecretKeySpec(keyBytes, mac.getAlgorithm()) );
+            mac.update(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
+            return runtime.newString( new ByteList(mac.doFinal(), false) );
         }
-        catch (Exception e) {
-            e.printStackTrace();
-            throw recv.getRuntime().newNotImplementedError(e.getMessage());
+        catch (NoSuchAlgorithmException e) {
+            throw runtime.newNotImplementedError("Unsupported MAC algorithm (HMAC[-]" + algName + ")");
+        }
+        catch (GeneralSecurityException e) {
+            if ( isDebug(runtime) ) e.printStackTrace(runtime.getOut());
+            throw runtime.newNotImplementedError(e.getMessage());
         }
     }
 
     @JRubyMethod(name = "hexdigest", meta = true)
-    public static IRubyObject s_hexdigest(IRubyObject recv, IRubyObject digest, IRubyObject key, IRubyObject data) {
-        final String algorithm = getDigestAlgorithmName(digest);
+    public static IRubyObject hexdigest(IRubyObject self, IRubyObject digest, IRubyObject key, IRubyObject data) {
+        final Ruby runtime = self.getRuntime();
+        final String algName = getDigestAlgorithmName(digest);
         final byte[] keyBytes = key.convertToString().getBytes();
+        final ByteList bytes = data.convertToString().getByteList();
         try {
-            Mac mac = getMacInstance(algorithm);
-            mac.init(new SecretKeySpec(keyBytes, mac.getAlgorithm()));
-            return RubyString.newString(recv.getRuntime(), ByteList.plain(Utils.toHex(mac.doFinal(data.convertToString().getBytes()))));
+            final Mac mac = getMacInstance(algName);
+            mac.init( new SecretKeySpec(keyBytes, mac.getAlgorithm()) );
+            mac.update(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
+            return runtime.newString( hexBytes( mac.doFinal() ) );
         }
-        catch (Exception e) {
-            throw recv.getRuntime().newNotImplementedError(e.getMessage());
+        catch (NoSuchAlgorithmException e) {
+            throw runtime.newNotImplementedError("Unsupported MAC algorithm (HMAC[-]" + algName + ")");
+        }
+        catch (GeneralSecurityException e) {
+            if ( isDebug(runtime) ) e.printStackTrace(runtime.getOut());
+            throw runtime.newNotImplementedError(e.getMessage());
         }
     }
 
@@ -107,16 +131,21 @@ public class HMAC extends RubyObject {
 
     private Mac mac;
     private byte[] key;
-    private StringBuffer data = new StringBuffer();
+    private final StringBuilder data = new StringBuilder(64);
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(IRubyObject kay, IRubyObject digest) {
-        String algoName = getDigestAlgorithmName(digest);
+    public IRubyObject initialize(IRubyObject key, IRubyObject digest) {
+        final String algName = getDigestAlgorithmName(digest);
         try {
-            mac = getMacInstance(algoName);
-            key = kay.convertToString().getBytes();
-            mac.init(new SecretKeySpec(key, mac.getAlgorithm()));
-        } catch (Exception e) {
+            this.mac = getMacInstance(algName);
+            this.key = key.convertToString().getBytes();
+            mac.init( new SecretKeySpec(this.key, mac.getAlgorithm()) );
+        }
+        catch (NoSuchAlgorithmException e) {
+            throw getRuntime().newNotImplementedError("Unsupported MAC algorithm (HMAC[-]" + algName + ")");
+        }
+        catch (GeneralSecurityException e) {
+            if ( isDebug(getRuntime()) ) e.printStackTrace(getRuntime().getOut());
             throw getRuntime().newNotImplementedError(e.getMessage());
         }
         return this;
@@ -124,35 +153,36 @@ public class HMAC extends RubyObject {
 
     @Override
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    public IRubyObject initialize_copy(IRubyObject obj) {
-        if(this == obj) {
-            return this;
-        }
+    public IRubyObject initialize_copy(final IRubyObject obj) {
+        if ( this == obj ) return this;
+
         checkFrozen();
-        String name = ((HMAC)obj).mac.getAlgorithm();
+
+        final HMAC that = ((HMAC) obj);
+        final String algName = that.mac.getAlgorithm();
         try {
-            mac = SecurityHelper.getMac(name);
-            key = ((HMAC)obj).key;
-            mac.init(new SecretKeySpec(key, name));
-        } catch(Exception e) {
-            throw getRuntime().newNotImplementedError("Unsupported MAC algorithm (" + name + ")");
+            this.mac = SecurityHelper.getMac(algName);
+            this.key = that.key;
+            mac.init( new SecretKeySpec(key, algName) );
+        }
+        catch (NoSuchAlgorithmException e) {
+            throw getRuntime().newNotImplementedError("Unsupported MAC algorithm (" + algName + ")");
+        }
+        catch (GeneralSecurityException e) {
+            if ( isDebug(getRuntime()) ) e.printStackTrace(getRuntime().getOut());
+            throw getRuntime().newNotImplementedError(e.getMessage());
         }
 
-        data = new StringBuffer(((HMAC)obj).data.toString());
+        data.setLength(0);
+        data.append( that.data );
 
         return this;
     }
 
-    @JRubyMethod(name={"update", "<<"})
-    public IRubyObject update(IRubyObject obj) {
+    @JRubyMethod(name = { "update", "<<" })
+    public IRubyObject update(final IRubyObject obj) {
         data.append(obj);
         return this;
-    }
-
-    @JRubyMethod
-    public IRubyObject digest() {
-        mac.reset();
-        return RubyString.newString(getRuntime(), getSignatureBytes());
     }
 
     @JRubyMethod
@@ -161,27 +191,34 @@ public class HMAC extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name={"hexdigest","inspect","to_s"})
+    @JRubyMethod
+    public IRubyObject digest() {
+        return RubyString.newString( getRuntime(), getSignatureBytes() );
+    }
+
+    @JRubyMethod(name = { "hexdigest", "inspect", "to_s" })
     public IRubyObject hexdigest() {
-        return RubyString.newString(getRuntime(), ByteList.plain(Utils.toHex(getSignatureBytes())));
+        return getRuntime().newString( hexBytes(getSignatureBytes()) );
     }
 
     String getAlgorithm() {
-        return this.mac.getAlgorithm();
+        return mac.getAlgorithm();
     }
 
     private byte[] getSignatureBytes() {
         mac.reset();
-        return mac.doFinal(data.toString().getBytes());
+        return mac.doFinal( data.toString().getBytes() );
     }
 
-    private static String getDigestAlgorithmName(IRubyObject digest) {
-        String algoName = null;
-        if (digest instanceof Digest) {
-            algoName = ((Digest) digest).getShortAlgorithm();
-        } else {
-            algoName = digest.asString().toString();
+    private static String getDigestAlgorithmName(final IRubyObject digest) {
+        if ( digest instanceof Digest ) {
+            return ((Digest) digest).getShortAlgorithm();
         }
-        return algoName;
+        return digest.asString().toString();
     }
+
+    private static ByteList hexBytes(final byte[] input) {
+        return Utils.hexBytes(input, new ByteList(input.length * 3));
+    }
+
 }// HMAC
