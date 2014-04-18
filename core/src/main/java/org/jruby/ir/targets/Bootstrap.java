@@ -12,16 +12,16 @@ import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.internal.runtime.methods.CompiledMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.internal.runtime.methods.JittedMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
-import org.jruby.ir.Interp;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
@@ -137,8 +137,12 @@ public class Bootstrap {
                 arity = type.parameterCount() - 4;
 
                 Signature sig = JRubyCallSite.STANDARD_SITE_SIG;
-                for (int i = 0; i < arity; i++) {
-                    sig = sig.appendArg("arg" + i, IRubyObject.class);
+                if (arity == 1 && type.parameterType(3) == IRubyObject[].class) {
+                    sig = sig.appendArg("args", IRubyObject[].class);
+                } else {
+                    for (int i = 0; i < arity; i++) {
+                        sig = sig.appendArg("arg" + i, IRubyObject.class);
+                    }
                 }
                 sig = sig.appendArg("block", Block.class);
                 fullSignature = signature = sig;
@@ -146,8 +150,12 @@ public class Bootstrap {
                 arity = type.parameterCount() - 3;
 
                 Signature sig = JRubyCallSite.STANDARD_SITE_SIG;
-                for (int i = 0; i < arity; i++) {
-                    sig = sig.appendArg("arg" + i, IRubyObject.class);
+                if (arity == 1 && type.parameterType(3) == IRubyObject[].class) {
+                    sig = sig.appendArg("args", IRubyObject[].class);
+                } else {
+                    for (int i = 0; i < arity; i++) {
+                        sig = sig.appendArg("arg" + i, IRubyObject.class);
+                    }
                 }
                 signature = sig;
                 fullSignature = sig.appendArg("block", Block.class);
@@ -629,56 +637,63 @@ public class Bootstrap {
         MethodHandle mh = null;
         SmartBinder binder = null;
         if (method.getNativeCall() != null) {
-            int nativeArgCount = InvocationLinker.getNativeArgCount(method, method.getNativeCall());
+            int nativeArgCount = getNativeArgCount(method, method.getNativeCall());
+
             DynamicMethod.NativeCall nc = method.getNativeCall();
-            if (nativeArgCount < 4) { // native methods only support arity 3
-                if (method.getArity().getValue() == site.arity) {
-                    // nothing to do
-                    binder = SmartBinder.from(lookup(), site.signature);
-                } else {
-                    // arity mismatch...leave null and use DynamicMethod.call below
-                }
+
+            if (nc.isJava()) {
+                // not supported yet, use DynamicMethod.call
             } else {
-                if (site.arity == -1) {
-                    // ok, already passing []
-                    binder = SmartBinder.from(lookup(), site.signature);
-                } else if (site.arity == 0) {
-                    // no args, insert dummy
-                    binder = SmartBinder.from(lookup(), site.signature)
-                            .insert(2, "args", IRubyObject.NULL_ARRAY);
+                if (nativeArgCount >= 0) { // native methods only support arity 3
+                    if (nativeArgCount == site.arity) {
+                        // nothing to do
+                        binder = SmartBinder.from(lookup(), site.signature);
+                    } else {
+                        // arity mismatch...leave null and use DynamicMethod.call below
+                    }
                 } else {
-                    // 1-3 args, collect into []
-                    binder = SmartBinder.from(lookup(), site.signature)
-                            .collect("args", "arg.*");
-                }
-            }
-
-            if (binder != null) {
-
-                // clean up non-arguments, ordering, types
-                if (!nc.hasContext()) {
-                    binder = binder.drop("context");
-                }
-
-                if (nc.hasBlock() && !block) {
-                    binder = binder.append("block", Block.NULL_BLOCK);
-                } else if (!nc.hasBlock() && block) {
-                    binder = binder.drop("block");
+                    // varargs
+                    if (site.arity == -1) {
+                        // ok, already passing []
+                        binder = SmartBinder.from(lookup(), site.signature);
+                    } else if (site.arity == 0) {
+                        // no args, insert dummy
+                        binder = SmartBinder.from(lookup(), site.signature)
+                                .insert(2, "args", IRubyObject.NULL_ARRAY);
+                    } else {
+                        // 1 or more args, collect into []
+                        binder = SmartBinder.from(lookup(), site.signature)
+                                .collect("args", "arg.*");
+                    }
                 }
 
-                if (nc.isStatic()) {
-                    mh = binder
-                            .permute("context", "self", "arg*", "block") // filter caller
-                            .cast(nc.getNativeReturn(), nc.getNativeSignature())
-                            .invokeStaticQuiet(LOOKUP, nc.getNativeTarget(), nc.getNativeName())
-                            .handle();
-                } else {
-                    mh = binder
-                            .permute("self", "context", "arg*", "block") // filter caller, move self
-                            .castArg("self", nc.getNativeTarget())
-                            .castVirtual(nc.getNativeReturn(), nc.getNativeTarget(), nc.getNativeSignature())
-                            .invokeVirtualQuiet(LOOKUP, nc.getNativeName())
-                            .handle();
+                if (binder != null) {
+
+                    // clean up non-arguments, ordering, types
+                    if (!nc.hasContext()) {
+                        binder = binder.drop("context");
+                    }
+
+                    if (nc.hasBlock() && !block) {
+                        binder = binder.append("block", Block.NULL_BLOCK);
+                    } else if (!nc.hasBlock() && block) {
+                        binder = binder.drop("block");
+                    }
+
+                    if (nc.isStatic()) {
+                        mh = binder
+                                .permute("context", "self", "arg*", "block") // filter caller
+                                .cast(nc.getNativeReturn(), nc.getNativeSignature())
+                                .invokeStaticQuiet(LOOKUP, nc.getNativeTarget(), nc.getNativeName())
+                                .handle();
+                    } else {
+                        mh = binder
+                                .permute("self", "context", "arg*", "block") // filter caller, move self
+                                .castArg("self", nc.getNativeTarget())
+                                .castVirtual(nc.getNativeReturn(), nc.getNativeTarget(), nc.getNativeSignature())
+                                .invokeVirtualQuiet(LOOKUP, nc.getNativeName())
+                                .handle();
+                    }
                 }
             }
         }
@@ -757,6 +772,92 @@ public class Bootstrap {
         }
 
         return mh;
+    }
+
+    public static int getNativeArgCount(DynamicMethod method, DynamicMethod.NativeCall nativeCall) {
+        // if non-Java, must:
+        // * exactly match arities or both are [] boxed
+        // * 3 or fewer arguments
+        int nativeArgCount = (method instanceof CompiledMethod || method instanceof JittedMethod)
+                ? getRubyArgCount(nativeCall.getNativeSignature())
+                : getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
+        return nativeArgCount;
+    }
+
+    private static int getArgCount(Class[] args, boolean isStatic) {
+        int length = args.length;
+        boolean hasContext = false;
+        if (isStatic) {
+            if (args.length > 1 && args[0] == ThreadContext.class) {
+                length--;
+                hasContext = true;
+            }
+
+            // remove self object
+            assert args.length >= 1;
+            length--;
+
+            if (args.length > 1 && args[args.length - 1] == Block.class) {
+                length--;
+            }
+
+            if (length == 1) {
+                if (hasContext && args[2] == IRubyObject[].class) {
+                    length = -1;
+                } else if (args[1] == IRubyObject[].class) {
+                    length = -1;
+                }
+            }
+        } else {
+            if (args.length > 0 && args[0] == ThreadContext.class) {
+                length--;
+                hasContext = true;
+            }
+
+            if (args.length > 0 && args[args.length - 1] == Block.class) {
+                length--;
+            }
+
+            if (length == 1) {
+                if (hasContext && args[1] == IRubyObject[].class) {
+                    length = -1;
+                } else if (args[0] == IRubyObject[].class) {
+                    length = -1;
+                }
+            }
+        }
+        return length;
+    }
+
+    private static int getRubyArgCount(Class[] args) {
+        int length = args.length;
+        boolean hasContext = false;
+
+        // remove script object
+        length--;
+
+        if (args.length > 2 && args[1] == ThreadContext.class) {
+            length--;
+            hasContext = true;
+        }
+
+        // remove self object
+        assert args.length >= 2;
+        length--;
+
+        if (args.length > 2 && args[args.length - 1] == Block.class) {
+            length--;
+        }
+
+        if (length == 1) {
+            if (hasContext && args[3] == IRubyObject[].class) {
+                length = -1;
+            } else if (args[2] == IRubyObject[].class) {
+                length = -1;
+            }
+        }
+
+        return length;
     }
 
     public static IRubyObject invokeSelfSimple(InvokeSite site, ThreadContext context, IRubyObject caller, IRubyObject self, Block block) {
