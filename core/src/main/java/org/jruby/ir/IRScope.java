@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 
@@ -82,7 +84,7 @@ import static org.jruby.ir.IRFlags.*;
 public abstract class IRScope implements ParseResult {
     private static final Logger LOG = LoggerFactory.getLogger("IRScope");
 
-    private static Integer globalScopeCount = 0;
+    private static AtomicInteger globalScopeCount = new AtomicInteger();
 
     /** Unique global scope id */
     private int scopeId;
@@ -182,7 +184,7 @@ public abstract class IRScope implements ParseResult {
         this.flags = s.flags.clone();
 
         this.localVars = new HashMap<String, LocalVariable>(s.localVars);
-        synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
+        this.scopeId = globalScopeCount.getAndIncrement();
         this.relinearizeCFG = false;
 
         setupLexicalContainment();
