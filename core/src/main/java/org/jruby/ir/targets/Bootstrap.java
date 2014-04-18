@@ -373,7 +373,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 0, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self);
@@ -390,7 +390,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 1, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0);
@@ -407,7 +407,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 2, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, arg1);
@@ -424,7 +424,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, arg1, arg2);
@@ -441,7 +441,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
 
         site.setTarget(mh);
         // FIXME: this varargs path needs to splat to call against handle
@@ -459,7 +459,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 0, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self);
@@ -477,7 +477,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 0, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, block);
@@ -495,7 +495,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 1, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, block);
@@ -513,7 +513,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 2, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, arg1, block);
@@ -531,7 +531,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, arg1, arg2, block);
@@ -549,7 +549,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
 
         site.setTarget(mh);
         // FIXME: this varargs path needs to splat to call against handle
@@ -568,7 +568,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 0, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, block);
@@ -605,7 +605,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 1, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
 
         mh = foldArguments(
                 mh,
@@ -625,7 +625,7 @@ public class Bootstrap {
             new int[]{1, 0, 2, 3, 4},
     };
 
-    private static MethodHandle getHandle(RubyClass selfClass, String fallbackName, SwitchPoint switchPoint, InvokeSite site, DynamicMethod method, int arity, boolean block) throws Throwable {
+    private static MethodHandle getHandle(RubyClass selfClass, String fallbackName, SwitchPoint switchPoint, InvokeSite site, DynamicMethod method, boolean block) throws Throwable {
         MethodHandle mh = null;
         SmartBinder binder = null;
         if (method.getNativeCall() != null) {
@@ -778,7 +778,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 1, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0);
@@ -799,7 +799,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0, arg1);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 2, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, arg1);
@@ -820,7 +820,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0, arg1, arg2);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, arg1, arg2);
@@ -841,7 +841,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, args);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, false);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
 
         site.setTarget(mh);
         // FIXME: this varargs path needs to splat to call against handle
@@ -864,7 +864,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 1, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, block);
@@ -887,7 +887,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0, arg1);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 2, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, arg1, block);
@@ -910,7 +910,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0, arg1, arg2);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, caller, self, arg0, arg1, arg2, block);
@@ -933,7 +933,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, args);
         }
 
-        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, 3, true);
+        MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
 
         site.setTarget(mh);
         // FIXME: this varargs path needs to splat to call against handle
