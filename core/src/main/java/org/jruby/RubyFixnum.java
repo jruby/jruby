@@ -300,10 +300,9 @@ public class RubyFixnum extends RubyInteger {
     @JRubyMethod
     @Override
     public RubyString to_s() {
-        int base = 10;
-        ByteList bl = ConvertBytes.longToByteList(value, base);
-        if (getRuntime().is1_9()) bl.setEncoding(USASCIIEncoding.INSTANCE);
-        return getRuntime().newString(bl);
+        RubyString str = getRuntime().newString(String.valueOf(value));
+        if (getRuntime().is1_9()) str.setEncoding(USASCIIEncoding.INSTANCE);
+        return str;
     }
     
     @JRubyMethod
