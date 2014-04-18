@@ -113,6 +113,7 @@ import org.jruby.ir.instructions.boxing.UnboxBooleanInstr;
 import org.jruby.ir.instructions.boxing.UnboxFixnumInstr;
 import org.jruby.ir.instructions.boxing.UnboxFloatInstr;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.MethodHandle;
@@ -122,6 +123,7 @@ import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
+import org.jruby.parser.IRStaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CompiledIRBlockBody;
@@ -152,6 +154,8 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.Method;
+
+import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
 /**
  * Implementation of IRCompiler for the JVM.
@@ -1572,7 +1576,77 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) {
-        super.RuntimeHelperCall(runtimehelpercall);
+        switch (runtimehelpercall.getHelperMethod()) {
+            case HANDLE_PROPAGATE_BREAK:
+                // disabled
+                super.RuntimeHelperCall(runtimehelpercall);
+                return;
+//                return IRRuntimeHelpers.handlePropagatedBreak(context, scope,
+//                        args[0].retrieve(context, self, currDynScope, temp), blockType);
+            case HANDLE_NONLOCAL_RETURN:
+                // disabled
+                super.RuntimeHelperCall(runtimehelpercall);
+                return;
+//                return IRRuntimeHelpers.handleNonlocalReturn(scope,
+//                        args[0].retrieve(context, self, currDynScope, temp), blockType);
+            case HANDLE_BREAK_AND_RETURNS_IN_LAMBDA:
+                // disabled
+                super.RuntimeHelperCall(runtimehelpercall);
+                return;
+//                return IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, scope,
+//                        args[0].retrieve(context, self, currDynScope, temp), blockType);
+
+
+            case IS_DEFINED_BACKREF:
+                jvmMethod().loadContext();
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedBackref", sig(IRubyObject.class, ThreadContext.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
+            case IS_DEFINED_NTH_REF:
+                jvmMethod().loadContext();
+                jvmAdapter().ldc((int)((Fixnum)runtimehelpercall.getArgs()[0]).getValue());
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedNthRef", sig(IRubyObject.class, ThreadContext.class, int.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
+            case IS_DEFINED_GLOBAL:
+                jvmMethod().loadContext();
+                jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[0]).getString());
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedGlobal", sig(IRubyObject.class, ThreadContext.class, String.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
+            case IS_DEFINED_INSTANCE_VAR:
+                jvmMethod().loadContext();
+                visit(runtimehelpercall.getArgs()[0]);
+                jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[1]).getString());
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedInstanceVar", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
+            case IS_DEFINED_CLASS_VAR:
+                jvmMethod().loadContext();
+                visit(runtimehelpercall.getArgs()[0]);
+                jvmAdapter().checkcast(p(RubyModule.class));
+                jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[1]).getString());
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedClassVar", sig(IRubyObject.class, ThreadContext.class, RubyModule.class, String.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
+            case IS_DEFINED_SUPER:
+                jvmMethod().loadContext();
+                visit(runtimehelpercall.getArgs()[0]);
+                jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[1]).getString());
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedSuper", sig(IRubyObject.class, ThreadContext.class, String.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
+            case IS_DEFINED_METHOD:
+                jvmMethod().loadContext();
+                visit(runtimehelpercall.getArgs()[0]);
+                jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[1]).getString());
+                jvmAdapter().ldc(((Boolean)runtimehelpercall.getArgs()[2]).isTrue());
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedMethod", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class, boolean.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
+            default:
+                throw new RuntimeException("Unknown IR runtime helper method: " + runtimehelpercall.getHelperMethod() + "; INSTR: " + this);
+        }
     }
 
     @Override
