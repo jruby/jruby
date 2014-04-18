@@ -924,17 +924,20 @@ public class ASN1 {
             else if ( impl == DERUTCTime.class ) {
                 return new DERUTCTime(((RubyTime) val).getJavaDate());
             }
-            else if ( impl == ASN1Integer.class && val instanceof RubyBignum ) {
-                return new ASN1Integer(((RubyBignum) val).getValue());
-            }
             else if ( impl == ASN1Integer.class ) {
+                if ( val instanceof RubyBignum ) {
+                    return new ASN1Integer(((RubyBignum) val).getValue());
+                }
+                if ( val instanceof BN ) {
+                    return new ASN1Integer(((BN) val).getValue());
+                }
                 return new ASN1Integer(new BigInteger(val.toString()));
             }
             else if ( impl == DEROctetString.class ) {
-                return new DEROctetString(val.convertToString().getBytes());
+                return new DEROctetString(val.asString().getBytes());
             }
             else if ( impl == DERBitString.class ) {
-                final byte[] bs = val.convertToString().getBytes();
+                final byte[] bs = val.asString().getBytes();
                 int unused = 0;
                 for ( int i = (bs.length - 1); i > -1; i-- ) {
                     if (bs[i] == 0) unused += 8;
@@ -964,7 +967,7 @@ public class ASN1 {
             if ( isDebug(context.runtime) ) {
                 context.runtime.getOut().println("object with tag: " + tag + " and value: " + val + " and val.class: " + val.getClass().getName() + " and impl: " + impl.getName());
             }
-            warn(context, "WARNING: unimplemented method called: asn1data#toASN1 (" + impl + ")");
+            warn(context, "WARNING: unimplemented method called: ASN1Data#toASN1 (" + impl + ")");
             return null;
         }
 
