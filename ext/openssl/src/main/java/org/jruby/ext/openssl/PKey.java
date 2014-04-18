@@ -33,6 +33,7 @@ import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -43,19 +44,26 @@ import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyFile;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.openssl.x509store.PEMInputOutput;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
+
+import org.jruby.ext.openssl.x509store.PEMInputOutput;
+import static org.jruby.ext.openssl.OpenSSLReal.debug;
+import static org.jruby.ext.openssl.OpenSSLReal.debugStackTrace;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -247,6 +255,30 @@ public abstract class PKey extends RubyObject {
         return getRuntime().newBoolean(valid);
     }
 
+    // shared Helpers for PKeyRSA / PKEyDSA :
+
+    protected PrivateKey tryPKCS8EncodedKey(final Ruby runtime, final KeyFactory keyFactory, final byte[] encodedKey) {
+        try {
+            return keyFactory.generatePrivate(new PKCS8EncodedKeySpec(encodedKey));
+        }
+        catch (InvalidKeySpecException e) {
+            debug(runtime, getClass().getSimpleName() + " could not generate (PKCS8) private key", e);
+        }
+        catch (RuntimeException e) { debugStackTrace(runtime, e); }
+        return null;
+    }
+
+    protected PublicKey tryX509EncodedKey(final Ruby runtime, final KeyFactory keyFactory, final byte[] encodedKey) {
+        try {
+            return keyFactory.generatePublic(new X509EncodedKeySpec(encodedKey));
+        }
+        catch (InvalidKeySpecException e) {
+            debug(runtime, getClass().getSimpleName() + " could not generate (X509) public key", e);
+        }
+        catch (RuntimeException e) { debugStackTrace(runtime, e); }
+        return null;
+    }
+
     protected static void addSplittedAndFormatted(StringBuilder result, BigInteger value) {
         String v = value.toString(16);
         if ((v.length() % 2) != 0) {
@@ -263,4 +295,21 @@ public abstract class PKey extends RubyObject {
         }
         result.append("\n");
     }
+
+    protected static char[] password(final IRubyObject pass) {
+        if ( pass != null && ! pass.isNil() ) {
+            return pass.toString().toCharArray();
+        }
+        return null;
+    }
+
+    protected static RubyString readInitArg(final ThreadContext context, IRubyObject arg) {
+        arg = OpenSSLImpl.to_der_if_possible(context, arg);
+        if ( arg instanceof RubyFile ) {
+            return (RubyString)( (RubyFile) arg.dup() ).read(context);
+        } else {
+            return arg.convertToString();
+        }
+    }
+
 }// PKey
