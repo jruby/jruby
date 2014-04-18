@@ -78,6 +78,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
 
+import static org.jruby.ext.openssl.OpenSSLReal.debug;
+import static org.jruby.ext.openssl.OpenSSLReal.debugStackTrace;
 import static org.jruby.ext.openssl.OpenSSLReal.isDebug;
 import static org.jruby.ext.openssl.OpenSSLReal.warn;
 
@@ -635,9 +637,7 @@ public class ASN1 {
                 return klass.callMethod(context, "new", context.runtime.newBoolean( ((DERBoolean) obj).isTrue() ));
             }
             else {
-                if ( isDebug(context.runtime) ) {
-                    context.runtime.getOut().println("ASN1.decodeObject() should handle: " + obj.getClass().getName());
-                }
+                debug(context.runtime, "ASN1.decodeObject() should handle: " + obj.getClass().getName());
             }
         }
         else if ( obj instanceof ASN1TaggedObject ) {
@@ -687,6 +687,8 @@ public class ASN1 {
             throw context.runtime.newArgumentError(e.getMessage());
         }
         catch (RuntimeException e) {
+            final Ruby runtime = context.runtime;
+            debugStackTrace(runtime, e);
             throw Utils.newRuntimeError(context.runtime, e);
         }
     }
