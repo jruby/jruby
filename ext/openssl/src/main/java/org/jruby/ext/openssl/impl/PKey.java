@@ -33,6 +33,7 @@ import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.interfaces.DSAParams;
@@ -42,6 +43,7 @@ import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.DSAPrivateKeySpec;
 import java.security.spec.DSAPublicKeySpec;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
@@ -129,10 +131,16 @@ public class PKey {
     }
 
     // d2i_RSAPrivateKey_bio
-    public static KeyPair readRSAPrivateKey(byte[] input) throws IOException, GeneralSecurityException {
-        KeyFactory fact = SecurityHelper.getKeyFactory("RSA");
+    public static KeyPair readRSAPrivateKey(final byte[] input)
+        throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+        return readRSAPrivateKey(SecurityHelper.getKeyFactory("RSA"), input);
+    }
+
+    public static KeyPair readRSAPrivateKey(final KeyFactory rsaFactory, final byte[] input)
+        throws IOException, InvalidKeySpecException {
+        // KeyFactory fact = SecurityHelper.getKeyFactory("RSA");
         ASN1Sequence seq = (ASN1Sequence) (new ASN1InputStream(input).readObject());
-        if (seq.size() == 9) {
+        if ( seq.size() == 9 ) {
             BigInteger mod = ((ASN1Integer) seq.getObjectAt(1)).getValue();
             BigInteger pubexp = ((ASN1Integer) seq.getObjectAt(2)).getValue();
             BigInteger privexp = ((ASN1Integer) seq.getObjectAt(3)).getValue();
@@ -141,62 +149,73 @@ public class PKey {
             BigInteger primeep = ((ASN1Integer) seq.getObjectAt(6)).getValue();
             BigInteger primeeq = ((ASN1Integer) seq.getObjectAt(7)).getValue();
             BigInteger crtcoeff = ((ASN1Integer) seq.getObjectAt(8)).getValue();
-            PrivateKey priv = fact.generatePrivate(new RSAPrivateCrtKeySpec(mod, pubexp, privexp, primep, primeq, primeep, primeeq, crtcoeff));
-            PublicKey pub = fact.generatePublic(new RSAPublicKeySpec(mod, pubexp));
+            PrivateKey priv = rsaFactory.generatePrivate(new RSAPrivateCrtKeySpec(mod, pubexp, privexp, primep, primeq, primeep, primeeq, crtcoeff));
+            PublicKey pub = rsaFactory.generatePublic(new RSAPublicKeySpec(mod, pubexp));
             return new KeyPair(pub, priv);
-        } else {
-            return null;
         }
+        return null;
     }
 
     // d2i_RSAPublicKey_bio
-    public static PublicKey readRSAPublicKey(byte[] input) throws IOException, GeneralSecurityException {
-        KeyFactory fact = SecurityHelper.getKeyFactory("RSA");
-        ASN1Sequence seq = (ASN1Sequence) (new ASN1InputStream(input).readObject());
-        if (seq.size() == 2) {
+    public static PublicKey readRSAPublicKey(final byte[] input)
+        throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+        return readRSAPublicKey(SecurityHelper.getKeyFactory("RSA"), input);
+    }
+
+    public static PublicKey readRSAPublicKey(final KeyFactory rsaFactory, final byte[] input)
+        throws IOException, InvalidKeySpecException {
+        ASN1Sequence seq = (ASN1Sequence) new ASN1InputStream(input).readObject();
+        if ( seq.size() == 2 ) {
             BigInteger mod = ((ASN1Integer) seq.getObjectAt(0)).getValue();
             BigInteger pubexp = ((ASN1Integer) seq.getObjectAt(1)).getValue();
-            return fact.generatePublic(new RSAPublicKeySpec(mod, pubexp));
-        } else {
-            return null;
+            return rsaFactory.generatePublic(new RSAPublicKeySpec(mod, pubexp));
         }
+        return null;
     }
 
     // d2i_DSAPrivateKey_bio
-    public static KeyPair readDSAPrivateKey(byte[] input) throws IOException, GeneralSecurityException {
-        KeyFactory fact = SecurityHelper.getKeyFactory("DSA");
-        ASN1Sequence seq = (ASN1Sequence) (new ASN1InputStream(input).readObject());
-        if (seq.size() == 6) {
+    public static KeyPair readDSAPrivateKey(final byte[] input)
+        throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+        return readDSAPrivateKey(SecurityHelper.getKeyFactory("DSA"), input);
+    }
+
+    public static KeyPair readDSAPrivateKey(final KeyFactory dsaFactory, final byte[] input)
+        throws IOException, InvalidKeySpecException {
+        ASN1Sequence seq = (ASN1Sequence) new ASN1InputStream(input).readObject();
+        if ( seq.size() == 6 ) {
             BigInteger p = ((ASN1Integer) seq.getObjectAt(1)).getValue();
             BigInteger q = ((ASN1Integer) seq.getObjectAt(2)).getValue();
             BigInteger g = ((ASN1Integer) seq.getObjectAt(3)).getValue();
             BigInteger y = ((ASN1Integer) seq.getObjectAt(4)).getValue();
             BigInteger x = ((ASN1Integer) seq.getObjectAt(5)).getValue();
-            PrivateKey priv = fact.generatePrivate(new DSAPrivateKeySpec(x, p, q, g));
-            PublicKey pub = fact.generatePublic(new DSAPublicKeySpec(y, p, q, g));
+            PrivateKey priv = dsaFactory.generatePrivate(new DSAPrivateKeySpec(x, p, q, g));
+            PublicKey pub = dsaFactory.generatePublic(new DSAPublicKeySpec(y, p, q, g));
             return new KeyPair(pub, priv);
-        } else {
-            return null;
         }
+        return null;
     }
 
     // d2i_DSA_PUBKEY_bio
-    public static PublicKey readDSAPublicKey(byte[] input) throws IOException, GeneralSecurityException {
-        KeyFactory fact = SecurityHelper.getKeyFactory("RSA");
-        ASN1Sequence seq = (ASN1Sequence) (new ASN1InputStream(input).readObject());
-        if (seq.size() == 4) {
+    public static PublicKey readDSAPublicKey(final byte[] input)
+        throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+        return readDSAPublicKey(SecurityHelper.getKeyFactory("DSA"), input);
+    }
+
+    public static PublicKey readDSAPublicKey(final KeyFactory dsaFactory, final byte[] input)
+        throws IOException, InvalidKeySpecException {
+        ASN1Sequence seq = (ASN1Sequence) new ASN1InputStream(input).readObject();
+        if ( seq.size() == 4 ) {
             BigInteger y = ((ASN1Integer) seq.getObjectAt(0)).getValue();
             BigInteger p = ((ASN1Integer) seq.getObjectAt(1)).getValue();
             BigInteger q = ((ASN1Integer) seq.getObjectAt(2)).getValue();
             BigInteger g = ((ASN1Integer) seq.getObjectAt(3)).getValue();
-            return fact.generatePublic(new DSAPublicKeySpec(y, p, q, g));
-        } else {
-            return null;
+            return dsaFactory.generatePublic(new DSAPublicKeySpec(y, p, q, g));
         }
+        return null;
     }
 
     // d2i_DHparams_bio
-    public static DHParameterSpec readDHParameter(byte[] input) throws IOException {
+    public static DHParameterSpec readDHParameter(final byte[] input) throws IOException {
         ASN1InputStream aIn = new ASN1InputStream(input);
         ASN1Sequence seq = (ASN1Sequence) aIn.readObject();
         BigInteger p = ((ASN1Integer) seq.getObjectAt(0)).getValue();
