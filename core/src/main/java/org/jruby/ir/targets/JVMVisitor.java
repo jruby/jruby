@@ -468,7 +468,12 @@ public class JVMVisitor extends IRVisitor {
             visit(operand);
         }
 
-        jvmMethod().invokeOther(attrAssignInstr.getMethodAddr().getName(), attrAssignInstr.getCallArgs().length, false);
+        // FIXME: This should probably live in IR somewhere
+        if (attrAssignInstr.getReceiver() instanceof Self) {
+            jvmMethod().invokeSelf(attrAssignInstr.getMethodAddr().getName(), attrAssignInstr.getCallArgs().length, false);
+        } else {
+            jvmMethod().invokeOther(attrAssignInstr.getMethodAddr().getName(), attrAssignInstr.getCallArgs().length, false);
+        }
         jvmAdapter().pop();
     }
 
