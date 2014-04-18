@@ -90,12 +90,11 @@ public class X509Cert extends RubyObject {
         }
     };
 
-    public static void createX509Cert(Ruby runtime, RubyModule mX509) {
-        RubyClass cX509Cert = mX509.defineClassUnder("Certificate",runtime.getObject(),X509CERT_ALLOCATOR);
-        RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
-        mX509.defineClassUnder("CertificateError",openSSLError,openSSLError.getAllocator());
-
-        cX509Cert.defineAnnotatedMethods(X509Cert.class);
+    public static void createX509Cert(final Ruby runtime, final RubyModule _X509) {
+        RubyClass _Certificate = _X509.defineClassUnder("Certificate", runtime.getObject(), X509CERT_ALLOCATOR);
+        RubyClass _OpenSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
+        _X509.defineClassUnder("CertificateError", _OpenSSLError, _OpenSSLError.getAllocator());
+        _Certificate.defineAnnotatedMethods(X509Cert.class);
     }
 
     public X509Cert(Ruby runtime, RubyClass type) {
@@ -130,7 +129,7 @@ public class X509Cert extends RubyObject {
     }
 
     public static IRubyObject wrap(Ruby runtime, Certificate cert) throws CertificateEncodingException {
-        final RubyModule _Certificate = runtime.getClassFromPath("OpenSSL::X509::Certificate");
+        final RubyClass _Certificate = _X509(runtime).getClass("Certificate");
         final RubyString encoded = RubyString.newString(runtime, cert.getEncoded());
         return _Certificate.callMethod(runtime.getCurrentContext(), "new", encoded);
     }
@@ -138,7 +137,7 @@ public class X509Cert extends RubyObject {
     // this is the javax.security counterpart of the previous wrap method
     public static IRubyObject wrap(Ruby runtime, javax.security.cert.Certificate cert)
         throws javax.security.cert.CertificateEncodingException {
-        final RubyModule _Certificate = runtime.getClassFromPath("OpenSSL::X509::Certificate");
+        final RubyClass _Certificate = _X509(runtime).getClass("Certificate");
         final RubyString encoded = RubyString.newString(runtime, cert.getEncoded());
         return _Certificate.callMethod(runtime.getCurrentContext(), "new", encoded);
     }
@@ -148,14 +147,14 @@ public class X509Cert extends RubyObject {
         final IRubyObject[] args, final Block unusedBlock) {
         final Ruby runtime = context.runtime;
 
-        if (args.length == 0) return this;
+        if ( args.length == 0 ) return this;
 
         byte[] bytes = OpenSSLImpl.readX509PEM(context, args[0]);
         ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
 
         final RubyModule _OpenSSL = runtime.getModule("OpenSSL");
         final RubyModule _X509 = (RubyModule) _OpenSSL.getConstant("X509");
-        final IRubyObject _Name = _X509.getConstant("Name");
+        final RubyClass _Name = _X509.getClass("Name");
 
         try {
             cert = (X509Certificate) SecurityHelper.getCertificateFactory("X.509").generateCertificate(bis);
@@ -180,7 +179,7 @@ public class X509Cert extends RubyObject {
         set_public_key( algorithm, cert.getPublicKey().getEncoded() );
 
         IRubyObject extFact = ((RubyClass)(_X509.getConstant("ExtensionFactory"))).callMethod(context,"new");
-        extFact.callMethod(context,"subject_certificate=",this);
+        extFact.callMethod(context, "subject_certificate=", this);
 
         final RubyModule _ASN1 = (RubyModule) _OpenSSL.getConstant("ASN1");
         final RubyClass _Extension = _X509.getClass("Extension");
