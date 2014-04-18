@@ -240,7 +240,7 @@ public class X509Name extends RubyObject {
             }
         } else {
             try {
-                byte[] bytes = OpenSSLImpl.to_der_if_possible(context, dn).convertToString().getBytes();
+                byte[] bytes = OpenSSLImpl.to_der_if_possible(context, dn).asString().getBytes();
                 ASN1InputStream is = new ASN1InputStream(bytes);
                 ASN1Sequence seq = (ASN1Sequence)is.readObject();
                 //StringBuilder b = new StringBuilder();
@@ -301,7 +301,7 @@ public class X509Name extends RubyObject {
 
         final ASN1ObjectIdentifier objectId;
         try {
-            String oidStr = oid.convertToString().toString();
+            String oidStr = oid.asString().toString();
             objectId = ASN1.getObjectIdentifier(runtime, oidStr);
         }
         catch (IllegalArgumentException e) {
@@ -310,7 +310,7 @@ public class X509Name extends RubyObject {
 
         if ( objectId == null ) throw newNameError(runtime, (String) null);
 
-        String valueStr = value.convertToString().toString();
+        String valueStr = value.asString().toString();
 
         oids.add(objectId);
         values.add(valueStr);
