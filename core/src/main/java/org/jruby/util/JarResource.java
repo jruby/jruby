@@ -27,16 +27,16 @@ abstract class JarResource implements FileResource {
         }
 
         String jarPath = sanitized.substring(0, bang);
-        String slashPath = sanitized.substring(bang + 1);
-        if (!slashPath.startsWith("/")) {
-            slashPath = "/" + slashPath;
+        String entryPath = sanitized.substring(bang + 1);
+        if (!entryPath.startsWith("/")) {
+            entryPath = "/" + entryPath;
         }
 
         // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
-        JarResource resource = createJarResource(jarPath, slashPath);
+        JarResource resource = createJarResource(jarPath, entryPath);
 
         if (resource == null) {
-            resource = createJarResource(jarPath, slashPath.substring(1));
+            resource = createJarResource(jarPath, entryPath.substring(1));
         }
         
         return resource;
@@ -52,19 +52,15 @@ abstract class JarResource implements FileResource {
 
         // Try it as directory first, because jars tend to have foo/ entries
         // and it's not really possible disambiguate between files and directories.
-        String[] entries = index.cachedDirEntries.get(path);
+        String[] entries = index.getDirEntries(path);
         if (entries != null) {
             return new JarDirectoryResource(jarPath, path, entries);
         }
 
-        try {
-            JarEntry jarEntry = index.getJarEntry(path);
-            if (jarEntry != null) {
-                InputStream jarEntryStream = index.jar.getInputStream(jarEntry);
-                return new JarFileResource(path, jarEntry, jarEntryStream);
-            }
-        } catch (IOException ioe) {
-            // Probably not a jar entry then
+        JarEntry jarEntry = index.getJarEntry(path);
+        if (jarEntry != null) {
+            InputStream jarEntryStream = index.getInputStream(jarEntry);
+            return new JarFileResource(path, jarEntry, jarEntryStream);
         }
 
         return null;
