@@ -455,7 +455,7 @@ public class JVMVisitor extends IRVisitor {
         m.loadContext();
         visit(aliasInstr.getReceiver());
         m.adapter.ldc(((StringLiteral) aliasInstr.getNewName()).string);
-        m.adapter.ldc(((StringLiteral) aliasInstr.getOldName()).string);
+        m.adapter.ldc(((StringLiteral)aliasInstr.getOldName()).string);
         m.invokeIRHelper("defineAlias", sig(void.class, ThreadContext.class, IRubyObject.class, String.class, String.class));
     }
 
