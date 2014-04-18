@@ -767,8 +767,15 @@ public class JVMVisitor extends IRVisitor {
         m.loadLocal(2); // caller
         visit(callInstr.getReceiver());
 
-        for (Operand operand : args) {
-            visit(operand);
+        boolean isSplat = false;
+
+        if (numArgs == 1 && args[0] instanceof Splat) {
+            visit(args[0]);
+            numArgs = -1;
+        } else {
+            for (Operand operand : args) {
+                visit(operand);
+            }
         }
 
         Operand closure = callInstr.getClosureArg(null);
@@ -1975,6 +1982,7 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(splat.getArray());
         jvmMethod().invokeHelper("irSplat", RubyArray.class, ThreadContext.class, IRubyObject.class);
+        jvmAdapter().invokevirtual(p(RubyArray.class), "toJavaArrayMaybeUnsafe", sig(IRubyObject[].class));
     }
 
     @Override
