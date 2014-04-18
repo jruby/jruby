@@ -228,7 +228,7 @@ public abstract class IRScope implements ParseResult {
         flags.add(USES_ZSUPER);
 
         this.localVars = new HashMap<String, LocalVariable>();
-        synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
+        this.scopeId = globalScopeCount.getAndIncrement();
         this.relinearizeCFG = false;
 
         setupLexicalContainment();
