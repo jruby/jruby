@@ -36,6 +36,7 @@ import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -61,8 +62,6 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.openssl.impl.CipherSpec;
-import org.jruby.ext.openssl.x509store.PEMInputOutput;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -70,7 +69,11 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 
+import org.jruby.ext.openssl.impl.CipherSpec;
+import org.jruby.ext.openssl.x509store.PEMInputOutput;
 import static org.jruby.ext.openssl.PKey._PKey;
+import static org.jruby.ext.openssl.OpenSSLReal.debug;
+import static org.jruby.ext.openssl.OpenSSLReal.debugStackTrace;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -186,10 +189,9 @@ public class PKeyRSA extends PKey {
     @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(final ThreadContext context,
         final IRubyObject[] args, final Block block) {
-        IRubyObject arg;
-        IRubyObject pass = null;
-        char[] passwd = null;
-        if (Arity.checkArgumentCount(context.runtime, args, 0, 2) == 0) {
+        final Ruby runtime = context.runtime;
+        IRubyObject arg; IRubyObject pass = null; char[] passwd = null;
+        if (Arity.checkArgumentCount(runtime, args, 0, 2) == 0) {
             privKey = null;
             pubKey = null;
         } else {
@@ -220,78 +222,63 @@ public class PKeyRSA extends PKey {
                 final KeyFactory rsaFactory;
                 try {
                     rsaFactory = SecurityHelper.getKeyFactory("RSA");
-                } catch (Exception e) {
+                } catch (NoSuchAlgorithmException e) {
                     throw context.runtime.newRuntimeError("unsupported key algorithm (RSA)");
+                } catch (RuntimeException e) {
+                    throw context.runtime.newRuntimeError("unsupported key algorithm (RSA) " + e);
                 }
                 // TODO: ugly NoClassDefFoundError catching for no BC env. How can we remove this?
-                if (null == val) {
-                    // PEM_read_bio_RSAPrivateKey
+                boolean noClassDef = false;
+                if ( val == null && ! noClassDef ) { // PEM_read_bio_RSAPrivateKey
                     try {
                         val = PEMInputOutput.readPrivateKey(new StringReader(str.toString()), passwd);
                     } catch (NoClassDefFoundError e) {
-                        val = null;
-                    } catch (Exception e) {
-                        val = null;
-                    }
+                        noClassDef = true; debugStackTrace(runtime, e);
+                    } catch (Exception e) { debugStackTrace(runtime, e); }
                 }
-                if (null == val) {
-                    // PEM_read_bio_RSAPublicKey
+                if ( val == null && ! noClassDef )  { // PEM_read_bio_RSAPublicKey
                     try {
                         val = PEMInputOutput.readRSAPublicKey(new StringReader(str.toString()), passwd);
                     } catch (NoClassDefFoundError e) {
-                        val = null;
-                    } catch (Exception e) {
-                        val = null;
-                    }
+                        noClassDef = true; debugStackTrace(runtime, e);
+                    } catch (Exception e) { debugStackTrace(runtime, e); }
                 }
-                if (null == val) {
-                    // PEM_read_bio_RSA_PUBKEY
+                if ( val == null && ! noClassDef ) { // PEM_read_bio_RSA_PUBKEY
                     try {
                         val = PEMInputOutput.readRSAPubKey(new StringReader(str.toString()));
                     } catch (NoClassDefFoundError e) {
-                        val = null;
-                    } catch (Exception e) {
-                        val = null;
-                    }
+                        noClassDef = true; debugStackTrace(runtime, e);
+                    } catch (Exception e) { debugStackTrace(runtime, e); }
                 }
-                if (null == val) {
-                    // d2i_RSAPrivateKey_bio
+                if ( val == null && ! noClassDef ) { // d2i_RSAPrivateKey_bio
                     try {
                         val = org.jruby.ext.openssl.impl.PKey.readRSAPrivateKey(str.getBytes());
                     } catch (NoClassDefFoundError e) {
-                        val = null;
-                    } catch (Exception e) {
-                        val = null;
-                    }
+                        noClassDef = true; debugStackTrace(runtime, e);
+                    } catch (Exception e) { debugStackTrace(runtime, e); }
                 }
-                if (null == val) {
-                    // d2i_RSAPublicKey_bio
+                if ( val == null && ! noClassDef ) { // d2i_RSAPublicKey_bio
                     try {
                         val = org.jruby.ext.openssl.impl.PKey.readRSAPublicKey(str.getBytes());
                     } catch (NoClassDefFoundError e) {
-                        val = null;
-                    } catch (Exception e) {
-                        val = null;
-                    }
+                        noClassDef = true; debugStackTrace(runtime, e);
+                    } catch (Exception e) { debugStackTrace(runtime, e); }
                 }
-                if (null == val) {
-                    // try to read PrivateKeyInfo.
+                if ( val == null ) { // try to read PrivateKeyInfo.
                     try {
                         val = rsaFactory.generatePrivate(new PKCS8EncodedKeySpec(str.getBytes()));
-                    } catch (Exception e) {
-                        val = null;
                     }
+                    catch (InvalidKeySpecException e) { debug(runtime, "PKeyRSA could not read private key", e); }
+                    catch (RuntimeException e) { debugStackTrace(runtime, e); }
                 }
-                if (null == val) {
-                    // try to read SubjectPublicKeyInfo.
+                if ( val == null ) { // try to read SubjectPublicKeyInfo.
                     try {
                         val = rsaFactory.generatePublic(new X509EncodedKeySpec(str.getBytes()));
                     }
-                    catch (Exception e) {
-                        val = null;
-                    }
+                    catch (InvalidKeySpecException e) { debug(runtime, "PKeyRSA could not read public key", e); }
+                    catch (RuntimeException e) { debugStackTrace(runtime, e); }
                 }
-                if (null == val) {
+                if ( val == null ) {
                     throw newRSAError(context.runtime, "Neither PUB key nor PRIV key:");
                 }
 
@@ -302,21 +289,23 @@ public class PKeyRSA extends PKey {
                         privKey = (RSAPrivateCrtKey) privateKey;
                         pubKey = (RSAPublicKey) publicKey;
                     } else {
-                        throw newRSAError(context.runtime, "Neither PUB key nor PRIV key:");
+                        throw newRSAError(context.runtime, "Neither PUB key nor PRIV key: " + val.getClass().getName());
                     }
                 } else if (val instanceof RSAPrivateCrtKey) {
                     privKey = (RSAPrivateCrtKey) val;
                     try {
                         pubKey = (RSAPublicKey) (rsaFactory.generatePublic(new RSAPublicKeySpec(privKey.getModulus(), privKey.getPublicExponent())));
-                    }
-                    catch (Exception e) {
-                        throw newRSAError(context.runtime, "Something rotten with private key");
+                    } catch (GeneralSecurityException e) {
+                        throw newRSAError(context.runtime, e.getMessage());
+                    } catch (RuntimeException e) {
+                        debugStackTrace(runtime, e);
+                        throw newRSAError(context.runtime, e.toString());
                     }
                 } else if (val instanceof RSAPublicKey) {
                     pubKey = (RSAPublicKey) val;
                     privKey = null;
                 } else {
-                    throw newRSAError(context.runtime, "Neither PUB key nor PRIV key:");
+                    throw newRSAError(context.runtime, "Neither PUB key nor PRIV key: " + val.getClass().getName());
                 }
             }
         }
