@@ -53,9 +53,9 @@ end
 
 report_references = {
   "topaz" => "topaz-dev",
-  "jruby" => "jruby-1.7.11-server-indy",
+  "jruby" => "jruby-1.7.12-server-indy",
   "jruby-head" => "jruby-head-server-indy",
-  "competition" => "jruby-1.7.11-server-indy",
+  "competition" => "jruby-1.7.12-server-indy",
   "almost-all" => "2.1.1",
   "all" => "1.8.7-p374",
   "interpreters" => "2.1.1",
@@ -104,7 +104,7 @@ rubies = []
   end
 end
 
-["jruby-1.7.11"].each do |name|
+["jruby-1.7.12"].each do |name|
   dir = "~/.rbenv/versions/" + name
 
   if Dir.exists? File.expand_path(dir)

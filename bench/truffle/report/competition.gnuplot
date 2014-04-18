@@ -6,7 +6,7 @@ set style histogram cluster gap 1
 
 set title "JRuby+Truffle vs the Competition"
 set xlabel "Implementation" rotate by 270
-set ylabel "Speedup Relative to JRuby 1.7.11 with invokedynamic"
+set ylabel "Speedup Relative to JRuby 1.7.12 with invokedynamic"
 set key top left
 
 set style fill solid border rgb 'black'
