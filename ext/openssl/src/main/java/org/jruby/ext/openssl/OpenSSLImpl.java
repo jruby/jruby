@@ -78,7 +78,7 @@ public class OpenSSLImpl {
                 throw context.runtime.newArgumentError("IO stream `" + arg.inspect() + "' contained no data");
             }
         } else {
-            str = arg.convertToString();
+            str = arg.asString();
         }
 
         StringReader in = new StringReader(str.getUnicodeValue());
