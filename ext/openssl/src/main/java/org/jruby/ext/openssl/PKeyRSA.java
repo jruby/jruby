@@ -255,13 +255,21 @@ public class PKeyRSA extends PKey {
             try { key = readRSAPrivateKey(rsaFactory, str.getBytes()); }
             catch (NoClassDefFoundError e) { noClassDef = true; debugStackTrace(runtime, e); }
             catch (InvalidKeySpecException e) { debug(runtime, "PKeyRSA could not read private key", e); }
-            catch (Exception e) { debugStackTrace(runtime, e); }
+            catch (IOException e) { debug(runtime, "PKeyRSA could not read private key", e); }
+            catch (RuntimeException e) {
+                if ( isKeyGenerationFailure(e) ) debug(runtime, "PKeyRSA could not read private key", e);
+                else debugStackTrace(runtime, e);
+            }
         }
         if ( key == null && ! noClassDef ) { // d2i_RSAPublicKey_bio
             try { key = readRSAPublicKey(rsaFactory, str.getBytes()); }
             catch (NoClassDefFoundError e) { noClassDef = true; debugStackTrace(runtime, e); }
             catch (InvalidKeySpecException e) { debug(runtime, "PKeyRSA could not read public key", e); }
-            catch (Exception e) { debugStackTrace(runtime, e); }
+            catch (IOException e) { debug(runtime, "PKeyRSA could not read public key", e); }
+            catch (RuntimeException e) {
+                if ( isKeyGenerationFailure(e) ) debug(runtime, "PKeyRSA could not read public key", e);
+                else debugStackTrace(runtime, e);
+            }
         }
 
         if ( key == null ) key = tryPKCS8EncodedKey(runtime, rsaFactory, str.getBytes());

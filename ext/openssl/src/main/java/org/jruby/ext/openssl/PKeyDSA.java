@@ -221,8 +221,12 @@ public class PKeyDSA extends PKey {
                 key = readDSAPrivateKey(dsaFactory, str.getBytes());
             }
             catch (NoClassDefFoundError e) { noClassDef = true; debugStackTrace(runtime, e); }
-            catch (InvalidKeySpecException e) { debug(runtime, "PKeyDSA could not read public key", e); }
-            catch (Exception e) { debugStackTrace(runtime, e); }
+            catch (InvalidKeySpecException e) { debug(runtime, "PKeyDSA could not read private key", e); }
+            catch (IOException e) { debug(runtime, "PKeyDSA could not read private key", e); }
+            catch (RuntimeException e) {
+                if ( isKeyGenerationFailure(e) ) debug(runtime, "PKeyDSA could not read private key", e);
+                else debugStackTrace(runtime, e);
+            }
         }
         if ( key == null && ! noClassDef ) { // d2i_DSA_PUBKEY_bio
             try {
@@ -230,7 +234,11 @@ public class PKeyDSA extends PKey {
             }
             catch (NoClassDefFoundError e) { noClassDef = true; debugStackTrace(runtime, e); }
             catch (InvalidKeySpecException e) { debug(runtime, "PKeyDSA could not read public key", e); }
-            catch (Exception e) { debugStackTrace(runtime, e); }
+            catch (IOException e) { debug(runtime, "PKeyDSA could not read public key", e); }
+            catch (RuntimeException e) {
+                if ( isKeyGenerationFailure(e) ) debug(runtime, "PKeyDSA could not read public key", e);
+                else debugStackTrace(runtime, e);
+            }
         }
 
         if ( key == null ) key = tryPKCS8EncodedKey(runtime, dsaFactory, str.getBytes());

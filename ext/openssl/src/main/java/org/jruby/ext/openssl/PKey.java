@@ -264,8 +264,31 @@ public abstract class PKey extends RubyObject {
         catch (InvalidKeySpecException e) {
             debug(runtime, getClass().getSimpleName() + " could not generate (PKCS8) private key", e);
         }
-        catch (RuntimeException e) { debugStackTrace(runtime, e); }
+        catch (RuntimeException e) {
+            if ( isKeyGenerationFailure(e) ) {
+                debug(runtime, getClass().getSimpleName() + " could not generate (PKCS8) private key", e);
+            }
+            else debugStackTrace(runtime, e);
+        }
         return null;
+    }
+
+    protected static boolean isKeyGenerationFailure(final RuntimeException e) {
+        // NOTE handle "common-failure" more gently (no need for stack trace) :
+        // java.lang.ClassCastException: org.bouncycastle.asn1.DLSequence cannot be cast to org.bouncycastle.asn1.ASN1Integer
+        //   at org.bouncycastle.asn1.pkcs.PrivateKeyInfo.<init>(Unknown Source)
+        //	 at org.bouncycastle.asn1.pkcs.PrivateKeyInfo.getInstance(Unknown Source)
+        //   at org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi.engineGeneratePrivate(Unknown Source)
+        //   at org.bouncycastle.jcajce.provider.asymmetric.dsa.KeyFactorySpi.engineGeneratePrivate(Unknown Source)
+        //   at java.security.KeyFactory.generatePrivate(KeyFactory.java:366)
+        if ( e instanceof ClassCastException ) {
+            // RSA :
+            final String msg = e.getMessage();
+            if ( msg != null && msg.contains("DLSequence cannot be cast to") ) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected PublicKey tryX509EncodedKey(final Ruby runtime, final KeyFactory keyFactory, final byte[] encodedKey) {
