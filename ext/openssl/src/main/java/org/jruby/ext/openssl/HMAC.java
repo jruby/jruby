@@ -44,7 +44,6 @@ import org.jruby.util.ByteList;
 import org.jruby.runtime.Visibility;
 
 import static org.jruby.ext.openssl.OpenSSLReal.isDebug;
-import static org.jruby.ext.openssl.OpenSSLReal.warn;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -114,7 +113,7 @@ public class HMAC extends RubyObject {
             final Mac mac = getMacInstance(algName);
             mac.init( new SecretKeySpec(keyBytes, mac.getAlgorithm()) );
             mac.update(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
-            return runtime.newString( hexBytes( mac.doFinal() ) );
+            return runtime.newString( toHEX( mac.doFinal() ) );
         }
         catch (NoSuchAlgorithmException e) {
             throw runtime.newNotImplementedError("Unsupported MAC algorithm (HMAC[-]" + algName + ")");
@@ -198,7 +197,7 @@ public class HMAC extends RubyObject {
 
     @JRubyMethod(name = { "hexdigest", "inspect", "to_s" })
     public IRubyObject hexdigest() {
-        return getRuntime().newString( hexBytes(getSignatureBytes()) );
+        return getRuntime().newString( toHEX(getSignatureBytes()) );
     }
 
     String getAlgorithm() {
@@ -217,8 +216,19 @@ public class HMAC extends RubyObject {
         return digest.asString().toString();
     }
 
-    private static ByteList hexBytes(final byte[] input) {
-        return Utils.hexBytes(input, new ByteList(input.length * 3));
+    private static final char[] HEX = {
+        '0' , '1' , '2' , '3' , '4' , '5' , '6' , '7' ,
+        '8' , '9' , 'a' , 'b' , 'c' , 'd' , 'e' , 'f'
+    };
+
+    private static ByteList toHEX(final byte[] data) {
+        final ByteList out = new ByteList(data.length * 2);
+        for ( int i = 0; i < data.length; i++ ) {
+            final byte b = data[i];
+            out.append( HEX[ (b >> 4) & 0xF ] );
+            out.append( HEX[ b & 0xF ] );
+        }
+        return out;
     }
 
 }// HMAC
