@@ -34,6 +34,7 @@ import java.util.Random;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -67,8 +68,6 @@ public class BN extends RubyObject {
     private static final BigInteger MAX_INT = BigInteger.valueOf(Integer.MAX_VALUE);
     private static final BigInteger TWO = BigInteger.valueOf(2);
     private static final int DEFAULT_CERTAINTY = 100;
-    private static Random _random;
-    private static SecureRandom _secureRandom;
 
     private static ObjectAllocator BN_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -110,6 +109,7 @@ public class BN extends RubyObject {
         return newBN(getRuntime(), this.value);
     }
 
+    @Override
     public IRubyObject initialize_copy(IRubyObject that) {
         super.initialize_copy(that);
         if (this != that) {
@@ -161,17 +161,18 @@ public class BN extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name="copy")
-    public synchronized IRubyObject bn_copy(IRubyObject other) {
+    @JRubyMethod(name = "copy")
+    public synchronized IRubyObject copy(IRubyObject other) {
         if (this != other) {
             this.value = getBigInteger(other);
         }
         return this;
     }
 
-    @JRubyMethod(name="to_s", rest=true)
-    public IRubyObject bn_to_s(IRubyObject[] args) {
-        Ruby runtime = getRuntime();
+    @JRubyMethod(name = "to_s", rest = true)
+    public RubyString to_s(IRubyObject[] args) {
+        final Ruby runtime = getRuntime();
+
         int argc = Arity.checkArgumentCount(runtime, args, 0, 1);
         int base = argc == 1 ? RubyNumeric.num2int(args[0]) : 10;
         byte[] bytes;
@@ -225,21 +226,25 @@ public class BN extends RubyObject {
         }
     }
 
-    @JRubyMethod(name="to_i")
-    public IRubyObject bn_to_i() {
-        Ruby runtime = getRuntime();
-        // FIXME: s/b faster way to convert than going through RubyString
-        return RubyNumeric.str2inum(runtime, runtime.newString(value.toString()), 10, true);
+    private static final BigInteger MIN_LONG = BigInteger.valueOf(Long.MIN_VALUE);
+    private static final BigInteger MAX_LONG = BigInteger.valueOf(Long.MAX_VALUE);
+
+    @JRubyMethod(name = "to_i")
+    public IRubyObject to_i() {
+        if ( value.compareTo( MAX_LONG ) > 0 || value.compareTo( MIN_LONG ) < 0 ) {
+            return RubyBignum.newBignum(getRuntime(), value);
+        }
+        return RubyFixnum.newFixnum(getRuntime(), value.longValue());
     }
 
-    @JRubyMethod(name="to_bn")
-    public IRubyObject bn_to_bn() {
+    @JRubyMethod(name = "to_bn")
+    public IRubyObject to_bn() {
         return this;
     }
 
     @JRubyMethod(name="coerce")
     // FIXME: is this right? don't see how it would be useful...
-    public IRubyObject bn_coerce(IRubyObject other) {
+    public IRubyObject coerce(IRubyObject other) {
         final Ruby runtime = getRuntime();
         IRubyObject self;
 //        switch (other.getMetaClass().index) {
@@ -261,7 +266,7 @@ public class BN extends RubyObject {
             self = runtime.newString(value.toString());
         }
         else if ( other instanceof RubyInteger ) {
-            self = bn_to_i();
+            self = to_i();
         }
         else if ( other instanceof BN ) {
             self = this;
@@ -596,9 +601,9 @@ public class BN extends RubyObject {
 
     // note that there is a bug in the MRI version, in argument handling,
     // so apparently no one ever calls this...
-    @JRubyMethod(name="prime?", rest=true)
-    public IRubyObject bn_is_prime(IRubyObject[] args) {
-        Ruby runtime = getRuntime();
+    @JRubyMethod(name = "prime?", rest = true)
+    public IRubyObject prime_p(IRubyObject[] args) {
+        final Ruby runtime = getRuntime();
         int argc = Arity.checkArgumentCount(runtime, args, 0, 1);
         // BigInteger#isProbablePrime will actually limit checks to a maximum of 50,
         // depending on bit count.
@@ -606,11 +611,11 @@ public class BN extends RubyObject {
         return runtime.newBoolean(this.value.isProbablePrime(certainty));
     }
 
-    // FIXME? BigInteger doesn't supply this, so right now this is (essentially)
-    // the same as bn_is_prime
-    @JRubyMethod(name="prime_fasttest?", rest=true)
-    public IRubyObject bn_is_prime_fasttest(IRubyObject[] args) {
-        Ruby runtime = getRuntime();
+    // NOTE: BigInteger doesn't supply this, so right now this is
+    // ... (essentially) the same as prime?
+    @JRubyMethod(name = "prime_fasttest?", rest = true)
+    public IRubyObject prime_fasttest_p(IRubyObject[] args) {
+        final Ruby runtime = getRuntime();
         int argc = Arity.checkArgumentCount(runtime, args, 0, 2);
         // BigInteger#isProbablePrime will actually limit checks to a maximum of 50,
         // depending on bit count.
@@ -618,8 +623,8 @@ public class BN extends RubyObject {
         return runtime.newBoolean(this.value.isProbablePrime(certainty));
     }
 
-    @JRubyMethod(name="generate_prime", meta=true, rest=true)
-    public static IRubyObject bn_generate_prime(IRubyObject recv, IRubyObject[] args) {
+    @JRubyMethod(name = "generate_prime", meta = true, rest = true)
+    public static IRubyObject generate_prime(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         int argc = Arity.checkArgumentCount(runtime, args, 1, 4);
         int bits = RubyNumeric.num2int(args[0]);
@@ -680,13 +685,13 @@ public class BN extends RubyObject {
         return generatePrime(bits, safe, null, null);
     }
 
-    @JRubyMethod(name="rand", meta=true, rest=true)
-    public static IRubyObject bn_rand(IRubyObject recv, IRubyObject[] args) {
+    @JRubyMethod(name = "rand", meta = true, rest = true)
+    public static IRubyObject rand(IRubyObject recv, IRubyObject[] args) {
         return getRandomBN(recv.getRuntime(), args, getSecureRandom());
     }
 
-    @JRubyMethod(name="pseudo_rand", meta=true, rest=true)
-    public static IRubyObject bn_pseudo_rand(IRubyObject recv, IRubyObject[] args) {
+    @JRubyMethod(name = "pseudo_rand", meta = true, rest = true)
+    public static IRubyObject pseudo_rand(IRubyObject recv, IRubyObject[] args) {
         return getRandomBN(recv.getRuntime(), args, getRandom());
     }
 
@@ -759,13 +764,13 @@ public class BN extends RubyObject {
         return new BigInteger(1, buf);
     }
 
-    @JRubyMethod(name="rand_range", meta=true)
-    public static IRubyObject bn_rand_range(IRubyObject recv, IRubyObject arg) {
+    @JRubyMethod(name = "rand_range", meta = true)
+    public static IRubyObject rand_range(IRubyObject recv, IRubyObject arg) {
         return getRandomBNInRange(recv.getRuntime(), getBigInteger(arg), getSecureRandom());
     }
 
-    @JRubyMethod(name="pseudo_rand_range", meta=true)
-    public static IRubyObject bn_pseudo_rand_range(IRubyObject recv, IRubyObject arg) {
+    @JRubyMethod(name = "pseudo_rand_range", meta = true)
+    public static IRubyObject pseudo_rand_range(IRubyObject recv, IRubyObject arg) {
         return getRandomBNInRange(recv.getRuntime(), getBigInteger(arg), getRandom());
     }
 
@@ -773,7 +778,8 @@ public class BN extends RubyObject {
         BigInteger value;
         try {
             value = getRandomBIInRange(limit, random);
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e) {
             throw newBNError(runtime, "illegal range");
         }
         return newBN(runtime, value);
@@ -791,21 +797,25 @@ public class BN extends RubyObject {
         return value;
     }
 
+    private static Random random;
+
     private static Random getRandom() {
-        Random rand;
-        if ((rand = _random) != null) {
-            return rand;
+        final Random rnd;
+        if ( ( rnd = BN.random ) != null ) {
+            return rnd;
         }
-        return _random = new Random();
+        return BN.random = new Random();
     }
 
+    private static SecureRandom secureRandom;
+
     private static SecureRandom getSecureRandom() {
-        SecureRandom rand;
-        if ((rand = _secureRandom) != null) {
-            return rand;
+        final SecureRandom rnd;
+        if ( ( rnd = BN.secureRandom ) != null ) {
+            return rnd;
         }
-        // FIXME: do we want a particular algorithm / provider? BC?
-        return _secureRandom = new SecureRandom(); // NOTE: will use Sun's if BC provider not set
+        // NOTE: will use (default) Sun's even if BC provider is set
+        return BN.secureRandom = new SecureRandom();
     }
 
     public static RaiseException newBNError(Ruby runtime, String message) {
@@ -827,7 +837,7 @@ public class BN extends RubyObject {
         if ( arg.isNil() ) return null;
 
         if ( arg instanceof RubyInteger ) {
-            return new BigInteger( arg.toString() );
+            return ((RubyInteger) arg).getBigIntegerValue();
         }
 
         if ( arg instanceof BN ) return ((BN) arg).value;
