@@ -764,6 +764,8 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "mult", required = 2, compat = CompatVersion.RUBY1_9)
     public IRubyObject mult219(ThreadContext context, IRubyObject b, IRubyObject n) {
+        cannotBeCoerced(getRuntime().getCurrentContext(), b, true);
+
         RubyBigDecimal val = getVpValue19(context, b, false);
         return multInternal(context, val, b, n);
     }
@@ -1191,6 +1193,8 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_9)
     public IRubyObject op_div19(ThreadContext context, IRubyObject other, IRubyObject digits) {
         RubyBigDecimal val = getVpValue(other, false);
+        cannotBeCoerced(getRuntime().getCurrentContext(), other, true);
+
         if (isNaN() || val.isNaN()) {
             throw context.runtime.newFloatDomainError("Computation results to 'NaN'");
         }
