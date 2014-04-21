@@ -138,7 +138,7 @@ public class ConvertBytes {
         } while ((i /= radix) > 0);
         if (neg) buf[--pos] = (byte)'-';
         
-        return new ByteList(buf, pos, len - pos, false);
+        return new ByteList(buf, pos, len - pos);
     }
 
     private static final ByteList intToUnsignedByteList(int i, int shift, byte[] digitmap) {
