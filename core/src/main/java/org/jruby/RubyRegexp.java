@@ -253,7 +253,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             thread.executeBlockingTask(task);
             return task.retval;
         } catch (InterruptedException e) {
-            throw runtime.newInterruptedRegexpError("Regexp Interrrupted");
+            throw runtime.newInterruptedRegexpError("Regexp Interrupted");
         }
     }
     
@@ -264,7 +264,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             thread.executeBlockingTask(task);
             return task.retval;
         } catch (InterruptedException e) {
-            throw runtime.newInterruptedRegexpError("Regexp Interrrupted");
+            throw runtime.newInterruptedRegexpError("Regexp Interrupted");
         }
     }
     
