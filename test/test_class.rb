@@ -315,7 +315,7 @@ class TestClass < Test::Unit::TestCase
     assert_equal([:puts2], AliasMethodTester::METHODS)
   end
 
-  # JRUBY-4266
+  # JRUBY-4497
   def test_sclass_return
     c = Class.new do
       def foo
