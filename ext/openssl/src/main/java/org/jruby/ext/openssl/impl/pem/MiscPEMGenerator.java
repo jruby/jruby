@@ -21,12 +21,18 @@ package org.jruby.ext.openssl.impl.pem;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.security.cert.CRLException;
+import java.security.cert.CertificateEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -44,16 +50,17 @@ import org.bouncycastle.util.io.pem.PemGenerationException;
 import org.bouncycastle.util.io.pem.PemHeader;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemObjectGenerator;
-
-import org.bouncycastle.openssl.PEMEncryptor;
+import org.bouncycastle.x509.X509AttributeCertificate;
 
 /**
  * PEM generator for the original set of PEM objects used in Open SSL.
  *
+ * @note Based on <code>org.bouncycastle.openssl.MiscPEMGenerator</code>
+ * (from BC 1.50) but "re-invented" for 1.47 compatibility
+ *
  * @author kares
  */
-public class MiscPEMGenerator
-    implements PemObjectGenerator
+public class MiscPEMGenerator implements PemObjectGenerator
 {
     private static final ASN1ObjectIdentifier[] dsaOids =
     {
@@ -76,10 +83,16 @@ public class MiscPEMGenerator
         this.encryptor = null;
     }
 
-    public MiscPEMGenerator(Object o, PEMEncryptor encryptor)
+    private MiscPEMGenerator(Object o, PEMEncryptor encryptor)
     {
         this.obj = o;
         this.encryptor = encryptor;
+    }
+
+    public static MiscPEMGenerator newInstance(final Object o,
+        final String algorithm, final char[] password,
+        final SecureRandom random) {
+        return new MiscPEMGenerator(o, buildPEMEncryptor(algorithm, password, random));
     }
 
     private PemObject createPemObject(Object o)
@@ -99,13 +112,11 @@ public class MiscPEMGenerator
         if (o instanceof X509CertificateHolder)
         {
             type = "CERTIFICATE";
-
             encoding = ((X509CertificateHolder)o).getEncoded();
         }
         else if (o instanceof X509CRLHolder)
         {
             type = "X509 CRL";
-
             encoding = ((X509CRLHolder)o).getEncoded();
         }
         else if (o instanceof PrivateKeyInfo)
@@ -116,7 +127,6 @@ public class MiscPEMGenerator
             if (algOID.equals(PKCSObjectIdentifiers.rsaEncryption))
             {
                 type = "RSA PRIVATE KEY";
-
                 encoding = info.parsePrivateKey().toASN1Primitive().getEncoded();
             }
             else if (algOID.equals(dsaOids[0]) || algOID.equals(dsaOids[1]))
@@ -142,7 +152,6 @@ public class MiscPEMGenerator
             else if (algOID.equals(X9ObjectIdentifiers.id_ecPublicKey))
             {
                 type = "EC PRIVATE KEY";
-
                 encoding = info.parsePrivateKey().toASN1Primitive().getEncoded();
             }
             else
@@ -153,7 +162,6 @@ public class MiscPEMGenerator
         else if (o instanceof SubjectPublicKeyInfo)
         {
             type = "PUBLIC KEY";
-
             encoding = ((SubjectPublicKeyInfo)o).getEncoded();
         }
         else if (o instanceof X509AttributeCertificateHolder)
@@ -161,7 +169,7 @@ public class MiscPEMGenerator
             type = "ATTRIBUTE CERTIFICATE";
             encoding = ((X509AttributeCertificateHolder)o).getEncoded();
         }
-        else if (o instanceof org.bouncycastle.pkcs.PKCS10CertificationRequest)
+        else if (o instanceof PKCS10CertificationRequest)
         {
             type = "CERTIFICATE REQUEST";
             encoding = ((PKCS10CertificationRequest)o).getEncoded();
@@ -171,12 +179,95 @@ public class MiscPEMGenerator
             type = "PKCS7";
             encoding = ((ContentInfo)o).getEncoded();
         }
+        //
+        // NOTE: added behaviour to provide backwards compatibility with 1.47 :
+        //
+        else if (o instanceof java.security.cert.X509Certificate) // 1.47 compatibility
+        {
+            type = "CERTIFICATE";
+            try {
+                encoding = ((java.security.cert.X509Certificate)o).getEncoded();
+            }
+            catch (CertificateEncodingException e) {
+                throw new PemGenerationException("Cannot encode object: " + e.toString());
+            }
+        }
+        else if (o instanceof java.security.cert.X509CRL) // 1.47 compatibility
+        {
+            type = "X509 CRL";
+            try {
+                encoding = ((java.security.cert.X509CRL)o).getEncoded();
+            }
+            catch (CRLException e) {
+                throw new PemGenerationException("Cannot encode object: " + e.toString());
+            }
+        }
+        else if (o instanceof java.security.KeyPair) // 1.47 compatibility
+        {
+            return createPemObject(((java.security.KeyPair)o).getPrivate());
+        }
+        else if (o instanceof java.security.PrivateKey) // 1.47 compatibility
+        {
+            PrivateKeyInfo info = new PrivateKeyInfo(
+                (ASN1Sequence) ASN1Primitive.fromByteArray(((java.security.Key)o).getEncoded()));
+
+            if (o instanceof java.security.interfaces.RSAPrivateKey)
+            {
+                type = "RSA PRIVATE KEY";
+
+                encoding = info.parsePrivateKey().toASN1Primitive().getEncoded();
+            }
+            else if (o instanceof java.security.interfaces.DSAPrivateKey)
+            {
+                type = "DSA PRIVATE KEY";
+
+                DSAParameter p = DSAParameter.getInstance(info.getPrivateKeyAlgorithm().getParameters());
+                ASN1EncodableVector v = new ASN1EncodableVector();
+
+                v.add(new DERInteger(0));
+                v.add(new DERInteger(p.getP()));
+                v.add(new DERInteger(p.getQ()));
+                v.add(new DERInteger(p.getG()));
+
+                BigInteger x = ((java.security.interfaces.DSAPrivateKey)o).getX();
+                BigInteger y = p.getG().modPow(x, p.getP());
+
+                v.add(new DERInteger(y));
+                v.add(new DERInteger(x));
+
+                encoding = new DERSequence(v).getEncoded();
+            }
+            else if (((java.security.PrivateKey)o).getAlgorithm().equals("ECDSA"))
+            {
+                type = "EC PRIVATE KEY";
+
+                encoding = info.parsePrivateKey().toASN1Primitive().getEncoded();
+            }
+            else
+            {
+                throw new IOException("Cannot identify private key");
+            }
+        }
+        else if (o instanceof java.security.PublicKey) // 1.47 compatibility
+        {
+            type = "PUBLIC KEY";
+
+            encoding = ((java.security.PublicKey)o).getEncoded();
+        }
+        else if (o instanceof X509AttributeCertificate) // 1.47 compatibility
+        {
+            type = "ATTRIBUTE CERTIFICATE";
+            encoding = ((X509AttributeCertificate)o).getEncoded();
+        }
+        //
+        //
+        //
         else
         {
             throw new PemGenerationException("unknown object passed - can't encode.");
         }
 
-        if (encryptor != null)
+        if (encryptor != null) // NEW STUFF (NOT IN OLD)
         {
             String dekAlgName = Strings.toUpperCase(encryptor.getAlgorithm());
 
@@ -186,12 +277,10 @@ public class MiscPEMGenerator
                 dekAlgName = "DES-EDE3-CBC";
             }
 
-
             byte[] iv = encryptor.getIV();
-
             byte[] encData = encryptor.encrypt(encoding);
 
-            List headers = new ArrayList(2);
+            List<PemHeader> headers = new ArrayList<PemHeader>(2);
 
             headers.add(new PemHeader("Proc-Type", "4,ENCRYPTED"));
             headers.add(new PemHeader("DEK-Info", dekAlgName + "," + getHexEncoded(iv)));
@@ -201,7 +290,7 @@ public class MiscPEMGenerator
         return new PemObject(type, encoding);
     }
 
-    private String getHexEncoded(byte[] bytes)
+    private static String getHexEncoded(byte[] bytes)
         throws IOException
     {
         char[] chars = new char[bytes.length * 2];
@@ -229,4 +318,36 @@ public class MiscPEMGenerator
             throw new PemGenerationException("encoding exception: " + e.getMessage(), e);
         }
     }
+
+    //
+    // NOTE: re-invented piece to provide compatibility for 1.47 - 1.48 :
+    //
+    private static PEMEncryptor buildPEMEncryptor(final String algorithm,
+        final char[] password, final SecureRandom random) {
+
+        int ivLength = algorithm.toUpperCase().startsWith("AES-") ? 16 : 8;
+        final byte[] iv = new byte[ivLength];
+        ( random == null ? new SecureRandom() : random ).nextBytes(iv);
+
+        return new PEMEncryptor() {
+            public String getAlgorithm() { return algorithm; }
+
+            public byte[] getIV() { return iv; }
+
+            public byte[] encrypt(byte[] encoding) throws PEMException {
+                return PEMUtilities.crypt(true, encoding, password, algorithm, iv);
+            }
+        };
+    }
+
+    private static interface PEMEncryptor {
+
+        public String getAlgorithm();
+
+        public byte[] getIV();
+
+        public byte[] encrypt(byte[] bytes) throws PEMException;
+
+    }
+
 }
