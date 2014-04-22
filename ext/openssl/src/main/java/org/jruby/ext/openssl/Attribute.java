@@ -82,13 +82,8 @@ public class Attribute extends RubyObject {
     private IRubyObject oid;
     private IRubyObject value;
 
-    private ASN1ObjectIdentifier getObjectIdentifier(String nameOrOid) {
-        Object val1 = ASN1.getOIDLookup(getRuntime()).get(nameOrOid.toLowerCase());
-        if(null != val1) {
-            return (ASN1ObjectIdentifier)val1;
-        }
-        ASN1ObjectIdentifier val2 = new ASN1ObjectIdentifier(nameOrOid);
-        return val2;
+    private ASN1ObjectIdentifier getObjectIdentifier(final String nameOrOid) {
+        return ASN1.getObjectIdentifier(getRuntime(), nameOrOid);
     }
 
     ASN1Primitive toASN1() {

@@ -162,7 +162,7 @@ public class Request extends RubyObject {
     private static IRubyObject newX509Attribute(final ThreadContext context,
         final ASN1ObjectIdentifier type, final ASN1Set values) throws IOException {
         final Ruby runtime = context.runtime;
-        IRubyObject attrType = runtime.newString( ASN1.getSymLookup(runtime).get(type) );
+        IRubyObject attrType = runtime.newString( ASN1.oid2Sym(runtime, type) );
         IRubyObject attrValue = ASN1.decode(context, _ASN1(runtime),
             RubyString.newString( runtime, ((ASN1Object) values).getEncoded() )
         );
