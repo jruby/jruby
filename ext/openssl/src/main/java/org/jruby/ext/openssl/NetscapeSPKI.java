@@ -56,6 +56,10 @@ import org.jruby.runtime.Visibility;
 // org.bouncycastle.jce.netscape.NetscapeCertRequest emulator:
 import org.jruby.ext.openssl.impl.NetscapeCertRequest;
 
+import static org.jruby.ext.openssl.PKeyDSA._DSA;
+import static org.jruby.ext.openssl.PKeyRSA._RSA;
+import org.jruby.runtime.ThreadContext;
+
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
@@ -77,6 +81,10 @@ public class NetscapeSPKI extends RubyObject {
         cSPKI.defineAnnotatedMethods(NetscapeSPKI.class);
     }
 
+    private static RubyModule _Netscape(final Ruby runtime) {
+        return (RubyModule) runtime.getModule("OpenSSL").getConstant("Netscape");
+    }
+
     public NetscapeSPKI(Ruby runtime, RubyClass type) {
         super(runtime,type);
     }
@@ -87,9 +95,9 @@ public class NetscapeSPKI extends RubyObject {
     private Object cert;
 
     @JRubyMethod(name = "initialize", rest = true, visibility = Visibility.PRIVATE)
-    public IRubyObject _initialize(IRubyObject[] args) {
-        final Ruby runtime = getRuntime();
-        if (args.length > 0) {
+    public IRubyObject _initialize(final ThreadContext context, final IRubyObject[] args) {
+        final Ruby runtime = context.runtime;
+        if ( args.length > 0 ) {
             byte[] b = args[0].convertToString().getBytes();
             b = tryBase64Decode(b);
 
@@ -105,11 +113,11 @@ public class NetscapeSPKI extends RubyObject {
             final String algorithm = publicKey.getAlgorithm();
             final RubyString pub_key = RubyString.newString(runtime, publicKey.getEncoded());
 
-            if ("RSA".equalsIgnoreCase(algorithm)) {
-                this.public_key = Utils.newRubyInstance(runtime, "OpenSSL::PKey::RSA", pub_key);
+            if ( "RSA".equalsIgnoreCase(algorithm) ) {
+                this.public_key = _RSA(runtime).callMethod(context, "new", pub_key);
             }
-            else if ("DSA".equalsIgnoreCase(algorithm)) {
-                this.public_key = Utils.newRubyInstance(runtime, "OpenSSL::PKey::DSA", pub_key);
+            else if ( "DSA".equalsIgnoreCase(algorithm) ) {
+                this.public_key = _DSA(runtime).callMethod(context, "new", pub_key);
             }
             else {
                 throw runtime.newLoadError("not implemented algo for public key: " + algorithm);
@@ -148,14 +156,12 @@ public class NetscapeSPKI extends RubyObject {
 
     private byte[] internalToDer() throws IOException {
         ASN1Sequence b = (ASN1Sequence) ((NetscapeCertRequest) cert).toASN1Primitive();
-        ASN1ObjectIdentifier encType = null;
-        DERBitString publicKey = new DERBitString(((PKey)public_key).to_der().convertToString().getBytes());
+        ASN1ObjectIdentifier encType = (ASN1ObjectIdentifier)((ASN1Sequence)((ASN1Sequence)((ASN1Sequence)b.getObjectAt(0)).getObjectAt(0)).getObjectAt(0)).getObjectAt(0);
+        ASN1ObjectIdentifier sigAlg = ((AlgorithmIdentifier)b.getObjectAt(1)).getAlgorithm();
+        DERBitString sig = (DERBitString) b.getObjectAt(2);
+
+        DERBitString publicKey = new DERBitString(((PKey) public_key).to_der().convertToString().getBytes());
         DERIA5String encodedChallenge = new DERIA5String(this.challenge.toString());
-        ASN1ObjectIdentifier sigAlg = null;
-        DERBitString sig = null;
-        encType = (ASN1ObjectIdentifier)((ASN1Sequence)((ASN1Sequence)((ASN1Sequence)b.getObjectAt(0)).getObjectAt(0)).getObjectAt(0)).getObjectAt(0);
-        sigAlg = ((AlgorithmIdentifier)b.getObjectAt(1)).getAlgorithm();
-        sig = (DERBitString)b.getObjectAt(2);
 
         ASN1EncodableVector v1 = new ASN1EncodableVector();
         ASN1EncodableVector v1_2 = new ASN1EncodableVector();
@@ -196,7 +202,7 @@ public class NetscapeSPKI extends RubyObject {
     public IRubyObject sign(final IRubyObject key, final IRubyObject digest) {
         final String keyAlg = ((PKey) key).getAlgorithm();
         final String digAlg = ((Digest) digest).getShortAlgorithm();
-        final String symKey = keyAlg.toLowerCase() + "-" + digAlg.toLowerCase();
+        final String symKey = keyAlg.toLowerCase() + '-' + digAlg.toLowerCase();
         try {
             final ASN1ObjectIdentifier alg = ASN1.getOIDLookup(getRuntime()).get( symKey );
             final PublicKey publicKey = ((PKey) public_key).getPublicKey();
@@ -235,7 +241,7 @@ public class NetscapeSPKI extends RubyObject {
     }
 
     private static RaiseException newSPKIError(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::Netscape::SPKIError", message);
+        return Utils.newError(runtime, _Netscape(runtime).getClass("SPKIError"), message);
     }
 
 }// NetscapeSPKI
