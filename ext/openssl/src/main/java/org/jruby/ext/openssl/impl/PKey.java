@@ -66,10 +66,9 @@ import org.jruby.ext.openssl.SecurityHelper;
 public class PKey {
 
     public static KeyPair readPrivateKey(byte[] input, String type) throws IOException, GeneralSecurityException {
-        KeySpec pubSpec = null;
-        KeySpec privSpec = null;
+        KeySpec pubSpec; KeySpec privSpec;
         ASN1Sequence seq = (ASN1Sequence) new ASN1InputStream(input).readObject();
-        if (type.equals("RSA")) {
+        if ( type.equals("RSA") ) {
             ASN1Integer mod = (ASN1Integer) seq.getObjectAt(1);
             ASN1Integer pubExp = (ASN1Integer) seq.getObjectAt(2);
             ASN1Integer privExp = (ASN1Integer) seq.getObjectAt(3);
@@ -95,17 +94,22 @@ public class PKey {
     }
 
     // d2i_PrivateKey_bio
-    public static KeyPair readPrivateKey(byte[] input) throws IOException, GeneralSecurityException {
+    public static KeyPair readPrivateKey(byte[] input) throws IOException,
+        NoSuchAlgorithmException, InvalidKeySpecException {
         KeyPair key = null;
         try {
             key = readRSAPrivateKey(input);
-        } catch (Exception e) {
+        }
+        catch (NoSuchAlgorithmException e) { throw e; /* should not happen */ }
+        catch (InvalidKeySpecException e) {
             // ignore
         }
         if (key == null) {
             try {
                 key = readDSAPrivateKey(input);
-            } catch (Exception e) {
+            }
+            catch (NoSuchAlgorithmException e) { throw e; /* should not happen */ }
+            catch (InvalidKeySpecException e) {
                 // ignore
             }
         }
@@ -113,17 +117,22 @@ public class PKey {
     }
 
     // d2i_PUBKEY_bio
-    public static PublicKey readPublicKey(byte[] input) throws IOException, GeneralSecurityException {
+    public static PublicKey readPublicKey(byte[] input) throws IOException,
+        NoSuchAlgorithmException, InvalidKeySpecException {
         PublicKey key = null;
         try {
             key = readRSAPublicKey(input);
-        } catch (Exception e) {
+        }
+        catch (NoSuchAlgorithmException e) { throw e; /* should not happen */ }
+        catch (InvalidKeySpecException e) {
             // ignore
         }
         if (key == null) {
             try {
                 key = readDSAPublicKey(input);
-            } catch (Exception e) {
+            }
+            catch (NoSuchAlgorithmException e) { throw e; /* should not happen */ }
+            catch (InvalidKeySpecException e) {
                 // ignore
             }
         }
@@ -139,7 +148,7 @@ public class PKey {
     public static KeyPair readRSAPrivateKey(final KeyFactory rsaFactory, final byte[] input)
         throws IOException, InvalidKeySpecException {
         // KeyFactory fact = SecurityHelper.getKeyFactory("RSA");
-        ASN1Sequence seq = (ASN1Sequence) (new ASN1InputStream(input).readObject());
+        ASN1Sequence seq = (ASN1Sequence) new ASN1InputStream(input).readObject();
         if ( seq.size() == 9 ) {
             BigInteger mod = ((ASN1Integer) seq.getObjectAt(1)).getValue();
             BigInteger pubexp = ((ASN1Integer) seq.getObjectAt(2)).getValue();
