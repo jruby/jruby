@@ -316,38 +316,48 @@ public class ThreadService {
     
     public static class Event {
         public enum Type { KILL, RAISE, WAKEUP }
-        public final RubyThread sender;
-        public final RubyThread target;
+        public final String description;
         public final Type type;
         public final IRubyObject exception;
 
-        public Event(RubyThread sender, RubyThread target, Type type) {
-            this(sender, target, type, null);
+        public Event(String description, Type type) {
+            this(description, type, null);
         }
 
-        public Event(RubyThread sender, RubyThread target, Type type, IRubyObject exception) {
-            this.sender = sender;
-            this.target = target;
+        public Event(String description, Type type, IRubyObject exception) {
+            this.description = description;
             this.type = type;
             this.exception = exception;
         }
         
         public String toString() {
             switch (type) {
-                case KILL: return sender.toString() + " sent KILL to " + target;
-                case RAISE: return sender.toString() + " sent RAISE to " + target + ": " + exception.getMetaClass().getRealClass();
-                case WAKEUP: return sender.toString() + " sent WAKEUP to " + target;
+                case KILL: return description;
+                case RAISE: return description + ": " + exception.getMetaClass().getRealClass();
+                case WAKEUP: return description;
             }
             return ""; // not reached
         }
+
+        public static Event kill(RubyThread sender, RubyThread target, Type type) {
+            return new Event(sender.toString() + " sent KILL to " + target, type);
+        }
+
+        public static Event raise(RubyThread sender, RubyThread target, Type type, IRubyObject exception) {
+            return new Event(sender.toString() + " sent KILL to " + target, type, exception);
+        }
+
+        public static Event wakeup(RubyThread sender, RubyThread target, Type type) {
+            return new Event(sender.toString() + " sent KILL to " + target, type);
+        }
     }
 
-    public void deliverEvent(Event event) {
+    public void deliverEvent(RubyThread sender, RubyThread target, Event event) {
         // first, check if the sender has unreceived mail
-        event.sender.checkMail(getCurrentContext());
+        sender.checkMail(getCurrentContext());
 
         // then deliver mail to the target
-        event.target.receiveMail(event);
+        target.receiveMail(event);
     }
 
     /**

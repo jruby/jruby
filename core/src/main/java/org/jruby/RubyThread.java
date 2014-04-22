@@ -879,7 +879,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         debug(this, "raising");
         IRubyObject exception = prepareRaiseException(runtime, args, block);
 
-        runtime.getThreadService().deliverEvent(new ThreadService.Event(currentThread, this, ThreadService.Event.Type.RAISE, exception));
+        runtime.getThreadService().deliverEvent(currentThread, this, ThreadService.Event.raise(currentThread, this, ThreadService.Event.Type.RAISE, exception));
 
         return this;
     }
@@ -895,7 +895,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         IRubyObject exception = prepareRaiseException(runtime, args, Block.NULL_BLOCK);
 
-        receiveMail(new ThreadService.Event(this, this, ThreadService.Event.Type.RAISE, exception));
+        receiveMail(ThreadService.Event.raise(this, this, ThreadService.Event.Type.RAISE, exception));
     }
 
     private IRubyObject prepareRaiseException(Ruby runtime, IRubyObject[] args, Block block) {
@@ -1053,7 +1053,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         currentThread.pollThreadEvents();
         
-        getRuntime().getThreadService().deliverEvent(new ThreadService.Event(currentThread, this, ThreadService.Event.Type.KILL));
+        getRuntime().getThreadService().deliverEvent(currentThread, this, ThreadService.Event.kill(currentThread, this, ThreadService.Event.Type.KILL));
 
         debug(this, "succeeded with kill");
         
@@ -1067,7 +1067,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * directly to mail delivery, bypassing all Ruby Thread-related steps.
      */
     public void dieFromFinalizer() {
-        receiveMail(new ThreadService.Event(null, this, ThreadService.Event.Type.KILL));
+        receiveMail(ThreadService.Event.kill(null, this, ThreadService.Event.Type.KILL));
     }
 
     private static void debug(RubyThread thread, String message) {
