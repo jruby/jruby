@@ -104,7 +104,218 @@ public class ASN1 {
         NID_TO_SN.put(runtime, new HashMap<Integer, String>());
         NID_TO_LN.put(runtime, new HashMap<Integer, String>());
 
-        OpenSSLImpl.defaultObjects(runtime);
+        defaultObjects(runtime);
+    }
+
+    private static void defaultObjects(final Ruby runtime) {
+        addObject(runtime, 0, null, null,"1.2.840.113549.1.12.1");
+        addObject(runtime, 1, null, "rsadsi","1.2.840.113549");
+        addObject(runtime, 2, null, "pkcs","1.2.840.113549.1");
+        addObject(runtime, 3, "MD2", "md2","1.2.840.113549.2.2");
+        addObject(runtime, 4, "MD5", "md5","1.2.840.113549.2.5");
+        addObject(runtime, 5, "RC4", "rc4","1.2.840.113549.3.4");
+        addObject(runtime, 6, null, "rsaEncryption","1.2.840.113549.1.1.1");
+        addObject(runtime, 7, "RSA-MD2", "md2WithRSAEncryption","1.2.840.113549.1.1.2");
+        addObject(runtime, 8, "RSA-MD5", "md5WithRSAEncryption","1.2.840.113549.1.1.4");
+        addObject(runtime, 9, "PBE-MD2-DES", "pbeWithMD2AndDES-CBC","1.2.840.113549.1.5.1");
+        addObject(runtime, 10, "PBE-MD5-DES", "pbeWithMD5AndDES-CBC","1.2.840.113549.1.5.3");
+        addObject(runtime, 11, null, "X500","2.5");
+        addObject(runtime, 12, null, "X509","2.5.4");
+        addObject(runtime, 13, "CN", "commonName","2.5.4.3");
+        addObject(runtime, 14, "C", "countryName","2.5.4.6");
+        addObject(runtime, 15, "L", "localityName","2.5.4.7");
+        addObject(runtime, 16, "ST", "stateOrProvinceName","2.5.4.8");
+        addObject(runtime, 17, "O", "organizationName","2.5.4.10");
+        addObject(runtime, 18, "OU", "organizationalUnitName","2.5.4.11");
+        addObject(runtime, 19, "RSA", "rsa","2.5.8.1.1");
+        addObject(runtime, 20, null, "pkcs7","1.2.840.113549.1.7");
+        addObject(runtime, org.jruby.ext.openssl.impl.ASN1Registry.NID_pkcs7_data, null, "pkcs7-data","1.2.840.113549.1.7.1");
+        addObject(runtime, org.jruby.ext.openssl.impl.ASN1Registry.NID_pkcs7_signed, null, "pkcs7-signedData","1.2.840.113549.1.7.2");
+        addObject(runtime, org.jruby.ext.openssl.impl.ASN1Registry.NID_pkcs7_enveloped, null, "pkcs7-envelopedData","1.2.840.113549.1.7.3");
+        addObject(runtime, org.jruby.ext.openssl.impl.ASN1Registry.NID_pkcs7_signedAndEnveloped, null, "pkcs7-signedAndEnvelopedData","1.2.840.113549.1.7.4");
+        addObject(runtime, org.jruby.ext.openssl.impl.ASN1Registry.NID_pkcs7_digest, null, "pkcs7-digestData","1.2.840.113549.1.7.5");
+        addObject(runtime, org.jruby.ext.openssl.impl.ASN1Registry.NID_pkcs7_encrypted, null, "pkcs7-encryptedData","1.2.840.113549.1.7.6");
+        addObject(runtime, 27, null, "pkcs3","1.2.840.113549.1.3");
+        addObject(runtime, 28, null, "dhKeyAgreement","1.2.840.113549.1.3.1");
+        addObject(runtime, 29, "DES-ECB", "des-ecb","1.3.14.3.2.6");
+        addObject(runtime, 30, "DES-CFB", "des-cfb","1.3.14.3.2.9");
+        addObject(runtime, 31, "DES-CBC", "des-cbc","1.3.14.3.2.7");
+        addObject(runtime, 32, "DES-EDE", "des-ede","1.3.14.3.2.17");
+        addObject(runtime, 33, "DES-EDE3", "des-ede3",null);
+        addObject(runtime, 34, "IDEA-CBC", "idea-cbc","1.3.6.1.4.1.188.7.1.1.2");
+        addObject(runtime, 35, "IDEA-CFB", "idea-cfb",null);
+        addObject(runtime, 36, "IDEA-ECB", "idea-ecb",null);
+        addObject(runtime, 37, "RC2-CBC", "rc2-cbc","1.2.840.113549.3.2");
+        addObject(runtime, 38, "RC2-ECB", "rc2-ecb",null);
+        addObject(runtime, 39, "RC2-CFB", "rc2-cfb",null);
+        addObject(runtime, 40, "RC2-OFB", "rc2-ofb",null);
+        addObject(runtime, 41, "SHA", "sha","1.3.14.3.2.18");
+        addObject(runtime, 42, "RSA-SHA", "shaWithRSAEncryption","1.3.14.3.2.15");
+        addObject(runtime, 43, "DES-EDE-CBC", "des-ede-cbc",null);
+        addObject(runtime, 44, "DES-EDE3-CBC", "des-ede3-cbc","1.2.840.113549.3.7");
+        addObject(runtime, 45, "DES-OFB", "des-ofb","1.3.14.3.2.8");
+        addObject(runtime, 46, "IDEA-OFB", "idea-ofb",null);
+        addObject(runtime, 47, null, "pkcs9","1.2.840.113549.1.9");
+        addObject(runtime, 48, "Email", "emailAddress","1.2.840.113549.1.9.1");
+        addObject(runtime, 49, null, "unstructuredName","1.2.840.113549.1.9.2");
+        addObject(runtime, 50, null, "contentType","1.2.840.113549.1.9.3");
+        addObject(runtime, 51, null, "messageDigest","1.2.840.113549.1.9.4");
+        addObject(runtime, 52, null, "signingTime","1.2.840.113549.1.9.5");
+        addObject(runtime, 53, null, "countersignature","1.2.840.113549.1.9.6");
+        addObject(runtime, 54, null, "challengePassword","1.2.840.113549.1.9.7");
+        addObject(runtime, 55, null, "unstructuredAddress","1.2.840.113549.1.9.8");
+        addObject(runtime, 56, null, "extendedCertificateAttributes","1.2.840.113549.1.9.9");
+        addObject(runtime, 57, "Netscape", "Netscape Communications Corp.","2.16.840.1.113730");
+        addObject(runtime, 58, "nsCertExt", "Netscape Certificate Extension","2.16.840.1.113730.1");
+        addObject(runtime, 59, "nsDataType", "Netscape Data Type","2.16.840.1.113730.2");
+        addObject(runtime, 60, "DES-EDE-CFB", "des-ede-cfb",null);
+        addObject(runtime, 61, "DES-EDE3-CFB", "des-ede3-cfb",null);
+        addObject(runtime, 62, "DES-EDE-OFB", "des-ede-ofb",null);
+        addObject(runtime, 63, "DES-EDE3-OFB", "des-ede3-ofb",null);
+        addObject(runtime, 64, "SHA1", "sha1","1.3.14.3.2.26");
+        addObject(runtime, 65, "RSA-SHA1", "sha1WithRSAEncryption","1.2.840.113549.1.1.5");
+        addObject(runtime, 66, "DSA-SHA", "dsaWithSHA","1.3.14.3.2.13");
+        addObject(runtime, 67, "DSA-old", "dsaEncryption-old","1.3.14.3.2.12");
+        addObject(runtime, 68, "PBE-SHA1-RC2-64", "pbeWithSHA1AndRC2-CBC","1.2.840.113549.1.5.11");
+        addObject(runtime, 69, null, "PBKDF2","1.2.840.113549.1.5.12");
+        addObject(runtime, 70, "DSA-SHA1-old", "dsaWithSHA1-old","1.3.14.3.2.27");
+        addObject(runtime, 71, "nsCertType", "Netscape Cert Type","2.16.840.1.113730.1.1");
+        addObject(runtime, 72, "nsBaseUrl", "Netscape Base Url","2.16.840.1.113730.1.2");
+        addObject(runtime, 73, "nsRevocationUrl", "Netscape Revocation Url","2.16.840.1.113730.1.3");
+        addObject(runtime, 74, "nsCaRevocationUrl", "Netscape CA Revocation Url","2.16.840.1.113730.1.4");
+        addObject(runtime, 75, "nsRenewalUrl", "Netscape Renewal Url","2.16.840.1.113730.1.7");
+        addObject(runtime, 76, "nsCaPolicyUrl", "Netscape CA Policy Url","2.16.840.1.113730.1.8");
+        addObject(runtime, 77, "nsSslServerName", "Netscape SSL Server Name","2.16.840.1.113730.1.12");
+        addObject(runtime, 78, "nsComment", "Netscape Comment","2.16.840.1.113730.1.13");
+        addObject(runtime, 79, "nsCertSequence", "Netscape Certificate Sequence","2.16.840.1.113730.2.5");
+        addObject(runtime, 80, "DESX-CBC", "desx-cbc",null);
+        addObject(runtime, 81, "id-ce", null,"2.5.29");
+        addObject(runtime, 82, "subjectKeyIdentifier", "X509v3 Subject Key Identifier","2.5.29.14");
+        addObject(runtime, 83, "keyUsage", "X509v3 Key Usage","2.5.29.15");
+        addObject(runtime, 84, "privateKeyUsagePeriod", "X509v3 Private Key Usage Period","2.5.29.16");
+        addObject(runtime, 85, "subjectAltName", "X509v3 Subject Alternative Name","2.5.29.17");
+        addObject(runtime, 86, "issuerAltName", "X509v3 Issuer Alternative Name","2.5.29.18");
+        addObject(runtime, 87, "basicConstraints", "X509v3 Basic Constraints","2.5.29.19");
+        addObject(runtime, 88, "crlNumber", "X509v3 CRL Number","2.5.29.20");
+        addObject(runtime, 89, "certificatePolicies", "X509v3 Certificate Policies","2.5.29.32");
+        addObject(runtime, 90, "authorityKeyIdentifier", "X509v3 Authority Key Identifier","2.5.29.35");
+        addObject(runtime, 91, "BF-CBC", "bf-cbc","1.3.6.1.4.1.3029.1.2");
+        addObject(runtime, 92, "BF-ECB", "bf-ecb",null);
+        addObject(runtime, 93, "BF-CFB", "bf-cfb",null);
+        addObject(runtime, 94, "BF-OFB", "bf-ofb",null);
+        addObject(runtime, 95, "MDC2", "mdc2","2.5.8.3.101");
+        addObject(runtime, 96, "RSA-MDC2", "mdc2withRSA","2.5.8.3.100");
+        addObject(runtime, 97, "RC4-40", "rc4-40",null);
+        addObject(runtime, 98, "RC2-40-CBC", "rc2-40-cbc",null);
+        addObject(runtime, 99, "G", "givenName","2.5.4.42");
+        addObject(runtime, 100, "S", "surname","2.5.4.4");
+        addObject(runtime, 101, "I", "initials","2.5.4.43");
+        addObject(runtime, 102, "UID", "uniqueIdentifier","2.5.4.45");
+        addObject(runtime, 103, "crlDistributionPoints", "X509v3 CRL Distribution Points","2.5.29.31");
+        addObject(runtime, 104, "RSA-NP-MD5", "md5WithRSA","1.3.14.3.2.3");
+        addObject(runtime, 105, "SN", "serialNumber","2.5.4.5");
+        addObject(runtime, 106, "T", "title","2.5.4.12");
+        addObject(runtime, 107, "D", "description","2.5.4.13");
+        addObject(runtime, 108, "CAST5-CBC", "cast5-cbc","1.2.840.113533.7.66.10");
+        addObject(runtime, 109, "CAST5-ECB", "cast5-ecb",null);
+        addObject(runtime, 110, "CAST5-CFB", "cast5-cfb",null);
+        addObject(runtime, 111, "CAST5-OFB", "cast5-ofb",null);
+        addObject(runtime, 112, null, "pbeWithMD5AndCast5CBC","1.2.840.113533.7.66.12");
+        addObject(runtime, 113, "DSA-SHA1", "dsaWithSHA1","1.2.840.10040.4.3");
+        addObject(runtime, 114, "MD5-SHA1", "md5-sha1",null);
+        addObject(runtime, 115, "RSA-SHA1-2", "sha1WithRSA","1.3.14.3.2.29");
+        addObject(runtime, 116, "DSA", "dsaEncryption","1.2.840.10040.4.1");
+        addObject(runtime, 117, "RIPEMD160", "ripemd160","1.3.36.3.2.1");
+        addObject(runtime, 118, "RSA-RIPEMD160", "ripemd160WithRSA","1.3.36.3.3.1.2");
+        addObject(runtime, 119, "RC5-CBC", "rc5-cbc","1.2.840.113549.3.8");
+        addObject(runtime, 120, "RC5-ECB", "rc5-ecb",null);
+        addObject(runtime, 121, "RC5-CFB", "rc5-cfb",null);
+        addObject(runtime, 122, "RC5-OFB", "rc5-ofb",null);
+        addObject(runtime, 123, "RLE", "run length compression","1.1.1.1.666.1");
+        addObject(runtime, 124, "ZLIB", "zlib compression","1.1.1.1.666.2");
+        addObject(runtime, 125, "extendedKeyUsage", "X509v3 Extended Key Usage","2.5.29.37");
+        addObject(runtime, 126, "PKIX", null,"1.3.6.1.5.5.7");
+        addObject(runtime, 127, "id-kp", null,"1.3.6.1.5.5.7.3");
+        addObject(runtime, 128, "serverAuth", "TLS Web Server Authentication","1.3.6.1.5.5.7.3.1");
+        addObject(runtime, 129, "clientAuth", "TLS Web Client Authentication","1.3.6.1.5.5.7.3.2");
+        addObject(runtime, 130, "codeSigning", "Code Signing","1.3.6.1.5.5.7.3.3");
+        addObject(runtime, 131, "emailProtection", "E-mail Protection","1.3.6.1.5.5.7.3.4");
+        addObject(runtime, 132, "timeStamping", "Time Stamping","1.3.6.1.5.5.7.3.8");
+        addObject(runtime, 133, "msCodeInd", "Microsoft Individual Code Signing","1.3.6.1.4.1.311.2.1.21");
+        addObject(runtime, 134, "msCodeCom", "Microsoft Commercial Code Signing","1.3.6.1.4.1.311.2.1.22");
+        addObject(runtime, 135, "msCTLSign", "Microsoft Trust List Signing","1.3.6.1.4.1.311.10.3.1");
+        addObject(runtime, 136, "msSGC", "Microsoft Server Gated Crypto","1.3.6.1.4.1.311.10.3.3");
+        addObject(runtime, 137, "msEFS", "Microsoft Encrypted File System","1.3.6.1.4.1.311.10.3.4");
+        addObject(runtime, 138, "nsSGC", "Netscape Server Gated Crypto","2.16.840.1.113730.4.1");
+        addObject(runtime, 139, "deltaCRL", "X509v3 Delta CRL Indicator","2.5.29.27");
+        addObject(runtime, 140, "CRLReason", "CRL Reason Code","2.5.29.21");
+        addObject(runtime, 141, "invalidityDate", "Invalidity Date","2.5.29.24");
+        addObject(runtime, 142, "SXNetID", "Strong Extranet ID","1.3.101.1.4.1");
+        addObject(runtime, 143, "PBE-SHA1-RC4-128", "pbeWithSHA1And128BitRC4","1.2.840.113549.1.12.1.1");
+        addObject(runtime, 144, "PBE-SHA1-RC4-40", "pbeWithSHA1And40BitRC4","1.2.840.113549.1.12.1.2");
+        addObject(runtime, 145, "PBE-SHA1-3DES", "pbeWithSHA1And3-KeyTripleDES-CBC","1.2.840.113549.1.12.1.3");
+        addObject(runtime, 146, "PBE-SHA1-2DES", "pbeWithSHA1And2-KeyTripleDES-CBC","1.2.840.113549.1.12.1.4");
+        addObject(runtime, 147, "PBE-SHA1-RC2-128", "pbeWithSHA1And128BitRC2-CBC","1.2.840.113549.1.12.1.5");
+        addObject(runtime, 148, "PBE-SHA1-RC2-40", "pbeWithSHA1And40BitRC2-CBC","1.2.840.113549.1.12.1.6");
+        addObject(runtime, 149, null, "keyBag","1.2.840.113549.1.12.10.1.1");
+        addObject(runtime, 150, null, "pkcs8ShroudedKeyBag","1.2.840.113549.1.12.10.1.2");
+        addObject(runtime, 151, null, "certBag","1.2.840.113549.1.12.10.1.3");
+        addObject(runtime, 152, null, "crlBag","1.2.840.113549.1.12.10.1.4");
+        addObject(runtime, 153, null, "secretBag","1.2.840.113549.1.12.10.1.5");
+        addObject(runtime, 154, null, "safeContentsBag","1.2.840.113549.1.12.10.1.6");
+        addObject(runtime, 155, null, "PBES2","1.2.840.113549.1.5.13");
+        addObject(runtime, 156, null, "PBMAC1","1.2.840.113549.1.5.14");
+        addObject(runtime, 157, null, "hmacWithSHA1","1.2.840.113549.2.7");
+        addObject(runtime, 158, "id-qt-cps", "Policy Qualifier CPS","1.3.6.1.5.5.7.2.1");
+        addObject(runtime, 159, "id-qt-unotice", "Policy Qualifier User Notice","1.3.6.1.5.5.7.2.2");
+        addObject(runtime, 160, "RC2-64-CBC", "rc2-64-cbc",null);
+        addObject(runtime, 161, "SMIME-CAPS", "S/MIME Capabilities","1.2.840.113549.1.9.15");
+        addObject(runtime, 162, "PBE-MD2-RC2-64", "pbeWithMD2AndRC2-CBC","1.2.840.113549.1.5.4");
+        addObject(runtime, 163, "PBE-MD5-RC2-64", "pbeWithMD5AndRC2-CBC","1.2.840.113549.1.5.6");
+        addObject(runtime, 164, "PBE-SHA1-DES", "pbeWithSHA1AndDES-CBC","1.2.840.113549.1.5.10");
+        addObject(runtime, 165, "msExtReq", "Microsoft Extension Request","1.3.6.1.4.1.311.2.1.14");
+        addObject(runtime, 166, "extReq", "Extension Request","1.2.840.113549.1.9.14");
+        addObject(runtime, 167, "name", "name","2.5.4.41");
+        addObject(runtime, 168, "dnQualifier", "dnQualifier","2.5.4.46");
+        addObject(runtime, 169, "id-pe", null,"1.3.6.1.5.5.7.1");
+        addObject(runtime, 170, "id-ad", null,"1.3.6.1.5.5.7.48");
+        addObject(runtime, 171, "authorityInfoAccess", "Authority Information Access","1.3.6.1.5.5.7.1.1");
+        addObject(runtime, 172, "OCSP", "OCSP","1.3.6.1.5.5.7.48.1");
+        addObject(runtime, 173, "caIssuers", "CA Issuers","1.3.6.1.5.5.7.48.2");
+        addObject(runtime, 174, "OCSPSigning", "OCSP Signing","1.3.6.1.5.5.7.3.9");
+        addObject(runtime, 175, "AES-128-EBC", "aes-128-ebc","2.16.840.1.101.3.4.1.1");
+        addObject(runtime, 176, "AES-128-CBC", "aes-128-cbc","2.16.840.1.101.3.4.1.2");
+        addObject(runtime, 177, "AES-128-OFB", "aes-128-ofb","2.16.840.1.101.3.4.1.3");
+        addObject(runtime, 178, "AES-128-CFB", "aes-128-cfb","2.16.840.1.101.3.4.1.4");
+        addObject(runtime, 179, "AES-192-EBC", "aes-192-ebc","2.16.840.1.101.3.4.1.21");
+        addObject(runtime, 180, "AES-192-CBC", "aes-192-cbc","2.16.840.1.101.3.4.1.22");
+        addObject(runtime, 181, "AES-192-OFB", "aes-192-ofb","2.16.840.1.101.3.4.1.23");
+        addObject(runtime, 182, "AES-192-CFB", "aes-192-cfb","2.16.840.1.101.3.4.1.24");
+        addObject(runtime, 183, "AES-256-EBC", "aes-256-ebc","2.16.840.1.101.3.4.1.41");
+        addObject(runtime, 184, "AES-256-CBC", "aes-256-cbc","2.16.840.1.101.3.4.1.42");
+        addObject(runtime, 185, "AES-256-OFB", "aes-256-ofb","2.16.840.1.101.3.4.1.43");
+        addObject(runtime, 186, "AES-256-CFB", "aes-256-cfb","2.16.840.1.101.3.4.1.44");
+    }
+
+    private static void addObject(final Ruby runtime, final int nid,
+        final String sn, final String ln, final String oid) {
+        if ( oid != null && ( sn != null || ln != null ) ) {
+
+            ASN1ObjectIdentifier objectId = new ASN1ObjectIdentifier(oid);
+
+            if ( sn != null ) {
+                symToOid(runtime).put(sn.toLowerCase(), objectId);
+            }
+            if ( ln != null ) {
+                symToOid(runtime).put(ln.toLowerCase(), objectId);
+            }
+
+            oidToSym(runtime).put(objectId, sn == null ? ln : sn);
+            oidToNid(runtime).put(objectId, nid);
+            nidToOid(runtime).put(nid, objectId);
+            nidToSn(runtime).put(nid, sn);
+            nidToLn(runtime).put(nid, ln);
+        }
     }
 
     private static Map<String, ASN1ObjectIdentifier> symToOid(final Ruby runtime) {
@@ -189,27 +400,6 @@ public class ASN1 {
             }
         }
         return map;
-    }
-
-    static void addObject(final Ruby runtime, final int nid,
-        final String sn, final String ln, final String oid) {
-        if ( oid != null && ( sn != null || ln != null ) ) {
-
-            ASN1ObjectIdentifier objectId = new ASN1ObjectIdentifier(oid);
-
-            if ( sn != null ) {
-                symToOid(runtime).put(sn.toLowerCase(), objectId);
-            }
-            if ( ln != null ) {
-                symToOid(runtime).put(ln.toLowerCase(), objectId);
-            }
-
-            oidToSym(runtime).put(objectId, sn == null ? ln : sn);
-            oidToNid(runtime).put(objectId, nid);
-            nidToOid(runtime).put(nid, objectId);
-            nidToSn(runtime).put(nid, sn);
-            nidToLn(runtime).put(nid, ln);
-        }
     }
 
     static String ln2oid(final Ruby runtime, final String ln) {
