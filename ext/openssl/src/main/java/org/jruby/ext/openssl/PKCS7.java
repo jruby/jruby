@@ -38,6 +38,9 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -85,8 +88,8 @@ public class PKCS7 extends RubyObject {
         }
     };
 
-    public static void createPKCS7(Ruby runtime, RubyModule mOSSL) {
-        RubyClass _PKCS7 = mOSSL.defineClassUnder("PKCS7", runtime.getObject(), PKCS7_ALLOCATOR);
+    public static void createPKCS7(final Ruby runtime, final RubyModule _OpenSSL) {
+        RubyClass _PKCS7 = _OpenSSL.defineClassUnder("PKCS7", runtime.getObject(), PKCS7_ALLOCATOR);
         RubyClass _OpenSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
         _PKCS7.defineClassUnder("PKCS7Error", _OpenSSLError, _OpenSSLError.getAllocator());
         _PKCS7.addReadWriteAttribute(runtime.getCurrentContext(), "data");
@@ -398,17 +401,19 @@ public class PKCS7 extends RubyObject {
 
     @JRubyMethod
     public IRubyObject add_signer(IRubyObject obj) {
-        SignerInfoWithPkey p7si = ((SignerInfo)obj).getSignerInfo().dup();
+        SignerInfoWithPkey signedInfo = ((SignerInfo) obj).getSignerInfo().dup();
 
         try {
-            p7.addSigner(p7si);
-        } catch (PKCS7Exception pkcse) {
-            throw newPKCS7Error(getRuntime(), pkcse);
+            p7.addSigner(signedInfo);
+        }
+        catch (PKCS7Exception e) {
+            throw newPKCS7Error(getRuntime(), e);
         }
         // TODO: Handle exception here
 
-        if(p7.isSigned()) {
-            p7si.addSignedAttribute(ASN1Registry.NID_pkcs9_contentType, ASN1Registry.nid2obj(ASN1Registry.NID_pkcs7_data));
+        if ( p7.isSigned() ) {
+            ASN1Encodable objectId = ASN1Registry.OID_pkcs7_data;
+            signedInfo.addSignedAttribute(ASN1Registry.NID_pkcs9_contentType, objectId);
         }
 
         return this;
@@ -421,10 +426,10 @@ public class PKCS7 extends RubyObject {
      */
     @JRubyMethod
     public IRubyObject signers() {
-        Collection<SignerInfoWithPkey> sk = p7.getSignerInfo();
-        RubyArray ary = getRuntime().newArray(sk.size());
-        for(SignerInfoWithPkey si : sk) {
-            ary.append(SignerInfo.create(getRuntime(), si));
+        Collection<SignerInfoWithPkey> signerInfos = p7.getSignerInfo();
+        RubyArray ary = getRuntime().newArray(signerInfos.size());
+        for ( SignerInfoWithPkey signerInfo : signerInfos ) {
+            ary.append( SignerInfo.create(getRuntime(), signerInfo) );
         }
         return ary;
     }

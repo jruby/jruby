@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2008 Ola Bini <ola.bini@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,8 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.impl;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
@@ -38,7 +36,6 @@ import java.security.interfaces.RSAPrivateKey;
 import java.util.Enumeration;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -80,7 +77,7 @@ public class SignerInfoWithPkey implements ASN1Encodable {
     }
 
     public SignerInfoWithPkey dup() {
-        SignerInfoWithPkey copy = new SignerInfoWithPkey(version, 
+        SignerInfoWithPkey copy = new SignerInfoWithPkey(version,
                                                          issuerAndSerialNumber,
                                                          digAlgorithm,
                                                          authenticatedAttributes,
@@ -91,7 +88,7 @@ public class SignerInfoWithPkey implements ASN1Encodable {
         return copy;
     }
 
-    SignerInfoWithPkey() {        
+    SignerInfoWithPkey() {
     }
 
     public SignerInfoWithPkey(ASN1Integer              version,
@@ -171,9 +168,7 @@ public class SignerInfoWithPkey implements ASN1Encodable {
      *
      */
     public void set(X509AuxCertificate x509, PrivateKey pkey, MessageDigest dgst) throws PKCS7Exception {
-        boolean dsa = 
-            (pkey instanceof DSAPrivateKey) || 
-            (pkey instanceof ECPrivateKey);
+        boolean dsa = (pkey instanceof DSAPrivateKey) || (pkey instanceof ECPrivateKey);
 
         version = new ASN1Integer(1);
 
@@ -182,19 +177,19 @@ public class SignerInfoWithPkey implements ASN1Encodable {
         issuerAndSerialNumber = new IssuerAndSerialNumber(issuer, serial);
 
         this.pkey = pkey;
-        
-        if(dsa) {
-            digAlgorithm = new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_sha1));
+
+        if ( dsa ) {
+            digAlgorithm = new AlgorithmIdentifier(ASN1Registry.OID_sha1);
         } else {
             digAlgorithm = new AlgorithmIdentifier(ASN1Registry.nid2obj(EVP.type(dgst)));
         }
-        
+
         if(pkey instanceof RSAPrivateKey) {
-            digEncryptionAlgorithm = new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_rsaEncryption));
+            digEncryptionAlgorithm = new AlgorithmIdentifier(ASN1Registry.OID_rsaEncryption);
         } else if(pkey instanceof DSAPrivateKey) {
-            digEncryptionAlgorithm = new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_dsa));
+            digEncryptionAlgorithm = new AlgorithmIdentifier(ASN1Registry.OID_dsa);
         } else if(pkey instanceof ECPrivateKey) {
-            digEncryptionAlgorithm = new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_ecdsa_with_SHA1));
+            digEncryptionAlgorithm = new AlgorithmIdentifier(ASN1Registry.OID_ecdsa_with_SHA1);
         }
     }
 
@@ -291,28 +286,18 @@ public class SignerInfoWithPkey implements ASN1Encodable {
     /** c: static get_attribute
      *
      */
-    public static ASN1Encodable getAttribute(ASN1Set sk, int nid) {
-        Attribute xa = null;
-        ASN1ObjectIdentifier o = ASN1Registry.nid2obj(nid);
+    static ASN1Encodable getAttribute(ASN1Set sk, int nid) {
+        final ASN1ObjectIdentifier oid = ASN1Registry.nid2obj(nid);
 
-        if(null == o || null == sk) {
-            return null;
-        }
+        if ( oid == null || sk == null ) return null;
 
-        for(Enumeration e = sk.getObjects(); e.hasMoreElements();) {
-            Object val = e.nextElement();
-            if(val instanceof Attribute) {
-                xa = (Attribute)val;
-            } else {
-                xa = Attribute.getInstance(val);
-            }
-
-            if(o.equals(xa.getAttrType())) {
-                if(xa.getAttrValues().size() > 0) {
+        for ( Enumeration e = sk.getObjects(); e.hasMoreElements(); ) {
+            Attribute xa = Attribute.getInstance( e.nextElement() );
+            if ( oid.equals(xa.getAttrType()) ) {
+                if ( xa.getAttrValues().size() > 0 ) {
                     return xa.getAttrValues().getObjectAt(0);
-                } else {
-                    return null;
                 }
+                return null;
             }
         }
         return null;
@@ -337,23 +322,16 @@ public class SignerInfoWithPkey implements ASN1Encodable {
      */
     private ASN1Set addAttribute(ASN1Set base, int atrType, ASN1Encodable value) {
         ASN1EncodableVector vector = new ASN1EncodableVector();
-        if(base == null) {
-            base = new DERSet();
-        }
-        Attribute attr = null;
-        for(Enumeration e = base.getObjects(); e.hasMoreElements();) {
-            Object val = e.nextElement();
-            if(val instanceof Attribute) {
-                attr = (Attribute)val;
-            } else {
-                attr = Attribute.getInstance(val);
-            }
-            if(ASN1Registry.obj2nid(attr.getAttrType()) != atrType) {
+        if ( base == null ) base = new DERSet();
+        Attribute attr;
+        for ( Enumeration e = base.getObjects(); e.hasMoreElements(); ) {
+            attr = Attribute.getInstance( e.nextElement() );
+            if ( ASN1Registry.obj2nid(attr.getAttrType()) != atrType ) {
                 vector.add(attr);
             }
         }
         ASN1ObjectIdentifier ident = ASN1Registry.nid2obj(atrType);
-        attr = new org.bouncycastle.asn1.pkcs.Attribute(ident, new DERSet(value));
+        attr = new Attribute(ident, new DERSet(value));
         vector.add(attr);
         return new DERSet(vector);
     }

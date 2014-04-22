@@ -435,9 +435,9 @@ public class ASN1 {
         return getSymLookup(runtime).get(oid);
     }
 
-    //static ASN1ObjectIdentifier sym2Oid(final Ruby runtime, final String name) {
-    //    return getOIDLookup(runtime).get(name);
-    //}
+    static ASN1ObjectIdentifier sym2Oid(final Ruby runtime, final String name) {
+        return getOIDLookup(runtime).get(name);
+    }
 
     static Map<String, ASN1ObjectIdentifier> getOIDLookup(final Ruby runtime) {
         return symToOid(runtime);
