@@ -379,4 +379,17 @@ public class ThreadService {
             return new Event(sender.toString() + " sent KILL to " + target, type);
         }
     }
+
+    public void deliverEvent(RubyThread sender, RubyThread target, Event event) {
+        // first, check if the sender has unreceived mail
+        sender.checkMail(getCurrentContext());
+
+        // then deliver mail to the target
+        target.receiveMail(event);
+    }
+
+        public static Event wakeup(RubyThread sender, RubyThread target, Type type) {
+            return new Event(sender.toString() + " sent KILL to " + target, type);
+        }
+    }
 }
