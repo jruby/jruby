@@ -40,7 +40,6 @@ import java.util.TimeZone;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.cert.X509CRL;
 
@@ -432,14 +431,14 @@ public class PKCS7 {
         }
 
         if((flags & NOATTR) == 0) {
-            si.addSignedAttribute(ASN1Registry.NID_pkcs9_contentType, ASN1Registry.nid2obj(ASN1Registry.NID_pkcs7_data));
+            si.addSignedAttribute(ASN1Registry.NID_pkcs9_contentType, ASN1Registry.OID_pkcs7_data);
             if((flags & NOSMIMECAP) == 0) {
                 ASN1EncodableVector smcap = new ASN1EncodableVector();
-                smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_des_ede3_cbc)));
-                smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_rc2_cbc), new ASN1Integer(128)));
-                smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_rc2_cbc), new ASN1Integer(64)));
-                smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_rc2_cbc), new ASN1Integer(40)));
-                smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_des_cbc)));
+                smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_des_ede3_cbc));
+                smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_rc2_cbc, new ASN1Integer(128)));
+                smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_rc2_cbc, new ASN1Integer(64)));
+                smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_rc2_cbc, new ASN1Integer(40)));
+                smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_des_cbc));
                 si.addSignedAttribute(ASN1Registry.NID_SMIMECapabilities, new DLSequence(smcap));
             }
         }

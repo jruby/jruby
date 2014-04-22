@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2008 Ola Bini <ola.bini@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -29,6 +29,7 @@ package org.jruby.ext.openssl.impl;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 /**
@@ -36,77 +37,87 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
 public class ASN1Registry {
+
     @SuppressWarnings("unchecked")
-    private static Map<String, ASN1ObjectIdentifier> SYM_TO_OID = new HashMap<String, ASN1ObjectIdentifier>(org.bouncycastle.asn1.x509.X509Name.DefaultLookUp);
+    private static final Map<String, ASN1ObjectIdentifier> SYM_TO_OID = new HashMap<String, ASN1ObjectIdentifier>(org.bouncycastle.asn1.x509.X509Name.DefaultLookUp);
     @SuppressWarnings("unchecked")
-    private static Map<ASN1ObjectIdentifier, String> OID_TO_SYM = new HashMap<ASN1ObjectIdentifier, String>(org.bouncycastle.asn1.x509.X509Name.DefaultSymbols);
-    private static Map<ASN1ObjectIdentifier, Integer> OID_TO_NID = new HashMap<ASN1ObjectIdentifier, Integer>();
-    private static Map<Integer, ASN1ObjectIdentifier> NID_TO_OID = new HashMap<Integer, ASN1ObjectIdentifier>();
-    private static Map<Integer, String> NID_TO_SN = new HashMap<Integer, String>();
-    private static Map<Integer, String> NID_TO_LN = new HashMap<Integer, String>();
-    
-    public static Integer obj2nid(String oid) {
+    private static final Map<ASN1ObjectIdentifier, String> OID_TO_SYM = new HashMap<ASN1ObjectIdentifier, String>(org.bouncycastle.asn1.x509.X509Name.DefaultSymbols);
+
+    private static final Map<ASN1ObjectIdentifier, Integer> OID_TO_NID = new HashMap<ASN1ObjectIdentifier, Integer>();
+    private static final Map<Integer, ASN1ObjectIdentifier> NID_TO_OID = new HashMap<Integer, ASN1ObjectIdentifier>();
+    private static final Map<Integer, String> NID_TO_SN = new HashMap<Integer, String>();
+    private static final Map<Integer, String> NID_TO_LN = new HashMap<Integer, String>();
+
+    // seems no longer used
+    static Integer obj2nid(String oid) {
         return obj2nid(new ASN1ObjectIdentifier(oid));
     }
 
-    public static String ln2oid(String ln) {
-        return SYM_TO_OID.get(ln.toLowerCase()).getId();
-    }
-
-    public static Integer obj2nid(ASN1ObjectIdentifier oid) {
+    public static Integer obj2nid(final ASN1ObjectIdentifier oid) {
         return OID_TO_NID.get(oid);
     }
 
-    public static String o2a(String oid) {
-        return o2a(new ASN1ObjectIdentifier(oid));        
+    // seems no longer used
+    static String ln2oid(final String ln) {
+        ASN1ObjectIdentifier oid = sym2oid(ln);
+        return oid == null ? null : oid.getId();
     }
-    
-    public static String o2a(ASN1ObjectIdentifier obj) {
+
+    public static String o2a(String oid) {
+        return o2a(new ASN1ObjectIdentifier(oid));
+    }
+
+    public static String o2a(final ASN1ObjectIdentifier obj) {
         Integer nid = obj2nid(obj);
-        String one = NID_TO_LN.get(nid);
-        if(one == null) {
-            one = NID_TO_SN.get(nid);
-        }
-        return one;
+        String name = NID_TO_LN.get(nid);
+        if( name == null ) name = NID_TO_SN.get(nid);
+        return name;
     }
 
     public static ASN1ObjectIdentifier sym2oid(String name) {
         return SYM_TO_OID.get(name.toLowerCase());
     }
 
-    public static int sym2nid(String name) {
+    // seems no longer used
+    static int sym2nid(String name) {
         return OID_TO_NID.get(SYM_TO_OID.get(name.toLowerCase()));
     }
 
-    public static String nid2ln(int nid) {
-        return nid2ln(Integer.valueOf(nid));
+    static String nid2ln(int nid) {
+        return NID_TO_LN.get( Integer.valueOf(nid) );
     }
 
     public static ASN1ObjectIdentifier nid2obj(int nid) {
         return NID_TO_OID.get(nid);
     }
 
-    public static String nid2ln(Integer nid) {
+    // seems no longer used
+    static String nid2ln(Integer nid) {
         return NID_TO_LN.get(nid);
     }
 
-    static void addObject(int nid, String sn, String ln, String oid) {
-        if(null != oid && oid.length() > 2 && (null != sn || null != ln)) {
-            ASN1ObjectIdentifier ident = new ASN1ObjectIdentifier(oid);
-            if(sn != null) {
-                SYM_TO_OID.put(sn.toLowerCase(),ident);
-            }
-            if(ln != null) {
-                SYM_TO_OID.put(ln.toLowerCase(),ident);
-            }
-            OID_TO_SYM.put(ident,sn == null ? ln : sn);
-            OID_TO_NID.put(ident,nid);
-            NID_TO_OID.put(nid,ident);
-            NID_TO_SN.put(nid,sn);
-            NID_TO_LN.put(nid,ln);
-        }        
+    private static ASN1ObjectIdentifier addObject(final int nid, String sn, String ln, final String oid) {
+        if ( oid != null ) {
+            final ASN1ObjectIdentifier objectId = new ASN1ObjectIdentifier(oid);
+            addObject(Integer.valueOf(nid), sn, ln, objectId);
+            return objectId;
+        }
+        return null;
     }
 
+    private static void addObject(final Integer nid, String sn, String ln, final ASN1ObjectIdentifier oid) {
+        if ( sn != null ) {
+            SYM_TO_OID.put(sn.toLowerCase(), oid);
+        }
+        if ( ln != null ) {
+            SYM_TO_OID.put(ln.toLowerCase(), oid);
+        }
+        OID_TO_SYM.put(oid, sn == null ? ln : sn);
+        OID_TO_NID.put(oid, nid);
+        NID_TO_OID.put(nid, oid);
+        NID_TO_SN.put(nid, sn);
+        NID_TO_LN.put(nid, ln);
+    }
 
     public final static int    NID_id_pkix = 127;
     public final static String SN_id_pkix = "PKIX";
@@ -122,7 +133,7 @@ public class ASN1Registry {
     public final static String OBJ_ad_OCSP = OBJ_id_ad + ".1";
 
     public final static String OBJ_id_pkix_OCSP = OBJ_ad_OCSP;
- 
+
     public final static int    NID_iso = 181;
     public final static String SN_iso = "ISO";
     public final static String LN_iso = "iso";
@@ -270,6 +281,7 @@ public class ASN1Registry {
     public final static int    NID_rsaEncryption = 6;
     public final static String LN_rsaEncryption = "rsaEncryption";
     public final static String OBJ_rsaEncryption = OBJ_pkcs1 + ".1";
+    public final static ASN1ObjectIdentifier OID_rsaEncryption = new ASN1ObjectIdentifier(OBJ_rsaEncryption);
 
     public final static int    NID_md2WithRSAEncryption = 7;
     public final static String SN_md2WithRSAEncryption = "RSA-MD2";
@@ -351,6 +363,7 @@ public class ASN1Registry {
     public final static int    NID_pkcs7_data = 21;
     public final static String LN_pkcs7_data = "pkcs7-data";
     public final static String OBJ_pkcs7_data = OBJ_pkcs7 + ".1";
+    public final static ASN1ObjectIdentifier OID_pkcs7_data = new ASN1ObjectIdentifier(OBJ_pkcs7_data);
 
     public final static int    NID_pkcs7_signed = 22;
     public final static String LN_pkcs7_signed = "pkcs7-signedData";
@@ -399,6 +412,7 @@ public class ASN1Registry {
     public final static String SN_des_cbc = "DES-CBC";
     public final static String LN_des_cbc = "des-cbc";
     public final static String OBJ_des_cbc = OBJ_algorithm + ".7";
+    public final static ASN1ObjectIdentifier OID_des_cbc = new ASN1ObjectIdentifier(OBJ_des_cbc);
 
     public final static int    NID_des_ede_ecb = 32;
     public final static String SN_des_ede_ecb = "DES-EDE";
@@ -426,6 +440,7 @@ public class ASN1Registry {
     public final static String SN_rc2_cbc = "RC2-CBC";
     public final static String LN_rc2_cbc = "rc2-cbc";
     public final static String OBJ_rc2_cbc = OBJ_rsadsi + ".3.2";
+    public final static ASN1ObjectIdentifier OID_rc2_cbc = new ASN1ObjectIdentifier(OBJ_rc2_cbc);
 
     public final static int    NID_rc2_ecb = 38;
     public final static String SN_rc2_ecb = "RC2-ECB";
@@ -457,6 +472,7 @@ public class ASN1Registry {
     public final static String SN_des_ede3_cbc = "DES-EDE3-CBC";
     public final static String LN_des_ede3_cbc = "des-ede3-cbc";
     public final static String OBJ_des_ede3_cbc = OBJ_rsadsi + ".3.7";
+    public final static ASN1ObjectIdentifier OID_des_ede3_cbc = new ASN1ObjectIdentifier(OBJ_des_ede3_cbc);
 
     public final static int    NID_des_ofb64 = 45;
     public final static String SN_des_ofb64 = "DES-OFB";
@@ -538,6 +554,7 @@ public class ASN1Registry {
     public final static String SN_sha1 = "SHA1";
     public final static String LN_sha1 = "sha1";
     public final static String OBJ_sha1 = OBJ_algorithm + ".26";
+    public final static ASN1ObjectIdentifier OID_sha1 = new ASN1ObjectIdentifier(OBJ_sha1);
 
     public final static int    NID_sha1WithRSAEncryption = 65;
     public final static String SN_sha1WithRSAEncryption = "RSA-SHA1";
@@ -758,7 +775,7 @@ public class ASN1Registry {
     public final static int    NID_pbeWithMD5AndCast5_CBC = 112;
     public final static String LN_pbeWithMD5AndCast5_CBC = "pbeWithMD5AndCast5CBC";
     public final static String OBJ_pbeWithMD5AndCast5_CBC = OBJ_ISO_US + ".113533.7.66.12";
- 
+
     public final static int    NID_X9cm = 185;
     public final static String SN_X9cm = "X9cm";
     public final static String LN_X9cm = "X9.57 CM ?";
@@ -782,6 +799,7 @@ public class ASN1Registry {
     public final static String SN_dsa = "DSA";
     public final static String LN_dsa = "dsaEncryption";
     public final static String OBJ_dsa = OBJ_X9cm + ".1";
+    public final static ASN1ObjectIdentifier OID_dsa = new ASN1ObjectIdentifier(OBJ_dsa);
 
     public final static int    NID_ripemd160 = 117;
     public final static String SN_ripemd160 = "RIPEMD160";
@@ -1923,7 +1941,7 @@ public class ASN1Registry {
     public final static String OBJ_Domain = OBJ_pilotObjectClass + ".13";
 
     public final static int    NID_joint_iso_ccitt = 393;
-    public final static String OBJ_joint_iso_ccitt = "OBJ_joint_iso_itu_t";
+    private final static String OBJ_joint_iso_ccitt = "OBJ_joint_iso_itu_t";
 
     public final static int    NID_selected_attribute_types = 394;
     public final static String SN_selected_attribute_types = "selected-attribute-types";
@@ -1973,7 +1991,7 @@ public class ASN1Registry {
     public final static String OBJ_no_rev_avail = OBJ_id_ce + ".56";
 
     public final static int    NID_ccitt = 404;
-    public final static String OBJ_ccitt = "OBJ_itu_t";
+    private final static String OBJ_ccitt = "OBJ_itu_t";
 
     public final static int    NID_X9_62_prime_field = 406;
     public final static String SN_X9_62_prime_field = "prime-field";
@@ -2018,6 +2036,7 @@ public class ASN1Registry {
     public final static int    NID_ecdsa_with_SHA1 = 416;
     public final static String SN_ecdsa_with_SHA1 = "ecdsa-with-SHA1";
     public final static String OBJ_ecdsa_with_SHA1 = OBJ_X9_62_id_ecSigType + ".1";
+    public final static ASN1ObjectIdentifier OID_ecdsa_with_SHA1 = new ASN1ObjectIdentifier(OBJ_ecdsa_with_SHA1);
 
     public final static int    NID_ms_csp_name = 417;
     public final static String SN_ms_csp_name = "CSPName";
@@ -3364,14 +3383,16 @@ public class ASN1Registry {
     public final static String SN_ipsec4 = "Oakley-EC2N-4";
     public final static String LN_ipsec4 = "ipsec4";
 
-    static {
-        addObject(NID_undef, SN_undef, LN_undef, OBJ_undef); // NID: 0
+    static { initObjects(); }
+
+    private static void initObjects() {
+        //addObject(NID_undef, SN_undef, LN_undef, OBJ_undef); // NID: 0
         addObject(NID_rsadsi, SN_rsadsi, LN_rsadsi, OBJ_rsadsi); // NID: 1
         addObject(NID_pkcs, SN_pkcs, LN_pkcs, OBJ_pkcs); // NID: 2
         addObject(NID_md2, SN_md2, LN_md2, OBJ_md2); // NID: 3
         addObject(NID_md5, SN_md5, LN_md5, OBJ_md5); // NID: 4
         addObject(NID_rc4, SN_rc4, LN_rc4, OBJ_rc4); // NID: 5
-        addObject(NID_rsaEncryption, null, LN_rsaEncryption, OBJ_rsaEncryption); // NID: 6
+        addObject(NID_rsaEncryption, null, LN_rsaEncryption, OID_rsaEncryption); // NID: 6
         addObject(NID_md2WithRSAEncryption, SN_md2WithRSAEncryption, LN_md2WithRSAEncryption, OBJ_md2WithRSAEncryption); // NID: 7
         addObject(NID_md5WithRSAEncryption, SN_md5WithRSAEncryption, LN_md5WithRSAEncryption, OBJ_md5WithRSAEncryption); // NID: 8
         addObject(NID_pbeWithMD2AndDES_CBC, SN_pbeWithMD2AndDES_CBC, LN_pbeWithMD2AndDES_CBC, OBJ_pbeWithMD2AndDES_CBC); // NID: 9
@@ -3386,7 +3407,7 @@ public class ASN1Registry {
         addObject(NID_organizationalUnitName, SN_organizationalUnitName, LN_organizationalUnitName, OBJ_organizationalUnitName); // NID: 18
         addObject(NID_rsa, SN_rsa, LN_rsa, OBJ_rsa); // NID: 19
         addObject(NID_pkcs7, SN_pkcs7, null, OBJ_pkcs7); // NID: 20
-        addObject(NID_pkcs7_data, null, LN_pkcs7_data, OBJ_pkcs7_data); // NID: 21
+        addObject(NID_pkcs7_data, null, LN_pkcs7_data, OID_pkcs7_data); // NID: 21
         addObject(NID_pkcs7_signed, null, LN_pkcs7_signed, OBJ_pkcs7_signed); // NID: 22
         addObject(NID_pkcs7_enveloped, null, LN_pkcs7_enveloped, OBJ_pkcs7_enveloped); // NID: 23
         addObject(NID_pkcs7_signedAndEnveloped, null, LN_pkcs7_signedAndEnveloped, OBJ_pkcs7_signedAndEnveloped); // NID: 24
@@ -3396,20 +3417,20 @@ public class ASN1Registry {
         addObject(NID_dhKeyAgreement, null, LN_dhKeyAgreement, OBJ_dhKeyAgreement); // NID: 28
         addObject(NID_des_ecb, SN_des_ecb, LN_des_ecb, OBJ_des_ecb); // NID: 29
         addObject(NID_des_cfb64, SN_des_cfb64, LN_des_cfb64, OBJ_des_cfb64); // NID: 30
-        addObject(NID_des_cbc, SN_des_cbc, LN_des_cbc, OBJ_des_cbc); // NID: 31
+        addObject(NID_des_cbc, SN_des_cbc, LN_des_cbc, OID_des_cbc); // NID: 31
         addObject(NID_des_ede_ecb, SN_des_ede_ecb, LN_des_ede_ecb, OBJ_des_ede_ecb); // NID: 32
         addObject(NID_des_ede3_ecb, SN_des_ede3_ecb, LN_des_ede3_ecb, null); // NID: 33
         addObject(NID_idea_cbc, SN_idea_cbc, LN_idea_cbc, OBJ_idea_cbc); // NID: 34
         addObject(NID_idea_cfb64, SN_idea_cfb64, LN_idea_cfb64, null); // NID: 35
         addObject(NID_idea_ecb, SN_idea_ecb, LN_idea_ecb, null); // NID: 36
-        addObject(NID_rc2_cbc, SN_rc2_cbc, LN_rc2_cbc, OBJ_rc2_cbc); // NID: 37
+        addObject(NID_rc2_cbc, SN_rc2_cbc, LN_rc2_cbc, OID_rc2_cbc); // NID: 37
         addObject(NID_rc2_ecb, SN_rc2_ecb, LN_rc2_ecb, null); // NID: 38
         addObject(NID_rc2_cfb64, SN_rc2_cfb64, LN_rc2_cfb64, null); // NID: 39
         addObject(NID_rc2_ofb64, SN_rc2_ofb64, LN_rc2_ofb64, null); // NID: 40
         addObject(NID_sha, SN_sha, LN_sha, OBJ_sha); // NID: 41
         addObject(NID_shaWithRSAEncryption, SN_shaWithRSAEncryption, LN_shaWithRSAEncryption, OBJ_shaWithRSAEncryption); // NID: 42
         addObject(NID_des_ede_cbc, SN_des_ede_cbc, LN_des_ede_cbc, null); // NID: 43
-        addObject(NID_des_ede3_cbc, SN_des_ede3_cbc, LN_des_ede3_cbc, OBJ_des_ede3_cbc); // NID: 44
+        addObject(NID_des_ede3_cbc, SN_des_ede3_cbc, LN_des_ede3_cbc, OID_des_ede3_cbc); // NID: 44
         addObject(NID_des_ofb64, SN_des_ofb64, LN_des_ofb64, OBJ_des_ofb64); // NID: 45
         addObject(NID_idea_ofb64, SN_idea_ofb64, LN_idea_ofb64, null); // NID: 46
         addObject(NID_pkcs9, SN_pkcs9, null, OBJ_pkcs9); // NID: 47
@@ -3429,7 +3450,7 @@ public class ASN1Registry {
         addObject(NID_des_ede3_cfb64, SN_des_ede3_cfb64, LN_des_ede3_cfb64, null); // NID: 61
         addObject(NID_des_ede_ofb64, SN_des_ede_ofb64, LN_des_ede_ofb64, null); // NID: 62
         addObject(NID_des_ede3_ofb64, SN_des_ede3_ofb64, LN_des_ede3_ofb64, null); // NID: 63
-        addObject(NID_sha1, SN_sha1, LN_sha1, OBJ_sha1); // NID: 64
+        addObject(NID_sha1, SN_sha1, LN_sha1, OID_sha1); // NID: 64
         addObject(NID_sha1WithRSAEncryption, SN_sha1WithRSAEncryption, LN_sha1WithRSAEncryption, OBJ_sha1WithRSAEncryption); // NID: 65
         addObject(NID_dsaWithSHA, SN_dsaWithSHA, LN_dsaWithSHA, OBJ_dsaWithSHA); // NID: 66
         addObject(NID_dsa_2, SN_dsa_2, LN_dsa_2, OBJ_dsa_2); // NID: 67
@@ -3480,7 +3501,7 @@ public class ASN1Registry {
         addObject(NID_dsaWithSHA1, SN_dsaWithSHA1, LN_dsaWithSHA1, OBJ_dsaWithSHA1); // NID: 113
         addObject(NID_md5_sha1, SN_md5_sha1, LN_md5_sha1, null); // NID: 114
         addObject(NID_sha1WithRSA, SN_sha1WithRSA, LN_sha1WithRSA, OBJ_sha1WithRSA); // NID: 115
-        addObject(NID_dsa, SN_dsa, LN_dsa, OBJ_dsa); // NID: 116
+        addObject(NID_dsa, SN_dsa, LN_dsa, OID_dsa); // NID: 116
         addObject(NID_ripemd160, SN_ripemd160, LN_ripemd160, OBJ_ripemd160); // NID: 117
         addObject(NID_ripemd160WithRSA, SN_ripemd160WithRSA, LN_ripemd160WithRSA, OBJ_ripemd160WithRSA); // NID: 119
         addObject(NID_rc5_cbc, SN_rc5_cbc, LN_rc5_cbc, OBJ_rc5_cbc); // NID: 120
@@ -3544,7 +3565,7 @@ public class ASN1Registry {
         addObject(NID_ad_OCSP, SN_ad_OCSP, LN_ad_OCSP, OBJ_ad_OCSP); // NID: 178
         addObject(NID_ad_ca_issuers, SN_ad_ca_issuers, LN_ad_ca_issuers, OBJ_ad_ca_issuers); // NID: 179
         addObject(NID_OCSP_sign, SN_OCSP_sign, LN_OCSP_sign, OBJ_OCSP_sign); // NID: 180
-        addObject(NID_iso, SN_iso, LN_iso, OBJ_iso); // NID: 181
+        //addObject(NID_iso, SN_iso, LN_iso, OBJ_iso); // NID: 181
         addObject(NID_member_body, SN_member_body, LN_member_body, OBJ_member_body); // NID: 182
         addObject(NID_ISO_US, SN_ISO_US, LN_ISO_US, OBJ_ISO_US); // NID: 183
         addObject(NID_X9_57, SN_X9_57, LN_X9_57, OBJ_X9_57); // NID: 184
@@ -3755,7 +3776,7 @@ public class ASN1Registry {
         addObject(NID_dcObject, SN_dcObject, LN_dcObject, OBJ_dcObject); // NID: 390
         addObject(NID_domainComponent, SN_domainComponent, LN_domainComponent, OBJ_domainComponent); // NID: 391
         addObject(NID_Domain, SN_Domain, LN_Domain, OBJ_Domain); // NID: 392
-        addObject(NID_joint_iso_ccitt, null, null, OBJ_joint_iso_ccitt); // NID: 393
+        //addObject(NID_joint_iso_ccitt, null, null, OBJ_joint_iso_ccitt); // NID: 393
         addObject(NID_selected_attribute_types, SN_selected_attribute_types, LN_selected_attribute_types, OBJ_selected_attribute_types); // NID: 394
         addObject(NID_clearance, SN_clearance, null, OBJ_clearance); // NID: 395
         addObject(NID_md4WithRSAEncryption, SN_md4WithRSAEncryption, LN_md4WithRSAEncryption, OBJ_md4WithRSAEncryption); // NID: 396
@@ -3766,7 +3787,7 @@ public class ASN1Registry {
         addObject(NID_policy_constraints, SN_policy_constraints, LN_policy_constraints, OBJ_policy_constraints); // NID: 401
         addObject(NID_target_information, SN_target_information, LN_target_information, OBJ_target_information); // NID: 402
         addObject(NID_no_rev_avail, SN_no_rev_avail, LN_no_rev_avail, OBJ_no_rev_avail); // NID: 403
-        addObject(NID_ccitt, null, null, OBJ_ccitt); // NID: 404
+        //addObject(NID_ccitt, null, null, OBJ_ccitt); // NID: 404
         addObject(NID_ansi_X9_62, SN_ansi_X9_62, LN_ansi_X9_62, OBJ_ansi_X9_62); // NID: 405
         addObject(NID_X9_62_prime_field, SN_X9_62_prime_field, null, OBJ_X9_62_prime_field); // NID: 406
         addObject(NID_X9_62_characteristic_two_field, SN_X9_62_characteristic_two_field, null, OBJ_X9_62_characteristic_two_field); // NID: 407
@@ -3778,7 +3799,7 @@ public class ASN1Registry {
         addObject(NID_X9_62_prime239v2, SN_X9_62_prime239v2, null, OBJ_X9_62_prime239v2); // NID: 413
         addObject(NID_X9_62_prime239v3, SN_X9_62_prime239v3, null, OBJ_X9_62_prime239v3); // NID: 414
         addObject(NID_X9_62_prime256v1, SN_X9_62_prime256v1, null, OBJ_X9_62_prime256v1); // NID: 415
-        addObject(NID_ecdsa_with_SHA1, SN_ecdsa_with_SHA1, null, OBJ_ecdsa_with_SHA1); // NID: 416
+        addObject(NID_ecdsa_with_SHA1, SN_ecdsa_with_SHA1, null, OID_ecdsa_with_SHA1); // NID: 416
         addObject(NID_ms_csp_name, SN_ms_csp_name, LN_ms_csp_name, OBJ_ms_csp_name); // NID: 417
         addObject(NID_aes_128_ecb, SN_aes_128_ecb, LN_aes_128_ecb, OBJ_aes_128_ecb); // NID: 418
         addObject(NID_aes_128_cbc, SN_aes_128_cbc, LN_aes_128_cbc, OBJ_aes_128_cbc); // NID: 419
@@ -4006,8 +4027,8 @@ public class ASN1Registry {
         addObject(NID_set_brand_Novus, SN_set_brand_Novus, null, OBJ_set_brand_Novus); // NID: 642
         addObject(NID_des_cdmf, SN_des_cdmf, LN_des_cdmf, OBJ_des_cdmf); // NID: 643
         addObject(NID_rsaOAEPEncryptionSET, SN_rsaOAEPEncryptionSET, null, OBJ_rsaOAEPEncryptionSET); // NID: 644
-        addObject(NID_itu_t, SN_itu_t, LN_itu_t, OBJ_itu_t); // NID: 645
-        addObject(NID_joint_iso_itu_t, SN_joint_iso_itu_t, LN_joint_iso_itu_t, OBJ_joint_iso_itu_t); // NID: 646
+        //addObject(NID_itu_t, SN_itu_t, LN_itu_t, OBJ_itu_t); // NID: 645
+        //addObject(NID_joint_iso_itu_t, SN_joint_iso_itu_t, LN_joint_iso_itu_t, OBJ_joint_iso_itu_t); // NID: 646
         addObject(NID_international_organizations, SN_international_organizations, LN_international_organizations, OBJ_international_organizations); // NID: 647
         addObject(NID_ms_smartcard_login, SN_ms_smartcard_login, LN_ms_smartcard_login, OBJ_ms_smartcard_login); // NID: 648
         addObject(NID_ms_upn, SN_ms_upn, LN_ms_upn, OBJ_ms_upn); // NID: 649
@@ -4115,7 +4136,6 @@ public class ASN1Registry {
         addObject(NID_dsa_with_SHA224, SN_dsa_with_SHA224, null, OBJ_dsa_with_SHA224); // NID: 802
         addObject(NID_dsa_with_SHA256, SN_dsa_with_SHA256, null, OBJ_dsa_with_SHA256); // NID: 803
     }
-
 
 //     public final static String SN_undef = "UNDEF";
 //     public final static String LN_undef = "undefined";
