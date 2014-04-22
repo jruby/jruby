@@ -49,10 +49,11 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.crypto.PBEParametersGenerator;
 import org.bouncycastle.crypto.generators.OpenSSLPBEParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.openssl.MiscPEMGenerator;
+//import org.bouncycastle.openssl.MiscPEMGenerator;
 import org.bouncycastle.openssl.PEMWriter;
 import org.bouncycastle.operator.OperatorCreationException;
 
+import org.jruby.ext.openssl.impl.pem.MiscPEMGenerator;
 import org.jruby.ext.openssl.impl.pem.PEMDecryptor;
 import org.jruby.ext.openssl.impl.pem.PEMDecryptorProvider;
 import org.jruby.ext.openssl.impl.pem.PEMEncryptedKeyPair;
@@ -168,10 +169,9 @@ public abstract class PEMUtils {
 
         final PEMWriter pemWriter = new PEMWriter(writer);
 
-        final Provider provider = SecurityHelper.getSecurityProvider();
         final SecureRandom random = SecurityHelper.getSecureRandom();
 
-        pemWriter.writeObject(new MiscPEMGenerator(obj, algorithm, password, random, provider));
+        pemWriter.writeObject(MiscPEMGenerator.newInstance(obj, algorithm, password, random));
         pemWriter.flush();
     }
 
