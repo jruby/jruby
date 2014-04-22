@@ -37,7 +37,7 @@ import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.IdentityHashMap;
+import java.util.WeakHashMap;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -88,12 +88,12 @@ import static org.jruby.ext.openssl.OpenSSLReal.warn;
  */
 public class ASN1 {
 
-    private static Map<Ruby, Map<String, ASN1ObjectIdentifier>> SYM_TO_OID = new IdentityHashMap<Ruby, Map<String, ASN1ObjectIdentifier>>();
-    private static Map<Ruby, Map<ASN1ObjectIdentifier, String>> OID_TO_SYM = new IdentityHashMap<Ruby, Map<ASN1ObjectIdentifier, String>>();
-    private static Map<Ruby, Map<ASN1ObjectIdentifier, Integer>> OID_TO_NID = new IdentityHashMap<Ruby, Map<ASN1ObjectIdentifier, Integer>>();
-    private static Map<Ruby, Map<Integer, ASN1ObjectIdentifier>> NID_TO_OID = new IdentityHashMap<Ruby, Map<Integer, ASN1ObjectIdentifier>>();
-    private static Map<Ruby, Map<Integer, String>> NID_TO_SN = new IdentityHashMap<Ruby, Map<Integer, String>>();
-    private static Map<Ruby, Map<Integer, String>> NID_TO_LN = new IdentityHashMap<Ruby, Map<Integer, String>>();
+    private static Map<Ruby, Map<String, ASN1ObjectIdentifier>> SYM_TO_OID = new WeakHashMap<Ruby, Map<String, ASN1ObjectIdentifier>>(8);
+    private static Map<Ruby, Map<ASN1ObjectIdentifier, String>> OID_TO_SYM = new WeakHashMap<Ruby, Map<ASN1ObjectIdentifier, String>>(8);
+    private static Map<Ruby, Map<ASN1ObjectIdentifier, Integer>> OID_TO_NID = new WeakHashMap<Ruby, Map<ASN1ObjectIdentifier, Integer>>(8);
+    private static Map<Ruby, Map<Integer, ASN1ObjectIdentifier>> NID_TO_OID = new WeakHashMap<Ruby, Map<Integer, ASN1ObjectIdentifier>>(8);
+    private static Map<Ruby, Map<Integer, String>> NID_TO_SN = new WeakHashMap<Ruby, Map<Integer, String>>(8);
+    private static Map<Ruby, Map<Integer, String>> NID_TO_LN = new WeakHashMap<Ruby, Map<Integer, String>>(8);
 
     @SuppressWarnings("unchecked")
     private static synchronized void initMaps(final Ruby runtime) {
