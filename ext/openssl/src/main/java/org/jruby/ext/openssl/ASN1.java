@@ -129,12 +129,12 @@ public class ASN1 {
         addObject(runtime, 18, "OU", "organizationalUnitName","2.5.4.11");
         addObject(runtime, 19, "RSA", "rsa","2.5.8.1.1");
         addObject(runtime, 20, null, "pkcs7","1.2.840.113549.1.7");
-        addObject(runtime, org.jruby.ext.openssl.impl.ASN1Registry.NID_pkcs7_data, null, "pkcs7-data","1.2.840.113549.1.7.1");
-        addObject(runtime, org.jruby.ext.openssl.impl.ASN1Registry.NID_pkcs7_signed, null, "pkcs7-signedData","1.2.840.113549.1.7.2");
-        addObject(runtime, org.jruby.ext.openssl.impl.ASN1Registry.NID_pkcs7_enveloped, null, "pkcs7-envelopedData","1.2.840.113549.1.7.3");
-        addObject(runtime, org.jruby.ext.openssl.impl.ASN1Registry.NID_pkcs7_signedAndEnveloped, null, "pkcs7-signedAndEnvelopedData","1.2.840.113549.1.7.4");
-        addObject(runtime, org.jruby.ext.openssl.impl.ASN1Registry.NID_pkcs7_digest, null, "pkcs7-digestData","1.2.840.113549.1.7.5");
-        addObject(runtime, org.jruby.ext.openssl.impl.ASN1Registry.NID_pkcs7_encrypted, null, "pkcs7-encryptedData","1.2.840.113549.1.7.6");
+        addObject(runtime, 21, null, "pkcs7-data","1.2.840.113549.1.7.1"); // NID_pkcs7_data
+        addObject(runtime, 22, null, "pkcs7-signedData","1.2.840.113549.1.7.2"); // NID_pkcs7_signed
+        addObject(runtime, 23, null, "pkcs7-envelopedData","1.2.840.113549.1.7.3"); // NID_pkcs7_enveloped
+        addObject(runtime, 24, null, "pkcs7-signedAndEnvelopedData","1.2.840.113549.1.7.4"); // NID_pkcs7_signedAndEnveloped
+        addObject(runtime, 25, null, "pkcs7-digestData","1.2.840.113549.1.7.5"); // NID_pkcs7_digest
+        addObject(runtime, 26, null, "pkcs7-encryptedData","1.2.840.113549.1.7.6"); // NID_pkcs7_encrypted
         addObject(runtime, 27, null, "pkcs3","1.2.840.113549.1.3");
         addObject(runtime, 28, null, "dhKeyAgreement","1.2.840.113549.1.3.1");
         addObject(runtime, 29, "DES-ECB", "des-ecb","1.3.14.3.2.6");
@@ -411,7 +411,7 @@ public class ASN1 {
         return val.getId();
     }
 
-    static Integer obj2nid(Ruby runtime, final ASN1ObjectIdentifier oid) {
+    static Integer obj2nid(final Ruby runtime, final ASN1ObjectIdentifier oid) {
         return oidToNid(runtime).get(oid);
     }
 
@@ -430,6 +430,14 @@ public class ASN1 {
     static String nid2ln(final Ruby runtime, final int nid) {
         return nidToLn(runtime).get(nid);
     }
+
+    static String oid2Sym(final Ruby runtime, final ASN1ObjectIdentifier oid) {
+        return getSymLookup(runtime).get(oid);
+    }
+
+    //static ASN1ObjectIdentifier sym2Oid(final Ruby runtime, final String name) {
+    //    return getOIDLookup(runtime).get(name);
+    //}
 
     static Map<String, ASN1ObjectIdentifier> getOIDLookup(final Ruby runtime) {
         return symToOid(runtime);
@@ -601,8 +609,8 @@ public class ASN1 {
 
     static ASN1ObjectIdentifier getObjectIdentifier(final Ruby runtime, final String nameOrOid)
         throws IllegalArgumentException {
-        Object val1 = getOIDLookup(runtime).get( nameOrOid.toLowerCase() );
-        if ( val1 != null ) return (ASN1ObjectIdentifier) val1;
+        ASN1ObjectIdentifier objectId = getOIDLookup(runtime).get( nameOrOid.toLowerCase() );
+        if ( objectId != null ) return objectId;
         return new ASN1ObjectIdentifier(nameOrOid);
     }
 
