@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.impl;
 
-import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.MessageDigest;
@@ -56,33 +55,20 @@ public class EVP {
     /* c: EVP_get_cipherbyobj
      *
      */
-    public static Cipher getCipher(ASN1ObjectIdentifier oid) throws GeneralSecurityException {
+    public static Cipher getCipher(ASN1ObjectIdentifier oid)
+        throws NoSuchAlgorithmException, NoSuchPaddingException {
         String algorithm = getAlgorithmName(oid);
         String[] cipher = org.jruby.ext.openssl.Cipher.Algorithm.osslToJsse(algorithm);
         String realName = cipher[3];
         return SecurityHelper.getCipher(realName);
     }
 
-    /* c: EVP_get_cipherbynid
-     *
-     */
-    public static Cipher getCipher(int nid) throws GeneralSecurityException {
-        return getCipher(ASN1Registry.nid2obj(nid));
-    }
-
     /* c: EVP_get_digestbyobj
      *
      */
-    public static MessageDigest getDigest(ASN1ObjectIdentifier oid) throws GeneralSecurityException {
+    public static MessageDigest getDigest(ASN1ObjectIdentifier oid) throws NoSuchAlgorithmException {
         String algorithm = getAlgorithmName(oid);
         return SecurityHelper.getMessageDigest(algorithm);
-    }
-
-    /* c: EVP_get_digestbynid
-     *
-     */
-    public static MessageDigest getDigest(int nid) throws GeneralSecurityException {
-        return getDigest(ASN1Registry.nid2obj(nid));
     }
 
     /* c: EVP_sha1
@@ -91,19 +77,20 @@ public class EVP {
     public static MessageDigest sha1() {
         try {
             return SecurityHelper.getMessageDigest("SHA1");
-        } catch(Exception e) {
+        }
+        catch (NoSuchAlgorithmException e) {
             return null;
         }
     }
 
     public static int type(MessageDigest digest) {
         String name = digest.getAlgorithm();
-        ASN1ObjectIdentifier obj = ASN1Registry.sym2oid(name);
-        if(obj == null) {
+        ASN1ObjectIdentifier oid = ASN1Registry.sym2oid(name);
+        if ( oid == null ) {
             name = name.toLowerCase().replace("sha-", "sha");
-            obj = ASN1Registry.sym2oid(name);
+            oid = ASN1Registry.sym2oid(name);
         }
-        return ASN1Registry.obj2nid(obj);
+        return ASN1Registry.obj2nid(oid);
     }
 
     public static String signatureAlgorithm(MessageDigest digest, Key key) {

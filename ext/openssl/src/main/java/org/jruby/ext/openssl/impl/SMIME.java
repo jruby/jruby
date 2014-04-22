@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2008 Ola Bini <ola.bini@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -56,12 +56,12 @@ public class SMIME {
 
     private static boolean equals(byte[] first, int firstIndex, byte[] second, int secondIndex, int length) {
         int len = length;
-        for(int i=firstIndex, 
-                j=secondIndex, 
-                flen=first.length, 
+        for(int i=firstIndex,
+                j=secondIndex,
+                flen=first.length,
                 slen=second.length;
-            i<flen && 
-                j<slen && 
+            i<flen &&
+                j<slen &&
                 len>0;
             i++, j++, len--) {
 
@@ -78,15 +78,15 @@ public class SMIME {
     public static boolean stripEol(byte[] linebuf, int[] plen) {
         int len = plen[0];
         boolean isEol = false;
-        
+
         for(int p = len - 1; len > 0; len--, p--) {
             byte c = linebuf[p];
             if(c == '\n') {
-                isEol = true; 
+                isEol = true;
             } else if(c != '\r') {
                 break;
             }
-            
+
         }
         plen[0] = len;
         return isEol;
@@ -140,7 +140,7 @@ public class SMIME {
             return 0;
         }
 
-        if(line[0] == '-' && 
+        if(line[0] == '-' &&
            line[1] == '-' &&
            equals(line, 2, bound, 0, blen)) {
             if(line.length>=(blen+4) &&
@@ -274,7 +274,7 @@ public class SMIME {
 
             return p7;
         }
-        
+
         if(!"application/x-pkcs7-mime".equals(hdr.getValue()) &&
            !"application/pkcs7-mime".equals(hdr.getValue())) {
             throw new PKCS7Exception(PKCS7.F_SMIME_READ_PKCS7, PKCS7.R_INVALID_MIME_TYPE, "type: " + hdr.getValue());
@@ -309,7 +309,7 @@ public class SMIME {
             mimeEOL = "\n";
         }
 
-        StringBuilder output = new StringBuilder();
+        StringBuilder output = new StringBuilder(512);
         output.append("MIME-Version: 1.0").append(mimeEOL);
 
         // Detached sign.
@@ -319,7 +319,7 @@ public class SMIME {
             // write headers
             output.append("Content-Type: multipart/signed;");
             output.append(" protocol=\"").append(mimePrefix).append("signature\";");
-            output.append(" micalg=\"").append(getMICalg(mdAlgs)).append("\";");
+            output.append(" micalg=\""); appendMICalg(output, mdAlgs); output.append("\";");
             output.append(" boundary=\"----").append(mimeBoundary).append("\"");
             output.append(mimeEOL).append(mimeEOL);
 
@@ -344,8 +344,7 @@ public class SMIME {
             output.append("Content-Disposition: attachment; filename=").append(cName);
             output.append(mimeEOL).append(mimeEOL);
 
-            byte[] p7Bytes = p7.toASN1();
-            String p7Base64 = Base64.encodeBytes(p7Bytes, Base64.DO_BREAK_LINES);
+            String p7Base64 = Base64.encodeBytes(p7.toASN1(), Base64.DO_BREAK_LINES);
             output.append(p7Base64).append(mimeEOL);
 
             // write final boundary
@@ -393,27 +392,21 @@ public class SMIME {
      *
      *  c : asn1_write_micalg
      */
-    private String getMICalg(Set<AlgorithmIdentifier> mdAlgs) {
-
-        StringBuilder output = new StringBuilder();
-        Iterator<AlgorithmIdentifier> it = mdAlgs.iterator();
+    private static void appendMICalg(final StringBuilder output, Set<AlgorithmIdentifier> mdAlgs) {
+        final Iterator<AlgorithmIdentifier> it = mdAlgs.iterator();
 
         boolean writeComma = false;
-        while (it.hasNext()) {
-            if (writeComma) {
-                output.append(",");
-            }
+        while ( it.hasNext() ) {
+            if ( writeComma ) output.append(',');
 
-            String ln = ASN1Registry.nid2ln(ASN1Registry.obj2nid(it.next().getAlgorithm()));
-            if (ln == null) {
-                ln = "unknown";
-            }
+            AlgorithmIdentifier algId = it.next();
+            String ln = ASN1Registry.nid2ln(ASN1Registry.obj2nid(algId.getAlgorithm()));
+            if ( ln == null ) ln = "unknown";
 
             output.append(ln);
             writeComma = true;
         }
-
-        return output.toString();
+        // return output.toString();
     }
 
     /**
@@ -423,7 +416,7 @@ public class SMIME {
      * @param length the length of the string. (MIME spec allows a max of 70 chars)
      * @return the generated boundary.
      */
-    private String generateMIMEBoundary(int length) {
+    private static String generateMIMEBoundary(int length) {
 
         final char alphabet[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
                 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2',
@@ -432,8 +425,8 @@ public class SMIME {
 
         StringBuilder output = new StringBuilder(length);
 
-        for (int i = 0; i < length; i++) {
-            output.append(alphabet[random.nextInt(length)]);
+        for ( int i = 0; i < length; i++ ) {
+            output.append( alphabet[ random.nextInt(length) ] );
         }
 
         return output.toString();

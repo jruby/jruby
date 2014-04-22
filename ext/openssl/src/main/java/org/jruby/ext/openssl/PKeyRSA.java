@@ -99,7 +99,11 @@ public class PKeyRSA extends PKey {
         _RSA.setConstant("SSLV23_PADDING", runtime.newFixnum(2));
         _RSA.setConstant("NO_PADDING", runtime.newFixnum(3));
         _RSA.setConstant("PKCS1_OAEP_PADDING", runtime.newFixnum(4));
-   }
+    }
+
+    static RubyClass _RSA(final Ruby runtime) {
+        return _PKey(runtime).getClass("RSA");
+    }
 
     public static RaiseException newRSAError(Ruby runtime, String message) {
         return Utils.newError(runtime, _PKey(runtime).getClass("RSAError"), message);
