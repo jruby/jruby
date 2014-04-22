@@ -97,12 +97,12 @@ public class ASN1Registry {
     }
 
     private static ASN1ObjectIdentifier addObject(final int nid, String sn, String ln, final String oid) {
-        if ( oid != null ) {
-            final ASN1ObjectIdentifier objectId = new ASN1ObjectIdentifier(oid);
-            addObject(Integer.valueOf(nid), sn, ln, objectId);
-            return objectId;
-        }
-        return null;
+        //if ( oid != null ) {
+        final ASN1ObjectIdentifier objectId = new ASN1ObjectIdentifier(oid);
+        addObject(Integer.valueOf(nid), sn, ln, objectId);
+        return objectId;
+        //}
+        //return null;
     }
 
     private static void addObject(final Integer nid, String sn, String ln, final ASN1ObjectIdentifier oid) {
@@ -3419,20 +3419,20 @@ public class ASN1Registry {
         addObject(NID_des_cfb64, SN_des_cfb64, LN_des_cfb64, OBJ_des_cfb64); // NID: 30
         addObject(NID_des_cbc, SN_des_cbc, LN_des_cbc, OID_des_cbc); // NID: 31
         addObject(NID_des_ede_ecb, SN_des_ede_ecb, LN_des_ede_ecb, OBJ_des_ede_ecb); // NID: 32
-        addObject(NID_des_ede3_ecb, SN_des_ede3_ecb, LN_des_ede3_ecb, null); // NID: 33
+        //addObject(NID_des_ede3_ecb, SN_des_ede3_ecb, LN_des_ede3_ecb, null); // NID: 33
         addObject(NID_idea_cbc, SN_idea_cbc, LN_idea_cbc, OBJ_idea_cbc); // NID: 34
-        addObject(NID_idea_cfb64, SN_idea_cfb64, LN_idea_cfb64, null); // NID: 35
-        addObject(NID_idea_ecb, SN_idea_ecb, LN_idea_ecb, null); // NID: 36
+        //addObject(NID_idea_cfb64, SN_idea_cfb64, LN_idea_cfb64, null); // NID: 35
+        //addObject(NID_idea_ecb, SN_idea_ecb, LN_idea_ecb, null); // NID: 36
         addObject(NID_rc2_cbc, SN_rc2_cbc, LN_rc2_cbc, OID_rc2_cbc); // NID: 37
-        addObject(NID_rc2_ecb, SN_rc2_ecb, LN_rc2_ecb, null); // NID: 38
-        addObject(NID_rc2_cfb64, SN_rc2_cfb64, LN_rc2_cfb64, null); // NID: 39
-        addObject(NID_rc2_ofb64, SN_rc2_ofb64, LN_rc2_ofb64, null); // NID: 40
+        //addObject(NID_rc2_ecb, SN_rc2_ecb, LN_rc2_ecb, null); // NID: 38
+        //addObject(NID_rc2_cfb64, SN_rc2_cfb64, LN_rc2_cfb64, null); // NID: 39
+        //addObject(NID_rc2_ofb64, SN_rc2_ofb64, LN_rc2_ofb64, null); // NID: 40
         addObject(NID_sha, SN_sha, LN_sha, OBJ_sha); // NID: 41
         addObject(NID_shaWithRSAEncryption, SN_shaWithRSAEncryption, LN_shaWithRSAEncryption, OBJ_shaWithRSAEncryption); // NID: 42
-        addObject(NID_des_ede_cbc, SN_des_ede_cbc, LN_des_ede_cbc, null); // NID: 43
+        //addObject(NID_des_ede_cbc, SN_des_ede_cbc, LN_des_ede_cbc, null); // NID: 43
         addObject(NID_des_ede3_cbc, SN_des_ede3_cbc, LN_des_ede3_cbc, OID_des_ede3_cbc); // NID: 44
         addObject(NID_des_ofb64, SN_des_ofb64, LN_des_ofb64, OBJ_des_ofb64); // NID: 45
-        addObject(NID_idea_ofb64, SN_idea_ofb64, LN_idea_ofb64, null); // NID: 46
+        //addObject(NID_idea_ofb64, SN_idea_ofb64, LN_idea_ofb64, null); // NID: 46
         addObject(NID_pkcs9, SN_pkcs9, null, OBJ_pkcs9); // NID: 47
         addObject(NID_pkcs9_emailAddress, null, LN_pkcs9_emailAddress, OBJ_pkcs9_emailAddress); // NID: 48
         addObject(NID_pkcs9_unstructuredName, null, LN_pkcs9_unstructuredName, OBJ_pkcs9_unstructuredName); // NID: 49
@@ -3446,10 +3446,10 @@ public class ASN1Registry {
         addObject(NID_netscape, SN_netscape, LN_netscape, OBJ_netscape); // NID: 57
         addObject(NID_netscape_cert_extension, SN_netscape_cert_extension, LN_netscape_cert_extension, OBJ_netscape_cert_extension); // NID: 58
         addObject(NID_netscape_data_type, SN_netscape_data_type, LN_netscape_data_type, OBJ_netscape_data_type); // NID: 59
-        addObject(NID_des_ede_cfb64, SN_des_ede_cfb64, LN_des_ede_cfb64, null); // NID: 60
-        addObject(NID_des_ede3_cfb64, SN_des_ede3_cfb64, LN_des_ede3_cfb64, null); // NID: 61
-        addObject(NID_des_ede_ofb64, SN_des_ede_ofb64, LN_des_ede_ofb64, null); // NID: 62
-        addObject(NID_des_ede3_ofb64, SN_des_ede3_ofb64, LN_des_ede3_ofb64, null); // NID: 63
+        //addObject(NID_des_ede_cfb64, SN_des_ede_cfb64, LN_des_ede_cfb64, null); // NID: 60
+        //addObject(NID_des_ede3_cfb64, SN_des_ede3_cfb64, LN_des_ede3_cfb64, null); // NID: 61
+        //addObject(NID_des_ede_ofb64, SN_des_ede_ofb64, LN_des_ede_ofb64, null); // NID: 62
+        //addObject(NID_des_ede3_ofb64, SN_des_ede3_ofb64, LN_des_ede3_ofb64, null); // NID: 63
         addObject(NID_sha1, SN_sha1, LN_sha1, OID_sha1); // NID: 64
         addObject(NID_sha1WithRSAEncryption, SN_sha1WithRSAEncryption, LN_sha1WithRSAEncryption, OBJ_sha1WithRSAEncryption); // NID: 65
         addObject(NID_dsaWithSHA, SN_dsaWithSHA, LN_dsaWithSHA, OBJ_dsaWithSHA); // NID: 66
@@ -3466,7 +3466,7 @@ public class ASN1Registry {
         addObject(NID_netscape_ssl_server_name, SN_netscape_ssl_server_name, LN_netscape_ssl_server_name, OBJ_netscape_ssl_server_name); // NID: 77
         addObject(NID_netscape_comment, SN_netscape_comment, LN_netscape_comment, OBJ_netscape_comment); // NID: 78
         addObject(NID_netscape_cert_sequence, SN_netscape_cert_sequence, LN_netscape_cert_sequence, OBJ_netscape_cert_sequence); // NID: 79
-        addObject(NID_desx_cbc, SN_desx_cbc, LN_desx_cbc, null); // NID: 80
+        //addObject(NID_desx_cbc, SN_desx_cbc, LN_desx_cbc, null); // NID: 80
         addObject(NID_id_ce, SN_id_ce, null, OBJ_id_ce); // NID: 81
         addObject(NID_subject_key_identifier, SN_subject_key_identifier, LN_subject_key_identifier, OBJ_subject_key_identifier); // NID: 82
         addObject(NID_key_usage, SN_key_usage, LN_key_usage, OBJ_key_usage); // NID: 83
@@ -3478,12 +3478,12 @@ public class ASN1Registry {
         addObject(NID_certificate_policies, SN_certificate_policies, LN_certificate_policies, OBJ_certificate_policies); // NID: 89
         addObject(NID_authority_key_identifier, SN_authority_key_identifier, LN_authority_key_identifier, OBJ_authority_key_identifier); // NID: 90
         addObject(NID_bf_cbc, SN_bf_cbc, LN_bf_cbc, OBJ_bf_cbc); // NID: 91
-        addObject(NID_bf_ecb, SN_bf_ecb, LN_bf_ecb, null); // NID: 92
-        addObject(NID_bf_cfb64, SN_bf_cfb64, LN_bf_cfb64, null); // NID: 93
-        addObject(NID_bf_ofb64, SN_bf_ofb64, LN_bf_ofb64, null); // NID: 94
+        //addObject(NID_bf_ecb, SN_bf_ecb, LN_bf_ecb, null); // NID: 92
+        //addObject(NID_bf_cfb64, SN_bf_cfb64, LN_bf_cfb64, null); // NID: 93
+        //addObject(NID_bf_ofb64, SN_bf_ofb64, LN_bf_ofb64, null); // NID: 94
         addObject(NID_mdc2, SN_mdc2, LN_mdc2, OBJ_mdc2); // NID: 95
         addObject(NID_mdc2WithRSA, SN_mdc2WithRSA, LN_mdc2WithRSA, OBJ_mdc2WithRSA); // NID: 96
-        addObject(NID_rc4_40, SN_rc4_40, LN_rc4_40, null); // NID: 97
+        //addObject(NID_rc4_40, SN_rc4_40, LN_rc4_40, null); // NID: 97
         addObject(NID_rc2_40_cbc, SN_rc2_40_cbc, LN_rc2_40_cbc, OBJ_rc2_40_cbc); // NID: 98
         addObject(NID_givenName, SN_givenName, LN_givenName, OBJ_givenName); // NID: 99
         addObject(NID_surname, SN_surname, LN_surname, OBJ_surname); // NID: 100
@@ -3494,20 +3494,20 @@ public class ASN1Registry {
         addObject(NID_title, null, LN_title, OBJ_title); // NID: 106
         addObject(NID_description, null, LN_description, OBJ_description); // NID: 107
         addObject(NID_cast5_cbc, SN_cast5_cbc, LN_cast5_cbc, OBJ_cast5_cbc); // NID: 108
-        addObject(NID_cast5_ecb, SN_cast5_ecb, LN_cast5_ecb, null); // NID: 109
-        addObject(NID_cast5_cfb64, SN_cast5_cfb64, LN_cast5_cfb64, null); // NID: 110
-        addObject(NID_cast5_ofb64, SN_cast5_ofb64, LN_cast5_ofb64, null); // NID: 111
+        //addObject(NID_cast5_ecb, SN_cast5_ecb, LN_cast5_ecb, null); // NID: 109
+        //addObject(NID_cast5_cfb64, SN_cast5_cfb64, LN_cast5_cfb64, null); // NID: 110
+        //addObject(NID_cast5_ofb64, SN_cast5_ofb64, LN_cast5_ofb64, null); // NID: 111
         addObject(NID_pbeWithMD5AndCast5_CBC, null, LN_pbeWithMD5AndCast5_CBC, OBJ_pbeWithMD5AndCast5_CBC); // NID: 112
         addObject(NID_dsaWithSHA1, SN_dsaWithSHA1, LN_dsaWithSHA1, OBJ_dsaWithSHA1); // NID: 113
-        addObject(NID_md5_sha1, SN_md5_sha1, LN_md5_sha1, null); // NID: 114
+        //addObject(NID_md5_sha1, SN_md5_sha1, LN_md5_sha1, null); // NID: 114
         addObject(NID_sha1WithRSA, SN_sha1WithRSA, LN_sha1WithRSA, OBJ_sha1WithRSA); // NID: 115
         addObject(NID_dsa, SN_dsa, LN_dsa, OID_dsa); // NID: 116
         addObject(NID_ripemd160, SN_ripemd160, LN_ripemd160, OBJ_ripemd160); // NID: 117
         addObject(NID_ripemd160WithRSA, SN_ripemd160WithRSA, LN_ripemd160WithRSA, OBJ_ripemd160WithRSA); // NID: 119
         addObject(NID_rc5_cbc, SN_rc5_cbc, LN_rc5_cbc, OBJ_rc5_cbc); // NID: 120
-        addObject(NID_rc5_ecb, SN_rc5_ecb, LN_rc5_ecb, null); // NID: 121
-        addObject(NID_rc5_cfb64, SN_rc5_cfb64, LN_rc5_cfb64, null); // NID: 122
-        addObject(NID_rc5_ofb64, SN_rc5_ofb64, LN_rc5_ofb64, null); // NID: 123
+        //addObject(NID_rc5_ecb, SN_rc5_ecb, LN_rc5_ecb, null); // NID: 121
+        //addObject(NID_rc5_cfb64, SN_rc5_cfb64, LN_rc5_cfb64, null); // NID: 122
+        //addObject(NID_rc5_ofb64, SN_rc5_ofb64, LN_rc5_ofb64, null); // NID: 123
         addObject(NID_rle_compression, SN_rle_compression, LN_rle_compression, OBJ_rle_compression); // NID: 124
         addObject(NID_zlib_compression, SN_zlib_compression, LN_zlib_compression, OBJ_zlib_compression); // NID: 125
         addObject(NID_ext_key_usage, SN_ext_key_usage, LN_ext_key_usage, OBJ_ext_key_usage); // NID: 126
@@ -3550,7 +3550,7 @@ public class ASN1Registry {
         addObject(NID_hmacWithSHA1, null, LN_hmacWithSHA1, OBJ_hmacWithSHA1); // NID: 163
         addObject(NID_id_qt_cps, SN_id_qt_cps, LN_id_qt_cps, OBJ_id_qt_cps); // NID: 164
         addObject(NID_id_qt_unotice, SN_id_qt_unotice, LN_id_qt_unotice, OBJ_id_qt_unotice); // NID: 165
-        addObject(NID_rc2_64_cbc, SN_rc2_64_cbc, LN_rc2_64_cbc, null); // NID: 166
+        //addObject(NID_rc2_64_cbc, SN_rc2_64_cbc, LN_rc2_64_cbc, null); // NID: 166
         addObject(NID_SMIMECapabilities, SN_SMIMECapabilities, LN_SMIMECapabilities, OBJ_SMIMECapabilities); // NID: 167
         addObject(NID_pbeWithMD2AndRC2_CBC, SN_pbeWithMD2AndRC2_CBC, LN_pbeWithMD2AndRC2_CBC, OBJ_pbeWithMD2AndRC2_CBC); // NID: 168
         addObject(NID_pbeWithMD5AndRC2_CBC, SN_pbeWithMD5AndRC2_CBC, LN_pbeWithMD5AndRC2_CBC, OBJ_pbeWithMD5AndRC2_CBC); // NID: 169
@@ -4032,16 +4032,16 @@ public class ASN1Registry {
         addObject(NID_international_organizations, SN_international_organizations, LN_international_organizations, OBJ_international_organizations); // NID: 647
         addObject(NID_ms_smartcard_login, SN_ms_smartcard_login, LN_ms_smartcard_login, OBJ_ms_smartcard_login); // NID: 648
         addObject(NID_ms_upn, SN_ms_upn, LN_ms_upn, OBJ_ms_upn); // NID: 649
-        addObject(NID_aes_128_cfb1, SN_aes_128_cfb1, LN_aes_128_cfb1, null); // NID: 650
-        addObject(NID_aes_192_cfb1, SN_aes_192_cfb1, LN_aes_192_cfb1, null); // NID: 651
-        addObject(NID_aes_256_cfb1, SN_aes_256_cfb1, LN_aes_256_cfb1, null); // NID: 652
-        addObject(NID_aes_128_cfb8, SN_aes_128_cfb8, LN_aes_128_cfb8, null); // NID: 653
-        addObject(NID_aes_192_cfb8, SN_aes_192_cfb8, LN_aes_192_cfb8, null); // NID: 654
-        addObject(NID_aes_256_cfb8, SN_aes_256_cfb8, LN_aes_256_cfb8, null); // NID: 655
-        addObject(NID_des_cfb1, SN_des_cfb1, LN_des_cfb1, null); // NID: 656
-        addObject(NID_des_cfb8, SN_des_cfb8, LN_des_cfb8, null); // NID: 657
-        addObject(NID_des_ede3_cfb1, SN_des_ede3_cfb1, LN_des_ede3_cfb1, null); // NID: 658
-        addObject(NID_des_ede3_cfb8, SN_des_ede3_cfb8, LN_des_ede3_cfb8, null); // NID: 659
+        //addObject(NID_aes_128_cfb1, SN_aes_128_cfb1, LN_aes_128_cfb1, null); // NID: 650
+        //addObject(NID_aes_192_cfb1, SN_aes_192_cfb1, LN_aes_192_cfb1, null); // NID: 651
+        //addObject(NID_aes_256_cfb1, SN_aes_256_cfb1, LN_aes_256_cfb1, null); // NID: 652
+        //addObject(NID_aes_128_cfb8, SN_aes_128_cfb8, LN_aes_128_cfb8, null); // NID: 653
+        //addObject(NID_aes_192_cfb8, SN_aes_192_cfb8, LN_aes_192_cfb8, null); // NID: 654
+        //addObject(NID_aes_256_cfb8, SN_aes_256_cfb8, LN_aes_256_cfb8, null); // NID: 655
+        //addObject(NID_des_cfb1, SN_des_cfb1, LN_des_cfb1, null); // NID: 656
+        //addObject(NID_des_cfb8, SN_des_cfb8, LN_des_cfb8, null); // NID: 657
+        //addObject(NID_des_ede3_cfb1, SN_des_ede3_cfb1, LN_des_ede3_cfb1, null); // NID: 658
+        //addObject(NID_des_ede3_cfb8, SN_des_ede3_cfb8, LN_des_ede3_cfb8, null); // NID: 659
         addObject(NID_streetAddress, null, LN_streetAddress, OBJ_streetAddress); // NID: 660
         addObject(NID_postalCode, null, LN_postalCode, OBJ_postalCode); // NID: 661
         addObject(NID_id_ppl, SN_id_ppl, null, OBJ_id_ppl); // NID: 662
@@ -4131,8 +4131,8 @@ public class ASN1Registry {
         addObject(NID_any_policy, SN_any_policy, LN_any_policy, OBJ_any_policy); // NID: 746
         addObject(NID_policy_mappings, SN_policy_mappings, LN_policy_mappings, OBJ_policy_mappings); // NID: 747
         addObject(NID_inhibit_any_policy, SN_inhibit_any_policy, LN_inhibit_any_policy, OBJ_inhibit_any_policy); // NID: 748
-        addObject(NID_ipsec3, SN_ipsec3, LN_ipsec3, null); // NID: 749
-        addObject(NID_ipsec4, SN_ipsec4, LN_ipsec4, null); // NID: 750
+        //addObject(NID_ipsec3, SN_ipsec3, LN_ipsec3, null); // NID: 749
+        //addObject(NID_ipsec4, SN_ipsec4, LN_ipsec4, null); // NID: 750
         addObject(NID_dsa_with_SHA224, SN_dsa_with_SHA224, null, OBJ_dsa_with_SHA224); // NID: 802
         addObject(NID_dsa_with_SHA256, SN_dsa_with_SHA256, null, OBJ_dsa_with_SHA256); // NID: 803
     }
