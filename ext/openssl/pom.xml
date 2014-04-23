@@ -45,7 +45,7 @@
       <scope>provided</scope>
     </dependency>
   </dependencies>
-  
+
   <build>
     <plugins>
       <plugin>
@@ -57,8 +57,9 @@
           <fork>true</fork>
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
-          <source>${base.java.version}</source>
-          <target>${base.javac.version}</target>
+          <!-- due JRuby 1.6/1.7 we shall compile as Java 6 compatible -->
+          <source>1.6</source>
+          <target>1.6</target>
         </configuration>
       </plugin>
       <plugin>
