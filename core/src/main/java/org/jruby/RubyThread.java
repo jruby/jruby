@@ -149,8 +149,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Mail slot for cross-thread events */
     private final AtomicReference<ThreadService.Event> mail = new AtomicReference<ThreadService.Event>();
 
+    @Deprecated
+    private volatile Wakeable currentBlockingTask;
+
     /** The current task blocking a thread, to allow interrupting it in an appropriate way */
-    private volatile BlockingTask currentBlockingTask;
+    private volatile Task task;
 
     /** The list of locks this thread currently holds, so they can be released on exit */
     private final List<Lock> heldLocks = new Vector<Lock>();
@@ -989,9 +992,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    public static interface BlockingTask {
-        public void run() throws InterruptedException;
+    public interface Wakeable {
         public void wakeup();
+    }
+
+    @Deprecated
+    public static interface BlockingTask extends Wakeable {
+        public void run() throws InterruptedException;
+    }
+
+    public interface Task<Data, Return> {
+        public Return run(ThreadContext context, Data data) throws InterruptedException;
+        public void wakeup(RubyThread self);
     }
 
     public static final class SleepTask implements BlockingTask {
@@ -1020,15 +1032,29 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
+    @Deprecated
     public void executeBlockingTask(BlockingTask task) throws InterruptedException {
         enterSleep();
         try {
-            currentBlockingTask = task;
+            this.currentBlockingTask = task;
             pollThreadEvents();
             task.run();
         } finally {
             exitSleep();
             currentBlockingTask = null;
+            pollThreadEvents();
+        }
+    }
+
+    public <Data, Return> Return executeTask(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
+        enterSleep();
+        try {
+            this.task = task;
+            pollThreadEvents();
+            return task.run(context, data);
+        } finally {
+            exitSleep();
+            this.task = null;
             pollThreadEvents();
         }
     }
@@ -1283,7 +1309,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return true;
         }
     }
-    
+
+    @SuppressWarnings("deprecated")
     public void interrupt() {
         Selector activeSelector = currentSelector;
         if (activeSelector != null) {
@@ -1293,10 +1320,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (iowait != null) {
             iowait.cancel();
         }
-        
-        BlockingTask task = currentBlockingTask;
+
+        Task task = this.task;
         if (task != null) {
-            task.wakeup();
+            task.wakeup(this);
+        }
+
+        // deprecated
+        {
+            Wakeable t = currentBlockingTask;
+            if (t != null) {
+                t.wakeup();
+            }
         }
     }
     private volatile BlockingIO.Condition blockingIO = null;
