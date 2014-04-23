@@ -29,6 +29,7 @@ package org.jruby.ext.openssl.impl;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -50,7 +51,6 @@ import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
-import org.bouncycastle.jce.provider.X509CertificateObject;
 
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 
@@ -201,33 +201,33 @@ public class Signed {
 
     public ASN1Encodable asASN1() {
         ASN1EncodableVector vector = new ASN1EncodableVector();
-        vector.add(new ASN1Integer(version));
-        vector.add(digestAlgorithmsToASN1Set());
+        vector.add( new ASN1Integer( BigInteger.valueOf(version) ) );
+        vector.add( digestAlgorithmsToASN1Set() );
         if (contents == null) {
             contents = PKCS7.newEmpty();
         }
-        vector.add(contents.asASN1());
+        vector.add( contents.asASN1() );
         if (cert != null && cert.size() > 0) {
             if (cert.size() > 1) {
-                vector.add(new DERTaggedObject(false, 0, certificatesToASN1Set()));
+                vector.add( new DERTaggedObject(false, 0, certificatesToASN1Set()) );
             } else {
                 // Encode the signer certificate directly for OpenSSL compatibility.
                 // OpenSSL does not support multiple signer signature.
                 // And OpenSSL requires EXPLICIT tagging.
-                vector.add(new DERTaggedObject(true, 0, firstCertificatesToASN1()));
+                vector.add( new DERTaggedObject(true, 0, firstCertificatesToASN1()) );
             }
         }
         if (crl != null && crl.size() > 0) {
-            vector.add(new DERTaggedObject(false, 1, crlsToASN1Set()));
+            vector.add( new DERTaggedObject(false, 1, crlsToASN1Set()) );
         }
-        vector.add(signerInfosToASN1Set());
+        vector.add( signerInfosToASN1Set() );
         return new DLSequence(vector);
     }
 
     private ASN1Set digestAlgorithmsToASN1Set() {
         ASN1EncodableVector vector = new ASN1EncodableVector();
-        for(AlgorithmIdentifier ai : mdAlgs) {
-            vector.add(ai.toASN1Primitive());
+        for (AlgorithmIdentifier ai : mdAlgs) {
+            vector.add( ai.toASN1Primitive() );
         }
         return new DERSet(vector);
     }

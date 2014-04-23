@@ -413,6 +413,10 @@ public class PKCS7 {
         }
     }
 
+    private static final BigInteger BI_128 = BigInteger.valueOf(128);
+    private static final BigInteger BI_64 = BigInteger.valueOf(64);
+    private static final BigInteger BI_40 = BigInteger.valueOf(40);
+
     /* c: PKCS7_sign
      *
      */
@@ -421,7 +425,7 @@ public class PKCS7 {
         p7.setType(ASN1Registry.NID_pkcs7_signed);
         p7.contentNew(ASN1Registry.NID_pkcs7_data);
         SignerInfoWithPkey si = p7.addSignature(signcert, pkey, EVP.sha1());
-        if((flags & NOCERTS) == 0) {
+        if ( (flags & NOCERTS) == 0 ) {
             p7.addCertificate(signcert);
             if(certs != null) {
                 for(X509AuxCertificate c : certs) {
@@ -430,20 +434,20 @@ public class PKCS7 {
             }
         }
 
-        if((flags & NOATTR) == 0) {
+        if ( (flags & NOATTR) == 0 ) {
             si.addSignedAttribute(ASN1Registry.NID_pkcs9_contentType, ASN1Registry.OID_pkcs7_data);
-            if((flags & NOSMIMECAP) == 0) {
+            if ( (flags & NOSMIMECAP) == 0 ) {
                 ASN1EncodableVector smcap = new ASN1EncodableVector();
                 smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_des_ede3_cbc));
-                smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_rc2_cbc, new ASN1Integer(128)));
-                smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_rc2_cbc, new ASN1Integer(64)));
-                smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_rc2_cbc, new ASN1Integer(40)));
+                smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_rc2_cbc, new ASN1Integer(BI_128)));
+                smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_rc2_cbc, new ASN1Integer(BI_64)));
+                smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_rc2_cbc, new ASN1Integer(BI_40)));
                 smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_des_cbc));
                 si.addSignedAttribute(ASN1Registry.NID_SMIMECapabilities, new DLSequence(smcap));
             }
         }
 
-        if((flags & STREAM) != 0) {
+        if ( (flags & STREAM) != 0 ) {
             return p7;
         }
 
@@ -455,7 +459,7 @@ public class PKCS7 {
             throw new PKCS7Exception(F_PKCS7_SIGN, R_PKCS7_DATAFINAL_ERROR, e);
         }
 
-        if((flags & DETACHED) != 0) {
+        if ( (flags & DETACHED) != 0 ) {
             p7.setDetached(1);
         }
 

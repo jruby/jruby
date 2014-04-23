@@ -233,51 +233,51 @@ public class PKey {
     }
 
     public static byte[] toDerRSAKey(RSAPublicKey pubKey, RSAPrivateCrtKey privKey) throws IOException {
-        ASN1EncodableVector v1 = new ASN1EncodableVector();
-        if (pubKey != null && privKey == null) {
-            v1.add(new ASN1Integer(pubKey.getModulus()));
-            v1.add(new ASN1Integer(pubKey.getPublicExponent()));
-        } else {
-            v1.add(new ASN1Integer(0));
-            v1.add(new ASN1Integer(privKey.getModulus()));
-            v1.add(new ASN1Integer(privKey.getPublicExponent()));
-            v1.add(new ASN1Integer(privKey.getPrivateExponent()));
-            v1.add(new ASN1Integer(privKey.getPrimeP()));
-            v1.add(new ASN1Integer(privKey.getPrimeQ()));
-            v1.add(new ASN1Integer(privKey.getPrimeExponentP()));
-            v1.add(new ASN1Integer(privKey.getPrimeExponentQ()));
-            v1.add(new ASN1Integer(privKey.getCrtCoefficient()));
+        ASN1EncodableVector vec = new ASN1EncodableVector();
+        if ( pubKey != null && privKey == null ) {
+            vec.add(new ASN1Integer(pubKey.getModulus()));
+            vec.add(new ASN1Integer(pubKey.getPublicExponent()));
         }
-        return new DLSequence(v1).getEncoded();
+        else {
+            vec.add(new ASN1Integer(BigInteger.ZERO));
+            vec.add(new ASN1Integer(privKey.getModulus()));
+            vec.add(new ASN1Integer(privKey.getPublicExponent()));
+            vec.add(new ASN1Integer(privKey.getPrivateExponent()));
+            vec.add(new ASN1Integer(privKey.getPrimeP()));
+            vec.add(new ASN1Integer(privKey.getPrimeQ()));
+            vec.add(new ASN1Integer(privKey.getPrimeExponentP()));
+            vec.add(new ASN1Integer(privKey.getPrimeExponentQ()));
+            vec.add(new ASN1Integer(privKey.getCrtCoefficient()));
+        }
+        return new DLSequence(vec).getEncoded();
     }
 
     public static byte[] toDerDSAKey(DSAPublicKey pubKey, DSAPrivateKey privKey) throws IOException {
-        if (pubKey != null && privKey == null) {
+        if ( pubKey != null && privKey == null ) {
             return pubKey.getEncoded();
-        } else if (privKey != null && pubKey != null) {
-            DSAParams params = privKey.getParams();
-            ASN1EncodableVector v1 = new ASN1EncodableVector();
-            v1.add(new ASN1Integer(0));
-            v1.add(new ASN1Integer(params.getP()));
-            v1.add(new ASN1Integer(params.getQ()));
-            v1.add(new ASN1Integer(params.getG()));
-            v1.add(new ASN1Integer(pubKey.getY()));
-            v1.add(new ASN1Integer(privKey.getX()));
-            return new DLSequence(v1).getEncoded();
-        } else {
-            return privKey.getEncoded();
         }
+        if ( privKey != null && pubKey != null ) {
+            ASN1EncodableVector vec = new ASN1EncodableVector();
+            final DSAParams params = privKey.getParams();
+            vec.add(new ASN1Integer(BigInteger.ZERO));
+            vec.add(new ASN1Integer(params.getP()));
+            vec.add(new ASN1Integer(params.getQ()));
+            vec.add(new ASN1Integer(params.getG()));
+            vec.add(new ASN1Integer(pubKey.getY()));
+            vec.add(new ASN1Integer(privKey.getX()));
+            return new DLSequence(vec).getEncoded();
+        }
+        if ( privKey == null ) {
+            throw new IllegalArgumentException("passed private key as well as public key are null");
+        }
+        return privKey.getEncoded();
     }
 
     public static byte[] toDerDHKey(BigInteger p, BigInteger g) throws IOException {
-        ASN1EncodableVector v = new ASN1EncodableVector();
-        if (p != null) {
-            v.add(new ASN1Integer(p));
-        }
-        if (g != null) {
-            v.add(new ASN1Integer(g));
-        }
-        return new DLSequence(v).getEncoded();
+        ASN1EncodableVector vec = new ASN1EncodableVector();
+        if ( p != null ) vec.add( new ASN1Integer(p) );
+        if ( g != null ) vec.add( new ASN1Integer(g) );
+        return new DLSequence(vec).getEncoded();
     }
 }
 
