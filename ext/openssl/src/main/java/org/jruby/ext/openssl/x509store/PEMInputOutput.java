@@ -380,7 +380,7 @@ public class PEMInputOutput {
         len += cipher.doFinal(out, len);
         byte[] pkcs8 = new byte[len];
         System.arraycopy(out, 0, pkcs8, 0, len);
-        KeyFactory fact = KeyFactory.getInstance("RSA"); // It seems to work for both RSA and DSA.
+        KeyFactory fact = SecurityHelper.getKeyFactory("RSA"); // It seems to work for both RSA and DSA.
         return fact.generatePrivate( new PKCS8EncodedKeySpec(pkcs8) );
     }
 
@@ -1065,7 +1065,7 @@ public class PEMInputOutput {
         OpenSSLPBEParametersGenerator pGen = new OpenSSLPBEParametersGenerator();
         pGen.init(PBEParametersGenerator.PKCS5PasswordToBytes(passwd), salt);
         KeyParameter param = (KeyParameter) pGen.generateDerivedParameters(keyLen * 8);
-        SecretKey secretKey = new javax.crypto.spec.SecretKeySpec(param.getKey(), realName);
+        SecretKey secretKey = new SecretKeySpec(param.getKey(), realName);
         Cipher cipher = SecurityHelper.getCipher(realName);
         cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
         return cipher.doFinal(decoded);
