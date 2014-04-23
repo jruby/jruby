@@ -170,7 +170,7 @@ public class SignerInfoWithPkey implements ASN1Encodable {
     public void set(X509AuxCertificate x509, PrivateKey pkey, MessageDigest dgst) throws PKCS7Exception {
         boolean dsa = (pkey instanceof DSAPrivateKey) || (pkey instanceof ECPrivateKey);
 
-        version = new ASN1Integer(1);
+        version = new ASN1Integer(BigInteger.ONE);
 
         X500Name issuer = X500Name.getInstance(x509.getIssuerX500Principal().getEncoded());
         BigInteger serial = x509.getSerialNumber();

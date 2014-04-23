@@ -39,7 +39,6 @@ import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
