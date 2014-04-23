@@ -359,16 +359,14 @@ public class PEMInputOutput {
 
         EncryptionScheme scheme = pbeParams.getEncryptionScheme();
         BufferedBlockCipher cipher;
-        if (scheme.getAlgorithm().equals(PKCSObjectIdentifiers.RC2_CBC)) {
+        if ( scheme.getAlgorithm().equals( PKCSObjectIdentifiers.RC2_CBC ) ) {
             RC2CBCParameter rc2Params = RC2CBCParameter.getInstance(scheme);
             byte[] iv = rc2Params.getIV();
             CipherParameters param = new ParametersWithIV(cipherParams, iv);
             cipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(new RC2Engine()));
             cipher.init(false, param);
         } else {
-            byte[] iv = ((ASN1OctetString) scheme.getObject()).getOctets();
-            // this version, done for BC 1.49 compat, caused #1238.
-//            byte[] iv = ASN1OctetString.getInstance(scheme).getOctets();
+            byte[] iv = ASN1OctetString.getInstance( scheme.getParameters() ).getOctets();
             CipherParameters param = new ParametersWithIV(cipherParams, iv);
             cipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(new DESedeEngine()));
             cipher.init(false, param);
