@@ -136,7 +136,7 @@ public class MiscPEMGenerator implements PemObjectGenerator
                 DSAParameter p = DSAParameter.getInstance(info.getPrivateKeyAlgorithm().getParameters());
                 ASN1EncodableVector v = new ASN1EncodableVector();
 
-                v.add(new ASN1Integer(0));
+                v.add(new ASN1Integer(BigInteger.ZERO));
                 v.add(new ASN1Integer(p.getP()));
                 v.add(new ASN1Integer(p.getQ()));
                 v.add(new ASN1Integer(p.getG()));

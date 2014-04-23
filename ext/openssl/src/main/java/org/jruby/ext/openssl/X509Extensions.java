@@ -28,6 +28,7 @@
 package org.jruby.ext.openssl;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -351,7 +352,7 @@ public class X509Extensions {
                 final String value = val[i];
                 if ( value.length() > 8 && value.substring(0, 8).equalsIgnoreCase("pathlen:") ) {
                     int pathlen = Integer.parseInt( value.substring(8).trim() );
-                    asnv.add( new ASN1Integer(pathlen) );
+                    asnv.add( new ASN1Integer( BigInteger.valueOf(pathlen) ) );
                 }
             }
             return new DLSequence(asnv);
