@@ -128,6 +128,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Weak reference to the ThreadContext for this thread. */
     private volatile WeakReference<ThreadContext> contextRef;
 
+    /** Whether to scan for cross-thread events */
+    private volatile boolean handleInterrupt = true;
+
     private static final boolean DEBUG = false;
     private int RUBY_MIN_THREAD_PRIORITY = -3;
     private int RUBY_MAX_THREAD_PRIORITY = 3;
@@ -486,11 +489,33 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
     
     public void pollThreadEvents(ThreadContext context) {
-        if (mail != null) checkMail(context);
+        if (handleInterrupt && mail != null && context.runtime.getThreadService().getPolling()) checkMail(context);
     }
     
     private static void throwThreadKill() {
         throw new ThreadKill();
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject handle_interrupt(ThreadContext context, IRubyObject self, IRubyObject mask, Block block) {
+        // TODO: honor mask
+
+        try {
+            context.getThread().handleInterrupt = false;
+            return block.call(context);
+        } finally {
+            context.getThread().handleInterrupt = true;
+        }
+    }
+
+    @JRubyMethod(name = "pending_interrupt?", meta = true)
+    public static IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject self) {
+        return context.runtime.newBoolean(context.getThread().mail.get() != null);
+    }
+
+    @JRubyMethod(name = "pending_interrupt?")
+    public IRubyObject pending_interrupt_p(ThreadContext context) {
+        return context.runtime.newBoolean(mail.get() != null);
     }
 
     /**
