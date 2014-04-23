@@ -14,6 +14,7 @@ import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
+import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.IRTranslator;
@@ -594,11 +595,18 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 case BOOK_KEEPING_OP:
                     if (operation == Operation.PUSH_BINDING) {
-                        // SSS NOTE: Method scopes only!
+                        // SSS NOTE: Method/module scopes only!
                         //
                         // Blocks are a headache -- so, these instrs. are only added to IRMethods.
                         // Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
-                        currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope());
+                        if (scope instanceof IRMetaClassBody) {
+                            // Add a parent-link to current dynscope to support non-local returns cheaply
+                            // This doesn't affect variable scoping since local variables will all have
+                            // the right scope depth.
+                            currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope(), context.getCurrentScope());
+                        } else {
+                            currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope());
+                        }
                         context.pushScope(currDynScope);
                     } else {
                         processBookKeepingOp(context, instr, operation, scope, args, self, block, implClass, visibility);
