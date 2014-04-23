@@ -30,8 +30,8 @@
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
-      <artifactId>jruby</artifactId>
-      <version>1.7.11</version>
+      <artifactId>jruby-core</artifactId>
+      <version>1.6.8</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
