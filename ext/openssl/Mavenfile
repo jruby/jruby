@@ -17,6 +17,8 @@ else
   parent 'org.jruby:jruby-ext', version
 end
 
+plugin( :compiler, :target => '1.6', :source => '1.6', :debug => true, :verbose => false, :showWarnings => true, :showDeprecation => true )
+
 jruby_plugin! :gem do
   # avoid adding this not yet built openssl to the load_path
   # when installing dependent gems
