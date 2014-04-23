@@ -27,7 +27,7 @@ jruby_plugin! :gem do
 end
 
 # we need the jruby API here, the version should be less important here
-jar 'org.jruby:jruby:1.7.11', :scope => :provided
+jar 'org.jruby:jruby-core:1.6.8', :scope => :provided
 
 properties( 'gem.home' => '../target/rubygems',
             'gem.path' => '${gem.home}',
