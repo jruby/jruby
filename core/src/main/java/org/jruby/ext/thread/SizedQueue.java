@@ -39,19 +39,15 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+
 /**
  * The "SizedQueue" class from the 'thread' library.
  */
 @JRubyClass(name = "SizedQueue", parent = "Queue")
 public class SizedQueue extends Queue {
     private int capacity;
-
-    @JRubyMethod(name = "new", rest = true, meta = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        SizedQueue result = new SizedQueue(context.runtime, (RubyClass) recv);
-        result.callInit(context, args, block);
-        return result;
-    }
 
     public SizedQueue(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -71,19 +67,19 @@ public class SizedQueue extends Queue {
 
     @JRubyMethod
     @Override
-    public synchronized IRubyObject clear(ThreadContext context) {
+    public IRubyObject clear(ThreadContext context) {
         super.clear(context);
         notifyAll();
         return context.runtime.getNil();
     }
 
     @JRubyMethod
-    public synchronized RubyNumeric max(ThreadContext context) {
+    public RubyNumeric max(ThreadContext context) {
         return RubyNumeric.int2fix(context.runtime, capacity);
     }
 
     @JRubyMethod(name = "max=")
-    public synchronized IRubyObject max_set(ThreadContext context, IRubyObject arg) {
+    public IRubyObject max_set(ThreadContext context, IRubyObject arg) {
         initialize(context, arg);
         return arg;
     }
@@ -104,46 +100,12 @@ public class SizedQueue extends Queue {
         if (difference > 0) {
             notifyAll();
         }
-        return context.runtime.getNil();
-    }
-
-    @JRubyMethod(name = {"pop", "deq", "shift"})
-    @Override
-    public synchronized IRubyObject pop(ThreadContext context) {
-        IRubyObject result = super.pop(context);
-        notifyAll();
-        return result;
-    }
-
-    @JRubyMethod(name = {"pop", "deq", "shift"})
-    @Override
-    public synchronized IRubyObject pop(ThreadContext context, IRubyObject arg0) {
-        IRubyObject result = super.pop(context, arg0);
-        notifyAll();
-        return result;
-    }
-
-    @JRubyMethod(name = {"push", "<<"})
-    @Override
-    public synchronized IRubyObject push(ThreadContext context, IRubyObject value) {
-        checkShutdown(context);
-        if (java_length() >= capacity) {
-            numWaiting++;
-            try {
-                while (java_length() >= capacity) {
-                    try {
-                        context.getThread().wait_timeout(this, null);
-                    } catch (InterruptedException e) {
-                    }
-                    checkShutdown(context);
-                }
-            } finally {
-                numWaiting--;
-            }
+        BlockingQueue<IRubyObject> queue = this.queue;
+        if (queue == null) {
+            this.queue = new ArrayBlockingQueue<IRubyObject>(capacity, false);
+        } else {
+            this.queue = new ArrayBlockingQueue<IRubyObject>(capacity, false, queue);
         }
-        super.push(context, value);
-        notifyAll();
-        return context.runtime.getNil();
+        return context.nil;
     }
-    
 }
