@@ -157,11 +157,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Mail slot for cross-thread events */
     private final Queue<IRubyObject> pendingInterruptQueue = new ConcurrentLinkedQueue();
 
-    /** A function to use to unblock this thread, if possible */
-    private Unblocker unblockFunc;
+    @Deprecated
+    private volatile Wakeable currentBlockingTask;
 
-    /** Argument to pass to the unblocker */
-    private IRubyObject unblockArg;
+    /** The current task blocking a thread, to allow interrupting it in an appropriate way */
+    private volatile Task task;
 
     /** The list of locks this thread currently holds, so they can be released on exit */
     private final List<Lock> heldLocks = new Vector<Lock>();
@@ -1167,19 +1167,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    @Deprecated
-    public static interface BlockingTask {
-        public void run() throws InterruptedException;
+    public interface Wakeable {
         public void wakeup();
     }
 
-    public interface Unblocker {
-        public void wakeup(RubyThread thread, IRubyObject self);
+    @Deprecated
+    public static interface BlockingTask extends Wakeable {
+        public void run() throws InterruptedException;
     }
 
-    public interface Task<Data, Return> extends Unblocker {
+    public interface Task<Data, Return> {
         public Return run(ThreadContext context, Data data) throws InterruptedException;
-        public void wakeup(RubyThread thread, IRubyObject self);
+        public void wakeup(RubyThread self);
     }
 
     public static final class SleepTask implements BlockingTask {
@@ -1222,17 +1221,15 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    public <Data extends IRubyObject, Return> Return executeTask(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
+    public <Data, Return> Return executeTask(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
         enterSleep();
         try {
-            this.unblockFunc = task;
-            this.unblockArg = data;
+            this.task = task;
             pollThreadEvents();
             return task.run(context, data);
         } finally {
             exitSleep();
-            this.unblockFunc = null;
-            this.unblockArg = null;
+            this.task = null;
             pollThreadEvents();
         }
     }
@@ -1500,9 +1497,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     @SuppressWarnings("deprecated")
-    public synchronized void interrupt() {
-        setInterrupt();
-
+    public void interrupt() {
         Selector activeSelector = currentSelector;
         if (activeSelector != null) {
             activeSelector.wakeup();
@@ -1512,9 +1507,17 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             iowait.cancel();
         }
 
-        Unblocker task = this.unblockFunc;
+        Task task = this.task;
         if (task != null) {
-            task.wakeup(this, unblockArg);
+            task.wakeup(this);
+        }
+
+        // deprecated
+        {
+            Wakeable t = currentBlockingTask;
+            if (t != null) {
+                t.wakeup();
+            }
         }
 
         // deprecated
