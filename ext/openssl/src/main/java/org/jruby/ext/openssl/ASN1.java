@@ -742,9 +742,12 @@ public class ASN1 {
             final ASN1ObjectIdentifier derOid = new ASN1ObjectIdentifier( args[0].toString() );
             final String a1 = args[1].toString();
             final String a2 = args[2].toString();
-            getOIDLookup(runtime).put(a1.toLowerCase(), derOid);
-            getOIDLookup(runtime).put(a2.toLowerCase(), derOid);
-            getSymLookup(runtime).put(derOid, a1);
+            synchronized(ASN1.class) {
+                Map<String, ASN1ObjectIdentifier> sym2oid = getOIDLookup(runtime);
+                sym2oid.put( a1.toLowerCase(), derOid );
+                sym2oid.put( a2.toLowerCase(), derOid );
+                getSymLookup(runtime).put( derOid, a1 );
+            }
             return runtime.getTrue();
         }
 
