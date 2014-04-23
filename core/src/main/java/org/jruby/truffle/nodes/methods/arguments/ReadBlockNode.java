@@ -31,7 +31,7 @@ public class ReadBlockNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyArguments arguments = frame.getArguments(RubyArguments.class);
+        final RubyArguments arguments = new RubyArguments(frame.getArguments());
         final RubyProc block = arguments.getBlock();
 
         if (block == null) {

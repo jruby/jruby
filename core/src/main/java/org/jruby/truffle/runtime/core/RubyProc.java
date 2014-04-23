@@ -66,16 +66,18 @@ public class RubyProc extends RubyObject {
         method = setMethod;
     }
 
-    @CompilerDirectives.SlowPath
-    public Object call(PackedFrame caller, Object... args) {
-        return callWithModifiedSelf(caller, selfCapturedInScope, args);
+    @Deprecated
+    public Object call(Object... args) {
+        return callWithModifiedSelf(selfCapturedInScope, args);
     }
 
-    public Object callWithModifiedSelf(PackedFrame caller, Object modifiedSelf, Object... args) {
+    @Deprecated
+    public Object callWithModifiedSelf(Object modifiedSelf, Object... args) {
         assert modifiedSelf != null;
+        assert args != null;
 
         try {
-            return method.call(caller, modifiedSelf, blockCapturedInScope, args);
+            return method.call(modifiedSelf, blockCapturedInScope, args);
         } catch (ReturnException e) {
             switch (type) {
                 case PROC:

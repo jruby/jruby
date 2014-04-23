@@ -30,8 +30,6 @@ public class DispatchHeadNode extends DispatchNode {
 
     public static final Object MISSING = new Object();
 
-    private final MissingBehavior missingBehavior;
-
     @Child protected UnboxedDispatchNode dispatch;
 
     public DispatchHeadNode(RubyContext context, SourceSection sourceSection, String name, boolean isSplatted, MissingBehavior missingBehavior) {
@@ -43,7 +41,6 @@ public class DispatchHeadNode extends DispatchNode {
         this.context = context;
         this.name = name;
         this.isSplatted = isSplatted;
-        this.missingBehavior = missingBehavior;
 
         final UninitializedDispatchNode uninitializedDispatch = new UninitializedDispatchNode(context, sourceSection, name, missingBehavior);
         dispatch = new UninitializedBoxingDispatchNode(context, sourceSection, uninitializedDispatch);

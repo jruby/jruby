@@ -39,7 +39,7 @@ public abstract class MainNodes {
                     final RubyModule included = (RubyModule) args[n];
 
                     // Note that we do appear to do full method lookup here
-                    included.getLookupNode().lookupMethod("append_features").call(null, included, null, main.getSingletonClass());
+                    included.getLookupNode().lookupMethod("append_features").call(included, null, main.getSingletonClass());
 
                     // TODO(cs): call included hook
                 }

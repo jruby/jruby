@@ -17,6 +17,8 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.lookup.*;
 import org.jruby.truffle.runtime.methods.*;
 
+import java.util.Arrays;
+
 /**
  * A node in the dispatch chain that comes after the boxing point and caches a method on a full
  * boxed Ruby BasicObject, matching it by looking at the lookup node and assuming it has not been
@@ -28,6 +30,7 @@ public class CachedBoxedDispatchNode extends BoxedDispatchNode {
     private final Assumption unmodifiedAssumption;
     private final RubyMethod method;
 
+    @Child protected DirectCallNode callNode;
     @Child protected BoxedDispatchNode next;
 
     public CachedBoxedDispatchNode(RubyContext context, SourceSection sourceSection, LookupNode expectedLookupNode, RubyMethod method, BoxedDispatchNode next) {
@@ -40,6 +43,20 @@ public class CachedBoxedDispatchNode extends BoxedDispatchNode {
         unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
         this.method = method;
         this.next = next;
+
+        callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+        callNode.assignSourceSection(sourceSection);
+
+        if (method.shouldAlwaysInlined()) {
+            // Splitting requires all nodes to be adopted, so force that now
+            adoptChildren();
+
+            assert callNode.isSplittable();
+            assert callNode.isInlinable();
+
+            callNode.split();
+            callNode.forceInlining();
+        }
     }
 
     @Override
@@ -60,7 +77,16 @@ public class CachedBoxedDispatchNode extends BoxedDispatchNode {
 
         // Call the method
 
-        return method.call(frame.pack(), receiverObject, blockObject, argumentsObjects);
+        final Object[] modifiedArgumentsObjects;
+
+        if (method.shouldAppendCallNode()) {
+            modifiedArgumentsObjects = Arrays.copyOf(argumentsObjects, argumentsObjects.length + 1);
+            modifiedArgumentsObjects[modifiedArgumentsObjects.length - 1] = this;
+        } else {
+            modifiedArgumentsObjects = argumentsObjects;
+        }
+
+        return callNode.call(frame, RubyArguments.create(frame.materialize(), receiverObject, blockObject, modifiedArgumentsObjects));
     }
 
 }

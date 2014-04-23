@@ -9,16 +9,13 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
-import com.oracle.truffle.api.frame.FrameDescriptor;
-import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
-import org.jruby.truffle.nodes.InlinableMethodImplementation;
+import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
@@ -29,9 +26,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.methods.Arity;
-import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.methods.UniqueMethodIdentifier;
 import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
@@ -141,12 +135,10 @@ public abstract class CoreMethodNodeManager {
         final UniqueMethodIdentifier uniqueIdentifier = new UniqueMethodIdentifier();
         final Visibility visibility = methodDetails.getMethodAnnotation().visibility();
 
-        final RubyRootNode pristineRootNode = makeGenericMethod(context, methodDetails);
-        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRootNode));
+        final RubyRootNode rootNode = makeGenericMethod(context, methodDetails);
 
-        final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRootNode, true,
-                        methodDetails.getMethodAnnotation().appendCallNode());
-        final RubyMethod method = new RubyMethod(pristineRootNode.getSourceSection(), module, uniqueIdentifier, canonicalName, visibility, false, methodImplementation);
+        final RubyMethod method = new RubyMethod(rootNode.getSourceSection(), uniqueIdentifier, canonicalName, module, visibility, false,
+                methodDetails.getMethodAnnotation().appendCallNode(), true, Truffle.getRuntime().createCallTarget(rootNode), null);
 
         module.addMethod(method);
 

@@ -13,24 +13,27 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import org.jruby.truffle.nodes.*;
+import com.oracle.truffle.api.nodes.Node.Child;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
 public abstract class ActiveLeaveDebugProbe extends RubyProbe {
 
     private final Assumption activeAssumption;
-
-    private final InlinableMethodImplementation inlinable;
-    private final RubyRootNode inlinedRoot;
-
+    private final RubyProc proc;
+    @Child protected DirectCallNode callNode;
     private final BranchProfile profile = new BranchProfile();
 
     public ActiveLeaveDebugProbe(RubyContext context, Assumption activeAssumption, RubyProc proc) {
         super(context, false);
         this.activeAssumption = activeAssumption;
-        inlinable = ((InlinableMethodImplementation) proc.getMethod().getImplementation());
-        inlinedRoot = inlinable.getCloneOfPristineRootNode();
+        this.proc = proc;
+
+        callNode = Truffle.getRuntime().createDirectCallNode(proc.getMethod().getCallTarget());
+
+        if (callNode.isInlinable()) {
+            callNode.forceInlining();
+        }
     }
 
     @Override
@@ -44,13 +47,7 @@ public abstract class ActiveLeaveDebugProbe extends RubyProbe {
             return;
         }
 
-        Object[] internalArguments = RubyArguments.create(1);
-        RubyArguments.setDeclarationFrame(internalArguments, inlinable.getDeclarationFrame());
-        RubyArguments.setSelf(internalArguments, NilPlaceholder.INSTANCE);
-        RubyArguments.setUserArgument(internalArguments, 0, result);
-        final RubyArguments arguments = new RubyArguments(internalArguments);
-        final VirtualFrame inlinedFrame = Truffle.getRuntime().createVirtualFrame(frame.pack(), arguments, inlinable.getFrameDescriptor());
-        inlinedRoot.execute(inlinedFrame);
+        callNode.call(frame, RubyArguments.create(proc.getMethod().getDeclarationFrame(), proc.getSelfCapturedInScope(), proc.getBlockCapturedInScope(), result));
     }
 
     protected abstract InactiveLeaveDebugProbe createInactive();

@@ -15,13 +15,14 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.core.*;
 
 import java.util.Arrays;
+import java.util.Iterator;
 
 /**
  * Arguments and other context passed to a Ruby method. Includes the central Ruby context object,
  * optionally the scope at the point of declaration (forming a closure), the value of self, a passed
  * block, and the formal arguments.
  */
-public final class RubyArguments extends Arguments {
+public final class RubyArguments {
 
     public static final int RUNTIME_ARGUMENT_COUNT = 3;
     public static final int DECLARATION_FRAME_INDEX = 0;
@@ -90,7 +91,7 @@ public final class RubyArguments extends Arguments {
     public static MaterializedFrame getDeclarationFrame(VirtualFrame frame, int level) {
         assert level > 0;
 
-        MaterializedFrame parentFrame = frame.getArguments(RubyArguments.class).getDeclarationFrame();
+        MaterializedFrame parentFrame = new RubyArguments(frame.getArguments()).getDeclarationFrame();
         return getDeclarationFrame(parentFrame, level - 1);
     }
 
@@ -106,10 +107,24 @@ public final class RubyArguments extends Arguments {
         MaterializedFrame parentFrame = frame;
 
         for (int n = 0; n < level; n++) {
-            parentFrame = parentFrame.getArguments(RubyArguments.class).getDeclarationFrame();
+            parentFrame = new RubyArguments(parentFrame.getArguments()).getDeclarationFrame();
         }
 
         return parentFrame;
+    }
+
+    public static FrameInstance getCallerFrame() {
+        final Iterable<FrameInstance> stackIterable = Truffle.getRuntime().getStackTrace();
+        assert stackIterable != null;
+
+        final Iterator<FrameInstance> stack = stackIterable.iterator();
+
+        assert stack.hasNext();
+        return stack.next();
+    }
+
+    public static Frame getCallerFrame(FrameInstance.FrameAccess access, boolean slowPath) {
+        return getCallerFrame().getFrame(access, slowPath);
     }
 
     public Object getSelf() {
@@ -139,4 +154,5 @@ public final class RubyArguments extends Arguments {
     public Object getUserArgument(int index) {
         return getUserArgument(internalArguments, index);
     }
+
 }

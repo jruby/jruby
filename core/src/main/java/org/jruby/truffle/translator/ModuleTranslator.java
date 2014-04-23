@@ -62,8 +62,7 @@ class ModuleTranslator extends BodyTranslator {
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRootNode));
 
-        return new MethodDefinitionNode(context, sourceSection, methodName, environment.getUniqueMethodIdentifier(), environment.getFrameDescriptor(), environment.needsDeclarationFrame(),
-                        pristineRootNode, callTarget, false);
+        return new MethodDefinitionNode(context, sourceSection, methodName, environment.getUniqueMethodIdentifier(), environment.needsDeclarationFrame(), callTarget, false);
     }
 
     @Override

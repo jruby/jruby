@@ -1087,7 +1087,7 @@ public abstract class ArrayNodes {
                 @Override
                 public int compare(Object a, Object b) {
                     final RubyBasicObject aBoxed = context.getCoreLibrary().box(a);
-                    return (int) aBoxed.getLookupNode().lookupMethod("<=>").call(null, aBoxed, null, b);
+                    return (int) aBoxed.getLookupNode().lookupMethod("<=>").call(aBoxed, null, b);
                 }
 
             });

@@ -12,31 +12,33 @@ package org.jruby.truffle.nodes.debug;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.nodes.InlinableMethodImplementation;
-import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.debug.RubyProbe;
+import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.subsystems.*;
 
-public final class InlinedTraceProbe extends RubyProbe {
+public final class ActiveTraceProbe extends RubyProbe {
 
     private final Assumption tracingAssumption;
-
-    private final InlinableMethodImplementation inlinable;
-    private final RubyRootNode inlinedRoot;
+    private final RubyProc proc;
 
     @CompilerDirectives.CompilationFinal private RubyString event;
     @CompilerDirectives.CompilationFinal private RubyString file;
     @CompilerDirectives.CompilationFinal private int line;
     @CompilerDirectives.CompilationFinal private RubyString className;
 
-    public InlinedTraceProbe(RubyContext context, InlinableMethodImplementation inlinable, final Assumption tracingAssumption) {
+    @Child protected DirectCallNode callNode;
+
+    public ActiveTraceProbe(RubyContext context, RubyProc proc, final Assumption tracingAssumption) {
         super(context, false);
         this.tracingAssumption = tracingAssumption;
-        this.inlinable = inlinable;
-        this.inlinedRoot = inlinable.getCloneOfPristineRootNode();
+        this.proc = proc;
+
+        callNode = Truffle.getRuntime().createDirectCallNode(proc.getMethod().getCallTarget());
+
+        if (callNode.isInlinable()) {
+            callNode.forceInlining();
+        }
     }
 
     @Override
@@ -58,7 +60,7 @@ public final class InlinedTraceProbe extends RubyProbe {
 
         final SourceSection sourceSection = astNode.getEncapsulatingSourceSection();
 
-        final Object self = frame.getArguments(RubyArguments.class).getSelf();
+        final Object self = new RubyArguments(frame.getArguments()).getSelf();
 
         if (event == null) {
             CompilerDirectives.transferToInterpreter();
@@ -74,9 +76,7 @@ public final class InlinedTraceProbe extends RubyProbe {
         context.getTraceManager().setSuspended(true);
 
         try {
-            final RubyArguments arguments = new RubyArguments(RubyArguments.create(inlinable.getDeclarationFrame(), NilPlaceholder.INSTANCE, null, event, file, line, objectId, binding, className));
-            final VirtualFrame inlinedFrame = Truffle.getRuntime().createVirtualFrame(frame.pack(), arguments, inlinable.getFrameDescriptor());
-            inlinedRoot.execute(inlinedFrame);
+            callNode.call(frame, RubyArguments.create(proc.getMethod().getDeclarationFrame(), proc.getSelfCapturedInScope(), proc.getBlockCapturedInScope(), event, file, line, objectId, binding, className));
         } finally {
             context.getTraceManager().setSuspended(false);
         }

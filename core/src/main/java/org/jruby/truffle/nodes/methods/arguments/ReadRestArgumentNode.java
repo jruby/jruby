@@ -34,8 +34,7 @@ public class ReadRestArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyArguments rubyArguments = frame.getArguments(RubyArguments.class);
-
+        final RubyArguments rubyArguments = new RubyArguments(frame.getArguments());
 
         final RubyClass arrayClass = getContext().getCoreLibrary().getArrayClass();
 

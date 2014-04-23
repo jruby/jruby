@@ -79,7 +79,7 @@ public abstract class HashNodes {
                 if (hash.defaultBlock == null) {
                     return NilPlaceholder.INSTANCE;
                 } else {
-                    return hash.defaultBlock.call(frame.pack(), hash, index);
+                    return hash.defaultBlock.call(hash, index);
                 }
             } else {
                 return value;

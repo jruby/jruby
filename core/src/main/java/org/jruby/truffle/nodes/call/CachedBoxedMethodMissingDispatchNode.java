@@ -70,7 +70,7 @@ public class CachedBoxedMethodMissingDispatchNode extends BoxedDispatchNode {
 
         // Call the method
 
-        return method.call(frame.pack(), receiverObject, blockObject, modifiedArgumentsObjects);
+        return method.call(receiverObject, blockObject, modifiedArgumentsObjects);
     }
 
 }

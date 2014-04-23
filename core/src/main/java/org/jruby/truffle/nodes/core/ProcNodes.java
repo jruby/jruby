@@ -31,7 +31,9 @@ public abstract class ProcNodes {
 
         @Specialization
         public Object call(VirtualFrame frame, RubyProc proc, Object[] args) {
-            return proc.call(frame.getCaller(), args);
+            // TODO(CS): need to call with the caller frame the same as this method's caller frame, not this method's frame
+
+            return proc.call(args);
         }
 
     }

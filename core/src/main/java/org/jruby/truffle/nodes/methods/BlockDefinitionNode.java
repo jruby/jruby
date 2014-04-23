@@ -13,7 +13,6 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
@@ -25,9 +24,9 @@ import org.jruby.truffle.runtime.methods.*;
 @NodeInfo(shortName = "block-def")
 public class BlockDefinitionNode extends MethodDefinitionNode {
 
-    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, String name, UniqueMethodIdentifier uniqueIdentifier, FrameDescriptor frameDescriptor,
-                    boolean requiresDeclarationFrame, RubyRootNode pristineRootNode, CallTarget callTarget) {
-        super(context, sourceSection, name, uniqueIdentifier, frameDescriptor, requiresDeclarationFrame, pristineRootNode, callTarget, false);
+    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, String name, UniqueMethodIdentifier uniqueIdentifier,
+                    boolean requiresDeclarationFrame, CallTarget callTarget) {
+        super(context, sourceSection, name, uniqueIdentifier, requiresDeclarationFrame, callTarget, false);
     }
 
     @Override
@@ -42,10 +41,9 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
             declarationFrame = null;
         }
 
-        final RubyArguments arguments = frame.getArguments(RubyArguments.class);
+        final RubyArguments arguments = new RubyArguments(frame.getArguments());
 
-        final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, declarationFrame, frameDescriptor, pristineRootNode, true, false);
-        final RubyMethod method = new RubyMethod(getSourceSection(), null, uniqueIdentifier, name, Visibility.PUBLIC, false, methodImplementation);
+        final RubyMethod method = new RubyMethod(getSourceSection(), uniqueIdentifier, name, null, Visibility.PUBLIC, false, false, true, callTarget, declarationFrame);
 
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, arguments.getSelf(), arguments.getBlock(), method);
     }

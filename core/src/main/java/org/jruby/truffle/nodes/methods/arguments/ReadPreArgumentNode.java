@@ -33,7 +33,7 @@ public class ReadPreArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyArguments arguments = frame.getArguments(RubyArguments.class);
+        final RubyArguments arguments = new RubyArguments(frame.getArguments());
 
         if (index >= arguments.getUserArgumentsCount()) {
             switch (missingArgumentBehaviour) {

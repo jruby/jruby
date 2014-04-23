@@ -123,18 +123,9 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
                 }
             }
 
-            UnboxedDispatchNode newDispatch;
-
-            if (method.getImplementation() instanceof InlinableMethodImplementation && InlineHeuristic.shouldInline((InlinableMethodImplementation) method.getImplementation())) {
-                newDispatch = new InlinedUnboxedDispatchNode(getContext(), getSourceSection(), receiverUnboxed.getClass(), receiverObject.getRubyClass().getUnmodifiedAssumption(),
-                        (InlinableMethodImplementation) method.getImplementation(), null);
-            } else {
-                newDispatch = new CachedUnboxedDispatchNode(getContext(), getSourceSection(), receiverUnboxed.getClass(), receiverObject.getRubyClass().getUnmodifiedAssumption(), method, null);
-            }
-
+            final UnboxedDispatchNode newDispatch = new CachedUnboxedDispatchNode(getContext(), getSourceSection(), receiverUnboxed.getClass(), receiverObject.getRubyClass().getUnmodifiedAssumption(), method, null);
             firstDispatch.replace(newDispatch, "prepending new unboxed dispatch node to chain");
             newDispatch.setNext(firstDispatch);
-
             return newDispatch.dispatch(frame, receiverUnboxed, blockObject, argumentsObjects);
         }
 
@@ -144,18 +135,8 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
         */
 
         final UninitializedDispatchNode newUninitializedDispatch = new UninitializedDispatchNode(getContext(), getSourceSection(), name, missingBehavior);
-
-        BoxedDispatchNode newDispatch;
-
-        if (method.getImplementation() instanceof InlinableMethodImplementation && InlineHeuristic.shouldInline((InlinableMethodImplementation) method.getImplementation())) {
-            newDispatch = new InlinedBoxedDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), (InlinableMethodImplementation) method.getImplementation(),
-                    newUninitializedDispatch);
-        } else {
-            newDispatch = new CachedBoxedDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), method, newUninitializedDispatch);
-        }
-
+        final BoxedDispatchNode newDispatch = new CachedBoxedDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), method, newUninitializedDispatch);
         replace(newDispatch, "appending new boxed dispatch node to chain");
-
         return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
     }
 }

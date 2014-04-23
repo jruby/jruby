@@ -20,9 +20,11 @@ import com.oracle.truffle.api.nodes.*;
 public class RubyRootNode extends RootNode {
 
     private final String indicativeName;
+
     private final org.jruby.ast.Node parseTree;
 
     @Child protected RubyNode body;
+    private final RubyNode uninitializedBody;
 
     public RubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, String indicativeName, org.jruby.ast.Node parseTree, RubyNode body) {
         super(sourceSection, frameDescriptor);
@@ -33,10 +35,21 @@ public class RubyRootNode extends RootNode {
         this.indicativeName = indicativeName;
         this.parseTree = parseTree;
         this.body = body;
+        uninitializedBody = NodeUtil.cloneNode(body);
     }
 
     public org.jruby.ast.Node getParseTree() {
         return parseTree;
+    }
+
+    @Override
+    public RootNode split() {
+        return new RubyRootNode(getSourceSection(), getFrameDescriptor(), indicativeName, parseTree, NodeUtil.cloneNode(uninitializedBody));
+    }
+
+    @Override
+    public boolean isSplittable() {
+        return true;
     }
 
     @Override

@@ -22,17 +22,20 @@ public abstract class ActiveEnterDebugProbe extends RubyProbe {
     private final Assumption activeAssumption;
 
     private final RubyProc proc;
-    //private final InlinableMethodImplementation inlinable;
-    //private final RubyRootNode inlinedRoot;
+    @Child protected DirectCallNode callNode;
 
     private final BranchProfile profile = new BranchProfile();
 
     public ActiveEnterDebugProbe(RubyContext context, Assumption activeAssumption, RubyProc proc) {
         super(context, false);
         this.activeAssumption = activeAssumption;
-        //inlinable = ((InlinableMethodImplementation) proc.getMethod().getImplementation());
-        //inlinedRoot = inlinable.getCloneOfPristineRootNode();
         this.proc = proc;
+
+        callNode = Truffle.getRuntime().createDirectCallNode(proc.getMethod().getCallTarget());
+
+        if (callNode.isInlinable()) {
+            callNode.forceInlining();
+        }
     }
 
     @Override
@@ -46,8 +49,8 @@ public abstract class ActiveEnterDebugProbe extends RubyProbe {
             return;
         }
 
-        final RubyBinding binding = new RubyBinding(context.getCoreLibrary().getBindingClass(), frame.getArguments(RubyArguments.class).getSelf(), frame.materialize());
-        proc.call(frame.pack(), binding);
+        final RubyBinding binding = new RubyBinding(context.getCoreLibrary().getBindingClass(), new RubyArguments(frame.getArguments()).getSelf(), frame.materialize());
+        callNode.call(frame, RubyArguments.create(proc.getMethod().getDeclarationFrame(), proc.getSelfCapturedInScope(), proc.getBlockCapturedInScope(), binding));
     }
 
     protected abstract InactiveEnterDebugProbe createInactive();

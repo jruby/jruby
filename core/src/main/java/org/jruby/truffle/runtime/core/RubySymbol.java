@@ -39,11 +39,13 @@ public class RubySymbol extends RubyObject {
     public RubyProc toProc() {
         final RubyContext context = getRubyClass().getContext();
 
+        // TODO(CS): we need a proper method in here
+
         final CallTarget callTarget = new CallTarget() {
 
             @Override
-            public Object call(PackedFrame frame, Arguments args) {
-                final RubyArguments rubyArgs = (RubyArguments) args;
+            public Object call(Object... args) {
+                final RubyArguments rubyArgs = new RubyArguments(args);
                 final Object receiver = rubyArgs.getUserArgument(0);
                 final Object[] arguments = rubyArgs.getArgumentsClone();
                 final Object[] sendArgs = Arrays.copyOfRange(arguments, 1, arguments.length);
@@ -53,8 +55,7 @@ public class RubySymbol extends RubyObject {
 
         };
 
-        final CallTargetMethodImplementation methodImplementation = new CallTargetMethodImplementation(callTarget, null);
-        final RubyMethod method = new RubyMethod(null, null, new UniqueMethodIdentifier(), symbol, Visibility.PUBLIC, false, methodImplementation);
+        final RubyMethod method = new RubyMethod(null, new UniqueMethodIdentifier(), symbol, null, Visibility.PUBLIC, false, false, false, callTarget, null);
 
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, NilPlaceholder.INSTANCE, null, method);
     }

@@ -205,7 +205,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object match(VirtualFrame frame, RubyString string, RubyRegexp regexp) {
-            return regexp.matchOperator(frame, string.toString());
+            return regexp.matchOperator(string.toString());
         }
     }
 
@@ -430,12 +430,12 @@ public abstract class StringNodes {
         @Specialization
         public Object match(VirtualFrame frame, RubyString string, RubyString regexpString) {
             final RubyRegexp regexp = new RubyRegexp(getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
-            return regexp.match(frame.getCaller().unpack(), string.toString());
+            return regexp.match(string.toString());
         }
 
         @Specialization
         public Object match(VirtualFrame frame, RubyString string, RubyRegexp regexp) {
-            return regexp.match(frame.getCaller().unpack(), string.toString());
+            return regexp.match(string.toString());
         }
     }
 

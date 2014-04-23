@@ -45,7 +45,7 @@ public abstract class StructNodes {
             }
 
             if (!RubyNilClass.isNil(block)) {
-                ((RubyProc) block).callWithModifiedSelf(frame.pack(), struct);
+                ((RubyProc) block).callWithModifiedSelf(struct);
             }
 
             return NilPlaceholder.INSTANCE;

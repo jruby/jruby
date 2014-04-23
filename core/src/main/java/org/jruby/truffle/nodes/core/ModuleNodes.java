@@ -16,7 +16,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.InlinableMethodImplementation;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
@@ -28,6 +27,7 @@ import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
@@ -109,11 +109,9 @@ public abstract class ModuleNodes {
 
             final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, readInstanceVariable);
 
-            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, name + "(attr_reader)", null, block);
-            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRoot));
-            final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRoot, true, false);
-            final RubyMethod method = new RubyMethod(sourceSection, module, new UniqueMethodIdentifier(), name, Visibility.PUBLIC, false, methodImplementation);
-
+            final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, name + "(attr_reader)", null, block);
+            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+            final RubyMethod method = new RubyMethod(sourceSection, new UniqueMethodIdentifier(), name, module, Visibility.PUBLIC, false, false, true, callTarget, null);
             module.addMethod(method);
         }
     }
@@ -152,10 +150,9 @@ public abstract class ModuleNodes {
 
             final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, writeInstanceVariable);
 
-            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, name + "(attr_writer)", null, block);
-            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRoot));
-            final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRoot, true, false);
-            final RubyMethod method = new RubyMethod(sourceSection, module, new UniqueMethodIdentifier(), name + "=", Visibility.PUBLIC, false, methodImplementation);
+            final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, name + "(attr_writer)", null, block);
+            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+            final RubyMethod method = new RubyMethod(sourceSection, new UniqueMethodIdentifier(), name + "=", module, Visibility.PUBLIC, false, false, true, callTarget, null);
 
             module.addMethod(method);
         }
@@ -222,8 +219,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(order = 4)
-        public Object classEval(VirtualFrame frame, RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
-            return block.callWithModifiedSelf(frame.pack(), self);
+        public Object classEval(RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
+            return block.callWithModifiedSelf(self);
         }
 
     }
@@ -346,13 +343,11 @@ public abstract class ModuleNodes {
         private static void defineMethod(RubyModule module, RubySymbol name, RubyProc proc) {
             final RubyMethod method = proc.getMethod();
 
-            if (!(method.getImplementation() instanceof InlinableMethodImplementation)) {
+            if (!(method.getCallTarget() instanceof RootCallTarget)) {
                 throw new UnsupportedOperationException("Can only use define_method with methods where we have the original AST, as we need to clone and modify it");
             }
 
-            final InlinableMethodImplementation methodImplementation = (InlinableMethodImplementation) method.getImplementation();
-
-            final RubyRootNode modifiedRootNode = methodImplementation.getCloneOfPristineRootNode();
+            final RubyRootNode modifiedRootNode = (RubyRootNode) ((RootCallTarget) method.getCallTarget()).getRootNode();
             final CatchReturnNode modifiedCatchReturn = NodeUtil.findFirstNodeInstance(modifiedRootNode, CatchReturnNode.class);
 
             if (modifiedCatchReturn == null) {
@@ -362,13 +357,7 @@ public abstract class ModuleNodes {
             modifiedCatchReturn.setIsProc(false);
 
             final CallTarget modifiedCallTarget = Truffle.getRuntime().createCallTarget(modifiedRootNode);
-
-            final InlinableMethodImplementation modifiedMethodImplementation = new InlinableMethodImplementation(
-                    modifiedCallTarget, methodImplementation.getDeclarationFrame(), methodImplementation.getFrameDescriptor(),
-                    modifiedRootNode, methodImplementation.alwaysInline(), methodImplementation.getShouldAppendCallNode());
-
-            final RubyMethod modifiedMethod = new RubyMethod(method.getSourceSection(), method.getDeclaringModule(), method.getUniqueIdentifier(), name.toString(), method.getVisibility(), method.isUndefined(), modifiedMethodImplementation);
-
+            final RubyMethod modifiedMethod = new RubyMethod(method.getSourceSection(), method.getUniqueIdentifier(), name.toString(), method.getDeclaringModule(), method.getVisibility(), method.isUndefined(), method.shouldAppendCallNode(), method.shouldAlwaysInlined(), modifiedCallTarget, method.getDeclarationFrame());
             module.addMethod(modifiedMethod);
         }
 
@@ -394,7 +383,7 @@ public abstract class ModuleNodes {
                     final RubyModule included = (RubyModule) args[n];
 
                     // Note that we do appear to do full method lookup here
-                    included.getLookupNode().lookupMethod("append_features").call(null, included, null, module);
+                    included.getLookupNode().lookupMethod("append_features").call(included, null, module);
 
                     // TODO(cs): call included hook
                 }
@@ -473,9 +462,9 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public NilPlaceholder moduleFunction(VirtualFrame frame, RubyModule module, Object... args) {
+        public NilPlaceholder moduleFunction(RubyModule module, Object... args) {
             if (args.length == 0) {
-                final Frame unpacked = frame.getCaller().unpack();
+                final Frame unpacked = RubyArguments.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
                 final FrameSlot slot = unpacked.getFrameDescriptor().findFrameSlot(RubyModule.MODULE_FUNCTION_FLAG_FRAME_SLOT_ID);
 
@@ -508,8 +497,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule doPublic(VirtualFrame frame, RubyModule module, Object... args) {
-            module.visibilityMethod(frame.getCaller(), args, Visibility.PUBLIC);
+        public RubyModule doPublic(RubyModule module, Object... args) {
+            module.visibilityMethod(args, Visibility.PUBLIC);
             return module;
         }
     }
@@ -526,8 +515,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule doPrivate(VirtualFrame frame, RubyModule module, Object... args) {
-            module.visibilityMethod(frame.getCaller(), args, Visibility.PRIVATE);
+        public RubyModule doPrivate(RubyModule module, Object... args) {
+            module.visibilityMethod(args, Visibility.PRIVATE);
             return module;
         }
     }
@@ -693,7 +682,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule doProtected(VirtualFrame frame, RubyModule module, Object... args) {
-            module.visibilityMethod(frame.getCaller(), args, Visibility.PROTECTED);
+            module.visibilityMethod(args, Visibility.PROTECTED);
             return module;
         }
     }

@@ -66,7 +66,7 @@ public class DispatchNode extends Node {
 
         CompilerAsserts.neverPartOfCompilation();
 
-        final RubyBasicObject boxedCallingSelf = context.getCoreLibrary().box(frame.getArguments(RubyArguments.class).getSelf());
+        final RubyBasicObject boxedCallingSelf = context.getCoreLibrary().box(new RubyArguments(frame.getArguments()).getSelf());
 
         RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(name);
 

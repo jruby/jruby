@@ -13,7 +13,6 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.InlinableMethodImplementation;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.methods.arguments.BehaveAsBlockNode;
 import org.jruby.truffle.runtime.*;
@@ -26,60 +25,48 @@ import org.jruby.truffle.runtime.core.*;
 public class RubyMethod {
 
     private final SourceSection sourceSection;
-    private final RubyModule declaringModule;
+
     private final UniqueMethodIdentifier uniqueIdentifier;
     private final String name;
+
+    private final RubyModule declaringModule;
     private final Visibility visibility;
     private final boolean undefined;
+    private final boolean appendCallNode;
+    public final boolean alwaysInline;
 
-    private final MethodImplementation implementation;
+    private final CallTarget callTarget;
+    private final MaterializedFrame declarationFrame;
 
-    public RubyMethod(SourceSection sourceSection, RubyModule declaringModule, UniqueMethodIdentifier uniqueIdentifier, String name, Visibility visibility, boolean undefined,
-                    MethodImplementation implementation) {
+    public RubyMethod(SourceSection sourceSection, UniqueMethodIdentifier uniqueIdentifier, String name,
+                      RubyModule declaringModule, Visibility visibility, boolean undefined,
+                      boolean appendCallNode, boolean alwaysInline, CallTarget callTarget,
+                      MaterializedFrame declarationFrame) {
         this.sourceSection = sourceSection;
-        this.declaringModule = declaringModule;
         this.uniqueIdentifier = uniqueIdentifier;
+        this.declaringModule = declaringModule;
         this.name = name;
         this.visibility = visibility;
         this.undefined = undefined;
-        this.implementation = implementation;
+        this.appendCallNode = appendCallNode;
+        this.alwaysInline = alwaysInline;
+        this.callTarget = callTarget;
+        this.declarationFrame = declarationFrame;
     }
 
-    public Object call(PackedFrame caller, Object self, RubyProc block, Object... args) {
-        assert RubyContext.shouldObjectBeVisible(self);
+    @Deprecated
+    public Object call(Object self, RubyProc block, Object... args) {
+        assert self != null;
+        assert args != null;
+
+        assert RubyContext.shouldObjectBeVisible(self) : self.getClass();
         assert RubyContext.shouldObjectsBeVisible(args);
 
-        final Object result = implementation.call(caller, self, block, args);
+        final Object result = callTarget.call(RubyArguments.create(declarationFrame, self, block, args));
 
         assert RubyContext.shouldObjectBeVisible(result);
 
         return result;
-    }
-
-    public SourceSection getSourceSection() {
-        return sourceSection;
-    }
-
-    public UniqueMethodIdentifier getUniqueIdentifier() {
-        return uniqueIdentifier;
-    }
-
-    public RubyModule getDeclaringModule() { return declaringModule; }
-
-    public String getName() {
-        return name;
-    }
-
-    public Visibility getVisibility() {
-        return visibility;
-    }
-
-    public boolean isUndefined() {
-        return undefined;
-    }
-
-    public MethodImplementation getImplementation() {
-        return implementation;
     }
 
     public RubyMethod withNewName(String newName) {
@@ -87,7 +74,7 @@ public class RubyMethod {
             return this;
         }
 
-        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, newName, visibility, undefined, implementation);
+        return new RubyMethod(sourceSection, uniqueIdentifier, newName, declaringModule, visibility, undefined, appendCallNode, alwaysInline, callTarget, declarationFrame);
     }
 
     public RubyMethod withNewVisibility(Visibility newVisibility) {
@@ -95,7 +82,7 @@ public class RubyMethod {
             return this;
         }
 
-        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, name, newVisibility, undefined, implementation);
+        return new RubyMethod(sourceSection, uniqueIdentifier, name, declaringModule, newVisibility, undefined, appendCallNode, alwaysInline, callTarget, declarationFrame);
     }
 
     public RubyMethod withDeclaringModule(RubyModule newDeclaringModule) {
@@ -103,27 +90,18 @@ public class RubyMethod {
             return this;
         }
 
-        return new RubyMethod(sourceSection, newDeclaringModule, uniqueIdentifier, name, visibility, undefined, implementation);
+        return new RubyMethod(sourceSection, uniqueIdentifier, name, newDeclaringModule, visibility, undefined, appendCallNode, alwaysInline, callTarget, declarationFrame);
     }
 
     public RubyMethod withoutBlockDestructureSemantics() {
-        final InlinableMethodImplementation inlinableMethodImplementation = (InlinableMethodImplementation) implementation;
-
-        final RubyRootNode modifiedRootNode = inlinableMethodImplementation.getCloneOfPristineRootNode();
+        final RubyRootNode modifiedRootNode = (RubyRootNode) ((RootCallTarget) callTarget).getRootNode().split();
 
         for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(modifiedRootNode, BehaveAsBlockNode.class)) {
             behaveAsBlockNode.setBehaveAsBlock(false);
         }
 
-        final InlinableMethodImplementation newImplementation = new InlinableMethodImplementation(
-                Truffle.getRuntime().createCallTarget(modifiedRootNode),
-                inlinableMethodImplementation.getDeclarationFrame(),
-                inlinableMethodImplementation.getFrameDescriptor(),
-                modifiedRootNode,
-                inlinableMethodImplementation.alwaysInline(),
-                inlinableMethodImplementation.getShouldAppendCallNode());
-
-        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, name, visibility, undefined, newImplementation);
+        return new RubyMethod(sourceSection, uniqueIdentifier, name, declaringModule, visibility, undefined,
+                appendCallNode, alwaysInline, Truffle.getRuntime().createCallTarget(modifiedRootNode), declarationFrame);
     }
 
     public RubyMethod undefined() {
@@ -131,7 +109,7 @@ public class RubyMethod {
             return this;
         }
 
-        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, name, visibility, true, implementation);
+        return new RubyMethod(sourceSection, uniqueIdentifier, name, declaringModule, visibility, true, appendCallNode, alwaysInline, callTarget, declarationFrame);
     }
 
     public boolean isVisibleTo(RubyBasicObject caller, RubyBasicObject receiver) {
@@ -203,9 +181,42 @@ public class RubyMethod {
         }
     }
 
-    @Override
-    public String toString() {
-        return implementation.toString();
+    public SourceSection getSourceSection() {
+        return sourceSection;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public UniqueMethodIdentifier getUniqueIdentifier() {
+        return uniqueIdentifier;
+    }
+
+    public RubyModule getDeclaringModule() { return declaringModule; }
+
+    public Visibility getVisibility() {
+        return visibility;
+    }
+
+    public boolean isUndefined() {
+        return undefined;
+    }
+
+    public boolean shouldAppendCallNode() {
+        return appendCallNode;
+    }
+
+    public boolean shouldAlwaysInlined() {
+        return alwaysInline;
+    }
+
+    public MaterializedFrame getDeclarationFrame() {
+        return declarationFrame;
+    }
+
+    public CallTarget getCallTarget(){
+        return callTarget;
     }
 
 }

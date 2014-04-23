@@ -88,7 +88,7 @@ public class TranslatorDriver {
                     }
                 }
 
-                frame = frame.getArguments(RubyArguments.class).getDeclarationFrame();
+                frame = new RubyArguments(frame.getArguments()).getDeclarationFrame();
             }
         }
 
@@ -239,7 +239,7 @@ public class TranslatorDriver {
         if (frame == null) {
             return null;
         } else {
-            final MaterializedFrame parent = frame.getArguments(RubyArguments.class).getDeclarationFrame();
+            final MaterializedFrame parent = new RubyArguments(frame.getArguments()).getDeclarationFrame();
             return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, new UniqueMethodIdentifier());
         }
     }

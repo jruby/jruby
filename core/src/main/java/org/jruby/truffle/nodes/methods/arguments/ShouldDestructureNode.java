@@ -40,7 +40,7 @@ public class ShouldDestructureNode extends RubyNode {
     public boolean executeBoolean(VirtualFrame frame) {
         // TODO(CS): express this using normal nodes?
 
-        final RubyArguments arguments = frame.getArguments(RubyArguments.class);
+        final RubyArguments arguments = new RubyArguments(frame.getArguments());
 
         // If we don't accept any arguments, there's never any need to destructure
         // TODO(CS): is this guaranteed by the translator anyway?

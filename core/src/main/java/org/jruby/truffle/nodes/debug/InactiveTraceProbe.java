@@ -13,8 +13,6 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.nodes.InlinableMethodImplementation;
-import org.jruby.truffle.nodes.call.InlineHeuristic;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 
@@ -41,15 +39,9 @@ public class InactiveTraceProbe extends RubyProbe {
                 return;
             }
 
-            if (traceProc.getMethod().getImplementation() instanceof InlinableMethodImplementation && InlineHeuristic.shouldInlineTrace((InlinableMethodImplementation) traceProc.getMethod().getImplementation())) {
-                final InlinableMethodImplementation inlinable = (InlinableMethodImplementation) traceProc.getMethod().getImplementation();
-                final InlinedTraceProbe activeTraceProbe = new InlinedTraceProbe((RubyContext) getContext(), inlinable, context.getTraceManager().getTracingAssumption().getAssumption());
-                replace(activeTraceProbe);
-                activeTraceProbe.enter(astNode, frame);
-            } else {
-                throw new UnsupportedOperationException("We only support inlinable trace funcs at the moment");
-            }
-
+            final ActiveTraceProbe activeTraceProbe = new ActiveTraceProbe((RubyContext) getContext(), traceProc, context.getTraceManager().getTracingAssumption().getAssumption());
+            replace(activeTraceProbe);
+            activeTraceProbe.enter(astNode, frame);
         }
     }
 }

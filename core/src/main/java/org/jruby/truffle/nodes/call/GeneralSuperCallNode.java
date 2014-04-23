@@ -31,18 +31,19 @@ public class GeneralSuperCallNode extends RubyNode {
     private final boolean isSplatted;
     @Child protected RubyNode block;
     @Children protected final RubyNode[] arguments;
+    @Child protected IndirectCallNode callNode;
 
     public GeneralSuperCallNode(RubyContext context, SourceSection sourceSection, String name, RubyNode block, RubyNode[] arguments, boolean isSplatted) {
         super(context, sourceSection);
-
         assert name != null;
         assert arguments != null;
         assert !isSplatted || arguments.length == 1;
-
         this.name = name;
         this.block = block;
         this.arguments = arguments;
         this.isSplatted = isSplatted;
+
+        callNode = Truffle.getRuntime().createIndirectCallNode();
     }
 
     @ExplodeLoop
@@ -52,7 +53,7 @@ public class GeneralSuperCallNode extends RubyNode {
 
         CompilerAsserts.neverPartOfCompilation();
 
-        final RubyBasicObject self = (RubyBasicObject) frame.getArguments(RubyArguments.class).getSelf();
+        final RubyBasicObject self = (RubyBasicObject) new RubyArguments(frame.getArguments()).getSelf();
 
         // Execute the arguments
 
@@ -93,9 +94,9 @@ public class GeneralSuperCallNode extends RubyNode {
 
         if (isSplatted) {
             final RubyArray argumentsArray = (RubyArray) argumentsObjects[0];
-            return method.call(frame.pack(), self, blockObject, argumentsArray.asList().toArray());
+            return callNode.call(frame, method.getCallTarget(), RubyArguments.create(method.getDeclarationFrame(), self, blockObject, argumentsArray.asList().toArray()));
         } else {
-            return method.call(frame.pack(), self, blockObject, argumentsObjects);
+            return callNode.call(frame, method.getCallTarget(), RubyArguments.create(method.getDeclarationFrame(), self, blockObject, argumentsObjects));
         }
     }
 
@@ -104,7 +105,7 @@ public class GeneralSuperCallNode extends RubyNode {
         final RubyContext context = getContext();
 
         try {
-            final RubyBasicObject self = context.getCoreLibrary().box(frame.getArguments(RubyArguments.class).getSelf());
+            final RubyBasicObject self = context.getCoreLibrary().box(new RubyArguments(frame.getArguments()).getSelf());
             final RubyBasicObject receiverRubyObject = context.getCoreLibrary().box(self);
 
             final RubyMethod method = receiverRubyObject.getRubyClass().getSuperclass().lookupMethod(name);

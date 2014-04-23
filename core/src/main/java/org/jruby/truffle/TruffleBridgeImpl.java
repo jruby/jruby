@@ -83,9 +83,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
         try {
             final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, truffleContext.getSourceManager().get(rootNode.getPosition().getFile()), parserContext, parentFrame, rootNode);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
-
-            final RubyArguments arguments = new RubyArguments(RubyArguments.create(parentFrame, self, null));
-            return callTarget.call(null, arguments);
+            return callTarget.call(RubyArguments.create(parentFrame, self, null));
         } catch (ThrowException e) {
             throw new RaiseException(truffleContext.getCoreLibrary().nameErrorUncaughtThrow(e.getTag()));
         } catch (RaiseException | BreakShellException | QuitException e) {

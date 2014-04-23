@@ -24,7 +24,7 @@ public class SelfNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final Object self = frame.getArguments(RubyArguments.class).getSelf();
+        final Object self = new RubyArguments(frame.getArguments()).getSelf();
         assert RubyContext.shouldObjectBeVisible(self);
         return self;
     }

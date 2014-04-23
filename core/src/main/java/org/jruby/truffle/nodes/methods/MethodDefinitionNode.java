@@ -28,23 +28,18 @@ public class MethodDefinitionNode extends RubyNode {
     protected final String name;
     protected final UniqueMethodIdentifier uniqueIdentifier;
 
-    protected final FrameDescriptor frameDescriptor;
-    protected final RubyRootNode pristineRootNode;
-
     protected final CallTarget callTarget;
 
     protected final boolean requiresDeclarationFrame;
 
     protected final boolean ignoreLocalVisibility;
 
-    public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, UniqueMethodIdentifier uniqueIdentifier, FrameDescriptor frameDescriptor,
-            boolean requiresDeclarationFrame, RubyRootNode pristineRootNode, CallTarget callTarget, boolean ignoreLocalVisibility) {
+    public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, UniqueMethodIdentifier uniqueIdentifier,
+            boolean requiresDeclarationFrame, CallTarget callTarget, boolean ignoreLocalVisibility) {
         super(context, sourceSection);
         this.name = name;
         this.uniqueIdentifier = uniqueIdentifier;
-        this.frameDescriptor = frameDescriptor;
         this.requiresDeclarationFrame = requiresDeclarationFrame;
-        this.pristineRootNode = pristineRootNode;
         this.callTarget = callTarget;
         this.ignoreLocalVisibility = ignoreLocalVisibility;
     }
@@ -88,8 +83,7 @@ public class MethodDefinitionNode extends RubyNode {
             }
         }
 
-        final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, declarationFrame, frameDescriptor, pristineRootNode, false, false);
-        return new RubyMethod(getSourceSection(), null, uniqueIdentifier, name, visibility, false, methodImplementation);
+        return new RubyMethod(getSourceSection(), uniqueIdentifier, name, null, visibility, false, false, false, callTarget, declarationFrame);
     }
 
     @Override

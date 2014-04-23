@@ -11,11 +11,8 @@ package org.jruby.truffle.nodes.yield;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.methods.*;
 
 /**
  * An uninitialized node in the yield dispatch chain.
@@ -30,17 +27,9 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
     public Object dispatch(VirtualFrame frame, RubyProc block, Object[] argumentsObjects) {
         CompilerDirectives.transferToInterpreter();
 
-        final MethodImplementation implementation = block.getMethod().getImplementation();
-
-        if (implementation instanceof InlinableMethodImplementation && InlineHeuristic.shouldInlineYield((InlinableMethodImplementation) implementation)) {
-            final InlinedYieldDispatchNode dispatch = new InlinedYieldDispatchNode(getContext(), getSourceSection(), (InlinableMethodImplementation) implementation);
-            replace(dispatch);
-            return dispatch.dispatch(frame, block, argumentsObjects);
-        } else {
-            final GeneralYieldDispatchNode dispatch = new GeneralYieldDispatchNode(getContext(), getSourceSection());
-            replace(dispatch);
-            return dispatch.dispatch(frame, block, argumentsObjects);
-        }
+        final CachedYieldDispatchNode dispatch = new CachedYieldDispatchNode(getContext(), getSourceSection(), block);
+        replace(dispatch);
+        return dispatch.dispatch(frame, block, argumentsObjects);
     }
 
 }

@@ -43,9 +43,7 @@ public class TruffleMethod extends DynamicMethod {
             RubyArguments.setUserArgument(internalArguments, n, arg);
         }
 
-        final Arguments truffleArguments = new RubyArguments(internalArguments);
-
-        return bridge.toJRuby(callTarget.call(truffleArguments));
+        return bridge.toJRuby(callTarget.call(internalArguments));
     }
 
     @Override

@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.dsl.Generic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
@@ -264,7 +265,7 @@ public abstract class ObjectNodes {
                 throw new RaiseException(getContext().getCoreLibrary().typeError("no class to make alias"));
             }
 
-            return block.callWithModifiedSelf(frame.pack(), receiver);
+            return block.callWithModifiedSelf(receiver);
         }
 
         @Specialization
@@ -385,13 +386,14 @@ public abstract class ObjectNodes {
         }
 
         @Specialization
-        public boolean isA(@SuppressWarnings("unused") RubyObject self, @SuppressWarnings("unused") NilPlaceholder nil) {
+        public boolean isA(@SuppressWarnings("unused") RubyBasicObject self, @SuppressWarnings("unused") NilPlaceholder nil) {
             return false;
         }
 
         @Specialization
-        public boolean isA(RubyObject self, RubyClass rubyClass) {
-            return self.getRubyClass().assignableTo(rubyClass);
+        public boolean isA(Object self, RubyClass rubyClass) {
+            // TODO(CS): fast path
+            return getContext().getCoreLibrary().box(self).getRubyClass().assignableTo(rubyClass);
         }
 
     }
@@ -642,7 +644,7 @@ public abstract class ObjectNodes {
         }
 
         @Specialization
-        public RubyString toS(RubyObject self) {
+        public RubyString toS(Object self) {
             return getContext().makeString(self.toString());
         }
 
