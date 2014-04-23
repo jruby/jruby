@@ -21,6 +21,7 @@ import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
@@ -125,7 +126,14 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     private void pre(ThreadContext context, IRubyObject self, String name, Block block) {
         // update call stacks (push: frame, class, scope, etc.)
-        context.preMethodFrameAndScope(getImplementationClass(), name, self, block, method.getStaticScope());
+        // SSS FIXME: If this is going to slow down the common case, we could
+        // create a specialized version of InterpretedIRMethod for meta class bodies
+        if (method instanceof IRMetaClassBody) {
+            context.preMethodFrameAndClass(getImplementationClass(), name, self, block, method.getStaticScope());
+            context.pushScope(DynamicScope.newDynamicScope(method.getStaticScope(), context.getCurrentScope()));
+        } else {
+            context.preMethodFrameAndScope(getImplementationClass(), name, self, block, method.getStaticScope());
+        }
         context.setCurrentVisibility(getVisibility());
     }
 

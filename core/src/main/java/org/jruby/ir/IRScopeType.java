@@ -7,6 +7,10 @@ public enum IRScopeType {
         return value < 0 || value >= values().length ? null : values()[value];
     }
 
+    public boolean isMethodType() {
+        return this == INSTANCE_METHOD || this == CLASS_METHOD;
+    }
+
     public boolean isClosureType() {
         return this == CLOSURE || this == FOR || this == EVAL_SCRIPT;
     }

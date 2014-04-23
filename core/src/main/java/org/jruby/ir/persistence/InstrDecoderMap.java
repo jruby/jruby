@@ -179,7 +179,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case MATCH3: return new Match3Instr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case METHOD_DEFINED: return new MethodDefinedInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
             case METHOD_LOOKUP: return new MethodLookupInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
-            case NONLOCAL_RETURN: return new NonlocalReturnInstr(d.decodeOperand(), d.decodeString(), d.decodeInt());
+            case NONLOCAL_RETURN: return new NonlocalReturnInstr(d.decodeOperand(), d.decodeString(), d.decodeBoolean());
             case NOP: return NopInstr.NOP;
             case NORESULT_CALL: return decodeNoResultCall();
             case POP_BINDING: return new PopBindingInstr();

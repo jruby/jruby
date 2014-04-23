@@ -4,9 +4,10 @@ import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.runtime.DynamicScope;
 
 public class IRReturnJump extends RuntimeException implements Unrescuable {
-    public int methodToReturnFrom;
+    public DynamicScope methodToReturnFrom;
     public Object returnValue;
 
     private IRReturnJump() {}
@@ -17,7 +18,7 @@ public class IRReturnJump extends RuntimeException implements Unrescuable {
 
     private static ThreadLocal<Reference<IRReturnJump>> threadLocalRJ = new ThreadLocal<Reference<IRReturnJump>>();
 
-    public static IRReturnJump create(int scopeId, Object rv) {
+    public static IRReturnJump create(DynamicScope scope, Object rv) {
         IRReturnJump rj;
         Reference<IRReturnJump> rjRef = threadLocalRJ.get();
         if (rjRef != null) {
@@ -26,7 +27,7 @@ public class IRReturnJump extends RuntimeException implements Unrescuable {
             rj = new IRReturnJump();
             threadLocalRJ.set(new SoftReference<IRReturnJump>(rj));
         }
-        rj.methodToReturnFrom = scopeId;
+        rj.methodToReturnFrom = scope;
         rj.returnValue = rv;
         return rj;
     }
