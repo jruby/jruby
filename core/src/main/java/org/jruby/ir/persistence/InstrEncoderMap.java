@@ -431,7 +431,7 @@ public class InstrEncoderMap {
     private void encodeNonlocalReturnInstr(NonlocalReturnInstr instr) {
         e.encode(instr.getReturnValue());
         e.encode(instr.methodName);
-        e.encode(instr.methodIdToReturnFrom);
+        e.encode(instr.maybeLambda);
     }
 
     private void encodeCallBaseInstr(CallBase instr) {

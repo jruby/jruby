@@ -3227,17 +3227,16 @@ public class IRBuilder {
 
         if (s instanceof IRClosure) {
             // If 'm' is a block scope, a return returns from the closest enclosing method.
-            // If this happens to be a module body, the runtime throws a local jump error if
-            // the closure is a proc. If the closure is a lambda, then this is just a normal
-            // return and the static methodIdToReturnFrom value is ignored
+            // If this happens to be a module body, the runtime throws a local jump error if the
+            // closure is a proc. If the closure is a lambda, then this becomes a normal return.
             IRMethod m = s.getNearestMethod();
-            addInstr(s, new NonlocalReturnInstr(retVal, m == null ? "--none--" : m.getName(), m == null ? -1 : m.getScopeId()));
+            addInstr(s, new NonlocalReturnInstr(retVal, m == null ? "--none--" : m.getName(), m == null));
         } else if (s.isModuleBody()) {
             IRMethod sm = s.getNearestMethod();
 
             // Cannot return from top-level module bodies!
             if (sm == null) addInstr(s, new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
-            else addInstr(s, new NonlocalReturnInstr(retVal, sm.getName(), sm.getScopeId()));
+            else addInstr(s, new NonlocalReturnInstr(retVal, sm.getName(), false));
         } else {
             addInstr(s, new ReturnInstr(retVal));
         }
