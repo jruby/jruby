@@ -31,20 +31,6 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
 
         callNode = Truffle.getRuntime().createDirectCallNode(block.getMethod().getCallTarget());
         callNode.assignSourceSection(sourceSection);
-
-        // Splitting requires all nodes to be adopted, so force that now
-
-        adoptChildren();
-
-        // Always try to split and inline blocks, they look like inline code so we'll treat them exactly like that
-
-        if (callNode.isSplittable()) {
-            callNode.split();
-        }
-
-        if (callNode.isInlinable()) {
-            callNode.forceInlining();
-        }
     }
 
     @Override

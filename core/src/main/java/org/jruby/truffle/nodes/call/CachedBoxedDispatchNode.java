@@ -46,17 +46,6 @@ public class CachedBoxedDispatchNode extends BoxedDispatchNode {
 
         callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
         callNode.assignSourceSection(sourceSection);
-
-        if (method.shouldAlwaysInlined()) {
-            // Splitting requires all nodes to be adopted, so force that now
-            adoptChildren();
-
-            assert callNode.isSplittable();
-            assert callNode.isInlinable();
-
-            callNode.split();
-            callNode.forceInlining();
-        }
     }
 
     @Override

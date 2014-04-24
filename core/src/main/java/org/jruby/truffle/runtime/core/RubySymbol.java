@@ -12,7 +12,6 @@ package org.jruby.truffle.runtime.core;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.frame.*;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.methods.*;
@@ -55,7 +54,7 @@ public class RubySymbol extends RubyObject {
 
         };
 
-        final RubyMethod method = new RubyMethod(null, new UniqueMethodIdentifier(), symbol, null, Visibility.PUBLIC, false, false, false, callTarget, null);
+        final RubyMethod method = new RubyMethod(null, new UniqueMethodIdentifier(), symbol, null, Visibility.PUBLIC, false, false, callTarget, null);
 
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, NilPlaceholder.INSTANCE, null, method);
     }
