@@ -20,12 +20,11 @@ DEALINGS IN THE SOFTWARE.
 package org.jruby.ext.openssl.impl;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -37,7 +36,6 @@ import java.security.spec.X509EncodedKeySpec;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
@@ -70,113 +68,104 @@ import org.jruby.ext.openssl.SecurityHelper;
 **/
 public class NetscapeCertRequest // extends ASN1Object
 {
-    AlgorithmIdentifier sigAlg;
-    AlgorithmIdentifier keyAlg;
-    byte sigBits [];
-    String challenge;
-    DERBitString content;
-    PublicKey pubkey ;
+    private AlgorithmIdentifier sigAlg;
+    private AlgorithmIdentifier keyAlg;
+    private byte[] signatureBits;
+    private final String challenge;
+    private final DERBitString content;
+    private PublicKey publicKey;
 
-    private static ASN1Sequence getReq(
-        byte[] r)
-        throws IOException
-    {
-        ASN1InputStream aIn = new ASN1InputStream(new ByteArrayInputStream(r));
+    public NetscapeCertRequest(final byte[] request) throws NoSuchAlgorithmException,
+        InvalidKeySpecException, IllegalArgumentException {
 
-        return ASN1Sequence.getInstance(aIn.readObject());
-    }
+        ASN1InputStream input = new ASN1InputStream( new ByteArrayInputStream(request) );
+        ASN1Sequence spkac;
+        try {
+            spkac = ASN1Sequence.getInstance( input.readObject() );
+        }
+        catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
 
-    public NetscapeCertRequest(
-        byte[] req)
-        throws IOException
-    {
-        this(getReq(req));
-    }
+        //
+        // SignedPublicKeyAndChallenge ::= SEQUENCE {
+        // publicKeyAndChallenge PublicKeyAndChallenge,
+        // signatureAlgorithm AlgorithmIdentifier,
+        // signature BIT STRING
+        // }
+        //
+        if ( spkac.size() != 3 ) {
+            throw new IllegalArgumentException("invalid SPKAC (size):" + spkac.size());
+        }
 
-    public NetscapeCertRequest (ASN1Sequence spkac)
-    {
-        try
-        {
+        final ASN1Sequence signatureId = (ASN1Sequence) spkac.getObjectAt(1);
+        this.sigAlg = AlgorithmIdentifier.getInstance(signatureId);
+        this.signatureBits = ((DERBitString) spkac.getObjectAt(2)).getBytes();
 
-            //
-            // SignedPublicKeyAndChallenge ::= SEQUENCE {
-            // publicKeyAndChallenge PublicKeyAndChallenge,
-            // signatureAlgorithm AlgorithmIdentifier,
-            // signature BIT STRING
-            // }
-            //
-            if (spkac.size() != 3)
-            {
-                throw new IllegalArgumentException("invalid SPKAC (size):"
-                        + spkac.size());
-            }
+        //
+        // PublicKeyAndChallenge ::= SEQUENCE {
+        // spki SubjectPublicKeyInfo,
+        // challenge IA5STRING
+        // }
+        //
+        ASN1Sequence pkac = (ASN1Sequence) spkac.getObjectAt(0);
 
-            sigAlg = new AlgorithmIdentifier((ASN1Sequence)spkac
-                    .getObjectAt(1));
-            sigBits = ((DERBitString)spkac.getObjectAt(2)).getBytes();
+        if ( pkac.size() != 2 ) {
+            throw new IllegalArgumentException("invalid PKAC (len): " + pkac.size());
+        }
 
-            //
-            // PublicKeyAndChallenge ::= SEQUENCE {
-            // spki SubjectPublicKeyInfo,
-            // challenge IA5STRING
-            // }
-            //
-            ASN1Sequence pkac = (ASN1Sequence)spkac.getObjectAt(0);
+        this.challenge = ((DERIA5String) pkac.getObjectAt(1)).getString();
 
-            if (pkac.size() != 2)
-            {
-                throw new IllegalArgumentException("invalid PKAC (len): "
-                        + pkac.size());
-            }
-
-            challenge = ((DERIA5String)pkac.getObjectAt(1)).getString();
-
+        final String keyAlgorithm; final X509EncodedKeySpec encodedKeySpec;
+        try {
             //this could be dangerous, as ASN.1 decoding/encoding
             //could potentially alter the bytes
-            content = new DERBitString(pkac);
+            this.content = new DERBitString(pkac);
 
-            SubjectPublicKeyInfo pubkeyinfo = new SubjectPublicKeyInfo(
-                    (ASN1Sequence)pkac.getObjectAt(0));
+            final SubjectPublicKeyInfo pubKeyInfo =
+                new SubjectPublicKeyInfo((ASN1Sequence) pkac.getObjectAt(0));
 
-            X509EncodedKeySpec xspec = new X509EncodedKeySpec(new DERBitString(
-                    pubkeyinfo).getBytes());
+            encodedKeySpec = new X509EncodedKeySpec( new DERBitString(pubKeyInfo).getBytes() );
 
-            keyAlg = pubkeyinfo.getAlgorithmId();
-            String keyAlgorithm = keyAlg.getObjectId().getId();
-            // NOTE: KeyFactory.getInstance(keyAlgorithm, "BC")
-            KeyFactory keyFactory = SecurityHelper.getKeyFactory(keyAlgorithm);
-            pubkey = keyFactory.generatePublic(xspec);
-
+            this.keyAlg = pubKeyInfo.getAlgorithm();
+            keyAlgorithm = keyAlg.getAlgorithm().getId();
         }
-        catch (Exception e)
-        {
-            throw new IllegalArgumentException(e.toString());
+        catch (Exception e) {
+            // new DERBitString throw IOExcetpion since BC 1.49
+            //if ( e instanceof IOException ) {
+            //    throw new IllegalArgumentException(e);
+            //}
+            if ( e instanceof RuntimeException ) throw (RuntimeException) e;
+            throw new IllegalArgumentException(e);
         }
+
+        KeyFactory keyFactory = SecurityHelper.getKeyFactory(keyAlgorithm);
+        this.publicKey = keyFactory.generatePublic(encodedKeySpec);
     }
 
-    public NetscapeCertRequest(
-        String challenge,
-        AlgorithmIdentifier signing_alg,
-        PublicKey pub_key) throws NoSuchAlgorithmException,
-            InvalidKeySpecException, NoSuchProviderException
-    {
+    public NetscapeCertRequest(final String challenge, final AlgorithmIdentifier signingAlg,
+        final PublicKey publicKey) throws InvalidKeySpecException {
 
         this.challenge = challenge;
-        sigAlg = signing_alg;
-        pubkey = pub_key;
+        this.sigAlg = signingAlg;
+        this.publicKey = publicKey;
 
-        ASN1EncodableVector content_der = new ASN1EncodableVector();
-        content_der.add(getKeySpec());
-        //content_der.add(new SubjectPublicKeyInfo(sigAlg, new RSAPublicKeyStructure(pubkey.getModulus(), pubkey.getPublicExponent()).getDERObject()));
-        content_der.add(new DERIA5String(challenge));
-
-        try
-        {
-            content = new DERBitString(new DERSequence(content_der));
+        ASN1EncodableVector contentDER = new ASN1EncodableVector();
+        try {
+            contentDER.add(getKeySpec());
         }
-        catch (Exception e) // IOException
-        {
-            if (e instanceof RuntimeException) throw (RuntimeException) e;
+        catch (IOException e) {
+            throw new InvalidKeySpecException(e);
+        }
+        //content_der.add(new SubjectPublicKeyInfo(sigAlg, new RSAPublicKeyStructure(pubkey.getModulus(), pubkey.getPublicExponent()).getDERObject()));
+        contentDER.add(new DERIA5String(challenge));
+
+        try {
+            this.content = new DERBitString(new DERSequence(contentDER));
+        }
+        catch (Exception e) {
+            // new DERBitString throw IOExcetpion since BC 1.49
+            if ( e instanceof RuntimeException ) throw (RuntimeException) e;
             throw new InvalidKeySpecException("exception encoding key: " + e.toString());
         }
     }
@@ -186,20 +175,22 @@ public class NetscapeCertRequest // extends ASN1Object
         return challenge;
     }
 
+    /*
     public void setChallenge(String value)
     {
         challenge = value;
-    }
+    } */
 
     public AlgorithmIdentifier getSigningAlgorithm()
     {
         return sigAlg;
     }
 
+    /*
     public void setSigningAlgorithm(AlgorithmIdentifier value)
     {
         sigAlg = value;
-    }
+    } */
 
     public AlgorithmIdentifier getKeyAlgorithm()
     {
@@ -213,120 +204,97 @@ public class NetscapeCertRequest // extends ASN1Object
 
     public PublicKey getPublicKey()
     {
-        return pubkey;
+        return publicKey;
     }
 
     public void setPublicKey(PublicKey value)
     {
-        pubkey = value;
+        publicKey = value;
     }
 
     public boolean verify(String challenge) throws NoSuchAlgorithmException,
-            InvalidKeyException, SignatureException, NoSuchProviderException
+        InvalidKeyException, SignatureException
     {
-        if (!challenge.equals(this.challenge))
-        {
-            return false;
-        }
-
+        if ( ! challenge.equals(this.challenge) ) return false;
         //
         // Verify the signature .. shows the response was generated
         // by someone who knew the associated private key
         //
-        String signAlgorithm = sigAlg.getObjectId().getId();
-        // NOTE: Signature.getInstance(signAlgorithm, "BC");
-        Signature sig = SecurityHelper.getSignature(signAlgorithm);
-        sig.initVerify(pubkey);
-        sig.update(content.getBytes());
+        final Signature signature = getSignature();
 
-        return sig.verify(sigBits);
+        signature.initVerify(publicKey);
+        signature.update(content.getBytes());
+
+        return signature.verify(signatureBits);
     }
 
-    public void sign(PrivateKey priv_key) throws NoSuchAlgorithmException,
-            InvalidKeyException, SignatureException, NoSuchProviderException,
-            InvalidKeySpecException
+    public void sign(final PrivateKey privateKey) throws NoSuchAlgorithmException,
+        InvalidKeyException, SignatureException, InvalidKeySpecException
     {
-        sign(priv_key, null);
+        sign(privateKey, null);
     }
 
-    public void sign(PrivateKey priv_key, SecureRandom rand)
-            throws NoSuchAlgorithmException, InvalidKeyException,
-            SignatureException, NoSuchProviderException,
-            InvalidKeySpecException
+    public void sign(final PrivateKey privateKey, SecureRandom random)
+        throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, InvalidKeySpecException
     {
-        String signAlgorithm = sigAlg.getObjectId().getId();
-        // NOTE: Signature.getInstance(signAlgorithm, "BC");
-        Signature sig = SecurityHelper.getSignature(signAlgorithm);
+        final Signature signature = getSignature();
 
-        if (rand != null)
-        {
-            sig.initSign(priv_key, rand);
+        if ( random != null ) {
+            signature.initSign(privateKey, random);
         }
-        else
-        {
-            sig.initSign(priv_key);
+        else {
+            signature.initSign(privateKey);
         }
 
         ASN1EncodableVector pkac = new ASN1EncodableVector();
 
-        pkac.add(getKeySpec());
+        try {
+            pkac.add(getKeySpec());
+        }
+        catch (IOException e) {
+            throw new InvalidKeySpecException(e);
+        }
         pkac.add(new DERIA5String(challenge));
 
-        try
-        {
-            sig.update(new DERSequence(pkac).getEncoded(ASN1Encoding.DER));
+        try {
+            signature.update(new DERSequence(pkac).getEncoded(ASN1Encoding.DER));
         }
-        catch (IOException ioe)
-        {
-            throw new SignatureException(ioe.getMessage());
+        catch (IOException e) {
+            throw new SignatureException(e);
         }
 
-        sigBits = sig.sign();
+        signatureBits = signature.sign();
     }
 
-    private ASN1Primitive getKeySpec() throws NoSuchAlgorithmException,
-            InvalidKeySpecException, NoSuchProviderException
-    {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        ASN1Primitive obj = null;
-        try
-        {
-
-            baos.write(pubkey.getEncoded());
-            baos.close();
-
-            ASN1InputStream derin = new ASN1InputStream(
-                    new ByteArrayInputStream(baos.toByteArray()));
-
-            obj = derin.readObject();
-        }
-        catch (IOException ioe)
-        {
-            throw new InvalidKeySpecException(ioe.getMessage());
-        }
-        return obj;
+    private Signature getSignature() throws NoSuchAlgorithmException {
+        String algorithm = sigAlg.getAlgorithm().getId();
+        return SecurityHelper.getSignature(algorithm);
     }
 
-    public ASN1Primitive toASN1Primitive()
-    {
+
+    private ASN1Primitive getKeySpec() throws IOException {
+        ASN1InputStream input = new ASN1InputStream(
+            new ByteArrayInputStream( publicKey.getEncoded() )
+        );
+        return input.readObject();
+    }
+
+    public ASN1Primitive toASN1Primitive() throws IOException {
         ASN1EncodableVector spkac = new ASN1EncodableVector();
         ASN1EncodableVector pkac = new ASN1EncodableVector();
 
-        try
-        {
-            pkac.add(getKeySpec());
+        try {
+            pkac.add( getKeySpec() );
         }
-        catch (Exception e)
-        {
-            //ignore
+        catch (IOException e) {
+            // TODO is this really fine shouldn't it be thrown ?
         }
 
         pkac.add(new DERIA5String(challenge));
 
         spkac.add(new DERSequence(pkac));
         spkac.add(sigAlg);
-        spkac.add(new DERBitString(sigBits));
+        spkac.add(new DERBitString(signatureBits));
 
         return new DERSequence(spkac);
     }

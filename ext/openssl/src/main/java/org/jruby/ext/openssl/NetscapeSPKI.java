@@ -29,6 +29,7 @@ package org.jruby.ext.openssl;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -39,7 +40,6 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-//import org.bouncycastle.jce.netscape.NetscapeCertRequest;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -52,14 +52,17 @@ import org.jruby.ext.openssl.impl.Base64;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.util.ByteList;
 
 // org.bouncycastle.jce.netscape.NetscapeCertRequest emulator:
 import org.jruby.ext.openssl.impl.NetscapeCertRequest;
 
 import static org.jruby.ext.openssl.PKeyDSA._DSA;
 import static org.jruby.ext.openssl.PKeyRSA._RSA;
-import org.jruby.runtime.ThreadContext;
+import static org.jruby.ext.openssl.OpenSSLReal.debugStackTrace;
+import static org.jruby.ext.openssl.OpenSSLReal.warn;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -99,17 +102,17 @@ public class NetscapeSPKI extends RubyObject {
     public IRubyObject _initialize(final ThreadContext context, final IRubyObject[] args) {
         final Ruby runtime = context.runtime;
         if ( args.length > 0 ) {
-            byte[] b = args[0].convertToString().getBytes();
-            b = tryBase64Decode(b);
+            byte[] request = args[0].convertToString().getBytes();
+            request = tryBase64Decode(request);
 
             final NetscapeCertRequest cert;
             try {
-                this.cert = cert = new NetscapeCertRequest(b);
+                this.cert = cert = new NetscapeCertRequest(request);
                 challenge = runtime.newString( cert.getChallenge() );
             }
-            catch (IOException ioe) {
-                throw newSPKIError(runtime, ioe.getMessage());
-            }
+            catch (GeneralSecurityException e) { throw newSPKIError(e); }
+            catch (IllegalArgumentException e) { throw newSPKIError(e); }
+
             final PublicKey publicKey = cert.getPublicKey();
             final String algorithm = publicKey.getAlgorithm();
             final RubyString pub_key = RubyString.newString(runtime, publicKey.getEncoded());
@@ -128,34 +131,36 @@ public class NetscapeSPKI extends RubyObject {
     }
 
     // just try to decode for the time when the given bytes are base64 encoded.
-    private byte[] tryBase64Decode(byte[] b) {
+    private static byte[] tryBase64Decode(byte[] b) {
         try {
             b = Base64.decode(b, 0, b.length, Base64.NO_OPTIONS);
-        } catch (Exception ignored) { }
+        }
+        catch (IOException ignored) { }
+        catch (IllegalArgumentException ignored) { }
         return b;
     }
 
     @JRubyMethod
     public IRubyObject to_der() {
         try {
-            return RubyString.newString(getRuntime(), internalToDer());
-        } catch (IOException ioe) {
-            throw newSPKIError(getRuntime(), ioe.getMessage());
+            final byte[] derBytes = toDER();
+            return getRuntime().newString(new ByteList(derBytes, false));
         }
+        catch (IOException ioe) { throw newSPKIError(ioe); }
     }
 
-    @JRubyMethod(name={"to_pem","to_s"})
+    @JRubyMethod(name = { "to_pem", "to_s" })
     public IRubyObject to_pem() {
         try {
-            byte[] source = internalToDer();
-            // no Base64.DO_BREAK_LINES option needed for NSPKI.
-            return getRuntime().newString(Base64.encodeBytes(source, 0, source.length, Base64.NO_OPTIONS));
-        } catch (IOException ioe) {
-            throw newSPKIError(getRuntime(), ioe.getMessage());
+            byte[] source = toDER();
+            // no Base64.DO_BREAK_LINES option needed for NSPKI :
+            source = Base64.encodeBytesToBytes(source, 0, source.length, Base64.NO_OPTIONS);
+            return getRuntime().newString(new ByteList(source, false));
         }
+        catch (IOException ioe) { throw newSPKIError(ioe); }
     }
 
-    private byte[] internalToDer() throws IOException {
+    private byte[] toDER() throws IOException {
         ASN1Sequence b = (ASN1Sequence) ((NetscapeCertRequest) cert).toASN1Primitive();
         ASN1ObjectIdentifier encType = (ASN1ObjectIdentifier)((ASN1Sequence)((ASN1Sequence)((ASN1Sequence)b.getObjectAt(0)).getObjectAt(0)).getObjectAt(0)).getObjectAt(0);
         ASN1ObjectIdentifier sigAlg = ((AlgorithmIdentifier)b.getObjectAt(1)).getAlgorithm();
@@ -170,14 +175,14 @@ public class NetscapeSPKI extends RubyObject {
         ASN1EncodableVector v3 = new ASN1EncodableVector();
         ASN1EncodableVector v4 = new ASN1EncodableVector();
         v4.add(encType);
-        v4.add(new DERNull());
+        v4.add(DERNull.INSTANCE);
         v3.add(new DLSequence(v4));
         v3.add(publicKey);
         v2.add(new DLSequence(v3));
         v2.add(encodedChallenge);
         v1.add(new DLSequence(v2));
         v1_2.add(sigAlg);
-        v1_2.add(new DERNull());
+        v1_2.add(DERNull.INSTANCE);
         v1.add(new DLSequence(v1_2));
         v1.add(sig);
         return new DLSequence(v1).getEncoded();
@@ -185,7 +190,7 @@ public class NetscapeSPKI extends RubyObject {
 
     @JRubyMethod
     public IRubyObject to_text() {
-        System.err.println("WARNING: calling unimplemented method: to_text");
+        warn(getRuntime().getCurrentContext(), "WARNING: unimplemented method called: Netscape::SPKI#to_text");
         return getRuntime().getNil();
     }
 
@@ -206,14 +211,18 @@ public class NetscapeSPKI extends RubyObject {
         final String symKey = keyAlg.toLowerCase() + '-' + digAlg.toLowerCase();
         try {
             final ASN1ObjectIdentifier alg = ASN1.getOIDLookup(getRuntime()).get( symKey );
-            final PublicKey publicKey = ((PKey) public_key).getPublicKey();
+            final PublicKey publicKey = ( (PKey) this.public_key ).getPublicKey();
             final String challengeStr = challenge.toString();
             final NetscapeCertRequest cert;
             this.cert = cert = new NetscapeCertRequest(challengeStr, new AlgorithmIdentifier(alg), publicKey);
             cert.sign( ((PKey) key).getPrivateKey() );
         }
-        catch (GeneralSecurityException gse) {
-            throw newSPKIError(getRuntime(), gse.getMessage());
+        catch (NoSuchAlgorithmException e) {
+            debugStackTrace(getRuntime(), e);
+            throw newSPKIError(e);
+        }
+        catch (GeneralSecurityException e) {
+            throw newSPKIError(e);
         }
         return this;
     }
@@ -221,13 +230,17 @@ public class NetscapeSPKI extends RubyObject {
     @JRubyMethod
     public IRubyObject verify(final IRubyObject pkey) {
         final NetscapeCertRequest cert = (NetscapeCertRequest) this.cert;
-        cert.setPublicKey(((PKey) pkey).getPublicKey());
+        cert.setPublicKey( ((PKey) pkey).getPublicKey() );
         try {
             boolean result = cert.verify(challenge.toString());
             return getRuntime().newBoolean(result);
         }
-        catch (GeneralSecurityException gse) {
-            throw newSPKIError(getRuntime(), gse.getMessage());
+        catch (NoSuchAlgorithmException e) {
+            debugStackTrace(getRuntime(), e);
+            throw newSPKIError(e);
+        }
+        catch (GeneralSecurityException e) {
+            throw newSPKIError(e);
         }
     }
 
@@ -239,6 +252,10 @@ public class NetscapeSPKI extends RubyObject {
     @JRubyMethod(name="challenge=")
     public IRubyObject set_challenge(final IRubyObject challenge) {
         return this.challenge = challenge;
+    }
+
+    private RaiseException newSPKIError(final Exception e) {
+        return newSPKIError(getRuntime(), e.getMessage());
     }
 
     private static RaiseException newSPKIError(Ruby runtime, String message) {
