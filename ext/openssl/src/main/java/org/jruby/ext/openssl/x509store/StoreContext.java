@@ -936,13 +936,13 @@ public class StoreContext {
         X509AuxCertificate x;
         i = chain.size()-1;
         x = chain.get(i);
-        ok = Trust.checkTrust(x,verifyParameter.trust,0);
-        if(ok == X509Utils.X509_TRUST_TRUSTED) {
+        ok = Trust.checkTrust(x, verifyParameter.trust, 0);
+        if ( ok == X509Utils.X509_TRUST_TRUSTED ) {
             return 1;
         }
         errorDepth = 1;
         currentCertificate = x;
-        if(ok == X509Utils.X509_TRUST_REJECTED) {
+        if ( ok == X509Utils.X509_TRUST_REJECTED ) {
             error = X509Utils.V_ERR_CERT_REJECTED;
         } else {
             error = X509Utils.V_ERR_CERT_UNTRUSTED;

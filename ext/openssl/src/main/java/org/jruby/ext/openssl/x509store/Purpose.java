@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,9 +27,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.x509store;
 
-
 import java.util.ArrayList;
 import java.util.List;
+
+import java.security.cert.CertificateException;
 
 /**
  * c: X509_PURPOSE
@@ -45,25 +46,23 @@ public class Purpose {
         "1.3.6.1.4.1.311.10.3.3"    // Microsoft Server Gated Crypto
     };
 
-    public static interface CheckPurposeFunction extends Function3 {
-        public static final CheckPurposeFunction EMPTY = new CheckPurposeFunction(){
-                public int call(Object arg0, Object arg1, Object arg2) {
-                    return -1;
-                }
-            };
+    static interface CheckPurposeFunction extends Function3<Purpose, X509AuxCertificate, Integer> {
+
+        int call(Purpose purpose, X509AuxCertificate x, Integer ca) throws CertificateException ;
+
     }
 
     public int purpose;
     public int trust;		/* Default trust ID */
     public int flags;
-    public CheckPurposeFunction checkPurpose;
+    CheckPurposeFunction checkPurpose;
     public String name;
     public String sname;
     public Object userData;
 
-    public Purpose() {}
+    private Purpose() {}
 
-    public Purpose(int p, int t, int f, CheckPurposeFunction cp, String n, String s, Object u) {
+    Purpose(int p, int t, int f, CheckPurposeFunction cp, String n, String s, Object u) {
         this.purpose = p; this.trust = t;
         this.flags = f; this.checkPurpose = cp;
         this.name = n; this.sname = s;
@@ -73,16 +72,14 @@ public class Purpose {
     /**
      * c: X509_check_purpose
      */
-    public static int checkPurpose(X509AuxCertificate x, int id, int ca) throws Exception {
-        if(id == -1) {
-            return 1;
-        }
+    public static int checkPurpose(X509AuxCertificate x, int id, int ca) throws CertificateException {
+        if ( id == -1 ) return 1;
+
         int idx = getByID(id);
-        if(idx == -1) {
-            return -1;
-        }
+        if ( idx == -1 ) return -1;
+
         Purpose pt = getFirst(idx);
-        return pt.checkPurpose.call(pt,x,new Integer(ca));
+        return pt.checkPurpose.call(pt, x ,Integer.valueOf(ca));
     }
 
     /**
@@ -210,11 +207,11 @@ public class Purpose {
     public int getTrust() {
         return trust;
     }
- 
+
     /**
      * c: X509_check_ca
      */
-    public static int checkCA(X509AuxCertificate x) throws Exception {
+    public static int checkCA(X509AuxCertificate x) throws CertificateException {
         if(x.getKeyUsage() != null && !x.getKeyUsage()[5]) { // KEY_CERT_SIGN
             return 0;
         }
@@ -242,7 +239,7 @@ public class Purpose {
      /**
      * c: check_ssl_ca
      */
-    public static int checkSSLCA(X509AuxCertificate x) throws Exception {
+    public static int checkSSLCA(X509AuxCertificate x) throws CertificateException {
         int ca_ret = checkCA(x);
         if(ca_ret == 0) {
             return 0;
@@ -258,11 +255,11 @@ public class Purpose {
      /**
      * c: xku_reject: check if the cert must be rejected(true) or not
      */
-    public static boolean xkuReject(X509AuxCertificate x, String mustHaveXku) throws Exception {
+    public static boolean xkuReject(X509AuxCertificate x, String mustHaveXku) throws CertificateException {
         List<String> xku = x.getExtendedKeyUsage();
         return (xku != null) && !xku.contains(mustHaveXku);
     }
-    public static boolean xkuReject(X509AuxCertificate x, String[] mustHaveOneOfXku) throws Exception {
+    public static boolean xkuReject(X509AuxCertificate x, String[] mustHaveOneOfXku) throws CertificateException {
         List<String> xku = x.getExtendedKeyUsage();
         if(xku == null) {
             return false;
@@ -278,7 +275,7 @@ public class Purpose {
      /**
      * c: ns_reject
      */
-    public static boolean nsReject(X509AuxCertificate x, int mustHaveCertType) throws Exception {
+    public static boolean nsReject(X509AuxCertificate x, int mustHaveCertType) throws CertificateException {
         Integer nsCertType = x.getNsCertType();
         return (nsCertType != null) && (nsCertType & mustHaveCertType) == 0;
     }
@@ -286,7 +283,7 @@ public class Purpose {
      /**
      * c: purpose_smime
      */
-    public static int purposeSMIME(X509AuxCertificate x, int ca) throws Exception {
+    public static int purposeSMIME(X509AuxCertificate x, int ca) throws CertificateException {
         if(xkuReject(x,XKU_EMAIL_PROTECT)) {
             return 0; // must allow email protection
         }
@@ -319,158 +316,144 @@ public class Purpose {
     /**
      * c: check_purpose_ssl_client
      */
-     public final static CheckPurposeFunction checkPurposeSSLClient = new CheckPurposeFunction() {
-            public int call(Object _xp, Object _x, Object _ca) throws Exception {
-                X509AuxCertificate x = (X509AuxCertificate)_x;
-                if(xkuReject(x, XKU_SSL_CLIENT)) {
-                    return 0;
-                }
-                int ca = ((Integer)_ca).intValue();
-                if(ca != 0) {
-                    return checkSSLCA(x);
-                }
-                if(x.getKeyUsage() != null && !x.getKeyUsage()[0]) {
-                    return 0;
-                }
-                if(nsReject(x, X509Utils.NS_SSL_CLIENT)) {
-                    // when the cert has nsCertType, it must include NS_SSL_CLIENT
-                    return 0;
-                }
-                return 1;
+     final static CheckPurposeFunction checkPurposeSSLClient = new CheckPurposeFunction() {
+        public int call(Purpose purpose, X509AuxCertificate x, Integer ca) throws CertificateException {
+            if ( xkuReject(x, XKU_SSL_CLIENT) ) {
+                return 0;
             }
-        };
+            if (ca.intValue() != 0) {
+                return checkSSLCA(x);
+            }
+            if ( x.getKeyUsage() != null && ! x.getKeyUsage()[0] ) {
+                return 0;
+            }
+            if ( nsReject(x, X509Utils.NS_SSL_CLIENT) ) {
+                // when the cert has nsCertType, it must include NS_SSL_CLIENT
+                return 0;
+            }
+            return 1;
+        }
+    };
 
     /**
      * c: check_purpose_ssl_server
      */
-    public final static CheckPurposeFunction checkPurposeSSLServer =  new CheckPurposeFunction() {
-            public int call(Object _xp, Object _x, Object _ca) throws Exception {
-                X509AuxCertificate x = (X509AuxCertificate)_x;
-                int ca = ((Integer)_ca).intValue();
-                if(xkuReject(x, XKU_SSL_SERVER)) {
-                    return 0;
-                }
-                if(ca != 0) {
-                    return checkSSLCA(x);
-                }
-                if(nsReject(x, X509Utils.NS_SSL_SERVER)) {
-                    // when the cert has nsCertType, it must include NS_SSL_SERVER
-                    return 0;
-                }
-                /* Now as for keyUsage: we'll at least need to sign OR encipher */      
-                if(x.getKeyUsage() != null && !(x.getKeyUsage()[0] || x.getKeyUsage()[2])) {
-                    return 0;
-                }
-                return 1;
+    final static CheckPurposeFunction checkPurposeSSLServer = new CheckPurposeFunction() {
+        public int call(Purpose purpose, X509AuxCertificate x, Integer ca) throws CertificateException {
+            if ( xkuReject(x, XKU_SSL_SERVER) ) {
+                return 0;
             }
-        };
+            if ( ca.intValue() != 0 ) {
+                return checkSSLCA(x);
+            }
+            if ( nsReject(x, X509Utils.NS_SSL_SERVER) ) {
+                // when the cert has nsCertType, it must include NS_SSL_SERVER
+                return 0;
+            }
+            /* Now as for keyUsage: we'll at least need to sign OR encipher */
+            if ( x.getKeyUsage() != null && ! ( x.getKeyUsage()[0] || x.getKeyUsage()[2] ) ) {
+                return 0;
+            }
+            return 1;
+        }
+    };
 
     /**
      * c: check_purpose_ns_ssl_server
      */
-    public final static CheckPurposeFunction checkPurposeNSSSLServer = new CheckPurposeFunction() {
-            public int call(Object _xp, Object _x, Object _ca) throws Exception {
-                Purpose xp = (Purpose)_xp;
-                X509AuxCertificate x = (X509AuxCertificate)_x;
-                int ca = ((Integer)_ca).intValue();
-                int ret = checkPurposeSSLServer.call(xp,x,_ca);
-                if(ret == 0 || ca != 0) {
-                    return ret;
-                }
-                if(x.getKeyUsage() != null && !x.getKeyUsage()[2]) {
-                    return 0;
-                }
-                return 1;
+    final static CheckPurposeFunction checkPurposeNSSSLServer = new CheckPurposeFunction() {
+        public int call(Purpose purpose, X509AuxCertificate x, Integer ca) throws CertificateException {
+            int ret = checkPurposeSSLServer.call(purpose, x, ca);
+            if ( ret == 0 || ca != 0 ) {
+                return ret;
             }
-        };
+            if ( x.getKeyUsage() != null && ! x.getKeyUsage()[2] ) {
+                return 0;
+            }
+            return 1;
+        }
+    };
 
     /**
      * c: check_purpose_smime_sign
      */
-    public final static CheckPurposeFunction checkPurposeSMIMESign = new CheckPurposeFunction() {
-            public int call(Object _xp, Object _x, Object _ca) throws Exception {
-                X509AuxCertificate x = (X509AuxCertificate)_x;
-                int ca = ((Integer)_ca).intValue();
-                int ret = purposeSMIME(x,ca);
-                if(ret == 0 || ca != 0) {
-                    return ret;
-                }
-                if(x.getKeyUsage() != null && (!x.getKeyUsage()[0] || !x.getKeyUsage()[1])) {
-                    return 0;
-                }
+    final static CheckPurposeFunction checkPurposeSMIMESign = new CheckPurposeFunction() {
+        public int call(Purpose purpose, X509AuxCertificate x, Integer ca) throws CertificateException {
+            int ret = purposeSMIME(x, ca);
+            if ( ret == 0 || ca != 0 ) {
                 return ret;
             }
-        };
+            if ( x.getKeyUsage() != null && ( ! x.getKeyUsage()[0] || ! x.getKeyUsage()[1] ) ) {
+                return 0;
+            }
+            return ret;
+        }
+    };
 
     /**
      * c: check_purpose_smime_encrypt
      */
-    public final static CheckPurposeFunction checkPurposeSMIMEEncrypt = new CheckPurposeFunction() {
-            public int call(Object _xp, Object _x, Object _ca) throws Exception {
-                X509AuxCertificate x = (X509AuxCertificate)_x;
-                int ca = ((Integer)_ca).intValue();
-                int ret = purposeSMIME(x,ca);
-                if(ret == 0 || ca != 0) {
-                    return ret;
-                }
-                if(x.getKeyUsage() != null && !x.getKeyUsage()[2]) {
-                    return 0;
-                }
+    final static CheckPurposeFunction checkPurposeSMIMEEncrypt = new CheckPurposeFunction() {
+        public int call(Purpose purpose, X509AuxCertificate x, Integer ca) throws CertificateException {
+            int ret = purposeSMIME(x,ca);
+            if ( ret == 0 || ca != 0 ) {
                 return ret;
             }
-        };
+            if ( x.getKeyUsage() != null && ! x.getKeyUsage()[2] ) {
+                return 0;
+            }
+            return ret;
+        }
+    };
 
     /**
      * c: check_purpose_crl_sign
      */
-    public final static CheckPurposeFunction checkPurposeCRLSign = new CheckPurposeFunction() {
-            public int call(Object _xp, Object _x, Object _ca) throws Exception {
-                X509AuxCertificate x = (X509AuxCertificate)_x;
-                int ca = ((Integer)_ca).intValue();
-                
-                if(ca != 0) {
-                    int ca_ret = checkCA(x);
-                    if(ca_ret != 2) {
-                        return ca_ret;
-                    }
-                    return 0;
+    final static CheckPurposeFunction checkPurposeCRLSign = new CheckPurposeFunction() {
+        public int call(Purpose purpose, X509AuxCertificate x, Integer ca) throws CertificateException {
+            if ( ca.intValue() != 0 ) {
+                int ca_ret = checkCA(x);
+                if ( ca_ret != 2 ) {
+                    return ca_ret;
                 }
-                if(x.getKeyUsage() != null && !x.getKeyUsage()[6]) {
-                    return 0;
-                }
-                return 1;
+                return 0;
             }
-        };
+            if ( x.getKeyUsage() != null && ! x.getKeyUsage()[6] ) {
+                return 0;
+            }
+            return 1;
+        }
+    };
 
     /**
      * c: no_check
      */
-    public final static CheckPurposeFunction noCheck = new CheckPurposeFunction() {
-            public int call(Object _xp, Object _x, Object _ca) {
-                return 1;
-            }
-        };
+    final static CheckPurposeFunction noCheck = new CheckPurposeFunction() {
+        public int call(Purpose purpose, X509AuxCertificate x, Integer ca) throws CertificateException {
+            return 1;
+        }
+    };
 
     /**
      * c: ocsp_helper
      */
-    public final static CheckPurposeFunction oscpHelper = new CheckPurposeFunction() {
-            public int call(Object _xp, Object _x, Object _ca) throws Exception {
-                if(((Integer)_ca).intValue() != 0) {
-                    return checkCA((X509AuxCertificate)_x);
-                }
-                return 1;
+    final static CheckPurposeFunction oscpHelper = new CheckPurposeFunction() {
+        public int call(Purpose purpose, X509AuxCertificate x, Integer ca) throws CertificateException {
+            if ( ca.intValue() != 0 ) {
+                return checkCA(x);
             }
-        };
+            return 1;
+        }
+    };
 
-    public final static Purpose[] xstandard = new Purpose[] {
-	new Purpose(X509Utils.X509_PURPOSE_SSL_CLIENT, X509Utils.X509_TRUST_SSL_CLIENT, 0, checkPurposeSSLClient, "SSL client", "sslclient", null),
-	new Purpose(X509Utils.X509_PURPOSE_SSL_SERVER, X509Utils.X509_TRUST_SSL_SERVER, 0, checkPurposeSSLServer, "SSL server", "sslserver", null),
-	new Purpose(X509Utils.X509_PURPOSE_NS_SSL_SERVER, X509Utils.X509_TRUST_SSL_SERVER, 0, checkPurposeNSSSLServer, "Netscape SSL server", "nssslserver", null),
-	new Purpose(X509Utils.X509_PURPOSE_SMIME_SIGN, X509Utils.X509_TRUST_EMAIL, 0, checkPurposeSMIMESign, "S/MIME signing", "smimesign", null),
-	new Purpose(X509Utils.X509_PURPOSE_SMIME_ENCRYPT, X509Utils.X509_TRUST_EMAIL, 0, checkPurposeSMIMEEncrypt, "S/MIME encryption", "smimeencrypt", null),
-	new Purpose(X509Utils.X509_PURPOSE_CRL_SIGN, X509Utils.X509_TRUST_COMPAT, 0, checkPurposeCRLSign, "CRL signing", "crlsign", null),
-	new Purpose(X509Utils.X509_PURPOSE_ANY, X509Utils.X509_TRUST_DEFAULT, 0, noCheck, "Any Purpose", "any", null),
-	new Purpose(X509Utils.X509_PURPOSE_OCSP_HELPER, X509Utils.X509_TRUST_COMPAT, 0, oscpHelper, "OCSP helper", "ocsphelper", null),
+    private final static Purpose[] xstandard = new Purpose[] {
+        new Purpose(X509Utils.X509_PURPOSE_SSL_CLIENT, X509Utils.X509_TRUST_SSL_CLIENT, 0, checkPurposeSSLClient, "SSL client", "sslclient", null),
+        new Purpose(X509Utils.X509_PURPOSE_SSL_SERVER, X509Utils.X509_TRUST_SSL_SERVER, 0, checkPurposeSSLServer, "SSL server", "sslserver", null),
+        new Purpose(X509Utils.X509_PURPOSE_NS_SSL_SERVER, X509Utils.X509_TRUST_SSL_SERVER, 0, checkPurposeNSSSLServer, "Netscape SSL server", "nssslserver", null),
+        new Purpose(X509Utils.X509_PURPOSE_SMIME_SIGN, X509Utils.X509_TRUST_EMAIL, 0, checkPurposeSMIMESign, "S/MIME signing", "smimesign", null),
+        new Purpose(X509Utils.X509_PURPOSE_SMIME_ENCRYPT, X509Utils.X509_TRUST_EMAIL, 0, checkPurposeSMIMEEncrypt, "S/MIME encryption", "smimeencrypt", null),
+        new Purpose(X509Utils.X509_PURPOSE_CRL_SIGN, X509Utils.X509_TRUST_COMPAT, 0, checkPurposeCRLSign, "CRL signing", "crlsign", null),
+        new Purpose(X509Utils.X509_PURPOSE_ANY, X509Utils.X509_TRUST_DEFAULT, 0, noCheck, "Any Purpose", "any", null),
+        new Purpose(X509Utils.X509_PURPOSE_OCSP_HELPER, X509Utils.X509_TRUST_COMPAT, 0, oscpHelper, "OCSP helper", "ocsphelper", null),
     };
 }// X509_PURPOSE
