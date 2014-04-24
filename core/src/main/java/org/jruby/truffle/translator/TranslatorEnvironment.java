@@ -35,10 +35,6 @@ public class TranslatorEnvironment {
 
     private final List<FrameSlot> flipFlopStates = new ArrayList<>();
 
-    private FrameSlot restParameter = null;
-
-    private FrameSlot blockParameter = null;
-
     private TranslatorDriver parser;
     private final long returnID;
 
@@ -74,22 +70,6 @@ public class TranslatorEnvironment {
 
     public TranslatorEnvironment getParent() {
         return parent;
-    }
-
-    public List<FrameSlot> getPreParameters() {
-        return preParameters;
-    }
-
-    public List<FrameSlot> getOptionalParameters() {
-        return optionalParameters;
-    }
-
-    public Map<FrameSlot, RubyNode> getOptionalParametersDefaultValues() {
-        return optionalParametersDefaultValues;
-    }
-
-    public List<FrameSlot> getPostParameters() {
-        return postParameters;
     }
 
     public TranslatorEnvironment getParent(int level) {
@@ -149,22 +129,6 @@ public class TranslatorEnvironment {
         return null;
     }
 
-    public void setRestParameter(FrameSlot restParameter) {
-        this.restParameter = restParameter;
-    }
-
-    public FrameSlot getRestParameter() {
-        return restParameter;
-    }
-
-    public void setBlockParameter(FrameSlot blockParameter) {
-        this.blockParameter = blockParameter;
-    }
-
-    public FrameSlot getBlockParameter() {
-        return blockParameter;
-    }
-
     public String getMethodName() {
         return methodName;
     }
@@ -218,10 +182,6 @@ public class TranslatorEnvironment {
 
     public List<FrameSlot> getFlipFlopStates() {
         return flipFlopStates;
-    }
-
-    public RubyNodeInstrumenter getNodeInstrumenter() {
-        return parser.getNodeInstrumenter();
     }
 
 }

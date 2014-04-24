@@ -21,12 +21,10 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
-import org.jruby.truffle.nodes.debug.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -84,12 +82,8 @@ public abstract class CoreMethodNodeManager {
         getMethods(methods, ThreadNodesFactory.getFactories());
         getMethods(methods, TimeNodesFactory.getFactories());
         getMethods(methods, TrueClassNodesFactory.getFactories());
+        getMethods(methods, TruffleDebugNodesFactory.getFactories());
         getMethods(methods, EncodingNodesFactory.getFactories());
-
-        if (Options.TRUFFLE_DEBUG_NODES.load()) {
-            getMethods(methods, DebugNodesFactory.getFactories());
-        }
-
         return methods;
     }
 

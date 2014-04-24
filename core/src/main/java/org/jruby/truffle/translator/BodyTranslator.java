@@ -54,7 +54,6 @@ public class BodyTranslator extends Translator {
     protected final BodyTranslator parent;
 
     protected final TranslatorEnvironment environment;
-    protected final RubyNodeInstrumenter instrumenter;
 
     public boolean translatingForStatement = false;
     public boolean useClassVariablesAsIfInClass = false;
@@ -113,7 +112,6 @@ public class BodyTranslator extends Translator {
         super(context, source);
         this.parent = parent;
         this.environment = environment;
-        this.instrumenter = environment.getNodeInstrumenter();
     }
 
     @Override
@@ -281,7 +279,8 @@ public class BodyTranslator extends Translator {
 
         RubyNode translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), argumentsAndBlock.getArguments());
 
-        return instrumenter.instrumentAsCall(translated, node.getName());
+        // return instrumenter.instrumentAsCall(translated, node.getName());
+        return translated;
     }
 
     protected class ArgumentsAndBlockTranslation {
@@ -1156,7 +1155,8 @@ public class BodyTranslator extends Translator {
 
         final UniqueMethodIdentifier methodIdentifier = environment.findMethodForLocalVar(node.getName());
 
-        return instrumenter.instrumentAsLocalAssignment(translated, methodIdentifier, node.getName());
+        // return instrumenter.instrumentAsLocalAssignment(translated, methodIdentifier, node.getName());
+        return translated;
     }
 
     @Override
@@ -1455,7 +1455,8 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitNewlineNode(org.jruby.ast.NewlineNode node) {
         final RubyNode translated = node.getNextNode().accept(this);
-        return instrumenter.instrumentAsStatement(translated);
+        // return instrumenter.instrumentAsStatement(translated);
+        return translated;
     }
 
     @Override
