@@ -76,8 +76,23 @@ public class IRRuntimeHelpers {
     /*
      * Handle non-local returns (ex: when nested in closures, root scopes of module/class/sclass bodies)
      */
-    public static void initiateNonLocalReturn(ThreadContext context, IRStaticScope scope, int methodToReturnFrom, IRubyObject returnValue) {
+    public static void initiateNonLocalReturn(ThreadContext context, DynamicScope dynScope, boolean maybeLambda, IRubyObject returnValue) {
+        IRStaticScope scope = (IRStaticScope)dynScope.getStaticScope();
         IRScopeType scopeType = scope.getScopeType();
+        while (dynScope != null) {
+            IRStaticScope ss = (IRStaticScope)dynScope.getStaticScope();
+            // SSS FIXME: Why is scopeType empty? Looks like this static-scope
+            // was not associated with the AST scope that got converted to IR.
+            //
+            // Ruby code: lambda { Thread.new { return }.join }.call
+            //
+            // To be investigated.
+            IRScopeType ssType = ss.getScopeType();
+            if (ssType != null && ssType.isMethodType()) {
+                break;
+            }
+            dynScope = dynScope.getNextCapturedScope();
+        }
 
         // SSS FIXME: Why is scopeType empty? Looks like this static-scope
         // was not associated with the AST scope that got converted to IR.
@@ -86,17 +101,17 @@ public class IRRuntimeHelpers {
         //
         // To be investigated.
         if (   (scopeType == null || (scopeType.isClosureType() && scopeType != IRScopeType.EVAL_SCRIPT))
-            && (methodToReturnFrom == -1 || !context.scopeExistsOnCallStack(methodToReturnFrom)))
+            && (maybeLambda || !context.scopeExistsOnCallStack(dynScope)))
         {
             // Cannot return from the call that we have long since exited.
             throw IRException.RETURN_LocalJumpError.getException(context.runtime);
         }
 
         // methodtoReturnFrom will not be -1 for explicit returns from class/module/sclass bodies
-        throw IRReturnJump.create(methodToReturnFrom, returnValue);
+        throw IRReturnJump.create(dynScope, returnValue);
     }
 
-    public static IRubyObject handleNonlocalReturn(IRStaticScope scope, Object rjExc, Block.Type blockType) throws RuntimeException {
+    public static IRubyObject handleNonlocalReturn(IRStaticScope scope, DynamicScope dynScope, Object rjExc, Block.Type blockType) throws RuntimeException {
         if (!(rjExc instanceof IRReturnJump)) {
             Helpers.throwException((Throwable)rjExc);
             return null;
@@ -104,27 +119,28 @@ public class IRRuntimeHelpers {
             IRReturnJump rj = (IRReturnJump)rjExc;
 
             // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
-            if (inNonMethodBodyLambda(scope, blockType) || (rj.methodToReturnFrom == scope.getScopeId())) return (IRubyObject) rj.returnValue;
+            if (inNonMethodBodyLambda(scope, blockType) || (rj.methodToReturnFrom == dynScope)) return (IRubyObject) rj.returnValue;
 
             // - If not, Just pass it along!
             throw rj;
         }
     }
 
-    public static IRubyObject initiateBreak(ThreadContext context, IRStaticScope scope, int scopeIdToReturnTo, IRubyObject breakValue, Block.Type blockType) throws RuntimeException {
+    public static IRubyObject initiateBreak(ThreadContext context, DynamicScope dynScope, IRubyObject breakValue, Block.Type blockType) throws RuntimeException {
         if (inLambda(blockType)) {
             // Ensures would already have been run since the IR builder makes
             // sure that ensure code has run before we hit the break.  Treat
             // the break as a regular return from the closure.
             return breakValue;
         } else {
+            IRStaticScope scope = (IRStaticScope)dynScope.getStaticScope();
             IRScopeType scopeType = scope.getScopeType();
             if (!scopeType.isClosureType()) {
                 // Error -- breaks can only be initiated in closures
                 throw IRException.BREAK_LocalJumpError.getException(context.runtime);
             }
 
-            IRBreakJump bj = IRBreakJump.create(scopeIdToReturnTo, breakValue);
+            IRBreakJump bj = IRBreakJump.create(dynScope.getNextCapturedScope(), breakValue);
             if (scopeType == IRScopeType.EVAL_SCRIPT) {
                 // If we are in an eval, record it so we can account for it
                 bj.breakInEval = true;
@@ -135,12 +151,12 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, IRStaticScope scope, Object exc, Block.Type blockType) throws RuntimeException {
+    public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, IRStaticScope scope, DynamicScope dynScope, Object exc, Block.Type blockType) throws RuntimeException {
         if ((exc instanceof IRBreakJump) && inNonMethodBodyLambda(scope, blockType)) {
             // We just unwound all the way up because of a non-local break
             throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
         } else if (exc instanceof IRReturnJump) {
-            return handleNonlocalReturn(scope, exc, blockType);
+            return handleNonlocalReturn(scope, dynScope, exc, blockType);
         } else {
             // Propagate
             Helpers.throwException((Throwable)exc);
@@ -149,7 +165,7 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static IRubyObject handlePropagatedBreak(ThreadContext context, IRStaticScope scope, Object bjExc, Block.Type blockType) {
+    public static IRubyObject handlePropagatedBreak(ThreadContext context, DynamicScope dynScope, Object bjExc, Block.Type blockType) {
         if (!(bjExc instanceof IRBreakJump)) {
             Helpers.throwException((Throwable)bjExc);
             return null;
@@ -158,6 +174,7 @@ public class IRRuntimeHelpers {
         IRBreakJump bj = (IRBreakJump)bjExc;
         if (bj.breakInEval) {
             // If the break was in an eval, we pretend as if it was in the containing scope
+            IRStaticScope scope = (IRStaticScope)dynScope.getStaticScope();
             IRScopeType scopeType = scope.getScopeType();
             if (!scopeType.isClosureType()) {
                 // Error -- breaks can only be initiated in closures
@@ -166,7 +183,7 @@ public class IRRuntimeHelpers {
                 bj.breakInEval = false;
                 throw bj;
             }
-        } else if (bj.scopeIdToReturnTo == scope.getScopeId()) {
+        } else if (bj.scopeToReturnTo == dynScope) {
             // Done!! Hurray!
             return bj.breakValue;
 /* ---------------------------------------------------------------

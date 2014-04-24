@@ -1,7 +1,9 @@
 package org.jruby.util;
 
+import static org.jruby.RubyFile.canonicalize;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -28,9 +30,9 @@ class JarCache {
     static class JarIndex {
         private static final String ROOT_KEY = "";
 
-        final Map<String, String[]> cachedDirEntries;
-        final JarFile jar;
-        final long snapshotCalculated;
+        private final Map<String, String[]> cachedDirEntries;
+        private final JarFile jar;
+        private final long snapshotCalculated;
 
         JarIndex(String jarPath) throws IOException {
             this.jar = new JarFile(jarPath);
@@ -76,7 +78,19 @@ class JarCache {
         }
 
         public JarEntry getJarEntry(String entryPath) {
-            return jar.getJarEntry(entryPath);
+            return jar.getJarEntry(canonicalJarPath(entryPath));
+        }
+
+        public String[] getDirEntries(String entryPath) {
+          return cachedDirEntries.get(canonicalJarPath(entryPath));
+        }
+
+        public InputStream getInputStream(JarEntry entry) {
+          try {
+              return jar.getInputStream(entry);
+          } catch (IOException ioError) {
+              return null;
+          }
         }
 
         public void release() {
@@ -87,6 +101,19 @@ class JarCache {
 
         public boolean isValid() {
             return new File(jar.getName()).lastModified() <= snapshotCalculated;
+        }
+
+        private static String canonicalJarPath(String path) {
+            String canonical = canonicalize(path);
+
+            // When hitting root, canonicalize tends to add a slash (so "foo/../bar" becomes "/bar"),
+            // which doesn't quite work with jar entry paths, since most jar paths tends to be
+            // relative (e.g. foo.jar!foo/bar). So we fix it.
+            if (canonical.startsWith("/") && !path.startsWith("/")) {
+                canonical = canonical.substring(1);
+            }
+
+            return canonical;
         }
     }
 

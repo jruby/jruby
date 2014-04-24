@@ -247,7 +247,6 @@ public class InstrEncoderMap {
     private void encodeBreakInstr(BreakInstr instr) {
         e.encode(instr.getReturnValue());
         e.encode(instr.getScopeName());
-        e.encode(instr.getScopeIdToReturnTo());
     }
 
     private void encodeBFalseInstr(BFalseInstr instr) {
@@ -431,7 +430,7 @@ public class InstrEncoderMap {
     private void encodeNonlocalReturnInstr(NonlocalReturnInstr instr) {
         e.encode(instr.getReturnValue());
         e.encode(instr.methodName);
-        e.encode(instr.methodIdToReturnFrom);
+        e.encode(instr.maybeLambda);
     }
 
     private void encodeCallBaseInstr(CallBase instr) {

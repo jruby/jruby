@@ -591,10 +591,10 @@ public final class ThreadContext {
      * @return true if it exists
      *         false if not
      **/
-    public boolean scopeExistsOnCallStack(int scopeId) {
+    public boolean scopeExistsOnCallStack(DynamicScope scope) {
         DynamicScope[] stack = scopeStack;
         for (int i = scopeIndex; i >= 0; i--) {
-           if (((IRStaticScope)stack[i].getStaticScope()).getScopeId() == scopeId) return true;
+           if (stack[i] == scope) return true;
         }
         return false;
     }
