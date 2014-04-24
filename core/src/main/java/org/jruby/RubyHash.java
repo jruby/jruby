@@ -1129,8 +1129,8 @@ public class RubyHash extends RubyObject implements Map {
                     } else {
                         visitAll(new Visitor() {
                                 public void visit(IRubyObject key, IRubyObject value) {
-                                    h[0] ^= invokedynamic(context, key, HASH).convertToInteger().getLongValue();
-                                    h[0] ^= invokedynamic(context, value, HASH).convertToInteger().getLongValue();
+                                    h[0] += invokedynamic(context, key, HASH).convertToInteger().getLongValue();
+                                    h[0] += invokedynamic(context, value, HASH).convertToInteger().getLongValue();
                                 }
                             });
 
