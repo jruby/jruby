@@ -838,8 +838,8 @@ public class X509Extensions {
             final ASN1EncodableVector vec = new ASN1EncodableVector();
             try {
                 vec.add( getRealOid() );
-                if ( critical != null ) { // NOTE: likely a hack Boolean.FALSE should also get skipped
-                    vec.add(critical.booleanValue() ? DERBoolean.TRUE : DERBoolean.FALSE);
+                if ( critical != null && critical.booleanValue() ) {
+                    vec.add( DERBoolean.TRUE );
                 }
                 vec.add( new DEROctetString(getRealValueBytes()) );
                 return RubyString.newString(getRuntime(), new DLSequence(vec).getEncoded(ASN1Encoding.DER));
