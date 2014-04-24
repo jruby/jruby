@@ -427,7 +427,7 @@ public class X509Cert extends RubyObject {
         for ( X509Extensions.Extension ext : extensions ) {
             try {
                 final byte[] bytes = ext.getRealValueBytes();
-                generator.addExtension(ext.getRealOid(), ext.getRealCritical(), bytes);
+                generator.addExtension(ext.getRealOid(), ext.isRealCritical(), bytes);
             }
             catch (IOException ioe) {
                 throw runtime.newIOErrorFromException(ioe);

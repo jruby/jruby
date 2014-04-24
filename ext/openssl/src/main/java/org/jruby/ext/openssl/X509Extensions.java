@@ -74,7 +74,6 @@ import static org.jruby.ext.openssl.X509._X509;
 import static org.jruby.ext.openssl.OpenSSLReal.debug;
 import static org.jruby.ext.openssl.OpenSSLReal.debugStackTrace;
 import static org.jruby.ext.openssl.OpenSSLReal.isDebug;
-import static org.jruby.ext.openssl.OpenSSLReal.warn;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -254,7 +253,7 @@ public class X509Extensions {
 
             ext.setRealOid(objectId);
             ext.setRealValue(value);
-            ext.setRealCritical(critical.isTrue());
+            ext.setRealCritical(critical.isNil() ? null : critical.isTrue());
 
             return ext;
         }
@@ -514,26 +513,22 @@ public class X509Extensions {
 
         private ASN1ObjectIdentifier oid;
         private Object value;
-        private boolean critical;
-
-        void setRealOid(ASN1ObjectIdentifier oid) {
-            this.oid = oid;
-        }
-
-        void setRealValue(Object value) {
-            this.value = value;
-        }
-
-        void setRealCritical(boolean critical) {
-            this.critical = critical;
-        }
+        private Boolean critical;
 
         ASN1ObjectIdentifier getRealOid() {
             return oid;
         }
 
+        void setRealOid(ASN1ObjectIdentifier oid) {
+            this.oid = oid;
+        }
+
         Object getRealValue() {
             return value;
+        }
+
+        void setRealValue(Object value) {
+            this.value = value;
         }
 
         byte[] getRealValueBytes() throws IOException {
@@ -551,8 +546,20 @@ public class X509Extensions {
             }
         }
 
-        boolean getRealCritical() {
-            return critical;
+        boolean isRealCritical() {
+            return critical == null ? Boolean.FALSE : critical.booleanValue();
+        }
+
+        //Boolean getRealCritical() {
+        //    return critical;
+        //}
+
+        void setRealCritical(boolean critical) {
+            this.critical = Boolean.valueOf(critical);
+        }
+
+        private void setRealCritical(Boolean critical) {
+            this.critical = critical;
         }
 
         @JRubyMethod(name = "initialize", rest = true, visibility = Visibility.PRIVATE)
@@ -594,8 +601,11 @@ public class X509Extensions {
 
         @JRubyMethod(name="oid=")
         public IRubyObject set_oid(final ThreadContext context, IRubyObject arg) {
-            warn(context, "WARNING: unimplemented method called: Extension#oid=");
-            return false ? arg : context.runtime.getNil();
+            if ( arg instanceof RubyString ) {
+                setRealOid( ASN1.getObjectIdentifier( context.runtime, arg.toString() ) );
+                return arg;
+            }
+            throw context.runtime.newTypeError(arg, context.runtime.getString());
         }
 
         private static final byte[] CA_ = { 'C','A',':' };
@@ -807,30 +817,31 @@ public class X509Extensions {
 
         @JRubyMethod(name="value=")
         public IRubyObject set_value(final ThreadContext context, IRubyObject arg) {
-            //warn(context, "WARNING: unimplemented method called: Extension#value=");
-            //return false ? arg : context.runtime.getNil();
-            setRealValue(arg); return arg;
+            if ( arg instanceof RubyString ) {
+                setRealValue(arg); return arg;
+            }
+            throw context.runtime.newTypeError(arg, context.runtime.getString());
         }
 
         @JRubyMethod(name="critical?")
         public IRubyObject critical_p() {
-            return getRuntime().newBoolean(critical);
+            return getRuntime().newBoolean( isRealCritical() );
         }
 
         @JRubyMethod(name="critical=")
         public IRubyObject set_critical(final ThreadContext context, IRubyObject arg) {
-            //warn(context, "WARNING: unimplemented method called: Extension#critical=");
-            //return false ? arg : context.runtime.getNil();
-            setRealCritical(arg.isTrue()); return arg;
+            setRealCritical( arg.isTrue() ); return arg;
         }
 
         @JRubyMethod
         public IRubyObject to_der() {
             final ASN1EncodableVector vec = new ASN1EncodableVector();
             try {
-                vec.add(getRealOid());
-                vec.add(getRealCritical() ? DERBoolean.TRUE : DERBoolean.FALSE);
-                vec.add(new DEROctetString(getRealValueBytes()));
+                vec.add( getRealOid() );
+                if ( critical != null ) { // NOTE: likely a hack Boolean.FALSE should also get skipped
+                    vec.add(critical.booleanValue() ? DERBoolean.TRUE : DERBoolean.FALSE);
+                }
+                vec.add( new DEROctetString(getRealValueBytes()) );
                 return RubyString.newString(getRuntime(), new DLSequence(vec).getEncoded(ASN1Encoding.DER));
             }
             catch (IOException e) {
