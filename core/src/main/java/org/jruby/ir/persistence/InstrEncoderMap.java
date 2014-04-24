@@ -247,7 +247,6 @@ public class InstrEncoderMap {
     private void encodeBreakInstr(BreakInstr instr) {
         e.encode(instr.getReturnValue());
         e.encode(instr.getScopeName());
-        e.encode(instr.getScopeIdToReturnTo());
     }
 
     private void encodeBFalseInstr(BFalseInstr instr) {

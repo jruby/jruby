@@ -410,6 +410,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     {
         switch(operation) {
         // --------- Return flavored instructions --------
+        case RETURN: {
+            return (IRubyObject)retrieveOp(((ReturnBase)instr).getReturnValue(), context, self, currDynScope, temp);
+        }
         case BREAK: {
             BreakInstr bi = (BreakInstr)instr;
             IRubyObject rv = (IRubyObject)bi.getReturnValue().retrieve(context, self, currDynScope, temp);
@@ -418,10 +421,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             // SSS FIXME: Assumes that scopes with break instr. have a frame / dynamic scope pushed so that we can get to its static scope
             // Discovered that for-loops don't leave any information on the runtime stack -- hmm ... that sucks! So, we need to figure out
             // a way of pushing a scope onto the stack and exploit that info.
-            return IRRuntimeHelpers.initiateBreak(context, (IRStaticScope)currDynScope.getStaticScope(), bi.getScopeIdToReturnTo(), rv, blockType);
-        }
-        case RETURN: {
-            return (IRubyObject)retrieveOp(((ReturnBase)instr).getReturnValue(), context, self, currDynScope, temp);
+            return IRRuntimeHelpers.initiateBreak(context, currDynScope, rv, blockType);
         }
         case NONLOCAL_RETURN: {
             NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;

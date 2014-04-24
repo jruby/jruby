@@ -32,23 +32,17 @@ import java.util.Map;
 // def foo(n); break if n > 5; end; foo(100) will throw an exception
 //
 public class BreakInstr extends Instr implements FixedArityInstr {
-    private final String scopeName;
-    private final int scopeIdToReturnTo;
+    private final String scopeName; // Primarily a debugging aid
     private Operand returnValue;
 
-    public BreakInstr(Operand rv, String scopeName, int scopeIdToReturnTo) {
+    public BreakInstr(Operand rv, String scopeName) {
         super(Operation.BREAK);
         this.scopeName = scopeName;
-        this.scopeIdToReturnTo = scopeIdToReturnTo;
         this.returnValue = rv;
     }
 
     public String getScopeName() {
         return scopeName;
-    }
-
-    public int getScopeIdToReturnTo() {
-        return scopeIdToReturnTo;
     }
 
     public Operand getReturnValue() {
@@ -57,7 +51,7 @@ public class BreakInstr extends Instr implements FixedArityInstr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { new StringLiteral(scopeName), new Fixnum(scopeIdToReturnTo), returnValue };
+        return new Operand[] { new StringLiteral(scopeName), returnValue };
     }
 
     @Override
@@ -76,7 +70,12 @@ public class BreakInstr extends Instr implements FixedArityInstr {
                 // been cloned as well!! This is only an issue if we
                 // inline in closures. But, if we always inline in methods,
                 // this will continue to work.
-                if (ii.getInlineHostScope().getScopeId() == scopeIdToReturnTo) {
+                //
+                // Hmm ... we need to figure out the required inlining info here.
+                //
+                // if (ii.getInlineHostScope().getScopeId() == scopeIdToReturnTo) {
+                //
+                if (false) {
                     // If the break got inlined into the scope we had to break to, replace the break
                     // with a COPY of the break-value into the call's result var.
                     // Ex: v = foo { ..; break n; ..}.  So, "break n" is replaced with "v = n"
@@ -89,7 +88,7 @@ public class BreakInstr extends Instr implements FixedArityInstr {
                 // fall through
             case ENSURE_BLOCK_CLONE:
             case NORMAL_CLONE:
-                return new BreakInstr(returnValue.cloneForInlining(ii), scopeName, scopeIdToReturnTo);
+                return new BreakInstr(returnValue.cloneForInlining(ii), scopeName);
             default:
                 return super.cloneForInlining(ii);
         }
@@ -97,7 +96,7 @@ public class BreakInstr extends Instr implements FixedArityInstr {
 
     @Override
     public String toString() {
-        return getOperation() + "(" + returnValue + ", " + scopeName + ":" + scopeIdToReturnTo + ")";
+        return getOperation() + "(" + returnValue + ", " + scopeName + ")";
     }
 
     @Override

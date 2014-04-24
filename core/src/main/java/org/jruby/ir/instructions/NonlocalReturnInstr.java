@@ -12,7 +12,7 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
-    public final String methodName;
+    public final String methodName; // Primarily a debugging aid
     public final boolean maybeLambda;
 
     public NonlocalReturnInstr(Operand returnValue, String methodName, boolean maybeLambda) {

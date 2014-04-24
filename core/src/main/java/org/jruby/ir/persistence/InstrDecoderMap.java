@@ -138,7 +138,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case BINDING_STORE:return new StoreLocalVarInstr(d.decodeOperand(), d.decodeScope(), (LocalVariable) d.decodeOperand());
             case BLOCK_GIVEN: return new BlockGivenInstr(d.decodeVariable(), d.decodeOperand());
             case BNE: return new BNEInstr(d.decodeOperand(), d.decodeOperand(), (Label) d.decodeOperand());
-            case BREAK: return new BreakInstr(d.decodeOperand(), d.decodeString(), d.decodeInt());
+            case BREAK: return new BreakInstr(d.decodeOperand(), d.decodeString());
             case B_FALSE: return createBFalse();
             case B_NIL: return createBNil();
             case B_TRUE: return createBTrue();

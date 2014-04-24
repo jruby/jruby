@@ -863,7 +863,7 @@ public class IRBuilder {
                 IRScope returnScope = s.getLexicalParent();
                 // In 1.9 and later modes, no breaks from evals
                 if (s instanceof IREvalScript || returnScope == null) addInstr(s, new ThrowExceptionInstr(IRException.BREAK_LocalJumpError));
-                else addInstr(s, new BreakInstr(rv, returnScope.getName(), returnScope.getScopeId()));
+                else addInstr(s, new BreakInstr(rv, returnScope.getName()));
             } else {
                 // We are not in a closure or a loop => bad break instr!
                 addInstr(s, new ThrowExceptionInstr(IRException.BREAK_LocalJumpError));

@@ -88,7 +88,7 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
 
         switch (helperMethod) {
             case HANDLE_PROPAGATE_BREAK:
-                return IRRuntimeHelpers.handlePropagatedBreak(context, scope,
+                return IRRuntimeHelpers.handlePropagatedBreak(context, currDynScope,
                         args[0].retrieve(context, self, currDynScope, temp), blockType);
             case HANDLE_NONLOCAL_RETURN:
                 return IRRuntimeHelpers.handleNonlocalReturn(scope, currDynScope,
