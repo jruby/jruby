@@ -210,7 +210,7 @@ public class NetscapeSPKI extends RubyObject {
         final String digAlg = ((Digest) digest).getShortAlgorithm();
         final String symKey = keyAlg.toLowerCase() + '-' + digAlg.toLowerCase();
         try {
-            final ASN1ObjectIdentifier alg = ASN1.getOIDLookup(getRuntime()).get( symKey );
+            final ASN1ObjectIdentifier alg = ASN1.sym2Oid( getRuntime(), symKey );
             final PublicKey publicKey = ( (PKey) this.public_key ).getPublicKey();
             final String challengeStr = challenge.toString();
             final NetscapeCertRequest cert;

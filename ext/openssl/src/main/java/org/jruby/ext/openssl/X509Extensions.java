@@ -594,9 +594,9 @@ public class X509Extensions {
 
         @JRubyMethod
         public IRubyObject oid(final ThreadContext context) {
-            String val = ASN1.getSymLookup(context.runtime).get(oid);
-            if ( val == null ) val = oid.toString();
-            return context.runtime.newString(val);
+            String name = ASN1.oid2Sym(context.runtime, oid);
+            if ( name == null ) name = oid.toString();
+            return context.runtime.newString(name);
         }
 
         @JRubyMethod(name="oid=")
