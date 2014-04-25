@@ -42,19 +42,23 @@ public class GeneralBoxedDispatchNode extends BoxedDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+        // TODO(CS): this whole method needs to use child nodes for boxing, lookup and stuff
+
         /*
          * TODO(CS): we should probably have some kind of cache here - even if it's just a hash map.
          * MRI and JRuby do and might avoid some pathological cases.
          */
 
+        final RubyBasicObject boxedCallingSelf = getContext().getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
+
         try {
-            final RubyMethod method = lookup(frame, receiverObject, name);
+            final RubyMethod method = lookup(boxedCallingSelf, receiverObject, name);
             return callNode.call(frame, method.getCallTarget(), RubyArguments.create(method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
         } catch (UseMethodMissingException e) {
             missingProfile.enter();
 
             try {
-                final RubyMethod method = lookup(frame, receiverObject, "method_missing");
+                final RubyMethod method = lookup(boxedCallingSelf, receiverObject, "method_missing");
 
                 final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
                 modifiedArgumentsObjects[0] = getContext().newSymbol(name);

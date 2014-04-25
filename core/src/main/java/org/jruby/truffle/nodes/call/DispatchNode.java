@@ -61,12 +61,9 @@ public class DispatchNode extends Node {
     /**
      * The central point for method lookup.
      */
-    protected RubyMethod lookup(VirtualFrame frame, RubyBasicObject receiverBasicObject, String name) throws UseMethodMissingException {
+    @CompilerDirectives.SlowPath
+    protected RubyMethod lookup(RubyBasicObject boxedCallingSelf, RubyBasicObject receiverBasicObject, String name) throws UseMethodMissingException {
         // TODO(CS): why are we using an exception to convey method missing here?
-
-        CompilerAsserts.neverPartOfCompilation();
-
-        final RubyBasicObject boxedCallingSelf = context.getCoreLibrary().box(new RubyArguments(frame.getArguments()).getSelf());
 
         RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(name);
 

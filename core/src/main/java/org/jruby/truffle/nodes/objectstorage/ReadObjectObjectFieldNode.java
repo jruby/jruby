@@ -34,7 +34,7 @@ public class ReadObjectObjectFieldNode extends ReadSpecializedObjectFieldNode {
             return storageLocation.read(object, condition);
         } else {
             CompilerDirectives.transferToInterpreter();
-            return readAndRespecialize(object);
+            return readAndRespecialize(object, "layout changed");
         }
     }
 

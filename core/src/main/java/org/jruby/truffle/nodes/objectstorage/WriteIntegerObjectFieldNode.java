@@ -31,7 +31,7 @@ public class WriteIntegerObjectFieldNode extends WriteSpecializedObjectFieldNode
             storageLocation.writeInteger(object, value);
         } else {
             CompilerDirectives.transferToInterpreter();
-            writeAndRespecialize(object, value);
+            writeAndRespecialize(object, value, "unexpected layout");
         }
     }
 
@@ -41,7 +41,7 @@ public class WriteIntegerObjectFieldNode extends WriteSpecializedObjectFieldNode
             execute(object, (int) value);
         } else {
             CompilerDirectives.transferToInterpreter();
-            writeAndRespecialize(object, value);
+            writeAndRespecialize(object, value, "unexpected value type");
         }
     }
 

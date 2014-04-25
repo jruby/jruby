@@ -129,7 +129,7 @@ if not ENV["JRUBY_DIR"].nil? and not ENV["GRAAL_DIR"].nil? and Dir.exists? File.
   rubies.push Ruby.new("jruby-head-server-ir-interpreter", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server -X-CIR", ["all", "jruby", "jruby-head", "interpreters"])
   rubies.push Ruby.new("jruby-head-server-ir-compiler", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server -X+CIR", ["all", "jruby", "jruby-head"])
   rubies.push Ruby.new("jruby-head+truffle-server-original", "JAVACMD=$GRAAL_DIR/bin/java $JRUBY_DIR/bin/jruby -J-original -J-d64 -X+T -Xtruffle.printRuntime=true", ["interpreters", "jruby", "jruby-head"])
-  rubies.push Ruby.new("jruby-head+truffle-server", "JAVACMD=$GRAAL_DIR/bin/java $JRUBY_DIR/bin/jruby -J-server -J-d64 -J-G:-TruffleBackgroundCompilation -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-head", "topaz", "competition", "summary", "java-c"])
+  rubies.push Ruby.new("jruby-head+truffle-server", "JAVACMD=$GRAAL_DIR/bin/java $JRUBY_DIR/bin/jruby -J-server -J-d64 -J-G:TruffleGraphMaxNodes=200000 -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-head", "topaz", "competition", "summary", "java-c"])
 else
   puts "warning: couldn't find $JRUBY_DIR or $GRAAL_DIR"
 end

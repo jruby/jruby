@@ -107,6 +107,7 @@ public final class RubyArray extends RubyObject {
         return new RubyArray(arrayClass, store);
     }
 
+    @SlowPath
     public Object get(int index) {
         return store.get(ArrayUtilities.normaliseIndex(store.size(), index));
     }
@@ -202,6 +203,7 @@ public final class RubyArray extends RubyObject {
         }
     }
 
+    @SlowPath
     public void insert(int index, Object value) {
         checkFrozen();
 
@@ -221,6 +223,7 @@ public final class RubyArray extends RubyObject {
         }
     }
 
+    @SlowPath
     public void push(Object value) {
         checkFrozen();
 
@@ -230,7 +233,7 @@ public final class RubyArray extends RubyObject {
              * special case of an empty array is common, will never cause rewrites and has a simple
              * implementation, so treat it as a special case.
              */
-            store = ((EmptyArrayStore) store).generalizeFor(value);
+            store = store.generalizeFor(value);
         }
 
         try {
@@ -246,6 +249,7 @@ public final class RubyArray extends RubyObject {
         }
     }
 
+    @SlowPath
     public void unshift(Object value) {
         insert(0, value);
     }

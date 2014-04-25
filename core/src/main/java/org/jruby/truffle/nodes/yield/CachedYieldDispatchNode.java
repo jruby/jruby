@@ -30,7 +30,6 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
         this.block = block;
 
         callNode = Truffle.getRuntime().createDirectCallNode(block.getMethod().getCallTarget());
-        callNode.assignSourceSection(sourceSection);
     }
 
     @Override

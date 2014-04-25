@@ -27,7 +27,7 @@ public class UninitializedReadObjectFieldNode extends ReadObjectFieldNode {
     @Override
     public Object execute(ObjectStorage object) {
         CompilerDirectives.transferToInterpreter();
-        return readAndRespecialize(object);
+        return readAndRespecialize(object, "initial specialization");
     }
 
 }

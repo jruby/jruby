@@ -13,6 +13,7 @@ import java.lang.ref.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -61,6 +62,7 @@ public class ObjectSpaceManager {
         this.context = context;
     }
 
+    @CompilerDirectives.SlowPath
     public void add(RubyBasicObject object) {
         objects.put(object.getObjectID(), object);
     }

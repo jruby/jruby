@@ -37,7 +37,7 @@ public abstract class ReadObjectFieldNode extends Node {
         throw new UnexpectedResultException(execute(object));
     }
 
-    public Object readAndRespecialize(ObjectStorage object) {
+    public Object readAndRespecialize(ObjectStorage object, String reason) {
         hook.hookRead(object, name);
 
         final ObjectLayout layout = object.getObjectLayout();
@@ -55,7 +55,7 @@ public abstract class ReadObjectFieldNode extends Node {
             newNode = new ReadObjectObjectFieldNode(name, layout, (ObjectStorageLocation) storageLocation, hook);
         }
 
-        replace(newNode);
+        replace(newNode, reason);
         return newNode.execute(object);
     }
 

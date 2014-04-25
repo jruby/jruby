@@ -32,7 +32,7 @@ public abstract class WriteObjectFieldNode extends Node {
         execute(object, (Object) value);
     }
 
-    public void writeAndRespecialize(ObjectStorage object, Object value) {
+    public void writeAndRespecialize(ObjectStorage object, Object value, String reason) {
         hook.hookWrite(object, name, value);
 
         final ObjectLayout layout = object.getObjectLayout();
@@ -50,7 +50,7 @@ public abstract class WriteObjectFieldNode extends Node {
             newNode = new WriteObjectObjectFieldNode(name, layout, (ObjectStorageLocation) storageLocation, hook);
         }
 
-        replace(newNode);
+        replace(newNode, reason);
         newNode.execute(object, value);
     }
 

@@ -44,7 +44,6 @@ public class CachedUnboxedDispatchNode extends UnboxedDispatchNode {
         this.next = next;
 
         this.callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
-        callNode.assignSourceSection(sourceSection);
     }
 
     @Override

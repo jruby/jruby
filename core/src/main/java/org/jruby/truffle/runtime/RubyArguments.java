@@ -76,6 +76,7 @@ public final class RubyArguments {
         return (MaterializedFrame) arguments[DECLARATION_FRAME_INDEX];
     }
 
+    @CompilerDirectives.SlowPath
     public static Object[] extractUserArguments(Object[] arguments) {
         return Arrays.copyOfRange(arguments, RUNTIME_ARGUMENT_COUNT, arguments.length);
     }

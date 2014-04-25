@@ -22,9 +22,10 @@ public class ReadMissingObjectFieldNode extends ReadSpecializedObjectFieldNode {
 
     @Override
     public Object execute(ObjectStorage object) {
+        // TODO(CS): this isn't right
         if (!object.getObjectLayout().contains(objectLayout)) {
             CompilerDirectives.transferToInterpreter();
-            return readAndRespecialize(object);
+            return readAndRespecialize(object, "layout doesn't contain expected");
         }
 
         return NilPlaceholder.INSTANCE;

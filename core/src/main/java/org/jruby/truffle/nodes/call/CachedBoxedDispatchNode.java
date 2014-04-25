@@ -45,7 +45,6 @@ public class CachedBoxedDispatchNode extends BoxedDispatchNode {
         this.next = next;
 
         callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
-        callNode.assignSourceSection(sourceSection);
     }
 
     @Override

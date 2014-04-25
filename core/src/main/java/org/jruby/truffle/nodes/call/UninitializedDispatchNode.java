@@ -66,11 +66,12 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
             return newBoxing.dispatch(frame, receiverObject, blockObject, argumentsObjects);
         }
 
+        final RubyBasicObject boxedCallingSelf = getContext().getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
 
         RubyMethod method;
 
         try {
-            method = lookup(frame, receiverObject, name);
+            method = lookup(boxedCallingSelf, receiverObject, name);
         } catch (UseMethodMissingException e) {
             final UninitializedDispatchNode newUninitializedDispatch = new UninitializedDispatchNode(getContext(), getSourceSection(), name, missingBehavior);
 
@@ -83,7 +84,7 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
 
                 case CALL_METHOD_MISSING: {
                     try {
-                        method = lookup(frame, receiverObject, "method_missing");
+                        method = lookup(boxedCallingSelf, receiverObject, "method_missing");
                     } catch (UseMethodMissingException e2) {
                         throw new RaiseException(context.getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing"));
                     }
@@ -110,9 +111,9 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
             if (receiverObject instanceof RubyTrueClass || receiverObject instanceof RubyFalseClass) {
                 try {
                     final Assumption falseUnmodifiedAssumption = context.getCoreLibrary().getFalseClass().getUnmodifiedAssumption();
-                    final RubyMethod falseMethod = lookup(frame, context.getCoreLibrary().box(false), name);
+                    final RubyMethod falseMethod = lookup(boxedCallingSelf, context.getCoreLibrary().box(false), name);
                     final Assumption trueUnmodifiedAssumption = context.getCoreLibrary().getTrueClass().getUnmodifiedAssumption();
-                    final RubyMethod trueMethod = lookup(frame, context.getCoreLibrary().box(true), name);
+                    final RubyMethod trueMethod = lookup(boxedCallingSelf, context.getCoreLibrary().box(true), name);
 
                     final BooleanDispatchNode newDispatch = new BooleanDispatchNode(getContext(), getSourceSection(), falseUnmodifiedAssumption, falseMethod, trueUnmodifiedAssumption, trueMethod, null);
                     firstDispatch.replace(newDispatch, "prepending new unboxed dispatch node to chain");

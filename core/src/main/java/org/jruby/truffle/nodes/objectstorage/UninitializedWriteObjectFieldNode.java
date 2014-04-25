@@ -21,7 +21,7 @@ public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {
     @Override
     public void execute(ObjectStorage object, Object value) {
         CompilerDirectives.transferToInterpreter();
-        writeAndRespecialize(object, value);
+        writeAndRespecialize(object, value, "initial specialization");
     }
 
 }
