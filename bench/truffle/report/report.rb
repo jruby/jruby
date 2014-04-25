@@ -23,7 +23,7 @@ while not args.empty?
     when "-h"
       time_budget = args.shift.to_i * 60 * 60
     when "--help", "-help", "-h"
-      puts "JRUBY_DIR=... GRAAL_DIR=... ruby report.rb options reports..."
+      puts "JRUBY_DIR=... JRUBY_TRUFFLE_HEAD_DIR=... GRAAL_RELEASE_DIR=... GRAAL_HEAD_DIR=... ruby report.rb options reports..."
       puts
       puts "  -s n  run for n seconds (default 60)"
       puts "  -m n  run for n minutes"
@@ -38,7 +38,7 @@ while not args.empty?
       exit
     end
   else
-    if ["topaz", "jruby", "jruby-head", "competition", "almost-all", "all", "interpreters", "summary", "java-c"].include? arg
+    if ["topaz", "jruby", "jruby-head", "competition", "almost-all", "all", "interpreters", "summary", "java-c", "head"].include? arg
       reports.push(arg)
     else
       puts "unknown report " + arg
@@ -60,7 +60,8 @@ report_references = {
   "all" => "1.8.7-p374",
   "interpreters" => "2.1.1",
   "summary" => "2.1.1",
-  "java-c" => "2.1.1"
+  "java-c" => "2.1.1",
+  "head" => "jruby-head+truffle-server"
 }
 
 Ruby = Struct.new(
@@ -122,16 +123,22 @@ else
   puts "warning: couldn't find ~/.rbenv/versions/topaz-dev"
 end
 
-if not ENV["JRUBY_DIR"].nil? and not ENV["GRAAL_DIR"].nil? and Dir.exists? File.expand_path(ENV["JRUBY_DIR"]) and Dir.exists? File.expand_path(ENV["GRAAL_DIR"])
+if not ENV["JRUBY_DIR"].nil? and not ENV["GRAAL_RELEASE_DIR"].nil? and Dir.exists? File.expand_path(ENV["JRUBY_DIR"]) and Dir.exists? File.expand_path(ENV["GRAAL_RELEASE_DIR"])
   rubies.push Ruby.new("jruby-head-server-interpreter", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server -Xcompile.mode=OFF", ["almost-all", "all", "jruby", "jruby-head", "interpreters"])
   rubies.push Ruby.new("jruby-head-server", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server", ["almost-all", "all", "jruby", "jruby-head"])
   rubies.push Ruby.new("jruby-head-server-indy", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server -Xcompile.invokedynamic=true", ["almost-all", "all", "competition", "jruby", "jruby-head", "summary", "java-c"])
   rubies.push Ruby.new("jruby-head-server-ir-interpreter", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server -X-CIR", ["all", "jruby", "jruby-head", "interpreters"])
   rubies.push Ruby.new("jruby-head-server-ir-compiler", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server -X+CIR", ["all", "jruby", "jruby-head"])
-  rubies.push Ruby.new("jruby-head+truffle-server-original", "JAVACMD=$GRAAL_DIR/bin/java $JRUBY_DIR/bin/jruby -J-original -J-d64 -X+T -Xtruffle.printRuntime=true", ["interpreters", "jruby", "jruby-head"])
-  rubies.push Ruby.new("jruby-head+truffle-server", "JAVACMD=$GRAAL_DIR/bin/java $JRUBY_DIR/bin/jruby -J-server -J-d64 -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-head", "topaz", "competition", "summary", "java-c"])
+  rubies.push Ruby.new("jruby-head+truffle-server-original", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-original -J-d64 -X+T -Xtruffle.printRuntime=true", ["interpreters", "jruby", "jruby-head"])
+  rubies.push Ruby.new("jruby-head+truffle-server", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-server -J-d64 -J-G:TruffleGraphMaxNodes=200000 -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-head", "topaz", "competition", "summary", "java-c", "head"])
 else
-  puts "warning: couldn't find $JRUBY_DIR or $GRAAL_DIR"
+  puts "warning: couldn't find $JRUBY_DIR or $GRAAL_RELEASE_DIR"
+end
+
+if not ENV["JRUBY_TRUFFLE_HEAD_DIR"].nil? and not ENV["GRAAL_HEAD_DIR"].nil? and Dir.exists? File.expand_path(ENV["JRUBY_TRUFFLE_HEAD_DIR"]) and Dir.exists? File.expand_path(ENV["GRAAL_HEAD_DIR"])
+  rubies.push Ruby.new("jruby-truffle-head+truffle-server", "JAVACMD=$GRAAL_HEAD_DIR/jdk1.8.0/product/bin/java $JRUBY_TRUFFLE_HEAD_DIR/bin/jruby -J-server -J-d64 -J-G:TruffleGraphMaxNodes=200000 -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-head", "topaz", "competition", "summary", "java-c", "head"])
+else
+  puts "warning: couldn't find $JRUBY_TRUFFLE_HEAD_DIR or $GRAAL_HEAD_DIR"
 end
 
 benchmarks = [
@@ -262,6 +269,7 @@ def plot(rubies_to_run, report, reference, benchmarks, scores)
     end
   end
 
+  puts "gnuplot #{report}.gnuplot"
   `gnuplot #{report}.gnuplot`
 end
 
