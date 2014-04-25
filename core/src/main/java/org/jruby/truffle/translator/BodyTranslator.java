@@ -58,6 +58,7 @@ public class BodyTranslator extends Translator {
     public boolean translatingForStatement = false;
     public boolean useClassVariablesAsIfInClass = false;
     private boolean translatingNextExpression = false;
+    private String currentCallMethodName = null;
 
     private static final Map<Class, String> nodeDefinedNames = new HashMap<>();
 
@@ -263,6 +264,8 @@ public class BodyTranslator extends Translator {
      */
     public RubyNode visitCallNodeExtraArgument(org.jruby.ast.CallNode node, RubyNode extraArgument) {
         final SourceSection sourceSection = translate(node.getPosition());
+
+        currentCallMethodName = node.getName();
 
         final RubyNode receiverTranslated = node.getReceiverNode().accept(this);
 
@@ -1111,7 +1114,7 @@ public class BodyTranslator extends Translator {
             methodCompiler.useClassVariablesAsIfInClass = true;
         }
 
-        return methodCompiler.compileFunctionNode(translate(node.getPosition()), "(block)", node, argsNode, node.getBodyNode(), false);
+        return methodCompiler.compileFunctionNode(translate(node.getPosition()), "(" + currentCallMethodName + "-block)", node, argsNode, node.getBodyNode(), false);
     }
 
     @Override
