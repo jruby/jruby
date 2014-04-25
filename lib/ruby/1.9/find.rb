@@ -44,9 +44,13 @@ module Find
         rescue Errno::ENOENT, Errno::EACCES, Errno::ENOTDIR, Errno::ELOOP, Errno::ENAMETOOLONG
           next
         end
-        if s.directory? then
+        if s.directory? || s.symlink? then
           begin
-            fs = Dir.entries(file)
+            fs = if s.symlink?
+              Dir.entries(File.readlink(file))
+            else
+              Dir.entries(file)
+            end
           rescue Errno::ENOENT, Errno::EACCES, Errno::ENOTDIR, Errno::ELOOP, Errno::ENAMETOOLONG
             next
           end
