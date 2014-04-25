@@ -46,11 +46,7 @@ module Find
         end
         if s.directory? || s.symlink? then
           begin
-            fs = if s.symlink?
-              Dir.entries(File.readlink(file))
-            else
-              Dir.entries(file)
-            end
+            fs = s.symlink? ? Dir.entries(File.readlink(file)) : Dir.entries(file)
           rescue Errno::ENOENT, Errno::EACCES, Errno::ENOTDIR, Errno::ELOOP, Errno::ENAMETOOLONG
             next
           end

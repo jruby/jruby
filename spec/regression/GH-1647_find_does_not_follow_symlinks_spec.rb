@@ -3,13 +3,13 @@ require 'find'
 require 'set'
 require 'rspec'
 
-describe "Find.find" do
+describe 'Find.find' do
   it 'finds files in symlinks' do
     Dir.mktmpdir('jruby-file-find-test') do |fn|
       FileUtils.cd(fn) do
         # Create real dir with file.
         FileUtils.mkdir_p('dir')
-        File.write('dir/foo.txt', 'Hello world!')
+        File.open('dir/foo.txt', 'w') { |f| f.write('Hello world!') }
 
         # Create symlink.
         File.symlink('dir', 'dir-link')
