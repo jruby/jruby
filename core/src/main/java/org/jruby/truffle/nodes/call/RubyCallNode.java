@@ -154,7 +154,7 @@ public class RubyCallNode extends RubyNode {
             final RubyMethod respondToMissing = receiverBasicObject.getLookupNode().lookupMethod("respond_to_missing?");
 
             if (respondToMissing != null) {
-                if (!GeneralConversions.toBoolean(respondToMissing.call(frame.pack(), receiverBasicObject, null, context.makeString(name), true))) {
+                if (!RubyTrueClass.toBoolean(respondToMissing.call(frame.pack(), receiverBasicObject, null, context.makeString(name), true))) {
                     return NilPlaceholder.INSTANCE;
                 }
             }

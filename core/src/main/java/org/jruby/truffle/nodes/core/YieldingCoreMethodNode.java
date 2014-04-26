@@ -34,7 +34,7 @@ public abstract class YieldingCoreMethodNode extends CoreMethodNode {
     }
 
     public boolean yieldBoolean(VirtualFrame frame, RubyProc block, Object... arguments) {
-        return GeneralConversions.toBoolean(dispatchNode.dispatch(frame, block, arguments));
+        return RubyTrueClass.toBoolean(dispatchNode.dispatch(frame, block, arguments));
     }
 
 }

@@ -9,6 +9,11 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.truffle.runtime.NilPlaceholder;
+
+import java.math.BigInteger;
+
 /**
  * Represents the Ruby {@code Float} class.
  */
@@ -19,6 +24,45 @@ public class RubyFloat extends RubyObject implements Unboxable {
     public RubyFloat(RubyClass floatClass, double value) {
         super(floatClass);
         this.value = value;
+    }
+
+    /**
+     * Convert a value to a {@code Float}, without doing any lookup.
+     */
+    public static double toFloat(Object value) {
+        assert value != null;
+
+        if (value instanceof NilPlaceholder || value instanceof RubyNilClass) {
+            return 0;
+        }
+
+        if (value instanceof Integer) {
+            return (int) value;
+        }
+
+        if (value instanceof RubyFixnum) {
+            return ((RubyFixnum) value).getValue();
+        }
+
+        if (value instanceof BigInteger) {
+            return ((BigInteger) value).doubleValue();
+        }
+
+        if (value instanceof RubyBignum) {
+            return ((RubyBignum) value).getValue().doubleValue();
+        }
+
+        if (value instanceof Double) {
+            return (double) value;
+        }
+
+        if (value instanceof RubyFloat) {
+            return ((RubyFloat) value).getValue();
+        }
+
+        CompilerDirectives.transferToInterpreter();
+
+        throw new UnsupportedOperationException();
     }
 
     public double getValue() {

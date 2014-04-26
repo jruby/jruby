@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
-import org.jruby.truffle.runtime.core.GeneralConversions;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyObject;
@@ -65,7 +64,7 @@ public final class RubyArray extends RubyObject {
         ArrayStore store;
 
         if (object instanceof Integer || object instanceof RubyFixnum) {
-            store = new FixnumArrayStore(new int[]{GeneralConversions.toFixnum(object)});
+            store = new FixnumArrayStore(new int[]{RubyFixnum.toFixnum(object)});
         } else {
             store = new ObjectArrayStore(new Object[]{object});
         }
@@ -96,7 +95,7 @@ public final class RubyArray extends RubyObject {
             final int[] values = new int[objects.length];
 
             for (int n = 0; n < objects.length; n++) {
-                values[n] = GeneralConversions.toFixnum(objects[n]);
+                values[n] = RubyFixnum.toFixnum(objects[n]);
             }
 
             store = new FixnumArrayStore(values);

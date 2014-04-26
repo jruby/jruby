@@ -163,7 +163,7 @@ public class RubyBasicObject extends ObjectStorage {
     }
 
     public Object getInstanceVariable(String name) {
-        return GeneralConversions.instanceOrNil(getField(name));
+        return RubyNilClass.instanceOrNil(getField(name));
     }
 
     public boolean hasPrivateLayout() {

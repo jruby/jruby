@@ -9,6 +9,9 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.truffle.runtime.NilPlaceholder;
+
 import java.math.*;
 
 /**
@@ -29,6 +32,69 @@ public class RubyFixnum extends RubyObject implements Unboxable {
     public RubyFixnum(RubyClass fixnumClass, int value) {
         super(fixnumClass);
         this.value = value;
+    }
+
+    /**
+     * Convert a value to a {@code Fixnum}, without doing any lookup.
+     */
+    public static int toFixnum(Object value) {
+        assert value != null;
+
+        if (value instanceof NilPlaceholder || value instanceof RubyNilClass) {
+            return 0;
+        }
+
+        if (value instanceof Integer) {
+            return (int) value;
+        }
+
+        if (value instanceof RubyFixnum) {
+            return ((RubyFixnum) value).getValue();
+        }
+
+        if (value instanceof BigInteger) {
+            throw new UnsupportedOperationException();
+        }
+
+        if (value instanceof RubyBignum) {
+            throw new UnsupportedOperationException();
+        }
+
+        if (value instanceof Double) {
+            return (int) (double) value;
+        }
+
+        if (value instanceof RubyFloat) {
+            return (int) ((RubyFloat) value).getValue();
+        }
+
+        CompilerDirectives.transferToInterpreter();
+
+        throw new UnsupportedOperationException(value.getClass().toString());
+    }
+
+    /**
+     * Given a {@link java.math.BigInteger} value, produce either a {@code Fixnum} or {@code Bignum} .
+     */
+    public static Object fixnumOrBignum(BigInteger value) {
+        assert value != null;
+
+        if (value.compareTo(MIN_VALUE_BIG) >= 0 && value.compareTo(MAX_VALUE_BIG) <= 0) {
+            return value.intValue();
+        } else {
+            return value;
+        }
+    }
+
+    /**
+     * Given a {@code long} value, produce either a {@code Fixnum} or {@code Bignum} .
+     */
+    public static Object fixnumOrBignum(long value) {
+        if (value >= MIN_VALUE && value <= MAX_VALUE) {
+            return (int) value;
+        } else {
+            return BigInteger.valueOf(value);
+        }
     }
 
     public int getValue() {

@@ -82,7 +82,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object add(BigInteger a, BigInteger b) {
-            return GeneralConversions.fixnumOrBignum(a.add(b));
+            return RubyFixnum.fixnumOrBignum(a.add(b));
         }
 
     }
@@ -110,7 +110,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object sub(BigInteger a, BigInteger b) {
-            return GeneralConversions.fixnumOrBignum(a.subtract(b));
+            return RubyFixnum.fixnumOrBignum(a.subtract(b));
         }
 
     }
@@ -138,7 +138,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object mul(BigInteger a, BigInteger b) {
-            return GeneralConversions.fixnumOrBignum(a.multiply(b));
+            return RubyFixnum.fixnumOrBignum(a.multiply(b));
         }
 
     }
@@ -200,7 +200,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object div(BigInteger a, BigInteger b) {
-            return GeneralConversions.fixnumOrBignum(a.divide(b));
+            return RubyFixnum.fixnumOrBignum(a.divide(b));
         }
 
     }
@@ -218,7 +218,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object mod(BigInteger a, int b) {
-            return GeneralConversions.fixnumOrBignum(a.mod(BigInteger.valueOf(b)));
+            return RubyFixnum.fixnumOrBignum(a.mod(BigInteger.valueOf(b)));
         }
 
         @Specialization
@@ -228,7 +228,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object mod(BigInteger a, BigInteger b) {
-            return GeneralConversions.fixnumOrBignum(a.mod(b));
+            return RubyFixnum.fixnumOrBignum(a.mod(b));
         }
 
     }
@@ -464,12 +464,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object bitAnd(BigInteger a, int b) {
-            return GeneralConversions.fixnumOrBignum(a.and(BigInteger.valueOf(b)));
+            return RubyFixnum.fixnumOrBignum(a.and(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitAnd(BigInteger a, BigInteger b) {
-            return GeneralConversions.fixnumOrBignum(a.and(b));
+            return RubyFixnum.fixnumOrBignum(a.and(b));
         }
     }
 
@@ -486,12 +486,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object bitOr(BigInteger a, int b) {
-            return GeneralConversions.fixnumOrBignum(a.or(BigInteger.valueOf(b)));
+            return RubyFixnum.fixnumOrBignum(a.or(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitOr(BigInteger a, BigInteger b) {
-            return GeneralConversions.fixnumOrBignum(a.or(b));
+            return RubyFixnum.fixnumOrBignum(a.or(b));
         }
     }
 
@@ -508,12 +508,12 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object bitXOr(BigInteger a, int b) {
-            return GeneralConversions.fixnumOrBignum(a.xor(BigInteger.valueOf(b)));
+            return RubyFixnum.fixnumOrBignum(a.xor(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitXOr(BigInteger a, BigInteger b) {
-            return GeneralConversions.fixnumOrBignum(a.xor(b));
+            return RubyFixnum.fixnumOrBignum(a.xor(b));
         }
     }
 
@@ -531,9 +531,9 @@ public abstract class BignumNodes {
         @Specialization
         public Object leftShift(BigInteger a, int b) {
             if (b >= 0) {
-                return GeneralConversions.fixnumOrBignum(a.shiftLeft(b));
+                return RubyFixnum.fixnumOrBignum(a.shiftLeft(b));
             } else {
-                return GeneralConversions.fixnumOrBignum(a.shiftRight(-b));
+                return RubyFixnum.fixnumOrBignum(a.shiftRight(-b));
             }
         }
 
@@ -553,9 +553,9 @@ public abstract class BignumNodes {
         @Specialization
         public Object leftShift(BigInteger a, int b) {
             if (b >= 0) {
-                return GeneralConversions.fixnumOrBignum(a.shiftRight(b));
+                return RubyFixnum.fixnumOrBignum(a.shiftRight(b));
             } else {
-                return GeneralConversions.fixnumOrBignum(a.shiftLeft(-b));
+                return RubyFixnum.fixnumOrBignum(a.shiftLeft(-b));
             }
         }
 
