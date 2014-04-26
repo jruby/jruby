@@ -33,7 +33,7 @@ public abstract class AndNode extends RubyNode {
 
     @ShortCircuit("right")
     public boolean needsRightNode(Object a) {
-        return GeneralConversions.toBoolean(a);
+        return RubyTrueClass.toBoolean(a);
     }
 
     @ShortCircuit("right")

@@ -13,7 +13,6 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
-import org.jruby.truffle.runtime.core.GeneralConversions;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyObject;
@@ -64,8 +63,10 @@ public final class RubyArray extends RubyObject {
     public static RubyArray specializedFromObject(RubyClass arrayClass, Object object) {
         ArrayStore store;
 
-        if (object instanceof Integer || object instanceof RubyFixnum) {
-            store = new FixnumArrayStore(new int[]{GeneralConversions.toFixnum(object)});
+        if (object instanceof Integer) {
+            store = new IntegerArrayStore(new int[]{(int) object});
+        } else if (object instanceof RubyFixnum.IntegerFixnum) {
+            store = new IntegerArrayStore(new int[]{((RubyFixnum.IntegerFixnum) object).getValue()});
         } else {
             store = new ObjectArrayStore(new Object[]{object});
         }
@@ -85,7 +86,7 @@ public final class RubyArray extends RubyObject {
         boolean canUseFixnum = true;
 
         for (Object object : objects) {
-            if (!(object instanceof Integer || object instanceof RubyFixnum)) {
+            if (!(object instanceof Integer || object instanceof RubyFixnum.IntegerFixnum)) {
                 canUseFixnum = false;
             }
         }
@@ -96,10 +97,11 @@ public final class RubyArray extends RubyObject {
             final int[] values = new int[objects.length];
 
             for (int n = 0; n < objects.length; n++) {
-                values[n] = GeneralConversions.toFixnum(objects[n]);
+
+                values[n] = RubyFixnum.toInt(objects[n]);
             }
 
-            store = new FixnumArrayStore(values);
+            store = new IntegerArrayStore(values);
         } else {
             store = new ObjectArrayStore(objects);
         }
@@ -379,7 +381,7 @@ public final class RubyArray extends RubyObject {
         int hash = 0;
 
         for (Object value : asList()) {
-            hash = hash + value.hashCode();
+            hash ^= value.hashCode();
         }
 
         return hash;

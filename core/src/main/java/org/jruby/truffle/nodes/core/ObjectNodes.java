@@ -16,7 +16,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -466,8 +465,8 @@ public abstract class ObjectNodes {
         }
 
         @Specialization
-        public Object objectID(RubyBasicObject object) {
-            return GeneralConversions.fixnumOrBignum(object.getObjectID());
+        public long objectID(RubyBasicObject object) {
+            return object.getObjectID();
         }
 
     }

@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.jruby.truffle.runtime.NilPlaceholder;
+
 /**
  * Represents the Ruby {@code TrueClass} class.
  */
@@ -16,6 +18,31 @@ public class RubyTrueClass extends RubyObject implements Unboxable {
 
     public RubyTrueClass(RubyClass objectClass) {
         super(objectClass);
+    }
+
+    /**
+     * Convert a value to a boolean, without doing any lookup.
+     */
+    public static boolean toBoolean(Object value) {
+        assert value != null;
+
+        if (value instanceof NilPlaceholder) {
+            return false;
+        }
+
+        if (value instanceof Boolean) {
+            return (boolean) value;
+        }
+
+        if (value instanceof RubyTrueClass) {
+            return true;
+        }
+
+        if (value instanceof RubyFalseClass) {
+            return false;
+        }
+
+        return true;
     }
 
     public Object unbox() {

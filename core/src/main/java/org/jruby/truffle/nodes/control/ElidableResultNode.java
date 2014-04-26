@@ -35,9 +35,9 @@ public class ElidableResultNode extends RubyNode {
     }
 
     @Override
-    public int executeFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
         required.executeVoid(frame);
-        return elidableResult.executeFixnum(frame);
+        return elidableResult.executeIntegerFixnum(frame);
     }
 
     @Override

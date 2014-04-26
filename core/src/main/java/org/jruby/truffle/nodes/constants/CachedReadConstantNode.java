@@ -116,7 +116,7 @@ public class CachedReadConstantNode extends ReadConstantNode {
     }
 
     @Override
-    public int executeFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
         guard(frame);
 
         if (hasInt) {

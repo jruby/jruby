@@ -62,7 +62,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     }
 
     @Override
-    public int executeFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
         return readNode.executeInteger(receiver.executeRubyBasicObject(frame));
     }
 

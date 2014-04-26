@@ -38,6 +38,12 @@ public abstract class WriteLocalVariableNode extends FrameSlotNode implements Wr
         return value;
     }
 
+    @Specialization(guards = "isLongFixnumKind")
+    public long doLongFixnum(VirtualFrame frame, long value) {
+        setLongFixnum(frame, value);
+        return value;
+    }
+
     @Specialization(guards = "isFloatKind")
     public double doFloat(VirtualFrame frame, double value) {
         setFloat(frame, value);

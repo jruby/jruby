@@ -22,10 +22,10 @@ while not args.empty?
     puts "Note: use a system Ruby to run this script, not the development JRuby, as that seems to sometimes get in a twist"
     puts
     puts "Set a reference point, running for 5 minutes:"
-    puts "    GRAAL_DIR=... ruby benchmark-compare.rb --reference -m 5"
+    puts "    JAVACMD=... ruby benchmark-compare.rb --reference -m 5"
     puts
     puts "Compare against that reference point:"
-    puts "    GRAAL_DIR=... ruby benchmark-compare.rb"
+    puts "    JAVACMD=... ruby benchmark-compare.rb"
     puts
     puts "  -s n  run for n seconds (default 60)"
     puts "  -m n  run for n minutes"

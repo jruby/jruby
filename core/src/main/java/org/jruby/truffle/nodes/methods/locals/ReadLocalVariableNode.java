@@ -37,6 +37,11 @@ public abstract class ReadLocalVariableNode extends FrameSlotNode implements Rea
     }
 
     @Specialization(rewriteOn = {FrameSlotTypeException.class})
+    public long doLongFixnum(VirtualFrame frame) throws FrameSlotTypeException {
+        return getLongFixnum(frame);
+    }
+
+    @Specialization(rewriteOn = {FrameSlotTypeException.class})
     public double doFloat(VirtualFrame frame) throws FrameSlotTypeException {
         return getFloat(frame);
     }

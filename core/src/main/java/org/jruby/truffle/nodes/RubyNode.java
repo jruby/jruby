@@ -77,20 +77,12 @@ public abstract class RubyNode extends Node {
         return RubyTypesGen.RUBYTYPES.expectBoolean(execute(frame));
     }
 
-    public RubyBignum executeBoxedBignum(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyBignum(execute(frame));
-    }
-
-    public RubyFixnum executeBoxedFixnum(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyFixnum(execute(frame));
-    }
-
-    public RubyFloat executeBoxedFloat(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyFloat(execute(frame));
-    }
-
-    public int executeFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectInteger(execute(frame));
+    }
+
+    public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectLong(execute(frame));
     }
 
     public FixnumRange executeFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
