@@ -45,6 +45,7 @@ import java.util.AbstractCollection;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.NoSuchElementException;
 import java.util.Iterator;
 import java.util.Set;
@@ -1096,7 +1097,6 @@ public class RubyHash extends RubyObject implements Map {
         final ThreadContext context = runtime.getCurrentContext();
         if (size == 0 || runtime.isInspecting(this)) return RubyFixnum.zero(runtime);
         final long hash[] = new long[]{size};
-        
         try {
             runtime.registerInspecting(this);
             visitAll(new Visitor() {
@@ -1123,19 +1123,17 @@ public class RubyHash extends RubyObject implements Map {
                     if(size == 0) {
                         return RubyFixnum.zero(runtime);
                     }
-                    final long[] h = new long[]{size};
+                    final HashMap<IRubyObject, IRubyObject> map = new HashMap<IRubyObject, IRubyObject>();
                     if(recur) {
-                        h[0] ^= RubyNumeric.num2long(invokedynamic(context, runtime.getHash(), HASH));
+                        return runtime.newFixnum(RubyNumeric.num2long(invokedynamic(context, runtime.getHash(), HASH)));
                     } else {
                         visitAll(new Visitor() {
                                 public void visit(IRubyObject key, IRubyObject value) {
-                                    h[0] += invokedynamic(context, key, HASH).convertToInteger().getLongValue();
-                                    h[0] += invokedynamic(context, value, HASH).convertToInteger().getLongValue();
+                                    map.put(key, value);
                                 }
                             });
-
                     }
-                    return runtime.newFixnum(h[0]);
+                    return runtime.newFixnum(map.hashCode());
                 }
             }, this);
     }
