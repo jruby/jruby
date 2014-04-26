@@ -50,7 +50,7 @@ public class FixnumRange extends RubyRange {
                 values[n] = begin + n;
             }
 
-            return new RubyArray(getRubyClass().getContext().getCoreLibrary().getArrayClass(), new FixnumArrayStore(values));
+            return new RubyArray(getRubyClass().getContext().getCoreLibrary().getArrayClass(), new IntegerArrayStore(values));
         }
     }
 

@@ -79,7 +79,7 @@ public final class EmptyArrayStore implements ArrayStore {
     @Override
     public ArrayStore generalizeFor(Object type) {
         if (type instanceof Integer) {
-            return new FixnumArrayStore();
+            return new IntegerArrayStore();
         } else {
             return new ObjectArrayStore();
         }

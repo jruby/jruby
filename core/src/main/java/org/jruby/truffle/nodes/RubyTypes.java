@@ -84,7 +84,8 @@ public class RubyTypes {
 
     @ImplicitCast
     public int unboxFixnum(RubyFixnum value) {
-        return value.getValue();
+        // TODO(CS): this can fail
+        return value.getIntValue();
     }
 
     @ImplicitCast

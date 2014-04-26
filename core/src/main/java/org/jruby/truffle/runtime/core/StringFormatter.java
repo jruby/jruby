@@ -109,7 +109,7 @@ public class StringFormatter {
                 switch (type) {
                     case 'd': {
                         formatBuilder.append("d");
-                        final int value = RubyFixnum.toFixnum(values.get(v));
+                        final long value = RubyFixnum.toLong(values.get(v));
                         stream.printf(formatBuilder.toString(), value);
                         break;
                     }

@@ -346,6 +346,10 @@ public class CoreLibrary {
             return new RubyFixnum(fixnumClass, (int) object);
         }
 
+        if (object instanceof Long) {
+            return new RubyFixnum(fixnumClass, (int) object);
+        }
+
         if (object instanceof BigInteger) {
             return new RubyBignum(bignumClass, (BigInteger) object);
         }

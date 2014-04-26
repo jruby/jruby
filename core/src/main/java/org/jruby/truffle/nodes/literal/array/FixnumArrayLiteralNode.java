@@ -42,7 +42,7 @@ public class FixnumArrayLiteralNode extends ArrayLiteralNode {
             }
         }
 
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new FixnumArrayStore(executedValues));
+        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new IntegerArrayStore(executedValues));
     }
 
     @ExplodeLoop

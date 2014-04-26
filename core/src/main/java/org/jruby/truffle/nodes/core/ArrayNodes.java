@@ -171,13 +171,13 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isFixnumStore", rewriteOn = UnexpectedResultException.class, order = 2)
         public int indexFixnum(RubyArray array, int index, @SuppressWarnings("unused") UndefinedPlaceholder unused) throws UnexpectedResultException {
-            final FixnumArrayStore store = (FixnumArrayStore) array.getArrayStore();
+            final IntegerArrayStore store = (IntegerArrayStore) array.getArrayStore();
             return store.getFixnum(ArrayUtilities.normaliseIndex(store.size(), index));
         }
 
         @Specialization(guards = "isFixnumStore", order = 3)
         public Object indexMaybeFixnum(RubyArray array, int index, @SuppressWarnings("unused") UndefinedPlaceholder unused) {
-            final FixnumArrayStore store = (FixnumArrayStore) array.getArrayStore();
+            final IntegerArrayStore store = (IntegerArrayStore) array.getArrayStore();
 
             try {
                 return store.getFixnum(ArrayUtilities.normaliseIndex(store.size(), index));
@@ -252,7 +252,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isFixnumStore", rewriteOn = GeneraliseArrayStoreException.class, order = 2)
         public int indexSetFixnum(RubyArray array, int index, int value, @SuppressWarnings("unused") UndefinedPlaceholder unused) throws GeneraliseArrayStoreException {
-            final FixnumArrayStore store = (FixnumArrayStore) array.getArrayStore();
+            final IntegerArrayStore store = (IntegerArrayStore) array.getArrayStore();
             final int normalisedIndex = ArrayUtilities.normaliseIndex(store.size(), index);
             store.setFixnum(normalisedIndex, value);
             return value;
@@ -260,7 +260,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isFixnumStore", order = 3)
         public int indexSetFixnumMayGeneralise(RubyArray array, int index, int value, @SuppressWarnings("unused") UndefinedPlaceholder unused) {
-            final FixnumArrayStore store = (FixnumArrayStore) array.getArrayStore();
+            final IntegerArrayStore store = (IntegerArrayStore) array.getArrayStore();
             final int normalisedIndex = ArrayUtilities.normaliseIndex(store.size(), index);
 
             try {
@@ -319,7 +319,7 @@ public abstract class ArrayNodes {
             if (value instanceof UndefinedPlaceholder) {
                 if (array.getArrayStore() instanceof EmptyArrayStore) {
                     return indexSetEmpty(array, begin, rangeLength, UndefinedPlaceholder.INSTANCE);
-                } else if (array.getArrayStore() instanceof FixnumArrayStore) {
+                } else if (array.getArrayStore() instanceof IntegerArrayStore) {
                     return indexSetFixnumMayGeneralise(array, begin, rangeLength, UndefinedPlaceholder.INSTANCE);
                 } else {
                     return indexSetObject(array, begin, rangeLength, UndefinedPlaceholder.INSTANCE);
@@ -738,7 +738,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isFixnumStore", rewriteOn = GeneraliseArrayStoreException.class)
         public int insert(RubyArray array, int index, int value) throws GeneraliseArrayStoreException {
-            final FixnumArrayStore store = (FixnumArrayStore) array.getArrayStore();
+            final IntegerArrayStore store = (IntegerArrayStore) array.getArrayStore();
             store.insertFixnum(ArrayUtilities.normaliseIndex(store.size(), index), value);
             return value;
         }

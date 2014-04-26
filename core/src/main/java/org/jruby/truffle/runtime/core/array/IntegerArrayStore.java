@@ -16,17 +16,17 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.*;
 
 /**
- * A store for an array of Fixnums.
+ * A store for an array of {@code int}.
  */
-public final class FixnumArrayStore extends BaseArrayStore {
+public final class IntegerArrayStore extends BaseArrayStore {
 
     private int[] values;
 
-    public FixnumArrayStore() {
+    public IntegerArrayStore() {
         this(new int[]{});
     }
 
-    public FixnumArrayStore(int[] values) {
+    public IntegerArrayStore(int[] values) {
         this.values = values;
         size = values.length;
         capacity = values.length;
@@ -55,7 +55,7 @@ public final class FixnumArrayStore extends BaseArrayStore {
             return null; // Represents Nil
         }
 
-        return new FixnumArrayStore(Arrays.copyOfRange(values, normalisedBegin, truncatedNormalisedExclusiveEnd));
+        return new IntegerArrayStore(Arrays.copyOfRange(values, normalisedBegin, truncatedNormalisedExclusiveEnd));
     }
 
     @Override
@@ -106,14 +106,14 @@ public final class FixnumArrayStore extends BaseArrayStore {
 
     @Override
     public void setRangeArray(int normalisedBegin, int normalisedExclusiveEnd, ArrayStore other) throws GeneraliseArrayStoreException {
-        if (other instanceof FixnumArrayStore) {
-            setRangeArrayFixnum(normalisedBegin, normalisedExclusiveEnd, (FixnumArrayStore) other);
+        if (other instanceof IntegerArrayStore) {
+            setRangeArrayFixnum(normalisedBegin, normalisedExclusiveEnd, (IntegerArrayStore) other);
         } else {
             throw new GeneraliseArrayStoreException();
         }
     }
 
-    public void setRangeArrayFixnum(int normalisedBegin, int normalisedExclusiveEnd, FixnumArrayStore other) {
+    public void setRangeArrayFixnum(int normalisedBegin, int normalisedExclusiveEnd, IntegerArrayStore other) {
         setRangeArrayMatchingTypes(normalisedBegin, normalisedExclusiveEnd, other.values, other.size);
     }
 
@@ -173,7 +173,7 @@ public final class FixnumArrayStore extends BaseArrayStore {
 
     @Override
     public ArrayStore dup() {
-        return new FixnumArrayStore(Arrays.copyOf(values, size));
+        return new IntegerArrayStore(Arrays.copyOf(values, size));
     }
 
     @Override
@@ -235,14 +235,14 @@ public final class FixnumArrayStore extends BaseArrayStore {
 
     @Override
     public boolean equals(ArrayStore other) {
-        if (other instanceof FixnumArrayStore) {
-            return equals((FixnumArrayStore) other);
+        if (other instanceof IntegerArrayStore) {
+            return equals((IntegerArrayStore) other);
         } else {
             return super.equals(other);
         }
     }
 
-    public boolean equals(FixnumArrayStore other) {
+    public boolean equals(IntegerArrayStore other) {
         if (other == null) {
             return false;
         } else if (other == this) {

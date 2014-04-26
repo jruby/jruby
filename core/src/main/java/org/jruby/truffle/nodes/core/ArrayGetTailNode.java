@@ -14,9 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.array.*;
 
@@ -46,7 +44,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
     }
 
     protected boolean isFixnumStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof FixnumArrayStore;
+        return receiver.getArrayStore() instanceof IntegerArrayStore;
     }
 
     protected boolean isFixnumImmutablePairStore(RubyArray receiver) {

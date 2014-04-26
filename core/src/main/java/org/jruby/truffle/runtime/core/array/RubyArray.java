@@ -63,8 +63,10 @@ public final class RubyArray extends RubyObject {
     public static RubyArray specializedFromObject(RubyClass arrayClass, Object object) {
         ArrayStore store;
 
-        if (object instanceof Integer || object instanceof RubyFixnum) {
-            store = new FixnumArrayStore(new int[]{RubyFixnum.toFixnum(object)});
+        if (object instanceof Integer) {
+            store = new IntegerArrayStore(new int[]{(int) object});
+        } else if (object instanceof RubyFixnum && ((RubyFixnum) object).isRepresentableAsInt()) {
+            store = new IntegerArrayStore(new int[]{((RubyFixnum) object).getIntValue()});
         } else {
             store = new ObjectArrayStore(new Object[]{object});
         }
@@ -84,7 +86,7 @@ public final class RubyArray extends RubyObject {
         boolean canUseFixnum = true;
 
         for (Object object : objects) {
-            if (!(object instanceof Integer || object instanceof RubyFixnum)) {
+            if (!(object instanceof Integer || (object instanceof RubyFixnum && ((RubyFixnum) object).isRepresentableAsInt()))) {
                 canUseFixnum = false;
             }
         }
@@ -95,10 +97,11 @@ public final class RubyArray extends RubyObject {
             final int[] values = new int[objects.length];
 
             for (int n = 0; n < objects.length; n++) {
-                values[n] = RubyFixnum.toFixnum(objects[n]);
+
+                values[n] = RubyFixnum.toInt(objects[n]);
             }
 
-            store = new FixnumArrayStore(values);
+            store = new IntegerArrayStore(values);
         } else {
             store = new ObjectArrayStore(objects);
         }
