@@ -1125,7 +1125,7 @@ public class RubyHash extends RubyObject implements Map {
                     }
                     final long[] h = new long[]{1};
                     if(recur) {
-                        return runtime.newFixnum(RubyNumeric.num2long(invokedynamic(context, runtime.getHash(), HASH)));
+                        h[0] ^= RubyNumeric.num2long(invokedynamic(context, runtime.getHash(), HASH));
                     } else {
                         visitAll(new Visitor() {
                                 public void visit(IRubyObject key, IRubyObject value) {
