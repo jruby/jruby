@@ -36,7 +36,7 @@ public class ReadIntegerObjectFieldNode extends ReadSpecializedObjectFieldNode {
             return storageLocation.readInteger(object, condition);
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new UnexpectedResultException(readAndRespecialize(object));
+            throw new UnexpectedResultException(readAndRespecialize(object, "layout changed"));
         }
     }
 

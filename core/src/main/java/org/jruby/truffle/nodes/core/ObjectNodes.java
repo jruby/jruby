@@ -463,8 +463,8 @@ public abstract class ObjectNodes {
         }
 
         @Specialization
-        public Object objectID(RubyBasicObject object) {
-            return RubyFixnum.fixnumOrBignum(object.getObjectID());
+        public long objectID(RubyBasicObject object) {
+            return object.getObjectID();
         }
 
     }

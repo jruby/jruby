@@ -41,6 +41,12 @@ public abstract class ReadLevelVariableNode extends FrameSlotNode implements Rea
     }
 
     @Specialization(rewriteOn = {FrameSlotTypeException.class})
+    public long doLongFixnum(VirtualFrame frame) throws FrameSlotTypeException {
+        MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);
+        return getLongFixnum(levelFrame);
+    }
+
+    @Specialization(rewriteOn = {FrameSlotTypeException.class})
     public double doFloat(VirtualFrame frame) throws FrameSlotTypeException {
         MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);
         return getFloat(levelFrame);
@@ -50,10 +56,6 @@ public abstract class ReadLevelVariableNode extends FrameSlotNode implements Rea
     public Object doObject(VirtualFrame frame) {
         MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);
         return getObject(levelFrame);
-    }
-
-    public int getVarLevel() {
-        return varLevel;
     }
 
     @Override

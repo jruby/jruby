@@ -36,7 +36,7 @@ public class ReadDoubleObjectFieldNode extends ReadSpecializedObjectFieldNode {
             return storageLocation.readDouble(object, condition);
         } else {
             CompilerDirectives.transferToInterpreter();
-            throw new UnexpectedResultException(readAndRespecialize(object));
+            throw new UnexpectedResultException(readAndRespecialize(object, "layout changed"));
         }
     }
 

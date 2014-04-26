@@ -10,35 +10,36 @@
 package org.jruby.truffle.nodes.objectstorage;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import org.jruby.truffle.runtime.objectstorage.IntegerStorageLocation;
+import org.jruby.truffle.runtime.objectstorage.DoubleStorageLocation;
+import org.jruby.truffle.runtime.objectstorage.LongStorageLocation;
 import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 
-public class WriteIntegerObjectFieldNode extends WriteSpecializedObjectFieldNode {
+public class WriteLongObjectFieldNode extends WriteSpecializedObjectFieldNode {
 
-    private final IntegerStorageLocation storageLocation;
+    private final LongStorageLocation storageLocation;
 
-    public WriteIntegerObjectFieldNode(String name, ObjectLayout objectLayout, IntegerStorageLocation storageLocation, RespecializeHook hook) {
+    public WriteLongObjectFieldNode(String name, ObjectLayout objectLayout, LongStorageLocation storageLocation, RespecializeHook hook) {
         super(name, objectLayout, hook);
         this.storageLocation = storageLocation;
     }
 
     @Override
-    public void execute(ObjectStorage object, int value) {
+    public void execute(ObjectStorage object, long value) {
         final ObjectLayout actualLayout = object.getObjectLayout();
 
         if (actualLayout == objectLayout) {
-            storageLocation.writeInteger(object, value);
+            storageLocation.writeLong(object, value);
         } else {
             CompilerDirectives.transferToInterpreter();
-            writeAndRespecialize(object, value, "unexpected layout");
+            writeAndRespecialize(object, value, "layout changed");
         }
     }
 
     @Override
     public void execute(ObjectStorage object, Object value) {
-        if (value instanceof Integer) {
-            execute(object, (int) value);
+        if (value instanceof Double) {
+            execute(object, (double) value);
         } else {
             CompilerDirectives.transferToInterpreter();
             writeAndRespecialize(object, value, "unexpected value type");

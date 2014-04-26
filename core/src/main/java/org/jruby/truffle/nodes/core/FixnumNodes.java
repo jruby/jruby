@@ -75,23 +75,54 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization(rewriteOn = ArithmeticException.class)
+        @Specialization(order = 1, rewriteOn = ArithmeticException.class)
         public int add(int a, int b) {
             return ExactMath.addExact(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public Object addWithOverflow(int a, int b) {
+            // TODO(CS): use longs
             return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).add(BigInteger.valueOf(b)));
         }
 
-        @Specialization
+        @Specialization(order = 3)
         public double add(int a, double b) {
             return a + b;
         }
 
-        @Specialization
+        @Specialization(order = 4)
+        public long add(int a, long b) {
+            return ExactMath.addExact(a, b);
+        }
+
+        @Specialization(order = 5)
         public Object add(int a, BigInteger b) {
+            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).add(b));
+        }
+
+        @Specialization(order = 6, rewriteOn = ArithmeticException.class)
+        public long add(long a, int b) {
+            return ExactMath.addExact(a, b);
+        }
+
+        @Specialization(order = 7, rewriteOn = ArithmeticException.class)
+        public long add(long a, long b) {
+            return ExactMath.addExact(a, b);
+        }
+
+        @Specialization(order = 8)
+        public Object addWithOverflow(long a, long b) {
+            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).add(BigInteger.valueOf(b)));
+        }
+
+        @Specialization(order = 9)
+        public double add(long a, double b) {
+            return a + b;
+        }
+
+        @Specialization(order = 10)
+        public Object add(long a, BigInteger b) {
             return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).add(b));
         }
 
@@ -210,18 +241,43 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public int div(int a, int b) {
             return a / b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
+        public long div(int a, long b) {
+            return a / b;
+        }
+
+        @Specialization(order = 3)
         public double div(int a, double b) {
             return a / b;
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public int div(@SuppressWarnings("unused") int a, @SuppressWarnings("unused") BigInteger b) {
+            return 0;
+        }
+
+        @Specialization(order = 5)
+        public long div(long a, int b) {
+            return a / b;
+        }
+
+        @Specialization(order = 6)
+        public long div(long a, long b) {
+            return a / b;
+        }
+
+        @Specialization(order = 7)
+        public double div(long a, double b) {
+            return a / b;
+        }
+
+        @Specialization(order = 8)
+        public int div(@SuppressWarnings("unused") long a, @SuppressWarnings("unused") BigInteger b) {
             return 0;
         }
     }
@@ -369,18 +425,43 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public boolean equal(int a, int b) {
             return a == b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
+        public boolean equal(int a, long b) {
+            return a == b;
+        }
+
+        @Specialization(order = 3)
         public boolean equal(int a, double b) {
             return a == b;
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public boolean equal(int a, BigInteger b) {
+            return BigInteger.valueOf(a).compareTo(b) == 0;
+        }
+
+        @Specialization(order = 5)
+        public boolean equal(long a, int b) {
+            return a == b;
+        }
+
+        @Specialization(order = 6)
+        public boolean equal(long a, long b) {
+            return a == b;
+        }
+
+        @Specialization(order = 7)
+        public boolean equal(long a, double b) {
+            return a == b;
+        }
+
+        @Specialization(order = 8)
+        public boolean equal(long a, BigInteger b) {
             return BigInteger.valueOf(a).compareTo(b) == 0;
         }
     }
@@ -522,13 +603,34 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public int bitAnd(int a, int b) {
             return a & b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
+        public long bitAnd(int a, long b) {
+            return a & b;
+        }
+
+        @Specialization(order = 3)
         public Object bitAnd(int a, BigInteger b) {
+            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).and(b));
+        }
+
+        @Specialization(order = 4)
+        public int bitAnd(long a, int b) {
+            // TODO(CS): is this safe? Why does Java type a & b as long? We should do this because people do big & small to clamp stuff to small
+            return (int) (a & b);
+        }
+
+        @Specialization(order = 5)
+        public long bitAnd(long a, long b) {
+            return a & b;
+        }
+
+        @Specialization(order = 6)
+        public Object bitAnd(long a, BigInteger b) {
             return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).and(b));
         }
     }
@@ -566,13 +668,33 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public int bitXOr(int a, int b) {
             return a ^ b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
+        public long bitXOr(int a, long b) {
+            return a ^ b;
+        }
+
+        @Specialization(order = 3)
         public Object bitXOr(int a, BigInteger b) {
+            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).xor(b));
+        }
+
+        @Specialization(order = 4)
+        public long bitXOr(long a, int b) {
+            return a ^ b;
+        }
+
+        @Specialization(order = 5)
+        public long bitXOr(long a, long b) {
+            return a ^ b;
+        }
+
+        @Specialization(order = 6)
+        public Object bitXOr(long a, BigInteger b) {
             return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).xor(b));
         }
     }
@@ -605,6 +727,23 @@ public abstract class FixnumNodes {
             }
         }
 
+        @Specialization
+        public Object leftShift(long a, int b) {
+            if (b > 0) {
+                if (RubyFixnum.SIZE - Long.numberOfLeadingZeros(a) + b > RubyFixnum.SIZE - 1) {
+                    return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).shiftLeft(b));
+                } else {
+                    return a << b;
+                }
+            } else {
+                if (-b >= Integer.SIZE) {
+                    return 0;
+                } else {
+                    return a >> -b;
+                }
+            }
+        }
+
     }
 
     @CoreMethod(names = ">>", minArgs = 1, maxArgs = 1)
@@ -620,6 +759,19 @@ public abstract class FixnumNodes {
 
         @Specialization
         public int rightShift(int a, int b) {
+            if (b > 0) {
+                return a >> b;
+            } else {
+                if (-b >= RubyFixnum.SIZE) {
+                    return 0;
+                } else {
+                    return a << -b;
+                }
+            }
+        }
+
+        @Specialization
+        public long rightShift(long a, int b) {
             if (b > 0) {
                 return a >> b;
             } else {
@@ -827,6 +979,11 @@ public abstract class FixnumNodes {
             return n;
         }
 
+        @Specialization
+        public double toF(long n) {
+            return n;
+        }
+
     }
 
     @CoreMethod(names = "to_s", maxArgs = 0)
@@ -843,6 +1000,11 @@ public abstract class FixnumNodes {
         @Specialization
         public RubyString toS(int n) {
             return getContext().makeString(Integer.toString(n));
+        }
+
+        @Specialization
+        public RubyString toS(long n) {
+            return getContext().makeString(Long.toString(n));
         }
 
     }

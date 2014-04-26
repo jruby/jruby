@@ -39,6 +39,8 @@ public class RubyBasicObject extends ObjectStorage {
     private static final boolean objectSpaceEnabled = Options.OBJECTSPACE_ENABLED.load();
 
     public RubyBasicObject(RubyClass rubyClass) {
+        super(rubyClass != null ? rubyClass.getObjectLayoutForInstances() : ObjectLayout.EMPTY);
+
         if (rubyClass != null) {
             unsafeSetRubyClass(rubyClass);
 
@@ -57,21 +59,16 @@ public class RubyBasicObject extends ObjectStorage {
         return rubyClass;
     }
 
-    public ObjectLayout getUpdatedObjectLayout() {
-        updateLayoutToMatchClass();
-        return getObjectLayout();
-    }
-
-    /**
-     * Set an instance variable to be a value. Slow path.
-     */
     public void setInstanceVariable(String name, Object value) {
         CompilerAsserts.neverPartOfCompilation();
 
         updateLayoutToMatchClass();
 
         setField(name, value);
-        rubyClass.setObjectLayoutForInstances(objectLayout);
+
+        if (rubyClass.getObjectLayoutForInstances() != objectLayout) {
+            rubyClass.setObjectLayoutForInstances(objectLayout);
+        }
     }
 
     public RubyClass getSingletonClass() {
@@ -118,8 +115,6 @@ public class RubyBasicObject extends ObjectStorage {
     }
 
     public void switchToPrivateLayout() {
-        final RubyContext context = getRubyClass().getContext();
-
         final Map<String, Object> instanceVariables = getFields();
 
         hasPrivateLayout = true;
@@ -139,10 +134,6 @@ public class RubyBasicObject extends ObjectStorage {
     @Override
     public String toString() {
         return "#<" + rubyClass.getName() + ":0x" + Long.toHexString(getObjectID()) + ">";
-    }
-
-    public boolean hasSingletonClass() {
-        return rubySingletonClass != null;
     }
 
     public Object send(String name, RubyProc block, Object... args) {

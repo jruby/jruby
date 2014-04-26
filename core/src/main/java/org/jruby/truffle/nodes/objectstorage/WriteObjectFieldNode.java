@@ -28,11 +28,15 @@ public abstract class WriteObjectFieldNode extends Node {
         execute(object, (Object) value);
     }
 
+    public void execute(ObjectStorage object, long value) {
+        execute(object, (Object) value);
+    }
+
     public void execute(ObjectStorage object, double value) {
         execute(object, (Object) value);
     }
 
-    public void writeAndRespecialize(ObjectStorage object, Object value) {
+    public void writeAndRespecialize(ObjectStorage object, Object value, String reason) {
         hook.hookWrite(object, name, value);
 
         final ObjectLayout layout = object.getObjectLayout();
@@ -44,13 +48,15 @@ public abstract class WriteObjectFieldNode extends Node {
             throw new RuntimeException("Storage location should be found at this point");
         } else if (storageLocation instanceof IntegerStorageLocation) {
             newNode = new WriteIntegerObjectFieldNode(name, layout, (IntegerStorageLocation) storageLocation, hook);
+        } else if (storageLocation instanceof LongStorageLocation) {
+            newNode = new WriteLongObjectFieldNode(name, layout, (LongStorageLocation) storageLocation, hook);
         } else if (storageLocation instanceof DoubleStorageLocation) {
             newNode = new WriteDoubleObjectFieldNode(name, layout, (DoubleStorageLocation) storageLocation, hook);
         } else {
             newNode = new WriteObjectObjectFieldNode(name, layout, (ObjectStorageLocation) storageLocation, hook);
         }
 
-        replace(newNode);
+        replace(newNode, reason);
         newNode.execute(object, value);
     }
 

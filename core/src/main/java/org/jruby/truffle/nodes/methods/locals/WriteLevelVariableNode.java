@@ -43,6 +43,13 @@ public abstract class WriteLevelVariableNode extends FrameSlotNode implements Wr
         return value;
     }
 
+    @Specialization(guards = "isLongFixnumKind")
+    public long doLongFixnum(VirtualFrame frame, long value) {
+        MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);
+        setLongFixnum(levelFrame, value);
+        return value;
+    }
+
     @Specialization(guards = "isFloatKind")
     public double doFloat(VirtualFrame frame, double value) {
         MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);

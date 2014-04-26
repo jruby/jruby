@@ -764,12 +764,11 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyString inspect(RubyArray array) {
-            final RubyContext context = getContext();
-            return getContext().makeString(inspect(context, array));
+            return getContext().makeString(createInspectString(array));
         }
 
         @SlowPath
-        private static String inspect(RubyContext context, RubyArray array) {
+        private String createInspectString(RubyArray array) {
             final StringBuilder builder = new StringBuilder();
 
             builder.append("[");
@@ -780,7 +779,7 @@ public abstract class ArrayNodes {
                 }
 
                 // TODO(CS): slow path send
-                builder.append(context.getCoreLibrary().box(array.get(n)).send("inspect", null));
+                builder.append(getContext().getCoreLibrary().box(array.get(n)).send("inspect", null));
             }
 
             builder.append("]");
@@ -1185,8 +1184,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public RubyFixnum hashNumber(RubyArray array) {
-            return new RubyFixnum(array.getRubyClass().getContext().getCoreLibrary().getFixnumClass(), array.hashCode());
+        public long hashNumber(RubyArray array) {
+            return array.hashCode();
         }
 
     }

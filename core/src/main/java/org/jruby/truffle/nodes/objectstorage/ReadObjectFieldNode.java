@@ -33,11 +33,15 @@ public abstract class ReadObjectFieldNode extends Node {
         throw new UnexpectedResultException(execute(object));
     }
 
+    public long executeLong(ObjectStorage object) throws UnexpectedResultException {
+        throw new UnexpectedResultException(execute(object));
+    }
+
     public double executeDouble(ObjectStorage object) throws UnexpectedResultException {
         throw new UnexpectedResultException(execute(object));
     }
 
-    public Object readAndRespecialize(ObjectStorage object) {
+    public Object readAndRespecialize(ObjectStorage object, String reason) {
         hook.hookRead(object, name);
 
         final ObjectLayout layout = object.getObjectLayout();
@@ -49,13 +53,15 @@ public abstract class ReadObjectFieldNode extends Node {
             newNode = new ReadMissingObjectFieldNode(name, layout, hook);
         } else if (storageLocation instanceof IntegerStorageLocation) {
             newNode = new ReadIntegerObjectFieldNode(name, layout, (IntegerStorageLocation) storageLocation, hook);
+        } else if (storageLocation instanceof LongStorageLocation) {
+            newNode = new ReadLongObjectFieldNode(name, layout, (LongStorageLocation) storageLocation, hook);
         } else if (storageLocation instanceof DoubleStorageLocation) {
             newNode = new ReadDoubleObjectFieldNode(name, layout, (DoubleStorageLocation) storageLocation, hook);
         } else {
             newNode = new ReadObjectObjectFieldNode(name, layout, (ObjectStorageLocation) storageLocation, hook);
         }
 
-        replace(newNode);
+        replace(newNode, reason);
         return newNode.execute(object);
     }
 

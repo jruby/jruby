@@ -30,7 +30,7 @@ public class FixnumArrayLiteralNode extends ArrayLiteralNode {
 
         for (int n = 0; n < values.length; n++) {
             try {
-                executedValues[n] = values[n].executeFixnum(frame);
+                executedValues[n] = values[n].executeIntegerFixnum(frame);
             } catch (UnexpectedResultException e) {
                 final Object[] executedObjects = new Object[n];
 

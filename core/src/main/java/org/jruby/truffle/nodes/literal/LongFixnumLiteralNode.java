@@ -9,29 +9,29 @@
  */
 package org.jruby.truffle.nodes.literal;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.runtime.*;
+import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.NodeInfo;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
 
-@NodeInfo(shortName = "fixnum(int)")
-public class FixnumLiteralNode extends RubyNode {
+@NodeInfo(shortName = "fixnum(long)")
+public class LongFixnumLiteralNode extends RubyNode {
 
-    private final int value;
+    private final long value;
 
-    public FixnumLiteralNode(RubyContext context, SourceSection sourceSection, int value) {
+    public LongFixnumLiteralNode(RubyContext context, SourceSection sourceSection, long value) {
         super(context, sourceSection);
         this.value = value;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return executeIntegerFixnum(frame);
+        return executeLongFixnum(frame);
     }
 
     @Override
-    public int executeIntegerFixnum(VirtualFrame frame) {
+    public long executeLongFixnum(VirtualFrame frame) {
         return value;
     }
 
@@ -40,7 +40,7 @@ public class FixnumLiteralNode extends RubyNode {
         return getContext().makeString("expression");
     }
 
-    public int getValue() {
+    public long getValue() {
         return value;
     }
 

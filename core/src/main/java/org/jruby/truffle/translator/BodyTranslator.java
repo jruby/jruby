@@ -788,10 +788,11 @@ public class BodyTranslator extends Translator {
     public RubyNode visitFixnumNode(org.jruby.ast.FixnumNode node) {
         final long value = node.getValue();
 
-        if (value >= RubyFixnum.MIN_VALUE && value <= RubyFixnum.MAX_VALUE) {
+        if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
             return new FixnumLiteralNode(context, translate(node.getPosition()), (int) value);
+        } else {
+            return new LongFixnumLiteralNode(context, translate(node.getPosition()), value);
         }
-        return new BignumLiteralNode(context, translate(node.getPosition()), BigInteger.valueOf(value));
     }
 
     @Override

@@ -40,8 +40,12 @@ public class RubyFloat extends RubyObject implements Unboxable {
             return (int) value;
         }
 
-        if (value instanceof RubyFixnum) {
-            return ((RubyFixnum) value).getLongValue();
+        if (value instanceof RubyFixnum.IntegerFixnum) {
+            return ((RubyFixnum.IntegerFixnum) value).getValue();
+        }
+
+        if (value instanceof RubyFixnum.LongFixnum) {
+            return ((RubyFixnum.LongFixnum) value).getValue();
         }
 
         if (value instanceof BigInteger) {
@@ -78,8 +82,10 @@ public class RubyFloat extends RubyObject implements Unboxable {
     public boolean equals(Object other) {
         if (other instanceof Integer) {
             return value == (int) other;
-        } else if (other instanceof RubyFixnum) {
-            return value == ((RubyFixnum) other).getLongValue();
+        } else if (other instanceof RubyFixnum.IntegerFixnum) {
+            return value == ((RubyFixnum.IntegerFixnum) other).getValue();
+        } else if (other instanceof RubyFixnum.LongFixnum) {
+            return value == ((RubyFixnum.LongFixnum) other).getValue();
         } else if (other instanceof Double) {
             return value == (double) other;
         } else if (other instanceof RubyFloat) {

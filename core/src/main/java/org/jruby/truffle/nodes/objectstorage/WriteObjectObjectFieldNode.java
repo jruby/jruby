@@ -31,7 +31,7 @@ public class WriteObjectObjectFieldNode extends WriteSpecializedObjectFieldNode 
             storageLocation.write(object, value);
         } else {
             CompilerDirectives.transferToInterpreter();
-            writeAndRespecialize(object, value);
+            writeAndRespecialize(object, value, "unexpected layout");
         }
     }
 

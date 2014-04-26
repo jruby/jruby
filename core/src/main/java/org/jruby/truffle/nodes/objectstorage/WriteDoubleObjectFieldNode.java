@@ -31,7 +31,7 @@ public class WriteDoubleObjectFieldNode extends WriteSpecializedObjectFieldNode 
             storageLocation.writeDouble(object, value);
         } else {
             CompilerDirectives.transferToInterpreter();
-            writeAndRespecialize(object, value);
+            writeAndRespecialize(object, value, "unexpected layout");
         }
     }
 
@@ -41,7 +41,7 @@ public class WriteDoubleObjectFieldNode extends WriteSpecializedObjectFieldNode 
             execute(object, (double) value);
         } else {
             CompilerDirectives.transferToInterpreter();
-            writeAndRespecialize(object, value);
+            writeAndRespecialize(object, value, "unexpected value type");
         }
     }
 

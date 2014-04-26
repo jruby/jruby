@@ -10,6 +10,8 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.dsl.ImplicitCast;
+import com.oracle.truffle.api.dsl.TypeCast;
+import com.oracle.truffle.api.dsl.TypeCheck;
 import com.oracle.truffle.api.dsl.TypeSystem;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.runtime.NilPlaceholder;
@@ -33,6 +35,7 @@ import java.math.BigInteger;
                 NilPlaceholder.class, //
                 boolean.class, //
                 int.class, //
+                long.class, //
                 double.class, //
                 BigInteger.class, //
                 FixnumRange.class, //
@@ -45,7 +48,8 @@ import java.math.BigInteger;
                 RubyException.class, //
                 RubyFiber.class, //
                 RubyFile.class, //
-                RubyFixnum.class, //
+                RubyFixnum.IntegerFixnum.class, //
+                RubyFixnum.LongFixnum.class, //
                 RubyFloat.class, //
                 RubyHash.class, //
                 RubyMatchData.class, //
@@ -83,9 +87,13 @@ public class RubyTypes {
     }
 
     @ImplicitCast
-    public int unboxFixnum(RubyFixnum value) {
-        // TODO(CS): this can fail
-        return value.getIntValue();
+    public int unboxIntegerFixnum(RubyFixnum.IntegerFixnum value) {
+        return value.getValue();
+    }
+
+    @ImplicitCast
+    public long unboxLongFixnum(RubyFixnum.LongFixnum value) {
+        return value.getValue();
     }
 
     @ImplicitCast

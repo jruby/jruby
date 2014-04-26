@@ -10,31 +10,43 @@
 package org.jruby.truffle.nodes.objectstorage;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import org.jruby.truffle.runtime.objectstorage.DoubleStorageLocation;
+import org.jruby.truffle.runtime.objectstorage.LongStorageLocation;
 import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
-import org.jruby.truffle.runtime.objectstorage.ObjectStorageLocation;
 
-public class ReadObjectObjectFieldNode extends ReadSpecializedObjectFieldNode {
+public class ReadLongObjectFieldNode extends ReadSpecializedObjectFieldNode {
 
-    private final ObjectStorageLocation storageLocation;
+    private final LongStorageLocation storageLocation;
 
-    public ReadObjectObjectFieldNode(String name, ObjectLayout objectLayout, ObjectStorageLocation storageLocation, RespecializeHook hook) {
+    public ReadLongObjectFieldNode(String name, ObjectLayout objectLayout, LongStorageLocation storageLocation, RespecializeHook hook) {
         super(name, objectLayout, hook);
         this.storageLocation = storageLocation;
     }
 
     @Override
-    public Object execute(ObjectStorage object) {
+    public long executeLong(ObjectStorage object) throws UnexpectedResultException {
         final ObjectLayout receiverLayout = object.getObjectLayout();
 
         final boolean condition = receiverLayout == objectLayout;
 
         if (condition) {
             assert receiverLayout != null;
-            return storageLocation.read(object, condition);
+
+            return storageLocation.readLong(object, condition);
         } else {
             CompilerDirectives.transferToInterpreter();
-            return readAndRespecialize(object, "layout changed");
+            throw new UnexpectedResultException(readAndRespecialize(object, "layout changed"));
+        }
+    }
+
+    @Override
+    public Object execute(ObjectStorage object) {
+        try {
+            return executeDouble(object);
+        } catch (UnexpectedResultException e) {
+            return e.getResult();
         }
     }
 
