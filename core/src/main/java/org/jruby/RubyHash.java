@@ -1123,17 +1123,17 @@ public class RubyHash extends RubyObject implements Map {
                     if(size == 0) {
                         return RubyFixnum.zero(runtime);
                     }
-                    final HashMap<IRubyObject, IRubyObject> map = new HashMap<IRubyObject, IRubyObject>();
+                    final long[] h = new long[]{1};
                     if(recur) {
                         return runtime.newFixnum(RubyNumeric.num2long(invokedynamic(context, runtime.getHash(), HASH)));
                     } else {
                         visitAll(new Visitor() {
                                 public void visit(IRubyObject key, IRubyObject value) {
-                                    map.put(key, value);
+                                    h[0] += invokedynamic(context, key, HASH).convertToInteger().getLongValue() ^ invokedynamic(context, value, HASH).convertToInteger().getLongValue();
                                 }
                             });
                     }
-                    return runtime.newFixnum(map.hashCode());
+                    return runtime.newFixnum(h[0]);
                 }
             }, this);
     }
