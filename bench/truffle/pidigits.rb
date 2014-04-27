@@ -80,7 +80,7 @@ def warmup
 end
 
 def sample
-  pidigits(5000) == 1007389
+  pidigits(100) == 1420881
 end
 
 def name
