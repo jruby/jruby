@@ -4497,7 +4497,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
 
         try {
-            ShellLauncher.POpenProcess process = ShellLauncher.popen3(runtime, args, false);
+            Ruby19POpen r19Popen = new Ruby19POpen(runtime, args);
+            ShellLauncher.POpenProcess process;
+            if (r19Popen.cmdPlusArgs == null) {
+                process = ShellLauncher.popen3(runtime, r19Popen.cmd, r19Popen.env, false);
+            } else {
+                process = ShellLauncher.popen3(runtime, r19Popen.cmdPlusArgs, r19Popen.env, false);
+            }
             RubyIO input = process.getInput() != null ?
                 new RubyIO(runtime, process.getInput()) :
                 new RubyIO(runtime, process.getInputStream());

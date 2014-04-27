@@ -716,6 +716,14 @@ public class ShellLauncher {
         return new POpenProcess(popenShared(runtime, strings, null, addShell));
     }
 
+    public static POpenProcess popen3(Ruby runtime, IRubyObject[] strings, Map env, boolean addShell) throws IOException {
+        return new POpenProcess(popenShared(runtime, strings, env, addShell));
+    }
+
+    public static POpenProcess popen3(Ruby runtime, IRubyObject string, Map env, boolean addShell) throws IOException {
+        return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}, env, addShell));
+    }
+
     private static Process popenShared(Ruby runtime, IRubyObject[] strings) throws IOException {
         return popenShared(runtime, strings, null);
     }
