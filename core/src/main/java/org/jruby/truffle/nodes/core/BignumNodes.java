@@ -76,6 +76,11 @@ public abstract class BignumNodes {
         }
 
         @Specialization
+        public Object add(BigInteger a, long b) {
+            return a.add(BigInteger.valueOf(b));
+        }
+
+        @Specialization
         public double add(BigInteger a, double b) {
             return a.doubleValue() + b;
         }
@@ -104,6 +109,11 @@ public abstract class BignumNodes {
         }
 
         @Specialization
+        public Object sub(BigInteger a, long b) {
+            return a.subtract(BigInteger.valueOf(b));
+        }
+
+        @Specialization
         public double sub(BigInteger a, double b) {
             return a.doubleValue() - b;
         }
@@ -128,6 +138,11 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object mul(BigInteger a, int b) {
+            return a.multiply(BigInteger.valueOf(b));
+        }
+
+        @Specialization
+        public Object mul(BigInteger a, long b) {
             return a.multiply(BigInteger.valueOf(b));
         }
 
@@ -194,6 +209,11 @@ public abstract class BignumNodes {
         }
 
         @Specialization
+        public Object div(BigInteger a, long b) {
+            return a.divide(BigInteger.valueOf(b));
+        }
+
+        @Specialization
         public double div(BigInteger a, double b) {
             return a.doubleValue() / b;
         }
@@ -222,6 +242,11 @@ public abstract class BignumNodes {
         }
 
         @Specialization
+        public Object mod(BigInteger a, long b) {
+            return RubyFixnum.fixnumOrBignum(a.mod(BigInteger.valueOf(b)));
+        }
+
+        @Specialization
         public Object mod(@SuppressWarnings("unused") BigInteger a, @SuppressWarnings("unused") double b) {
             throw new UnsupportedOperationException();
         }
@@ -244,10 +269,14 @@ public abstract class BignumNodes {
             super(prev);
         }
 
-        @SuppressWarnings("unused")
         @Specialization
-        public RubyArray divMod(VirtualFrame frame, BigInteger a, int b) {
-            return RubyBignum.divMod(getContext(), a, BigInteger.valueOf(b));
+        public RubyArray divMod(BigInteger a, int b) {
+            return doDivMod(getContext(), a, BigInteger.valueOf(b));
+        }
+
+        @Specialization
+        public RubyArray divMod(BigInteger a, long b) {
+            return doDivMod(getContext(), a, BigInteger.valueOf(b));
         }
 
         @Specialization
@@ -257,7 +286,14 @@ public abstract class BignumNodes {
 
         @Specialization
         public RubyArray divMod(BigInteger a, BigInteger b) {
-            return RubyBignum.divMod(getContext(), a, b);
+            return doDivMod(getContext(), a, b);
+        }
+
+        @CompilerDirectives.SlowPath
+        public static RubyArray doDivMod(RubyContext context, BigInteger a, BigInteger b) {
+            final BigInteger[] values = org.jruby.RubyBignum.divmod(a, b);
+            final ArrayStore store = new ObjectImmutablePairArrayStore(RubyFixnum.fixnumOrBignum(values[0]), RubyFixnum.fixnumOrBignum(values[1]));
+            return new RubyArray(context.getCoreLibrary().getArrayClass(), store);
         }
 
     }
@@ -275,6 +311,11 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean less(BigInteger a, int b) {
+            return a.compareTo(BigInteger.valueOf(b)) < 0;
+        }
+
+        @Specialization
+        public boolean less(BigInteger a, long b) {
             return a.compareTo(BigInteger.valueOf(b)) < 0;
         }
 
@@ -306,6 +347,11 @@ public abstract class BignumNodes {
         }
 
         @Specialization
+        public boolean lessEqual(BigInteger a, long b) {
+            return a.compareTo(BigInteger.valueOf(b)) <= 0;
+        }
+
+        @Specialization
         public boolean lessEqual(BigInteger a, double b) {
             return a.compareTo(BigInteger.valueOf((long) b)) <= 0;
         }
@@ -329,6 +375,11 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean equal(BigInteger a, int b) {
+            return a.compareTo(BigInteger.valueOf(b)) == 0;
+        }
+
+        @Specialization
+        public boolean equal(BigInteger a, long b) {
             return a.compareTo(BigInteger.valueOf(b)) == 0;
         }
 
@@ -360,6 +411,11 @@ public abstract class BignumNodes {
         }
 
         @Specialization
+        public int compare(BigInteger a, long b) {
+            return a.compareTo(BigInteger.valueOf(b));
+        }
+
+        @Specialization
         public int compare(BigInteger a, double b) {
             return a.compareTo(BigInteger.valueOf((long) b));
         }
@@ -383,6 +439,11 @@ public abstract class BignumNodes {
 
         @Specialization
         public boolean notEqual(BigInteger a, int b) {
+            return a.compareTo(BigInteger.valueOf(b)) != 0;
+        }
+
+        @Specialization
+        public boolean notEqual(BigInteger a, long b) {
             return a.compareTo(BigInteger.valueOf(b)) != 0;
         }
 
@@ -414,6 +475,11 @@ public abstract class BignumNodes {
         }
 
         @Specialization
+        public boolean greaterEqual(BigInteger a, long b) {
+            return a.compareTo(BigInteger.valueOf(b)) >= 0;
+        }
+
+        @Specialization
         public boolean greaterEqual(BigInteger a, double b) {
             return a.compareTo(BigInteger.valueOf((long) b)) >= 0;
         }
@@ -436,17 +502,22 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public boolean equal(BigInteger a, int b) {
+        public boolean greater(BigInteger a, int b) {
             return a.compareTo(BigInteger.valueOf(b)) > 0;
         }
 
         @Specialization
-        public boolean equal(BigInteger a, double b) {
+        public boolean greater(BigInteger a, long b) {
+            return a.compareTo(BigInteger.valueOf(b)) > 0;
+        }
+
+        @Specialization
+        public boolean greater(BigInteger a, double b) {
             return a.compareTo(BigInteger.valueOf((long) b)) > 0;
         }
 
         @Specialization
-        public boolean equal(BigInteger a, BigInteger b) {
+        public boolean greater(BigInteger a, BigInteger b) {
             return a.compareTo(b) > 0;
         }
     }
@@ -464,6 +535,11 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object bitAnd(BigInteger a, int b) {
+            return RubyFixnum.fixnumOrBignum(a.and(BigInteger.valueOf(b)));
+        }
+
+        @Specialization
+        public Object bitAnd(BigInteger a, long b) {
             return RubyFixnum.fixnumOrBignum(a.and(BigInteger.valueOf(b)));
         }
 
@@ -490,6 +566,11 @@ public abstract class BignumNodes {
         }
 
         @Specialization
+        public Object bitOr(BigInteger a, long b) {
+            return RubyFixnum.fixnumOrBignum(a.or(BigInteger.valueOf(b)));
+        }
+
+        @Specialization
         public Object bitOr(BigInteger a, BigInteger b) {
             return RubyFixnum.fixnumOrBignum(a.or(b));
         }
@@ -508,6 +589,11 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object bitXOr(BigInteger a, int b) {
+            return RubyFixnum.fixnumOrBignum(a.xor(BigInteger.valueOf(b)));
+        }
+
+        @Specialization
+        public Object bitXOr(BigInteger a, long b) {
             return RubyFixnum.fixnumOrBignum(a.xor(BigInteger.valueOf(b)));
         }
 

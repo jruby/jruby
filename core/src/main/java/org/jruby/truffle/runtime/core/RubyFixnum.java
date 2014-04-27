@@ -127,9 +127,6 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         throw new UnsupportedOperationException(value.getClass().toString());
     }
 
-    /**
-     * Given a {@link java.math.BigInteger} value, produce either a {@code Fixnum} or {@code Bignum} .
-     */
     public static Object fixnumOrBignum(BigInteger value) {
         assert value != null;
 
@@ -138,7 +135,7 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         if (value.compareTo(MIN_VALUE_BIG) >= 0 && value.compareTo(MAX_VALUE_BIG) <= 0) {
             final long longValue = value.longValue();
 
-            if (longValue >= IntegerFixnum.MIN_VALUE && longValue <= IntegerFixnum.MAX_VALUE) {
+            if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
                 return (int) longValue;
             } else {
                 return value;

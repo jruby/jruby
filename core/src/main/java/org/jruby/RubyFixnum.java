@@ -694,6 +694,35 @@ public class RubyFixnum extends RubyInteger {
         IRubyObject fixMod = RubyFixnum.newFixnum(runtime, mod);
         return RubyArray.newArray(runtime, integerDiv, fixMod);
     }
+
+    public static Object[] divmodFixnum(long x, long y) {
+        if (y == 0) {
+            throw new ArithmeticException("divide by zero");
+        }
+
+        long mod;
+        Object integerDiv;
+        if (y == -1) {
+            if (x == org.jruby.truffle.runtime.core.RubyFixnum.MIN_VALUE) {
+                integerDiv = BigInteger.valueOf(x).negate();
+            } else {
+                integerDiv = -x;
+            }
+            mod = 0;
+        } else {
+            long div = x / y;
+            // Next line avoids using the slow: mod = x % y,
+            // and I believe there is no possibility of integer overflow.
+            mod = x - y * div;
+            if (mod < 0 && y > 0 || mod > 0 && y < 0) {
+                div -= 1; // horrible sudden thought: might this overflow? probably not?
+                mod += y;
+            }
+            integerDiv = div;
+        }
+
+        return new Object[]{integerDiv, mod};
+    }
     	
     /** fix_quo
      * 
