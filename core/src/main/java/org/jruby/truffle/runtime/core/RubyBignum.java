@@ -37,16 +37,6 @@ public class RubyBignum extends RubyObject implements Unboxable {
         return value;
     }
 
-    public static RubyArray divMod(RubyContext context, BigInteger a, BigInteger b) {
-        final BigInteger[] quotientRemainder = a.divideAndRemainder(b);
-
-        final Object quotient = RubyFixnum.fixnumOrBignum(quotientRemainder[0]);
-        final Object remainder = RubyFixnum.fixnumOrBignum(quotientRemainder[1]);
-
-        final ObjectImmutablePairArrayStore store = new ObjectImmutablePairArrayStore(quotient, remainder);
-        return new RubyArray(context.getCoreLibrary().getArrayClass(), store);
-    }
-
     @Override
     public int hashCode() {
         return value.hashCode();
