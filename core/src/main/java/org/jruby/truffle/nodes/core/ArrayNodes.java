@@ -769,8 +769,7 @@ public abstract class ArrayNodes {
 
         @SlowPath
         private String createInspectString(RubyArray array) {
-            final Stri
-            ngBuilder builder = new StringBuilder();
+            final StringBuilder builder = new StringBuilder();
 
             builder.append("[");
 
