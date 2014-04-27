@@ -1,4 +1,3 @@
-require File.expand_path('../../../spec_helper', __FILE__)
 require 'zlib'
 
 describe "Zlib.adler32" do

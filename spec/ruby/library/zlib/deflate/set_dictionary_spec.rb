@@ -1,5 +1,4 @@
 # -*- encoding: US-ASCII -*-
-require File.expand_path('../../../../spec_helper', __FILE__)
 require 'zlib'
 
 describe "Zlib::Deflate#set_dictionary" do

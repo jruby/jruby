@@ -1,6 +1,5 @@
 # -*- encoding: US-ASCII -*-
 require 'zlib'
-require File.expand_path('../../../../spec_helper', __FILE__)
 
 describe "Zlib::Inflate#inflate" do
 
@@ -106,5 +105,48 @@ describe "Zlib::Inflate::inflate" do
     # the first chunk is inflated to its completion,
     # the second chunk is just passed through.
     result.should == "foo" + main_data
+  end
+end
+
+describe "Zlib::Inflate#inflate" do
+
+  before do
+    @zeros    = Zlib::Deflate.deflate("0" * 100_000)
+    @inflator = Zlib::Inflate.new
+    @chunks   = []
+  end
+
+  describe "without break" do
+
+    before do
+      @inflator.inflate(@zeros) do |chunk|
+        @chunks << chunk
+      end
+    end
+
+    it "inflates chunked data" do
+      @chunks.map { |chunk| chunk.size }.should == [16384, 16384, 16384, 16384, 16384, 16384, 1696]
+    end
+
+    it "properly handles chunked data" do
+      @chunks.all? { |chunk| chunk =~ /\A0+\z/ }.should be_true
+    end
+
+  end
+
+  describe "with break" do
+
+    before do
+      @inflator.inflate(@zeros) do |chunk|
+        @chunks << chunk
+        break
+      end
+    end
+
+    it "inflates chunked break" do
+      output = @inflator.inflate nil
+      (100_000 - @chunks.first.length).should == output.length
+    end
+
   end
 end
