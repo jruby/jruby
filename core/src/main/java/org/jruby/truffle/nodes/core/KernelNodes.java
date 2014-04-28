@@ -106,7 +106,7 @@ public abstract class
 
         @Specialization
         public boolean blockGiven() {
-            return new RubyArguments(RubyArguments.getCallerFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()).getBlock() != null;
+            return RubyArguments.getBlock(RubyArguments.getCallerFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
         }
     }
 

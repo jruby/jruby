@@ -44,7 +44,7 @@ public class YieldNode extends RubyNode {
             argumentsObjects[i] = arguments[i].execute(frame);
         }
 
-        final RubyProc block = new RubyArguments(frame.getArguments()).getBlock();
+        final RubyProc block = RubyArguments.getBlock(frame.getArguments());
 
         if (block == null) {
             CompilerDirectives.transferToInterpreter();
@@ -63,9 +63,7 @@ public class YieldNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        final RubyArguments args = new RubyArguments(frame.getArguments());
-
-        if (args.getBlock() == null) {
+        if (RubyArguments.getBlock(frame.getArguments()) == null) {
             return NilPlaceholder.INSTANCE;
         } else {
             return getContext().makeString("yield");

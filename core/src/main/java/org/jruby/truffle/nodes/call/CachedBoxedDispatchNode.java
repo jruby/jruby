@@ -17,8 +17,6 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.lookup.*;
 import org.jruby.truffle.runtime.methods.*;
 
-import java.util.Arrays;
-
 /**
  * A node in the dispatch chain that comes after the boxing point and caches a method on a full
  * boxed Ruby BasicObject, matching it by looking at the lookup node and assuming it has not been
@@ -65,7 +63,7 @@ public class CachedBoxedDispatchNode extends BoxedDispatchNode {
 
         // Call the method
 
-        return callNode.call(frame, RubyArguments.create(frame.materialize(), receiverObject, blockObject, argumentsObjects));
+        return callNode.call(frame, RubyArguments.pack(frame.materialize(), receiverObject, blockObject, argumentsObjects));
     }
 
 }

@@ -53,7 +53,7 @@ public class GeneralBoxedDispatchNode extends BoxedDispatchNode {
 
         try {
             final RubyMethod method = lookup(boxedCallingSelf, receiverObject, name);
-            return callNode.call(frame, method.getCallTarget(), RubyArguments.create(method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
+            return callNode.call(frame, method.getCallTarget(), RubyArguments.pack(method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
         } catch (UseMethodMissingException e) {
             missingProfile.enter();
 
@@ -64,7 +64,7 @@ public class GeneralBoxedDispatchNode extends BoxedDispatchNode {
                 modifiedArgumentsObjects[0] = getContext().newSymbol(name);
                 System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
 
-                return callNode.call(frame, method.getCallTarget(), RubyArguments.create(method.getDeclarationFrame(), receiverObject, blockObject, modifiedArgumentsObjects));
+                return callNode.call(frame, method.getCallTarget(), RubyArguments.pack(method.getDeclarationFrame(), receiverObject, blockObject, modifiedArgumentsObjects));
             } catch (UseMethodMissingException e2) {
                 doubleMissingProfile.enter();
 

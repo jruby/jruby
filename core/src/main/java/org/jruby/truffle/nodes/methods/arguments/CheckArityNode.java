@@ -32,7 +32,7 @@ public class CheckArityNode extends RubyNode {
 
     @Override
     public void executeVoid(VirtualFrame frame) {
-        final int given = new RubyArguments(frame.getArguments()).getUserArgumentsCount();
+        final int given = RubyArguments.getUserArgumentsCount(frame.getArguments());
 
         if (!checkArity(given)) {
             CompilerDirectives.transferToInterpreter();

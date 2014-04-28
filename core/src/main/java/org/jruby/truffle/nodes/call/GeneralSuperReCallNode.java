@@ -47,21 +47,19 @@ public class GeneralSuperReCallNode extends RubyNode {
 
         CompilerAsserts.neverPartOfCompilation();
 
-        final RubyArguments arguments = new RubyArguments(frame.getArguments());
-
         // Lookup method
 
-        final RubyClass selfClass = ((RubyBasicObject) arguments.getSelf()).getRubyClass();
+        final RubyClass selfClass = ((RubyBasicObject) RubyArguments.getSelf(frame.getArguments())).getRubyClass();
         final RubyMethod method = selfClass.getSuperclass().lookupMethod(name);
 
         if (method == null || method.isUndefined()) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name, arguments.getSelf().toString()));
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name, RubyArguments.getSelf(frame.getArguments()).toString()));
         }
 
         // Call the method
 
-        return callNode.call(frame, method.getCallTarget(), RubyArguments.create(arguments.getDeclarationFrame(), arguments.getSelf(), arguments.getBlock(), arguments.getArgumentsClone()));
+        return callNode.call(frame, method.getCallTarget(), frame.getArguments());
     }
 
     @Override
@@ -69,7 +67,7 @@ public class GeneralSuperReCallNode extends RubyNode {
         final RubyContext context = getContext();
 
         try {
-            final RubyBasicObject self = context.getCoreLibrary().box(new RubyArguments(frame.getArguments()).getSelf());
+            final RubyBasicObject self = context.getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
             final RubyBasicObject receiverRubyObject = context.getCoreLibrary().box(self);
 
             final RubyMethod method = receiverRubyObject.getRubyClass().getSuperclass().lookupMethod(name);

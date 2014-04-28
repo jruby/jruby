@@ -167,7 +167,7 @@ public class RubyContext {
         try {
             final RubyParserResult parseResult = translator.parse(context, source, parserContext, parentFrame);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
-            return callTarget.call(RubyArguments.create(parentFrame, self, null));
+            return callTarget.call(RubyArguments.pack(parentFrame, self, null));
         } catch (RaiseException e) {
             throw e;
         } catch (ThrowException e) {

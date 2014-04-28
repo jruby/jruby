@@ -44,12 +44,11 @@ public class RubySymbol extends RubyObject {
 
             @Override
             public Object call(Object... args) {
-                final RubyArguments rubyArgs = new RubyArguments(args);
-                final Object receiver = rubyArgs.getUserArgument(0);
-                final Object[] arguments = rubyArgs.getArgumentsClone();
+                final Object receiver = RubyArguments.getUserArgument(args, 0);
+                final Object[] arguments = RubyArguments.extractUserArguments(args);
                 final Object[] sendArgs = Arrays.copyOfRange(arguments, 1, arguments.length);
                 final RubyBasicObject receiverObject = context.getCoreLibrary().box(receiver);
-                return receiverObject.send(symbol, rubyArgs.getBlock(), sendArgs);
+                return receiverObject.send(symbol, RubyArguments.getBlock(args), sendArgs);
             }
 
         };

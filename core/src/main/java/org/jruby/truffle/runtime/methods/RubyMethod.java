@@ -57,7 +57,7 @@ public class RubyMethod {
         assert RubyContext.shouldObjectBeVisible(self) : self.getClass();
         assert RubyContext.shouldObjectsBeVisible(args);
 
-        final Object result = callTarget.call(RubyArguments.create(declarationFrame, self, block, args));
+        final Object result = callTarget.call(RubyArguments.pack(declarationFrame, self, block, args));
 
         assert RubyContext.shouldObjectBeVisible(result);
 

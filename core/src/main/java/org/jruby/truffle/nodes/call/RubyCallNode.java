@@ -148,7 +148,7 @@ public class RubyCallNode extends RubyNode {
 
         final RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(name);
 
-        final RubyBasicObject self = context.getCoreLibrary().box(new RubyArguments(frame.getArguments()).getSelf());
+        final RubyBasicObject self = context.getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
 
         if (method == null) {
             final RubyMethod respondToMissing = receiverBasicObject.getLookupNode().lookupMethod("respond_to_missing?");
