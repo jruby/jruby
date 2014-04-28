@@ -757,9 +757,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(order = 4)
-        public int bitAnd(long a, int b) {
-            // TODO(CS): is this safe? Why does Java type a & b as long? We should do this because people do big & small to clamp stuff to small
-            return (int) (a & b);
+        public long bitAnd(long a, int b) {
+            return a & b;
         }
 
         @Specialization(order = 5)
