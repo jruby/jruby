@@ -67,7 +67,6 @@ import java.math.BigInteger;
                 RubyFalseClass.class, //
                 RubyObject.class, //
                 RubyBasicObject.class, //
-                Node.class, //
                 Object[].class})
 public class RubyTypes {
 

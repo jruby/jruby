@@ -25,7 +25,7 @@ import org.jruby.truffle.runtime.methods.*;
 @CoreClass(name = "Debug")
 public abstract class TruffleDebugNodes {
 
-    @CoreMethod(names = "tree", isModuleMethod = true, needsSelf = false, appendCallNode = true, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
     public abstract static class TreeNode extends CoreMethodNode {
 
         public TreeNode(RubyContext context, SourceSection sourceSection) {
@@ -37,13 +37,13 @@ public abstract class TruffleDebugNodes {
         }
 
         @Specialization
-        public RubyString tree(Node callNode) {
-            return getContext().makeString(NodeUtil.printCompactTreeToString(callNode.getRootNode()));
+        public RubyString tree() {
+            return getContext().makeString(NodeUtil.printCompactTreeToString(RubyArguments.getCallerFrame().getCallNode().getRootNode()));
         }
 
     }
 
-    @CoreMethod(names = "full_tree", isModuleMethod = true, needsSelf = false, appendCallNode = true, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "full_tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
     public abstract static class FullTreeNode extends CoreMethodNode {
 
         public FullTreeNode(RubyContext context, SourceSection sourceSection) {
@@ -55,13 +55,13 @@ public abstract class TruffleDebugNodes {
         }
 
         @Specialization
-        public RubyString fullTree(Node callNode) {
-            return getContext().makeString(NodeUtil.printTreeToString(callNode.getRootNode()));
+        public RubyString fullTree() {
+            return getContext().makeString(NodeUtil.printTreeToString(RubyArguments.getCallerFrame().getCallNode().getRootNode()));
         }
 
     }
 
-    @CoreMethod(names = "parse_tree", isModuleMethod = true, needsSelf = false, appendCallNode = true, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "parse_tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
     public abstract static class ParseTreeNode extends CoreMethodNode {
 
         public ParseTreeNode(RubyContext context, SourceSection sourceSection) {
@@ -73,8 +73,8 @@ public abstract class TruffleDebugNodes {
         }
 
         @Specialization
-        public RubyString parseTree(Node callNode) {
-            return getContext().makeString(((RubyRootNode) callNode.getRootNode()).getParseTree().toString(true, 0));
+        public RubyString parseTree() {
+            return getContext().makeString(((RubyRootNode) RubyArguments.getCallerFrame().getCallNode().getRootNode()).getParseTree().toString(true, 0));
         }
 
     }

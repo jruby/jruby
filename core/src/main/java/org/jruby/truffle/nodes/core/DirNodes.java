@@ -26,7 +26,7 @@ import org.jruby.truffle.runtime.core.array.*;
 @CoreClass(name = "Dir")
 public abstract class DirNodes {
 
-    @CoreMethod(names = "[]", isModuleMethod = true, needsSelf = false, appendCallNode = true, minArgs = 2, maxArgs = 2)
+    @CoreMethod(names = "[]", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
     public abstract static class GlobNode extends CoreMethodNode {
 
         public GlobNode(RubyContext context, SourceSection sourceSection) {
@@ -38,9 +38,7 @@ public abstract class DirNodes {
         }
 
         @Specialization
-        public RubyArray glob(RubyString glob, Node callNode) {
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "globbing");
-
+        public RubyArray glob(RubyString glob) {
             return glob(getContext(), glob.toString());
         }
 

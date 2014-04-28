@@ -65,16 +65,7 @@ public class CachedBoxedDispatchNode extends BoxedDispatchNode {
 
         // Call the method
 
-        final Object[] modifiedArgumentsObjects;
-
-        if (method.shouldAppendCallNode()) {
-            modifiedArgumentsObjects = Arrays.copyOf(argumentsObjects, argumentsObjects.length + 1);
-            modifiedArgumentsObjects[modifiedArgumentsObjects.length - 1] = this;
-        } else {
-            modifiedArgumentsObjects = argumentsObjects;
-        }
-
-        return callNode.call(frame, RubyArguments.create(frame.materialize(), receiverObject, blockObject, modifiedArgumentsObjects));
+        return callNode.call(frame, RubyArguments.create(frame.materialize(), receiverObject, blockObject, argumentsObjects));
     }
 
 }

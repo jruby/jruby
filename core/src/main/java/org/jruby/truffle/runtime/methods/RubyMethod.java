@@ -32,22 +32,19 @@ public class RubyMethod {
     private final RubyModule declaringModule;
     private final Visibility visibility;
     private final boolean undefined;
-    private final boolean appendCallNode;
 
     private final CallTarget callTarget;
     private final MaterializedFrame declarationFrame;
 
     public RubyMethod(SourceSection sourceSection, UniqueMethodIdentifier uniqueIdentifier, String name,
                       RubyModule declaringModule, Visibility visibility, boolean undefined,
-                      boolean appendCallNode, CallTarget callTarget,
-                      MaterializedFrame declarationFrame) {
+                      CallTarget callTarget, MaterializedFrame declarationFrame) {
         this.sourceSection = sourceSection;
         this.uniqueIdentifier = uniqueIdentifier;
         this.declaringModule = declaringModule;
         this.name = name;
         this.visibility = visibility;
         this.undefined = undefined;
-        this.appendCallNode = appendCallNode;
         this.callTarget = callTarget;
         this.declarationFrame = declarationFrame;
     }
@@ -72,7 +69,7 @@ public class RubyMethod {
             return this;
         }
 
-        return new RubyMethod(sourceSection, uniqueIdentifier, newName, declaringModule, visibility, undefined, appendCallNode, callTarget, declarationFrame);
+        return new RubyMethod(sourceSection, uniqueIdentifier, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
     }
 
     public RubyMethod withNewVisibility(Visibility newVisibility) {
@@ -80,7 +77,7 @@ public class RubyMethod {
             return this;
         }
 
-        return new RubyMethod(sourceSection, uniqueIdentifier, name, declaringModule, newVisibility, undefined, appendCallNode, callTarget, declarationFrame);
+        return new RubyMethod(sourceSection, uniqueIdentifier, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
     }
 
     public RubyMethod withDeclaringModule(RubyModule newDeclaringModule) {
@@ -88,7 +85,7 @@ public class RubyMethod {
             return this;
         }
 
-        return new RubyMethod(sourceSection, uniqueIdentifier, name, newDeclaringModule, visibility, undefined, appendCallNode, callTarget, declarationFrame);
+        return new RubyMethod(sourceSection, uniqueIdentifier, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame);
     }
 
     public RubyMethod withoutBlockDestructureSemantics() {
@@ -99,7 +96,7 @@ public class RubyMethod {
         }
 
         return new RubyMethod(sourceSection, uniqueIdentifier, name, declaringModule, visibility, undefined,
-                appendCallNode, Truffle.getRuntime().createCallTarget(modifiedRootNode), declarationFrame);
+                Truffle.getRuntime().createCallTarget(modifiedRootNode), declarationFrame);
     }
 
     public RubyMethod undefined() {
@@ -107,7 +104,7 @@ public class RubyMethod {
             return this;
         }
 
-        return new RubyMethod(sourceSection, uniqueIdentifier, name, declaringModule, visibility, true, appendCallNode, callTarget, declarationFrame);
+        return new RubyMethod(sourceSection, uniqueIdentifier, name, declaringModule, visibility, true, callTarget, declarationFrame);
     }
 
     public boolean isVisibleTo(RubyBasicObject caller, RubyBasicObject receiver) {
@@ -199,10 +196,6 @@ public class RubyMethod {
 
     public boolean isUndefined() {
         return undefined;
-    }
-
-    public boolean shouldAppendCallNode() {
-        return appendCallNode;
     }
 
     public MaterializedFrame getDeclarationFrame() {

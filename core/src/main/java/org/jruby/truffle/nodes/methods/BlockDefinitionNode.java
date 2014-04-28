@@ -43,7 +43,7 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
 
         final RubyArguments arguments = new RubyArguments(frame.getArguments());
 
-        final RubyMethod method = new RubyMethod(getSourceSection(), uniqueIdentifier, name, null, Visibility.PUBLIC, false, false, callTarget, declarationFrame);
+        final RubyMethod method = new RubyMethod(getSourceSection(), uniqueIdentifier, name, null, Visibility.PUBLIC, false, callTarget, declarationFrame);
 
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, arguments.getSelf(), arguments.getBlock(), method);
     }

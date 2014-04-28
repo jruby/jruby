@@ -97,10 +97,6 @@ public abstract class RubyNode extends Node {
         return RubyTypesGen.RUBYTYPES.expectNilPlaceholder(execute(frame));
     }
 
-    public Node executeNode(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectNode(execute(frame));
-    }
-
     public Object[] executeObjectArray(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectObjectArray(execute(frame));
     }
