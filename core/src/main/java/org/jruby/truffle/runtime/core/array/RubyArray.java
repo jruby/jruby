@@ -265,6 +265,16 @@ public final class RubyArray extends RubyObject {
         return store.deleteAt(normalisedIndex);
     }
 
+    public void setSize(int size, Object defaultValue) {
+        final Object[] objects = new Object[size];
+
+        for (int n = 0; n < objects.length; n++) {
+            objects[n] = defaultValue;
+        }
+
+        store = new ObjectArrayStore(objects);
+    }
+
     public void clear() {
         store = EmptyArrayStore.INSTANCE;
     }

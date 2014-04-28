@@ -380,6 +380,24 @@ public abstract class ArrayNodes {
 
     }
 
+    @CoreMethod(names = "at", minArgs = 1, maxArgs = 1)
+    public abstract static class AtNode extends CoreMethodNode {
+
+        public AtNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AtNode(AtNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object at(RubyArray array, int index) {
+            return array.get(index);
+        }
+
+    }
+
     @CoreMethod(names = "clear", maxArgs = 0)
     public abstract static class ClearNode extends ArrayCoreMethodNode {
 
@@ -682,6 +700,25 @@ public abstract class ArrayNodes {
         @Specialization
         public boolean include(RubyArray array, Object value) {
             return array.contains(value);
+        }
+
+    }
+
+    @CoreMethod(names = "initialize", needsBlock = true, minArgs = 2, maxArgs = 2)
+    public abstract static class InitializeNode extends CoreMethodNode {
+
+        public InitializeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InitializeNode(InitializeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray initialize(RubyArray array, int size, Object defaultValue) {
+            array.setSize(size, defaultValue);
+            return array;
         }
 
     }

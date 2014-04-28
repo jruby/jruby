@@ -1167,4 +1167,27 @@ public abstract class FixnumNodes {
 
     }
 
+    @CoreMethod(names = "zero?", maxArgs = 0)
+    public abstract static class ZeroNode extends CoreMethodNode {
+
+        public ZeroNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ZeroNode(ZeroNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean zero(int n) {
+            return n == 0;
+        }
+
+        @Specialization
+        public boolean zero(long n) {
+            return n == 0;
+        }
+
+    }
+
 }
