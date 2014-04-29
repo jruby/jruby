@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2008 Ola Bini <ola.bini@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,9 +27,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.impl;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -126,10 +128,10 @@ public class Envelope {
      *
      */
     public static Envelope fromASN1(ASN1Encodable content) {
-        ASN1Sequence sequence = (ASN1Sequence)content;
-        ASN1Integer version = (ASN1Integer)sequence.getObjectAt(0);
-        ASN1Set recipients = (ASN1Set)sequence.getObjectAt(1);
-        ASN1Encodable encContent = sequence.getObjectAt(2);        
+        ASN1Sequence sequence = (ASN1Sequence) content;
+        ASN1Integer version = (ASN1Integer) sequence.getObjectAt(0);
+        ASN1Set recipients = (ASN1Set) sequence.getObjectAt(1);
+        ASN1Encodable encContent = sequence.getObjectAt(2);
 
         Envelope envelope = new Envelope();
         envelope.setVersion(version.getValue().intValue());
@@ -141,15 +143,15 @@ public class Envelope {
 
     public ASN1Encodable asASN1() {
         ASN1EncodableVector vector = new ASN1EncodableVector();
-        vector.add(new ASN1Integer(version));
-        vector.add(receipientInfosToASN1Set());
-        vector.add(encData.asASN1());
+        vector.add( new ASN1Integer( BigInteger.valueOf(version) ) );
+        vector.add( receipientInfosToASN1Set() );
+        vector.add( encData.asASN1() );
         return new DLSequence(vector);
     }
 
     private ASN1Set receipientInfosToASN1Set() {
         ASN1EncodableVector vector = new ASN1EncodableVector();
-        for(RecipInfo ri : getRecipientInfo()) {
+        for (RecipInfo ri : getRecipientInfo()) {
             vector.add(ri.asASN1());
         }
         return new DERSet(vector);

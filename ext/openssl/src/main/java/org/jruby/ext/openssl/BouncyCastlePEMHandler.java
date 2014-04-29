@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -30,16 +30,18 @@ package org.jruby.ext.openssl;
 import java.io.Reader;
 import java.io.Writer;
 
-import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PEMReader; // uses Security API directly
 import org.bouncycastle.openssl.PEMWriter;
 import org.bouncycastle.openssl.PasswordFinder;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@Deprecated
 public class BouncyCastlePEMHandler implements PEMHandler {
+
     public Object readPEM(Reader read, String password) throws Exception {
-        return new PEMReader(read,new BasicPasswordFinder(password)).readObject();
+        return new PEMReader(read, new BasicPasswordFinder(password)).readObject();
     }
 
     public void writePEM(Writer writ, Object obj, String algorithm, char[] password) throws Exception {
@@ -55,15 +57,16 @@ public class BouncyCastlePEMHandler implements PEMHandler {
     }
 
     private static class BasicPasswordFinder implements PasswordFinder {
+
         private char[] pwd;
-        BasicPasswordFinder(String pwd) {
-            if(pwd != null) {
-                this.pwd = pwd.toCharArray();
-            }
+
+        BasicPasswordFinder(final String pwd) {
+            if ( pwd != null ) this.pwd = pwd.toCharArray();
         }
 
         public char[] getPassword() {
-            return pwd;
+            return this.pwd;
         }
     }
+
 }// BouncyCastlePEMHandler

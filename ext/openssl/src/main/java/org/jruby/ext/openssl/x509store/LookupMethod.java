@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,6 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.x509store;
 
+import java.math.BigInteger;
+
 /**
  * x509_lookup_method_st and X509_LOOKUP_METHOD in x509_vfy.h
  *
@@ -35,50 +37,51 @@ package org.jruby.ext.openssl.x509store;
 public class LookupMethod {
     public String name;
 
-    public static interface NewItemFunction extends Function1 {}
-    public static interface FreeFunction extends Function1 {}
-    public static interface InitFunction extends Function1 {}
-    public static interface ShutdownFunction extends Function1 {}
-    public static interface ControlFunction extends Function5 {}
-    public static interface BySubjectFunction extends Function4 {}
-    public static interface ByIssuerSerialNumberFunction extends Function5 {}
-    public static interface ByFingerprintFunction extends Function4 {}
-    public static interface ByAliasFunction extends Function4 {}
+    static interface NewItemFunction extends Function1<Lookup> {}
+    static interface FreeFunction extends Function1<Lookup> {}
+    static interface InitFunction extends Function1<Lookup> {}
+    static interface ShutdownFunction extends Function1<Lookup> {}
+    static interface ControlFunction extends Function5<Lookup, Integer, String, Number, String[]> {}
+    static interface BySubjectFunction extends Function4<Lookup, Integer, Name, X509Object[]> {}
+    static interface ByIssuerSerialNumberFunction extends Function5<Lookup, Integer, Name, BigInteger, X509Object[]> {}
+    static interface ByFingerprintFunction extends Function4<Lookup, Integer, String, X509Object[]> {}
+    static interface ByAliasFunction extends Function4<Lookup, Integer, String, X509Object[]> {}
 
     /**
      * c: new_item
      */
-    public NewItemFunction newItem;
+    NewItemFunction newItem;
     /**
      * c: free
      */
-    public FreeFunction free;
+    FreeFunction free;
     /**
      * c: init
      */
-    public InitFunction init;
+    InitFunction init;
     /**
      * c: shutdown
      */
-    public ShutdownFunction shutdown;
+    ShutdownFunction shutdown;
     /**
      * c: ctrl
      */
-    public ControlFunction control;
+    ControlFunction control;
     /**
      * c: get_by_subject
      */
-    public BySubjectFunction getBySubject;
+    BySubjectFunction getBySubject;
     /**
      * c: get_by_issuer_serial
      */
-    public ByIssuerSerialNumberFunction getByIssuerSerialNumber;
+    ByIssuerSerialNumberFunction getByIssuerSerialNumber;
     /**
      * c: get_by_fingerprint
      */
-    public ByFingerprintFunction getByFingerprint;
+    ByFingerprintFunction getByFingerprint;
     /**
      * c: get_by_alias
      */
-    public ByAliasFunction getByAlias;
+    ByAliasFunction getByAlias;
+
 }// X509_LOOKUP_METHOD

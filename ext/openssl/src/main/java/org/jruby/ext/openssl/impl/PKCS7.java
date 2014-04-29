@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2008 Ola Bini <ola.bini@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -29,12 +29,6 @@ package org.jruby.ext.openssl.impl;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.Signature;
-import java.security.cert.X509CRL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -42,13 +36,20 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
+
+import java.security.MessageDigest;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.cert.X509CRL;
+
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.RC2ParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import org.bouncycastle.asn1.ASN1Object;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -65,6 +66,8 @@ import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.pkcs.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+
+import org.jruby.ext.openssl.SecurityHelper;
 import org.jruby.ext.openssl.x509store.Name;
 import org.jruby.ext.openssl.x509store.Store;
 import org.jruby.ext.openssl.x509store.StoreContext;
@@ -80,7 +83,7 @@ import org.jruby.ext.openssl.x509store.X509Utils;
 public class PKCS7 {
     // OpenSSL behavior: PKCS#7 ObjectId for "ITU-T" + "0"
     private static final String EMPTY_PKCS7_OID = "0.0";
-    
+
 	/* content as defined by the type */
 	/* all encryption/message digests are applied to the 'contents',
 	 * leaving out the 'type' field. */
@@ -294,7 +297,7 @@ public class PKCS7 {
             ASN1OctetString os = si.getEncryptedDigest();
             PublicKey pkey = x509.getPublicKey();
 
-            Signature sign = Signature.getInstance(EVP.signatureAlgorithm(mdc_tmp, pkey));
+            Signature sign = SecurityHelper.getSignature(EVP.signatureAlgorithm(mdc_tmp, pkey));
             sign.initVerify(pkey);
             if(currentData.length > 0) {
                 sign.update(currentData);
@@ -375,7 +378,7 @@ public class PKCS7 {
         } else {
             tmpout = out;
         }
-        
+
         byte[] buf = new byte[4096];
         for(;;) {
             try {
@@ -410,6 +413,10 @@ public class PKCS7 {
         }
     }
 
+    private static final BigInteger BI_128 = BigInteger.valueOf(128);
+    private static final BigInteger BI_64 = BigInteger.valueOf(64);
+    private static final BigInteger BI_40 = BigInteger.valueOf(40);
+
     /* c: PKCS7_sign
      *
      */
@@ -418,7 +425,7 @@ public class PKCS7 {
         p7.setType(ASN1Registry.NID_pkcs7_signed);
         p7.contentNew(ASN1Registry.NID_pkcs7_data);
         SignerInfoWithPkey si = p7.addSignature(signcert, pkey, EVP.sha1());
-        if((flags & NOCERTS) == 0) {
+        if ( (flags & NOCERTS) == 0 ) {
             p7.addCertificate(signcert);
             if(certs != null) {
                 for(X509AuxCertificate c : certs) {
@@ -427,20 +434,20 @@ public class PKCS7 {
             }
         }
 
-        if((flags & NOATTR) == 0) {
-            si.addSignedAttribute(ASN1Registry.NID_pkcs9_contentType, ASN1Registry.nid2obj(ASN1Registry.NID_pkcs7_data));
-            if((flags & NOSMIMECAP) == 0) {
+        if ( (flags & NOATTR) == 0 ) {
+            si.addSignedAttribute(ASN1Registry.NID_pkcs9_contentType, ASN1Registry.OID_pkcs7_data);
+            if ( (flags & NOSMIMECAP) == 0 ) {
                 ASN1EncodableVector smcap = new ASN1EncodableVector();
-                smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_des_ede3_cbc)));
-                smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_rc2_cbc), new ASN1Integer(128)));
-                smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_rc2_cbc), new ASN1Integer(64)));
-                smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_rc2_cbc), new ASN1Integer(40)));
-                smcap.add(new AlgorithmIdentifier(ASN1Registry.nid2obj(ASN1Registry.NID_des_cbc)));
+                smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_des_ede3_cbc));
+                smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_rc2_cbc, new ASN1Integer(BI_128)));
+                smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_rc2_cbc, new ASN1Integer(BI_64)));
+                smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_rc2_cbc, new ASN1Integer(BI_40)));
+                smcap.add(new AlgorithmIdentifier(ASN1Registry.OID_des_cbc));
                 si.addSignedAttribute(ASN1Registry.NID_SMIMECapabilities, new DLSequence(smcap));
             }
         }
 
-        if((flags & STREAM) != 0) {
+        if ( (flags & STREAM) != 0 ) {
             return p7;
         }
 
@@ -452,14 +459,14 @@ public class PKCS7 {
             throw new PKCS7Exception(F_PKCS7_SIGN, R_PKCS7_DATAFINAL_ERROR, e);
         }
 
-        if((flags & DETACHED) != 0) {
+        if ( (flags & DETACHED) != 0 ) {
             p7.setDetached(1);
         }
 
         p7.dataFinal(p7bio);
 
         return p7;
-    } 
+    }
 
     /* c: PKCS7_encrypt
      *
@@ -604,7 +611,7 @@ public class PKCS7 {
     public void setContent(PKCS7 p7) throws PKCS7Exception {
         this.data.setContent(p7);
     }
-    
+
     /** c: PKCS7_get_signer_info
      *
      */
@@ -689,7 +696,7 @@ public class PKCS7 {
                 throw new PKCS7Exception(F_PKCS7_DATADECODE, R_UNSUPPORTED_CIPHER_TYPE, e);
             }
             break;
-        case ASN1Registry.NID_pkcs7_enveloped: 
+        case ASN1Registry.NID_pkcs7_enveloped:
             rsk = getEnveloped().getRecipientInfo();
             dataBody = getEnveloped().getEncData().getEncData().getOctets();
             encAlg = getEnveloped().getEncData().getAlgorithm();
@@ -765,7 +772,7 @@ public class PKCS7 {
                 }
             } else {
                 try {
-                    Cipher cipher = Cipher.getInstance(CipherSpec.getWrappingAlgorithm(pkey.getAlgorithm()));
+                    Cipher cipher = SecurityHelper.getCipher(CipherSpec.getWrappingAlgorithm(pkey.getAlgorithm()));
                     cipher.init(Cipher.DECRYPT_MODE, pkey);
                     tmp = cipher.doFinal(ri.getEncKey().getOctets());
                 } catch (Exception e) {
@@ -805,7 +812,7 @@ public class PKCS7 {
             }
             etmp = null;
         }
-        
+
         if(isDetached() || inBio != null) {
             bio = inBio;
         } else {
@@ -883,14 +890,14 @@ public class PKCS7 {
                 algoBase = algoBase.split("/")[0];
             }
             try {
-                KeyGenerator gen = KeyGenerator.getInstance(algoBase);
-                gen.init(evpCipher.getKeyLenInBits(), new SecureRandom());
+                KeyGenerator gen = SecurityHelper.getKeyGenerator(algoBase);
+                gen.init(evpCipher.getKeyLenInBits(), SecurityHelper.getSecureRandom());
                 SecretKey key = gen.generateKey();
                 evpCipher.getCipher().init(Cipher.ENCRYPT_MODE, key);
                 if (null != rsk) {
                     for (RecipInfo ri : rsk) {
                         PublicKey pkey = ri.getCert().getPublicKey();
-                        Cipher cipher = Cipher.getInstance(CipherSpec.getWrappingAlgorithm(pkey.getAlgorithm()));
+                        Cipher cipher = SecurityHelper.getCipher(CipherSpec.getWrappingAlgorithm(pkey.getAlgorithm()));
                         cipher.init(Cipher.ENCRYPT_MODE, pkey);
                         tmp = cipher.doFinal(key.getEncoded());
                         ri.setEncKey(new DEROctetString(tmp));
@@ -953,7 +960,7 @@ public class PKCS7 {
             if(pmd[0] == null) {
                 throw new PKCS7Exception(F_PKCS7_FIND_DIGEST, -1);
             }
-            
+
             if(nid == EVP.type(pmd[0])) {
                 return bio;
             }
@@ -1007,7 +1014,7 @@ public class PKCS7 {
                 } catch(CloneNotSupportedException e) {
                     throw new RuntimeException(e);
                 }
-                
+
                 sk = si.getAuthenticatedAttributes();
 
                 Signature sign = null;
@@ -1025,7 +1032,7 @@ public class PKCS7 {
                         si.addSignedAttribute(ASN1Registry.NID_pkcs9_messageDigest, digest);
 
                         sk = si.getAuthenticatedAttributes();
-                        sign = Signature.getInstance(EVP.signatureAlgorithm(ctx_tmp, si.getPkey()));
+                        sign = SecurityHelper.getSignature(EVP.signatureAlgorithm(ctx_tmp, si.getPkey()));
                         sign.initSign(si.getPkey());
 
                         byte[] abuf = sk.getEncoded();

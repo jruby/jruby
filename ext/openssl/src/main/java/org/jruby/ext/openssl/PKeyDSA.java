@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
  * Copyright (C) 2007 Wiliam N Dortch <bill.dortch@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -44,8 +44,6 @@ import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.DSAPublicKey;
 import java.security.spec.DSAPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -57,9 +55,19 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.impl.CipherSpec;
 import org.jruby.ext.openssl.x509store.PEMInputOutput;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+
+import static org.jruby.ext.openssl.OpenSSLReal.bcExceptionMessage;
+import static org.jruby.ext.openssl.OpenSSLReal.debug;
+import static org.jruby.ext.openssl.OpenSSLReal.debugStackTrace;
+import static org.jruby.ext.openssl.impl.PKey.readDSAPrivateKey;
+import static org.jruby.ext.openssl.impl.PKey.readDSAPublicKey;
+import static org.jruby.ext.openssl.impl.PKey.toDerDSAKey;
+import static org.jruby.ext.openssl.PKey._PKey;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -72,18 +80,21 @@ public class PKeyDSA extends PKey {
             return new PKeyDSA(runtime, klass);
         }
     };
-    
-    public static void createPKeyDSA(Ruby runtime, RubyModule mPKey) {
-        RubyClass cDSA = mPKey.defineClassUnder("DSA",mPKey.getClass("PKey"),PKEYDSA_ALLOCATOR);
-        RubyClass pkeyError = mPKey.getClass("PKeyError");
-        mPKey.defineClassUnder("DSAError",pkeyError,pkeyError.getAllocator());
-        
 
-        cDSA.defineAnnotatedMethods(PKeyDSA.class);
+    public static void createPKeyDSA(final Ruby runtime, final RubyModule _PKey) {
+        RubyClass _DSA = _PKey.defineClassUnder("DSA",_PKey.getClass("PKey"),PKEYDSA_ALLOCATOR);
+        RubyClass _PKeyError = _PKey.getClass("PKeyError");
+        _PKey.defineClassUnder("DSAError", _PKeyError, _PKeyError.getAllocator());
+
+        _DSA.defineAnnotatedMethods(PKeyDSA.class);
+    }
+
+    static RubyClass _DSA(final Ruby runtime) {
+        return _PKey(runtime).getClass("DSA");
     }
 
     public static RaiseException newDSAError(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::PKey::DSAError", message);
+        return Utils.newError(runtime, _PKey(runtime).getClass("DSAError"), message);
     }
 
     public PKeyDSA(Ruby runtime, RubyClass type) {
@@ -102,18 +113,18 @@ public class PKeyDSA extends PKey {
 
     private DSAPrivateKey privKey;
     private DSAPublicKey pubKey;
-    
+
     // specValues holds individual DSAPublicKeySpec components. this allows
     // a public key to be constructed incrementally, as required by the
     // current implementation of Net::SSH.
     // (see net-ssh-1.1.2/lib/net/ssh/transport/ossl/buffer.rb #read_keyblob)
     private BigInteger[] specValues;
-    
+
     private static final int SPEC_Y = 0;
     private static final int SPEC_P = 1;
     private static final int SPEC_Q = 2;
     private static final int SPEC_G = 3;
-    
+
     @Override
     PublicKey getPublicKey() {
         return pubKey;
@@ -130,9 +141,9 @@ public class PKeyDSA extends PKey {
     }
 
     @JRubyMethod(name = "generate", meta = true)
-    public static IRubyObject generate(IRubyObject recv, IRubyObject arg) {
-        int keysize = RubyNumeric.fix2int(arg);
-        PKeyDSA dsa = new PKeyDSA(recv.getRuntime(), (RubyClass) recv);
+    public static IRubyObject generate(IRubyObject self, IRubyObject arg) {
+        final int keysize = RubyNumeric.fix2int(arg);
+        PKeyDSA dsa = new PKeyDSA(self.getRuntime(), (RubyClass) self);
         dsaGenerate(dsa, keysize);
         return dsa;
     }
@@ -142,133 +153,121 @@ public class PKeyDSA extends PKey {
      */
     private static void dsaGenerate(PKeyDSA dsa, int keysize) throws RaiseException {
         try {
-            KeyPairGenerator gen = KeyPairGenerator.getInstance("DSA");
+            KeyPairGenerator gen = SecurityHelper.getKeyPairGenerator("DSA");
             gen.initialize(keysize, new SecureRandom());
             KeyPair pair = gen.generateKeyPair();
-            dsa.privKey = (DSAPrivateKey) (pair.getPrivate());
-            dsa.pubKey = (DSAPublicKey) (pair.getPublic());
-        } catch (Exception e) {
+            dsa.privKey = (DSAPrivateKey) pair.getPrivate();
+            dsa.pubKey = (DSAPublicKey) pair.getPublic();
+        }
+        catch (NoSuchAlgorithmException e) {
+            throw newDSAError(dsa.getRuntime(), e.getMessage());
+        }
+        catch (RuntimeException e) {
             throw newDSAError(dsa.getRuntime(), e.getMessage());
         }
     }
 
     @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(IRubyObject[] args) {
-        IRubyObject arg;
-        IRubyObject pass = null;
-        char[] passwd = null;
-        if (org.jruby.runtime.Arity.checkArgumentCount(getRuntime(), args, 0, 2) == 0) {
-            privKey = null;
-            pubKey = null;
-        } else {
-            arg = args[0];
-            if (args.length > 1) {
-                pass = args[1];
-            }
-            if (arg instanceof RubyFixnum) {
-                int keysize = RubyNumeric.fix2int(arg);
-                dsaGenerate(this, keysize);
-            } else {
-                if (pass != null && !pass.isNil()) {
-                    passwd = pass.toString().toCharArray();
-                }
-                arg = OpenSSLImpl.to_der_if_possible(arg);
-                RubyString str = arg.convertToString();
+    public IRubyObject initialize(final ThreadContext context, final IRubyObject[] args) {
+        final Ruby runtime = context.runtime;
 
-                Object val = null;
-                KeyFactory fact = null;
-                try {
-                    fact = KeyFactory.getInstance("DSA");
-                } catch (NoSuchAlgorithmException e) {
-                    throw getRuntime().newLoadError("unsupported key algorithm (DSA)");
-                }
-                // TODO: ugly NoClassDefFoundError catching for no BC env. How can we remove this?
-                if (null == val) {
-                    // PEM_read_bio_DSAPrivateKey
-                    try {
-                        val = PEMInputOutput.readDSAPrivateKey(new StringReader(str.toString()), passwd);
-                    } catch (NoClassDefFoundError e) {
-                        val = null;
-                    } catch (Exception e) {
-                        val = null;
-                    }
-                }
-                if (null == val) {
-                    // PEM_read_bio_DSAPublicKey
-                    try {
-                        val = PEMInputOutput.readDSAPublicKey(new StringReader(str.toString()), passwd);
-                    } catch (NoClassDefFoundError e) {
-                        val = null;
-                    } catch (Exception e) {
-                        val = null;
-                    }
-                }
-                if (null == val) {
-                    // PEM_read_bio_DSA_PUBKEY
-                    try {
-                        val = PEMInputOutput.readDSAPubKey(new StringReader(str.toString()));
-                    } catch (NoClassDefFoundError e) {
-                        val = null;
-                    } catch (Exception e) {
-                        val = null;
-                    }
-                }
-                if (null == val) {
-                    // d2i_DSAPrivateKey_bio
-                    try {
-                        val = org.jruby.ext.openssl.impl.PKey.readDSAPrivateKey(str.getBytes());
-                    } catch (NoClassDefFoundError e) {
-                        val = null;
-                    } catch (Exception e) {
-                        val = null;
-                    }
-                }
-                if (null == val) {
-                    // d2i_DSA_PUBKEY_bio
-                    try {
-                        val = org.jruby.ext.openssl.impl.PKey.readDSAPublicKey(str.getBytes());
-                    } catch (NoClassDefFoundError e) {
-                        val = null;
-                    } catch (Exception e) {
-                        val = null;
-                    }
-                }
-                if (null == val) {
-                    try {
-                        val = fact.generatePrivate(new PKCS8EncodedKeySpec(str.getBytes()));
-                    } catch (Exception e) {
-                        val = null;
-                    }
-                }
-                if (null == val) {
-                    try {
-                        val = fact.generatePublic(new X509EncodedKeySpec(str.getBytes()));
-                    } catch (Exception e) {
-                        val = null;
-                    }
-                }
-                if (null == val) {
-                    throw newDSAError(getRuntime(), "Neither PUB key nor PRIV key:");
-                }
+        if ( Arity.checkArgumentCount(runtime, args, 0, 2) == 0 ) {
+            this.privKey = null; this.pubKey = null; return this;
+        }
 
-                if (val instanceof KeyPair) {
-                    PrivateKey privateKey = ((KeyPair) val).getPrivate();
-                    PublicKey publicKey = ((KeyPair) val).getPublic();
-                    if (privateKey instanceof DSAPrivateKey) {
-                        privKey = (DSAPrivateKey) privateKey;
-                        pubKey = (DSAPublicKey) publicKey;
-                    } else {
-                        throw newDSAError(getRuntime(), "Neither PUB key nor PRIV key:");
-                    }
-                } else if (val instanceof DSAPrivateKey) {
-                    privKey = (DSAPrivateKey) val;
-                } else if (val instanceof DSAPublicKey) {
-                    pubKey = (DSAPublicKey) val;
-                    privKey = null;
-                } else {
-                    throw newDSAError(getRuntime(), "Neither PUB key nor PRIV key:");
-                }
+        IRubyObject arg = args[0]; IRubyObject pass = null;
+        if ( args.length > 1 ) pass = args[1];
+
+        if ( arg instanceof RubyFixnum ) {
+            int keysize = RubyNumeric.fix2int((RubyFixnum) arg);
+            dsaGenerate(this, keysize); return this;
+        }
+
+        final char[] passwd = password(pass);
+        final RubyString str = readInitArg(context, arg);
+
+        Object key = null;
+        final KeyFactory dsaFactory;
+        try {
+            dsaFactory = SecurityHelper.getKeyFactory("DSA");
+        } catch (NoSuchAlgorithmException e) {
+            throw runtime.newRuntimeError("unsupported key algorithm (DSA)");
+        } catch (RuntimeException e) {
+            throw runtime.newRuntimeError("unsupported key algorithm (DSA) " + e);
+        }
+        // TODO: ugly NoClassDefFoundError catching for no BC env. How can we remove this?
+        boolean noClassDef = false;
+        if ( key == null && ! noClassDef ) { // PEM_read_bio_DSAPrivateKey
+            try {
+                key = PEMInputOutput.readDSAPrivateKey(new StringReader(str.toString()), passwd);
             }
+            catch (NoClassDefFoundError e) { noClassDef = true; debugStackTrace(runtime, e); }
+            catch (Exception e) { debugStackTrace(runtime, e); }
+        }
+        if ( key == null && ! noClassDef ) { // PEM_read_bio_DSAPublicKey
+            try {
+                key = PEMInputOutput.readDSAPublicKey(new StringReader(str.toString()), passwd);
+            }
+            catch (NoClassDefFoundError e) { noClassDef = true; debugStackTrace(runtime, e); }
+            catch (Exception e) { debugStackTrace(runtime, e); }
+        }
+        if ( key == null && ! noClassDef ) { // PEM_read_bio_DSA_PUBKEY
+            try {
+                key = PEMInputOutput.readDSAPubKey(new StringReader(str.toString()));
+            }
+            catch (NoClassDefFoundError e) { noClassDef = true; debugStackTrace(runtime, e); }
+            catch (Exception e) { debugStackTrace(runtime, e); }
+        }
+        if ( key == null && ! noClassDef ) { // d2i_DSAPrivateKey_bio
+            try {
+                key = readDSAPrivateKey(dsaFactory, str.getBytes());
+            }
+            catch (NoClassDefFoundError e) { noClassDef = true; debugStackTrace(runtime, e); }
+            catch (InvalidKeySpecException e) { debug(runtime, "PKeyDSA could not read private key", e); }
+            catch (IOException e) { debug(runtime, "PKeyDSA could not read private key", e); }
+            catch (RuntimeException e) {
+                if ( isKeyGenerationFailure(e) ) debug(runtime, "PKeyDSA could not read private key", e);
+                else debugStackTrace(runtime, e);
+            }
+        }
+        if ( key == null && ! noClassDef ) { // d2i_DSA_PUBKEY_bio
+            try {
+                key = readDSAPublicKey(dsaFactory, str.getBytes());
+            }
+            catch (NoClassDefFoundError e) { noClassDef = true; debugStackTrace(runtime, e); }
+            catch (InvalidKeySpecException e) { debug(runtime, "PKeyDSA could not read public key", e); }
+            catch (IOException e) { debug(runtime, "PKeyDSA could not read public key", e); }
+            catch (RuntimeException e) {
+                if ( isKeyGenerationFailure(e) ) debug(runtime, "PKeyDSA could not read public key", e);
+                else debugStackTrace(runtime, e);
+            }
+        }
+
+        if ( key == null ) key = tryPKCS8EncodedKey(runtime, dsaFactory, str.getBytes());
+        if ( key == null ) key = tryX509EncodedKey(runtime, dsaFactory, str.getBytes());
+
+        if ( key == null ) throw newDSAError(runtime, "Neither PUB key nor PRIV key:");
+
+        if ( key instanceof KeyPair ) {
+            PublicKey publicKey = ((KeyPair) key).getPublic();
+            PrivateKey privateKey = ((KeyPair) key).getPrivate();
+            if ( ! ( privateKey instanceof DSAPrivateKey ) ) {
+                if ( privateKey == null ) {
+                    throw newDSAError(runtime, "Neither PUB key nor PRIV key: (private key is null)");
+                }
+                throw newDSAError(runtime, "Neither PUB key nor PRIV key: (invalid key type " + privateKey.getClass().getName() + ")");
+            }
+            this.privKey = (DSAPrivateKey) privateKey;
+            this.pubKey = (DSAPublicKey) publicKey;
+        }
+        else if ( key instanceof DSAPrivateKey ) {
+            this.privKey = (DSAPrivateKey) key;
+        }
+        else if ( key instanceof DSAPublicKey ) {
+            this.pubKey = (DSAPublicKey) key; this.privKey = null;
+        }
+        else {
+            throw newDSAError(runtime, "Neither PUB key nor PRIV key: "  + key.getClass().getName());
         }
         return this;
     }
@@ -283,16 +282,20 @@ public class PKeyDSA extends PKey {
         return privKey != null ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
+    @Override
     @JRubyMethod
     public IRubyObject to_der() {
+        final byte[] bytes;
         try {
-            byte[] bytes = org.jruby.ext.openssl.impl.PKey.toDerDSAKey(pubKey, privKey);
-            return RubyString.newString(getRuntime(), bytes);
-        } catch (NoClassDefFoundError ncdfe) {
-            throw newDSAError(getRuntime(), OpenSSLReal.bcExceptionMessage(ncdfe));
-        } catch (IOException ioe) {
-            throw newDSAError(getRuntime(), ioe.getMessage());
+            bytes = toDerDSAKey(pubKey, privKey);
         }
+        catch (NoClassDefFoundError e) {
+            throw newDSAError(getRuntime(), bcExceptionMessage(e));
+        }
+        catch (IOException e) {
+            throw newDSAError(getRuntime(), e.getMessage());
+        }
+        return RubyString.newString(getRuntime(), bytes);
     }
 
     @JRubyMethod
@@ -325,27 +328,26 @@ public class PKeyDSA extends PKey {
 
     @JRubyMethod(name = { "export", "to_pem", "to_s" }, rest = true)
     public IRubyObject export(IRubyObject[] args) {
-        StringWriter w = new StringWriter();
-        org.jruby.runtime.Arity.checkArgumentCount(getRuntime(), args, 0, 2);
-        CipherSpec ciph = null;
+        Arity.checkArgumentCount(getRuntime(), args, 0, 2);
+        CipherSpec spec = null;
         char[] passwd = null;
         if (args.length > 0 && !args[0].isNil()) {
             org.jruby.ext.openssl.Cipher c = (org.jruby.ext.openssl.Cipher) args[0];
-            ciph = new CipherSpec(c.getCipher(), c.getName(), c.getKeyLen() * 8);
+            spec = new CipherSpec(c.getCipher(), c.getName(), c.getKeyLen() * 8);
             if (args.length > 1 && !args[1].isNil()) {
                 passwd = args[1].toString().toCharArray();
             }
         }
         try {
+            final StringWriter writer = new StringWriter();
             if (privKey != null) {
-                PEMInputOutput.writeDSAPrivateKey(w, privKey, ciph, passwd);
+                PEMInputOutput.writeDSAPrivateKey(writer, privKey, spec, passwd);
             } else {
-                PEMInputOutput.writeDSAPublicKey(w, pubKey);
+                PEMInputOutput.writeDSAPublicKey(writer, pubKey);
             }
-            w.close();
-            return getRuntime().newString(w.toString());
+            return getRuntime().newString(writer.toString());
         } catch (NoClassDefFoundError ncdfe) {
-            throw newDSAError(getRuntime(), OpenSSLReal.bcExceptionMessage(ncdfe));
+            throw newDSAError(getRuntime(), bcExceptionMessage(ncdfe));
         } catch (IOException ioe) {
             throw newDSAError(getRuntime(), ioe.getMessage());
         }
@@ -362,7 +364,7 @@ public class PKeyDSA extends PKey {
         // TODO
         return getRuntime().getNil();
     }
-    
+
     @JRubyMethod(name="p")
     public synchronized IRubyObject get_p() {
         // FIXME: return only for public?
@@ -379,7 +381,7 @@ public class PKeyDSA extends PKey {
         }
         return getRuntime().getNil();
     }
-    
+
     @JRubyMethod(name="p=")
     public synchronized IRubyObject set_p(IRubyObject p) {
         return setKeySpecComponent(SPEC_P, p);
@@ -423,7 +425,7 @@ public class PKeyDSA extends PKey {
         }
         return getRuntime().getNil();
     }
-    
+
     @JRubyMethod(name="g=")
     public synchronized IRubyObject set_g(IRubyObject g) {
         return setKeySpecComponent(SPEC_G, g);
@@ -452,7 +454,7 @@ public class PKeyDSA extends PKey {
         }
         return getRuntime().getNil();
     }
-    
+
     @JRubyMethod(name="pub_key=")
     public synchronized IRubyObject set_pub_key(IRubyObject pub_key) {
         return setKeySpecComponent(SPEC_Y, pub_key);
@@ -468,7 +470,7 @@ public class PKeyDSA extends PKey {
         }
         // get the BigInteger value
         BigInteger bival = BN.getBigInteger(value);
-        
+
         if (vals != null) {
             // we already have some vals stored, store this one, too
             vals[index] = bival;
@@ -482,7 +484,7 @@ public class PKeyDSA extends PKey {
             // we now have all components. create the key.
             DSAPublicKeySpec spec = new DSAPublicKeySpec(vals[SPEC_Y], vals[SPEC_P], vals[SPEC_Q], vals[SPEC_G]);
             try {
-                this.pubKey = (DSAPublicKey)KeyFactory.getInstance("DSA").generatePublic(spec);
+                this.pubKey = (DSAPublicKey) SecurityHelper.getKeyFactory("DSA").generatePublic(spec);
             } catch (InvalidKeySpecException e) {
                 throw newDSAError(getRuntime(), "invalid keyspec");
             } catch (NoSuchAlgorithmException e) {

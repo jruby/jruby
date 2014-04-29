@@ -30,8 +30,8 @@
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
-      <artifactId>jruby</artifactId>
-      <version>1.7.11</version>
+      <artifactId>jruby-core</artifactId>
+      <version>1.6.8</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
@@ -119,6 +119,17 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <target>1.6</target>
+          <source>1.6</source>
+          <debug>true</debug>
+          <verbose>false</verbose>
+          <showWarnings>true</showWarnings>
+          <showDeprecation>true</showDeprecation>
+        </configuration>
       </plugin>
     </plugins>
   </build>

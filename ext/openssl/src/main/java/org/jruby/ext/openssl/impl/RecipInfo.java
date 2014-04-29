@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2008 Ola Bini <ola.bini@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,12 +27,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.impl;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.math.BigInteger;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -40,6 +38,7 @@ import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.pkcs.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x500.X500Name;
+
 import org.jruby.ext.openssl.x509store.Name;
 import org.jruby.ext.openssl.x509store.X509AuxCertificate;
 
@@ -86,7 +85,7 @@ public class RecipInfo {
         boolean ret = this == other;
         if(!ret && (other instanceof RecipInfo)) {
             RecipInfo o = (RecipInfo)other;
-            ret = 
+            ret =
                 this.version == o.version &&
                 (this.issuerAndSerial == null ? o.issuerAndSerial == null : (this.issuerAndSerial.equals(o.issuerAndSerial))) &&
                 (this.keyEncAlgor == null ? o.keyEncAlgor == null : (this.keyEncAlgor.equals(o.keyEncAlgor))) &&
@@ -203,11 +202,11 @@ public class RecipInfo {
     /* c: static pkcs7_cmp_ri
      *
      */
-    public boolean compare(X509AuxCertificate pcert) {
-        if(!new Name(issuerAndSerial.getName()).isEqual(pcert.getIssuerX500Principal())) {
+    public boolean compare(final X509AuxCertificate pcert) {
+        if ( ! new Name( issuerAndSerial.getName() ).isEqual( pcert.getIssuerX500Principal() ) ) {
             return false;
         }
-        return pcert.getSerialNumber().compareTo(issuerAndSerial.getCertificateSerialNumber().getValue()) == 0;
+        return pcert.getSerialNumber().compareTo( issuerAndSerial.getCertificateSerialNumber().getValue() ) == 0;
     }
 
     /**
@@ -216,25 +215,25 @@ public class RecipInfo {
      *   issuerAndSerialNumber IssuerAndSerialNumber,
      *   keyEncryptionAlgorithm KeyEncryptionAlgorithmIdentifier,
      *   encryptedKey EncryptedKey }
-     * 
+     *
      * EncryptedKey ::= OCTET STRING
      */
     public static RecipInfo fromASN1(ASN1Encodable content) {
         ASN1Sequence sequence = (ASN1Sequence)content;
         RecipInfo ri = new RecipInfo();
-        ri.setVersion(((ASN1Integer)sequence.getObjectAt(0)).getValue().intValue());
-        ri.setIssuerAndSerial(IssuerAndSerialNumber.getInstance(sequence.getObjectAt(1)));
-        ri.setKeyEncAlgor(AlgorithmIdentifier.getInstance(sequence.getObjectAt(2)));
-        ri.setEncKey((ASN1OctetString)sequence.getObjectAt(3));
+        ri.setVersion( ( (ASN1Integer) sequence.getObjectAt(0) ).getValue().intValue() );
+        ri.setIssuerAndSerial( IssuerAndSerialNumber.getInstance( sequence.getObjectAt(1) ) );
+        ri.setKeyEncAlgor( AlgorithmIdentifier.getInstance( sequence.getObjectAt(2) ) );
+        ri.setEncKey( (ASN1OctetString) sequence.getObjectAt(3) );
         return ri;
     }
 
     public ASN1Encodable asASN1() {
         ASN1EncodableVector vector = new ASN1EncodableVector();
-        vector.add(new ASN1Integer(getVersion()));
-        vector.add(issuerAndSerial.toASN1Primitive()); 
-        vector.add(keyEncAlgor.toASN1Primitive());
-        vector.add(encKey.toASN1Primitive());
+        vector.add( new ASN1Integer( BigInteger.valueOf(getVersion()) ) );
+        vector.add( issuerAndSerial.toASN1Primitive() );
+        vector.add( keyEncAlgor.toASN1Primitive() );
+        vector.add( encKey.toASN1Primitive() );
         return new DLSequence(vector);
     }
 }// RecipInfo
