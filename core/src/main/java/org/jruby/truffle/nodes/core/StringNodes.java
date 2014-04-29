@@ -19,7 +19,9 @@ import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.array.ArrayUtilities;
 import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.range.FixnumRange;
 
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -181,8 +183,9 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "[]", minArgs = 1, maxArgs = 2, isSplatted = true)
+    @CoreMethod(names = "[]", minArgs = 1, maxArgs = 2)
     public abstract static class GetIndexNode extends CoreMethodNode {
+
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -192,9 +195,46 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @Specialization
-        public Object getIndex(RubyString string, Object[] args) {
-            return RubyString.getIndex(getContext(), string.toString(), args);
+        @CompilerDirectives.SlowPath
+        @Specialization(order = 1)
+        public Object getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
+            final String javaString = string.toString();
+            final int normalisedIndex = ArrayUtilities.normaliseIndex(javaString.length(), index);
+            return getContext().makeString(javaString.charAt(normalisedIndex));
+        }
+
+        @CompilerDirectives.SlowPath
+        @Specialization(order = 2)
+        public Object getIndex(RubyString string, FixnumRange range, UndefinedPlaceholder undefined) {
+            final String javaString = string.toString();
+
+            final int stringLength = javaString.length();
+
+            if (range.doesExcludeEnd()) {
+                final int begin = ArrayUtilities.normaliseIndex(stringLength, range.getBegin());
+                final int exclusiveEnd = ArrayUtilities.normaliseExclusiveIndex(stringLength, range.getExclusiveEnd());
+                return getContext().makeString(javaString.substring(begin, exclusiveEnd));
+            } else {
+                final int begin = ArrayUtilities.normaliseIndex(stringLength, range.getBegin());
+                final int inclusiveEnd = ArrayUtilities.normaliseIndex(stringLength, range.getInclusiveEnd());
+                return getContext().makeString(javaString.substring(begin, inclusiveEnd + 1));
+            }
+        }
+
+        @CompilerDirectives.SlowPath
+        @Specialization(order = 3)
+        public Object getIndex(RubyString string, int start, int length) {
+            final String javaString = string.toString();
+
+            if (length > javaString.length() - start) {
+                length = javaString.length() - start;
+            }
+
+            if (start > javaString.length()) {
+                return NilPlaceholder.INSTANCE;
+            }
+
+            return getContext().makeString(javaString.substring(start, start + length));
         }
     }
 

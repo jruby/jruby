@@ -157,6 +157,8 @@ public class CachedReadConstantNode extends ReadConstantNode {
             receiverRubyObject = context.getCoreLibrary().box(receiverObject);
         }
 
+        // TODO(CS): should this be looking at lookup, rather than class?
+
         if (receiverRubyObject.getRubyClass() != expectedClass) {
             CompilerDirectives.transferToInterpreter();
             throw new UnexpectedResultException(uninitialize(receiverRubyObject));
