@@ -41,7 +41,7 @@ import org.jruby.truffle.runtime.methods.*;
  * methods involved.
  * <p>
  * If we have too many dispatch nodes we replace the whole chain with {@link DispatchHeadNode} -&gt;
- * {@link BoxingDispatchNode} -&gt; {@link GeneralBoxedDispatchNode}.
+ * {@link BoxingDispatchNode} -&gt; {@link GeneralDispatchNode}.
  * <p>
  * This system allows us to dispatch based purely on Java class, before we have to turn the object
  * into a full {@link RubyBasicObject} and consider the full Ruby lookup process, and something such
