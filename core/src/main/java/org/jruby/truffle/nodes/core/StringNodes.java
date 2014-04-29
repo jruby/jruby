@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.joni.Option;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
@@ -163,13 +164,18 @@ public abstract class StringNodes {
             super(prev);
         }
 
+        private final BranchProfile singleArrayProfile = new BranchProfile();
+        private final BranchProfile multipleArgumentsProfile = new BranchProfile();
+
         @Specialization
         public RubyString format(RubyString format, Object[] args) {
             final RubyContext context = getContext();
 
             if (args.length == 1 && args[0] instanceof RubyArray) {
+                singleArrayProfile.enter();
                 return context.makeString(StringFormatter.format(format.toString(), ((RubyArray) args[0]).asList()));
             } else {
+                multipleArgumentsProfile.enter();
                 return context.makeString(StringFormatter.format(format.toString(), Arrays.asList(args)));
             }
         }

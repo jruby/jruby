@@ -12,10 +12,12 @@ package org.jruby.truffle.runtime.core;
 import java.io.*;
 import java.util.*;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.runtime.core.array.*;
 
 public class StringFormatter {
 
+    @CompilerDirectives.SlowPath
     public static String format(String format, List<Object> values) {
         final ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
         final PrintStream printStream = new PrintStream(byteArray);
@@ -25,6 +27,7 @@ public class StringFormatter {
         return byteArray.toString();
     }
 
+    @CompilerDirectives.SlowPath
     public static void format(PrintStream stream, String format, List<Object> values) {
         /*
          * See http://www.ruby-doc.org/core-1.9.3/Kernel.html#method-i-sprintf.
@@ -107,6 +110,12 @@ public class StringFormatter {
                 }
 
                 switch (type) {
+                    case 's': {
+                        formatBuilder.append("s");
+                        stream.printf(formatBuilder.toString(), values.get(v));
+                        break;
+                    }
+
                     case 'd': {
                         formatBuilder.append("d");
                         final long value = RubyFixnum.toLong(values.get(v));
@@ -130,27 +139,6 @@ public class StringFormatter {
                 v++;
             } else {
                 stream.print(c);
-            }
-        }
-    }
-
-    public static void formatPuts(PrintStream stream, List<Object> args) {
-        if (args.size() > 0) {
-            formatPutsInner(stream, args);
-        } else {
-            stream.println();
-        }
-    }
-
-    public static void formatPutsInner(PrintStream stream, List<Object> args) {
-        if (args.size() > 0) {
-            for (Object arg : args) {
-                if (arg instanceof RubyArray) {
-                    final RubyArray array = (RubyArray) arg;
-                    formatPutsInner(stream, array.asList());
-                } else {
-                    stream.println(arg);
-                }
             }
         }
     }
