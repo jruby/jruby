@@ -247,12 +247,15 @@ public class RubyModule extends RubyObject implements LookupNode {
 
     public void changeConstantVisibility(RubySymbol constant, boolean isPrivate) {
         RubyConstant rubyConstant = lookupConstant(constant.toString());
+        checkFrozen();
 
         if (rubyConstant != null) {
             rubyConstant.isPrivate = isPrivate;
         } else {
-            // raises an exception
+            throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(constant.toString()));
         }
+
+        newVersion();
     }
 
     @Override
