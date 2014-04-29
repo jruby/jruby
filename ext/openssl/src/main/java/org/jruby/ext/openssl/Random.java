@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,14 +27,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import java.security.SecureRandom;
-
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -42,62 +41,92 @@ import org.jruby.util.ByteList;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class Random {
-    private final static class RandomHolder {
-        public java.util.Random[] randomizers;
-    }
-    public static void createRandom(Ruby runtime, RubyModule ossl) {
-        RubyModule rand = ossl.defineModuleUnder("Random");
 
-        RubyClass osslError = (RubyClass)ossl.getConstant("OpenSSLError");
-        rand.defineClassUnder("RandomError",osslError,osslError.getAllocator());
+    static class RandomHolder {
 
-        rand.defineAnnotatedMethods(Random.class);
+        final java.util.Random plainRandom;
+        final java.security.SecureRandom secureRandom;
 
-        RandomHolder holder = new RandomHolder();
-        holder.randomizers = new java.util.Random[]{new java.util.Random(), new SecureRandom()};
-        rand.dataWrapStruct(holder);
-    }
-
-    @JRubyMethod(meta=true)
-    public static IRubyObject seed(IRubyObject recv, IRubyObject arg) {
-        return recv.getRuntime().getNil();
-    }
-    @JRubyMethod(meta=true)
-    public static IRubyObject load_random_file(IRubyObject recv, IRubyObject arg) {
-        return recv.getRuntime().getNil();
-    }
-    @JRubyMethod(meta=true)
-    public static IRubyObject write_random_file(IRubyObject recv, IRubyObject arg) {
-        return recv.getRuntime().getNil();
-    }
-
-    @JRubyMethod(meta=true)
-    public static IRubyObject random_bytes(IRubyObject recv, IRubyObject arg) {
-        return generate(recv, arg, 1);
-    }
-
-    @JRubyMethod(meta=true)
-    public static IRubyObject pseudo_bytes(IRubyObject recv, IRubyObject arg) {
-        return generate(recv, arg, 0);
-    }
-
-    private static RubyString generate(IRubyObject recv, IRubyObject arg, int ix) {
-        RandomHolder holder = (RandomHolder)recv.dataGetStruct();
-        int len = RubyNumeric.fix2int(arg);
-        if (len < 0 || len > Integer.MAX_VALUE) {
-            throw recv.getRuntime().newArgumentError("negative string size (or size too big)");
+        RandomHolder(java.util.Random plainRandom, java.security.SecureRandom secureRandom) {
+            this.plainRandom = plainRandom; this.secureRandom = secureRandom;
+            //this.randomizers = new java.util.Random[] { plainRandom, secureRandom };
         }
-        byte[] buf = new byte[len];
-        holder.randomizers[ix].nextBytes(buf);
-        return RubyString.newString(recv.getRuntime(), new ByteList(buf,false));
+
+        //RandomHolder(java.util.Random... randomizers) {
+        //    this.randomizers = randomizers;
+        //}
+
+        //public final java.util.Random[] randomizers;
+
+        //java.util.Random get(final int index) {
+        //    return randomizers[ index % randomizers.length ];
+        //}
+
     }
 
-    @JRubyMethod(meta=true)
-    public static IRubyObject egd(IRubyObject recv, IRubyObject arg) {
-        return recv.getRuntime().getNil();
+    public static void createRandom(final Ruby runtime, final RubyModule ossl) {
+        final RubyModule random = ossl.defineModuleUnder("Random");
+
+        RubyClass osslError = (RubyClass) ossl.getConstant("OpenSSLError");
+        random.defineClassUnder("RandomError", osslError, osslError.getAllocator());
+
+        random.defineAnnotatedMethods(Random.class);
+
+        random.dataWrapStruct(
+            new RandomHolder(new java.util.Random(), SecurityHelper.getSecureRandom())
+        );
     }
-    @JRubyMethod(meta=true)
-    public static IRubyObject egd_bytes(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
-        return recv.getRuntime().getNil();
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject seed(final ThreadContext context,
+        final IRubyObject self, IRubyObject arg) {
+        return context.runtime.getNil(); // TODO this could be implemented !
     }
+    @JRubyMethod(meta = true)
+    public static IRubyObject load_random_file(final ThreadContext context,
+        final IRubyObject self, IRubyObject arg) {
+        return context.runtime.getNil();
+    }
+    @JRubyMethod(meta = true)
+    public static IRubyObject write_random_file(final ThreadContext context,
+        final IRubyObject self, IRubyObject arg) {
+        return context.runtime.getNil();
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject random_bytes(final ThreadContext context,
+        final IRubyObject self, IRubyObject arg) {
+        return generate(context.runtime, self, arg, true); // secure-random
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject pseudo_bytes(final ThreadContext context,
+        final IRubyObject self, IRubyObject arg) {
+        return generate(context.runtime, self, arg, false); // plain-random
+    }
+
+    private static RubyString generate(final Ruby runtime,
+        final IRubyObject self, IRubyObject arg, final boolean secure) {
+        final int len = RubyNumeric.fix2int(arg);
+        if ( len < 0 || len > Integer.MAX_VALUE ) {
+            throw runtime.newArgumentError("negative string size (or size too big) " + len);
+        }
+        final RandomHolder holder = (RandomHolder) self.dataGetStruct();
+        final byte[] bytes = new byte[len];
+        ( secure ? holder.secureRandom : holder.plainRandom ).nextBytes(bytes);
+        return RubyString.newString(runtime, new ByteList(bytes, false));
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject egd(final ThreadContext context,
+        final IRubyObject self, IRubyObject arg) {
+        return context.runtime.getNil();
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject egd_bytes(final ThreadContext context,
+        final IRubyObject self, IRubyObject arg1, IRubyObject arg2) {
+        return context.runtime.getNil();
+    }
+
 }

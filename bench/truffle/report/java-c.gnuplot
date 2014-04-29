@@ -1,4 +1,4 @@
-set terminal pdf enhanced
+set terminal pdf enhanced size 10,6
 set output 'java-c.pdf'
 
 set style data histogram

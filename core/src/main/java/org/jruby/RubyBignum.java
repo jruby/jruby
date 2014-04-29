@@ -467,18 +467,6 @@ public class RubyBignum extends RubyInteger {
         return RubyArray.newArray(runtime, bignorm(runtime, results[0]), bignorm(runtime, results[1]));
     }
 
-    public static BigInteger[] divmod(BigInteger value, BigInteger other) {
-        if (other.signum() == 0) throw new ArithmeticException("divide by zero");
-
-        BigInteger[] results = value.divideAndRemainder(other);
-        if ((value.signum() * other.signum()) == -1 && results[1].signum() != 0) {
-            results[0] = results[0].subtract(BigInteger.ONE);
-            results[1] = other.add(results[1]);
-        }
-
-        return results;
-    }
-
     @JRubyMethod(name = "divmod", required = 1)
     public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
         if (!other.isNil() && other instanceof RubyFloat

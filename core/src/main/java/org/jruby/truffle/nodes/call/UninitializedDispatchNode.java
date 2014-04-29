@@ -25,12 +25,8 @@ import org.jruby.truffle.runtime.methods.*;
  */
 public class UninitializedDispatchNode extends BoxedDispatchNode {
 
-    /*
-     * Node at depth 5 is 4 actual dispatches, the boxing dispatch and the final uninitalized
-     * dispatch.
-     */
-
-    private static final int MAX_DEPTH = 5;
+    private static final int MAX_DISPATCHES = 4;
+    private static final int MAX_DEPTH = MAX_DISPATCHES + 2; // MAX_DISPATCHES + BoxingDispatchNode + UninitializedDispatchNode
 
     private final String name;
     private final DispatchHeadNode.MissingBehavior missingBehavior;
@@ -59,7 +55,7 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
 
             getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getSourceSection().getSource().getName(), getSourceSection().getStartLine(), "resorting to a general call node");
 
-            final GeneralBoxedDispatchNode newGeneralDispatch = new GeneralBoxedDispatchNode(getContext(), getSourceSection(), name);
+            final GeneralDispatchNode newGeneralDispatch = new GeneralDispatchNode(getContext(), getSourceSection(), name);
             final BoxingDispatchNode newBoxing = new BoxingDispatchNode(getContext(), getSourceSection(), newGeneralDispatch);
 
             dispatchHead.getDispatch().replace(newBoxing);

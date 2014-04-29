@@ -13,7 +13,7 @@ end
 
 properties( 'tesla.version' => '0.0.9',
             'jruby.version' => '@project.version@',
-            'jruby.plugins.version' => '1.0.0-rc4',
+            'jruby.plugins.version' => '1.0.0',
             'gem.home' => '${project.build.outputDirectory}',
             'gem.path' => '${gem.home}',
             'project.build.sourceEncoding' => 'utf-8',

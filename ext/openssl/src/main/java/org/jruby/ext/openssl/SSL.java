@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -93,7 +93,29 @@ public class SSL {
         mSSL.setConstant("OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG", runtime.newFixnum(OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG));
     }
 
+    @Deprecated // confusing since it throws instead of returning
     public static RaiseException newSSLError(Ruby runtime, Throwable t) {
         throw Utils.newError(runtime, "OpenSSL::SSL::SSLError", t.getMessage());
     }
+
+    public static RaiseException newSSLError(Ruby runtime, Exception exception) {
+        return Utils.newError(runtime, _SSL(runtime).getClass("SSLError"), exception);
+    }
+
+    public static RaiseException newSSLError(Ruby runtime, String message) {
+        return Utils.newError(runtime, _SSL(runtime).getClass("SSLError"), message, false);
+    }
+
+    public static RaiseException newSSLErrorWaitReadable(Ruby runtime, String message) {
+        return Utils.newError(runtime, _SSL(runtime).getClass("SSLErrorWaitReadable"), message, false);
+    }
+
+    public static RaiseException newSSLErrorWaitWritable(Ruby runtime, String message) {
+        return Utils.newError(runtime, _SSL(runtime).getClass("SSLErrorWaitWritable"), message, false);
+    }
+
+    static RubyModule _SSL(final Ruby runtime) {
+        return (RubyModule) runtime.getModule("OpenSSL").getConstant("SSL");
+    }
+
 }// SSL

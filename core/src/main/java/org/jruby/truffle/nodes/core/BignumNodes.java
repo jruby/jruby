@@ -261,39 +261,31 @@ public abstract class BignumNodes {
     @CoreMethod(names = "divmod", minArgs = 1, maxArgs = 1)
     public abstract static class DivModNode extends CoreMethodNode {
 
+        @Child protected GeneralDivModNode divModNode;
+
         public DivModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            divModNode = new GeneralDivModNode(context);
         }
 
         public DivModNode(DivModNode prev) {
             super(prev);
+            divModNode = new GeneralDivModNode(getContext());
         }
 
         @Specialization
         public RubyArray divMod(BigInteger a, int b) {
-            return doDivMod(getContext(), a, BigInteger.valueOf(b));
+            return divModNode.execute(a, b);
         }
 
         @Specialization
         public RubyArray divMod(BigInteger a, long b) {
-            return doDivMod(getContext(), a, BigInteger.valueOf(b));
-        }
-
-        @Specialization
-        public RubyArray divMod(@SuppressWarnings("unused") BigInteger a, @SuppressWarnings("unused") double b) {
-            throw new UnsupportedOperationException();
+            return divModNode.execute(a, b);
         }
 
         @Specialization
         public RubyArray divMod(BigInteger a, BigInteger b) {
-            return doDivMod(getContext(), a, b);
-        }
-
-        @CompilerDirectives.SlowPath
-        public static RubyArray doDivMod(RubyContext context, BigInteger a, BigInteger b) {
-            final BigInteger[] values = org.jruby.RubyBignum.divmod(a, b);
-            final ArrayStore store = new ObjectImmutablePairArrayStore(RubyFixnum.fixnumOrBignum(values[0]), RubyFixnum.fixnumOrBignum(values[1]));
-            return new RubyArray(context.getCoreLibrary().getArrayClass(), store);
+            return divModNode.execute(a, b);
         }
 
     }

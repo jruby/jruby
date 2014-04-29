@@ -1,1 +1,2 @@
 fails(inherited):The DATA constant succeeds in locking the file DATA came from
+fails:The DATA constant does not exist when the main script contains no __END__

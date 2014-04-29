@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -32,27 +32,27 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.Cipher;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyBignum;
-import org.jruby.RubyFile;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
@@ -60,14 +60,21 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.openssl.impl.CipherSpec;
-import org.jruby.ext.openssl.x509store.PEMInputOutput;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
+
+import org.jruby.ext.openssl.impl.CipherSpec;
+import org.jruby.ext.openssl.x509store.PEMInputOutput;
+import static org.jruby.ext.openssl.PKey._PKey;
+import static org.jruby.ext.openssl.OpenSSLReal.debug;
+import static org.jruby.ext.openssl.OpenSSLReal.debugStackTrace;
+import static org.jruby.ext.openssl.impl.PKey.readRSAPrivateKey;
+import static org.jruby.ext.openssl.impl.PKey.readRSAPublicKey;
+import static org.jruby.ext.openssl.impl.PKey.toDerRSAKey;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -80,22 +87,26 @@ public class PKeyRSA extends PKey {
             return new PKeyRSA(runtime, klass);
         }
     };
-    
-    public static void createPKeyRSA(Ruby runtime, RubyModule mPKey) {
-        RubyClass cRSA = mPKey.defineClassUnder("RSA",mPKey.getClass("PKey"),PKEYRSA_ALLOCATOR);
-        RubyClass pkeyError = mPKey.getClass("PKeyError");
-        mPKey.defineClassUnder("RSAError",pkeyError,pkeyError.getAllocator());
 
-        cRSA.defineAnnotatedMethods(PKeyRSA.class);
+    public static void createPKeyRSA(final Ruby runtime, final RubyModule _PKey) {
+        RubyClass _RSA = _PKey.defineClassUnder("RSA", _PKey.getClass("PKey"), PKEYRSA_ALLOCATOR);
+        RubyClass _PKeyError = _PKey.getClass("PKeyError");
+        _PKey.defineClassUnder("RSAError", _PKeyError, _PKeyError.getAllocator());
 
-        cRSA.setConstant("PKCS1_PADDING",runtime.newFixnum(1));
-        cRSA.setConstant("SSLV23_PADDING",runtime.newFixnum(2));
-        cRSA.setConstant("NO_PADDING",runtime.newFixnum(3));
-        cRSA.setConstant("PKCS1_OAEP_PADDING",runtime.newFixnum(4));
-   }
+        _RSA.defineAnnotatedMethods(PKeyRSA.class);
+
+        _RSA.setConstant("PKCS1_PADDING", runtime.newFixnum(1));
+        _RSA.setConstant("SSLV23_PADDING", runtime.newFixnum(2));
+        _RSA.setConstant("NO_PADDING", runtime.newFixnum(3));
+        _RSA.setConstant("PKCS1_OAEP_PADDING", runtime.newFixnum(4));
+    }
+
+    static RubyClass _RSA(final Ruby runtime) {
+        return _PKey(runtime).getClass("RSA");
+    }
 
     public static RaiseException newRSAError(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::PKey::RSAError", message);
+        return Utils.newError(runtime, _PKey(runtime).getClass("RSAError"), message);
     }
 
     public PKeyRSA(Ruby runtime, RubyClass type) {
@@ -114,7 +125,7 @@ public class PKeyRSA extends PKey {
 
     private transient volatile RSAPrivateCrtKey privKey;
     private transient volatile RSAPublicKey pubKey;
-    
+
     // fields to hold individual RSAPublicKeySpec components. this allows
     // a public key to be constructed incrementally, as required by the
     // current implementation of Net::SSH.
@@ -128,7 +139,7 @@ public class PKeyRSA extends PKey {
     private transient volatile BigInteger rsa_dmp1;
     private transient volatile BigInteger rsa_dmq1;
     private transient volatile BigInteger rsa_iqmp;
-    
+
     @Override
     PublicKey getPublicKey() {
         return pubKey;
@@ -145,9 +156,9 @@ public class PKeyRSA extends PKey {
     }
 
     @JRubyMethod(name = "generate", meta = true, rest = true)
-    public static IRubyObject generate(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject generate(IRubyObject self, IRubyObject[] args) {
         BigInteger exp = RSAKeyGenParameterSpec.F4;
-        if (Arity.checkArgumentCount(recv.getRuntime(), args, 1, 2) == 2) {
+        if ( Arity.checkArgumentCount(self.getRuntime(), args, 1, 2) == 2 ) {
             if (args[1] instanceof RubyFixnum) {
                 exp = BigInteger.valueOf(RubyNumeric.num2long(args[1]));
             } else {
@@ -155,7 +166,7 @@ public class PKeyRSA extends PKey {
             }
         }
         int keysize = RubyNumeric.fix2int(args[0]);
-        PKeyRSA rsa = new PKeyRSA(recv.getRuntime(), (RubyClass) recv);
+        PKeyRSA rsa = new PKeyRSA(self.getRuntime(), (RubyClass) self);
         rsaGenerate(rsa, keysize, exp);
         return rsa;
     }
@@ -165,154 +176,137 @@ public class PKeyRSA extends PKey {
      */
     private static void rsaGenerate(PKeyRSA rsa, int keysize, BigInteger exp) throws RaiseException {
         try {
-            KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
-            if (gen.getProvider().getName().equals("IBMJCEFIPS")) {
-                // IBMJCEFIPS does not support parameters
-                gen.initialize(keysize);
+            KeyPairGenerator gen = SecurityHelper.getKeyPairGenerator("RSA");
+            if ( "IBMJCEFIPS".equals( gen.getProvider().getName() ) ) {
+                gen.initialize(keysize); // IBMJCEFIPS does not support parameters
             } else {
                 gen.initialize(new RSAKeyGenParameterSpec(keysize, exp), new SecureRandom());
             }
             KeyPair pair = gen.generateKeyPair();
-            rsa.privKey = (RSAPrivateCrtKey) (pair.getPrivate());
-            rsa.pubKey = (RSAPublicKey) (pair.getPublic());
-        } catch (Exception e) {
+            rsa.privKey = (RSAPrivateCrtKey) pair.getPrivate();
+            rsa.pubKey = (RSAPublicKey) pair.getPublic();
+        }
+        catch (NoSuchAlgorithmException e) {
+            throw newRSAError(rsa.getRuntime(), e.getMessage());
+        }
+        catch (InvalidAlgorithmParameterException e) {
+            throw newRSAError(rsa.getRuntime(), e.getMessage());
+        }
+        catch (RuntimeException e) {
             throw newRSAError(rsa.getRuntime(), e.getMessage());
         }
     }
 
     @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(IRubyObject[] args, Block block) {
-        IRubyObject arg;
-        IRubyObject pass = null;
-        char[] passwd = null;
-        if (org.jruby.runtime.Arity.checkArgumentCount(getRuntime(), args, 0, 2) == 0) {
-            privKey = null;
-            pubKey = null;
-        } else {
-            arg = args[0];
-            if (args.length > 1) {
-                pass = args[1];
-            }
-            if (arg instanceof RubyFixnum) {
-                int keysize = RubyNumeric.fix2int(arg);
-                BigInteger exp = RSAKeyGenParameterSpec.F4;
-                if (null != pass && !pass.isNil()) {
-                    exp = BigInteger.valueOf(RubyNumeric.num2long(pass));
-                }
-                rsaGenerate(this, keysize, exp);
-            } else {
-                if (pass != null && !pass.isNil()) {
-                    passwd = pass.toString().toCharArray();
-                }
-                arg = OpenSSLImpl.to_der_if_possible(arg);
-                RubyString str;
-                if (arg instanceof RubyFile) {
-                    str = (RubyString)((RubyFile)arg.dup()).read(getRuntime().getCurrentContext());
-                } else {
-                    str = arg.convertToString();
-                }
+    public IRubyObject initialize(final ThreadContext context,
+        final IRubyObject[] args, final Block block) {
+        final Ruby runtime = context.runtime;
 
-                Object val = null;
-                KeyFactory fact = null;
-                try {
-                    fact = KeyFactory.getInstance("RSA");
-                } catch (Exception e) {
-                    throw getRuntime().newRuntimeError("unsupported key algorithm (RSA)");
-                }
-                // TODO: ugly NoClassDefFoundError catching for no BC env. How can we remove this?
-                if (null == val) {
-                    // PEM_read_bio_RSAPrivateKey
-                    try {
-                        val = PEMInputOutput.readPrivateKey(new StringReader(str.toString()), passwd);
-                    } catch (NoClassDefFoundError e) {
-                        val = null;
-                    } catch (Exception e) {
-                        val = null;
-                    }
-                }
-                if (null == val) {
-                    // PEM_read_bio_RSAPublicKey
-                    try {
-                        val = PEMInputOutput.readRSAPublicKey(new StringReader(str.toString()), passwd);
-                    } catch (NoClassDefFoundError e) {
-                        val = null;
-                    } catch (Exception e) {
-                        val = null;
-                    }
-                }
-                if (null == val) {
-                    // PEM_read_bio_RSA_PUBKEY
-                    try {
-                        val = PEMInputOutput.readRSAPubKey(new StringReader(str.toString()));
-                    } catch (NoClassDefFoundError e) {
-                        val = null;
-                    } catch (Exception e) {
-                        val = null;
-                    }
-                }
-                if (null == val) {
-                    // d2i_RSAPrivateKey_bio
-                    try {
-                        val = org.jruby.ext.openssl.impl.PKey.readRSAPrivateKey(str.getBytes());
-                    } catch (NoClassDefFoundError e) {
-                        val = null;
-                    } catch (Exception e) {
-                        val = null;
-                    }
-                }
-                if (null == val) {
-                    // d2i_RSAPublicKey_bio
-                    try {
-                        val = org.jruby.ext.openssl.impl.PKey.readRSAPublicKey(str.getBytes());
-                    } catch (NoClassDefFoundError e) {
-                        val = null;
-                    } catch (Exception e) {
-                        val = null;
-                    }
-                }
-                if (null == val) {
-                    // try to read PrivateKeyInfo.
-                    try {
-                        val = fact.generatePrivate(new PKCS8EncodedKeySpec(str.getBytes()));
-                    } catch (Exception e) {
-                        val = null;
-                    }
-                }
-                if (null == val) {
-                    // try to read SubjectPublicKeyInfo.
-                    try {
-                        val = fact.generatePublic(new X509EncodedKeySpec(str.getBytes()));
-                    } catch (Exception e) {
-                        val = null;
-                    }
-                }
-                if (null == val) {
-                    throw newRSAError(getRuntime(), "Neither PUB key nor PRIV key:");
-                }
+        if ( Arity.checkArgumentCount(runtime, args, 0, 2) == 0 ) {
+            privKey = null; pubKey = null; return this;
+        }
 
-                if (val instanceof KeyPair) {
-                    PrivateKey privateKey = ((KeyPair) val).getPrivate();
-                    PublicKey publicKey = ((KeyPair) val).getPublic();
-                    if (privateKey instanceof RSAPrivateCrtKey) {
-                        privKey = (RSAPrivateCrtKey) privateKey;
-                        pubKey = (RSAPublicKey) publicKey;
-                    } else {
-                        throw newRSAError(getRuntime(), "Neither PUB key nor PRIV key:");
-                    }
-                } else if (val instanceof RSAPrivateCrtKey) {
-                    privKey = (RSAPrivateCrtKey) val;
-                    try {
-                        pubKey = (RSAPublicKey) (fact.generatePublic(new RSAPublicKeySpec(privKey.getModulus(), privKey.getPublicExponent())));
-                    } catch (Exception e) {
-                        throw newRSAError(getRuntime(), "Something rotten with private key");
-                    }
-                } else if (val instanceof RSAPublicKey) {
-                    pubKey = (RSAPublicKey) val;
-                    privKey = null;
-                } else {
-                    throw newRSAError(getRuntime(), "Neither PUB key nor PRIV key:");
-                }
+        IRubyObject arg = args[0]; IRubyObject pass = null;
+        if ( args.length > 1 ) pass = args[1];
+
+        if ( arg instanceof RubyFixnum ) {
+            int keysize = RubyNumeric.fix2int((RubyFixnum) arg);
+            BigInteger exp = RSAKeyGenParameterSpec.F4;
+            if (null != pass && !pass.isNil()) {
+                exp = BigInteger.valueOf(RubyNumeric.num2long(pass));
             }
+            rsaGenerate(this, keysize, exp); return this;
+        }
+
+        final char[] passwd = password(pass);
+        final RubyString str = readInitArg(context, arg);
+
+        Object key = null;
+        final KeyFactory rsaFactory;
+        try {
+            rsaFactory = SecurityHelper.getKeyFactory("RSA");
+        } catch (NoSuchAlgorithmException e) {
+            throw runtime.newRuntimeError("unsupported key algorithm (RSA)");
+        } catch (RuntimeException e) {
+            throw runtime.newRuntimeError("unsupported key algorithm (RSA) " + e);
+        }
+        // TODO: ugly NoClassDefFoundError catching for no BC env. How can we remove this?
+        boolean noClassDef = false;
+        if ( key == null && ! noClassDef ) { // PEM_read_bio_RSAPrivateKey
+            try {
+                key = PEMInputOutput.readPrivateKey(new StringReader(str.toString()), passwd);
+            }
+            catch (NoClassDefFoundError e) { noClassDef = true; debugStackTrace(runtime, e); }
+            catch (Exception e) { debugStackTrace(runtime, e); }
+        }
+        if ( key == null && ! noClassDef )  { // PEM_read_bio_RSAPublicKey
+            try {
+                key = PEMInputOutput.readRSAPublicKey(new StringReader(str.toString()), passwd);
+            }
+            catch (NoClassDefFoundError e) { noClassDef = true; debugStackTrace(runtime, e); }
+            catch (Exception e) { debugStackTrace(runtime, e); }
+        }
+        if ( key == null && ! noClassDef ) { // PEM_read_bio_RSA_PUBKEY
+            try {
+                key = PEMInputOutput.readRSAPubKey(new StringReader(str.toString()));
+            }
+            catch (NoClassDefFoundError e) { noClassDef = true; debugStackTrace(runtime, e); }
+            catch (Exception e) { debugStackTrace(runtime, e); }
+        }
+        if ( key == null && ! noClassDef ) { // d2i_RSAPrivateKey_bio
+            try { key = readRSAPrivateKey(rsaFactory, str.getBytes()); }
+            catch (NoClassDefFoundError e) { noClassDef = true; debugStackTrace(runtime, e); }
+            catch (InvalidKeySpecException e) { debug(runtime, "PKeyRSA could not read private key", e); }
+            catch (IOException e) { debug(runtime, "PKeyRSA could not read private key", e); }
+            catch (RuntimeException e) {
+                if ( isKeyGenerationFailure(e) ) debug(runtime, "PKeyRSA could not read private key", e);
+                else debugStackTrace(runtime, e);
+            }
+        }
+        if ( key == null && ! noClassDef ) { // d2i_RSAPublicKey_bio
+            try { key = readRSAPublicKey(rsaFactory, str.getBytes()); }
+            catch (NoClassDefFoundError e) { noClassDef = true; debugStackTrace(runtime, e); }
+            catch (InvalidKeySpecException e) { debug(runtime, "PKeyRSA could not read public key", e); }
+            catch (IOException e) { debug(runtime, "PKeyRSA could not read public key", e); }
+            catch (RuntimeException e) {
+                if ( isKeyGenerationFailure(e) ) debug(runtime, "PKeyRSA could not read public key", e);
+                else debugStackTrace(runtime, e);
+            }
+        }
+
+        if ( key == null ) key = tryPKCS8EncodedKey(runtime, rsaFactory, str.getBytes());
+        if ( key == null ) key = tryX509EncodedKey(runtime, rsaFactory, str.getBytes());
+
+        if ( key == null ) throw newRSAError(runtime, "Neither PUB key nor PRIV key:");
+
+        if ( key instanceof KeyPair ) {
+            PublicKey publicKey = ((KeyPair) key).getPublic();
+            PrivateKey privateKey = ((KeyPair) key).getPrivate();
+            if ( ! ( privateKey instanceof RSAPrivateCrtKey ) ) {
+                if ( privateKey == null ) {
+                    throw newRSAError(runtime, "Neither PUB key nor PRIV key: (private key is null)");
+                }
+                throw newRSAError(runtime, "Neither PUB key nor PRIV key: (invalid key type " + privateKey.getClass().getName() + ")");
+            }
+            this.privKey = (RSAPrivateCrtKey) privateKey;
+            this.pubKey = (RSAPublicKey) publicKey;
+        }
+        else if ( key instanceof RSAPrivateCrtKey ) {
+            this.privKey = (RSAPrivateCrtKey) key;
+            try {
+                this.pubKey = (RSAPublicKey) rsaFactory.generatePublic(new RSAPublicKeySpec(privKey.getModulus(), privKey.getPublicExponent()));
+            } catch (GeneralSecurityException e) {
+                throw newRSAError(runtime, e.getMessage());
+            } catch (RuntimeException e) {
+                debugStackTrace(runtime, e);
+                throw newRSAError(runtime, e.toString());
+            }
+        }
+        else if ( key instanceof RSAPublicKey ) {
+            this.pubKey = (RSAPublicKey) key; this.privKey = null;
+        }
+        else {
+            throw newRSAError(runtime, "Neither PUB key nor PRIV key: " + key.getClass().getName());
         }
         return this;
     }
@@ -327,16 +321,20 @@ public class PKeyRSA extends PKey {
         return privKey != null ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
+    @Override
     @JRubyMethod
     public IRubyObject to_der() {
+        final byte[] bytes;
         try {
-            byte[] bytes = org.jruby.ext.openssl.impl.PKey.toDerRSAKey(pubKey, privKey);
-            return RubyString.newString(getRuntime(), bytes);
-        } catch (NoClassDefFoundError ncdfe) {
-            throw newRSAError(getRuntime(), OpenSSLReal.bcExceptionMessage(ncdfe));
-        } catch (IOException ioe) {
-            throw newRSAError(getRuntime(), ioe.getMessage());
+            bytes = toDerRSAKey(pubKey, privKey);
         }
+        catch (NoClassDefFoundError e) {
+            throw newRSAError(getRuntime(), OpenSSLReal.bcExceptionMessage(e));
+        }
+        catch (IOException e) {
+            throw newRSAError(getRuntime(), e.getMessage());
+        }
+        return RubyString.newString(getRuntime(), bytes);
     }
 
     @JRubyMethod
@@ -348,28 +346,28 @@ public class PKeyRSA extends PKey {
     }
 
     @JRubyMethod
-    public IRubyObject params() {
-        ThreadContext ctx = getRuntime().getCurrentContext();
-        RubyHash hash = RubyHash.newHash(getRuntime());
-        if(privKey != null) {
-            hash.op_aset(ctx, getRuntime().newString("iqmp"), BN.newBN(getRuntime(), privKey.getCrtCoefficient()));
-            hash.op_aset(ctx, getRuntime().newString("n"), BN.newBN(getRuntime(), privKey.getModulus()));
-            hash.op_aset(ctx, getRuntime().newString("d"), BN.newBN(getRuntime(), privKey.getPrivateExponent()));
-            hash.op_aset(ctx, getRuntime().newString("p"), BN.newBN(getRuntime(), privKey.getPrimeP()));
-            hash.op_aset(ctx, getRuntime().newString("e"), BN.newBN(getRuntime(), privKey.getPublicExponent()));
-            hash.op_aset(ctx, getRuntime().newString("q"), BN.newBN(getRuntime(), privKey.getPrimeQ()));
-            hash.op_aset(ctx, getRuntime().newString("dmq1"), BN.newBN(getRuntime(), privKey.getPrimeExponentQ()));
-            hash.op_aset(ctx, getRuntime().newString("dmp1"), BN.newBN(getRuntime(), privKey.getPrimeExponentP()));
-            
+    public IRubyObject params(final ThreadContext context) {
+        final Ruby runtime = context.runtime;
+        RubyHash hash = RubyHash.newHash(runtime);
+        if ( privKey != null ) {
+            hash.op_aset(context, runtime.newString("iqmp"), BN.newBN(runtime, privKey.getCrtCoefficient()));
+            hash.op_aset(context, runtime.newString("n"), BN.newBN(runtime, privKey.getModulus()));
+            hash.op_aset(context, runtime.newString("d"), BN.newBN(runtime, privKey.getPrivateExponent()));
+            hash.op_aset(context, runtime.newString("p"), BN.newBN(runtime, privKey.getPrimeP()));
+            hash.op_aset(context, runtime.newString("e"), BN.newBN(runtime, privKey.getPublicExponent()));
+            hash.op_aset(context, runtime.newString("q"), BN.newBN(runtime, privKey.getPrimeQ()));
+            hash.op_aset(context, runtime.newString("dmq1"), BN.newBN(runtime, privKey.getPrimeExponentQ()));
+            hash.op_aset(context, runtime.newString("dmp1"), BN.newBN(runtime, privKey.getPrimeExponentP()));
+
         } else {
-            hash.op_aset(ctx, getRuntime().newString("iqmp"), BN.newBN(getRuntime(), BigInteger.ZERO));
-            hash.op_aset(ctx, getRuntime().newString("n"), BN.newBN(getRuntime(), pubKey.getModulus()));
-            hash.op_aset(ctx, getRuntime().newString("d"), BN.newBN(getRuntime(), BigInteger.ZERO));
-            hash.op_aset(ctx, getRuntime().newString("p"), BN.newBN(getRuntime(), BigInteger.ZERO));
-            hash.op_aset(ctx, getRuntime().newString("e"), BN.newBN(getRuntime(), pubKey.getPublicExponent()));
-            hash.op_aset(ctx, getRuntime().newString("q"), BN.newBN(getRuntime(), BigInteger.ZERO));
-            hash.op_aset(ctx, getRuntime().newString("dmq1"), BN.newBN(getRuntime(), BigInteger.ZERO));
-            hash.op_aset(ctx, getRuntime().newString("dmp1"), BN.newBN(getRuntime(), BigInteger.ZERO));
+            hash.op_aset(context, runtime.newString("iqmp"), BN.newBN(runtime, BigInteger.ZERO));
+            hash.op_aset(context, runtime.newString("n"), BN.newBN(runtime, pubKey.getModulus()));
+            hash.op_aset(context, runtime.newString("d"), BN.newBN(runtime, BigInteger.ZERO));
+            hash.op_aset(context, runtime.newString("p"), BN.newBN(runtime, BigInteger.ZERO));
+            hash.op_aset(context, runtime.newString("e"), BN.newBN(runtime, pubKey.getPublicExponent()));
+            hash.op_aset(context, runtime.newString("q"), BN.newBN(runtime, BigInteger.ZERO));
+            hash.op_aset(context, runtime.newString("dmq1"), BN.newBN(runtime, BigInteger.ZERO));
+            hash.op_aset(context, runtime.newString("dmp1"), BN.newBN(runtime, BigInteger.ZERO));
         }
         return hash;
     }
@@ -432,163 +430,140 @@ public class PKeyRSA extends PKey {
         }
     }
 
-    private String getPadding(int padding) {
-        if(padding < 1 || padding > 4) {
+    private String getPadding(final int padding) {
+        if ( padding < 1 || padding > 4 ) {
             throw newRSAError(getRuntime(), null);
         }
         // BC accepts "/NONE/*" but SunJCE doesn't. use "/ECB/*"
         String p = "/ECB/PKCS1Padding";
-        if(padding == 3) {
+        if ( padding == 3 ) {
             p = "/ECB/NoPadding";
-        } else if(padding == 4) {
+        } else if ( padding == 4 ) {
             p = "/ECB/OAEPWithMD5AndMGF1Padding";
-        } else if(padding == 2) {
+        } else if ( padding == 2 ) {
             p = "/ECB/ISO9796-1Padding";
         }
         return p;
-    }        
-
-    @JRubyMethod(rest = true)
-    public IRubyObject private_encrypt(IRubyObject[] args) {
-        int padding = 1;
-        if (org.jruby.runtime.Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2 && !args[1].isNil()) {
-            padding = RubyNumeric.fix2int(args[1]);
-        }
-        String p = getPadding(padding);
-        RubyString buffer = args[0].convertToString();
-        if (privKey == null) {
-            throw newRSAError(getRuntime(), "private key needed.");
-        }
-        try {
-            Cipher engine = Cipher.getInstance("RSA" + p);
-            engine.init(Cipher.ENCRYPT_MODE, privKey);
-            byte[] outp = engine.doFinal(buffer.getBytes());
-            return RubyString.newString(getRuntime(), outp);
-        } catch (GeneralSecurityException gse) {
-            throw newRSAError(getRuntime(), gse.getMessage());
-        }
     }
 
     @JRubyMethod(rest = true)
-    public IRubyObject private_decrypt(IRubyObject[] args) {
+    public IRubyObject private_encrypt(final ThreadContext context, final IRubyObject[] args) {
         int padding = 1;
-        if (org.jruby.runtime.Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2 && !args[1].isNil()) {
+        if ( Arity.checkArgumentCount(context.runtime, args, 1, 2) == 2 && ! args[1].isNil() ) {
             padding = RubyNumeric.fix2int(args[1]);
         }
-        String p = getPadding(padding);
-        RubyString buffer = args[0].convertToString();
-        if (privKey == null) {
-            throw newRSAError(getRuntime(), "private key needed.");
-        }
-        try {
-            Cipher engine = Cipher.getInstance("RSA" + p);
-            engine.init(Cipher.DECRYPT_MODE, privKey);
-            byte[] outp = engine.doFinal(buffer.getBytes());
-            return RubyString.newString(getRuntime(), outp);
-        } catch (GeneralSecurityException gse) {
-            throw newRSAError(getRuntime(), gse.getMessage());
-        }
+        if ( privKey == null ) throw newRSAError(context.runtime, "private key needed.");
+        return doCipherRSA(context.runtime, args[0], padding, Cipher.ENCRYPT_MODE, privKey);
     }
 
     @JRubyMethod(rest = true)
-    public IRubyObject public_encrypt(IRubyObject[] args) {
+    public IRubyObject private_decrypt(final ThreadContext context, final IRubyObject[] args) {
         int padding = 1;
-        if (org.jruby.runtime.Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2 && !args[1].isNil()) {
+        if ( Arity.checkArgumentCount(context.runtime, args, 1, 2) == 2 && ! args[1].isNil())  {
             padding = RubyNumeric.fix2int(args[1]);
         }
-        String p = getPadding(padding);
-        RubyString buffer = args[0].convertToString();
-        try {
-            Cipher engine = Cipher.getInstance("RSA" + p);
-            engine.init(Cipher.ENCRYPT_MODE, pubKey);
-            byte[] outp = engine.doFinal(buffer.getBytes());
-            return RubyString.newString(getRuntime(), outp);
-        } catch (GeneralSecurityException gse) {
-            throw newRSAError(getRuntime(), gse.getMessage());
-        }
+        if ( privKey == null ) throw newRSAError(context.runtime, "private key needed.");
+        return doCipherRSA(context.runtime, args[0], padding, Cipher.DECRYPT_MODE, privKey);
     }
 
     @JRubyMethod(rest = true)
-    public IRubyObject public_decrypt(IRubyObject[] args) {
+    public IRubyObject public_encrypt(final ThreadContext context, final IRubyObject[] args) {
         int padding = 1;
-        if (org.jruby.runtime.Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 2 && !args[1].isNil()) {
+        if ( Arity.checkArgumentCount(context.runtime, args, 1, 2) == 2 && ! args[1].isNil())  {
             padding = RubyNumeric.fix2int(args[1]);
         }
-        String p = getPadding(padding);
-        RubyString buffer = args[0].convertToString();
+        return doCipherRSA(context.runtime, args[0], padding, Cipher.ENCRYPT_MODE, pubKey);
+    }
+
+    @JRubyMethod(rest = true)
+    public IRubyObject public_decrypt(final ThreadContext context, final IRubyObject[] args) {
+        int padding = 1;
+        if ( Arity.checkArgumentCount(context.runtime, args, 1, 2) == 2 && ! args[1].isNil() ) {
+            padding = RubyNumeric.fix2int(args[1]);
+        }
+        return doCipherRSA(context.runtime, args[0], padding, Cipher.DECRYPT_MODE, pubKey);
+    }
+
+    private RubyString doCipherRSA(final Ruby runtime,
+        final IRubyObject content, final int padding,
+        final int initMode, final Key initKey) {
+
+        final String cipherPadding = getPadding(padding);
+        final RubyString buffer = content.convertToString();
         try {
-            Cipher engine = Cipher.getInstance("RSA" + p);
-            engine.init(Cipher.DECRYPT_MODE, pubKey);
-            byte[] outp = engine.doFinal(buffer.getBytes());
-            return RubyString.newString(getRuntime(), outp);
-        } catch (GeneralSecurityException gse) {
-            throw newRSAError(getRuntime(), gse.getMessage());
+            Cipher engine = SecurityHelper.getCipher("RSA" + cipherPadding);
+            engine.init(initMode, initKey);
+            byte[] output = engine.doFinal(buffer.getBytes());
+            return RubyString.newString(runtime, output);
+        }
+        catch (GeneralSecurityException gse) {
+            throw newRSAError(runtime, gse.getMessage());
         }
     }
 
     @JRubyMethod(name="d=")
-    public synchronized IRubyObject set_d(IRubyObject value) {
-        if (privKey != null) {
-            throw newRSAError(getRuntime(), "illegal modification");
+    public synchronized IRubyObject set_d(final ThreadContext context, IRubyObject value) {
+        if ( privKey != null ) {
+            throw newRSAError(context.runtime, "illegal modification");
         }
         rsa_d = BN.getBigInteger(value);
-        generatePrivateKeyIfParams();
+        generatePrivateKeyIfParams(context);
         return value;
     }
 
     @JRubyMethod(name="p=")
-    public synchronized IRubyObject set_p(IRubyObject value) {
-        if (privKey != null) {
-            throw newRSAError(getRuntime(), "illegal modification");
+    public synchronized IRubyObject set_p(final ThreadContext context, IRubyObject value) {
+        if ( privKey != null ) {
+            throw newRSAError(context.runtime, "illegal modification");
         }
         rsa_p = BN.getBigInteger(value);
-        generatePrivateKeyIfParams();
+        generatePrivateKeyIfParams(context);
         return value;
     }
 
     @JRubyMethod(name="q=")
-    public synchronized IRubyObject set_q(IRubyObject value) {
-        if (privKey != null) {
-            throw newRSAError(getRuntime(), "illegal modification");
+    public synchronized IRubyObject set_q(final ThreadContext context, IRubyObject value) {
+        if ( privKey != null ) {
+            throw newRSAError(context.runtime, "illegal modification");
         }
         rsa_q = BN.getBigInteger(value);
-        generatePrivateKeyIfParams();
+        generatePrivateKeyIfParams(context);
         return value;
     }
 
     @JRubyMethod(name="dmp1=")
-    public synchronized IRubyObject set_dmp1(IRubyObject value) {
-        if (privKey != null) {
-            throw newRSAError(getRuntime(), "illegal modification");
+    public synchronized IRubyObject set_dmp1(final ThreadContext context, IRubyObject value) {
+        if ( privKey != null ) {
+            throw newRSAError(context.runtime, "illegal modification");
         }
         rsa_dmp1 = BN.getBigInteger(value);
-        generatePrivateKeyIfParams();
+        generatePrivateKeyIfParams(context);
         return value;
     }
 
     @JRubyMethod(name="dmq1=")
-    public synchronized IRubyObject set_dmq1(IRubyObject value) {
-        if (privKey != null) {
-            throw newRSAError(getRuntime(), "illegal modification");
+    public synchronized IRubyObject set_dmq1(final ThreadContext context, IRubyObject value) {
+        if ( privKey != null ) {
+            throw newRSAError(context.runtime, "illegal modification");
         }
         rsa_dmq1 = BN.getBigInteger(value);
-        generatePrivateKeyIfParams();
+        generatePrivateKeyIfParams(context);
         return value;
     }
 
     @JRubyMethod(name="iqmp=")
-    public synchronized IRubyObject set_iqmp(IRubyObject value) {
-        if (privKey != null) {
-            throw newRSAError(getRuntime(), "illegal modification");
+    public synchronized IRubyObject set_iqmp(final ThreadContext context, IRubyObject value) {
+        if ( privKey != null ) {
+            throw newRSAError(context.runtime, "illegal modification");
         }
         rsa_iqmp = BN.getBigInteger(value);
-        generatePrivateKeyIfParams();
+        generatePrivateKeyIfParams(context);
         return value;
     }
 
     @JRubyMethod(name="iqmp")
     public synchronized IRubyObject get_iqmp() {
-        BigInteger iqmp = null;
+        BigInteger iqmp;
         if (privKey != null) {
             iqmp = privKey.getCrtCoefficient();
         } else {
@@ -602,7 +577,7 @@ public class PKeyRSA extends PKey {
 
     @JRubyMethod(name="dmp1")
     public synchronized IRubyObject get_dmp1() {
-        BigInteger dmp1 = null;
+        BigInteger dmp1;
         if (privKey != null) {
             dmp1 = privKey.getPrimeExponentP();
         } else {
@@ -616,7 +591,7 @@ public class PKeyRSA extends PKey {
 
     @JRubyMethod(name="dmq1")
     public synchronized IRubyObject get_dmq1() {
-        BigInteger dmq1 = null;
+        BigInteger dmq1;
         if (privKey != null) {
             dmq1 = privKey.getPrimeExponentQ();
         } else {
@@ -630,7 +605,7 @@ public class PKeyRSA extends PKey {
 
     @JRubyMethod(name="d")
     public synchronized IRubyObject get_d() {
-        BigInteger d = null;
+        BigInteger d;
         if (privKey != null) {
             d = privKey.getPrivateExponent();
         } else {
@@ -644,7 +619,7 @@ public class PKeyRSA extends PKey {
 
     @JRubyMethod(name="p")
     public synchronized IRubyObject get_p() {
-        BigInteger p = null;
+        BigInteger p;
         if (privKey != null) {
             p = privKey.getPrimeP();
         } else {
@@ -658,7 +633,7 @@ public class PKeyRSA extends PKey {
 
     @JRubyMethod(name="q")
     public synchronized IRubyObject get_q() {
-        BigInteger q = null;
+        BigInteger q;
         if (privKey != null) {
             q = privKey.getPrimeQ();
         } else {
@@ -686,20 +661,21 @@ public class PKeyRSA extends PKey {
         }
         return getRuntime().getNil();
     }
-    
-    @JRubyMethod(name="e=")
-    public synchronized IRubyObject set_e(IRubyObject value) {
-        rsa_e = BN.getBigInteger(value);
 
-        if(privKey == null) {
-            generatePrivateKeyIfParams();
+    @JRubyMethod(name="e=")
+    public synchronized IRubyObject set_e(final ThreadContext context, IRubyObject value) {
+        this.rsa_e = BN.getBigInteger(value);
+
+        if ( privKey == null ) {
+            generatePrivateKeyIfParams(context);
         }
-        if(pubKey == null) {
-            generatePublicKeyIfParams();
+        if ( pubKey == null ) {
+            generatePublicKeyIfParams(context);
         }
+
         return value;
     }
-    
+
     @JRubyMethod(name="n")
     public synchronized IRubyObject get_n() {
         RSAPublicKey key;
@@ -716,66 +692,73 @@ public class PKeyRSA extends PKey {
         }
         return getRuntime().getNil();
     }
-    
-    @JRubyMethod(name="n=")
-    public synchronized IRubyObject set_n(IRubyObject value) {
-        rsa_n = BN.getBigInteger(value);
 
-        if(privKey == null) {
-            generatePrivateKeyIfParams();
+    @JRubyMethod(name="n=")
+    public synchronized IRubyObject set_n(final ThreadContext context, IRubyObject value) {
+        this.rsa_n = BN.getBigInteger(value);
+
+        if ( privKey == null ) {
+            generatePrivateKeyIfParams(context);
         }
-        if(pubKey == null) {
-            generatePublicKeyIfParams();
+        if ( pubKey == null ) {
+            generatePublicKeyIfParams(context);
         }
+
         return value;
     }
-    
-    private void generatePublicKeyIfParams() {
-        if (pubKey != null) {
-            throw newRSAError(getRuntime(), "illegal modification");
-        }
+
+    private void generatePublicKeyIfParams(final ThreadContext context) {
+        final Ruby runtime = context.runtime;
+
+        if ( pubKey != null ) throw newRSAError(runtime, "illegal modification");
+
         BigInteger e, n;
-        if ((e = rsa_e) != null && (n = rsa_n) != null) {
-            KeyFactory fact;
+        if ( (e = rsa_e) != null && (n = rsa_n) != null ) {
+            final KeyFactory rsaFactory;
             try {
-                fact = KeyFactory.getInstance("RSA");
-            } catch(Exception ex) {
-                throw getRuntime().newLoadError("unsupported key algorithm (RSA)");
+                rsaFactory = SecurityHelper.getKeyFactory("RSA");
             }
+            catch (Exception ex) {
+                throw runtime.newLoadError("unsupported key algorithm (RSA)");
+            }
+
             try {
-                pubKey = (RSAPublicKey)fact.generatePublic(new RSAPublicKeySpec(n, e));
-            } catch (InvalidKeySpecException ex) {
-                throw newRSAError(getRuntime(), "invalid parameters");
+                pubKey = (RSAPublicKey) rsaFactory.generatePublic(new RSAPublicKeySpec(n, e));
+            }
+            catch (InvalidKeySpecException ex) {
+                throw newRSAError(runtime, "invalid parameters");
             }
             rsa_e = null;
             rsa_n = null;
         }
     }
-    
-    private void generatePrivateKeyIfParams() {
-        if (privKey != null) {
-            throw newRSAError(getRuntime(), "illegal modification");
-        }
+
+    private void generatePrivateKeyIfParams(final ThreadContext context) {
+        final Ruby runtime = context.runtime;
+
+        if ( privKey != null ) throw newRSAError(runtime, "illegal modification");
+
         if (rsa_e != null && rsa_n != null && rsa_p != null && rsa_q != null && rsa_d != null && rsa_dmp1 != null && rsa_dmq1 != null && rsa_iqmp != null) {
-            KeyFactory fact;
+            final KeyFactory rsaFactory;
             try {
-                fact = KeyFactory.getInstance("RSA");
-            } catch(Exception ex) {
-                throw getRuntime().newLoadError("unsupported key algorithm (RSA)");
+                rsaFactory = SecurityHelper.getKeyFactory("RSA");
             }
+            catch (NoSuchAlgorithmException e) {
+                throw runtime.newLoadError("unsupported key algorithm (RSA)");
+            }
+
             try {
-                privKey = (RSAPrivateCrtKey)fact.generatePrivate(new RSAPrivateCrtKeySpec(rsa_n, rsa_e, rsa_d, rsa_p, rsa_q, rsa_dmp1, rsa_dmq1, rsa_iqmp));
-            } catch (InvalidKeySpecException ex) {
-                throw newRSAError(getRuntime(), "invalid parameters");
+                privKey = (RSAPrivateCrtKey) rsaFactory.generatePrivate(
+                    new RSAPrivateCrtKeySpec(rsa_n, rsa_e, rsa_d, rsa_p, rsa_q, rsa_dmp1, rsa_dmq1, rsa_iqmp)
+                );
             }
-            rsa_n = null;
-            rsa_e = null;
-            rsa_d = null;
-            rsa_p = null;
-            rsa_q = null;
-            rsa_dmp1 = null;
-            rsa_dmq1 = null;
-            rsa_iqmp = null;
+            catch (InvalidKeySpecException e) {
+                throw newRSAError(runtime, "invalid parameters");
+            }
+            rsa_n = null; rsa_e = null;
+            rsa_d = null; rsa_p = null; rsa_q = null;
+            rsa_dmp1 = null; rsa_dmq1 = null; rsa_iqmp = null;
         }
     }
+
 }// PKeyRSA

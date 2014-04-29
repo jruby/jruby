@@ -403,70 +403,46 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "divmod", minArgs = 1, maxArgs = 1)
     public abstract static class DivModNode extends CoreMethodNode {
 
+        @Child protected GeneralDivModNode divModNode;
+
         public DivModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            divModNode = new GeneralDivModNode(context);
         }
 
         public DivModNode(DivModNode prev) {
             super(prev);
+            divModNode = new GeneralDivModNode(getContext());
         }
 
         @Specialization(order = 1)
         public RubyArray divMod(int a, int b) {
-            return doDivMod(a, b);
+            return divModNode.execute(a, b);
         }
 
         @Specialization(order = 2)
         public RubyArray divMod(int a, long b) {
-            return doDivMod(a, b);
+            return divModNode.execute(a, b);
         }
 
         @Specialization(order = 3)
-        public RubyArray divMod(@SuppressWarnings("unused") int a, @SuppressWarnings("unused") double b) {
-            throw new UnsupportedOperationException();
+        public RubyArray divMod(int a, BigInteger b) {
+            return divModNode.execute(a, b);
         }
 
         @Specialization(order = 4)
-        public RubyArray divMod(int a, BigInteger b) {
-            return BignumNodes.DivModNode.doDivMod(getContext(), BigInteger.valueOf(a), b);
+        public RubyArray divMod(long a, int b) {
+            return divModNode.execute(a, b);
         }
 
         @Specialization(order = 5)
-        public RubyArray divMod(long a, int b) {
-            return doDivMod(a, b);
+        public RubyArray divMod(long a, long b) {
+            return divModNode.execute(a, b);
         }
 
         @Specialization(order = 6)
-        public RubyArray divMod(long a, long b) {
-            return doDivMod(a, b);
-        }
-
-        @Specialization(order = 7)
-        public RubyArray divMod(@SuppressWarnings("unused") long a, @SuppressWarnings("unused") double b) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Specialization(order = 8)
         public RubyArray divMod(long a, BigInteger b) {
-            return BignumNodes.DivModNode.doDivMod(getContext(), BigInteger.valueOf(a), b);
-        }
-
-        @CompilerDirectives.SlowPath
-        private RubyArray doDivMod(long a, long b) {
-            final Object[] values = org.jruby.RubyFixnum.divmodFixnum(a, b);
-
-            final Object integerDiv = values[0];
-            final long mod = (long) values[1];
-
-            final ArrayStore store;
-
-            if (integerDiv instanceof Long && ((long) integerDiv) >= Integer.MIN_VALUE && ((long) integerDiv) <= Integer.MAX_VALUE && mod >= Integer.MIN_VALUE && mod <= Integer.MAX_VALUE) {
-                store = new FixnumImmutablePairArrayStore((int) (long) integerDiv, (int) mod);
-            } else {
-                store = new ObjectImmutablePairArrayStore(integerDiv, mod);
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store);
+            return divModNode.execute(a, b);
         }
 
     }
@@ -781,9 +757,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(order = 4)
-        public int bitAnd(long a, int b) {
-            // TODO(CS): is this safe? Why does Java type a & b as long? We should do this because people do big & small to clamp stuff to small
-            return (int) (a & b);
+        public long bitAnd(long a, int b) {
+            return a & b;
         }
 
         @Specialization(order = 5)
@@ -1188,6 +1163,29 @@ public abstract class FixnumNodes {
             }
 
             return NilPlaceholder.INSTANCE;
+        }
+
+    }
+
+    @CoreMethod(names = "zero?", maxArgs = 0)
+    public abstract static class ZeroNode extends CoreMethodNode {
+
+        public ZeroNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ZeroNode(ZeroNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean zero(int n) {
+            return n == 0;
+        }
+
+        @Specialization
+        public boolean zero(long n) {
+            return n == 0;
         }
 
     }

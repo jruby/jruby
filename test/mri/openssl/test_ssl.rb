@@ -30,6 +30,17 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
     end
   end
 
+  def test_methods
+    methods = OpenSSL::SSL::SSLContext::METHODS
+    methods = methods.dup; methods.delete(:"TLSv1.1"); methods.delete(:"TLS")
+    assert_equal :TLSv1, methods[0]
+    assert_equal :TLSv1_server, methods[1]
+    assert_equal :TLSv1_client, methods[2]
+    assert_equal :SSLv23, methods[-3]
+    assert_equal :SSLv23_server, methods[-2]
+    assert_equal :SSLv23_client, methods[-1]
+  end
+
   def test_ssl_gets
     start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true) { |server, port|
       server_connect(port) { |ssl|

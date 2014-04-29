@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
 import org.jruby.RubyBoolean;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -133,48 +134,6 @@ public class RubyString extends RubyObject {
     @Override
     public int hashCode() {
         return toString().hashCode();
-    }
-
-    public static Object getIndex(RubyContext context, String string, Object[] args) {
-        if (args.length == 1) {
-            final Object index = args[0];
-
-            if (index instanceof Integer) {
-                final int stringLength = string.length();
-                final int normalisedIndex = ArrayUtilities.normaliseIndex(stringLength, (int) index);
-
-                return context.makeString(string.charAt(normalisedIndex));
-            } else if (index instanceof FixnumRange) {
-                final FixnumRange range = (FixnumRange) index;
-
-                final int stringLength = string.length();
-
-                if (range.doesExcludeEnd()) {
-                    final int begin = ArrayUtilities.normaliseIndex(stringLength, range.getBegin());
-                    final int exclusiveEnd = ArrayUtilities.normaliseExclusiveIndex(stringLength, range.getExclusiveEnd());
-                    return context.makeString(string.substring(begin, exclusiveEnd));
-                } else {
-                    final int begin = ArrayUtilities.normaliseIndex(stringLength, range.getBegin());
-                    final int inclusiveEnd = ArrayUtilities.normaliseIndex(stringLength, range.getInclusiveEnd());
-                    return context.makeString(string.substring(begin, inclusiveEnd + 1));
-                }
-            } else {
-                throw new UnsupportedOperationException("Don't know how to index a string with " + index.getClass());
-            }
-        } else {
-            final int rangeStart = (int) args[0];
-            int rangeLength = (int) args[1];
-
-            if (rangeLength > string.length() - rangeStart) {
-                rangeLength = string.length() - rangeStart;
-            }
-
-            if (rangeStart > string.length()) {
-                return NilPlaceholder.INSTANCE;
-            }
-
-            return context.makeString(string.substring(rangeStart, rangeStart + rangeLength));
-        }
     }
 
     @Override

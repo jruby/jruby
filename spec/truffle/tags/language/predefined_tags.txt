@@ -92,3 +92,4 @@ fails:The predefined global constant STDIN retains the encoding set by #set_enco
 fails:The predefined global constant STDIN has the encodings set by #set_encoding
 fails:The predefined global constant STDIN has the same external encoding as Encoding.default_external when that encoding is changed
 fails:The predefined global constant STDIN has the same external encoding as Encoding.default_external
+fails:Processing RUBYOPT prints the version number for '-v'
