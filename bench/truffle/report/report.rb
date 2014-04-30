@@ -148,7 +148,8 @@ benchmarks = [
   "n-body",
   "pidigits",
   "spectral-norm",
-  "neural-net"
+  "neural-net",
+  "richards"
 ]
 
 if reports == ["java-c"]

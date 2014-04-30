@@ -72,7 +72,8 @@ benchmarks = [
   "n-body",
   "pidigits",
   "spectral-norm",
-  "neural-net"
+  "neural-net",
+  "richards"
 ]
 
 time_budget_per_run = time_budget / benchmarks.length
