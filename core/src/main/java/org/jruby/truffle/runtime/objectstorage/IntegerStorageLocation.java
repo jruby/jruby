@@ -32,7 +32,8 @@ public class IntegerStorageLocation extends PrimitiveStorageLocation {
 
     public int readInteger(ObjectStorage object, boolean condition) throws UnexpectedResultException {
         if (isSet(object)) {
-            return CompilerDirectives.unsafeGetInt(object, offset, condition, this);
+            // TODO(CS): unsafeGetInt has a problem under compilation - pass condition as false and location as null for now
+            return CompilerDirectives.unsafeGetInt(object, offset, false /*condition*/, null /*this*/);
         } else {
             throw new UnexpectedResultException(null);
         }
