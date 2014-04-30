@@ -116,15 +116,13 @@ public class Tempfile extends org.jruby.RubyFile {
             IRubyObject tmpname = args[0];
             IOOptions ioOptions = newIOOptions(runtime, ModeFlags.RDWR | ModeFlags.EXCL);
             
-            if (context.is19) {
-                // check for trailing hash
-                if (args.length > 1) {
-                    if (args[args.length - 1] instanceof RubyHash) {
-                        // TODO: encoding options do not appear to actually get passed through to file init logic
-                        RubyHash options = (RubyHash)args[args.length - 1];
-                        ioOptions = updateIOOptionsFromOptions(context, options, ioOptions);
-                        EncodingUtils.ioExtractEncodingOption(context, Tempfile.this, options, null);
-                    }
+            // check for trailing hash
+            if (args.length > 1) {
+                if (args[args.length - 1] instanceof RubyHash) {
+                    // TODO: encoding options do not appear to actually get passed through to file init logic
+                    RubyHash options = (RubyHash)args[args.length - 1];
+                    ioOptions = updateIOOptionsFromOptions(context, options, ioOptions);
+                    EncodingUtils.ioExtractEncodingOption(context, Tempfile.this, options, null);
                 }
             }
 

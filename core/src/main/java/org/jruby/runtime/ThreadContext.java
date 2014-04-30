@@ -89,8 +89,7 @@ public final class ThreadContext {
     public final Ruby runtime;
     public final IRubyObject nil;
     public final RuntimeCache runtimeCache;
-    public final boolean is19;
-    
+
     // Is this thread currently with in a function trace?
     private boolean isWithinTrace;
     
@@ -158,7 +157,6 @@ public final class ThreadContext {
     private ThreadContext(Ruby runtime) {
         this.runtime = runtime;
         this.nil = runtime.getNil();
-        this.is19 = true;
 
         if (runtime.getInstanceConfig().isProfilingEntireRun()) {
             startProfiling();
@@ -587,7 +585,7 @@ public final class ThreadContext {
      * Check if a static scope is present on the call stack.
      * This is the IR equivalent of isJumpTargetAlive
      *
-     * @param s the static scope to look for
+     * @param scope the static scope to look for
      * @return true if it exists
      *         false if not
      **/
@@ -769,7 +767,6 @@ public final class ThreadContext {
     
     /**
      * Create an Array with backtrace information for Kernel#caller
-     * @param runtime
      * @param level
      * @return an Array with the backtrace
      */
@@ -779,7 +776,6 @@ public final class ThreadContext {
 
     /**
      * Create an Array with backtrace information for Kernel#caller
-     * @param runtime
      * @param level
      * @param length
      * @return an Array with the backtrace

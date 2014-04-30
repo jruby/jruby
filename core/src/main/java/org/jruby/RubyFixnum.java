@@ -544,7 +544,8 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "div")
     public IRubyObject div_div(ThreadContext context, IRubyObject other) {
-        if (context.is19) checkZeroDivisionError(context, other);
+        checkZeroDivisionError(context, other);
+
         return idiv(context, other, "div");
     }
     	
@@ -714,18 +715,12 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "**")
     public IRubyObject op_pow(ThreadContext context, IRubyObject other) {
-        if (context.is19) return op_pow_19(context, other);
-        if(other instanceof RubyFixnum) {
-            return powerFixnum(context, ((RubyFixnum)other).value);
-        } else {
-            return powerOther(context, other);
-        }
+        return op_pow_19(context, other);
     }
 
     public IRubyObject op_pow(ThreadContext context, long other) {
         // FIXME this needs to do the right thing for 1.9 mode before we can use it
-        if (context.is19) throw context.runtime.newRuntimeError("bug: using direct op_pow(long) in 1.8 mode");
-        return powerFixnum(context, other);
+        throw context.runtime.newRuntimeError("bug: using direct op_pow(long) in 1.8 mode");
     }
 
     private IRubyObject powerFixnum(ThreadContext context, long other) {
@@ -843,10 +838,8 @@ public class RubyFixnum extends RubyInteger {
     @JRubyMethod(name = "==")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFixnum) return op_equal(context, ((RubyFixnum) other).value);
-        return context.is19 ?
-                op_equalOther(context, other) :
-                super.op_num_equal(context, other);
+        return other instanceof RubyFixnum ?
+                op_equal(context, ((RubyFixnum) other).value) : op_equalOther(context, other);
     }
 
     public IRubyObject op_equal(ThreadContext context, long other) {
@@ -892,10 +885,8 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFixnum) return op_cmp(context, ((RubyFixnum)other).value);
-        return context.is19 ?
-                compareOther(context, other) :
-                coerceCmp(context, "<=>", other);
+        return other instanceof RubyFixnum ?
+                op_cmp(context, ((RubyFixnum)other).value) : compareOther(context, other);
     }
 
     public IRubyObject op_cmp(ThreadContext context, long other) {
@@ -922,9 +913,8 @@ public class RubyFixnum extends RubyInteger {
         if (other instanceof RubyFixnum) {
             return RubyBoolean.newBoolean(context.runtime, value > ((RubyFixnum) other).value);
         }
-        return context.is19 ?
-                op_gtOther(context, other) :
-                coerceRelOp(context, ">", other);
+
+        return op_gtOther(context, other);
     }
 
     public IRubyObject op_gt(ThreadContext context, long other) {
@@ -954,9 +944,7 @@ public class RubyFixnum extends RubyInteger {
         if (other instanceof RubyFixnum) {
             return RubyBoolean.newBoolean(context.runtime, value >= ((RubyFixnum) other).value);
         }
-        return context.is19 ?
-                op_geOther(context, other) :
-                coerceRelOp(context, ">=", other);
+        return op_geOther(context, other);
     }
 
     public IRubyObject op_ge(ThreadContext context, long other) {
@@ -1016,9 +1004,7 @@ public class RubyFixnum extends RubyInteger {
         if (other instanceof RubyFixnum) {
             return RubyBoolean.newBoolean(context.runtime, value <= ((RubyFixnum) other).value);
         }
-        return context.is19 ?
-                op_leOther(context, other) :
-                coerceRelOp(context, "<=", other);
+        return op_leOther(context, other);
     }
 
     public IRubyObject op_le(ThreadContext context, long other) {
@@ -1053,11 +1039,10 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "&")
     public IRubyObject op_and(ThreadContext context, IRubyObject other) {
-        if (context.is19) return op_and19(context, other);
-        return op_and18(context, other);
+        return op_and19(context, other);
     }
 
-    private IRubyObject op_and18(ThreadContext context, IRubyObject other) {
+    private IRubyObject op_andOther(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum || (other = fixCoerce(other)) instanceof RubyFixnum) {
             return newFixnum(context.runtime, value & ((RubyFixnum) other).value);
         }
@@ -1072,7 +1057,8 @@ public class RubyFixnum extends RubyInteger {
         if (!((other = bitCoerce(other)) instanceof RubyFixnum)) {
             return ((RubyBignum) other).op_and(context, this);
         }
-        return op_and18(context, other);
+
+        return op_andOther(context, other);
     }
     
     /** fix_or 
@@ -1080,35 +1066,23 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "|")
     public IRubyObject op_or(ThreadContext context, IRubyObject other) {
-        if (context.is19) return op_or19(context, other);
-        return op_or18(context, other);
-    }
-
-    private IRubyObject op_or18(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFixnum || (other = fixCoerce(other)) instanceof RubyFixnum) {
+        if ((other = bitCoerce(other)) instanceof RubyFixnum) {
             return newFixnum(context.runtime, value | ((RubyFixnum) other).value);
         }
+
         return ((RubyBignum) other).op_or(context, this);
     }
-    
+
     public IRubyObject op_or(ThreadContext context, long other) {
         return newFixnum(context.runtime, value | other);
     }
 
-    private IRubyObject op_or19(ThreadContext context, IRubyObject other) {
-        if (!((other = bitCoerce(other)) instanceof RubyFixnum)) {
-            return ((RubyBignum) other).op_or(context, this);
-        }
-        return op_or18(context, other);
-    }
-    
     /** fix_xor 
      * 
      */
     @JRubyMethod(name = "^")
     public IRubyObject op_xor(ThreadContext context, IRubyObject other) {
-        if (context.is19) return op_xor19(context, other);
-        return op_xor18(context, other);
+        return op_xor19(context, other);
     }
 
     private IRubyObject op_xor18(ThreadContext context, IRubyObject other) {

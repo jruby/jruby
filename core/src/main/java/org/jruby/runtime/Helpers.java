@@ -3011,7 +3011,7 @@ public class Helpers {
     }
     
     public static RubyArray irSplat(ThreadContext context, IRubyObject maybeAry) {
-        return context.is19 ? splatValue19(maybeAry) : splatValue(maybeAry);
+        return splatValue19(maybeAry);
     }
 
     public static IRubyObject irToAry(ThreadContext context, IRubyObject value) {
