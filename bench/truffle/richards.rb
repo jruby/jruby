@@ -248,11 +248,6 @@ class WorkerTask
          packet.a2.collect! {|x|
             @v2 += 1
             @v2 = 1 if @v2 > 26 
-            # FIXME(CS)
-            if @v2 == 27
-              puts "error"
-              exit
-            end
             ALPHA[@v2]
             }                  
          @scheduler.queue(packet) 
@@ -389,7 +384,7 @@ class Packet
 end
 
 def warmup
-  1_000.times do
+  2_000.times do
     run(1)
   end
 end

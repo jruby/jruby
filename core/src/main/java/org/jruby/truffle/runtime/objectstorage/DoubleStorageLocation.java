@@ -32,7 +32,8 @@ public class DoubleStorageLocation extends PrimitiveStorageLocation {
 
     public double readDouble(ObjectStorage object, boolean condition) throws UnexpectedResultException {
         if (isSet(object)) {
-            return CompilerDirectives.unsafeGetDouble(object, offset, condition, this);
+            // TODO(CS): unsafeGetInt has a problem under compilation - pass condition as false and location as null for now
+            return CompilerDirectives.unsafeGetDouble(object, offset, false /*condition*/, null /*this*/);
         } else {
             throw new UnexpectedResultException(null);
         }
