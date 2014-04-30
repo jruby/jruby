@@ -38,12 +38,13 @@ import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.util.Iterator;
+import java.util.Queue;
 import java.util.Vector;
 import java.util.WeakHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Map;
 
 import java.util.Set;
@@ -60,7 +61,11 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import org.jruby.anno.JRubyMethod;
@@ -69,13 +74,12 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectMarshal;
 import static org.jruby.runtime.Visibility.*;
 
-import org.jruby.util.cli.Options;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BlockingIO;
 import org.jruby.util.io.SelectorFactory;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import org.jruby.internal.runtime.ThreadedRunnable;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
@@ -131,6 +135,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Whether to scan for cross-thread events */
     private volatile boolean handleInterrupt = true;
 
+    /** Stack of interrupt masks active for this thread */
+    private final List<RubyHash> interruptMaskStack = new ArrayList<RubyHash>();
+
     private static final boolean DEBUG = false;
     private int RUBY_MIN_THREAD_PRIORITY = -3;
     private int RUBY_MAX_THREAD_PRIORITY = 3;
@@ -150,19 +157,41 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private final AtomicReference<Status> status = new AtomicReference<Status>(Status.RUN);
 
     /** Mail slot for cross-thread events */
-    private final AtomicReference<ThreadService.Event> mail = new AtomicReference<ThreadService.Event>();
+    private final Queue<IRubyObject> pendingInterruptQueue = new ConcurrentLinkedQueue();
 
-    @Deprecated
-    private volatile Wakeable currentBlockingTask;
+    /** A function to use to unblock this thread, if possible */
+    private Unblocker unblockFunc;
 
-    /** The current task blocking a thread, to allow interrupting it in an appropriate way */
-    private volatile Task task;
+    /** Argument to pass to the unblocker */
+    private IRubyObject unblockArg;
 
     /** The list of locks this thread currently holds, so they can be released on exit */
     private final List<Lock> heldLocks = new Vector<Lock>();
 
     /** Whether or not this thread has been disposed of */
     private volatile boolean disposed = false;
+
+    /** Interrupt flags */
+    private volatile int interruptFlag = 0;
+
+    /** Interrupt mask to use for disabling certain types */
+    private volatile int interruptMask;
+
+    /** Short circuit to avoid-re-scanning for interrupts */
+    private volatile boolean pendingInterruptQueueChecked = false;
+
+    private static final AtomicIntegerFieldUpdater INTERRUPT_FLAG_UPDATER =
+            AtomicIntegerFieldUpdater.newUpdater(RubyThread.class, "interruptFlag");
+
+    private static final int TIMER_INTERRUPT_MASK         = 0x01;
+    private static final int PENDING_INTERRUPT_MASK       = 0x02;
+    private static final int POSTPONED_JOB_INTERRUPT_MASK = 0x04;
+    private static final int TRAP_INTERRUPT_MASK	      = 0x08;
+
+    private static final int INTERRUPT_NONE = 0;
+    private static final int INTERRUPT_IMMEDIATE = 1;
+    private static final int INTERRUPT_ON_BLOCKING = 2;
+    private static final int INTERRUPT_NEVER = 3;
 
     protected RubyThread(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -177,46 +206,127 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         startWith(runnable);
     }
 
-    public void receiveMail(ThreadService.Event event) {
-        synchronized (this) {
-            // if we're already aborting, we can receive no further mail
-            if (status.get() == Status.ABORTING) return;
+    private void executeInterrupts(ThreadContext context, boolean blockingTiming) {
+        Ruby runtime = context.runtime;
+        int interrupt;
 
-            // FIXME: this was not checking null before, but maybe it should
-            mail.set(event);
-            switch (event.type) {
-            case KILL:
-                status.set(Status.ABORTING);
+        boolean postponedJobInterrupt = false;
+
+        while ((interrupt = getInterrupts()) != 0) {
+            boolean timerInterrupt = (interrupt & TIMER_INTERRUPT_MASK) == TIMER_INTERRUPT_MASK;
+            boolean pendingInterrupt = (interrupt & PENDING_INTERRUPT_MASK) == PENDING_INTERRUPT_MASK;
+
+//            if (postponedJobInterrupt) {
+//                postponedJobFlush(context);
+//            }
+            // Missing: signal handling...but perhaps we don't need it on JVM
+
+            if (pendingInterrupt && pendingInterruptActive()) {
+                IRubyObject err = pendingInterruptDeque(context, blockingTiming ? INTERRUPT_ON_BLOCKING : INTERRUPT_NONE);
+
+                if (err == UNDEF) {
+                    // no error
+                } else if (err == RubyFixnum.zero(runtime) ||
+                        err == RubyFixnum.one(runtime) ||
+                        err == RubyFixnum.two(runtime)) {
+                    toKill();
+                } else {
+                    afterBlockingCall();
+                    if (status.get() == Status.SLEEP) {
+                        exitSleep();
+                    }
+                    RubyKernel.raise(context, runtime.getKernel(), new IRubyObject[]{err}, Block.NULL_BLOCK);
+                }
             }
 
-            // If this thread is sleeping or stopped, wake it
-            notify();
+            // Missing: timer interrupt...needed?
         }
-
-        // interrupt the target thread in case it's blocking or waiting
-        // WARNING: We no longer interrupt the target thread, since this usually means
-        // interrupting IO and with NIO that means the channel is no longer usable.
-        // We either need a new way to handle waking a target thread that's waiting
-        // on IO, or we need to accept that we can't wake such threads and must wait
-        // for them to complete their operation.
-        //threadImpl.interrupt();
-
-        // new interrupt, to hopefully wake it out of any blocking IO
-        this.interrupt();
-
     }
 
-    public void checkMail(ThreadContext context) {
-        ThreadService.Event myEvent = mail.getAndSet(null);
-        
-        if (myEvent != null) {
-            switch (myEvent.type) {
-            case RAISE:
-                receivedAnException(context, myEvent.exception);
-            case KILL:
-                throwThreadKill();
+    private void postponedJobFlush(ThreadContext context) {
+        // unsure if this function has any relevance in JRuby
+
+//        int savedPostponedJobInterruptMask = interruptMask & POSTPONED_JOB_INTERRUPT_MASK;
+//
+//        errorInfo = context.nil;
+//        interruptMask |= POSTPONED_JOB_INTERRUPT_MASK;
+    }
+
+    private boolean pendingInterruptActive() {
+        if (pendingInterruptQueueChecked) return false;
+        if (pendingInterruptQueue.isEmpty()) return false;
+        return true;
+    }
+
+    private void toKill() {
+        pendingInterruptClear();
+        throwThreadKill();
+    }
+
+    private void pendingInterruptClear() {
+        pendingInterruptQueue.clear();
+    }
+
+    private int getInterrupts() {
+        int interrupt;
+        while (true) {
+            interrupt = interruptFlag;
+            if (INTERRUPT_FLAG_UPDATER.compareAndSet(this, interrupt, interrupt & interruptMask)) {
+                break;
             }
         }
+        return interrupt & ~interruptMask;
+    }
+
+    private IRubyObject pendingInterruptDeque(ThreadContext context, int timing) {
+        for (Iterator<IRubyObject> iterator = pendingInterruptQueue.iterator(); iterator.hasNext();) {
+            IRubyObject err = iterator.next();
+            int maskTiming = pendingInterruptCheckMask(context, err);
+
+            switch (maskTiming) {
+                case INTERRUPT_ON_BLOCKING:
+                    if (timing != INTERRUPT_ON_BLOCKING) break;
+                case INTERRUPT_NONE:
+                case INTERRUPT_IMMEDIATE:
+                    iterator.remove();
+                    return err;
+                case INTERRUPT_NEVER:
+                    break;
+            }
+        }
+
+        pendingInterruptQueueChecked = true;
+
+        return UNDEF;
+    }
+
+    private int pendingInterruptCheckMask(ThreadContext context, IRubyObject err) {
+        List<IRubyObject> ancestors = err.getMetaClass().getAncestorList();
+        int ancestorsLen = ancestors.size();
+
+        List<RubyHash> maskStack = interruptMaskStack;
+        int maskStackLen = maskStack.size();
+
+        for (int i = 0; i < maskStackLen; i++) {
+            RubyHash mask = maskStack.get(maskStackLen - (i + 1));
+
+            for (int j = 0; j < ancestorsLen; j++) {
+                IRubyObject klass = ancestors.get(j);
+                IRubyObject sym;
+
+                if (!(sym = mask.op_aref(context, klass)).isNil()) {
+                    String symStr = sym.toString();
+                    switch (symStr) {
+                        case "immediate": return INTERRUPT_IMMEDIATE;
+                        case "on_blocking": return INTERRUPT_ON_BLOCKING;
+                        case "never": return INTERRUPT_NEVER;
+                        default:
+                            throw context.runtime.newThreadError("unknown mask signature");
+                    }
+                }
+            }
+        }
+        return INTERRUPT_NONE;
     }
 
     public IRubyObject getErrorInfo() {
@@ -487,9 +597,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public void pollThreadEvents() {
         pollThreadEvents(getRuntime().getCurrentContext());
     }
-    
+
+    // CHECK_INTS
     public void pollThreadEvents(ThreadContext context) {
-        if (handleInterrupt && mail != null && context.runtime.getThreadService().getPolling()) checkMail(context);
+        if (anyInterrupted()) {
+            executeInterrupts(context, true);
+        }
+    }
+
+    private boolean anyInterrupted() {
+        return (interruptFlag & ~interruptMask) != 0;
     }
     
     private static void throwThreadKill() {
@@ -497,25 +614,80 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     @JRubyMethod(meta = true)
-    public static IRubyObject handle_interrupt(ThreadContext context, IRubyObject self, IRubyObject mask, Block block) {
-        // TODO: honor mask
+    public static IRubyObject handle_interrupt(ThreadContext context, IRubyObject self, IRubyObject _mask, Block block) {
+        Ruby runtime = context.runtime;
+
+        if (!block.isGiven()) {
+            throw runtime.newArgumentError("block is needed");
+        }
+
+        RubyHash mask = (RubyHash)TypeConverter.convertToTypeWithCheck(_mask, runtime.getHash(), "to_hash");
+
+        mask.visitAll(new RubyHash.Visitor() {
+            @Override
+            public void visit(IRubyObject key, IRubyObject value) {
+                if (value instanceof RubySymbol) {
+                    RubySymbol sym = (RubySymbol)value;
+                    String symString = sym.toString();
+                    if (!symString.equals("immediate") && !symString.equals("on_blocking") && !symString.equals("never")) {
+                        throw key.getRuntime().newArgumentError("unknown mask signature");
+                    }
+                }
+            }
+        });
+
+        RubyThread th = context.getThread();
+        th.interruptMaskStack.add(mask);
+        if (th.pendingInterruptQueue.isEmpty()) {
+            th.pendingInterruptQueueChecked = false;
+            th.setInterrupt();
+        }
 
         try {
-            context.getThread().handleInterrupt = false;
             return block.call(context);
         } finally {
-            context.getThread().handleInterrupt = true;
+            th.interruptMaskStack.remove(th.interruptMaskStack.size() - 1);
+            th.setInterrupt();
+
+            th.pollThreadEvents(context);
         }
     }
 
-    @JRubyMethod(name = "pending_interrupt?", meta = true)
-    public static IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject self) {
-        return context.runtime.newBoolean(context.getThread().mail.get() != null);
+    @JRubyMethod(name = "pending_interrupt?", meta = true, optional = 1)
+    public static IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        return context.getThread().pending_interrupt_p(context, args);
     }
 
-    @JRubyMethod(name = "pending_interrupt?")
-    public IRubyObject pending_interrupt_p(ThreadContext context) {
-        return context.runtime.newBoolean(mail.get() != null);
+    @JRubyMethod(name = "pending_interrupt?", optional = 1)
+    public IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject[] args) {
+        if (pendingInterruptQueue.isEmpty()) {
+            return context.runtime.getFalse();
+        } else {
+            if (args.length == 1) {
+                IRubyObject err = args[0];
+                if (!(err instanceof RubyModule)) {
+                    throw context.runtime.newTypeError("class or module required for rescue clause");
+                }
+                if (pendingInterruptInclude(err)) {
+                    return context.runtime.getTrue();
+                } else {
+                    return context.runtime.getFalse();
+                }
+            } else {
+                return context.runtime.getTrue();
+            }
+        }
+    }
+
+    private boolean pendingInterruptInclude(IRubyObject err) {
+        Iterator<IRubyObject> iterator = pendingInterruptQueue.iterator();
+        while (iterator.hasNext()) {
+            IRubyObject e = iterator.next();
+            if (((RubyModule)e).op_le(err).isTrue()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -778,7 +950,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         RubyThread rubyThread = context.getThread();
         
         synchronized (rubyThread) {
-            rubyThread.checkMail(context);
+            rubyThread.pollThreadEvents(context);
             try {
                 // attempt to decriticalize all if we're the critical thread
                 receiver.getRuntime().getThreadService().setCritical(false);
@@ -786,7 +958,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 rubyThread.status.set(Status.SLEEP);
                 rubyThread.wait();
             } catch (InterruptedException ie) {
-                rubyThread.checkMail(context);
+                rubyThread.pollThreadEvents(context);
                 rubyThread.status.set(Status.RUN);
             }
         }
@@ -804,13 +976,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public static IRubyObject exit(IRubyObject receiver, Block block) {
         RubyThread rubyThread = receiver.getRuntime().getThreadService().getCurrentContext().getThread();
 
-        synchronized (rubyThread) {
-            rubyThread.status.set(Status.ABORTING);
-            // FIXME: This was not checking for non-null before, but maybe it should
-            rubyThread.mail.set(null);
-            receiver.getRuntime().getThreadService().setCritical(false);
-            throw new ThreadKill();
-        }
+        return rubyThread.kill();
     }
 
     @JRubyMethod(name = "stop?")
@@ -896,34 +1062,19 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod(optional = 3)
     public IRubyObject raise(IRubyObject[] args, Block block) {
         Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
-        if (this == context.getThread()) {
-            return RubyKernel.raise(context, runtime.getKernel(), args, block);
-        }
-        
-        debug(this, "before raising");
-        RubyThread currentThread = getRuntime().getCurrentContext().getThread();
 
-        debug(this, "raising");
-        IRubyObject exception = prepareRaiseException(runtime, args, block);
-
-        runtime.getThreadService().deliverEvent(currentThread, this, ThreadService.Event.raise(currentThread, this, ThreadService.Event.Type.RAISE, exception));
-
-        return this;
+        return genericRaise(runtime, args);
     }
 
-    /**
-     * This is intended to be used to raise exceptions in Ruby threads from non-
-     * Ruby threads like Timeout's thread.
-     * 
-     * @param args Same args as for Thread#raise
-     */
-    public void internalRaise(IRubyObject[] args) {
-        Ruby runtime = getRuntime();
+    public IRubyObject genericRaise(Ruby runtime, IRubyObject[] args) {
+        if (!isAlive()) return runtime.getNil();
 
         IRubyObject exception = prepareRaiseException(runtime, args, Block.NULL_BLOCK);
 
-        receiveMail(ThreadService.Event.raise(this, this, ThreadService.Event.Type.RAISE, exception));
+        pendingInterruptEnque(exception);
+        interrupt();
+
+        return runtime.getNil();
     }
 
     private IRubyObject prepareRaiseException(Ruby runtime, IRubyObject[] args, Block block) {
@@ -1017,18 +1168,19 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    public interface Wakeable {
+    @Deprecated
+    public static interface BlockingTask {
+        public void run() throws InterruptedException;
         public void wakeup();
     }
 
-    @Deprecated
-    public static interface BlockingTask extends Wakeable {
-        public void run() throws InterruptedException;
+    public interface Unblocker {
+        public void wakeup(RubyThread thread, IRubyObject self);
     }
 
-    public interface Task<Data, Return> {
+    public interface Task<Data, Return> extends Unblocker {
         public Return run(ThreadContext context, Data data) throws InterruptedException;
-        public void wakeup(RubyThread self);
+        public void wakeup(RubyThread thread, IRubyObject self);
     }
 
     public static final class SleepTask implements BlockingTask {
@@ -1071,15 +1223,17 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    public <Data, Return> Return executeTask(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
+    public <Data extends IRubyObject, Return> Return executeTask(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
         enterSleep();
         try {
-            this.task = task;
+            this.unblockFunc = task;
+            this.unblockArg = data;
             pollThreadEvents();
             return task.run(context, data);
         } finally {
             exitSleep();
-            this.task = null;
+            this.unblockFunc = null;
+            this.unblockArg = null;
             pollThreadEvents();
         }
     }
@@ -1094,21 +1248,29 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = {"kill", "exit", "terminate"})
     public IRubyObject kill() {
+        Ruby runtime = getRuntime();
         // need to reexamine this
-        RubyThread currentThread = getRuntime().getCurrentContext().getThread();
-        
+        RubyThread currentThread = runtime.getCurrentContext().getThread();
+
+        if (currentThread == runtime.getThreadService().getMainThread()) {
+            // rb_exit to hard exit process...not quite right for us
+        }
+        return genericKill(runtime, currentThread);
+    }
+
+    private IRubyObject genericKill(Ruby runtime, RubyThread currentThread) {
         // If the killee thread is the same as the killer thread, just die
         if (currentThread == this) throwThreadKill();
 
-        debug(this, "trying to kill");
+        pendingInterruptEnque(RubyFixnum.zero(runtime));
+        interrupt();
 
-        currentThread.pollThreadEvents();
-        
-        getRuntime().getThreadService().deliverEvent(currentThread, this, ThreadService.Event.kill(currentThread, this, ThreadService.Event.Type.KILL));
-
-        debug(this, "succeeded with kill");
-        
         return this;
+    }
+
+    private void pendingInterruptEnque(IRubyObject v) {
+        pendingInterruptQueue.add(v);
+        pendingInterruptQueueChecked = false;
     }
     
     /**
@@ -1118,7 +1280,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * directly to mail delivery, bypassing all Ruby Thread-related steps.
      */
     public void dieFromFinalizer() {
-        receiveMail(ThreadService.Event.kill(null, this, ThreadService.Event.Type.KILL));
+        genericKill(getRuntime(), this);
     }
 
     private static void debug(RubyThread thread, String message) {
@@ -1336,7 +1498,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     @SuppressWarnings("deprecated")
-    public void interrupt() {
+    public synchronized void interrupt() {
+        setInterrupt();
+
         Selector activeSelector = currentSelector;
         if (activeSelector != null) {
             activeSelector.wakeup();
@@ -1346,19 +1510,27 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             iowait.cancel();
         }
 
-        Task task = this.task;
+        Unblocker task = this.unblockFunc;
         if (task != null) {
-            task.wakeup(this);
+            task.wakeup(this, unblockArg);
         }
 
         // deprecated
         {
-            Wakeable t = currentBlockingTask;
+            BlockingTask t = currentBlockingTask;
             if (t != null) {
                 t.wakeup();
             }
         }
+
+        // If this thread is sleeping or stopped, wake it
+        notify();
     }
+
+    public void setInterrupt() {
+        INTERRUPT_FLAG_UPDATER.addAndGet(this, PENDING_INTERRUPT_MASK);
+    }
+
     private volatile BlockingIO.Condition blockingIO = null;
     public boolean waitForIO(ThreadContext context, RubyIO io, int ops) {
         Channel channel = io.getChannel();
@@ -1514,4 +1686,28 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private String identityString() {
         return "0x" + Integer.toHexString(System.identityHashCode(this));
     }
+
+    /**
+     * This is intended to be used to raise exceptions in Ruby threads from non-
+     * Ruby threads like Timeout's thread.
+     *
+     * @param args Same args as for Thread#raise
+     */
+    @Deprecated
+    public void internalRaise(IRubyObject[] args) {
+        Ruby runtime = getRuntime();
+
+        genericRaise(runtime, args);
+    }
+
+    @Deprecated
+    public void receiveMail(ThreadService.Event event) {
+    }
+
+    @Deprecated
+    public void checkMail(ThreadContext context) {
+    }
+
+    @Deprecated
+    private volatile BlockingTask currentBlockingTask;
 }

@@ -47,11 +47,14 @@ import java.util.concurrent.BlockingQueue;
  */
 @JRubyClass(name = "SizedQueue", parent = "Queue")
 public class SizedQueue extends Queue {
-    private int capacity;
-
     public SizedQueue(Ruby runtime, RubyClass type) {
         super(runtime, type);
-        capacity = 1;
+    }
+
+    public SizedQueue(Ruby runtime, RubyClass type, int size) {
+        super(runtime, type);
+
+        this.queue = new ArrayBlockingQueue<IRubyObject>(size, false);
     }
 
     public static void setup(Ruby runtime) {
@@ -69,13 +72,13 @@ public class SizedQueue extends Queue {
     @Override
     public IRubyObject clear(ThreadContext context) {
         super.clear(context);
-        notifyAll();
-        return context.runtime.getNil();
+
+        return this;
     }
 
     @JRubyMethod
     public RubyNumeric max(ThreadContext context) {
-        return RubyNumeric.int2fix(context.runtime, capacity);
+        return RubyNumeric.int2fix(context.runtime, queue.size() + queue.remainingCapacity());
     }
 
     @JRubyMethod(name = "max=")
@@ -87,25 +90,13 @@ public class SizedQueue extends Queue {
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public synchronized IRubyObject initialize(ThreadContext context, IRubyObject arg) {
         int new_capacity = RubyNumeric.fix2int(arg);
+
         if (new_capacity <= 0) {
-            context.runtime.newArgumentError("queue size must be positive");
+            throw context.runtime.newArgumentError("queue size must be positive");
         }
-        int difference;
-        if (new_capacity > capacity) {
-            difference = new_capacity - capacity;
-        } else {
-            difference = 0;
-        }
-        capacity = new_capacity;
-        if (difference > 0) {
-            notifyAll();
-        }
-        BlockingQueue<IRubyObject> queue = this.queue;
-        if (queue == null) {
-            this.queue = new ArrayBlockingQueue<IRubyObject>(capacity, false);
-        } else {
-            this.queue = new ArrayBlockingQueue<IRubyObject>(capacity, false, queue);
-        }
-        return context.nil;
+
+        this.queue = new ArrayBlockingQueue<IRubyObject>(new_capacity, false);
+
+        return this;
     }
 }

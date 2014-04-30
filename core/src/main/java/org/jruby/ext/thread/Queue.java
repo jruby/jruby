@@ -52,17 +52,16 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class Queue extends RubyObject {
     protected BlockingQueue<IRubyObject> queue;
     protected AtomicLong numWaiting = new AtomicLong();
-    final Ruby runtime;
 
-    final RubyThread.Task<BlockingQueue<IRubyObject>, IRubyObject> takeTask = new RubyThread.Task<BlockingQueue<IRubyObject>, IRubyObject>() {
+    final RubyThread.Task<Queue, IRubyObject> takeTask = new RubyThread.Task<Queue, IRubyObject>() {
         @Override
-        public IRubyObject run(ThreadContext context, BlockingQueue<IRubyObject> queue) throws InterruptedException {
-            return queue.take();
+        public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
+            return queue.getQueueSafe().take();
         }
 
         @Override
-        public void wakeup(RubyThread self) {
-            self.getNativeThread().interrupt();
+        public void wakeup(RubyThread thread, IRubyObject self) {
+            thread.getNativeThread().interrupt();
         }
     };
 
@@ -75,14 +74,13 @@ public class Queue extends RubyObject {
         }
 
         @Override
-        public void wakeup(RubyThread self) {
-            self.getNativeThread().interrupt();
+        public void wakeup(RubyThread thread, IRubyObject data) {
+            thread.getNativeThread().interrupt();
         }
     };
 
     public Queue(Ruby runtime, RubyClass type) {
         super(runtime, type);
-        this.runtime = runtime;
     }
 
     public static void setup(Ruby runtime) {
@@ -99,7 +97,7 @@ public class Queue extends RubyObject {
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context) {
         queue = new LinkedBlockingQueue<IRubyObject>();
-        return context.nil;
+        return this;
     }
 
     @JRubyMethod(name = "shutdown!")
@@ -124,6 +122,7 @@ public class Queue extends RubyObject {
 
     public synchronized void checkShutdown() {
         if (queue == null) {
+            Ruby runtime = getRuntime();
             throw new RaiseException(runtime, runtime.getThreadError(), "queue shut down", false);
         }
     }
@@ -132,7 +131,7 @@ public class Queue extends RubyObject {
     public synchronized IRubyObject clear(ThreadContext context) {
         BlockingQueue<IRubyObject> queue = getQueueSafe();
         queue.clear();
-        return context.runtime.getNil();
+        return this;
     }
 
     @JRubyMethod(name = "empty?")
@@ -170,7 +169,8 @@ public class Queue extends RubyObject {
     public IRubyObject push(ThreadContext context, final IRubyObject value) {
         checkShutdown();
         try {
-            return context.getThread().executeTask(context, value, putTask);
+            context.getThread().executeTask(context, value, putTask);
+            return this;
         } catch (InterruptedException ie) {
             throw context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#push");
         }
@@ -183,7 +183,7 @@ public class Queue extends RubyObject {
         }
         numWaiting.incrementAndGet();
         try {
-            return context.getThread().executeTask(context, queue, takeTask);
+            return context.getThread().executeTask(context, this, takeTask);
         } catch (InterruptedException ie) {
             throw context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#pop");
         } finally {
