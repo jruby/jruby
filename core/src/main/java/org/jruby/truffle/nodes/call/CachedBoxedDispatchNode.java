@@ -63,7 +63,7 @@ public class CachedBoxedDispatchNode extends BoxedDispatchNode {
 
         // Call the method
 
-        return callNode.call(frame, RubyArguments.pack(frame.materialize(), receiverObject, blockObject, argumentsObjects));
+        return callNode.call(frame, RubyArguments.pack(method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
     }
 
 }
