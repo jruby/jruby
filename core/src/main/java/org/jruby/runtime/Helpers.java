@@ -2099,6 +2099,7 @@ public class Helpers {
             MethodNodes methodNodes) {
         
         DynamicMethod method;
+        final Ruby runtime = containingClass.getRuntime();
 
         if (name.equals("initialize") || name.equals("initialize_copy") || name.equals("initialize_clone") || name.equals("initialize_dup") || name.equals("respond_to_missing?") || visibility == Visibility.MODULE_FUNCTION) {
             visibility = Visibility.PRIVATE;

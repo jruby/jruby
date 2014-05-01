@@ -294,10 +294,10 @@ public class RubyFixnum extends RubyInteger {
     @JRubyMethod
     @Override
     public RubyString to_s() {
-        int base = 10;
-        ByteList bl = ConvertBytes.longToByteList(value, base);
-        bl.setEncoding(USASCIIEncoding.INSTANCE);
-        return getRuntime().newString(bl);
+        ByteList bl = ConvertBytes.longToByteList(value, 10);
+        RubyString str = getRuntime().newString(bl);
+        str.setEncoding(USASCIIEncoding.INSTANCE);
+        return str;
     }
     
     @JRubyMethod

@@ -54,7 +54,7 @@ public class ProfiledMethods {
 
         this.runtime = runtime;
         // TODO is 10000 a good value ?
-        this.methods = new ConcurrentHashMap<>(10000);
+        this.methods = new ConcurrentHashMap<Long,ProfiledMethod>(10000);
     }
 
     private Ruby getRuntime() {

@@ -368,7 +368,24 @@ public class RubyBasicSocket extends RubyIO {
         int how = 2;
 
         if (args.length > 0) {
-            how = RubyNumeric.fix2int(args[0]);
+            String howString = null;
+            if (args[0] instanceof RubyString) {
+                howString = ((RubyString) args[0]).asJavaString();
+            } else if (args[0] instanceof RubySymbol) {
+                howString = ((RubySymbol) args[0]).asJavaString();
+            }
+
+            if (howString != null) {
+                if (howString.equals("RD") || howString.equals("SHUT_RD")) {
+                    how = 0;
+                } else if (howString.equals("WR") || howString.equals("SHUT_WR")) {
+                    how = 1;
+                } else if (howString.equals("RDWR") || howString.equals("SHUT_RDWR")) {
+                    how = 2;
+                }
+            } else {
+                how = RubyNumeric.fix2int(args[0]);
+            }
         }
 
         try {
@@ -604,7 +621,7 @@ public class RubyBasicSocket extends RubyIO {
             return RubyFixnum.zero(runtime);
 
             default:
-            throw runtime.newArgumentError("`how' should be either 0, 1, 2");
+            throw runtime.newArgumentError("`how' should be either :SHUT_RD, :SHUT_WR, :SHUT_RDWR");
         }
     }
 

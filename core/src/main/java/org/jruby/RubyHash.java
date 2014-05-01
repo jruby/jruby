@@ -38,6 +38,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.RubyEnumerator.enumeratorize;
+
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -1113,9 +1115,25 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_hash
      * 
      */
+    // FIXME: 
     @Override
     public RubyFixnum hash() {
-        return hash19();
+        final Ruby runtime = getRuntime();
+        final ThreadContext context = runtime.getCurrentContext();
+        if (size == 0 || runtime.isInspecting(this)) return RubyFixnum.zero(runtime);
+        final long hash[] = new long[]{size};
+        try {
+            runtime.registerInspecting(this);
+            visitAll(new Visitor() {
+                public void visit(IRubyObject key, IRubyObject value) {
+                    hash[0] ^= invokedynamic(context, key, HASH).convertToInteger().getLongValue();
+                    hash[0] ^= invokedynamic(context, value, HASH).convertToInteger().getLongValue();
+                }
+            });
+        } finally {
+            runtime.unregisterInspecting(this);
+        }
+        return RubyFixnum.newFixnum(runtime, hash[0]);
     }
 
     /** rb_hash_hash
@@ -1131,18 +1149,16 @@ public class RubyHash extends RubyObject implements Map {
                     if(size == 0) {
                         return RubyFixnum.zero(runtime);
                     }
-                    final long[] h = new long[]{size};
+                    final long[] h = new long[]{1};
                     if(recur) {
                         h[0] ^= RubyNumeric.num2long(invokedynamic(context, runtime.getHash(), HASH));
                     } else {
                         visitAll(new Visitor() {
                                 @Override
                                 public void visit(IRubyObject key, IRubyObject value) {
-                                    h[0] ^= invokedynamic(context, key, HASH).convertToInteger().getLongValue();
-                                    h[0] ^= invokedynamic(context, value, HASH).convertToInteger().getLongValue();
+                                    h[0] += invokedynamic(context, key, HASH).convertToInteger().getLongValue() ^ invokedynamic(context, value, HASH).convertToInteger().getLongValue();
                                 }
                             });
-
                     }
                     return runtime.newFixnum(h[0]);
                 }

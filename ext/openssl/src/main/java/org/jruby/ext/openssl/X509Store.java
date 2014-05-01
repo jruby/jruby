@@ -101,6 +101,7 @@ public class X509Store extends RubyObject {
         this.setInstanceVariable("@error_string", nil);
         this.setInstanceVariable("@chain", nil);
         this.setInstanceVariable("@time", nil);
+
         return this;
     }
 

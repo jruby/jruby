@@ -639,7 +639,10 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "mult", required = 2)
     public IRubyObject mult219(ThreadContext context, IRubyObject b, IRubyObject n) {
-        return multInternal(context, getVpValue19(context, b, false), b, n);
+        RubyBigDecimal val = getVpValue19(context, b, false);
+        if (val == null) return cannotBeCoerced(context, val, true);
+
+        return multInternal(context, val, b, n);
     }
 
     private IRubyObject multInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, IRubyObject n) {
@@ -873,7 +876,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = "div")
     public IRubyObject op_div19(ThreadContext context, IRubyObject r) {
         RubyBigDecimal val = getVpValue19(context, r, true);
-        
+
         if (val == null) return cannotBeCoerced(context, val, true);
         if (isNaN() || val.isNaN()) throw context.runtime.newFloatDomainError("Computation results to 'NaN'");
         if (isInfinity() && val.isOne()) throw context.runtime.newFloatDomainError("Computation results to 'Infinity'");
@@ -916,7 +919,11 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = "div")
     public IRubyObject op_div19(ThreadContext context, IRubyObject other, IRubyObject digits) {
         RubyBigDecimal val = getVpValue(context, other, false);
-        if (isNaN() || val.isNaN()) throw context.runtime.newFloatDomainError("Computation results to 'NaN'");
+        if (val == null) return cannotBeCoerced(context, val, true);
+
+        if (isNaN() || val.isNaN()) {
+            throw context.runtime.newFloatDomainError("Computation results to 'NaN'");
+        }
         
         return op_div(context, other, digits);
     }

@@ -4,7 +4,6 @@ import com.headius.options.Option;
 import jnr.posix.util.Platform;
 import org.jruby.runtime.Constants;
 import org.jruby.util.SafePropertyAccessor;
-
 /**
  * Utility methods to generate the command-line output strings for help,
  * extended options, properties, version, and copyright strings.
