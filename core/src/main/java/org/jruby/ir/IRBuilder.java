@@ -1245,25 +1245,14 @@ public class IRBuilder {
         Node leftNode = iVisited.getLeftNode();
         final String name = iVisited.getName();
 
-        // ENEBO: Does this really happen?
+        // Colon2ImplicitNode
         if (leftNode == null) return searchConst(s, s, name);
 
-        if (iVisited instanceof Colon2ConstNode) {
-            // 1. Load the module first (lhs of node)
-            // 2. Then load the constant from the module
-            Operand module = build(leftNode, s);
-            return searchConstInInheritanceHierarchy(s, module, name);
-        } else if (iVisited instanceof Colon2MethodNode) {
-            Colon2MethodNode c2mNode = (Colon2MethodNode)iVisited;
-            List<Operand> args       = setupCallArgs(null, s);
-            Variable      callResult = s.createTemporaryVariable();
-            Instr         callInstr  = CallInstr.create(callResult, new MethAddr(c2mNode.getName()),
-                    null, args.toArray(new Operand[args.size()]), null);
-            addInstr(s, callInstr);
-            return callResult;
-        } else {
-            throw new NotCompilableException("Not compilable: " + iVisited);
-        }
+        // Colon2ConstNode
+        // 1. Load the module first (lhs of node)
+        // 2. Then load the constant from the module
+        Operand module = build(leftNode, s);
+        return searchConstInInheritanceHierarchy(s, module, name);
     }
 
     public Operand buildColon3(Colon3Node node, IRScope s) {

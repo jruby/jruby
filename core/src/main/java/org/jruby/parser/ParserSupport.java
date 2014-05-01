@@ -993,13 +993,9 @@ public class ParserSupport {
     }
 
     public Colon2Node new_colon2(ISourcePosition position, Node leftNode, String name) {
-        if (IdUtil.isConstant(name)) {
-            if (leftNode == null) return new Colon2ImplicitNode(position, name);
+        if (leftNode == null) return new Colon2ImplicitNode(position, name);
 
-            return new Colon2ConstNode(position, leftNode, name);
-        }
-
-        return new Colon2MethodNode(position, leftNode, name);
+        return new Colon2ConstNode(position, leftNode, name);
     }
 
     public Colon3Node new_colon3(ISourcePosition position, String name) {
