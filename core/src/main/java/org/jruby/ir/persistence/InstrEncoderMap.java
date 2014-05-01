@@ -88,8 +88,6 @@ import org.jruby.ir.instructions.UndefMethodInstr;
 import org.jruby.ir.instructions.UnresolvedSuperInstr;
 import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.instructions.ZSuperInstr;
-import org.jruby.ir.instructions.defined.DefinedObjectNameInstr;
-import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Operand;
@@ -131,7 +129,6 @@ public class InstrEncoderMap {
             case CLASS_VAR_MODULE: encodeGetClassVarContainerModuleInstr((GetClassVarContainerModuleInstr) instr); break;
             case CONST_MISSING: encodeConstMissingInstr((ConstMissingInstr) instr); break;
             case COPY: encodeCopyInstr((CopyInstr) instr); break;
-            case DEFINED_CONSTANT_OR_METHOD: encodeGetDefinedConstantOrMethodInstr((GetDefinedConstantOrMethodInstr) instr); break;
             case DEF_CLASS: encodeDefineClassInstr((DefineClassInstr) instr); break;
             case DEF_CLASS_METH: encodeDefineClassMethodInstr((DefineClassMethodInstr) instr); break;
             case DEF_INST_METH: encodeDefineInstanceMethodInstr((DefineInstanceMethodInstr) instr); break;
@@ -289,10 +286,6 @@ public class InstrEncoderMap {
 
     private void encodeCopyInstr(CopyInstr instr) {
         e.encode(instr.getSource());
-    }
-
-    private void encodeGetDefinedConstantOrMethodInstr(GetDefinedConstantOrMethodInstr instr) {
-        encodeDefinedObjectNameInstr(instr);
     }
 
     private void encodeDefineClassInstr(DefineClassInstr instr) {
@@ -607,11 +600,6 @@ public class InstrEncoderMap {
     private void encodeOneOperandBranchInstr(OneOperandBranchInstr instr) {
         e.encode(instr.getArg1());
         e.encode(instr.getJumpTarget());
-    }
-
-    private void encodeDefinedObjectNameInstr(DefinedObjectNameInstr instr) {
-        e.encode(instr.getObject());
-        e.encode(instr.getName());
     }
 
     private void encodeGetInstr(GetInstr instr) {
