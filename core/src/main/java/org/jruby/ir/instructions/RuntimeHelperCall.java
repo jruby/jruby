@@ -24,6 +24,7 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
         HANDLE_PROPAGATE_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
         IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL, IS_DEFINED_INSTANCE_VAR,
         IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
+        IS_DEFINED_CONSTANT_OR_METHOD,
     };
 
     Variable  result;
@@ -100,6 +101,10 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
                 return IRRuntimeHelpers.isDefinedBackref(context);
             case IS_DEFINED_CALL:
                 return IRRuntimeHelpers.isDefinedCall(context, self,
+                        (IRubyObject) args[0].retrieve(context, self, currDynScope, temp),
+                        ((StringLiteral) args[1]).getString());
+            case IS_DEFINED_CONSTANT_OR_METHOD:
+                return IRRuntimeHelpers.isDefinedConstantOrMethod(context,
                         (IRubyObject) args[0].retrieve(context, self, currDynScope, temp),
                         ((StringLiteral) args[1]).getString());
             case IS_DEFINED_NTH_REF:

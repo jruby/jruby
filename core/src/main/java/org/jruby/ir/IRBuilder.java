@@ -6,7 +6,6 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.instructions.*;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
-import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.*;
@@ -1446,7 +1445,7 @@ public class IRBuilder {
                     Operand v    = (n instanceof Colon2Node) ? build(((Colon2Node)n).getLeftNode(), s) : new ObjectClass();
 
                     Variable tmpVar = s.createTemporaryVariable();
-                    addInstr(s, new GetDefinedConstantOrMethodInstr(tmpVar, v, new ConstantStringLiteral(name)));
+                    addInstr(s, new RuntimeHelperCall(tmpVar, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {v, new ConstantStringLiteral(name)}));
                     return tmpVar;
                 }
             };

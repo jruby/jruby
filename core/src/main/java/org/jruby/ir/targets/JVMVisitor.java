@@ -119,7 +119,6 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.MethodHandle;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.runtime.Binding;
@@ -1807,13 +1806,6 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void ZSuperInstr(ZSuperInstr zsuperinstr) {
         super.ZSuperInstr(zsuperinstr);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    // "defined" instructions
-
-    @Override
-    public void GetDefinedConstantOrMethodInstr(GetDefinedConstantOrMethodInstr getdefinedconstantormethodinstr) {
-        super.GetDefinedConstantOrMethodInstr(getdefinedconstantormethodinstr);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     @Override
