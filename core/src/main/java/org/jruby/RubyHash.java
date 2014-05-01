@@ -545,7 +545,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     protected RubyHashEntry internalGetEntry(IRubyObject key) {
-        if (size == 0) {
+        if (size == 0 && getRuntime().is1_9()) {
           return NO_ENTRY;
         }
         final int hash = hashValue(key.hashCode());
@@ -566,7 +566,7 @@ public class RubyHash extends RubyObject implements Map {
 
 
     protected RubyHashEntry internalDelete(final IRubyObject key) {
-        if (size == 0) {
+        if (size == 0 && getRuntime().is2_0()) {
           return NO_ENTRY;
         }
         return internalDelete(hashValue(key.hashCode()), MATCH_KEY, key);
