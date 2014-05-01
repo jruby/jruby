@@ -92,7 +92,6 @@ import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.instructions.ZSuperInstr;
 import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
-import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
@@ -177,7 +176,6 @@ class InstrDecoderMap implements IRPersistenceValues {
             case MATCH: return new MatchInstr(d.decodeVariable(), d.decodeOperand());
             case MATCH2: return new Match2Instr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case MATCH3: return new Match3Instr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
-            case METHOD_DEFINED: return new MethodDefinedInstr(d.decodeVariable(), d.decodeOperand(), (StringLiteral) d.decodeOperand());
             case METHOD_LOOKUP: return new MethodLookupInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case NONLOCAL_RETURN: return new NonlocalReturnInstr(d.decodeOperand(), d.decodeString(), d.decodeBoolean());
             case NOP: return NopInstr.NOP;

@@ -23,7 +23,7 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
     public enum Methods {
         HANDLE_PROPAGATE_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
         IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL, IS_DEFINED_INSTANCE_VAR,
-        IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD,
+        IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
     };
 
     Variable  result;
@@ -98,6 +98,10 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
                         args[0].retrieve(context, self, currDynScope, temp), blockType);
             case IS_DEFINED_BACKREF:
                 return IRRuntimeHelpers.isDefinedBackref(context);
+            case IS_DEFINED_CALL:
+                return IRRuntimeHelpers.isDefinedCall(context, self,
+                        (IRubyObject) args[0].retrieve(context, self, currDynScope, temp),
+                        ((StringLiteral) args[1]).getString());
             case IS_DEFINED_NTH_REF:
                 return IRRuntimeHelpers.isDefinedNthRef(context, (int) ((Fixnum) args[0]).getValue());
             case IS_DEFINED_GLOBAL:
