@@ -960,7 +960,7 @@ public class RubyHash extends RubyObject implements Map {
     }
     
     public final void fastASetCheckString(Ruby runtime, IRubyObject key, IRubyObject value) {
-      if (key instanceof RubyString) {
+      if (key instanceof RubyString && !isComparedByIdentity()) {
           op_asetForString(runtime, (RubyString) key, value);
       } else {
           internalPut(key, value);
