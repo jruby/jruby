@@ -10,6 +10,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.FixedArityInstr;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
@@ -23,12 +24,33 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class GetDefinedConstantOrMethodInstr extends DefinedInstr implements FixedArityInstr {
+public class GetDefinedConstantOrMethodInstr extends Instr implements ResultInstr, FixedArityInstr {
+    protected Variable result;
+    protected final Operand[] operands;
+
     public GetDefinedConstantOrMethodInstr(Variable result, Operand object, StringLiteral name) {
-        super(Operation.DEFINED_CONSTANT_OR_METHOD, result, new Operand[] { object, name });
+        super(Operation.DEFINED_CONSTANT_OR_METHOD);
+
+        this.result = result;
+        this.operands = new Operand[] { object, name };
 
         assert operands.length >= 2 : "Too few operands to " + getClass().getName();
         assert operands[1] instanceof StringLiteral : "Operand 1 must be a string literal.  Was '" + operands[1].getClass() + "'";
+    }
+
+    @Override
+    public Operand[] getOperands() {
+        return operands;
+    }
+
+    @Override
+    public Variable getResult() {
+        return result;
+    }
+
+    @Override
+    public void updateResult(Variable v) {
+        result = v;
     }
 
     @Override
