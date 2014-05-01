@@ -35,9 +35,11 @@ import org.jruby.util.log.LoggerFactory;
 public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
 
-    private final IRScope method;
     private Arity arity;
-    boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
+    private boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
+    private boolean pushScope;
+
+    protected final IRScope method;
 
     private static class DynamicMethodBox {
         public CompiledIRMethod actualMethod;
@@ -51,13 +53,14 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         this.method = method;
         this.method.getStaticScope().determineModule();
         this.arity = calculateArity();
+        this.pushScope = method.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE);
     }
 
     // We can probably use IRMethod callArgs for something (at least arity)
     public InterpretedIRMethod(IRScope method, RubyModule implementationClass) {
         this(method, Visibility.PRIVATE, implementationClass);
     }
-    
+
     public IRScope getIRMethod() {
         return method;
     }
@@ -117,27 +120,21 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         }
     }
 
-    private void post(ThreadContext context) {
+    protected void post(ThreadContext context) {
         // update call stacks (pop: ..)
         context.popFrame();
         context.popRubyClass();
-        context.popScope();
+        if (this.pushScope) {
+            context.popScope();
+        }
     }
 
-    private void pre(ThreadContext context, IRubyObject self, String name, Block block) {
+    protected void pre(ThreadContext context, IRubyObject self, String name, Block block) {
         // update call stacks (push: frame, class, scope, etc.)
-
-        // SSS FIXME: If this is going to slow down the common case, we could
-        // create a specialized version of InterpretedIRMethod for meta class bodies
         StaticScope ss = method.getStaticScope();
-        if (method instanceof IRMetaClassBody) {
-            context.preMethodFrameAndClass(getImplementationClass(), name, self, block, ss);
-            // Add a parent-link to current dynscope to support non-local returns cheaply
-            // This doesn't affect variable scoping since local variables will all have
-            // the right scope depth.
-            context.pushScope(DynamicScope.newDynamicScope(ss, context.getCurrentScope()));
-        } else {
-            context.preMethodFrameAndScope(getImplementationClass(), name, self, block, ss);
+        context.preMethodFrameAndClass(getImplementationClass(), name, self, block, ss);
+        if (this.pushScope) {
+            context.pushScope(DynamicScope.newDynamicScope(ss));
         }
         context.setCurrentVisibility(getVisibility());
     }
@@ -204,6 +201,10 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             }
         }
         return false;
+    }
+
+    protected void dupBox(InterpretedIRMethod orig) {
+        this.box = orig.box;
     }
 
     @Override
