@@ -28,6 +28,7 @@ import org.jruby.truffle.runtime.core.range.ObjectRange;
 import org.jruby.truffle.runtime.core.range.RubyRange;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 import java.math.BigInteger;
 
@@ -208,6 +209,10 @@ public abstract class RubyNode extends Node {
 
     public RubyContext getContext() {
         return context;
+    }
+
+    public SharedMethodInfo getMethodInfo() {
+        return ((RubyRootNode) getRootNode()).getSharedInfo();
     }
 
 }

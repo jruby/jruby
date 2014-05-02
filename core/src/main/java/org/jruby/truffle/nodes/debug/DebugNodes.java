@@ -144,7 +144,7 @@ public abstract class DebugNodes {
 
         @Specialization
         public RubyString parseTree(Node callNode) {
-            return getContext().makeString(((RubyRootNode) callNode.getRootNode()).getParseTree().toString(true, 0));
+            return getContext().makeString(((RubyRootNode) callNode.getRootNode()).getSharedInfo().getParseTree().toString(true, 0));
         }
 
     }

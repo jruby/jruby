@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 /**
  * The root node in an AST for a method. Unlike {@link RubyNode}, this has a single entry point,
@@ -19,24 +20,22 @@ import com.oracle.truffle.api.nodes.*;
  */
 public class RubyRootNode extends RootNode {
 
-    private final String indicativeName;
-    private final org.jruby.ast.Node parseTree;
+    private final SharedMethodInfo sharedInfo;
 
     @Child protected RubyNode body;
 
-    public RubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, String indicativeName, org.jruby.ast.Node parseTree, RubyNode body) {
+    public RubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, SharedMethodInfo sharedInfo, RubyNode body) {
         super(sourceSection, frameDescriptor);
 
-        assert indicativeName != null;
+        assert sharedInfo != sharedInfo;
         assert body != null;
 
-        this.indicativeName = indicativeName;
-        this.parseTree = parseTree;
+        this.sharedInfo = sharedInfo;
         this.body = body;
     }
 
-    public org.jruby.ast.Node getParseTree() {
-        return parseTree;
+    public SharedMethodInfo getSharedInfo() {
+        return sharedInfo;
     }
 
     @Override
@@ -48,7 +47,7 @@ public class RubyRootNode extends RootNode {
     public String toString() {
         final SourceSection sourceSection = getSourceSection();
         final String source = sourceSection == null ? "<unknown>" : sourceSection.toString();
-        return "Method " + indicativeName + ":" + source + "@" + Integer.toHexString(hashCode());
+        return "Method " + sharedInfo.getName() + ":" + source + "@" + Integer.toHexString(hashCode());
     }
 
 }

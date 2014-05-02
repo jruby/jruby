@@ -38,8 +38,6 @@ class MethodTranslator extends BodyTranslator {
     }
 
     public MethodDefinitionNode compileFunctionNode(SourceSection sourceSection, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity) {
-        environment.setMethodName(methodName);
-
         final ParameterCollector parameterCollector = new ParameterCollector();
         argsNode.accept(parameterCollector);
 
@@ -146,15 +144,15 @@ class MethodTranslator extends BodyTranslator {
             body = new CatchBreakAsReturnNode(context, sourceSection, body);
         }
 
-        final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), methodName, parseTree, body);
+        final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRootNode));
 
         if (isBlock) {
-            return new BlockDefinitionNode(context, sourceSection, methodName, environment.getUniqueMethodIdentifier(), environment.getFrameDescriptor(), environment.needsDeclarationFrame(),
+            return new BlockDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.getFrameDescriptor(), environment.needsDeclarationFrame(),
                             pristineRootNode, callTarget);
         } else {
-            return new MethodDefinitionNode(context, sourceSection, methodName, environment.getUniqueMethodIdentifier(), environment.getFrameDescriptor(), environment.needsDeclarationFrame(),
+            return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.getFrameDescriptor(), environment.needsDeclarationFrame(),
                             pristineRootNode, callTarget, ignoreLocalVisiblity);
         }
     }
@@ -171,18 +169,14 @@ class MethodTranslator extends BodyTranslator {
 
         final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, node.getIterNode(), node.getArgsNode(), null);
 
-        final String name = environment.getMethodName();
-
-        return new GeneralSuperCallNode(context, sourceSection, name, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted());
+        return new GeneralSuperCallNode(context, sourceSection, argumentsAndBlock.getBlock(), argumentsAndBlock.getArguments(), argumentsAndBlock.isSplatted());
     }
 
     @Override
     public RubyNode visitZSuperNode(org.jruby.ast.ZSuperNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final String name = environment.getMethodName();
-
-        return new GeneralSuperReCallNode(context, sourceSection, name);
+        return new GeneralSuperReCallNode(context, sourceSection);
     }
 
     @Override

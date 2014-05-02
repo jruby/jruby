@@ -14,7 +14,6 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
-import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
@@ -23,20 +22,12 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 public class GeneralSuperReCallNode extends RubyNode {
 
-    private final String name;
-
-    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, String name) {
+    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-
-        assert name != null;
-
-        this.name = name;
     }
 
     @ExplodeLoop
@@ -53,11 +44,11 @@ public class GeneralSuperReCallNode extends RubyNode {
         // Lookup method
 
         final RubyClass selfClass = ((RubyBasicObject) arguments.getSelf()).getRubyClass();
-        final RubyMethod method = selfClass.getSuperclass().lookupMethod(name);
+        final RubyMethod method = selfClass.getSuperclass().lookupMethod(getMethodInfo().getName());
 
         if (method == null || method.isUndefined()) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name, arguments.getSelf().toString()));
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(getMethodInfo().getName(), arguments.getSelf().toString()));
         }
 
         // Call the method
@@ -73,7 +64,7 @@ public class GeneralSuperReCallNode extends RubyNode {
             final RubyBasicObject self = context.getCoreLibrary().box(frame.getArguments(RubyArguments.class).getSelf());
             final RubyBasicObject receiverRubyObject = context.getCoreLibrary().box(self);
 
-            final RubyMethod method = receiverRubyObject.getRubyClass().getSuperclass().lookupMethod(name);
+            final RubyMethod method = receiverRubyObject.getRubyClass().getSuperclass().lookupMethod(getMethodInfo().getName());
 
             if (method == null || method.isUndefined() || !method.isVisibleTo(self)) {
                 return NilPlaceholder.INSTANCE;

@@ -41,9 +41,6 @@ class ModuleTranslator extends BodyTranslator {
 
         environment.addMethodDeclarationSlots();
 
-        final String methodName = "(" + name + "-def" + ")";
-        environment.setMethodName(methodName);
-
         RubyNode body;
 
         if (bodyNode != null) {
@@ -58,11 +55,11 @@ class ModuleTranslator extends BodyTranslator {
 
         body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID(), false);
 
-        final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), methodName, parseTree, body);
+        final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRootNode));
 
-        return new MethodDefinitionNode(context, sourceSection, methodName, environment.getUniqueMethodIdentifier(), environment.getFrameDescriptor(), environment.needsDeclarationFrame(),
+        return new MethodDefinitionNode(context, sourceSection, environment.getSharedMethodInfo().getName(), environment.getSharedMethodInfo(), environment.getFrameDescriptor(), environment.needsDeclarationFrame(),
                         pristineRootNode, callTarget, false);
     }
 
@@ -93,8 +90,10 @@ class ModuleTranslator extends BodyTranslator {
          * the class being defined.
          */
 
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
-                        new SharedRubyMethod(sourceSection));
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, node.getName(), node.getBodyNode());
+
+        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
+                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo);
         final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, false, source);
         final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), node.getName(), node, node.getArgsNode(), node.getBodyNode(), false);
 

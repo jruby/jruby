@@ -25,7 +25,7 @@ import org.jruby.truffle.runtime.methods.*;
 @NodeInfo(shortName = "block-def")
 public class BlockDefinitionNode extends MethodDefinitionNode {
 
-    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedRubyMethod uniqueIdentifier, FrameDescriptor frameDescriptor,
+    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo uniqueIdentifier, FrameDescriptor frameDescriptor,
                     boolean requiresDeclarationFrame, RubyRootNode pristineRootNode, CallTarget callTarget) {
         super(context, sourceSection, name, uniqueIdentifier, frameDescriptor, requiresDeclarationFrame, pristineRootNode, callTarget, false);
     }

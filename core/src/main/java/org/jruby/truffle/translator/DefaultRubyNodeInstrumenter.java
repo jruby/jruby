@@ -59,7 +59,7 @@ final class DefaultRubyNodeInstrumenter implements RubyNodeInstrumenter {
         return node;
     }
 
-    public RubyNode instrumentAsLocalAssignment(RubyNode node, SharedRubyMethod methodIdentifier, String localName) {
+    public RubyNode instrumentAsLocalAssignment(RubyNode node, SharedMethodInfo methodIdentifier, String localName) {
         assert node != null;
 
         final RubyContext context = node.getContext();

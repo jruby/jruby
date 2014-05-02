@@ -109,10 +109,11 @@ public abstract class ModuleNodes {
 
             final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, readInstanceVariable);
 
-            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, name + "(attr_reader)", null, block);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name + "(attr_reader)", null);
+            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRoot));
             final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRoot, true, false);
-            final RubyMethod method = new RubyMethod(new SharedRubyMethod(sourceSection), module, name, Visibility.PUBLIC, false, methodImplementation);
+            final RubyMethod method = new RubyMethod(sharedMethodInfo, module, name, Visibility.PUBLIC, false, methodImplementation);
 
             module.addMethod(method);
         }
@@ -152,10 +153,11 @@ public abstract class ModuleNodes {
 
             final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, writeInstanceVariable);
 
-            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, name + "(attr_writer)", null, block);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name + "(attr_writer)", null);
+            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRoot));
             final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRoot, true, false);
-            final RubyMethod method = new RubyMethod(new SharedRubyMethod(sourceSection), module, name + "=", Visibility.PUBLIC, false, methodImplementation);
+            final RubyMethod method = new RubyMethod(sharedMethodInfo, module, name + "=", Visibility.PUBLIC, false, methodImplementation);
 
             module.addMethod(method);
         }

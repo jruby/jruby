@@ -39,7 +39,7 @@ import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.range.FixnumRange;
-import org.jruby.truffle.runtime.methods.SharedRubyMethod;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 import java.util.*;
 
@@ -519,11 +519,13 @@ public class BodyTranslator extends Translator {
     public RubyNode visitClassNode(org.jruby.ast.ClassNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, node.getCPath().getName(), node.getBodyNode());
+
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
-                        new SharedRubyMethod(sourceSection));
+                        sharedMethodInfo);
         final ModuleTranslator classTranslator = new ModuleTranslator(context, this, newEnvironment, source);
 
-        final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), node.getCPath().getName(), node, node.getBodyNode());
+        final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), sharedMethodInfo.getName(), node, node.getBodyNode());
 
         /*
          * See my note in visitDefnNode about where the class gets defined - the same applies here.
@@ -715,8 +717,10 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity) {
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
-                        new SharedRubyMethod(sourceSection));
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, methodName, parseTree);
+
+        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
+                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo);
 
         // ownScopeForAssignments is the same for the defined method as the current one.
 
@@ -1090,8 +1094,10 @@ public class BodyTranslator extends Translator {
 
         // Unset this flag for any for any blocks within the for statement's body
 
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getReturnID(), hasOwnScope, false,
-                        new SharedRubyMethod(sourceSection));
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(block)", node.getBodyNode());
+
+        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
+                context, environment, environment.getParser(), environment.getReturnID(), hasOwnScope, false, sharedMethodInfo);
         final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, true, parent == null, source);
         methodCompiler.translatingForStatement = translatingForStatement;
 
@@ -1155,7 +1161,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode translated = ((ReadNode) lhs).makeWriteNode(rhs);
 
-        final SharedRubyMethod methodIdentifier = environment.findMethodForLocalVar(node.getName());
+        final SharedMethodInfo methodIdentifier = environment.findMethodForLocalVar(node.getName());
 
         return instrumenter.instrumentAsLocalAssignment(translated, methodIdentifier, node.getName());
     }
@@ -1198,11 +1204,13 @@ public class BodyTranslator extends Translator {
 
         final String name = node.getCPath().getName();
 
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
-                        new SharedRubyMethod(sourceSection));
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name, node);
+
+        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
+                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo);
         final ModuleTranslator classTranslator = new ModuleTranslator(context, this, newEnvironment, source);
 
-        final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), node.getCPath().getName(), node, node.getBodyNode());
+        final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), name, node, node.getBodyNode());
 
         final DefineOrGetModuleNode defineModuleNode = new DefineOrGetModuleNode(context, sourceSection, name, translateCPath(sourceSection, node.getCPath()));
 
@@ -1758,11 +1766,13 @@ public class BodyTranslator extends Translator {
     public RubyNode visitSClassNode(org.jruby.ast.SClassNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
-                        new SharedRubyMethod(sourceSection));
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(singleton-def)", node);
+
+        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
+                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo);
         final ModuleTranslator classTranslator = new ModuleTranslator(context, this, newEnvironment, source);
 
-        final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), "singleton", node, node.getBodyNode());
+        final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), sharedMethodInfo.getName(), node, node.getBodyNode());
 
         final RubyNode receiverNode = node.getReceiverNode().accept(this);
 
@@ -1932,7 +1942,10 @@ public class BodyTranslator extends Translator {
 
         // TODO(cs): code copied and modified from visitIterNode - extract common
 
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getReturnID(), false, false, new SharedRubyMethod(sourceSection));
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(lambda)", node);
+
+        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
+                context, environment, environment.getParser(), environment.getReturnID(), false, false, sharedMethodInfo);
         final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, parent == null, source);
 
         org.jruby.ast.ArgsNode argsNode;
@@ -1949,7 +1962,7 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException();
         }
 
-        final MethodDefinitionNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), "(lambda)", node, argsNode, node.getBodyNode(), false);
+        final MethodDefinitionNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), node, argsNode, node.getBodyNode(), false);
 
         return new LambdaNode(context, translate(node.getPosition()), definitionNode);
     }

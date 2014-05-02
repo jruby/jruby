@@ -50,8 +50,14 @@ public class TranslatorDriver {
     }
 
     public MethodDefinitionNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
-        // TODO(cs) should this get a new shared method object or not?
-        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, null), this, allocateReturnID(), true, true, new SharedRubyMethod(null));
+        final SourceSection sourceSection = new DefaultSourceSection(
+                context.getSourceManager().get(bodyNode.getPosition().getFile()),
+                "(unknown)", bodyNode.getPosition().getStartLine() + 1, -1, -1, -1);
+
+        final SharedMethodInfo sharedMethod = new SharedMethodInfo(sourceSection, "(unknown)", parseTree);
+
+        final TranslatorEnvironment environment = new TranslatorEnvironment(
+                context, environmentForFrame(context, null), this, allocateReturnID(), true, true, sharedMethod);
 
         // All parsing contexts have a visibility slot at their top level
 
@@ -61,7 +67,7 @@ public class TranslatorDriver {
 
         final MethodTranslator translator = new MethodTranslator(context, null, environment, false, false, context.getSourceManager().get(bodyNode.getPosition().getFile()));
 
-        return translator.compileFunctionNode(new DefaultSourceSection(context.getSourceManager().get(bodyNode.getPosition().getFile()), "(unknown)", bodyNode.getPosition().getStartLine() + 1, -1, -1, -1), "(unknown)", parseTree, argsNode, bodyNode, false);
+        return translator.compileFunctionNode(sourceSection, "(unknown)", parseTree, argsNode, bodyNode, false);
     }
 
     public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame) {
@@ -114,7 +120,9 @@ public class TranslatorDriver {
     }
 
     public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
-        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, new SharedRubyMethod(null));
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(null, "(root)", rootNode);
+
+        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, sharedMethodInfo);
 
         // Get the DATA constant
 
@@ -195,7 +203,7 @@ public class TranslatorDriver {
                     throw new UnsupportedOperationException();
             }
 
-            final RootNode root = new RubyRootNode(truffleNode.getSourceSection(), environment.getFrameDescriptor(), indicativeName, rootNode, truffleNode);
+            final RootNode root = new RubyRootNode(truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode);
 
             // Return the root and the frame descriptor
 
@@ -239,7 +247,8 @@ public class TranslatorDriver {
             return null;
         } else {
             final MaterializedFrame parent = frame.getArguments(RubyArguments.class).getDeclarationFrame();
-            return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, new SharedRubyMethod(null));
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(null, null, null);
+            return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, sharedMethodInfo);
         }
     }
 
