@@ -58,7 +58,7 @@ public class FloatNode extends Node implements ILiteralNode {
         return NodeType.FLOATNODE;
     }
 
-    public Object accept(NodeVisitor iVisitor) {
+    public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitFloatNode(this);
     }
 

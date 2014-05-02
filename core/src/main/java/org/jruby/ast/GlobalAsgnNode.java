@@ -64,7 +64,7 @@ public class GlobalAsgnNode extends AssignableNode implements INameNode {
      * accepts the visitor 
      * @param iVisitor the visitor to accept
      **/
-    public Object accept(NodeVisitor iVisitor) {
+    public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitGlobalAsgnNode(this);
     }
     /**
