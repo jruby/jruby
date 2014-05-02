@@ -516,7 +516,7 @@ class TestKernel < Test::Unit::TestCase
     if (WINDOWS)
       result = `"#{TESTAPP_NONORM}" #{Dir.pwd}`.strip
     else
-      result = `"pwd" .`.strip
+      result = `""pwd -P"" .`.strip
     end
     expected = Dir.pwd
     assert_equal(expected, result)
@@ -527,7 +527,7 @@ class TestKernel < Test::Unit::TestCase
       result = `cmd /c cd`.strip.gsub('\\', '/').downcase
       expected = Dir.pwd.downcase
     else
-      result = `sh -c pwd`.strip
+      result = `sh -c "pwd -P"`.strip
       expected = Dir.pwd
     end
     assert_equal(expected, result)
@@ -538,7 +538,7 @@ class TestKernel < Test::Unit::TestCase
       result = `cmd.exe /c cd`.strip.gsub('\\', '/').downcase
       expected = Dir.pwd.downcase
     else
-      result = `pwd`.strip
+      result = `pwd -P`.strip
       expected = Dir.pwd
     end
     assert_equal(expected, result)
