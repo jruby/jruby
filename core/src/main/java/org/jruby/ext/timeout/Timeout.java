@@ -207,7 +207,7 @@ public class Timeout implements Library {
             public void run() {
                 if (latch.compareAndSet(false, true)) {
                     if (currentThread.isAlive()) {
-                        currentThread.genericRaise(runtime, new IRubyObject[]{exception, runtime.newString("execution expired")});
+                        currentThread.genericRaise(runtime, new IRubyObject[]{exception, runtime.newString("execution expired")}, null);
                     }
                 }
             }

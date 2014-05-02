@@ -157,11 +157,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** Mail slot for cross-thread events */
     private final Queue<IRubyObject> pendingInterruptQueue = new ConcurrentLinkedQueue();
 
-    @Deprecated
-    private volatile Wakeable currentBlockingTask;
+    /** A function to use to unblock this thread, if possible */
+    private Unblocker unblockFunc;
 
-    /** The current task blocking a thread, to allow interrupting it in an appropriate way */
-    private volatile Task task;
+    /** Argument to pass to the unblocker */
+    private IRubyObject unblockArg;
 
     /** The list of locks this thread currently holds, so they can be released on exit */
     private final List<Lock> heldLocks = new Vector<Lock>();
@@ -1072,7 +1072,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public IRubyObject raise(IRubyObject[] args, Block block) {
         Ruby runtime = getRuntime();
 
-        runtime.getThreadService().deliverEvent(currentThread, this, ThreadService.Event.raise(currentThread, this, ThreadService.Event.Type.RAISE, exception));
+        RubyThread currentThread = runtime.getCurrentContext().getThread();
 
         return genericRaise(runtime, args, currentThread);
     }
@@ -1080,11 +1080,17 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public IRubyObject genericRaise(Ruby runtime, IRubyObject[] args, RubyThread currentThread) {
         if (!isAlive()) return runtime.getNil();
 
-        if (currentThread == this) throwThreadKill();
+        if (currentThread == this) {
+            RubyKernel.raise(runtime.getCurrentContext(), runtime.getKernel(), args, Block.NULL_BLOCK);
+            // should not reach here
+        }
 
         IRubyObject exception = prepareRaiseException(runtime, args, Block.NULL_BLOCK);
 
-        receiveMail(ThreadService.Event.raise(this, this, ThreadService.Event.Type.RAISE, exception));
+        pendingInterruptEnqueue(exception);
+        interrupt();
+
+        return runtime.getNil();
     }
 
     private IRubyObject prepareRaiseException(Ruby runtime, IRubyObject[] args, Block block) {
@@ -1178,18 +1184,19 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    public interface Wakeable {
+    @Deprecated
+    public static interface BlockingTask {
+        public void run() throws InterruptedException;
         public void wakeup();
     }
 
-    @Deprecated
-    public static interface BlockingTask extends Wakeable {
-        public void run() throws InterruptedException;
+    public interface Unblocker {
+        public void wakeup(RubyThread thread, IRubyObject self);
     }
 
-    public interface Task<Data, Return> {
+    public interface Task<Data, Return> extends Unblocker {
         public Return run(ThreadContext context, Data data) throws InterruptedException;
-        public void wakeup(RubyThread self);
+        public void wakeup(RubyThread thread, IRubyObject self);
     }
 
     public static final class SleepTask implements BlockingTask {
@@ -1232,15 +1239,17 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    public <Data, Return> Return executeTask(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
+    public <Data extends IRubyObject, Return> Return executeTask(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
         enterSleep();
         try {
-            this.task = task;
+            this.unblockFunc = task;
+            this.unblockArg = data;
             pollThreadEvents();
             return task.run(context, data);
         } finally {
             exitSleep();
-            this.task = null;
+            this.unblockFunc = null;
+            this.unblockArg = null;
             pollThreadEvents();
         }
     }
@@ -1269,11 +1278,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // If the killee thread is the same as the killer thread, just die
         if (currentThread == this) throwThreadKill();
 
-        debug(this, "trying to kill");
-
-        currentThread.pollThreadEvents();
-        
-        getRuntime().getThreadService().deliverEvent(currentThread, this, ThreadService.Event.kill(currentThread, this, ThreadService.Event.Type.KILL));
+        pendingInterruptEnqueue(RubyFixnum.zero(runtime));
+        interrupt();
 
         return this;
     }
@@ -1290,7 +1296,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * directly to mail delivery, bypassing all Ruby Thread-related steps.
      */
     public void dieFromFinalizer() {
-        receiveMail(ThreadService.Event.kill(null, this, ThreadService.Event.Type.KILL));
+        genericKill(getRuntime(), this);
     }
 
     private static void debug(RubyThread thread, String message) {
@@ -1508,7 +1514,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     @SuppressWarnings("deprecated")
-    public void interrupt() {
+    public synchronized void interrupt() {
+        setInterrupt();
+
         Selector activeSelector = currentSelector;
         if (activeSelector != null) {
             activeSelector.wakeup();
@@ -1518,17 +1526,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             iowait.cancel();
         }
 
-        Task task = this.task;
+        Unblocker task = this.unblockFunc;
         if (task != null) {
-            task.wakeup(this);
-        }
-
-        // deprecated
-        {
-            Wakeable t = currentBlockingTask;
-            if (t != null) {
-                t.wakeup();
-            }
+            task.wakeup(this, unblockArg);
         }
 
         // deprecated
