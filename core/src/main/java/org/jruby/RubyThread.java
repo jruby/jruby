@@ -603,6 +603,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
+    // RUBY_VM_INTERRUPTED_ANY
     private boolean anyInterrupted() {
         return (interruptFlag & ~interruptMask) != 0;
     }
@@ -814,14 +815,19 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return isAlive() ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    @JRubyMethod(optional = 1)
+    @Deprecated
     public IRubyObject join(IRubyObject[] args) {
-        Ruby runtime = getRuntime();
+        return join(getRuntime().getCurrentContext(), args);
+    }
+
+    @JRubyMethod(optional = 1)
+    public IRubyObject join(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
         long timeoutMillis = Long.MAX_VALUE;
 
         if (args.length > 0 && !args[0].isNil()) {
             if (args.length > 1) {
-                throw getRuntime().newArgumentError(args.length,1);
+                throw runtime.newArgumentError(args.length, 1);
             }
             // MRI behavior: value given in seconds; converted to Float; less
             // than or equal to zero returns immediately; returns nil
@@ -830,7 +836,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             // TODO: not sure that we should skip calling join() altogether.
             // Thread.join() has some implications for Java Memory Model, etc.
                 if (threadImpl.isAlive()) {
-                    return getRuntime().getNil();
+                    return context.nil;
                 } else {   
                    return this;
                 }
@@ -838,8 +844,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
 
         if (isCurrent()) {
-            throw getRuntime().newThreadError("thread " + identityString() + " tried to join itself");
+            throw runtime.newThreadError("thread " + identityString() + " tried to join itself");
         }
+
+        RubyThread currentThread = context.getThread();
 
         try {
             if (runtime.getThreadService().getCritical()) {
@@ -857,7 +865,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 //threadImpl.interrupt();
             }
 
-            RubyThread currentThread = getRuntime().getCurrentContext().getThread();
             final long timeToWait = Math.min(timeoutMillis, 200);
 
             // We need this loop in order to be able to "unblock" the
@@ -883,12 +890,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         if (exitingException != null) {
             // Set $! in the current thread before exiting
-            getRuntime().getGlobalVariables().set("$!", (IRubyObject)exitingException.getException());
+            runtime.getGlobalVariables().set("$!", (IRubyObject)exitingException.getException());
             throw exitingException;
+
         }
 
+        // check events before leaving
+        currentThread.pollThreadEvents(context);
+
         if (threadImpl.isAlive()) {
-            return getRuntime().getNil();
+            return context.nil;
         } else {
             return this;
         }
@@ -1533,7 +1544,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public void setInterrupt() {
-        INTERRUPT_FLAG_UPDATER.addAndGet(this, PENDING_INTERRUPT_MASK);
+        while (true) {
+            int oldFlag = interruptFlag;
+            if (INTERRUPT_FLAG_UPDATER.compareAndSet(this, oldFlag, oldFlag | PENDING_INTERRUPT_MASK)) {
+                return;
+            }
+        }
     }
 
     private volatile BlockingIO.Condition blockingIO = null;
