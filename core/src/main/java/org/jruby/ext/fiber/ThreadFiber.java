@@ -186,7 +186,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     
     @JRubyMethod
     public IRubyObject __alive__(ThreadContext context) {
-        return context.runtime.newBoolean(thread != null && thread.isAlive());
+        return context.runtime.newBoolean(alive());
     }
     
     @JRubyMethod(meta = true)
@@ -241,6 +241,10 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                     if (data.prev != null) {
                         data.prev.thread.raise(JavaUtil.convertJavaToUsableRubyObject(runtime, t));
                     }
+                } finally {
+                    // clear reference to the fiber's thread
+                    ThreadFiber tf = data.fiber.get();
+                    if (tf != null) tf.thread = null;
                 }
             }
         });
