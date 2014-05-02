@@ -61,9 +61,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReference;
@@ -1075,7 +1073,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         IRubyObject exception = prepareRaiseException(runtime, args, Block.NULL_BLOCK);
 
-        pendingInterruptEnque(exception);
+        pendingInterruptEnqueue(exception);
         interrupt();
 
         return runtime.getNil();
@@ -1266,13 +1264,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         // If the killee thread is the same as the killer thread, just die
         if (currentThread == this) throwThreadKill();
 
-        pendingInterruptEnque(RubyFixnum.zero(runtime));
+        pendingInterruptEnqueue(RubyFixnum.zero(runtime));
         interrupt();
 
         return this;
     }
 
-    private void pendingInterruptEnque(IRubyObject v) {
+    private void pendingInterruptEnqueue(IRubyObject v) {
         pendingInterruptQueue.add(v);
         pendingInterruptQueueChecked = false;
     }
