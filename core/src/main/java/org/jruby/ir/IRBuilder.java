@@ -1419,22 +1419,21 @@ public class IRBuilder {
             // of the runtime library, which then can be used by buildDefinitionCheck method above?
             // This runtime library would be used both by the interpreter & the compiled code!
 
-            final Colon3Node iVisited = (Colon3Node) node;
-            final String name = iVisited.getName();
+            final Colon3Node colon = (Colon3Node) node;
+            final IRScope scope = s;
+            final String name = colon.getName();
+            final Variable errInfo = s.createTemporaryVariable();
 
             // store previous exception for restoration if we rescue something
-            Variable errInfo = s.createTemporaryVariable();
             addInstr(s, new GetErrorInfoInstr(errInfo));
 
             CodeBlock protectedCode = new CodeBlock() {
                 public Operand run(Object[] args) {
-                    IRScope s    = (IRScope)args[0];
-                    Node    n    = (Node)args[1];
-                    String  name = (String)args[2];
-                    Operand v    = (n instanceof Colon2Node) ? build(((Colon2Node)n).getLeftNode(), s) : new ObjectClass();
+                    Operand v = colon instanceof Colon2Node ?
+                            build(((Colon2Node)colon).getLeftNode(), scope) : new ObjectClass();
 
-                    Variable tmpVar = s.createTemporaryVariable();
-                    addInstr(s, new RuntimeHelperCall(tmpVar, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {v, new ConstantStringLiteral(name)}));
+                    Variable tmpVar = scope.createTemporaryVariable();
+                    addInstr(scope, new RuntimeHelperCall(tmpVar, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {v, new ConstantStringLiteral(name)}));
                     return tmpVar;
                 }
             };
@@ -1442,15 +1441,14 @@ public class IRBuilder {
             // rescue block
             CodeBlock rescueBlock = new CodeBlock() {
                  public Operand run(Object[] args) {
-                      // Nothing to do -- ignore the exception, and restore stashed error info!
-                      IRScope s  = (IRScope)args[0];
-                      addInstr(s, new RestoreErrorInfoInstr((Operand) args[1]));
-                      return manager.getNil();
+                 // Nothing to do -- ignore the exception, and restore stashed error info!
+                 addInstr(scope, new RestoreErrorInfoInstr(errInfo));
+                 return manager.getNil();
                  }
             };
 
                 // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
-            return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, name}, rescueBlock, new Object[] {s, errInfo});
+            return protectCodeWithRescue(s, protectedCode, null, rescueBlock, null);
         }
         case FCALLNODE: {
             /* ------------------------------------------------------------------
@@ -1467,19 +1465,19 @@ public class IRBuilder {
             return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
         }
         case CALLNODE: {
-            Label undefLabel = s.getNewLabel();
-            CallNode callNode = (CallNode) node;
+            final Label undefLabel = s.getNewLabel();
+            final CallNode callNode = (CallNode) node;
+            final IRScope scope = s;
             Operand  receiverDefn = buildGetDefinition(callNode.getReceiverNode(), s);
             addInstr(s, BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
 
             // protected main block
             CodeBlock protectedCode = new CodeBlock() {
                 public Operand run(Object[] args) {
-                    IRScope  scope = (IRScope)args[0];
-                    CallNode node = (CallNode)args[1];
-
-                    return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_CALL,
-                            new Operand[]{build(node.getReceiverNode(), scope), new StringLiteral(node.getName())}));
+                    Variable tmpVar = scope.createTemporaryVariable();
+                    addInstr(scope, new RuntimeHelperCall(tmpVar, IS_DEFINED_CALL,
+                            new Operand[]{build(callNode.getReceiverNode(), scope), new StringLiteral(callNode.getName())}));
+                    return buildDefnCheckIfThenPaths(scope, undefLabel, tmpVar);
                 }
             };
 
@@ -1489,7 +1487,7 @@ public class IRBuilder {
             };
 
             // Try verifying definition, and if we get an exception, throw it out, and return nil
-            return protectCodeWithRescue(s, protectedCode, new Object[]{s, callNode, undefLabel}, rescueBlock, null);
+            return protectCodeWithRescue(s, protectedCode, null, rescueBlock, null);
         }
         case ATTRASSIGNNODE: {
             Label  undefLabel = s.getNewLabel();
