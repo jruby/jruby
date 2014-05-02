@@ -67,7 +67,7 @@ public class TranslatorDriver {
 
         final MethodTranslator translator = new MethodTranslator(context, null, environment, false, false, context.getSourceManager().get(bodyNode.getPosition().getFile()));
 
-        return translator.compileFunctionNode(sourceSection, "(unknown)", parseTree, argsNode, bodyNode, false);
+        return translator.compileFunctionNode(sourceSection, "(unknown)", argsNode, bodyNode, false);
     }
 
     public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame) {

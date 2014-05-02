@@ -525,7 +525,7 @@ public class BodyTranslator extends Translator {
                         sharedMethodInfo);
         final ModuleTranslator classTranslator = new ModuleTranslator(context, this, newEnvironment, source);
 
-        final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), sharedMethodInfo.getName(), node, node.getBodyNode());
+        final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), sharedMethodInfo.getName(), node.getBodyNode());
 
         /*
          * See my note in visitDefnNode about where the class gets defined - the same applies here.
@@ -726,7 +726,7 @@ public class BodyTranslator extends Translator {
 
         final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, parent == null, source);
 
-        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(sourceSection, methodName, parseTree, argsNode, bodyNode, ignoreLocalVisiblity);
+        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(sourceSection, methodName, argsNode, bodyNode, ignoreLocalVisiblity);
 
         /*
          * In the top-level, methods are defined in the class of the main object. This is
@@ -1119,7 +1119,7 @@ public class BodyTranslator extends Translator {
             methodCompiler.useClassVariablesAsIfInClass = true;
         }
 
-        return methodCompiler.compileFunctionNode(translate(node.getPosition()), "(block)", node, argsNode, node.getBodyNode(), false);
+        return methodCompiler.compileFunctionNode(translate(node.getPosition()), "(block)", argsNode, node.getBodyNode(), false);
     }
 
     @Override
@@ -1210,7 +1210,7 @@ public class BodyTranslator extends Translator {
                 context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo);
         final ModuleTranslator classTranslator = new ModuleTranslator(context, this, newEnvironment, source);
 
-        final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), name, node, node.getBodyNode());
+        final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), name, node.getBodyNode());
 
         final DefineOrGetModuleNode defineModuleNode = new DefineOrGetModuleNode(context, sourceSection, name, translateCPath(sourceSection, node.getCPath()));
 
@@ -1772,7 +1772,7 @@ public class BodyTranslator extends Translator {
                 context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo);
         final ModuleTranslator classTranslator = new ModuleTranslator(context, this, newEnvironment, source);
 
-        final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), sharedMethodInfo.getName(), node, node.getBodyNode());
+        final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), sharedMethodInfo.getName(), node.getBodyNode());
 
         final RubyNode receiverNode = node.getReceiverNode().accept(this);
 
@@ -1962,7 +1962,7 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException();
         }
 
-        final MethodDefinitionNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), node, argsNode, node.getBodyNode(), false);
+        final MethodDefinitionNode definitionNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false);
 
         return new LambdaNode(context, translate(node.getPosition()), definitionNode);
     }
