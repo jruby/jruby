@@ -1063,11 +1063,15 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public IRubyObject raise(IRubyObject[] args, Block block) {
         Ruby runtime = getRuntime();
 
-        return genericRaise(runtime, args);
+        RubyThread currentThread = runtime.getCurrentContext().getThread();
+
+        return genericRaise(runtime, args, currentThread);
     }
 
-    public IRubyObject genericRaise(Ruby runtime, IRubyObject[] args) {
+    public IRubyObject genericRaise(Ruby runtime, IRubyObject[] args, RubyThread currentThread) {
         if (!isAlive()) return runtime.getNil();
+
+        if (currentThread == this) throwThreadKill();
 
         IRubyObject exception = prepareRaiseException(runtime, args, Block.NULL_BLOCK);
 
@@ -1697,7 +1701,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public void internalRaise(IRubyObject[] args) {
         Ruby runtime = getRuntime();
 
-        genericRaise(runtime, args);
+        genericRaise(runtime, args, runtime.getCurrentContext().getThread());
     }
 
     @Deprecated
