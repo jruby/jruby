@@ -62,7 +62,7 @@ public abstract class DebugNodes {
         @Specialization(order = 4)
         public NilPlaceholder debugBreak(RubySymbol methodName, RubySymbol localName, @SuppressWarnings("unused") Node callNode, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             final RubyMethod method = getContext().getCoreLibrary().getMainObject().getLookupNode().lookupMethod(methodName.toString());
-            final MethodLocal methodLocal = new MethodLocal(method.getUniqueIdentifier(), localName.toString());
+            final MethodLocal methodLocal = new MethodLocal(method.getSharedMethodInfo(), localName.toString());
             getContext().getRubyDebugManager().setBreakpoint(methodLocal, null);
             return NilPlaceholder.INSTANCE;
         }
@@ -70,7 +70,7 @@ public abstract class DebugNodes {
         @Specialization(order = 5)
         public NilPlaceholder debugBreak(RubySymbol methodName, RubySymbol localName, @SuppressWarnings("unused") Node callNode, RubyProc block) {
             final RubyMethod method = getContext().getCoreLibrary().getMainObject().getLookupNode().lookupMethod(methodName.toString());
-            final MethodLocal methodLocal = new MethodLocal(method.getUniqueIdentifier(), localName.toString());
+            final MethodLocal methodLocal = new MethodLocal(method.getSharedMethodInfo(), localName.toString());
             getContext().getRubyDebugManager().setBreakpoint(methodLocal, block);
             return NilPlaceholder.INSTANCE;
         }
@@ -171,7 +171,7 @@ public abstract class DebugNodes {
         @Specialization
         public NilPlaceholder debugRemove(RubySymbol methodName, RubySymbol localName) {
             final RubyMethod method = getContext().getCoreLibrary().getMainObject().getLookupNode().lookupMethod(methodName.toString());
-            final MethodLocal methodLocal = new MethodLocal(method.getUniqueIdentifier(), localName.toString());
+            final MethodLocal methodLocal = new MethodLocal(method.getSharedMethodInfo(), localName.toString());
             getContext().getRubyDebugManager().removeBreakpoint(methodLocal);
             return NilPlaceholder.INSTANCE;
         }

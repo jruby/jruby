@@ -26,13 +26,6 @@ public class TranslatorEnvironment {
 
     private final FrameDescriptor frameDescriptor;
 
-    private final List<FrameSlot> preParameters = new ArrayList<>();
-
-    private final List<FrameSlot> optionalParameters = new ArrayList<>();
-    private final Map<FrameSlot, RubyNode> optionalParametersDefaultValues = new HashMap<>();
-
-    private final List<FrameSlot> postParameters = new ArrayList<>();
-
     private final List<FrameSlot> flipFlopStates = new ArrayList<>();
 
     private FrameSlot restParameter = null;
@@ -48,7 +41,7 @@ public class TranslatorEnvironment {
     protected final TranslatorEnvironment parent;
     private String methodName = "";
     private boolean needsDeclarationFrame = false;
-    private UniqueMethodIdentifier methodIdentifier;
+    private SharedRubyMethod methodIdentifier;
 
     // TODO(CS): overflow?
     private static AtomicInteger tempIndex = new AtomicInteger();
@@ -56,7 +49,7 @@ public class TranslatorEnvironment {
     public boolean hasRestParameter = false;
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, FrameDescriptor frameDescriptor, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments,
-                    boolean neverAssignInParentScope, UniqueMethodIdentifier methodIdentifier) {
+                    boolean neverAssignInParentScope, SharedRubyMethod sharedMethodInfo) {
         this.context = context;
         this.parent = parent;
         this.frameDescriptor = frameDescriptor;
@@ -64,32 +57,16 @@ public class TranslatorEnvironment {
         this.returnID = returnID;
         this.ownScopeForAssignments = ownScopeForAssignments;
         this.neverAssignInParentScope = neverAssignInParentScope;
-        this.methodIdentifier = methodIdentifier;
+        this.methodIdentifier = sharedMethodInfo;
     }
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
-                    UniqueMethodIdentifier methodIdentifier) {
+                    SharedRubyMethod methodIdentifier) {
         this(context, parent, new FrameDescriptor(RubyFrameTypeConversion.getInstance()), parser, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier);
     }
 
     public TranslatorEnvironment getParent() {
         return parent;
-    }
-
-    public List<FrameSlot> getPreParameters() {
-        return preParameters;
-    }
-
-    public List<FrameSlot> getOptionalParameters() {
-        return optionalParameters;
-    }
-
-    public Map<FrameSlot, RubyNode> getOptionalParametersDefaultValues() {
-        return optionalParametersDefaultValues;
-    }
-
-    public List<FrameSlot> getPostParameters() {
-        return postParameters;
     }
 
     public TranslatorEnvironment getParent(int level) {
@@ -105,7 +82,7 @@ public class TranslatorEnvironment {
         return getFrameDescriptor().findOrAddFrameSlot(name);
     }
 
-    public UniqueMethodIdentifier findMethodForLocalVar(String name) {
+    public SharedRubyMethod findMethodForLocalVar(String name) {
         TranslatorEnvironment current = this;
         do {
             FrameSlot slot = current.getFrameDescriptor().findFrameSlot(name);
@@ -212,7 +189,7 @@ public class TranslatorEnvironment {
         frameDescriptor.addFrameSlot(RubyModule.MODULE_FUNCTION_FLAG_FRAME_SLOT_ID);
     }
 
-    public UniqueMethodIdentifier getUniqueMethodIdentifier() {
+    public SharedRubyMethod getUniqueMethodIdentifier() {
         return methodIdentifier;
     }
 

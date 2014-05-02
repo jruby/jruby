@@ -25,20 +25,18 @@ import org.jruby.truffle.runtime.core.*;
  */
 public class RubyMethod {
 
-    private final SourceSection sourceSection;
+    private final SharedRubyMethod sharedMethodInfo;
     private final RubyModule declaringModule;
-    private final UniqueMethodIdentifier uniqueIdentifier;
     private final String name;
     private final Visibility visibility;
     private final boolean undefined;
 
     private final MethodImplementation implementation;
 
-    public RubyMethod(SourceSection sourceSection, RubyModule declaringModule, UniqueMethodIdentifier uniqueIdentifier, String name, Visibility visibility, boolean undefined,
+    public RubyMethod(SharedRubyMethod sharedMethodInfo, RubyModule declaringModule, String name, Visibility visibility, boolean undefined,
                     MethodImplementation implementation) {
-        this.sourceSection = sourceSection;
+        this.sharedMethodInfo = sharedMethodInfo;
         this.declaringModule = declaringModule;
-        this.uniqueIdentifier = uniqueIdentifier;
         this.name = name;
         this.visibility = visibility;
         this.undefined = undefined;
@@ -56,12 +54,8 @@ public class RubyMethod {
         return result;
     }
 
-    public SourceSection getSourceSection() {
-        return sourceSection;
-    }
-
-    public UniqueMethodIdentifier getUniqueIdentifier() {
-        return uniqueIdentifier;
+    public SharedRubyMethod getSharedMethodInfo() {
+        return sharedMethodInfo;
     }
 
     public RubyModule getDeclaringModule() { return declaringModule; }
@@ -82,12 +76,20 @@ public class RubyMethod {
         return implementation;
     }
 
+    public RubyMethod withDeclaringModule(RubyModule newDeclaringModule) {
+        if (newDeclaringModule == declaringModule) {
+            return this;
+        }
+
+        return new RubyMethod(sharedMethodInfo, newDeclaringModule, name, visibility, undefined, implementation);
+    }
+
     public RubyMethod withNewName(String newName) {
         if (newName.equals(name)) {
             return this;
         }
 
-        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, newName, visibility, undefined, implementation);
+        return new RubyMethod(sharedMethodInfo, declaringModule, newName, visibility, undefined, implementation);
     }
 
     public RubyMethod withNewVisibility(Visibility newVisibility) {
@@ -95,15 +97,7 @@ public class RubyMethod {
             return this;
         }
 
-        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, name, newVisibility, undefined, implementation);
-    }
-
-    public RubyMethod withDeclaringModule(RubyModule newDeclaringModule) {
-        if (newDeclaringModule == declaringModule) {
-            return this;
-        }
-
-        return new RubyMethod(sourceSection, newDeclaringModule, uniqueIdentifier, name, visibility, undefined, implementation);
+        return new RubyMethod(sharedMethodInfo, declaringModule, name, newVisibility, undefined, implementation);
     }
 
     public RubyMethod withoutBlockDestructureSemantics() {
@@ -123,7 +117,7 @@ public class RubyMethod {
                 inlinableMethodImplementation.alwaysInline(),
                 inlinableMethodImplementation.getShouldAppendCallNode());
 
-        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, name, visibility, undefined, newImplementation);
+        return new RubyMethod(sharedMethodInfo, declaringModule, name, visibility, undefined, newImplementation);
     }
 
     public RubyMethod undefined() {
@@ -131,7 +125,7 @@ public class RubyMethod {
             return this;
         }
 
-        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, name, visibility, true, implementation);
+        return new RubyMethod(sharedMethodInfo, declaringModule, name, visibility, true, implementation);
     }
 
     public boolean isVisibleTo(RubyBasicObject caller, RubyBasicObject receiver) {
@@ -201,11 +195,6 @@ public class RubyMethod {
             default:
                 return false;
         }
-    }
-
-    @Override
-    public String toString() {
-        return implementation.toString();
     }
 
 }

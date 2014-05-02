@@ -34,6 +34,6 @@ public interface RubyNodeInstrumenter {
      * {@link NodePhylum#ASSIGNMENT}, possibly returning a new {@link InstrumentationProxyNode} that
      * holds the original as its child.
      */
-    RubyNode instrumentAsLocalAssignment(RubyNode node, UniqueMethodIdentifier methodIdentifier, String localName);
+    RubyNode instrumentAsLocalAssignment(RubyNode node, SharedRubyMethod methodIdentifier, String localName);
 
 }

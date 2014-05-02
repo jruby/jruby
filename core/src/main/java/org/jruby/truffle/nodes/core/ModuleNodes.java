@@ -112,7 +112,7 @@ public abstract class ModuleNodes {
             final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, name + "(attr_reader)", null, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRoot));
             final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRoot, true, false);
-            final RubyMethod method = new RubyMethod(sourceSection, module, new UniqueMethodIdentifier(), name, Visibility.PUBLIC, false, methodImplementation);
+            final RubyMethod method = new RubyMethod(new SharedRubyMethod(sourceSection), module, name, Visibility.PUBLIC, false, methodImplementation);
 
             module.addMethod(method);
         }
@@ -155,7 +155,7 @@ public abstract class ModuleNodes {
             final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, name + "(attr_writer)", null, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRoot));
             final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRoot, true, false);
-            final RubyMethod method = new RubyMethod(sourceSection, module, new UniqueMethodIdentifier(), name + "=", Visibility.PUBLIC, false, methodImplementation);
+            final RubyMethod method = new RubyMethod(new SharedRubyMethod(sourceSection), module, name + "=", Visibility.PUBLIC, false, methodImplementation);
 
             module.addMethod(method);
         }
@@ -367,7 +367,7 @@ public abstract class ModuleNodes {
                     modifiedCallTarget, methodImplementation.getDeclarationFrame(), methodImplementation.getFrameDescriptor(),
                     modifiedRootNode, methodImplementation.alwaysInline(), methodImplementation.getShouldAppendCallNode());
 
-            final RubyMethod modifiedMethod = new RubyMethod(method.getSourceSection(), method.getDeclaringModule(), method.getUniqueIdentifier(), name.toString(), method.getVisibility(), method.isUndefined(), modifiedMethodImplementation);
+            final RubyMethod modifiedMethod = new RubyMethod(method.getSharedMethodInfo(), method.getDeclaringModule(), name.toString(), method.getVisibility(), method.isUndefined(), modifiedMethodImplementation);
 
             module.addMethod(modifiedMethod);
         }

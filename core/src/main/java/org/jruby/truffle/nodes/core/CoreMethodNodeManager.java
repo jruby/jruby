@@ -31,7 +31,7 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.methods.UniqueMethodIdentifier;
+import org.jruby.truffle.runtime.methods.SharedRubyMethod;
 import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
@@ -138,15 +138,15 @@ public abstract class CoreMethodNodeManager {
         final String canonicalName = names.get(0);
         final List<String> aliases = names.subList(1, names.size());
 
-        final UniqueMethodIdentifier uniqueIdentifier = new UniqueMethodIdentifier();
         final Visibility visibility = methodDetails.getMethodAnnotation().visibility();
 
         final RubyRootNode pristineRootNode = makeGenericMethod(context, methodDetails);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRootNode));
 
+        final SharedRubyMethod sharedMethodInfo = new SharedRubyMethod(pristineRootNode.getSourceSection());
         final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRootNode, true,
                         methodDetails.getMethodAnnotation().appendCallNode());
-        final RubyMethod method = new RubyMethod(pristineRootNode.getSourceSection(), module, uniqueIdentifier, canonicalName, visibility, false, methodImplementation);
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, module, canonicalName, visibility, false, methodImplementation);
 
         module.addMethod(method);
 
