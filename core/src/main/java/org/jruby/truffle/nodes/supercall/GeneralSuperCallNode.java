@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.nodes.call;
+package org.jruby.truffle.nodes.supercall;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;

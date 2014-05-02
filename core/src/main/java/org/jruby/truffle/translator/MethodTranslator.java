@@ -13,7 +13,6 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.*;
@@ -22,6 +21,8 @@ import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.respondto.RespondToNode;
+import org.jruby.truffle.nodes.supercall.GeneralSuperCallNode;
+import org.jruby.truffle.nodes.supercall.GeneralSuperReCallNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.methods.*;
 
