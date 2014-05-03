@@ -88,46 +88,63 @@ public class RubyMethod {
     }
 
     public RubyMethod withDeclaringModule(RubyModule newDeclaringModule) {
-        if (newDeclaringModule == declaringModule) {
-            return this;
+        if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
+            final RubyRootNode newRootNode = (RubyRootNode) ((RootCallTarget) callTarget).getRootNode();
+            final RubyMethod newMethod = new RubyMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame);
+            newRootNode.setMethod(newMethod);
+            return newMethod;
+        } else {
+            return new RubyMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame);
         }
-
-        return new RubyMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame);
     }
 
     public RubyMethod withNewName(String newName) {
-        if (newName.equals(name)) {
-            return this;
+        if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
+            final RubyRootNode newRootNode = (RubyRootNode) ((RootCallTarget) callTarget).getRootNode();
+            final RubyMethod newMethod = new RubyMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame);
+            newRootNode.setMethod(newMethod);
+            return newMethod;
+        } else {
+            return new RubyMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
         }
-
-        return new RubyMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
     }
 
     public RubyMethod withNewVisibility(Visibility newVisibility) {
-        if (newVisibility == visibility) {
-            return this;
+        if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
+            final RubyRootNode newRootNode = (RubyRootNode) ((RootCallTarget) callTarget).getRootNode();
+            final RubyMethod newMethod = new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame);
+            newRootNode.setMethod(newMethod);
+            return newMethod;
+        } else {
+            return new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
         }
-
-        return new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
     }
 
     public RubyMethod withoutBlockDestructureSemantics() {
-        final RubyRootNode modifiedRootNode = (RubyRootNode) ((RootCallTarget) callTarget).getRootNode().split();
+        if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
+            final RubyRootNode newRootNode = (RubyRootNode) ((RootCallTarget) callTarget).getRootNode();
 
-        for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(modifiedRootNode, BehaveAsBlockNode.class)) {
-            behaveAsBlockNode.setBehaveAsBlock(false);
+            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNode, BehaveAsBlockNode.class)) {
+                behaveAsBlockNode.setBehaveAsBlock(false);
+            }
+
+            final RubyMethod newMethod = new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, undefined, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame);
+            newRootNode.setMethod(newMethod);
+            return newMethod;
+        } else {
+            throw new UnsupportedOperationException("Can't change the semantics of an opaque call target");
         }
-
-        return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, undefined,
-                Truffle.getRuntime().createCallTarget(modifiedRootNode), declarationFrame);
     }
 
     public RubyMethod undefined() {
-        if (undefined) {
-            return this;
+        if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
+            final RubyRootNode newRootNode = (RubyRootNode) ((RootCallTarget) callTarget).getRootNode();
+            final RubyMethod newMethod = new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, true, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame);
+            newRootNode.setMethod(newMethod);
+            return newMethod;
+        } else {
+            return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame);
         }
-
-        return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame);
     }
 
     public boolean isVisibleTo(RubyBasicObject caller, RubyBasicObject receiver) {

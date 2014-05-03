@@ -201,8 +201,8 @@ public abstract class RubyNode extends Node {
         return context;
     }
 
-    public SharedMethodInfo getMethodInfo() {
-        return ((RubyRootNode) getRootNode()).getSharedInfo();
+    public RubyMethod getMethod() {
+        return ((RubyRootNode) getRootNode()).getMethod();
     }
 
 }

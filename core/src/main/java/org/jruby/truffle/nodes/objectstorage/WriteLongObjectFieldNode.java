@@ -38,8 +38,8 @@ public class WriteLongObjectFieldNode extends WriteSpecializedObjectFieldNode {
 
     @Override
     public void execute(ObjectStorage object, Object value) {
-        if (value instanceof Double) {
-            execute(object, (double) value);
+        if (value instanceof Long) {
+            execute(object, (long) value);
         } else {
             CompilerDirectives.transferToInterpreter();
             writeAndRespecialize(object, value, "unexpected value type");

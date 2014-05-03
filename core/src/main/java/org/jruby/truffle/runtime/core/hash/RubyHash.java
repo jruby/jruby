@@ -65,6 +65,7 @@ public class RubyHash extends RubyObject {
         return newHash;
     }
 
+    @CompilerDirectives.SlowPath
     public void put(Object key, Object value) {
         checkFrozen();
 
@@ -76,6 +77,7 @@ public class RubyHash extends RubyObject {
         storage.put(key, value);
     }
 
+    @CompilerDirectives.SlowPath
     public Object get(Object key) {
         return storage.get(key);
     }

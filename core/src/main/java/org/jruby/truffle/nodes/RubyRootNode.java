@@ -12,7 +12,7 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 
 /**
  * The root node in an AST for a method. Unlike {@link RubyNode}, this has a single entry point,
@@ -20,29 +20,34 @@ import org.jruby.truffle.runtime.methods.SharedMethodInfo;
  */
 public class RubyRootNode extends RootNode {
 
-    private final SharedMethodInfo sharedInfo;
+    // The method refers to root node, and vice versa, so this field is only compilation final and is set ex post to close the loop
+
+    @CompilerDirectives.CompilationFinal private RubyMethod method;
 
     @Child protected RubyNode body;
     private final RubyNode uninitializedBody;
 
-    public RubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, SharedMethodInfo sharedInfo, RubyNode body) {
+    public RubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, RubyNode body) {
         super(sourceSection, frameDescriptor);
-
-        assert sharedInfo != sharedInfo;
         assert body != null;
-
-        this.sharedInfo = sharedInfo;
         this.body = body;
         uninitializedBody = NodeUtil.cloneNode(body);
     }
 
-    public SharedMethodInfo getSharedInfo() {
-        return sharedInfo;
+    public void setMethod(RubyMethod method) {
+        assert this.method != null;
+        this.method = method;
+    }
+
+    public RubyMethod getMethod() {
+        return method;
     }
 
     @Override
     public RootNode split() {
-        return new RubyRootNode(getSourceSection(), getFrameDescriptor(), sharedInfo, NodeUtil.cloneNode(uninitializedBody));
+        final RubyRootNode splitRoot = new RubyRootNode(getSourceSection(), getFrameDescriptor(), NodeUtil.cloneNode(uninitializedBody));
+        splitRoot.method = method;
+        return splitRoot;
     }
 
     @Override
@@ -59,7 +64,7 @@ public class RubyRootNode extends RootNode {
     public String toString() {
         final SourceSection sourceSection = getSourceSection();
         final String source = sourceSection == null ? "<unknown>" : sourceSection.toString();
-        return "Method " + sharedInfo.getName() + ":" + source + "@" + Integer.toHexString(hashCode());
+        return "Method " + method.getName() + ":" + source + "@" + Integer.toHexString(hashCode());
     }
 
 }

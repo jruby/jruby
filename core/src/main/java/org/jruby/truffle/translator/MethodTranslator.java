@@ -147,14 +147,12 @@ class MethodTranslator extends BodyTranslator {
             body = new CatchBreakAsReturnNode(context, sourceSection, body);
         }
 
-        final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
-
-        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRootNode));
+        final RubyRootNode rootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), body);
 
         if (isBlock) {
-            return new BlockDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), callTarget);
+            return new BlockDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), rootNode);
         } else {
-            return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), callTarget, ignoreLocalVisiblity);
+            return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), rootNode, ignoreLocalVisiblity);
         }
     }
 

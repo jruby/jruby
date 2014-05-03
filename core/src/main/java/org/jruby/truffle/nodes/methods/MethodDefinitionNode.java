@@ -28,19 +28,19 @@ public class MethodDefinitionNode extends RubyNode {
     protected final String name;
     protected final SharedMethodInfo sharedMethodInfo;
 
-    protected final CallTarget callTarget;
+    protected final RubyRootNode rootNode;
 
     protected final boolean requiresDeclarationFrame;
 
     protected final boolean ignoreLocalVisibility;
 
     public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
-            boolean requiresDeclarationFrame, CallTarget callTarget, boolean ignoreLocalVisibility) {
+            boolean requiresDeclarationFrame, RubyRootNode rootNode, boolean ignoreLocalVisibility) {
         super(context, sourceSection);
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
         this.requiresDeclarationFrame = requiresDeclarationFrame;
-        this.callTarget = callTarget;
+        this.rootNode = rootNode;
         this.ignoreLocalVisibility = ignoreLocalVisibility;
     }
 
@@ -83,7 +83,11 @@ public class MethodDefinitionNode extends RubyNode {
             }
         }
 
-        return new RubyMethod(sharedMethodInfo, name, null, visibility, false, callTarget, declarationFrame);
+        final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
+        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, name, null, visibility, false, callTarget, declarationFrame);
+        rootNodeClone.setMethod(method);
+        return method;
     }
 
     @Override
@@ -95,8 +99,8 @@ public class MethodDefinitionNode extends RubyNode {
         return name;
     }
 
-    public CallTarget getCallTarget() {
-        return callTarget;
+    public RubyRootNode getMethodRootNode() {
+        return rootNode;
     }
 
 }

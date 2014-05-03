@@ -13,6 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
@@ -25,8 +26,8 @@ import org.jruby.truffle.runtime.methods.*;
 public class BlockDefinitionNode extends MethodDefinitionNode {
 
     public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo methodInfo,
-                    boolean requiresDeclarationFrame, CallTarget callTarget) {
-        super(context, sourceSection, name, methodInfo, requiresDeclarationFrame, callTarget, false);
+                    boolean requiresDeclarationFrame, RubyRootNode rootNode) {
+        super(context, sourceSection, name, methodInfo, requiresDeclarationFrame, rootNode, false);
     }
 
     @Override
@@ -41,7 +42,10 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
             declarationFrame = null;
         }
 
+        final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
+        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
         final RubyMethod method = new RubyMethod(sharedMethodInfo, name, null, Visibility.PUBLIC, false, callTarget, declarationFrame);
+        rootNodeClone.setMethod(method);
 
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, RubyArguments.getSelf(frame.getArguments()), RubyArguments.getBlock(frame.getArguments()), method);
     }

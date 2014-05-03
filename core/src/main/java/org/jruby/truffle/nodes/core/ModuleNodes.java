@@ -109,9 +109,10 @@ public abstract class ModuleNodes {
             final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, readInstanceVariable);
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name + "(attr_reader)", null);
-            final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
+            final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final RubyMethod method = new RubyMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null);
+            rootNode.setMethod(method);
             module.addMethod(method);
         }
     }
@@ -150,10 +151,10 @@ public abstract class ModuleNodes {
             final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, writeInstanceVariable);
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name + "(attr_writer)", null);
-            final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
+            final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final RubyMethod method = new RubyMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null);
-
+            rootNode.setMethod(method);
             module.addMethod(method);
         }
     }
@@ -357,6 +358,7 @@ public abstract class ModuleNodes {
 
             final CallTarget modifiedCallTarget = Truffle.getRuntime().createCallTarget(modifiedRootNode);
             final RubyMethod modifiedMethod = new RubyMethod(method.getSharedMethodInfo(), name.toString(), method.getDeclaringModule(), method.getVisibility(), method.isUndefined(), modifiedCallTarget, method.getDeclarationFrame());
+            modifiedRootNode.setMethod(modifiedMethod);
             module.addMethod(modifiedMethod);
         }
 

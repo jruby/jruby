@@ -76,7 +76,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
     @Override public TruffleMethod truffelize(DynamicMethod originalMethod, ArgsNode argsNode, Node bodyNode) {
         final MethodDefinitionNode methodDefinitionNode = truffleContext.getTranslator().parse(truffleContext, null, argsNode, bodyNode);
-        return new TruffleMethod(originalMethod, methodDefinitionNode.getCallTarget());
+        return new TruffleMethod(originalMethod, Truffle.getRuntime().createCallTarget(methodDefinitionNode.getMethodRootNode()));
     }
 
     @Override public Object execute(TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {

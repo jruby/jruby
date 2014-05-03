@@ -170,28 +170,7 @@ public class TranslatorDriver {
             truffleNode = new ShellResultNode(context, truffleNode.getSourceSection(), truffleNode);
         }
 
-        // Root Node
-
-        String indicativeName;
-
-        switch (parserContext) {
-            case TOP_LEVEL:
-                indicativeName = "(main)";
-                break;
-            case SHELL:
-                indicativeName = "(shell)";
-                break;
-            case MODULE:
-                indicativeName = "(module)";
-                break;
-            default:
-                throw new UnsupportedOperationException();
-        }
-
-        final RootNode root = new RubyRootNode(truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode);
-
-        // Return the root and the frame descriptor
-
+        final RootNode root = new RubyRootNode(truffleNode.getSourceSection(), environment.getFrameDescriptor(), truffleNode);
         return new RubyParserResult(root);
     }
 
