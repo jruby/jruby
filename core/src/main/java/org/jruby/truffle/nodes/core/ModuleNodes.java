@@ -110,11 +110,11 @@ public abstract class ModuleNodes {
             final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, readInstanceVariable);
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name + "(attr_reader)", null);
-            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
+            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRoot));
             final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRoot, true, false);
             final RubyMethod method = new RubyMethod(sharedMethodInfo, module, name, Visibility.PUBLIC, false, methodImplementation);
-
+            methodImplementation.setMethod(method);
             module.addMethod(method);
         }
     }
@@ -154,11 +154,11 @@ public abstract class ModuleNodes {
             final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, writeInstanceVariable);
 
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name + "(attr_writer)", null);
-            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
+            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRoot));
             final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRoot, true, false);
             final RubyMethod method = new RubyMethod(sharedMethodInfo, module, name + "=", Visibility.PUBLIC, false, methodImplementation);
-
+            methodImplementation.setMethod(method);
             module.addMethod(method);
         }
     }
@@ -370,7 +370,7 @@ public abstract class ModuleNodes {
                     modifiedRootNode, methodImplementation.alwaysInline(), methodImplementation.getShouldAppendCallNode());
 
             final RubyMethod modifiedMethod = new RubyMethod(method.getSharedMethodInfo(), method.getDeclaringModule(), name.toString(), method.getVisibility(), method.isUndefined(), modifiedMethodImplementation);
-
+            methodImplementation.setMethod(modifiedMethod);
             module.addMethod(modifiedMethod);
         }
 

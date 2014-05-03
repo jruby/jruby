@@ -145,7 +145,12 @@ public abstract class CoreMethodNodeManager {
 
         final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRootNode, true,
                         methodDetails.getMethodAnnotation().appendCallNode());
-        final RubyMethod method = new RubyMethod(pristineRootNode.getSharedInfo(), module, canonicalName, visibility, false, methodImplementation);
+
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(pristineRootNode.getSourceSection(), methodDetails.getIndicativeName(), null);
+
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, module, canonicalName, visibility, false, methodImplementation);
+
+        methodImplementation.setMethod(method);
 
         module.addMethod(method);
 
@@ -189,13 +194,11 @@ public abstract class CoreMethodNodeManager {
             argumentsNodes.add(new ReadBlockNode(context, sourceSection, UndefinedPlaceholder.INSTANCE));
         }
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, methodDetails.getIndicativeName(), null);
-
         final RubyNode methodNode = methodDetails.getNodeFactory().createNode(context, sourceSection, argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]));
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
 
-        return new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
+        return new RubyRootNode(sourceSection, null, block);
     }
 
     public static class MethodDetails {

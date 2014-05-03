@@ -92,7 +92,11 @@ public class MethodDefinitionNode extends RubyNode {
 
         // Define the method with no declaring module - this will be filled in by AddMethodNode in the typical case
 
-        return new RubyMethod(sharedMethodInfo, null, name, visibility, false, methodImplementation);
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, null, name, visibility, false, methodImplementation);
+
+        methodImplementation.setMethod(method);
+
+        return method;
     }
 
     @Override

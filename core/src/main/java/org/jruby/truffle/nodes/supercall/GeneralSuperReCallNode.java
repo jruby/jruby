@@ -44,11 +44,11 @@ public class GeneralSuperReCallNode extends RubyNode {
         // Lookup method
 
         final RubyClass selfClass = ((RubyBasicObject) arguments.getSelf()).getRubyClass();
-        final RubyMethod method = selfClass.getSuperclass().lookupMethod(getMethodInfo().getName());
+        final RubyMethod method = selfClass.getSuperclass().lookupMethod(getMethod().getName());
 
         if (method == null || method.isUndefined()) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(getMethodInfo().getName(), arguments.getSelf().toString()));
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(getMethod().getName(), arguments.getSelf().toString()));
         }
 
         // Call the method
@@ -64,7 +64,7 @@ public class GeneralSuperReCallNode extends RubyNode {
             final RubyBasicObject self = context.getCoreLibrary().box(frame.getArguments(RubyArguments.class).getSelf());
             final RubyBasicObject receiverRubyObject = context.getCoreLibrary().box(self);
 
-            final RubyMethod method = receiverRubyObject.getRubyClass().getSuperclass().lookupMethod(getMethodInfo().getName());
+            final RubyMethod method = receiverRubyObject.getRubyClass().getSuperclass().lookupMethod(getMethod().getName());
 
             if (method == null || method.isUndefined() || !method.isVisibleTo(self)) {
                 return NilPlaceholder.INSTANCE;

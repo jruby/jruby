@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.methods;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -41,6 +42,14 @@ public class CallTargetMethodImplementation implements MethodImplementation {
 
     public MaterializedFrame getDeclarationFrame() {
         return declarationFrame;
+    }
+
+    public void setMethod(RubyMethod method) {
+        // Silently ignore if not a RootCallTarget for now - this is all going way in the next version of Truffle anyway
+
+        if (callTarget instanceof RootCallTarget) {
+            ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).setMethod(method);
+        }
     }
 
 }

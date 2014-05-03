@@ -203,7 +203,7 @@ public class TranslatorDriver {
                     throw new UnsupportedOperationException();
             }
 
-            final RootNode root = new RubyRootNode(truffleNode.getSourceSection(), environment.getFrameDescriptor(), sharedMethodInfo, truffleNode);
+            final RootNode root = new RubyRootNode(truffleNode.getSourceSection(), environment.getFrameDescriptor(), truffleNode);
 
             // Return the root and the frame descriptor
 

@@ -57,7 +57,7 @@ public class RubySymbol extends RubyObject {
 
         final CallTargetMethodImplementation methodImplementation = new CallTargetMethodImplementation(callTarget, null);
         final RubyMethod method = new RubyMethod(sharedMethodInfo, null, symbol, Visibility.PUBLIC, false, methodImplementation);
-
+        methodImplementation.setMethod(method);
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, NilPlaceholder.INSTANCE, null, method);
     }
 
