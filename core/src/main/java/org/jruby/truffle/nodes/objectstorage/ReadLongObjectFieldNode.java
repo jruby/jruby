@@ -44,7 +44,7 @@ public class ReadLongObjectFieldNode extends ReadSpecializedObjectFieldNode {
     @Override
     public Object execute(ObjectStorage object) {
         try {
-            return executeDouble(object);
+            return executeLong(object);
         } catch (UnexpectedResultException e) {
             return e.getResult();
         }
