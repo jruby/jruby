@@ -19,7 +19,7 @@ import java.util.Map;
 public class ProcessModuleBodyInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
     private Operand  moduleBody;
-    private Operand block;
+    private Operand  block;
 
     public ProcessModuleBodyInstr(Variable result, Operand moduleBody, Operand block) {
         super(Operation.PROCESS_MODULE_BODY);

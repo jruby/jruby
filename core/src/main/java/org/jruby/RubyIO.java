@@ -4569,6 +4569,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private static final Set<String> UNSUPPORTED_SPAWN_OPTIONS = new HashSet<String>(Arrays.asList(new String[] {
             "unsetenv_others",
             "prgroup",
+            "new_pgroup",
             "rlimit_resourcename",
             "chdir",
             "umask",
@@ -4581,6 +4582,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private static final Set<String> ALL_SPAWN_OPTIONS = new HashSet<String>(Arrays.asList(new String[] {
             "unsetenv_others",
             "prgroup",
+            "new_pgroup",
             "rlimit_resourcename",
             "chdir",
             "umask",
@@ -4649,7 +4651,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = optsHash.getRuntime();
 
         for (Object opt : optsHash.keySet()) {
-            if (opt instanceof RubySymbol || opt instanceof RubyFixnum || valid.contains(opt.toString())) {
+            if (opt instanceof RubySymbol || opt instanceof RubyFixnum || opt instanceof RubyArray || valid.contains(opt.toString())) {
                 continue;
             }
 

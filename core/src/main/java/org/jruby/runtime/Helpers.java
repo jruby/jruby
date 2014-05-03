@@ -2099,6 +2099,7 @@ public class Helpers {
             MethodNodes methodNodes) {
         
         DynamicMethod method;
+        final Ruby runtime = containingClass.getRuntime();
 
         if (name.equals("initialize") || name.equals("initialize_copy") || name.equals("initialize_clone") || name.equals("initialize_dup") || name.equals("respond_to_missing?") || visibility == Visibility.MODULE_FUNCTION) {
             visibility = Visibility.PRIVATE;
@@ -3011,7 +3012,7 @@ public class Helpers {
     }
     
     public static RubyArray irSplat(ThreadContext context, IRubyObject maybeAry) {
-        return context.is19 ? splatValue19(maybeAry) : splatValue(maybeAry);
+        return splatValue19(maybeAry);
     }
 
     public static IRubyObject irToAry(ThreadContext context, IRubyObject value) {

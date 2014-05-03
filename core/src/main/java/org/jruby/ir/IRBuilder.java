@@ -6,9 +6,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.instructions.*;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
-import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
-import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
@@ -1247,25 +1245,14 @@ public class IRBuilder {
         Node leftNode = iVisited.getLeftNode();
         final String name = iVisited.getName();
 
-        // ENEBO: Does this really happen?
+        // Colon2ImplicitNode
         if (leftNode == null) return searchConst(s, s, name);
 
-        if (iVisited instanceof Colon2ConstNode) {
-            // 1. Load the module first (lhs of node)
-            // 2. Then load the constant from the module
-            Operand module = build(leftNode, s);
-            return searchConstInInheritanceHierarchy(s, module, name);
-        } else if (iVisited instanceof Colon2MethodNode) {
-            Colon2MethodNode c2mNode = (Colon2MethodNode)iVisited;
-            List<Operand> args       = setupCallArgs(null, s);
-            Variable      callResult = s.createTemporaryVariable();
-            Instr         callInstr  = CallInstr.create(callResult, new MethAddr(c2mNode.getName()),
-                    null, args.toArray(new Operand[args.size()]), null);
-            addInstr(s, callInstr);
-            return callResult;
-        } else {
-            throw new NotCompilableException("Not compilable: " + iVisited);
-        }
+        // Colon2ConstNode
+        // 1. Load the module first (lhs of node)
+        // 2. Then load the constant from the module
+        Operand module = build(leftNode, s);
+        return searchConstInInheritanceHierarchy(s, module, name);
     }
 
     public Operand buildColon3(Colon3Node node, IRScope s) {
@@ -1447,7 +1434,7 @@ public class IRBuilder {
                     Operand v    = (n instanceof Colon2Node) ? build(((Colon2Node)n).getLeftNode(), s) : new ObjectClass();
 
                     Variable tmpVar = s.createTemporaryVariable();
-                    addInstr(s, new GetDefinedConstantOrMethodInstr(tmpVar, v, new ConstantStringLiteral(name)));
+                    addInstr(s, new RuntimeHelperCall(tmpVar, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {v, new ConstantStringLiteral(name)}));
                     return tmpVar;
                 }
             };
@@ -1480,25 +1467,19 @@ public class IRBuilder {
             return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
         }
         case CALLNODE: {
-            // SSS FIXME: Is there a reason to do this all with low-level IR?
-            // Can't this all be folded into a Java method that would be part
-            // of the runtime library?
-
-            Label    undefLabel = s.getNewLabel();
-            CallNode iVisited = (CallNode) node;
-            Operand  receiverDefn = buildGetDefinition(iVisited.getReceiverNode(), s);
+            Label undefLabel = s.getNewLabel();
+            CallNode callNode = (CallNode) node;
+            Operand  receiverDefn = buildGetDefinition(callNode.getReceiverNode(), s);
             addInstr(s, BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
 
             // protected main block
             CodeBlock protectedCode = new CodeBlock() {
                 public Operand run(Object[] args) {
-                    IRScope  s          = (IRScope)args[0];
-                    CallNode iVisited   = (CallNode)args[1];
-                    String   methodName = iVisited.getName();
-                    Variable tmpVar     = s.createTemporaryVariable();
-                    Operand  receiver   = build(iVisited.getReceiverNode(), s);
-                    addInstr(s, new MethodDefinedInstr(tmpVar, receiver, new StringLiteral(methodName)));
-                    return buildDefnCheckIfThenPaths(s, (Label)args[2], tmpVar);
+                    IRScope  scope = (IRScope)args[0];
+                    CallNode node = (CallNode)args[1];
+
+                    return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_CALL,
+                            new Operand[]{build(node.getReceiverNode(), scope), new StringLiteral(node.getName())}));
                 }
             };
 
@@ -1508,7 +1489,7 @@ public class IRBuilder {
             };
 
             // Try verifying definition, and if we get an exception, throw it out, and return nil
-            return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, undefLabel}, rescueBlock, null);
+            return protectCodeWithRescue(s, protectedCode, new Object[]{s, callNode, undefLabel}, rescueBlock, null);
         }
         case ATTRASSIGNNODE: {
             Label  undefLabel = s.getNewLabel();

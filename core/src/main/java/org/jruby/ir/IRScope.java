@@ -225,6 +225,7 @@ public abstract class IRScope implements ParseResult {
         flags.add(BINDING_HAS_ESCAPED);
         flags.add(USES_EVAL);
         flags.add(USES_BACKREF_OR_LASTLINE);
+        flags.add(REQUIRES_DYNSCOPE);
         flags.add(USES_ZSUPER);
 
         this.localVars = new HashMap<String, LocalVariable>();
@@ -588,9 +589,9 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void runDeadCodeAndVarLoadStorePasses() {
-        // For methods with unescaped bindings, inline the binding
-        // by converting local var loads/store to tmp var loads/stores
-        if (this instanceof IRMethod && !this.bindingHasEscaped() && !flags.contains(HAS_END_BLOCKS)) {
+        // For methods that don't require a dynamic scope,
+        // inline add lvar loads/store to tmp-var loads/stores.
+        if (!flags.contains(HAS_END_BLOCKS) && !flags.contains(REQUIRES_DYNSCOPE)) {
             CompilerPass pass;
             pass = new DeadCodeElimination();
             if (pass.previouslyRun(this) == null) {
@@ -713,6 +714,7 @@ public abstract class IRScope implements ParseResult {
         flags.remove(USES_ZSUPER);
         flags.remove(USES_EVAL);
         flags.remove(USES_BACKREF_OR_LASTLINE);
+        flags.remove(REQUIRES_DYNSCOPE);
         // NOTE: bindingHasEscaped is the crucial flag and it effectively is
         // unconditionally true whenever it has a call that receives a closure.
         // See CallBase.computeRequiresCallersBindingFlag
@@ -755,6 +757,20 @@ public abstract class IRScope implements ParseResult {
                     flags.add(USES_ZSUPER);
                 }
             }
+        }
+
+        if (!(this instanceof IRMethod)
+            || flags.contains(CAN_RECEIVE_BREAKS)
+            || flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS)
+            || flags.contains(BINDING_HAS_ESCAPED)
+               // SSS FIXME: checkArity for keyword args
+               // looks up a keyword arg in the static scope
+               // which currently requires a dynamic scope to
+               // be recovered. If there is another way to do this,
+               // we can get rid of this.
+            || flags.contains(RECEIVES_KEYWORD_ARGS))
+        {
+            flags.add(REQUIRES_DYNSCOPE);
         }
 
         flagsComputed = true;

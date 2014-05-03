@@ -1215,24 +1215,15 @@ public class ASTCompiler {
         Node leftNode = iVisited.getLeftNode();
         final String name = iVisited.getName();
 
-        if (leftNode == null) {
+        if (leftNode == null) { //Colon2ImplictNode
             context.loadObject();
             context.retrieveConstantFromModule(name);
+        } else if (node instanceof Colon2ConstNode) {
+            compile(iVisited.getLeftNode(), context, true);
+            context.retrieveConstantFromModule(name);
         } else {
-            if (node instanceof Colon2ConstNode) {
-                compile(iVisited.getLeftNode(), context, true);
-                context.retrieveConstantFromModule(name);
-            } else if (node instanceof Colon2MethodNode) {
-                final CompilerCallback receiverCallback = new CompilerCallback() {
-                    public void call(BodyCompiler context) {
-                        compile(iVisited.getLeftNode(), context,true);
-                    }
-                };
-                
-                context.getInvocationCompiler().invokeDynamic(name, receiverCallback, null, CallType.FUNCTIONAL, null, false);
-            } else {
-                compile(iVisited.getLeftNode(), context, true);
-            }
+            // FIXME: This is dead but ASTCompiler is dying and I don't want to prove it.
+            compile(iVisited.getLeftNode(), context, true);
         }
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();

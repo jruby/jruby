@@ -15,6 +15,7 @@ import org.jruby.runtime.EventHook;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 

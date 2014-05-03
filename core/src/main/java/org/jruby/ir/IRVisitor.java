@@ -2,9 +2,7 @@ package org.jruby.ir;
 
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.boxing.*;
-import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
-import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
@@ -110,9 +108,7 @@ public abstract class IRVisitor {
     public void ZSuperInstr(ZSuperInstr zsuperinstr) { error(zsuperinstr); }
 
     // "defined" instructions
-    public void GetDefinedConstantOrMethodInstr(GetDefinedConstantOrMethodInstr getdefinedconstantormethodinstr) { error(getdefinedconstantormethodinstr); }
     public void GetErrorInfoInstr(GetErrorInfoInstr geterrorinfoinstr) { error(geterrorinfoinstr); }
-    public void MethodDefinedInstr(MethodDefinedInstr methoddefinedinstr) { error(methoddefinedinstr); }
     public void RestoreErrorInfoInstr(RestoreErrorInfoInstr restoreerrorinfoinstr) { error(restoreerrorinfoinstr); }
 
     // ruby 1.9 specific

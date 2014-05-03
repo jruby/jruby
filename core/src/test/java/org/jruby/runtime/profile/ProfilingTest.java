@@ -16,18 +16,6 @@ public class ProfilingTest extends TestCase {
         super(testName);
     }
 
-    public void testCopyOfProfilingServiceFromParentConfigWorks() {
-        RubyInstanceConfig config = Ruby.getGlobalRuntime().getInstanceConfig();
-
-        RubyInstanceConfig configOne = new RubyInstanceConfig(config);
-        configOne.setProfilingService("test.service");
-        configOne.setProfilingMode(RubyInstanceConfig.ProfilingMode.SERVICE );
-
-        RubyInstanceConfig configTwo = new RubyInstanceConfig(configOne);
-
-        assertEquals( configOne.getProfilingService(), configTwo.getProfilingService() );
-        assertEquals( configOne.getProfilingMode(), configTwo.getProfilingMode() );
-    }
 
     /**
      * Tests the {@link org.jruby.runtime.profile.ProfilingServiceLookup} too

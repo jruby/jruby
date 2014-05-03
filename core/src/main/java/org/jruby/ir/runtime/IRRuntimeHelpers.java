@@ -561,6 +561,18 @@ public class IRRuntimeHelpers {
                 context.runtime.getDefinedMessage(DefinedMessage.INSTANCE_VARIABLE) : context.nil;
     }
 
+    public static IRubyObject isDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name) {
+        RubyString boundValue = Helpers.getDefinedCall(context, self, receiver, name);
+
+        return boundValue == null ? context.nil : boundValue;
+    }
+
+    public static IRubyObject isDefinedConstantOrMethod(ThreadContext context, IRubyObject receiver, String name) {
+        RubyString definedType = Helpers.getDefinedConstantOrBoundMethod(receiver, name);
+
+        return definedType == null ? context.nil : definedType;
+    }
+
     public static IRubyObject isDefinedMethod(ThreadContext context, IRubyObject receiver, String name, boolean checkIfPublic) {
         DynamicMethod method = receiver.getMetaClass().searchMethod(name);
 
