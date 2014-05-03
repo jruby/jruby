@@ -81,7 +81,7 @@ public class ObjectLayout {
                 if (type == Integer.class) {
                     canStoreInPrimitive = true;
                     primitivesNeeded = 1;
-                } else if (type == Integer.class) {
+                } else if (type == Long.class) {
                     canStoreInPrimitive = true;
                     primitivesNeeded = 2;
                 } else if (type == Double.class) {
