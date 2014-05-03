@@ -1260,10 +1260,10 @@ public class IRBuilder {
     }
 
     interface CodeBlock {
-        public Operand run(Object[] args);
+        public Operand run();
     }
 
-    private Operand protectCodeWithRescue(IRScope s, CodeBlock protectedCode, Object[] protectedCodeArgs, CodeBlock rescueBlock, Object[] rescueBlockArgs) {
+    private Operand protectCodeWithRescue(IRScope s, CodeBlock protectedCode, CodeBlock rescueBlock) {
         // This effectively mimics a begin-rescue-end code block
         // Except this catches all exceptions raised by the protected code
 
@@ -1275,7 +1275,7 @@ public class IRBuilder {
         // Protected region code
         addInstr(s, new LabelInstr(rBeginLabel));
         addInstr(s, new ExceptionRegionStartMarkerInstr(rescueLabel));
-        Object v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
+        Object v1 = protectedCode.run(); // YIELD: Run the protected code block
         addInstr(s, new CopyInstr(rv, (Operand)v1));
         addInstr(s, new JumpInstr(rEndLabel));
         addInstr(s, new ExceptionRegionEndMarkerInstr());
@@ -1308,7 +1308,7 @@ public class IRBuilder {
 
         // exc === Exception; Run the rescue block
         addInstr(s, new LabelInstr(caughtLabel));
-        Object v2 = rescueBlock.run(rescueBlockArgs); // YIELD: Run the protected code block
+        Object v2 = rescueBlock.run(); // YIELD: Run the protected code block
         if (v2 != null) addInstr(s, new CopyInstr(rv, manager.getNil()));
 
         // End
@@ -1317,8 +1317,8 @@ public class IRBuilder {
         return rv;
     }
 
-    public Operand buildGetDefinition(Node node, IRScope s) {
-        node = skipOverNewlines(s, node);
+    public Operand buildGetDefinition(Node node, final IRScope scope) {
+        node = skipOverNewlines(scope, node);
 
         // FIXME: Do we still have MASGN and MASGN19?
         switch (node.getNodeType()) {
@@ -1342,75 +1342,77 @@ public class IRBuilder {
         case TRUENODE:
             return new ConstantStringLiteral("true");
         case DREGEXPNODE: case DSTRNODE: {
+            final Node dNode = node;
+
             // protected code
             CodeBlock protectedCode = new CodeBlock() {
-                public Operand run(Object[] args) {
-                    build((Node)args[0], (IRScope)args[1]);
+                public Operand run() {
+                    build(dNode, scope);
                     // always an expression as long as we get through here without an exception!
                     return new StringLiteral("expression");
                 }
             };
             // rescue block
             CodeBlock rescueBlock = new CodeBlock() {
-                public Operand run(Object[] args) { return manager.getNil(); } // Nothing to do if we got an exception
+                public Operand run() { return manager.getNil(); } // Nothing to do if we got an exception
             };
 
             // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
-            Operand v = protectCodeWithRescue(s, protectedCode, new Object[]{node, s}, rescueBlock, null);
-            Label doneLabel = s.getNewLabel();
-            Variable tmpVar = getValueInTemporaryVariable(s, v);
-            addInstr(s, BNEInstr.create(tmpVar, manager.getNil(), doneLabel));
-            addInstr(s, new CopyInstr(tmpVar, new ConstantStringLiteral("expression")));
-            addInstr(s, new LabelInstr(doneLabel));
+            Operand v = protectCodeWithRescue(scope, protectedCode, rescueBlock);
+            Label doneLabel = scope.getNewLabel();
+            Variable tmpVar = getValueInTemporaryVariable(scope, v);
+            addInstr(scope, BNEInstr.create(tmpVar, manager.getNil(), doneLabel));
+            addInstr(scope, new CopyInstr(tmpVar, new ConstantStringLiteral("expression")));
+            addInstr(scope, new LabelInstr(doneLabel));
 
             return tmpVar;
         }
         case BACKREFNODE:
-            return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_BACKREF,
+            return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_BACKREF,
                     Operand.EMPTY_ARRAY));
         case GLOBALVARNODE:
-            return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_GLOBAL,
+            return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_GLOBAL,
                     new Operand[] { new StringLiteral(((GlobalVarNode) node).getName()) }));
         case NTHREFNODE: {
-            return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_NTH_REF,
+            return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_NTH_REF,
                     new Operand[] { new Fixnum(((NthRefNode) node).getMatchNumber()) }));
         }
         case INSTVARNODE:
-            return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_INSTANCE_VAR,
-                    new Operand[] { s.getSelf(), new StringLiteral(((InstVarNode) node).getName()) }));
+            return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_INSTANCE_VAR,
+                    new Operand[] { scope.getSelf(), new StringLiteral(((InstVarNode) node).getName()) }));
         case CLASSVARNODE:
-            return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_CLASS_VAR,
-                    new Operand[]{classVarDefinitionContainer(s), new StringLiteral(((ClassVarNode) node).getName())}));
+            return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_CLASS_VAR,
+                    new Operand[]{classVarDefinitionContainer(scope), new StringLiteral(((ClassVarNode) node).getName())}));
         case SUPERNODE: {
-            Label undefLabel = s.getNewLabel();
-            Variable tmpVar  = addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_SUPER,
-                    new Operand[] { s.getSelf() }));
-            addInstr(s, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
-            Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), s, "super");
-            return buildDefnCheckIfThenPaths(s, undefLabel, superDefnVal);
+            Label undefLabel = scope.getNewLabel();
+            Variable tmpVar  = addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_SUPER,
+                    new Operand[] { scope.getSelf() }));
+            addInstr(scope, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
+            Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), scope, "super");
+            return buildDefnCheckIfThenPaths(scope, undefLabel, superDefnVal);
         }
         case VCALLNODE:
-            return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_METHOD,
-                    new Operand[] { s.getSelf(), new StringLiteral(((VCallNode) node).getName()), Boolean.FALSE}));
+            return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_METHOD,
+                    new Operand[] { scope.getSelf(), new StringLiteral(((VCallNode) node).getName()), Boolean.FALSE}));
         case YIELDNODE:
-            return buildDefinitionCheck(s, new BlockGivenInstr(s.createTemporaryVariable(), getImplicitBlockArg(s)), "yield");
+            return buildDefinitionCheck(scope, new BlockGivenInstr(scope.createTemporaryVariable(), getImplicitBlockArg(scope)), "yield");
         case ZSUPERNODE:
-            return addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_SUPER,
-                    new Operand[] { s.getSelf() } ));
+            return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_SUPER,
+                    new Operand[] { scope.getSelf() } ));
         case CONSTNODE: {
-            Label defLabel = s.getNewLabel();
-            Label doneLabel = s.getNewLabel();
-            Variable tmpVar  = s.createTemporaryVariable();
+            Label defLabel = scope.getNewLabel();
+            Label doneLabel = scope.getNewLabel();
+            Variable tmpVar  = scope.createTemporaryVariable();
             String constName = ((ConstNode) node).getName();
-            addInstr(s, new LexicalSearchConstInstr(tmpVar, startingSearchScope(s), constName));
-            addInstr(s, BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
-            addInstr(s, new InheritanceSearchConstInstr(tmpVar, findContainerModule(s), constName, false)); // SSS FIXME: should this be the current-module var or something else?
-            addInstr(s, BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
-            addInstr(s, new CopyInstr(tmpVar, manager.getNil()));
-            addInstr(s, new JumpInstr(doneLabel));
-            addInstr(s, new LabelInstr(defLabel));
-            addInstr(s, new CopyInstr(tmpVar, new ConstantStringLiteral("constant")));
-            addInstr(s, new LabelInstr(doneLabel));
+            addInstr(scope, new LexicalSearchConstInstr(tmpVar, startingSearchScope(scope), constName));
+            addInstr(scope, BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
+            addInstr(scope, new InheritanceSearchConstInstr(tmpVar, findContainerModule(scope), constName, false)); // SSS FIXME: should this be the current-module var or something else?
+            addInstr(scope, BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
+            addInstr(scope, new CopyInstr(tmpVar, manager.getNil()));
+            addInstr(scope, new JumpInstr(doneLabel));
+            addInstr(scope, new LabelInstr(defLabel));
+            addInstr(scope, new CopyInstr(tmpVar, new ConstantStringLiteral("constant")));
+            addInstr(scope, new LabelInstr(doneLabel));
             return tmpVar;
         }
         case COLON3NODE: case COLON2NODE: {
@@ -1419,38 +1421,35 @@ public class IRBuilder {
             // of the runtime library, which then can be used by buildDefinitionCheck method above?
             // This runtime library would be used both by the interpreter & the compiled code!
 
-            final Colon3Node iVisited = (Colon3Node) node;
-            final String name = iVisited.getName();
+            final Colon3Node colon = (Colon3Node) node;
+            final String name = colon.getName();
+            final Variable errInfo = scope.createTemporaryVariable();
 
             // store previous exception for restoration if we rescue something
-            Variable errInfo = s.createTemporaryVariable();
-            addInstr(s, new GetErrorInfoInstr(errInfo));
+            addInstr(scope, new GetErrorInfoInstr(errInfo));
 
             CodeBlock protectedCode = new CodeBlock() {
-                public Operand run(Object[] args) {
-                    IRScope s    = (IRScope)args[0];
-                    Node    n    = (Node)args[1];
-                    String  name = (String)args[2];
-                    Operand v    = (n instanceof Colon2Node) ? build(((Colon2Node)n).getLeftNode(), s) : new ObjectClass();
+                public Operand run() {
+                    Operand v = colon instanceof Colon2Node ?
+                            build(((Colon2Node)colon).getLeftNode(), scope) : new ObjectClass();
 
-                    Variable tmpVar = s.createTemporaryVariable();
-                    addInstr(s, new RuntimeHelperCall(tmpVar, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {v, new ConstantStringLiteral(name)}));
+                    Variable tmpVar = scope.createTemporaryVariable();
+                    addInstr(scope, new RuntimeHelperCall(tmpVar, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {v, new ConstantStringLiteral(name)}));
                     return tmpVar;
                 }
             };
 
             // rescue block
             CodeBlock rescueBlock = new CodeBlock() {
-                 public Operand run(Object[] args) {
-                      // Nothing to do -- ignore the exception, and restore stashed error info!
-                      IRScope s  = (IRScope)args[0];
-                      addInstr(s, new RestoreErrorInfoInstr((Operand) args[1]));
-                      return manager.getNil();
+                 public Operand run() {
+                 // Nothing to do -- ignore the exception, and restore stashed error info!
+                 addInstr(scope, new RestoreErrorInfoInstr(errInfo));
+                 return manager.getNil();
                  }
             };
 
                 // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
-            return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, name}, rescueBlock, new Object[] {s, errInfo});
+            return protectCodeWithRescue(scope, protectedCode, rescueBlock);
         }
         case FCALLNODE: {
             /* ------------------------------------------------------------------
@@ -1459,47 +1458,46 @@ public class IRBuilder {
              *    mc = r.metaclass
              *    return mc.methodBound(meth) ? buildGetArgumentDefn(..) : false
              * ----------------------------------------------------------------- */
-            Label undefLabel = s.getNewLabel();
-            Variable tmpVar = addResultInstr(s, new RuntimeHelperCall(s.createTemporaryVariable(), IS_DEFINED_METHOD,
-                    new Operand[]{s.getSelf(), new StringLiteral(((FCallNode) node).getName()), Boolean.FALSE}));
-            addInstr(s, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
-            Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "method");
-            return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
+            Label undefLabel = scope.getNewLabel();
+            Variable tmpVar = addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_METHOD,
+                    new Operand[]{scope.getSelf(), new StringLiteral(((FCallNode) node).getName()), Boolean.FALSE}));
+            addInstr(scope, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
+            Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), scope, "method");
+            return buildDefnCheckIfThenPaths(scope, undefLabel, argsCheckDefn);
         }
         case CALLNODE: {
-            Label undefLabel = s.getNewLabel();
-            CallNode callNode = (CallNode) node;
-            Operand  receiverDefn = buildGetDefinition(callNode.getReceiverNode(), s);
-            addInstr(s, BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
+            final Label undefLabel = scope.getNewLabel();
+            final CallNode callNode = (CallNode) node;
+            Operand  receiverDefn = buildGetDefinition(callNode.getReceiverNode(), scope);
+            addInstr(scope, BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
 
             // protected main block
             CodeBlock protectedCode = new CodeBlock() {
-                public Operand run(Object[] args) {
-                    IRScope  scope = (IRScope)args[0];
-                    CallNode node = (CallNode)args[1];
-
-                    return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_CALL,
-                            new Operand[]{build(node.getReceiverNode(), scope), new StringLiteral(node.getName())}));
+                public Operand run() {
+                    Variable tmpVar = scope.createTemporaryVariable();
+                    addInstr(scope, new RuntimeHelperCall(tmpVar, IS_DEFINED_CALL,
+                            new Operand[]{build(callNode.getReceiverNode(), scope), new StringLiteral(callNode.getName())}));
+                    return buildDefnCheckIfThenPaths(scope, undefLabel, tmpVar);
                 }
             };
 
             // rescue block
             CodeBlock rescueBlock = new CodeBlock() {
-                public Operand run(Object[] args) { return manager.getNil(); } // Nothing to do if we got an exception
+                public Operand run() { return manager.getNil(); } // Nothing to do if we got an exception
             };
 
             // Try verifying definition, and if we get an exception, throw it out, and return nil
-            return protectCodeWithRescue(s, protectedCode, new Object[]{s, callNode, undefLabel}, rescueBlock, null);
+            return protectCodeWithRescue(scope, protectedCode, rescueBlock);
         }
         case ATTRASSIGNNODE: {
-            Label  undefLabel = s.getNewLabel();
-            AttrAssignNode iVisited = (AttrAssignNode) node;
-            Operand receiverDefn = buildGetDefinition(iVisited.getReceiverNode(), s);
-            addInstr(s, BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
+            final Label  undefLabel = scope.getNewLabel();
+            final AttrAssignNode attrAssign = (AttrAssignNode) node;
+            Operand receiverDefn = buildGetDefinition(attrAssign.getReceiverNode(), scope);
+            addInstr(scope, BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
 
             // protected main block
             CodeBlock protectedCode = new CodeBlock() {
-                public Operand run(Object[] args) {
+                public Operand run() {
                     /* --------------------------------------------------------------------------
                      * This basically combines checks from CALLNODE and FCALLNODE
                      *
@@ -1514,43 +1512,41 @@ public class IRBuilder {
                      * Hide the complexity of instrs 2-4 into a verifyMethodIsPublicAccessible call
                      * which can executely entirely in Java-land.  No reason to expose the guts in IR.
                      * ------------------------------------------------------------------------------ */
-                    IRScope s = (IRScope)args[0];
-                    AttrAssignNode iVisited = (AttrAssignNode)args[1];
-                    Label undefLabel = (Label)args[2];
-                    Variable tmpVar     = s.createTemporaryVariable();
-                    Operand  receiver   = build(iVisited.getReceiverNode(), s);
-                    addInstr(s, new RuntimeHelperCall(tmpVar, IS_DEFINED_METHOD,
-                            new Operand[] { receiver, new StringLiteral(iVisited.getName()), Boolean.TRUE }));
-                    addInstr(s, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
-                    Operand argsCheckDefn = buildGetArgumentDefinition(iVisited.getArgsNode(), s, "assignment");
-                    return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
+                    Variable tmpVar     = scope.createTemporaryVariable();
+                    Operand  receiver   = build(attrAssign.getReceiverNode(), scope);
+                    addInstr(scope, new RuntimeHelperCall(tmpVar, IS_DEFINED_METHOD,
+                            new Operand[] { receiver, new StringLiteral(attrAssign.getName()), Boolean.TRUE }));
+                    addInstr(scope, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
+                    Operand argsCheckDefn = buildGetArgumentDefinition(attrAssign.getArgsNode(), scope, "assignment");
+                    return buildDefnCheckIfThenPaths(scope, undefLabel, argsCheckDefn);
                 }
             };
 
             // rescue block
             CodeBlock rescueBlock = new CodeBlock() {
-                public Operand run(Object[] args) { return manager.getNil(); } // Nothing to do if we got an exception
+                public Operand run() { return manager.getNil(); } // Nothing to do if we got an exception
             };
 
             // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
-            return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, undefLabel}, rescueBlock, null);
+            return protectCodeWithRescue(scope, protectedCode, rescueBlock);
         }
         default: {
+            final Node aNode = node;
             // protected code
             CodeBlock protectedCode = new CodeBlock() {
-                public Operand run(Object[] args) {
-                    build((Node)args[0], (IRScope)args[1]);
+                public Operand run() {
+                    build(aNode, scope);
                     // always an expression as long as we get through here without an exception!
                     return new StringLiteral("expression");
                 }
             };
             // rescue block
             CodeBlock rescueBlock = new CodeBlock() {
-                public Operand run(Object[] args) { return manager.getNil(); } // Nothing to do if we got an exception
+                public Operand run() { return manager.getNil(); } // Nothing to do if we got an exception
             };
 
             // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
-            return protectCodeWithRescue(s, protectedCode, new Object[]{node, s}, rescueBlock, null);
+            return protectCodeWithRescue(scope, protectedCode, rescueBlock);
         }
         }
     }

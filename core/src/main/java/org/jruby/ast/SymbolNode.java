@@ -62,7 +62,7 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, IEqlNod
         return NodeType.SYMBOLNODE;
     }
 
-    public Object accept(NodeVisitor iVisitor) {
+    public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitSymbolNode(this);
     }
 

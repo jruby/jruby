@@ -42,8 +42,8 @@ public class TranslatorDriver {
     }
 
     public MethodDefinitionNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
-        // TODO(cs) should this get a new unique method identifier or not?
-        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, null), this, allocateReturnID(), true, true, new UniqueMethodIdentifier());
+        // TODO(cs) should this get a new shared method object or not?
+        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, null), this, allocateReturnID(), true, true, new SharedRubyMethod(null));
 
         // All parsing contexts have a visibility slot at their top level
 
@@ -106,8 +106,7 @@ public class TranslatorDriver {
     }
 
     public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
-        // TODO(cs) should this get a new unique method identifier or not?
-        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, new UniqueMethodIdentifier());
+        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, new SharedRubyMethod(null));
 
         // Get the DATA constant
 
@@ -220,7 +219,7 @@ public class TranslatorDriver {
             return null;
         } else {
             final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame.getArguments());
-            return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, new UniqueMethodIdentifier());
+            return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, new SharedRubyMethod(null));
         }
     }
 

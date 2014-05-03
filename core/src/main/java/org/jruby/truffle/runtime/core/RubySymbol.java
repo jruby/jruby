@@ -35,7 +35,7 @@ public class RubySymbol extends RubyObject {
         return runtime.getSymbolTable().getSymbol(name);
     }
 
-    public RubyProc toProc() {
+    public RubyProc toProc(SourceSection sourceSection) {
         final RubyContext context = getRubyClass().getContext();
 
         // TODO(CS): we need a proper method in here
@@ -53,7 +53,7 @@ public class RubySymbol extends RubyObject {
 
         };
 
-        final RubyMethod method = new RubyMethod(null, new UniqueMethodIdentifier(), symbol, null, Visibility.PUBLIC, false, callTarget, null);
+        final RubyMethod method = new RubyMethod(new SharedRubyMethod(sourceSection), symbol, null, Visibility.PUBLIC, false, callTarget, null);
 
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, NilPlaceholder.INSTANCE, null, method);
     }

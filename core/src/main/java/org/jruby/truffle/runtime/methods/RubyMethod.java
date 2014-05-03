@@ -24,9 +24,7 @@ import org.jruby.truffle.runtime.core.*;
  */
 public class RubyMethod {
 
-    private final SourceSection sourceSection;
-
-    private final UniqueMethodIdentifier uniqueIdentifier;
+    private final SharedRubyMethod sharedMethodInfo;
     private final String name;
 
     private final RubyModule declaringModule;
@@ -36,11 +34,10 @@ public class RubyMethod {
     private final CallTarget callTarget;
     private final MaterializedFrame declarationFrame;
 
-    public RubyMethod(SourceSection sourceSection, UniqueMethodIdentifier uniqueIdentifier, String name,
+    public RubyMethod(SharedRubyMethod sharedMethodInfo, String name,
                       RubyModule declaringModule, Visibility visibility, boolean undefined,
                       CallTarget callTarget, MaterializedFrame declarationFrame) {
-        this.sourceSection = sourceSection;
-        this.uniqueIdentifier = uniqueIdentifier;
+        this.sharedMethodInfo = sharedMethodInfo;
         this.declaringModule = declaringModule;
         this.name = name;
         this.visibility = visibility;
@@ -64,20 +61,30 @@ public class RubyMethod {
         return result;
     }
 
-    public RubyMethod withNewName(String newName) {
-        if (newName.equals(name)) {
-            return this;
-        }
-
-        return new RubyMethod(sourceSection, uniqueIdentifier, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
+    public SharedRubyMethod getSharedMethodInfo() {
+        return sharedMethodInfo;
     }
 
-    public RubyMethod withNewVisibility(Visibility newVisibility) {
-        if (newVisibility == visibility) {
-            return this;
-        }
+    public RubyModule getDeclaringModule() { return declaringModule; }
 
-        return new RubyMethod(sourceSection, uniqueIdentifier, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
+    public String getName() {
+        return name;
+    }
+
+    public Visibility getVisibility() {
+        return visibility;
+    }
+
+    public boolean isUndefined() {
+        return undefined;
+    }
+
+    public MaterializedFrame getDeclarationFrame() {
+        return declarationFrame;
+    }
+
+    public CallTarget getCallTarget(){
+        return callTarget;
     }
 
     public RubyMethod withDeclaringModule(RubyModule newDeclaringModule) {
@@ -85,7 +92,23 @@ public class RubyMethod {
             return this;
         }
 
-        return new RubyMethod(sourceSection, uniqueIdentifier, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame);
+        return new RubyMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame);
+    }
+
+    public RubyMethod withNewName(String newName) {
+        if (newName.equals(name)) {
+            return this;
+        }
+
+        return new RubyMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
+    }
+
+    public RubyMethod withNewVisibility(Visibility newVisibility) {
+        if (newVisibility == visibility) {
+            return this;
+        }
+
+        return new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
     }
 
     public RubyMethod withoutBlockDestructureSemantics() {
@@ -95,7 +118,7 @@ public class RubyMethod {
             behaveAsBlockNode.setBehaveAsBlock(false);
         }
 
-        return new RubyMethod(sourceSection, uniqueIdentifier, name, declaringModule, visibility, undefined,
+        return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, undefined,
                 Truffle.getRuntime().createCallTarget(modifiedRootNode), declarationFrame);
     }
 
@@ -104,7 +127,7 @@ public class RubyMethod {
             return this;
         }
 
-        return new RubyMethod(sourceSection, uniqueIdentifier, name, declaringModule, visibility, true, callTarget, declarationFrame);
+        return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame);
     }
 
     public boolean isVisibleTo(RubyBasicObject caller, RubyBasicObject receiver) {
@@ -174,36 +197,6 @@ public class RubyMethod {
             default:
                 return false;
         }
-    }
-
-    public SourceSection getSourceSection() {
-        return sourceSection;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public UniqueMethodIdentifier getUniqueIdentifier() {
-        return uniqueIdentifier;
-    }
-
-    public RubyModule getDeclaringModule() { return declaringModule; }
-
-    public Visibility getVisibility() {
-        return visibility;
-    }
-
-    public boolean isUndefined() {
-        return undefined;
-    }
-
-    public MaterializedFrame getDeclarationFrame() {
-        return declarationFrame;
-    }
-
-    public CallTarget getCallTarget(){
-        return callTarget;
     }
 
 }

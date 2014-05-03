@@ -59,7 +59,7 @@ public class BignumNode extends Node implements ILiteralNode {
         return NodeType.BIGNUMNODE;
     }
 
-    public Object accept(NodeVisitor iVisitor) {
+    public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitBignumNode(this);
     }
 

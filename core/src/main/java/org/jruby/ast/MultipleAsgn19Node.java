@@ -66,7 +66,7 @@ public class MultipleAsgn19Node extends AssignableNode {
         return NodeType.MULTIPLEASGN19NODE;
     }
 
-    public Object accept(NodeVisitor iVisitor) {
+    public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitMultipleAsgnNode(this);
     }
 

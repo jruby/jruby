@@ -16,10 +16,10 @@ import org.jruby.truffle.runtime.methods.*;
  */
 public class MethodLocal {
 
-    private final UniqueMethodIdentifier method;
+    private final SharedRubyMethod method;
     private final String local;
 
-    public MethodLocal(UniqueMethodIdentifier method, String local) {
+    public MethodLocal(SharedRubyMethod method, String local) {
         this.method = method;
         this.local = local;
     }

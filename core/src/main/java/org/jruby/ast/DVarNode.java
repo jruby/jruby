@@ -69,7 +69,7 @@ public class DVarNode extends Node implements INameNode, IScopedNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public Object accept(NodeVisitor iVisitor) {
+    public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitDVarNode(this);
     }
     
