@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.core.*;
  */
 public class RubyMethod {
 
-    private final SharedRubyMethod sharedMethodInfo;
+    private final SharedMethodInfo sharedMethodInfo;
     private final String name;
 
     private final RubyModule declaringModule;
@@ -34,7 +34,7 @@ public class RubyMethod {
     private final CallTarget callTarget;
     private final MaterializedFrame declarationFrame;
 
-    public RubyMethod(SharedRubyMethod sharedMethodInfo, String name,
+    public RubyMethod(SharedMethodInfo sharedMethodInfo, String name,
                       RubyModule declaringModule, Visibility visibility, boolean undefined,
                       CallTarget callTarget, MaterializedFrame declarationFrame) {
         this.sharedMethodInfo = sharedMethodInfo;
@@ -61,7 +61,7 @@ public class RubyMethod {
         return result;
     }
 
-    public SharedRubyMethod getSharedMethodInfo() {
+    public SharedMethodInfo getSharedMethodInfo() {
         return sharedMethodInfo;
     }
 

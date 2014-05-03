@@ -135,6 +135,12 @@ public class ThreadService {
      * will follow.
      */
     private final Map<Object, RubyThread> rubyThreadMap;
+
+    /**
+     * Indicates whether there's only a single thread executing, in which case
+     * we don't need to be polling for cross-thread events.
+     */
+    private volatile boolean polling = false;
     
     private final ReentrantLock criticalLock = new ReentrantLock();
 
@@ -231,6 +237,10 @@ public class ThreadService {
         mainContext.setThread(rubyThread);
         rubyThreadMap.put(thread, rubyThread);
     }
+
+    public boolean getPolling() {
+        return polling;
+    }
     
     public synchronized RubyThread[] getActiveRubyThreads() {
     	// all threads in ruby thread group plus main thread
@@ -282,16 +292,19 @@ public class ThreadService {
 
     public synchronized void associateThread(Object threadOrFuture, RubyThread rubyThread) {
         rubyThreadMap.put(threadOrFuture, rubyThread);
+        if (rubyThreadMap.size() >= 0) polling = true;
     }
 
     public synchronized void dissociateThread(Object threadOrFuture) {
         rubyThreadMap.remove(threadOrFuture);
+        if (rubyThreadMap.size() <= 1) polling = false;
     }
     
     public synchronized void unregisterThread(RubyThread thread) {
         rubyThreadMap.remove(Thread.currentThread());
         getCurrentContext().setThread(null);
         localContext.set(null);
+        if (rubyThreadMap.size() >= 0) polling = false;
     }
     
     public void setCritical(boolean critical) {
@@ -313,42 +326,6 @@ public class ThreadService {
     public boolean getCritical() {
         return criticalLock.isHeldByCurrentThread();
     }
-    
-    public static class Event {
-        public enum Type { KILL, RAISE, WAKEUP }
-        public final RubyThread sender;
-        public final RubyThread target;
-        public final Type type;
-        public final IRubyObject exception;
-
-        public Event(RubyThread sender, RubyThread target, Type type) {
-            this(sender, target, type, null);
-        }
-
-        public Event(RubyThread sender, RubyThread target, Type type, IRubyObject exception) {
-            this.sender = sender;
-            this.target = target;
-            this.type = type;
-            this.exception = exception;
-        }
-        
-        public String toString() {
-            switch (type) {
-                case KILL: return sender.toString() + " sent KILL to " + target;
-                case RAISE: return sender.toString() + " sent RAISE to " + target + ": " + exception.getMetaClass().getRealClass();
-                case WAKEUP: return sender.toString() + " sent WAKEUP to " + target;
-            }
-            return ""; // not reached
-        }
-    }
-
-    public void deliverEvent(Event event) {
-        // first, check if the sender has unreceived mail
-        event.sender.checkMail(getCurrentContext());
-
-        // then deliver mail to the target
-        event.target.receiveMail(event);
-    }
 
     /**
      * Get the map from threadlike objects to RubyThread instances. Used mainly
@@ -358,5 +335,51 @@ public class ThreadService {
      */
     public Map<Object, RubyThread> getRubyThreadMap() {
         return rubyThreadMap;
+    }
+
+    @Deprecated
+    public void deliverEvent(RubyThread sender, RubyThread target, Event event) {
+    }
+
+    @Deprecated
+    public static class Event {
+        public enum Type { KILL, RAISE, WAKEUP }
+        public final String description;
+        public final Type type;
+        public final IRubyObject exception;
+
+        public Event(String description, Type type) {
+            this(description, type, null);
+        }
+
+        public Event(String description, Type type, IRubyObject exception) {
+            this.description = description;
+            this.type = type;
+            this.exception = exception;
+        }
+
+        public String toString() {
+            switch (type) {
+                case KILL: return description;
+                case RAISE: return description + ": " + exception.getMetaClass().getRealClass();
+                case WAKEUP: return description;
+            }
+            return ""; // not reached
+        }
+
+        @Deprecated
+        public static Event kill(RubyThread sender, RubyThread target, Type type) {
+            return new Event(sender.toString() + " sent KILL to " + target, type);
+        }
+
+        @Deprecated
+        public static Event raise(RubyThread sender, RubyThread target, Type type, IRubyObject exception) {
+            return new Event(sender.toString() + " sent KILL to " + target, type, exception);
+        }
+
+        @Deprecated
+        public static Event wakeup(RubyThread sender, RubyThread target, Type type) {
+            return new Event(sender.toString() + " sent KILL to " + target, type);
+        }
     }
 }

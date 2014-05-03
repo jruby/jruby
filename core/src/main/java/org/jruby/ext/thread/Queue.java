@@ -27,18 +27,22 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.thread;
 
-import java.util.LinkedList;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
+import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -46,19 +50,37 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 @JRubyClass(name = "Queue")
 public class Queue extends RubyObject {
-    private LinkedList entries;
-    protected volatile int numWaiting = 0;
+    protected BlockingQueue<IRubyObject> queue;
+    protected AtomicLong numWaiting = new AtomicLong();
 
-    @JRubyMethod(name = "new", rest = true, meta = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Queue result = new Queue(context.runtime, (RubyClass) recv);
-        result.callInit(context, args, block);
-        return result;
-    }
+    final RubyThread.Task<Queue, IRubyObject> takeTask = new RubyThread.Task<Queue, IRubyObject>() {
+        @Override
+        public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
+            return queue.getQueueSafe().take();
+        }
+
+        @Override
+        public void wakeup(RubyThread thread, IRubyObject self) {
+            thread.getNativeThread().interrupt();
+        }
+    };
+
+    final RubyThread.Task<IRubyObject, IRubyObject> putTask = new RubyThread.Task<IRubyObject, IRubyObject>() {
+        @Override
+        public IRubyObject run(ThreadContext context, IRubyObject data) throws InterruptedException {
+            final BlockingQueue<IRubyObject> queue = getQueueSafe();
+            queue.put(data);
+            return context.nil;
+        }
+
+        @Override
+        public void wakeup(RubyThread thread, IRubyObject data) {
+            thread.getNativeThread().interrupt();
+        }
+    };
 
     public Queue(Ruby runtime, RubyClass type) {
         super(runtime, type);
-        entries = new LinkedList();
     }
 
     public static void setup(Ruby runtime) {
@@ -72,92 +94,101 @@ public class Queue extends RubyObject {
         cQueue.defineAnnotatedMethods(Queue.class);
     }
 
+    @JRubyMethod(visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context) {
+        queue = new LinkedBlockingQueue<IRubyObject>();
+        return this;
+    }
+
     @JRubyMethod(name = "shutdown!")
-    public synchronized IRubyObject shutdown(ThreadContext context) {
-        entries = null;
-        notifyAll();
+    public IRubyObject shutdown(ThreadContext context) {
+        queue = null;
         return context.runtime.getNil();
     }
     
     public synchronized void shutdown() {
-        entries = null;
-        notifyAll();
+        queue = null;
     }
 
     public boolean isShutdown() {
-        return entries == null;
+        return queue == null;
     }
 
-    public synchronized void checkShutdown(ThreadContext context) {
-        if (entries == null) {
-            throw new RaiseException(context.runtime, context.runtime.getThreadError(), "queue shut down", false);
+    public BlockingQueue<IRubyObject> getQueueSafe() {
+        BlockingQueue<IRubyObject> queue = this.queue;
+        checkShutdown();
+        return queue;
+    }
+
+    public synchronized void checkShutdown() {
+        if (queue == null) {
+            Ruby runtime = getRuntime();
+            throw new RaiseException(runtime, runtime.getThreadError(), "queue shut down", false);
         }
     }
 
     @JRubyMethod
     public synchronized IRubyObject clear(ThreadContext context) {
-        checkShutdown(context);
-        entries.clear();
-        return context.runtime.getNil();
+        BlockingQueue<IRubyObject> queue = getQueueSafe();
+        queue.clear();
+        return this;
     }
 
     @JRubyMethod(name = "empty?")
-    public synchronized RubyBoolean empty_p(ThreadContext context) {
-        checkShutdown(context);
-        return context.runtime.newBoolean(entries.size() == 0);
+    public RubyBoolean empty_p(ThreadContext context) {
+        BlockingQueue<IRubyObject> queue = getQueueSafe();
+        return context.runtime.newBoolean(queue.size() == 0);
     }
 
     @JRubyMethod(name = {"length", "size"})
-    public synchronized RubyNumeric length(ThreadContext context) {
-        checkShutdown(context);
-        return RubyNumeric.int2fix(context.runtime, entries.size());
+    public RubyNumeric length(ThreadContext context) {
+        checkShutdown();
+        return RubyNumeric.int2fix(context.runtime, queue.size());
     }
 
-    protected synchronized long java_length() {
-        return entries.size();
+    protected long java_length() {
+        return queue.size();
     }
 
     @JRubyMethod
     public RubyNumeric num_waiting(ThreadContext context) {
-        return context.runtime.newFixnum(numWaiting);
+        return context.runtime.newFixnum(numWaiting.longValue());
     }
 
     @JRubyMethod(name = {"pop", "deq", "shift"})
-    public synchronized IRubyObject pop(ThreadContext context) {
+    public IRubyObject pop(ThreadContext context) {
         return pop(context, true);
     }
 
     @JRubyMethod(name = {"pop", "deq", "shift"})
-    public synchronized IRubyObject pop(ThreadContext context, IRubyObject arg0) {
+    public IRubyObject pop(ThreadContext context, IRubyObject arg0) {
         return pop(context, !arg0.isTrue());
     }
 
     @JRubyMethod(name = {"push", "<<", "enq"})
-    public synchronized IRubyObject push(ThreadContext context, IRubyObject value) {
-        checkShutdown(context);
-        entries.addLast(value);
-        notify();
-        return context.runtime.getNil();
+    public IRubyObject push(ThreadContext context, final IRubyObject value) {
+        checkShutdown();
+        try {
+            context.getThread().executeTask(context, value, putTask);
+            return this;
+        } catch (InterruptedException ie) {
+            throw context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#push");
+        }
     }
 
-    private synchronized IRubyObject pop(ThreadContext context, boolean should_block) {
-        checkShutdown(context);
-        if (!should_block && entries.size() == 0) {
+    private IRubyObject pop(ThreadContext context, boolean should_block) {
+        final BlockingQueue<IRubyObject> queue = getQueueSafe();
+        if (!should_block && queue.size() == 0) {
             throw new RaiseException(context.runtime, context.runtime.getThreadError(), "queue empty", false);
         }
-        numWaiting++;
+        numWaiting.incrementAndGet();
         try {
-            while (java_length() == 0) {
-                try {
-                    context.getThread().wait_timeout(this, null);
-                } catch (InterruptedException e) {
-                }
-                checkShutdown(context);
-            }
+            return context.getThread().executeTask(context, this, takeTask);
+        } catch (InterruptedException ie) {
+            throw context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#pop");
         } finally {
-            numWaiting--;
+            numWaiting.decrementAndGet();
         }
-        return (IRubyObject) entries.removeFirst();
     }
     
 }

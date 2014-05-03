@@ -190,11 +190,11 @@ public class Timeout implements Library {
         Runnable timeoutRunnable = new Runnable() {
             public void run() {
                 if (latch.compareAndSet(false, true)) {
-                    if (currentThread.alive_p().isTrue()) {
+                    if (currentThread.isAlive()) {
                         RubyClass anonException = (RubyClass)runtime.getClassFromPath("Timeout::AnonymousException");
                         IRubyObject anonExceptionObj = anonException.newInstance(runtime.getCurrentContext(), runtime.newString("execution expired"), Block.NULL_BLOCK);
                         anonExceptionObj.getInternalVariables().setInternalVariable("__identifier__", id);
-                        currentThread.internalRaise(new IRubyObject[] {anonExceptionObj});
+                        currentThread.raise(anonExceptionObj);
                     }
                 }
             }
@@ -206,8 +206,8 @@ public class Timeout implements Library {
         Runnable timeoutRunnable = new Runnable() {
             public void run() {
                 if (latch.compareAndSet(false, true)) {
-                    if (currentThread.alive_p().isTrue()) {
-                        currentThread.internalRaise(new IRubyObject[]{exception, runtime.newString("execution expired")});
+                    if (currentThread.isAlive()) {
+                        currentThread.genericRaise(runtime, new IRubyObject[]{exception, runtime.newString("execution expired")}, null);
                     }
                 }
             }

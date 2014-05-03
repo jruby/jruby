@@ -26,7 +26,7 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.methods.SharedRubyMethod;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -132,8 +132,7 @@ public abstract class CoreMethodNodeManager {
 
         final RubyRootNode rootNode = makeGenericMethod(context, methodDetails);
 
-        final SharedRubyMethod sharedMethodInfo = new SharedRubyMethod(rootNode.getSourceSection());
-        final RubyMethod method = new RubyMethod(sharedMethodInfo, canonicalName, module, visibility, false,
+        final RubyMethod method = new RubyMethod(rootNode.getSharedInfo(), canonicalName, module, visibility, false,
                 Truffle.getRuntime().createCallTarget(rootNode), null);
 
         module.addMethod(method);
@@ -178,11 +177,13 @@ public abstract class CoreMethodNodeManager {
             argumentsNodes.add(new ReadBlockNode(context, sourceSection, UndefinedPlaceholder.INSTANCE));
         }
 
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, methodDetails.getIndicativeName(), null);
+
         final RubyNode methodNode = methodDetails.getNodeFactory().createNode(context, sourceSection, argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]));
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
 
-        return new RubyRootNode(sourceSection, null, methodDetails.getClassAnnotation().name() + "#" + methodDetails.getMethodAnnotation().names()[0] + "(core)", null, block);
+        return new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
     }
 
     public static class MethodDetails {
@@ -210,6 +211,10 @@ public abstract class CoreMethodNodeManager {
 
         public NodeFactory<? extends RubyNode> getNodeFactory() {
             return nodeFactory;
+        }
+
+        public String getIndicativeName() {
+            return classAnnotation.name() + "#" + methodAnnotation.names()[0] + "(core)";
         }
 
     }

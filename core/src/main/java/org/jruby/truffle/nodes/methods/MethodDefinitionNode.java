@@ -26,7 +26,7 @@ import org.jruby.truffle.runtime.methods.*;
 public class MethodDefinitionNode extends RubyNode {
 
     protected final String name;
-    protected final SharedRubyMethod sharedMethodInfo;
+    protected final SharedMethodInfo sharedMethodInfo;
 
     protected final CallTarget callTarget;
 
@@ -34,7 +34,7 @@ public class MethodDefinitionNode extends RubyNode {
 
     protected final boolean ignoreLocalVisibility;
 
-    public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedRubyMethod sharedMethodInfo,
+    public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
             boolean requiresDeclarationFrame, CallTarget callTarget, boolean ignoreLocalVisibility) {
         super(context, sourceSection);
         this.name = name;

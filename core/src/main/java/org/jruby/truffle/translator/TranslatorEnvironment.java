@@ -35,9 +35,8 @@ public class TranslatorEnvironment {
     private final boolean neverAssignInParentScope;
 
     protected final TranslatorEnvironment parent;
-    private String methodName = "";
     private boolean needsDeclarationFrame = false;
-    private SharedRubyMethod methodIdentifier;
+    private final SharedMethodInfo sharedMethodInfo;
 
     // TODO(CS): overflow?
     private static AtomicInteger tempIndex = new AtomicInteger();
@@ -45,7 +44,7 @@ public class TranslatorEnvironment {
     public boolean hasRestParameter = false;
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, FrameDescriptor frameDescriptor, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments,
-                    boolean neverAssignInParentScope, SharedRubyMethod sharedMethodInfo) {
+                    boolean neverAssignInParentScope, SharedMethodInfo sharedMethodInfo) {
         this.context = context;
         this.parent = parent;
         this.frameDescriptor = frameDescriptor;
@@ -53,11 +52,11 @@ public class TranslatorEnvironment {
         this.returnID = returnID;
         this.ownScopeForAssignments = ownScopeForAssignments;
         this.neverAssignInParentScope = neverAssignInParentScope;
-        this.methodIdentifier = sharedMethodInfo;
+        this.sharedMethodInfo = sharedMethodInfo;
     }
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
-                    SharedRubyMethod methodIdentifier) {
+                    SharedMethodInfo methodIdentifier) {
         this(context, parent, new FrameDescriptor(RubyFrameTypeConversion.getInstance()), parser, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier);
     }
 
@@ -78,12 +77,12 @@ public class TranslatorEnvironment {
         return getFrameDescriptor().findOrAddFrameSlot(name);
     }
 
-    public SharedRubyMethod findMethodForLocalVar(String name) {
+    public SharedMethodInfo findMethodForLocalVar(String name) {
         TranslatorEnvironment current = this;
         do {
             FrameSlot slot = current.getFrameDescriptor().findFrameSlot(name);
             if (slot != null) {
-                return current.methodIdentifier;
+                return current.sharedMethodInfo;
             }
 
             current = current.parent;
@@ -120,14 +119,6 @@ public class TranslatorEnvironment {
         }
 
         return null;
-    }
-
-    public String getMethodName() {
-        return methodName;
-    }
-
-    public void setMethodName(String methodName) {
-        this.methodName = methodName;
     }
 
     public void setNeedsDeclarationFrame() {
@@ -169,8 +160,8 @@ public class TranslatorEnvironment {
         frameDescriptor.addFrameSlot(RubyModule.MODULE_FUNCTION_FLAG_FRAME_SLOT_ID);
     }
 
-    public SharedRubyMethod getUniqueMethodIdentifier() {
-        return methodIdentifier;
+    public SharedMethodInfo getSharedMethodInfo() {
+        return sharedMethodInfo;
     }
 
     public List<FrameSlot> getFlipFlopStates() {

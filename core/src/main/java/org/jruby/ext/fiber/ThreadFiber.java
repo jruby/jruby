@@ -30,7 +30,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         ThreadFiber rootFiber = new ThreadFiber(runtime, runtime.getClass("Fiber")); // FIXME: getFiber()
         
         assert runtime.getClass("SizedQueue") != null : "SizedQueue has not been loaded";
-        rootFiber.data = new FiberData(new SizedQueue(runtime, runtime.getClass("SizedQueue")), null, rootFiber);
+        rootFiber.data = new FiberData(new SizedQueue(runtime, runtime.getClass("SizedQueue"), 1), null, rootFiber);
         rootFiber.thread = context.getThread();
         context.setRootFiber(rootFiber);
     }
@@ -40,8 +40,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         Ruby runtime = context.runtime;
         
         if (!block.isGiven()) throw runtime.newArgumentError("tried to create Proc object without block");
-        
-        data = new FiberData(new SizedQueue(runtime, runtime.getClass("SizedQueue")), context.getFiberCurrentThread(), this);
+
+        data = new FiberData(new SizedQueue(runtime, runtime.getClass("SizedQueue"), 1), context.getFiberCurrentThread(), this);
         
         FiberData currentFiberData = context.getFiber().data;
         
@@ -186,7 +186,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     
     @JRubyMethod
     public IRubyObject __alive__(ThreadContext context) {
-        return context.runtime.newBoolean(thread != null && thread.isAlive());
+        return context.runtime.newBoolean(alive());
     }
     
     @JRubyMethod(meta = true)
@@ -241,6 +241,10 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                     if (data.prev != null) {
                         data.prev.thread.raise(JavaUtil.convertJavaToUsableRubyObject(runtime, t));
                     }
+                } finally {
+                    // clear reference to the fiber's thread
+                    ThreadFiber tf = data.fiber.get();
+                    if (tf != null) tf.thread = null;
                 }
             }
         });

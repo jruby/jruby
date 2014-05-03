@@ -28,18 +28,15 @@ import org.jruby.truffle.runtime.methods.*;
 @NodeInfo(shortName = "general-super-call")
 public class GeneralSuperCallNode extends RubyNode {
 
-    private final String name;
     private final boolean isSplatted;
     @Child protected RubyNode block;
     @Children protected final RubyNode[] arguments;
     @Child protected IndirectCallNode callNode;
 
-    public GeneralSuperCallNode(RubyContext context, SourceSection sourceSection, String name, RubyNode block, RubyNode[] arguments, boolean isSplatted) {
+    public GeneralSuperCallNode(RubyContext context, SourceSection sourceSection, RubyNode block, RubyNode[] arguments, boolean isSplatted) {
         super(context, sourceSection);
-        assert name != null;
         assert arguments != null;
         assert !isSplatted || arguments.length == 1;
-        this.name = name;
         this.block = block;
         this.arguments = arguments;
         this.isSplatted = isSplatted;
@@ -86,11 +83,11 @@ public class GeneralSuperCallNode extends RubyNode {
         // Lookup method
 
         final RubyClass selfClass = self.getRubyClass();
-        final RubyMethod method = selfClass.getSuperclass().lookupMethod(name);
+        final RubyMethod method = selfClass.getSuperclass().lookupMethod(getMethodInfo().getName());
 
         if (method == null || method.isUndefined()) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name, self.toString()));
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(getMethodInfo().getName(), self.toString()));
         }
 
         // Call the method
@@ -111,7 +108,7 @@ public class GeneralSuperCallNode extends RubyNode {
             final RubyBasicObject self = context.getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
             final RubyBasicObject receiverRubyObject = context.getCoreLibrary().box(self);
 
-            final RubyMethod method = receiverRubyObject.getRubyClass().getSuperclass().lookupMethod(name);
+            final RubyMethod method = receiverRubyObject.getRubyClass().getSuperclass().lookupMethod(getMethodInfo().getName());
 
             if (method == null || method.isUndefined() || !method.isVisibleTo(self)) {
                 return NilPlaceholder.INSTANCE;

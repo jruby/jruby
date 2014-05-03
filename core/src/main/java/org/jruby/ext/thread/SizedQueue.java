@@ -39,23 +39,22 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+
 /**
  * The "SizedQueue" class from the 'thread' library.
  */
 @JRubyClass(name = "SizedQueue", parent = "Queue")
 public class SizedQueue extends Queue {
-    private int capacity;
-
-    @JRubyMethod(name = "new", rest = true, meta = true)
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        SizedQueue result = new SizedQueue(context.runtime, (RubyClass) recv);
-        result.callInit(context, args, block);
-        return result;
-    }
-
     public SizedQueue(Ruby runtime, RubyClass type) {
         super(runtime, type);
-        capacity = 1;
+    }
+
+    public SizedQueue(Ruby runtime, RubyClass type, int size) {
+        super(runtime, type);
+
+        this.queue = new ArrayBlockingQueue<IRubyObject>(size, false);
     }
 
     public static void setup(Ruby runtime) {
@@ -71,19 +70,19 @@ public class SizedQueue extends Queue {
 
     @JRubyMethod
     @Override
-    public synchronized IRubyObject clear(ThreadContext context) {
+    public IRubyObject clear(ThreadContext context) {
         super.clear(context);
-        notifyAll();
-        return context.runtime.getNil();
+
+        return this;
     }
 
     @JRubyMethod
-    public synchronized RubyNumeric max(ThreadContext context) {
-        return RubyNumeric.int2fix(context.runtime, capacity);
+    public RubyNumeric max(ThreadContext context) {
+        return RubyNumeric.int2fix(context.runtime, queue.size() + queue.remainingCapacity());
     }
 
     @JRubyMethod(name = "max=")
-    public synchronized IRubyObject max_set(ThreadContext context, IRubyObject arg) {
+    public IRubyObject max_set(ThreadContext context, IRubyObject arg) {
         initialize(context, arg);
         return arg;
     }
@@ -91,59 +90,13 @@ public class SizedQueue extends Queue {
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public synchronized IRubyObject initialize(ThreadContext context, IRubyObject arg) {
         int new_capacity = RubyNumeric.fix2int(arg);
+
         if (new_capacity <= 0) {
-            context.runtime.newArgumentError("queue size must be positive");
+            throw context.runtime.newArgumentError("queue size must be positive");
         }
-        int difference;
-        if (new_capacity > capacity) {
-            difference = new_capacity - capacity;
-        } else {
-            difference = 0;
-        }
-        capacity = new_capacity;
-        if (difference > 0) {
-            notifyAll();
-        }
-        return context.runtime.getNil();
-    }
 
-    @JRubyMethod(name = {"pop", "deq", "shift"})
-    @Override
-    public synchronized IRubyObject pop(ThreadContext context) {
-        IRubyObject result = super.pop(context);
-        notifyAll();
-        return result;
-    }
+        this.queue = new ArrayBlockingQueue<IRubyObject>(new_capacity, false);
 
-    @JRubyMethod(name = {"pop", "deq", "shift"})
-    @Override
-    public synchronized IRubyObject pop(ThreadContext context, IRubyObject arg0) {
-        IRubyObject result = super.pop(context, arg0);
-        notifyAll();
-        return result;
+        return this;
     }
-
-    @JRubyMethod(name = {"push", "<<"})
-    @Override
-    public synchronized IRubyObject push(ThreadContext context, IRubyObject value) {
-        checkShutdown(context);
-        if (java_length() >= capacity) {
-            numWaiting++;
-            try {
-                while (java_length() >= capacity) {
-                    try {
-                        context.getThread().wait_timeout(this, null);
-                    } catch (InterruptedException e) {
-                    }
-                    checkShutdown(context);
-                }
-            } finally {
-                numWaiting--;
-            }
-        }
-        super.push(context, value);
-        notifyAll();
-        return context.runtime.getNil();
-    }
-    
 }

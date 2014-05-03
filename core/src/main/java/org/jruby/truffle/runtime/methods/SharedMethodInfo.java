@@ -12,19 +12,31 @@ package org.jruby.truffle.runtime.methods;
 import com.oracle.truffle.api.SourceSection;
 
 /**
- * {@link RubyMethod} objects are copied as properties such as visibility are changed. {@link SharedRubyMethod} stores
+ * {@link RubyMethod} objects are copied as properties such as visibility are changed. {@link SharedMethodInfo} stores
  * the state that does not change, such as where the method was defined.
  */
-public class SharedRubyMethod {
+public class SharedMethodInfo {
 
     private final SourceSection sourceSection;
+    private final String name;
+    private final org.jruby.ast.Node parseTree;
 
-    public SharedRubyMethod(SourceSection sourceSection) {
+    public SharedMethodInfo(SourceSection sourceSection, String name, org.jruby.ast.Node parseTree) {
         this.sourceSection = sourceSection;
+        this.name = name;
+        this.parseTree = parseTree;
     }
 
     public SourceSection getSourceSection() {
         return sourceSection;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public org.jruby.ast.Node getParseTree() {
+        return parseTree;
     }
 
 }
