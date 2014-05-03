@@ -81,8 +81,7 @@ public class GeneralSuperCallNode extends RubyNode {
 
         // Lookup method
 
-        final RubyClass selfClass = self.getRubyClass();
-        final RubyMethod method = selfClass.getSuperclass().lookupMethod(getMethod().getName());
+        final RubyMethod method = ((RubyClass) getMethod().getDeclaringModule()).getSuperclass().lookupMethod(getMethod().getName());
 
         if (method == null || method.isUndefined()) {
             CompilerDirectives.transferToInterpreter();
