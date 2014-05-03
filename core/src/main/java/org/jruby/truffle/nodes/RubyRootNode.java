@@ -50,7 +50,8 @@ public class RubyRootNode extends RootNode {
     public String toString() {
         final SourceSection sourceSection = getSourceSection();
         final String source = sourceSection == null ? "<unknown>" : sourceSection.toString();
-        return "Method " + method.getName() + ":" + source + "@" + Integer.toHexString(hashCode());
+        final String methodName = method == null ? "<unknown>" : method.getName();
+        return "Method " + methodName + ":" + source + "@" + Integer.toHexString(hashCode());
     }
 
 }
