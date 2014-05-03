@@ -32,6 +32,9 @@ public class GeneralSuperCallNode extends RubyNode {
     @Child protected RubyNode block;
     @Children protected final RubyNode[] arguments;
 
+    @CompilerDirectives.CompilationFinal private Assumption unmodifiedAssumption;
+    @CompilerDirectives.CompilationFinal private RubyMethod method;
+
     public GeneralSuperCallNode(RubyContext context, SourceSection sourceSection, RubyNode block, RubyNode[] arguments, boolean isSplatted) {
         super(context, sourceSection);
 
@@ -46,12 +49,6 @@ public class GeneralSuperCallNode extends RubyNode {
     @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
-        getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getSourceSection().getSource().getName(), getSourceSection().getStartLine(), "User general super call");
-
-        // This method is only a simple implementation - it needs proper caching
-
-        CompilerAsserts.neverPartOfCompilation();
-
         final RubyBasicObject self = (RubyBasicObject) frame.getArguments(RubyArguments.class).getSelf();
 
         // Execute the arguments
@@ -79,18 +76,30 @@ public class GeneralSuperCallNode extends RubyNode {
             blockObject = null;
         }
 
-        // Lookup method
+        // Check we have a method and the module is unmodified
 
-        final RubyMethod method = ((RubyClass) getMethod().getDeclaringModule()).getSuperclass().lookupMethod(getMethod().getName());
+        if (method == null || !unmodifiedAssumption.isValid()) {
+            CompilerAsserts.neverPartOfCompilation();
 
-        if (method == null || method.isUndefined()) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(getMethod().getName(), self.toString()));
+            // Lookup method
+
+            final RubyModule declaringModule = getMethod().getDeclaringModule();
+
+            method = ((RubyClass) declaringModule).getSuperclass().lookupMethod(getMethod().getName());
+
+            if (method == null || method.isUndefined()) {
+                method = null;
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(getMethod().getName(), self.toString()));
+            }
+
+            unmodifiedAssumption = declaringModule.getUnmodifiedAssumption();
         }
 
         // Call the method
 
         if (isSplatted) {
+            // TODO(CS): need something better to splat the arguments array
+            CompilerAsserts.neverPartOfCompilation();
             final RubyArray argumentsArray = (RubyArray) argumentsObjects[0];
             return method.call(frame.pack(), self, blockObject, argumentsArray.asList().toArray());
         } else {
