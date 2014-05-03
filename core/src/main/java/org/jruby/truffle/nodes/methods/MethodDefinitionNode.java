@@ -89,6 +89,9 @@ public class MethodDefinitionNode extends RubyNode {
         }
 
         final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, declarationFrame, frameDescriptor, pristineRootNode, false, false);
+
+        // Define the method with no declaring module - this will be filled in by AddMethodNode in the typical case
+
         return new RubyMethod(sharedMethodInfo, null, name, visibility, false, methodImplementation);
     }
 
