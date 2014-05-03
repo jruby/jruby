@@ -631,6 +631,7 @@ def chain_test(n)
 
         if last.value != i
             puts 'Chain test failed.'
+            exit
         end
     end
 end
@@ -660,12 +661,14 @@ def projection_test(n)
 
     if dst.value != 1170
         puts 'Projection 1 failed'
+        exit
     end
 
     change(dst, 1050)
 
     if src.value != 5
         puts 'Projection 2 failed'
+        exit
     end
 
     change(scale, 5)
@@ -673,6 +676,7 @@ def projection_test(n)
     for i in 0..(n - 2)
         if dests[i].value != (i * 5 + 1000)
             puts 'Projection 3 failed'
+            exit
         end
     end
 
@@ -681,6 +685,7 @@ def projection_test(n)
     for i in 0..(n - 2)
         if dests[i].value != (i * 5 + 2000)
             puts 'Projection 4 failed'
+            exit
         end
     end
 end
