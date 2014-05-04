@@ -14,7 +14,7 @@ import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 import org.jruby.truffle.runtime.objectstorage.StorageLocation;
 
-public class gUninitializedReadObjectFieldNode extends ReadObjectFieldNode {
+public class UninitializedReadObjectFieldNode extends ReadObjectFieldNode {
 
     public UninitializedReadObjectFieldNode(String name, RespecializeHook hook) {
         super(name, hook);
