@@ -73,6 +73,20 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
     }
 
     @Override
+    public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
+        final RubyBasicObject object = receiver.executeRubyBasicObject(frame);
+
+        try {
+            final long value = rhs.executeLongFixnum(frame);
+            writeNode.execute(object, value);
+            return value;
+        } catch (UnexpectedResultException e) {
+            writeNode.execute(object, e.getResult());
+            throw e;
+        }
+    }
+
+    @Override
     public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
         final RubyBasicObject object = receiver.executeRubyBasicObject(frame);
 
