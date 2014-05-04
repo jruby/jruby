@@ -9,29 +9,27 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.runtime.objectstorage.IntegerStorageLocation;
 import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 
-public class WriteIntegerObjectFieldNode extends WriteSpecializedObjectFieldNode {
+public class WriteIntegerObjectFieldNode extends WriteObjectFieldChainNode {
 
+    private final ObjectLayout objectLayout;
     private final IntegerStorageLocation storageLocation;
 
-    public WriteIntegerObjectFieldNode(String name, ObjectLayout objectLayout, IntegerStorageLocation storageLocation, RespecializeHook hook) {
-        super(name, objectLayout, hook);
+    public WriteIntegerObjectFieldNode(ObjectLayout objectLayout, IntegerStorageLocation storageLocation, WriteObjectFieldNode next) {
+        super(next);
+        this.objectLayout = objectLayout;
         this.storageLocation = storageLocation;
     }
 
     @Override
     public void execute(ObjectStorage object, int value) {
-        final ObjectLayout actualLayout = object.getObjectLayout();
-
-        if (actualLayout == objectLayout) {
+        if (object.getObjectLayout() == objectLayout) {
             storageLocation.writeInteger(object, value);
         } else {
-            CompilerDirectives.transferToInterpreter();
-            writeAndRespecialize(object, value, "unexpected layout");
+            next.execute(object, value);
         }
     }
 
@@ -40,8 +38,7 @@ public class WriteIntegerObjectFieldNode extends WriteSpecializedObjectFieldNode
         if (value instanceof Integer) {
             execute(object, (int) value);
         } else {
-            CompilerDirectives.transferToInterpreter();
-            writeAndRespecialize(object, value, "unexpected value type");
+            next.execute(object, value);
         }
     }
 

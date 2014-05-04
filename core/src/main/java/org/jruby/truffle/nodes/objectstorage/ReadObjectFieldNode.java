@@ -15,57 +15,40 @@ import org.jruby.truffle.runtime.objectstorage.*;
 
 public abstract class ReadObjectFieldNode extends Node {
 
-    private final String name;
-    private final RespecializeHook hook;
+    public abstract Object execute(ObjectStorage object);
 
-    public ReadObjectFieldNode(String name, RespecializeHook hook) {
-        this.name = name;
-        this.hook = hook;
+    public int executeInteger(ObjectStorage object) throws UnexpectedResultException {
+        Object result = execute(object);
+
+        if (result instanceof Integer) {
+            return (int) result;
+        } else {
+            throw new UnexpectedResultException(result);
+        }
+    }
+
+    public long executeLong(ObjectStorage object) throws UnexpectedResultException {
+        Object result = execute(object);
+
+        if (result instanceof Long) {
+            return (long) result;
+        } else {
+            throw new UnexpectedResultException(result);
+        }
+    }
+
+    public double executeDouble(ObjectStorage object) throws UnexpectedResultException {
+        Object result = execute(object);
+
+        if (result instanceof Double) {
+            return (double) result;
+        } else {
+            throw new UnexpectedResultException(result);
+        }
     }
 
     public boolean isSet(ObjectStorage object) {
         return true;
     }
 
-    public abstract Object execute(ObjectStorage object);
-
-    public int executeInteger(ObjectStorage object) throws UnexpectedResultException {
-        throw new UnexpectedResultException(execute(object));
-    }
-
-    public long executeLong(ObjectStorage object) throws UnexpectedResultException {
-        throw new UnexpectedResultException(execute(object));
-    }
-
-    public double executeDouble(ObjectStorage object) throws UnexpectedResultException {
-        throw new UnexpectedResultException(execute(object));
-    }
-
-    public Object readAndRespecialize(ObjectStorage object, String reason) {
-        hook.hookRead(object, name);
-
-        final ObjectLayout layout = object.getObjectLayout();
-        final StorageLocation storageLocation = layout.findStorageLocation(name);
-
-        ReadObjectFieldNode newNode;
-
-        if (storageLocation == null) {
-            newNode = new ReadMissingObjectFieldNode(name, layout, hook);
-        } else if (storageLocation instanceof IntegerStorageLocation) {
-            newNode = new ReadIntegerObjectFieldNode(name, layout, (IntegerStorageLocation) storageLocation, hook);
-        } else if (storageLocation instanceof LongStorageLocation) {
-            newNode = new ReadLongObjectFieldNode(name, layout, (LongStorageLocation) storageLocation, hook);
-        } else if (storageLocation instanceof DoubleStorageLocation) {
-            newNode = new ReadDoubleObjectFieldNode(name, layout, (DoubleStorageLocation) storageLocation, hook);
-        } else {
-            newNode = new ReadObjectObjectFieldNode(name, layout, (ObjectStorageLocation) storageLocation, hook);
-        }
-
-        replace(newNode, reason);
-        return newNode.execute(object);
-    }
-
-    public String getName() {
-        return name;
-    }
 }

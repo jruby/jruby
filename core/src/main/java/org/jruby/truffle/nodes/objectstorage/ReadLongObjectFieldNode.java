@@ -9,44 +9,41 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
-import org.jruby.truffle.runtime.objectstorage.DoubleStorageLocation;
 import org.jruby.truffle.runtime.objectstorage.LongStorageLocation;
 import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 
-public class ReadLongObjectFieldNode extends ReadSpecializedObjectFieldNode {
+public class ReadLongObjectFieldNode extends ReadObjectFieldChainNode {
 
+    private final ObjectLayout objectLayout;
     private final LongStorageLocation storageLocation;
 
-    public ReadLongObjectFieldNode(String name, ObjectLayout objectLayout, LongStorageLocation storageLocation, RespecializeHook hook) {
-        super(name, objectLayout, hook);
+    public ReadLongObjectFieldNode(ObjectLayout objectLayout, LongStorageLocation storageLocation, ReadObjectFieldNode next) {
+        super(next);
+        this.objectLayout = objectLayout;
         this.storageLocation = storageLocation;
     }
 
     @Override
     public long executeLong(ObjectStorage object) throws UnexpectedResultException {
-        final ObjectLayout receiverLayout = object.getObjectLayout();
-
-        final boolean condition = receiverLayout == objectLayout;
+        final boolean condition = object.getObjectLayout() == objectLayout;
 
         if (condition) {
-            assert receiverLayout != null;
-
             return storageLocation.readLong(object, condition);
         } else {
-            CompilerDirectives.transferToInterpreter();
-            throw new UnexpectedResultException(readAndRespecialize(object, "layout changed"));
+            return next.executeLong(object);
         }
     }
 
     @Override
     public Object execute(ObjectStorage object) {
-        try {
-            return executeLong(object);
-        } catch (UnexpectedResultException e) {
-            return e.getResult();
+        final boolean condition = object.getObjectLayout() == objectLayout;
+
+        if (condition) {
+            return storageLocation.read(object, condition);
+        } else {
+            return next.execute(object);
         }
     }
 

@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.cast.BoxingNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.RespecializeHook;
 import org.jruby.truffle.nodes.objectstorage.UninitializedReadObjectFieldNode;
@@ -49,7 +50,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     };
 
     @Child protected BoxingNode receiver;
-    @Child protected ReadObjectFieldNode readNode;
+    @Child protected ReadHeadObjectFieldNode readNode;
     private final boolean isGlobal;
 
     private final BranchProfile nullProfile = new BranchProfile();
@@ -57,7 +58,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean isGlobal) {
         super(context, sourceSection);
         this.receiver = new BoxingNode(context, sourceSection, receiver);
-        readNode = new UninitializedReadObjectFieldNode(name, hook);
+        readNode = new ReadHeadObjectFieldNode(name, hook);
         this.isGlobal = isGlobal;
     }
 

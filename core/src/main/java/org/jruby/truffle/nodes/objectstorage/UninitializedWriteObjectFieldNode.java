@@ -10,18 +10,43 @@
 package org.jruby.truffle.nodes.objectstorage;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
+import org.jruby.truffle.runtime.objectstorage.*;
 
 public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {
 
+    private final String name;
+    private final RespecializeHook hook;
+
     public UninitializedWriteObjectFieldNode(String name, RespecializeHook hook) {
-        super(name, hook);
+        this.name = name;
+        this.hook = hook;
     }
 
     @Override
     public void execute(ObjectStorage object, Object value) {
-        CompilerDirectives.transferToInterpreter();
-        writeAndRespecialize(object, value, "initial specialization");
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+
+        hook.hookWrite(object, name, value);
+
+        final ObjectLayout layout = object.getObjectLayout();
+        final StorageLocation storageLocation = layout.findStorageLocation(name);
+
+        WriteObjectFieldNode newNode;
+
+        if (storageLocation == null) {
+            throw new RuntimeException("Storage location should be found at this point");
+        } else if (storageLocation instanceof IntegerStorageLocation) {
+            newNode = new WriteIntegerObjectFieldNode(layout, (IntegerStorageLocation) storageLocation, new UninitializedWriteObjectFieldNode(name, hook));
+        } else if (storageLocation instanceof LongStorageLocation) {
+            newNode = new WriteLongObjectFieldNode(layout, (LongStorageLocation) storageLocation, new UninitializedWriteObjectFieldNode(name, hook));
+        } else if (storageLocation instanceof DoubleStorageLocation) {
+            newNode = new WriteDoubleObjectFieldNode(layout, (DoubleStorageLocation) storageLocation, new UninitializedWriteObjectFieldNode(name, hook));
+        } else {
+            newNode = new WriteObjectObjectFieldNode(layout, (ObjectStorageLocation) storageLocation, new UninitializedWriteObjectFieldNode(name, hook));
+        }
+
+        replace(newNode, "adding new write object field node to chain");
+        newNode.execute(object, value);
     }
 
 }

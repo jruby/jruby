@@ -10,24 +10,50 @@
 package org.jruby.truffle.nodes.objectstorage;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
-import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
-import org.jruby.truffle.runtime.objectstorage.StorageLocation;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import org.jruby.truffle.runtime.objectstorage.*;
 
 public class UninitializedReadObjectFieldNode extends ReadObjectFieldNode {
 
-    public UninitializedReadObjectFieldNode(String name, RespecializeHook hook) {
-        super(name, hook);
-    }
+    private final String name;
+    private final RespecializeHook hook;
 
-    public boolean isSet(ObjectStorage object) {
-        return object.getObjectLayout().findStorageLocation(getName()) != null;
+    public UninitializedReadObjectFieldNode(String name, RespecializeHook hook) {
+        this.name = name;
+        this.hook = hook;
     }
 
     @Override
     public Object execute(ObjectStorage object) {
-        CompilerDirectives.transferToInterpreter();
-        return readAndRespecialize(object, "initial specialization");
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+
+        hook.hookRead(object, name);
+
+        final ObjectLayout layout = object.getObjectLayout();
+        final StorageLocation storageLocation = layout.findStorageLocation(name);
+
+        ReadObjectFieldNode newNode;
+
+        if (storageLocation == null) {
+            newNode = new ReadMissingObjectFieldNode(layout, new UninitializedReadObjectFieldNode(name, hook));
+        } else if (storageLocation instanceof IntegerStorageLocation) {
+            newNode = new ReadIntegerObjectFieldNode(layout, (IntegerStorageLocation) storageLocation, new UninitializedReadObjectFieldNode(name, hook));
+        } else if (storageLocation instanceof LongStorageLocation) {
+            newNode = new ReadLongObjectFieldNode(layout, (LongStorageLocation) storageLocation, new UninitializedReadObjectFieldNode(name, hook));
+        } else if (storageLocation instanceof DoubleStorageLocation) {
+            newNode = new ReadDoubleObjectFieldNode(layout, (DoubleStorageLocation) storageLocation, new UninitializedReadObjectFieldNode(name, hook));
+        } else {
+            newNode = new ReadObjectObjectFieldNode(layout, (ObjectStorageLocation) storageLocation, new UninitializedReadObjectFieldNode(name, hook));
+        }
+
+        replace(newNode, "adding new read object field node to chain");
+        return newNode.execute(object);
+    }
+
+    @Override
+    public boolean isSet(ObjectStorage object) {
+        return object.getObjectLayout().findStorageLocation(name) != null;
+
     }
 
 }
