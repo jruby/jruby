@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
-import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 
@@ -25,7 +24,7 @@ public class ReadMissingObjectFieldNode extends ReadObjectFieldChainNode {
     @Override
     public Object execute(ObjectStorage object) {
         if (object.getObjectLayout() == objectLayout) {
-            return NilPlaceholder.INSTANCE;
+            return null;
         } else {
             return next.execute(object);
         }
