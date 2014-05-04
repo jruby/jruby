@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.objectstorage;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.runtime.objectstorage.*;
 
 public class UninitializedReadObjectFieldNode extends ReadObjectFieldNode {
@@ -35,15 +34,15 @@ public class UninitializedReadObjectFieldNode extends ReadObjectFieldNode {
         ReadObjectFieldNode newNode;
 
         if (storageLocation == null) {
-            newNode = new ReadMissingObjectFieldNode(layout, new UninitializedReadObjectFieldNode(name, hook));
+            newNode = new ReadMissingObjectFieldNode(layout, this);
         } else if (storageLocation instanceof IntegerStorageLocation) {
-            newNode = new ReadIntegerObjectFieldNode(layout, (IntegerStorageLocation) storageLocation, new UninitializedReadObjectFieldNode(name, hook));
+            newNode = new ReadIntegerObjectFieldNode(layout, (IntegerStorageLocation) storageLocation, this);
         } else if (storageLocation instanceof LongStorageLocation) {
-            newNode = new ReadLongObjectFieldNode(layout, (LongStorageLocation) storageLocation, new UninitializedReadObjectFieldNode(name, hook));
+            newNode = new ReadLongObjectFieldNode(layout, (LongStorageLocation) storageLocation, this);
         } else if (storageLocation instanceof DoubleStorageLocation) {
-            newNode = new ReadDoubleObjectFieldNode(layout, (DoubleStorageLocation) storageLocation, new UninitializedReadObjectFieldNode(name, hook));
+            newNode = new ReadDoubleObjectFieldNode(layout, (DoubleStorageLocation) storageLocation, this);
         } else {
-            newNode = new ReadObjectObjectFieldNode(layout, (ObjectStorageLocation) storageLocation, new UninitializedReadObjectFieldNode(name, hook));
+            newNode = new ReadObjectObjectFieldNode(layout, (ObjectStorageLocation) storageLocation, this);
         }
 
         replace(newNode, "adding new read object field node to chain");

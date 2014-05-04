@@ -36,13 +36,13 @@ public class UninitializedWriteObjectFieldNode extends WriteObjectFieldNode {
         if (storageLocation == null) {
             throw new RuntimeException("Storage location should be found at this point");
         } else if (storageLocation instanceof IntegerStorageLocation) {
-            newNode = new WriteIntegerObjectFieldNode(layout, (IntegerStorageLocation) storageLocation, new UninitializedWriteObjectFieldNode(name, hook));
+            newNode = new WriteIntegerObjectFieldNode(layout, (IntegerStorageLocation) storageLocation, this);
         } else if (storageLocation instanceof LongStorageLocation) {
-            newNode = new WriteLongObjectFieldNode(layout, (LongStorageLocation) storageLocation, new UninitializedWriteObjectFieldNode(name, hook));
+            newNode = new WriteLongObjectFieldNode(layout, (LongStorageLocation) storageLocation, this);
         } else if (storageLocation instanceof DoubleStorageLocation) {
-            newNode = new WriteDoubleObjectFieldNode(layout, (DoubleStorageLocation) storageLocation, new UninitializedWriteObjectFieldNode(name, hook));
+            newNode = new WriteDoubleObjectFieldNode(layout, (DoubleStorageLocation) storageLocation, this);
         } else {
-            newNode = new WriteObjectObjectFieldNode(layout, (ObjectStorageLocation) storageLocation, new UninitializedWriteObjectFieldNode(name, hook));
+            newNode = new WriteObjectObjectFieldNode(layout, (ObjectStorageLocation) storageLocation, this);
         }
 
         replace(newNode, "adding new write object field node to chain");
