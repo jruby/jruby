@@ -149,7 +149,8 @@ benchmarks = [
   "pidigits",
   "spectral-norm",
   "neural-net",
-  "richards"
+  "richards",
+  "deltablue"
 ]
 
 if reports == ["java-c"]
