@@ -25,9 +25,13 @@ import org.jruby.truffle.runtime.methods.*;
 @NodeInfo(shortName = "block-def")
 public class BlockDefinitionNode extends MethodDefinitionNode {
 
+    private final CallTarget callTarget;
+
     public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo methodInfo,
                     boolean requiresDeclarationFrame, RubyRootNode rootNode) {
         super(context, sourceSection, name, methodInfo, requiresDeclarationFrame, rootNode, false);
+        final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
+        callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
     }
 
     @Override
@@ -42,10 +46,10 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
             declarationFrame = null;
         }
 
-        final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
-        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
+        //final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
+        //final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
         final RubyMethod method = new RubyMethod(sharedMethodInfo, name, null, Visibility.PUBLIC, false, callTarget, declarationFrame);
-        rootNodeClone.setMethod(method);
+        //rootNodeClone.setMethod(method);
 
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, RubyArguments.getSelf(frame.getArguments()), RubyArguments.getBlock(frame.getArguments()), method);
     }
