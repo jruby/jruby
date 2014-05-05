@@ -79,7 +79,7 @@ public class GeneralSuperCallNode extends RubyNode {
         // Check we have a method and the module is unmodified
 
         if (method == null || !unmodifiedAssumption.isValid()) {
-            CompilerAsserts.neverPartOfCompilation();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
 
             // Lookup method
 
