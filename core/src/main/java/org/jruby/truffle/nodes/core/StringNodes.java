@@ -171,6 +171,11 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString format(RubyString format, Object[] args) {
+            return formatSlow(format, args);
+        }
+
+        @CompilerDirectives.SlowPath
+        private RubyString formatSlow(RubyString format, Object[] args) {
             final RubyContext context = getContext();
 
             if (args.length == 1 && args[0] instanceof RubyArray) {
