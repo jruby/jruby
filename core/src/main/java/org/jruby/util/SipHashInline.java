@@ -23,6 +23,12 @@ public class SipHashInline {
         int last = offset + length / 8 * 8;
         int i = offset;
 
+        if (offset < 0) {
+            throw new ArrayIndexOutOfBoundsException(offset);
+        } else if (offset + length > src.length) {
+            throw new ArrayIndexOutOfBoundsException(src.length);
+        }
+
         // processing 8 bytes blocks in data
         while (i < last) {
             // pack a block to long, as LE 8 bytes
