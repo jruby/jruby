@@ -9,29 +9,27 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.runtime.objectstorage.DoubleStorageLocation;
 import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 
-public class WriteDoubleObjectFieldNode extends WriteSpecializedObjectFieldNode {
+public class WriteDoubleObjectFieldNode extends WriteObjectFieldChainNode {
 
+    private final ObjectLayout objectLayout;
     private final DoubleStorageLocation storageLocation;
 
-    public WriteDoubleObjectFieldNode(String name, ObjectLayout objectLayout, DoubleStorageLocation storageLocation, RespecializeHook hook) {
-        super(name, objectLayout, hook);
+    public WriteDoubleObjectFieldNode(ObjectLayout objectLayout, DoubleStorageLocation storageLocation, WriteObjectFieldNode next) {
+        super(next);
+        this.objectLayout = objectLayout;
         this.storageLocation = storageLocation;
     }
 
     @Override
     public void execute(ObjectStorage object, double value) {
-        final ObjectLayout actualLayout = object.getObjectLayout();
-
-        if (actualLayout == objectLayout) {
+        if (object.getObjectLayout() == objectLayout) {
             storageLocation.writeDouble(object, value);
         } else {
-            CompilerDirectives.transferToInterpreter();
-            writeAndRespecialize(object, value, "unexpected layout");
+            next.execute(object, value);
         }
     }
 
@@ -40,8 +38,7 @@ public class WriteDoubleObjectFieldNode extends WriteSpecializedObjectFieldNode 
         if (value instanceof Double) {
             execute(object, (double) value);
         } else {
-            CompilerDirectives.transferToInterpreter();
-            writeAndRespecialize(object, value, "unexpected value type");
+            next.execute(object, value);
         }
     }
 

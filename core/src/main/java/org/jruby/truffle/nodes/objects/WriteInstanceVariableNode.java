@@ -47,14 +47,14 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
     @Child protected BoxingNode receiver;
     @Child protected RubyNode rhs;
-    @Child protected WriteObjectFieldNode writeNode;
+    @Child protected WriteHeadObjectFieldNode writeNode;
     private final boolean isGlobal;
 
     public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs, boolean isGlobal) {
         super(context, sourceSection);
         this.receiver = new BoxingNode(context, sourceSection, receiver);
         this.rhs = rhs;
-        writeNode = new UninitializedWriteObjectFieldNode(name, hook);
+        writeNode = new WriteHeadObjectFieldNode(name, hook);
         this.isGlobal = isGlobal;
     }
 
@@ -64,6 +64,20 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
         try {
             final int value = rhs.executeIntegerFixnum(frame);
+            writeNode.execute(object, value);
+            return value;
+        } catch (UnexpectedResultException e) {
+            writeNode.execute(object, e.getResult());
+            throw e;
+        }
+    }
+
+    @Override
+    public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
+        final RubyBasicObject object = receiver.executeRubyBasicObject(frame);
+
+        try {
+            final long value = rhs.executeLongFixnum(frame);
             writeNode.execute(object, value);
             return value;
         } catch (UnexpectedResultException e) {

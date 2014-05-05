@@ -9,25 +9,25 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 
-public class ReadMissingObjectFieldNode extends ReadSpecializedObjectFieldNode {
+public class ReadMissingObjectFieldNode extends ReadObjectFieldChainNode {
 
-    public ReadMissingObjectFieldNode(String name, ObjectLayout objectLayout, RespecializeHook hook) {
-        super(name, objectLayout, hook);
+    private final ObjectLayout objectLayout;
+
+    public ReadMissingObjectFieldNode(ObjectLayout objectLayout, ReadObjectFieldNode next) {
+        super(next);
+        this.objectLayout = objectLayout;
     }
 
     @Override
     public Object execute(ObjectStorage object) {
-        // TODO(CS): this isn't right
-        if (!object.getObjectLayout().contains(objectLayout)) {
-            CompilerDirectives.transferToInterpreter();
-            return readAndRespecialize(object, "layout doesn't contain expected");
+        if (object.getObjectLayout() == objectLayout) {
+            return null;
+        } else {
+            return next.execute(object);
         }
-
-        return NilPlaceholder.INSTANCE;
     }
+
 }

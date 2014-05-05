@@ -9,30 +9,27 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import org.jruby.truffle.runtime.objectstorage.DoubleStorageLocation;
 import org.jruby.truffle.runtime.objectstorage.LongStorageLocation;
 import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 
-public class WriteLongObjectFieldNode extends WriteSpecializedObjectFieldNode {
+public class WriteLongObjectFieldNode extends WriteObjectFieldChainNode {
 
+    private final ObjectLayout objectLayout;
     private final LongStorageLocation storageLocation;
 
-    public WriteLongObjectFieldNode(String name, ObjectLayout objectLayout, LongStorageLocation storageLocation, RespecializeHook hook) {
-        super(name, objectLayout, hook);
+    public WriteLongObjectFieldNode(ObjectLayout objectLayout, LongStorageLocation storageLocation, WriteObjectFieldNode next) {
+        super(next);
+        this.objectLayout = objectLayout;
         this.storageLocation = storageLocation;
     }
 
     @Override
     public void execute(ObjectStorage object, long value) {
-        final ObjectLayout actualLayout = object.getObjectLayout();
-
-        if (actualLayout == objectLayout) {
+        if (object.getObjectLayout() == objectLayout) {
             storageLocation.writeLong(object, value);
         } else {
-            CompilerDirectives.transferToInterpreter();
-            writeAndRespecialize(object, value, "layout changed");
+            next.execute(object, value);
         }
     }
 
@@ -41,8 +38,7 @@ public class WriteLongObjectFieldNode extends WriteSpecializedObjectFieldNode {
         if (value instanceof Long) {
             execute(object, (long) value);
         } else {
-            CompilerDirectives.transferToInterpreter();
-            writeAndRespecialize(object, value, "unexpected value type");
+            next.execute(object, value);
         }
     }
 

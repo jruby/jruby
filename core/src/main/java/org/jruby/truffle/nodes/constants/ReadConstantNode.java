@@ -11,19 +11,48 @@ package org.jruby.truffle.nodes.constants;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.cast.BoxingNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 
-public abstract class ReadConstantNode extends RubyNode {
+public class ReadConstantNode extends RubyNode {
 
     protected final String name;
-    @Child protected RubyNode receiver;
+    @Child protected BoxingNode receiver;
+    @Child protected ReadConstantChainNode first;
 
     public ReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
         super(context, sourceSection);
         this.name = name;
-        this.receiver = receiver;
+        this.receiver = new BoxingNode(context, sourceSection, receiver);
+        first = new UninitializedReadConstantNode(name);
+    }
+
+    @Override
+    public Object execute(VirtualFrame frame) {
+        return first.execute(receiver.executeRubyBasicObject(frame));
+    }
+
+    @Override
+    public boolean executeBoolean(VirtualFrame frame) throws UnexpectedResultException {
+        return first.executeBoolean(receiver.executeRubyBasicObject(frame));
+    }
+
+    @Override
+    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
+        return first.executeIntegerFixnum(receiver.executeRubyBasicObject(frame));
+    }
+
+    @Override
+    public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
+        return first.executeFloat(receiver.executeRubyBasicObject(frame));
+    }
+
+    @Override
+    public void executeVoid(VirtualFrame frame) {
     }
 
     @Override

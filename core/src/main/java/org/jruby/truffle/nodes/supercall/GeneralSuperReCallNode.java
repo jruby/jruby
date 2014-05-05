@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.supercall;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.SourceSection;
@@ -24,11 +25,15 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 public class GeneralSuperReCallNode extends RubyNode {
 
     @Child protected IndirectCallNode callNode;
+
+    @CompilerDirectives.CompilationFinal private Assumption unmodifiedAssumption;
+    @CompilerDirectives.CompilationFinal private RubyMethod method;
 
     public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -38,19 +43,23 @@ public class GeneralSuperReCallNode extends RubyNode {
     @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
-        getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getSourceSection().getSource().getName(), getSourceSection().getStartLine(), "User general super re-call");
+        // Check we have a method and the module is unmodified
 
-        // This method is only a simple implementation - it needs proper caching
+        if (method == null || !unmodifiedAssumption.isValid()) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
 
-        CompilerAsserts.neverPartOfCompilation();
+            // Lookup method
 
-        // Lookup method
+            final RubyModule declaringModule = getMethod().getDeclaringModule();
 
-        final RubyMethod method = ((RubyClass) getMethod().getDeclaringModule()).getSuperclass().lookupMethod(getMethod().getName());
+            method = ((RubyClass) declaringModule).getSuperclass().lookupMethod(getMethod().getName());
 
-        if (method == null || method.isUndefined()) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(getMethod().getName(), RubyArguments.getSelf(frame.getArguments()).toString()));
+            if (method == null || method.isUndefined()) {
+                method = null;
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(getMethod().getName(), RubyArguments.getSelf(frame.getArguments()).toString()));
+            }
+
+            unmodifiedAssumption = declaringModule.getUnmodifiedAssumption();
         }
 
         // Call the method

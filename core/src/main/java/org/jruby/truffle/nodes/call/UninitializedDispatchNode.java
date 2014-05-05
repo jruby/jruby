@@ -69,11 +69,9 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
         try {
             method = lookup(boxedCallingSelf, receiverObject, name);
         } catch (UseMethodMissingException e) {
-            final UninitializedDispatchNode newUninitializedDispatch = new UninitializedDispatchNode(getContext(), getSourceSection(), name, missingBehavior);
-
             switch (missingBehavior) {
                 case RETURN_MISSING: {
-                    BoxedDispatchNode newDispatch = new CachedBoxedReturnMissingDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), newUninitializedDispatch);
+                    BoxedDispatchNode newDispatch = new CachedBoxedReturnMissingDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), this);
                     replace(newDispatch, "appending new boxed return nil dispatch node to chain");
                     return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
                 }
@@ -85,7 +83,7 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
                         throw new RaiseException(context.getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing"));
                     }
 
-                    BoxedDispatchNode newDispatch = new CachedBoxedMethodMissingDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), method, name, newUninitializedDispatch);
+                    BoxedDispatchNode newDispatch = new CachedBoxedMethodMissingDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), method, name, this);
                     replace(newDispatch, "appending new boxed method missing dispatch node to chain");
                     return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
                 }

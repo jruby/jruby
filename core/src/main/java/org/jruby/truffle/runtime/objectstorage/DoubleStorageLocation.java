@@ -50,7 +50,7 @@ public class DoubleStorageLocation extends PrimitiveStorageLocation {
         }
     }
 
-    public void writeDouble(ObjectStorage object, Double value) {
+    public void writeDouble(ObjectStorage object, double value) {
         CompilerDirectives.unsafePutDouble(object, offset, value, null);
         markAsSet(object);
     }
