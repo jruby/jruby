@@ -1183,7 +1183,7 @@ public class RubyBigDecimal extends RubyNumeric {
     
     @JRubyMethod
     public IRubyObject round(ThreadContext context, IRubyObject scale) {
-        return new RubyBigDecimal(context.runtime, value.setScale(num2int(scale), getRoundingMode(context.runtime))).to_int();
+        return new RubyBigDecimal(context.runtime, value.setScale(num2int(scale), getRoundingMode(context.runtime)));
     }
     
     @JRubyMethod
