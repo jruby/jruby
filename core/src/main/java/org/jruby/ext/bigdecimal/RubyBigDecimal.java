@@ -329,7 +329,7 @@ public class RubyBigDecimal extends RubyNumeric {
         long _EXCEPTION_ALL =  bigDecimalConst(context.runtime, "EXCEPTION_ALL");
         if ((longMode & _EXCEPTION_ALL) != 0) {     
             if (value.isNil()) return c.searchInternalModuleVariable("vpExceptionMode");
-            if (!(value instanceof RubyBoolean)) throw context.runtime.newTypeError("second argument must be true or false");
+            if (!(value instanceof RubyBoolean)) throw context.runtime.newArgumentError("second argument must be true or false");
 
             RubyFixnum currentExceptionMode = (RubyFixnum)c.searchInternalModuleVariable("vpExceptionMode");
             RubyFixnum newExceptionMode = new RubyFixnum(context.runtime, currentExceptionMode.getLongValue());
@@ -410,7 +410,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         String err = v.isImmediate() ? RubyObject.inspect(context, v).toString() : v.getMetaClass().getBaseName();
             
-        throw context.runtime.newTypeError(err + " can't be coerced into BigDecimal");
+        throw context.runtime.newArgumentError(err + " can't be coerced into BigDecimal");
     }
     
     private static RubyBigDecimal unableToCoerceWithoutPrec(ThreadContext context, IRubyObject v, boolean must) {
@@ -1183,7 +1183,7 @@ public class RubyBigDecimal extends RubyNumeric {
     
     @JRubyMethod
     public IRubyObject round(ThreadContext context, IRubyObject scale) {
-        return new RubyBigDecimal(context.runtime, value.setScale(num2int(scale), getRoundingMode(context.runtime))).to_int();
+        return new RubyBigDecimal(context.runtime, value.setScale(num2int(scale), getRoundingMode(context.runtime)));
     }
     
     @JRubyMethod
