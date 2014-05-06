@@ -44,14 +44,10 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
-<<<<<<< HEAD
 import org.jruby.runtime.ThreadContext;
-=======
 import org.jruby.runtime.Visibility;
->>>>>>> jruby-1_7
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.runtime.Visibility;
 
 /**
  * OpenSSL::BN implementation. Wraps java.math.BigInteger, which provides
