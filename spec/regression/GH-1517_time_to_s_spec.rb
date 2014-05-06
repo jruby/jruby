@@ -17,7 +17,7 @@ if RUBY_VERSION > '1.9'
       t1 = Time.new(2014, 1, 2, 3, 4, 5, '+05:00')
       t2 = Time.new(2014, 1, 2, 3, 4, 5, 18000)
       
-      t1.to_s.should == t2.to_s
+      t1.eql?(t2).should == true
     end
   end
   
