@@ -359,6 +359,7 @@ public class IRBuilder {
             case DSYMBOLNODE: return buildDSymbol((DSymbolNode) node, s);
             case DVARNODE: return buildDVar((DVarNode) node, s);
             case DXSTRNODE: return buildDXStr((DXStrNode) node, s);
+            case ENCODINGNODE: return buildEncoding((EncodingNode)node, s);
             case ENSURENODE: return buildEnsureNode((EnsureNode) node, s);
             case EVSTRNODE: return buildEvStr((EvStrNode) node, s);
             case FALSENODE: return buildFalse(node, s);
@@ -374,6 +375,7 @@ public class IRBuilder {
             case INSTASGNNODE: return buildInstAsgn((InstAsgnNode) node, s);
             case INSTVARNODE: return buildInstVar((InstVarNode) node, s);
             case ITERNODE: return buildIter((IterNode) node, s);
+            case LAMBDANODE: return buildLambda((LambdaNode)node, s);
             case LITERALNODE: return buildLiteral((LiteralNode) node, s);
             case LOCALASGNNODE: return buildLocalAsgn((LocalAsgnNode) node, s);
             case LOCALVARNODE: return buildLocalVar((LocalVarNode) node, s);
@@ -382,6 +384,7 @@ public class IRBuilder {
             case MATCHNODE: return buildMatch((MatchNode) node, s);
             case MODULENODE: return buildModule((ModuleNode) node, s);
             case MULTIPLEASGNNODE: return buildMultipleAsgn((MultipleAsgnNode) node, s); // Only for 1.8
+            case MULTIPLEASGN19NODE: return buildMultipleAsgn19((MultipleAsgn19Node) node, s);
             case NEWLINENODE: return buildNewline((NewlineNode) node, s);
             case NEXTNODE: return buildNext((NextNode) node, s);
             case NTHREFNODE: return buildNthRef((NthRefNode) node, s);
@@ -421,7 +424,7 @@ public class IRBuilder {
             case YIELDNODE: return buildYield((YieldNode) node, s);
             case ZARRAYNODE: return buildZArray(node, s);
             case ZSUPERNODE: return buildZSuper((ZSuperNode) node, s);
-            default: return buildVersionSpecificNodes(node, s);
+            default: throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
         }
     }
 
@@ -510,15 +513,6 @@ public class IRBuilder {
         addInstr(s, new ToAryInstr(tmp, ret));
         buildMultipleAsgn19Assignment(multipleAsgnNode, s, null, tmp);
         return ret;
-    }
-
-    protected Operand buildVersionSpecificNodes(Node node, IRScope s) {
-        switch (node.getNodeType()) {
-            case ENCODINGNODE: return buildEncoding((EncodingNode)node, s);
-            case MULTIPLEASGN19NODE: return buildMultipleAsgn19((MultipleAsgn19Node) node, s);
-            case LAMBDANODE: return buildLambda((LambdaNode)node, s);
-            default: throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
-        }
     }
 
     protected Variable copyAndReturnValue(IRScope s, Operand val) {
