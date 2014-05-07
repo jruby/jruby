@@ -81,8 +81,8 @@ public class IterNode extends Node {
         this.blockBody = Interpreted19Block.newBlockBody(this);
     }
 
-    public final int getArgumentType() {
-        return BlockBody.asArgumentType(BlockBody.getArgumentTypeWackyHack(this));
+    public int getArgumentType() {
+        return BlockBody.asArgumentType(varNode.getNodeType());
     }
 
     public NodeType getNodeType() {

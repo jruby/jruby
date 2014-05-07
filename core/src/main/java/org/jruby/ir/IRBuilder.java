@@ -2490,9 +2490,7 @@ public class IRBuilder {
         closureBuilder.addInstr(closure, new ReceiveSelfInstr(closure.getSelf()));
 
         // Build args
-        NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
-        if ((iterNode.getVarNode() != null) && (argsNodeId != null))
-            closureBuilder.receiveBlockArgs(iterNode, closure);
+        if (iterNode.getVarNode().getNodeType() != null) closureBuilder.receiveBlockArgs(iterNode, closure);
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
