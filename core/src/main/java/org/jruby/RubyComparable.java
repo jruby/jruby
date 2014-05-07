@@ -113,6 +113,8 @@ public class RubyComparable {
         
         if (recv == other) return runtime.getTrue();
 
+        IRubyObject savedError = runtime.getGlobalVariables().get("$!");
+
         try {
             IRubyObject result = invokedynamic(context, recv, OP_CMP, other);
 
@@ -125,6 +127,7 @@ public class RubyComparable {
         } catch (RaiseException e) {
             if (e.getException().kind_of_p(context, runtime.getStandardError()).isTrue()) {
                 // clear error info resulting from failure to compare (JRUBY-3292)
+                runtime.getGlobalVariables().set("$!", savedError);
                 context.setErrorInfo(runtime.getNil());
                 return returnValueOnError;
             } else {

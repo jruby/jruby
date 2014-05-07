@@ -445,9 +445,14 @@ public class RubyNumeric extends RubyObject {
      */
     protected final RubyArray doCoerce(ThreadContext context, IRubyObject other, boolean err) {
         IRubyObject result;
+
+        IRubyObject savedError = context.runtime.getGlobalVariables().get("$!");
+
         try {
             result = coerceBody(context, other);
         } catch (RaiseException e) {
+            context.runtime.getGlobalVariables().set("$!", savedError);
+
             if (err) {
                 throw getRuntime().newTypeError(
                         other.getMetaClass().getName() + " can't be coerced into " + getMetaClass().getName());
