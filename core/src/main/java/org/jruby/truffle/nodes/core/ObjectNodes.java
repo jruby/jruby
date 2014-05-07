@@ -366,7 +366,7 @@ public abstract class ObjectNodes {
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (String name : instanceVariableNames) {
-                array.push(new RubyString(getContext().getCoreLibrary().getStringClass(), name));
+                array.push(RubyString.fromJavaString(getContext().getCoreLibrary().getStringClass(), name));
             }
 
             return array;

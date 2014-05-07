@@ -499,20 +499,10 @@ public abstract class
 
             try {
                 for (Object arg : args) {
-                    /*
-                     * TODO(cs): If it's a RubyString and made up of bytes, just write the bytes out
-                     * - using toString will mess up the encoding. We need to stop using toString
-                     * everywhere, and write our own bytes, possibly using JRuby's library for this.
-                     */
-
-                    if (arg instanceof RubyString && !((RubyString) arg).isFromJavaString()) {
-                        try {
-                            getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) arg).getBytes().bytes());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    } else {
-                        getContext().getRuntime().getInstanceConfig().getOutput().print(arg);
+                    try {
+                        getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) arg).getBytes().bytes());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
                 }
             } finally {

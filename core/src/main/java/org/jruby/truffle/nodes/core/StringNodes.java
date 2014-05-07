@@ -45,7 +45,11 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString add(RubyString a, RubyString b) {
-            return new RubyString(a.getRubyClass().getContext().getCoreLibrary().getStringClass(), a.toString() + b.toString());
+            // TODO(CS): which encoding do we get here?
+            final RubyString string = new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList());
+            string.getBytes().append(a.getBytes());
+            string.getBytes().append(b.getBytes());
+            return string;
         }
     }
 
@@ -153,7 +157,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString concat(RubyString string, RubyString other) {
-            string.concat(other);
+            string.getBytes().append(other.getBytes());
             return string;
         }
     }
@@ -318,7 +322,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString chompBang(RubyString string) {
-            string.replace(string.toString().trim());
+            string.set(string.toString().trim());
             return string;
         }
     }
@@ -353,7 +357,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString downcase(RubyString string) {
-            string.replace(string.toString().toLowerCase());
+            string.set(string.toString().toLowerCase());
             return string;
         }
     }
@@ -488,7 +492,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString initialize(RubyString self, RubyString from) {
-            self.setStringValue(from);
+            self.set(from);
             return self;
         }
     }
@@ -765,7 +769,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString reverse(RubyString string) {
-            return new RubyString(getContext().getCoreLibrary().getStringClass(), string.getReverseString());
+            return RubyString.fromJavaString(string.getRubyClass(), new StringBuilder(string.toString()).reverse().toString());
         }
     }
 
@@ -782,7 +786,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString reverse(RubyString string) {
-            string.reverseStringValue();
+            string.set(new StringBuilder(string.toString()).reverse().toString());
             return string;
         }
     }
