@@ -19,6 +19,10 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
 
+import org.jruby.ir.runtime.IRBreakJump;
+import org.jruby.ir.runtime.IRReturnJump;
+import org.jruby.ir.operands.IRException;
+
 public class ThreadFiber extends RubyObject implements ExecutionContext {
     public ThreadFiber(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
@@ -232,6 +236,18 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                 } catch (JumpException.FlowControlException fce) {
                     if (data.prev != null) {
                         data.prev.thread.raise(fce.buildException(runtime).getException());
+                    }
+                } catch (IRBreakJump bj) {
+                    // This is one of the rare cases where IR flow-control jumps
+                    // leaks into the runtime impl.
+                    if (data.prev != null) {
+                        data.prev.thread.raise(((RaiseException)IRException.BREAK_LocalJumpError.getException(runtime)).getException());
+                    }
+                } catch (IRReturnJump rj) {
+                    // This is one of the rare cases where IR flow-control jumps
+                    // leaks into the runtime impl.
+                    if (data.prev != null) {
+                        data.prev.thread.raise(((RaiseException)IRException.RETURN_LocalJumpError.getException(runtime)).getException());
                     }
                 } catch (RaiseException re) {
                     if (data.prev != null) {
