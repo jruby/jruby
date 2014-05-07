@@ -177,10 +177,10 @@ public class CoreLibrary {
 
         // Set constants
 
-        objectClass.setConstant("RUBY_VERSION", new RubyString(stringClass, "2.1.0"));
+        objectClass.setConstant("RUBY_VERSION", RubyString.fromJavaString(stringClass, "2.1.0"));
         objectClass.setConstant("RUBY_PATCHLEVEL", 0);
-        objectClass.setConstant("RUBY_ENGINE", new RubyString(stringClass, "rubytruffle"));
-        objectClass.setConstant("RUBY_PLATFORM", new RubyString(stringClass, "jvm"));
+        objectClass.setConstant("RUBY_ENGINE", RubyString.fromJavaString(stringClass, "rubytruffle"));
+        objectClass.setConstant("RUBY_PLATFORM", RubyString.fromJavaString(stringClass, "jvm"));
 
         argv = new RubyArray(arrayClass, new ObjectArrayStore());
         objectClass.setConstant("ARGV", argv);
@@ -190,20 +190,20 @@ public class CoreLibrary {
         objectClass.setConstant("NIL", NilPlaceholder.INSTANCE);
 
         final RubyHash configHash = new RubyHash(hashClass);
-        configHash.put(new RubyString(stringClass, "ruby_install_name"), new RubyString(stringClass, "rubytruffle"));
-        configHash.put(new RubyString(stringClass, "RUBY_INSTALL_NAME"), new RubyString(stringClass, "rubytruffle"));
-        configHash.put(new RubyString(stringClass, "host_os"), new RubyString(stringClass, "unknown"));
-        configHash.put(new RubyString(stringClass, "exeext"), new RubyString(stringClass, ""));
-        configHash.put(new RubyString(stringClass, "EXEEXT"), new RubyString(stringClass, "rubytruffle"));
+        configHash.put(RubyString.fromJavaString(stringClass, "ruby_install_name"), RubyString.fromJavaString(stringClass, "rubytruffle"));
+        configHash.put(RubyString.fromJavaString(stringClass, "RUBY_INSTALL_NAME"), RubyString.fromJavaString(stringClass, "rubytruffle"));
+        configHash.put(RubyString.fromJavaString(stringClass, "host_os"), RubyString.fromJavaString(stringClass, "unknown"));
+        configHash.put(RubyString.fromJavaString(stringClass, "exeext"), RubyString.fromJavaString(stringClass, ""));
+        configHash.put(RubyString.fromJavaString(stringClass, "EXEEXT"), RubyString.fromJavaString(stringClass, "rubytruffle"));
         configModule.setConstant("CONFIG", configHash);
         objectClass.setConstant("RbConfig", configModule);
 
         mathModule.setConstant("PI", Math.PI);
 
-        fileClass.setConstant("SEPARATOR", new RubyString(stringClass, File.separator));
-        fileClass.setConstant("Separator", new RubyString(stringClass, File.separator));
+        fileClass.setConstant("SEPARATOR", RubyString.fromJavaString(stringClass, File.separator));
+        fileClass.setConstant("Separator", RubyString.fromJavaString(stringClass, File.separator));
         fileClass.setConstant("ALT_SEPARATOR", NilPlaceholder.INSTANCE);
-        fileClass.setConstant("PATH_SEPARATOR", new RubyString(stringClass, File.pathSeparator));
+        fileClass.setConstant("PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
         fileClass.setConstant("FNM_SYSCASE", 0);
 
         errnoModule.setConstant("ENOENT", new RubyClass(null, systemCallErrorClass, "ENOENT"));

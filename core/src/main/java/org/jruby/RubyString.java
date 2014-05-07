@@ -6090,7 +6090,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return RubyEncoding.decodeUTF8(value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
     }
 
-    private static ByteList encodeBytelist(CharSequence value, Encoding encoding) {
+    public static ByteList encodeBytelist(CharSequence value, Encoding encoding) {
 
         Charset charset = encoding.getCharset();
 

@@ -11,7 +11,9 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
-import org.jruby.RubyBoolean;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.*;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
@@ -39,130 +41,36 @@ public class RubyString extends RubyObject {
 
         @Override
         public RubyBasicObject newInstance() {
-            return new RubyString(this, "");
+            return new RubyString(this, new ByteList());
         }
 
     }
 
-    private boolean fromJavaString;
     private ByteList bytes;
-    private String cachedStringValue;
-
-    public RubyString(RubyClass stringClass, String value) {
-        super(stringClass);
-        fromJavaString = true;
-        bytes = org.jruby.RubySymbol.symbolBytesFromString(getRubyClass().getContext().getRuntime(), value);
-        cachedStringValue = value;
-    }
 
     public RubyString(RubyClass stringClass, ByteList bytes) {
         super(stringClass);
-        fromJavaString = false;
         this.bytes = bytes;
     }
 
-    public RubyString(RubyClass stringClass, org.jruby.RubyString value) {
-        super(stringClass);
-        fromJavaString = true;
-        bytes = org.jruby.RubySymbol.symbolBytesFromString(getRubyClass().getContext().getRuntime(), value.toString());
-        cachedStringValue = value.asJavaString();
+    public static RubyString fromJavaString(RubyClass stringClass, String string) {
+        return new RubyString(stringClass, new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), UTF8Encoding.INSTANCE, false));
     }
 
-    /**
-     * Construct a string from bytes representing characters in an encoding, lazily converting to a
-     * Java {@link String} as needed.
-     */
-
-    public RubyString(RubyString copyOf) {
-        super(copyOf.getRubyClass().getContext().getCoreLibrary().getStringClass());
-        setStringValue(copyOf);
+    public void set(String string) {
+        bytes = new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), UTF8Encoding.INSTANCE, false);
     }
 
-    public void setStringValue(RubyString from) {
-        fromJavaString = from.fromJavaString;
-        bytes = from.getBytes();
-        cachedStringValue = from.cachedStringValue;
+    public void set(RubyString string) {
+        bytes = string.getBytes().dup();
     }
 
     public void forceEncoding(Encoding encoding) {
         this.bytes.setEncoding(encoding);
     }
 
-    public boolean isFromJavaString() {
-        return fromJavaString;
-    }
-
     public ByteList getBytes() {
-        if (bytes == null) {
-            bytes = ByteList.create(cachedStringValue);
-        }
-
         return bytes;
-    }
-
-    public void replace(String value) {
-        fromJavaString = true;
-        bytes = null;
-        cachedStringValue = value;
-    }
-
-    @Override
-    public String toString() {
-        if (cachedStringValue == null) {
-            cachedStringValue = bytes.toString();
-        }
-
-        return cachedStringValue;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == null) {
-            return false;
-        }
-
-        // If the other value is a Java string, use our Java string representation to compare
-        if (other instanceof String) {
-            return toString().equals(other);
-        }
-
-        if (other instanceof RubyString) {
-            final RubyString otherString = (RubyString) other;
-            IRubyObject resp =  this.toJRubyString().op_equal(getRubyClass().getContext().getRuntime().getCurrentContext(),
-                    otherString.toJRubyString());
-
-            if (resp instanceof RubyBoolean){
-                return resp.isTrue();
-            }
-        }
-
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return toString().hashCode();
-    }
-
-    @Override
-    public Object dup() {
-        return new RubyString(this);
-    }
-
-    public org.jruby.RubyString toJRubyString() {
-        return getRubyClass().getContext().getRuntime().newString(bytes);
-    }
-
-    public void concat(RubyString other) {
-        if (bytes != null) {
-            cachedStringValue = null;
-            bytes.append(other.getBytes());
-        } else if (fromJavaString && other.fromJavaString) {
-            cachedStringValue += other.cachedStringValue;
-            bytes = null;
-        } else {
-            throw new UnsupportedOperationException("Don't know how to append strings with encodings");
-        }
     }
 
     public static String ljust(String string, int length, String padding) {
@@ -223,18 +131,41 @@ public class RubyString extends RubyObject {
         }
     }
 
-    public String getReverseString() {
-        return new StringBuilder(cachedStringValue).reverse().toString();
+    public org.jruby.RubyString toJRubyString() {
+        return getRubyClass().getContext().getRuntime().newString(bytes);
     }
 
-    public void reverseStringValue(){
-        checkFrozen();
-        this.cachedStringValue = getReverseString();
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) {
+            return true;
+        }
+
+        if (other instanceof String || other instanceof RubyString) {
+            return toString().equals(other.toString());
+        }
+
+        return false;
+    }
+
+    @Override
+    public Object dup() {
+        return new RubyString(getRubyClass(), bytes.dup());
+    }
+
+    @Override
+    public String toString() {
+        return Helpers.decodeByteList(getRubyClass().getContext().getRuntime(), bytes);
     }
 
     @Override
     public String inspect() {
         return toJRubyString().inspect().toString();
+    }
+
+    @Override
+    public int hashCode() {
+        return bytes.hashCode();
     }
 
 }

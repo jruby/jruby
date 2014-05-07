@@ -70,7 +70,7 @@ public class RubyHash extends RubyObject {
         checkFrozen();
 
         if (key instanceof RubyString) {
-            key = new RubyString(getRubyClass().getContext().getCoreLibrary().getStringClass(), key.toString());
+            key = RubyString.fromJavaString(getRubyClass().getContext().getCoreLibrary().getStringClass(), key.toString());
             ((RubyString) key).frozen = true;
         }
 

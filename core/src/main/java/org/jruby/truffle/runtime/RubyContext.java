@@ -230,7 +230,7 @@ public class RubyContext implements ExecutionContext {
     }
 
     public RubyString makeString(String string) {
-        return new RubyString(coreLibrary.getStringClass(), string);
+        return RubyString.fromJavaString(coreLibrary.getStringClass(), string);
     }
 
     public RubyString makeString(char string) {
