@@ -31,6 +31,10 @@ public abstract class ArrayCoreMethodNode extends CoreMethodNode {
         return receiver.getArrayStore() instanceof IntegerArrayStore;
     }
 
+    protected boolean isLongFixnumStore(RubyArray receiver) {
+        return receiver.getArrayStore() instanceof LongArrayStore;
+    }
+
     protected boolean isFixnumImmutablePairStore(RubyArray receiver) {
         return receiver.getArrayStore() instanceof FixnumImmutablePairArrayStore;
     }

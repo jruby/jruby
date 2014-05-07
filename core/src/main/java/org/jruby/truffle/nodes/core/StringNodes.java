@@ -20,8 +20,11 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.ArrayUtilities;
+import org.jruby.truffle.runtime.core.array.IntegerArrayStore;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.range.FixnumRange;
+import org.jruby.util.ByteList;
+import org.jruby.util.Pack;
 
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -150,7 +153,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString concat(RubyString string, RubyString other) {
-            string.replace(string.toString() + other.toString());
+            string.concat(other);
             return string;
         }
     }
@@ -260,6 +263,31 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "bytes", maxArgs = 0)
+    public abstract static class BytesNode extends CoreMethodNode {
+
+        public BytesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public BytesNode(BytesNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray chomp(RubyString string) {
+            final byte[] bytes = string.getBytes().bytes();
+
+            final int[] ints = new int[bytes.length];
+
+            for (int n = 0; n < ints.length; n++) {
+                ints[n] = RubyFixnum.toUnsignedInt(bytes[n]);
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new IntegerArrayStore(ints));
+        }
+    }
+
     @CoreMethod(names = "chomp", maxArgs = 0)
     public abstract static class ChompNode extends CoreMethodNode {
 
@@ -364,6 +392,27 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "force_encoding", minArgs = 1, maxArgs = 1)
+    public abstract static class ForceEncodingNode extends CoreMethodNode {
+
+        public ForceEncodingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ForceEncodingNode(ForceEncodingNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString forceEncoding(RubyString string, RubyString encodingName) {
+            RubyEncoding encoding = RubyEncoding.findEncodingByName(encodingName);
+            string.forceEncoding(encoding.getRubyEncoding().getEncoding());
+
+            return string;
+        }
+
+    }
+
     @CoreMethod(names = "gsub", minArgs = 2, maxArgs = 2)
     public abstract static class GsubNode extends CoreMethodNode {
 
@@ -384,6 +433,23 @@ public abstract class StringNodes {
         @Specialization
         public RubyString gsub(RubyString string, RubyRegexp regexp, RubyString replacement) {
             return regexp.gsub(string.toString(), replacement.toString());
+        }
+    }
+
+    @CoreMethod(names = "getbyte", minArgs = 1, maxArgs = 1)
+    public abstract static class GetByteNode extends CoreMethodNode {
+
+        public GetByteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public GetByteNode(GetByteNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int getByte(RubyString string, int index) {
+            return string.getBytes().get(index);
         }
     }
 
@@ -450,6 +516,23 @@ public abstract class StringNodes {
 
     }
 
+    @CoreMethod(names = "setbyte", minArgs = 2, maxArgs = 2)
+    public abstract static class SetByteNode extends CoreMethodNode {
+
+        public SetByteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SetByteNode(SetByteNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object setByte(RubyString string, int index, Object value) {
+            throw new UnsupportedOperationException("getbyte not implemented");
+        }
+    }
+
     @CoreMethod(names = "size", maxArgs = 0)
     public abstract static class SizeNode extends CoreMethodNode {
 
@@ -464,6 +547,23 @@ public abstract class StringNodes {
         @Specialization
         public int size(RubyString string) {
             return string.toString().length();
+        }
+    }
+
+    @CoreMethod(names = "slice", minArgs = 2, maxArgs = 2)
+    public abstract static class SliceNode extends CoreMethodNode {
+
+        public SliceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SliceNode(SliceNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString slice(RubyString string, int start, int length) {
+            return getContext().makeString(string.toString().substring(start, start + length));
         }
     }
 
@@ -687,23 +787,21 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "force_encoding", minArgs = 1, maxArgs = 1)
-    public abstract static class ForceEncodingNode extends CoreMethodNode {
+    @CoreMethod(names = "unpack", minArgs = 1, maxArgs = 1)
+    public abstract static class UnpackNode extends ArrayCoreMethodNode {
 
-        public ForceEncodingNode(RubyContext context, SourceSection sourceSection) {
+        public UnpackNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ForceEncodingNode(ForceEncodingNode prev) {
+        public UnpackNode(UnpackNode prev) {
             super(prev);
         }
 
         @Specialization
-        public RubyString forceEncoding(RubyString string, RubyString encodingName) {
-            RubyEncoding encoding = RubyEncoding.findEncodingByName(encodingName);
-            string.forceEncoding(encoding.getRubyEncoding().getEncoding());
-
-            return string;
+        public RubyArray unpack(RubyString string, RubyString format) {
+            final org.jruby.RubyArray jrubyArray = Pack.unpack(getContext().getRuntime(), string.getBytes(), format.getBytes());
+            return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), jrubyArray.toArray());
         }
 
     }

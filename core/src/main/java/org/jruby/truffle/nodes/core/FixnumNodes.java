@@ -15,15 +15,10 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.*;
-import org.jruby.*;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.array.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 
@@ -384,19 +379,34 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public int mod(int a, int b) {
             return a % b;
         }
 
-        @Specialization
-        public double mod(@SuppressWarnings("unused") int a, @SuppressWarnings("unused") double b) {
-            throw new UnsupportedOperationException();
+        @Specialization(order = 2)
+        public long mod(int a, long b) {
+            return a % b;
         }
 
-        @Specialization
-        public BigInteger mod(@SuppressWarnings("unused") int a, BigInteger b) {
-            return b;
+        @Specialization(order = 3)
+        public Object mod(int a, BigInteger b) {
+            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).mod(b));
+        }
+
+        @Specialization(order = 4)
+        public long mod(long a, int b) {
+            return a % b;
+        }
+
+        @Specialization(order = 5)
+        public long mod(long a, long b) {
+            return a % b;
+        }
+
+        @Specialization(order = 6)
+        public Object mod(long a, BigInteger b) {
+            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).mod(b));
         }
     }
 
@@ -458,18 +468,43 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public boolean less(int a, int b) {
             return a < b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
+        public boolean less(int a, long b) {
+            return a < b;
+        }
+
+        @Specialization(order = 3)
         public boolean less(int a, double b) {
             return a < b;
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public boolean less(int a, BigInteger b) {
+            return BigInteger.valueOf(a).compareTo(b) < 0;
+        }
+
+        @Specialization(order = 5)
+        public boolean less(long a, int b) {
+            return a < b;
+        }
+
+        @Specialization(order = 6)
+        public boolean less(long a, long b) {
+            return a < b;
+        }
+
+        @Specialization(order = 7)
+        public boolean less(long a, double b) {
+            return a < b;
+        }
+
+        @Specialization(order = 8)
+        public boolean less(long a, BigInteger b) {
             return BigInteger.valueOf(a).compareTo(b) < 0;
         }
     }
@@ -485,18 +520,43 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public boolean lessEqual(int a, int b) {
             return a <= b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
+        public boolean lessEqual(int a, long b) {
+            return a <= b;
+        }
+
+        @Specialization(order = 3)
         public boolean lessEqual(int a, double b) {
             return a <= b;
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public boolean lessEqual(int a, BigInteger b) {
+            return BigInteger.valueOf(a).compareTo(b) <= 0;
+        }
+
+        @Specialization(order = 5)
+        public boolean lessEqual(long a, int b) {
+            return a <= b;
+        }
+
+        @Specialization(order = 6)
+        public boolean lessEqual(long a, long b) {
+            return a <= b;
+        }
+
+        @Specialization(order = 7)
+        public boolean lessEqual(long a, double b) {
+            return a <= b;
+        }
+
+        @Specialization(order = 8)
+        public boolean lessEqual(long a, BigInteger b) {
             return BigInteger.valueOf(a).compareTo(b) <= 0;
         }
     }
@@ -564,18 +624,43 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public int compare(int a, int b) {
             return Integer.compare(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 2)
+        public int compare(int a, long b) {
+            return Long.compare(a, b);
+        }
+
+        @Specialization(order = 3)
         public int compare(int a, double b) {
             return Double.compare(a, b);
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public int compare(int a, BigInteger b) {
+            return BigInteger.valueOf(a).compareTo(b);
+        }
+
+        @Specialization(order = 5)
+        public int compare(long a, int b) {
+            return Long.compare(a, b);
+        }
+
+        @Specialization(order = 6)
+        public int compare(long a, long b) {
+            return Long.compare(a, b);
+        }
+
+        @Specialization(order = 7)
+        public int compare(long a, double b) {
+            return Double.compare(a, b);
+        }
+
+        @Specialization(order = 8)
+        public int compare(long a, BigInteger b) {
             return BigInteger.valueOf(a).compareTo(b);
         }
     }
@@ -783,13 +868,33 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public int bitOr(int a, int b) {
             return a | b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
+        public long bitOr(int a, long b) {
+            return a | b;
+        }
+
+        @Specialization(order = 3)
         public Object bitOr(int a, BigInteger b) {
+            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).or(b));
+        }
+
+        @Specialization(order = 4)
+        public long bitOr(long a, int b) {
+            return a | b;
+        }
+
+        @Specialization(order = 5)
+        public long bitOr(long a, long b) {
+            return a | b;
+        }
+
+        @Specialization(order = 6)
+        public Object bitOr(long a, BigInteger b) {
             return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).or(b));
         }
     }
@@ -940,6 +1045,29 @@ public abstract class FixnumNodes {
             } else {
                 return 1;
             }
+        }
+
+    }
+
+    @CoreMethod(names = "abs", maxArgs = 0)
+    public abstract static class AbsNode extends CoreMethodNode {
+
+        public AbsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AbsNode(AbsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int abs(int n) {
+            return Math.abs(n);
+        }
+
+        @Specialization
+        public long abs(long n) {
+            return Math.abs(n);
         }
 
     }

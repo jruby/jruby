@@ -40,6 +40,7 @@ public class CoreLibrary {
     private RubyClass classClass;
     private RubyClass continuationClass;
     private RubyClass dirClass;
+    private RubyClass encodingClass;
     private RubyClass exceptionClass;
     private RubyClass falseClass;
     private RubyClass fiberClass;
@@ -77,17 +78,16 @@ public class CoreLibrary {
     private RubyClass trueClass;
     private RubyClass typeErrorClass;
     private RubyClass zeroDivisionErrorClass;
-    private RubyClass encodingClass;
-
     private RubyModule comparableModule;
     private RubyModule configModule;
+    private RubyModule debugModule;
+    private RubyModule enumerableModule;
     private RubyModule errnoModule;
     private RubyModule kernelModule;
     private RubyModule mathModule;
     private RubyModule objectSpaceModule;
     private RubyModule signalModule;
 
-    private RubyModule debugModule;
     private RubyArray argv;
     private RubyBasicObject globalVariablesObject;
     private RubyBasicObject mainObject;
@@ -128,12 +128,14 @@ public class CoreLibrary {
         arrayClass = new RubyArray.RubyArrayClass(objectClass);
         bignumClass = new RubyClass(null, integerClass, "Bignum");
         bindingClass = new RubyClass(null, objectClass, "Binding");
-        continuationClass = new RubyClass(null, objectClass, "Continuation");
         comparableModule = new RubyModule(moduleClass, null, "Comparable");
         configModule = new RubyModule(moduleClass, null, "Config");
+        continuationClass = new RubyClass(null, objectClass, "Continuation");
         debugModule = new RubyModule(moduleClass, null, "Debug");
         dirClass = new RubyClass(null, objectClass, "Dir");
+        encodingClass = new RubyEncoding.RubyEncodingClass(objectClass);
         errnoModule = new RubyModule(moduleClass, null, "Errno");
+        enumerableModule = new RubyModule(moduleClass, null, "Enumerable");
         falseClass = new RubyClass(null, objectClass, "FalseClass");
         fiberClass = new RubyFiber.RubyFiberClass(objectClass);
         fileClass = new RubyClass(null, ioClass, "File");
@@ -156,10 +158,9 @@ public class CoreLibrary {
         regexpClass = new RubyRegexp.RubyRegexpClass(objectClass);
         rubyTruffleErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RubyTruffleError");
         runtimeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RuntimeError");
-        stringClass = new RubyString.RubyStringClass(objectClass);
-        encodingClass = new RubyEncoding.RubyEncodingClass(objectClass);
-        structClass = new RubyClass(null, ioClass, "Struct");
         signalModule = new RubyModule(moduleClass, null, "Signal");
+        stringClass = new RubyString.RubyStringClass(objectClass);
+        structClass = new RubyClass(null, ioClass, "Struct");
         symbolClass = new RubyClass(null, objectClass, "Symbol");
         syntaxErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "SyntaxError");
         systemCallErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "SystemCallError");
@@ -225,6 +226,7 @@ public class CoreLibrary {
                         configModule, //
                         debugModule, //
                         dirClass, //
+                        enumerableModule, //
                         errnoModule, //
                         exceptionClass, //
                         falseClass, //
@@ -360,6 +362,10 @@ public class CoreLibrary {
 
         if (object instanceof NilPlaceholder) {
             return nilObject;
+        }
+
+        if (object instanceof String) {
+            return context.makeString((String) object);
         }
 
         CompilerDirectives.transferToInterpreter();

@@ -48,14 +48,17 @@ public class RubyString extends RubyObject {
     private ByteList bytes;
     private String cachedStringValue;
 
-    /**
-     * Construct a string from a Java {@link String}, lazily converting to bytes as needed.
-     */
     public RubyString(RubyClass stringClass, String value) {
         super(stringClass);
         fromJavaString = true;
         bytes = org.jruby.RubySymbol.symbolBytesFromString(getRubyClass().getContext().getRuntime(), value);
         cachedStringValue = value;
+    }
+
+    public RubyString(RubyClass stringClass, ByteList bytes) {
+        super(stringClass);
+        fromJavaString = false;
+        this.bytes = bytes;
     }
 
     public RubyString(RubyClass stringClass, org.jruby.RubyString value) {
@@ -64,6 +67,7 @@ public class RubyString extends RubyObject {
         bytes = org.jruby.RubySymbol.symbolBytesFromString(getRubyClass().getContext().getRuntime(), value.toString());
         cachedStringValue = value.asJavaString();
     }
+
     /**
      * Construct a string from bytes representing characters in an encoding, lazily converting to a
      * Java {@link String} as needed.
@@ -89,6 +93,10 @@ public class RubyString extends RubyObject {
     }
 
     public ByteList getBytes() {
+        if (bytes == null) {
+            bytes = ByteList.create(cachedStringValue);
+        }
+
         return bytes;
     }
 
@@ -146,7 +154,10 @@ public class RubyString extends RubyObject {
     }
 
     public void concat(RubyString other) {
-        if (fromJavaString && other.fromJavaString) {
+        if (bytes != null) {
+            cachedStringValue = null;
+            bytes.append(other.getBytes());
+        } else if (fromJavaString && other.fromJavaString) {
             cachedStringValue += other.cachedStringValue;
             bytes = null;
         } else {
@@ -219,6 +230,11 @@ public class RubyString extends RubyObject {
     public void reverseStringValue(){
         checkFrozen();
         this.cachedStringValue = getReverseString();
+    }
+
+    @Override
+    public String inspect() {
+        return toJRubyString().inspect().toString();
     }
 
 }

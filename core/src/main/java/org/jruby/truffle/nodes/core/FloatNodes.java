@@ -472,6 +472,24 @@ public abstract class FloatNodes {
 
     }
 
+    @CoreMethod(names = "round", maxArgs = 0)
+    public abstract static class RoundNode extends CoreMethodNode {
+
+        public RoundNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RoundNode(RoundNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object round(double n) {
+            return RubyFixnum.fixnumOrBignum(Math.round(n));
+        }
+
+    }
+
     @CoreMethod(names = "to_s", maxArgs = 0)
     public abstract static class ToSNode extends CoreMethodNode {
 

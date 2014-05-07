@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyObject;
@@ -67,6 +68,10 @@ public final class RubyArray extends RubyObject {
             store = new IntegerArrayStore(new int[]{(int) object});
         } else if (object instanceof RubyFixnum.IntegerFixnum) {
             store = new IntegerArrayStore(new int[]{((RubyFixnum.IntegerFixnum) object).getValue()});
+        } else if (object instanceof Long) {
+            store = new LongArrayStore(new long[]{(long) object});
+        } else if (object instanceof RubyFixnum.LongFixnum) {
+            store = new LongArrayStore(new long[]{((RubyFixnum.LongFixnum) object).getValue()});
         } else {
             store = new ObjectArrayStore(new Object[]{object});
         }
@@ -84,11 +89,28 @@ public final class RubyArray extends RubyObject {
         }
 
         boolean canUseFixnum = true;
+        boolean canUseLongFixnum = true;
 
         for (Object object : objects) {
-            if (!(object instanceof Integer || object instanceof RubyFixnum.IntegerFixnum)) {
-                canUseFixnum = false;
+            boolean canUseFixnumForThis = false;
+            boolean canUseLongFixnumForThis = false;
+
+            if (object instanceof Integer) {
+                canUseFixnumForThis = true;
+                canUseLongFixnumForThis = true;
+            } else if (object instanceof RubyFixnum.IntegerFixnum) {
+                canUseFixnumForThis = true;
+                canUseLongFixnumForThis = true;
+            } else if (object instanceof Long) {
+                canUseFixnumForThis = RubyFixnum.fitsIntoInteger((long) object);
+                canUseLongFixnumForThis = true;
+            } else if (object instanceof RubyFixnum.LongFixnum) {
+                canUseFixnumForThis = RubyFixnum.fitsIntoInteger(((RubyFixnum.LongFixnum) object).getValue());
+                canUseLongFixnumForThis = true;
             }
+
+            canUseFixnum = canUseFixnum && canUseFixnumForThis;
+            canUseLongFixnum = canUseLongFixnum && canUseLongFixnumForThis;
         }
 
         ArrayStore store;
@@ -102,6 +124,15 @@ public final class RubyArray extends RubyObject {
             }
 
             store = new IntegerArrayStore(values);
+        } else if (canUseLongFixnum) {
+            final long[] values = new long[objects.length];
+
+            for (int n = 0; n < objects.length; n++) {
+
+                values[n] = RubyFixnum.toLong(objects[n]);
+            }
+
+            store = new LongArrayStore(values);
         } else {
             store = new ObjectArrayStore(objects);
         }
@@ -453,6 +484,38 @@ public final class RubyArray extends RubyObject {
 
     public boolean isEmpty() {
         return store.size() == 0;
+    }
+
+    public org.jruby.RubyArray toJRubyArray() {
+        final org.jruby.RubyArray jrubyArray = org.jruby.RubyArray.newArray(getRubyClass().getContext().getRuntime());
+
+        for (Object value : this.asList()) {
+            jrubyArray.add(getRubyClass().getContext().toJRuby(value));
+        }
+
+        return jrubyArray;
+    }
+
+    @SlowPath
+    @Override
+    public String inspect() {
+
+        final StringBuilder builder = new StringBuilder();
+
+        builder.append("[");
+
+        for (int n = 0; n < size(); n++) {
+            if (n > 0) {
+                builder.append(", ");
+            }
+
+            // TODO(CS): slow path send
+            builder.append(getRubyClass().getContext().getCoreLibrary().box(get(n)).send("inspect", null));
+        }
+
+        builder.append("]");
+
+        return builder.toString();
     }
 
 }

@@ -43,6 +43,16 @@ public class FeatureManager {
                 return true;
             }
 
+            if (feature.equals("zlib")) {
+                context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "zlib not yet implemented");
+                return true;
+            }
+
+            if (feature.equals("enumerator")) {
+                context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "enumerator not yet implemented");
+                return true;
+            }
+
             if (feature.equals("rbconfig")) {
                 // Kernel#rbconfig is always there
                 return true;
