@@ -127,6 +127,14 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         throw new UnsupportedOperationException(value.getClass().toString());
     }
 
+    public static boolean fitsIntoInteger(long value) {
+        return value >= Integer.MAX_VALUE && value <= Integer.MAX_VALUE;
+    }
+
+    public static int toUnsignedInt(byte x) {
+        return ((int) x) & 0xff;
+    }
+
     public static Object fixnumOrBignum(BigInteger value) {
         assert value != null;
 
@@ -134,6 +142,22 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
 
         if (value.compareTo(MIN_VALUE_BIG) >= 0 && value.compareTo(MAX_VALUE_BIG) <= 0) {
             final long longValue = value.longValue();
+
+            if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
+                return (int) longValue;
+            } else {
+                return value;
+            }
+        } else {
+            return value;
+        }
+    }
+
+    public static Object fixnumOrBignum(double value) {
+        // TODO(CS): make this a node?
+
+        if (value >= MIN_VALUE && value <= MAX_VALUE) {
+            final long longValue = (long) value;
 
             if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
                 return (int) longValue;

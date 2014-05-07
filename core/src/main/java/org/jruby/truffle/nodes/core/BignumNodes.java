@@ -236,22 +236,17 @@ public abstract class BignumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public Object mod(BigInteger a, int b) {
             return RubyFixnum.fixnumOrBignum(a.mod(BigInteger.valueOf(b)));
         }
 
-        @Specialization
+        @Specialization(order = 2)
         public Object mod(BigInteger a, long b) {
             return RubyFixnum.fixnumOrBignum(a.mod(BigInteger.valueOf(b)));
         }
 
-        @Specialization
-        public Object mod(@SuppressWarnings("unused") BigInteger a, @SuppressWarnings("unused") double b) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Specialization
+        @Specialization(order = 3)
         public Object mod(BigInteger a, BigInteger b) {
             return RubyFixnum.fixnumOrBignum(a.mod(b));
         }

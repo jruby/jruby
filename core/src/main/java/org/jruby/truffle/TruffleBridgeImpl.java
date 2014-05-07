@@ -44,7 +44,8 @@ public class TruffleBridgeImpl implements TruffleBridge {
         truffleContext = new RubyContext(runtime, new TranslatorDriver(runtime));
     }
 
-    @Override public void init() {
+    @Override
+    public void init() {
         if (Options.TRUFFLE_PRINT_RUNTIME.load()) {
             runtime.getInstanceConfig().getError().println("jruby: using " + Truffle.getRuntime().getName());
         }
@@ -74,12 +75,14 @@ public class TruffleBridgeImpl implements TruffleBridge {
         }
     }
 
-    @Override public TruffleMethod truffelize(DynamicMethod originalMethod, ArgsNode argsNode, Node bodyNode) {
+    @Override
+    public TruffleMethod truffelize(DynamicMethod originalMethod, ArgsNode argsNode, Node bodyNode) {
         final MethodDefinitionNode methodDefinitionNode = truffleContext.getTranslator().parse(truffleContext, null, argsNode, bodyNode);
         return new TruffleMethod(originalMethod, Truffle.getRuntime().createCallTarget(methodDefinitionNode.getMethodRootNode()));
     }
 
-    @Override public Object execute(TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
+    @Override
+    public Object execute(TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
         try {
             final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, truffleContext.getSourceManager().get(rootNode.getPosition().getFile()), parserContext, parentFrame, rootNode);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
@@ -94,51 +97,18 @@ public class TruffleBridgeImpl implements TruffleBridge {
         }
     }
 
-    @Override public IRubyObject toJRuby(Object object) {
-        if (object instanceof NilPlaceholder) {
-            return runtime.getNil();
-        } else if (object == truffleContext.getCoreLibrary().getKernelModule()) {
-            return runtime.getKernel();
-        } else if (object == truffleContext.getCoreLibrary().getMainObject()) {
-            return runtime.getTopSelf();
-        } else if (object instanceof Boolean) {
-            return runtime.newBoolean((boolean) object);
-        } else if (object instanceof Integer) {
-            return runtime.newFixnum((int) object);
-        } else if (object instanceof Double) {
-            return runtime.newFloat((double) object);
-        } else {
-            return runtime.getTopSelf();
-        }
+    @Override
+    public IRubyObject toJRuby(Object object) {
+        return truffleContext.toJRuby(object);
     }
 
-    @Override public Object toTruffle(IRubyObject object) {
-        if (object == runtime.getTopSelf()) {
-            return truffleContext.getCoreLibrary().getMainObject();
-        } else if (object == runtime.getKernel()) {
-            return truffleContext.getCoreLibrary().getKernelModule();
-        } else if (object instanceof RubyNil) {
-            return NilPlaceholder.INSTANCE;
-        } else if (object instanceof RubyBoolean.True) {
-            return true;
-        } else if (object instanceof RubyBoolean.False) {
-            return false;
-        } else if (object instanceof RubyFixnum) {
-            final long value = ((RubyFixnum) object).getLongValue();
-
-            if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
-                throw new UnsupportedOperationException();
-            }
-
-            return (int) value;
-        } else if (object instanceof RubyFloat) {
-            return ((RubyFloat) object).getDoubleValue();
-        } else {
-            throw object.getRuntime().newRuntimeError("cannot pass " + object.inspect() + " to Truffle");
-        }
+    @Override
+    public Object toTruffle(IRubyObject object) {
+        return truffleContext.toTruffle(object);
     }
 
-    @Override public void shutdown() {
+    @Override
+    public void shutdown() {
         truffleContext.shutdown();
     }
 

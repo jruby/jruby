@@ -9,24 +9,24 @@
  */
 package org.jruby.truffle.runtime.core.array;
 
-import java.util.*;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import org.jruby.truffle.runtime.NilPlaceholder;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.runtime.*;
+import java.util.Arrays;
 
 /**
- * A store for an array of {@code int}.
+ * A store for an array of {@code long}.
  */
-public final class IntegerArrayStore extends BaseArrayStore {
+public final class LongArrayStore extends BaseArrayStore {
 
-    private int[] values;
+    private long[] values;
 
-    public IntegerArrayStore() {
-        this(new int[]{});
+    public LongArrayStore() {
+        this(new long[]{});
     }
 
-    public IntegerArrayStore(int[] values) {
+    public LongArrayStore(long[] values) {
         this.values = values;
         size = values.length;
         capacity = values.length;
@@ -35,13 +35,13 @@ public final class IntegerArrayStore extends BaseArrayStore {
     @Override
     public Object get(int normalisedIndex) {
         try {
-            return getFixnum(normalisedIndex);
+            return getLongFixnum(normalisedIndex);
         } catch (UnexpectedResultException e) {
             return e.getResult();
         }
     }
 
-    public int getFixnum(int normalisedIndex) throws UnexpectedResultException {
+    public long getLongFixnum(int normalisedIndex) throws UnexpectedResultException {
         if (normalisedIndex >= size) {
             throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
         }
@@ -55,19 +55,21 @@ public final class IntegerArrayStore extends BaseArrayStore {
             return null; // Represents Nil
         }
 
-        return new IntegerArrayStore(Arrays.copyOfRange(values, normalisedBegin, truncatedNormalisedExclusiveEnd));
+        return new LongArrayStore(Arrays.copyOfRange(values, normalisedBegin, truncatedNormalisedExclusiveEnd));
     }
 
     @Override
     public void set(int normalisedIndex, Object value) throws GeneraliseArrayStoreException {
         if (value instanceof Integer) {
-            setFixnum(normalisedIndex, (int) value);
+            setLongFixnum(normalisedIndex, (int) value);
+        } else if (value instanceof Long) {
+            setLongFixnum(normalisedIndex, (long) value);
         } else {
             throw new GeneraliseArrayStoreException();
         }
     }
 
-    public void setFixnum(int normalisedIndex, int value) throws GeneraliseArrayStoreException {
+    public void setLongFixnum(int normalisedIndex, long value) throws GeneraliseArrayStoreException {
         if (normalisedIndex > size) {
             throw new GeneraliseArrayStoreException();
         }
@@ -83,12 +85,14 @@ public final class IntegerArrayStore extends BaseArrayStore {
     public void setRangeSingle(int normalisedBegin, int truncatedNormalisedExclusiveEnd, Object value) throws GeneraliseArrayStoreException {
         if (value instanceof Integer) {
             setRangeSingleFixnum(normalisedBegin, truncatedNormalisedExclusiveEnd, (int) value);
+        } else if (value instanceof Long) {
+            setRangeSingleFixnum(normalisedBegin, truncatedNormalisedExclusiveEnd, (long) value);
         } else {
             throw new GeneraliseArrayStoreException();
         }
     }
 
-    public void setRangeSingleFixnum(int normalisedBegin, int truncatedNormalisedExclusiveEnd, int value) {
+    public void setRangeSingleFixnum(int normalisedBegin, int truncatedNormalisedExclusiveEnd, long value) {
         // Is the range the whole array?
 
         if (normalisedBegin == 0 && truncatedNormalisedExclusiveEnd == size) {
@@ -106,27 +110,29 @@ public final class IntegerArrayStore extends BaseArrayStore {
 
     @Override
     public void setRangeArray(int normalisedBegin, int normalisedExclusiveEnd, ArrayStore other) throws GeneraliseArrayStoreException {
-        if (other instanceof IntegerArrayStore) {
-            setRangeArrayFixnum(normalisedBegin, normalisedExclusiveEnd, (IntegerArrayStore) other);
+        if (other instanceof LongArrayStore) {
+            setRangeArrayFixnum(normalisedBegin, normalisedExclusiveEnd, (LongArrayStore) other);
         } else {
             throw new GeneraliseArrayStoreException();
         }
     }
 
-    public void setRangeArrayFixnum(int normalisedBegin, int normalisedExclusiveEnd, IntegerArrayStore other) {
+    public void setRangeArrayFixnum(int normalisedBegin, int normalisedExclusiveEnd, LongArrayStore other) {
         setRangeArrayMatchingTypes(normalisedBegin, normalisedExclusiveEnd, other.values, other.size);
     }
 
     @Override
     public void insert(int normalisedIndex, Object value) throws GeneraliseArrayStoreException {
         if (value instanceof Integer) {
-            insertFixnum(normalisedIndex, (int) value);
+            insertLongFixnum(normalisedIndex, (int) value);
+        } else if (value instanceof Long) {
+            insertLongFixnum(normalisedIndex, (long) value);
         } else {
             throw new GeneraliseArrayStoreException();
         }
     }
 
-    public void insertFixnum(int normalisedIndex, int value) throws GeneraliseArrayStoreException {
+    public void insertLongFixnum(int normalisedIndex, long value) throws GeneraliseArrayStoreException {
         if (normalisedIndex > size) {
             throw new GeneraliseArrayStoreException();
         }
@@ -138,13 +144,15 @@ public final class IntegerArrayStore extends BaseArrayStore {
     @Override
     public void push(Object value) throws GeneraliseArrayStoreException {
         if (value instanceof Integer) {
-            pushFixnum((int) value);
+            pushLongFixnum((int) value);
+        } else if (value instanceof Long) {
+            pushLongFixnum((long) value);
         } else {
             throw new GeneraliseArrayStoreException();
         }
     }
 
-    public void pushFixnum(int value) {
+    public void pushLongFixnum(long value) {
         createSpaceAtEnd(1);
         values[size - 1] = value;
     }
@@ -152,19 +160,19 @@ public final class IntegerArrayStore extends BaseArrayStore {
     @Override
     public Object deleteAt(int normalisedIndex) {
         try {
-            return deleteAtFixnum(normalisedIndex);
+            return deleteAtLongFixnum(normalisedIndex);
         } catch (UnexpectedResultException e) {
             return e.getResult();
         }
     }
 
-    public int deleteAtFixnum(int normalisedIndex) throws UnexpectedResultException {
+    public long deleteAtLongFixnum(int normalisedIndex) throws UnexpectedResultException {
         if (normalisedIndex >= size) {
             CompilerDirectives.transferToInterpreter();
             throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
         }
 
-        final int value = values[normalisedIndex];
+        final long value = values[normalisedIndex];
 
         deleteSpace(normalisedIndex, 1);
 
@@ -173,7 +181,7 @@ public final class IntegerArrayStore extends BaseArrayStore {
 
     @Override
     public ArrayStore dup() {
-        return new IntegerArrayStore(Arrays.copyOf(values, size));
+        return new LongArrayStore(Arrays.copyOf(values, size));
     }
 
     @Override
@@ -215,11 +223,11 @@ public final class IntegerArrayStore extends BaseArrayStore {
 
     @Override
     protected void setCapacityWithNewArray(int newCapacity) {
-        values = new int[newCapacity];
+        values = new long[newCapacity];
         capacity = values.length;
     }
 
-    public int[] getValues() {
+    public long[] getValues() {
         return values;
     }
 
@@ -243,14 +251,14 @@ public final class IntegerArrayStore extends BaseArrayStore {
 
     @Override
     public boolean equals(ArrayStore other) {
-        if (other instanceof IntegerArrayStore) {
-            return equals((IntegerArrayStore) other);
+        if (other instanceof LongArrayStore) {
+            return equals((LongArrayStore) other);
         } else {
             return super.equals(other);
         }
     }
 
-    public boolean equals(IntegerArrayStore other) {
+    public boolean equals(LongArrayStore other) {
         if (other == null) {
             return false;
         } else if (other == this) {

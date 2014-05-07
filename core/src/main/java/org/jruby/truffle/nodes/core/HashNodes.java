@@ -249,6 +249,28 @@ public abstract class HashNodes {
 
     }
 
+    @CoreMethod(names = "merge", minArgs = 1, maxArgs = 1)
+    public abstract static class MergeNode extends CoreMethodNode {
+
+        public MergeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public MergeNode(MergeNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.SlowPath
+        @Specialization
+        public RubyHash merge(RubyHash hash, RubyHash other) {
+            final RubyHash merged = new RubyHash(getContext().getCoreLibrary().getHashClass());
+            merged.getMap().putAll(hash.getMap());
+            merged.getMap().putAll(other.getMap());
+            return merged;
+        }
+
+    }
+
     @CoreMethod(names = "key?", minArgs = 1, maxArgs = 1)
     public abstract static class KeyNode extends CoreMethodNode {
 

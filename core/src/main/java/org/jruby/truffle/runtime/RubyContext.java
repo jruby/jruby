@@ -14,11 +14,12 @@ import java.math.*;
 import java.util.concurrent.atomic.*;
 
 import org.jruby.Ruby;
-
+import org.jruby.*;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.source.*;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyBinding;
@@ -210,6 +211,52 @@ public class RubyContext {
 
     public RubyString makeString(char string) {
         return makeString(Character.toString(string));
+    }
+
+    public IRubyObject toJRuby(Object object) {
+        if (object instanceof NilPlaceholder) {
+            return runtime.getNil();
+        } else if (object == getCoreLibrary().getKernelModule()) {
+            return runtime.getKernel();
+        } else if (object == getCoreLibrary().getMainObject()) {
+            return runtime.getTopSelf();
+        } else if (object instanceof Boolean) {
+            return runtime.newBoolean((boolean) object);
+        } else if (object instanceof Integer) {
+            return runtime.newFixnum((int) object);
+        } else if (object instanceof Double) {
+            return runtime.newFloat((double) object);
+        } else if (object instanceof RubyString) {
+            return ((RubyString) object).toJRubyString();
+        } else {
+            throw getRuntime().newRuntimeError("cannot pass " + object + " to JRuby");
+        }
+    }
+
+    public Object toTruffle(IRubyObject object) {
+        if (object == runtime.getTopSelf()) {
+            return getCoreLibrary().getMainObject();
+        } else if (object == runtime.getKernel()) {
+            return getCoreLibrary().getKernelModule();
+        } else if (object instanceof RubyNil) {
+            return NilPlaceholder.INSTANCE;
+        } else if (object instanceof RubyBoolean.True) {
+            return true;
+        } else if (object instanceof RubyBoolean.False) {
+            return false;
+        } else if (object instanceof org.jruby.RubyFixnum) {
+            final long value = ((org.jruby.RubyFixnum) object).getLongValue();
+
+            if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+                throw new UnsupportedOperationException();
+            }
+
+            return (int) value;
+        } else if (object instanceof org.jruby.RubyFloat) {
+            return ((org.jruby.RubyFloat) object).getDoubleValue();
+        } else {
+            throw object.getRuntime().newRuntimeError("cannot pass " + object.inspect() + " to Truffle");
+        }
     }
 
     public Ruby getRuntime() {
