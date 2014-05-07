@@ -54,7 +54,6 @@ import org.jruby.lexer.yacc.Token;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.util.ByteList;
-import org.jruby.util.IdUtil;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 
@@ -81,11 +80,6 @@ public class ParserSupport {
     public void reset() {
         inSingleton = 0;
         inDefinition = false;
-    }
-    
-    public void allowDubyExtension(ISourcePosition position) {
-        throw new SyntaxException(PID.DUBY_EXTENSIONS_OFF, position,
-                lexer.getCurrentLine(), "Duby extensions not configured");
     }
     
     public StaticScope getCurrentScope() {
@@ -812,35 +806,6 @@ public class ParserSupport {
 
         return new WhenNode(position, expressionNodes, bodyNode, nextCase);
     }
-
-    public Node getReturnArgsNode(Node node) {
-        if (node instanceof ArrayNode && ((ArrayNode) node).size() == 1) { 
-            return ((ListNode) node).get(0);
-        } else if (node instanceof BlockPassNode) {
-            throw new SyntaxException(PID.BLOCK_ARG_UNEXPECTED, node.getPosition(),
-                    lexer.getCurrentLine(), "Block argument should not be given.");
-        }
-        return node;
-    }
-    
-    public Node new_opAssign(AssignableNode lhs, String asgnOp, Node rhs) {
-        checkExpression(rhs);
-
-        ISourcePosition pos = lhs.getPosition();
-        
-        if (asgnOp.equals("||")) {
-            lhs.setValueNode(rhs);
-            return new OpAsgnOrNode(pos, gettable2(lhs), lhs);
-        } else if (asgnOp.equals("&&")) {
-            lhs.setValueNode(rhs);
-            return new OpAsgnAndNode(pos, gettable2(lhs), lhs);
-        }
-        
-        lhs.setValueNode(getOperatorCallNode(gettable2(lhs), asgnOp, rhs));
-        lhs.setPosition(pos);
-        
-        return lhs;
-    }
     
     public Node new_opElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
         if (argsNode instanceof ArrayNode) {
@@ -979,17 +944,6 @@ public class ParserSupport {
 
                 return new CallManyArgsNode(position(receiver, args), receiver, (String) name.getValue(), args);
         }
-    }
-
-    public Node new_aref(Node receiver, Token name, Node argsNode) {
-        if (argsNode instanceof ArrayNode) {
-            ArrayNode args = (ArrayNode) argsNode;
-
-            if (args.size() == 1 && args.get(0) instanceof FixnumNode) {
-                return new CallOneArgFixnumNode(position(receiver, args), receiver, "[]", args);
-            }
-        }
-        return new_call(receiver, name, argsNode, null);
     }
 
     public Colon2Node new_colon2(ISourcePosition position, Node leftNode, String name) {
@@ -1219,15 +1173,6 @@ public class ParserSupport {
         
         return new EvStrNode(position, head);
     }
-
-    public IterNode new_iter(ISourcePosition position, Node vars, 
-            StaticScope scope, Node body) {
-        if (vars != null && vars instanceof BlockPassNode) {
-            vars = ((BlockPassNode)vars).getArgsNode();
-        }
-        
-        return new IterNode(position, vars, scope, body);
-    }
     
     public Node new_yield(ISourcePosition position, Node node) {
         if (node != null && node instanceof BlockPassNode) {
@@ -1279,11 +1224,6 @@ public class ParserSupport {
         floatNode.setValue(-floatNode.getValue());
         
         return floatNode;
-    }
-
-    // FIXME: Remove this from grammars.
-    public ISourcePosition createEmptyArgsNodePosition(ISourcePosition pos) {
-        return pos;
     }
     
     public Node unwrapNewlineNode(Node node) {
@@ -1351,17 +1291,6 @@ public class ParserSupport {
 
     public Node newUndef(ISourcePosition position, Node nameNode) {
         return new UndefNode(position, nameNode);
-    }
-
-    public BlockArgNode newBlockArg(ISourcePosition position, Token nameToken) {
-        String identifier = (String) nameToken.getValue();
-
-        if (getCurrentScope().getLocalScope().isDefined(identifier) >= 0) {
-            throw new SyntaxException(PID.BAD_IDENTIFIER, position, lexer.getCurrentLine(),
-                    "duplicate block argument name");
-        }
-
-        return new BlockArgNode(position, getCurrentScope().getLocalScope().addVariable(identifier), identifier);
     }
 
     /**
