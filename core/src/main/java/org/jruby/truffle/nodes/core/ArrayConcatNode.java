@@ -27,12 +27,12 @@ public final class ArrayConcatNode extends RubyNode {
     public ArrayConcatNode(RubyContext context, SourceSection sourceSection, RubyNode[] children) {
         super(context, sourceSection);
         assert children.length > 1;
-        this.children = adoptChildren(children);
+        this.children = children;
     }
 
     @ExplodeLoop
     @Override
-    public Object execute(VirtualFrame frame) {
+    public RubyArray execute(VirtualFrame frame) {
         final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
         for (int n = 0; n < children.length; n++) {

@@ -3,6 +3,7 @@ package org.jruby.ext.ffi.jffi;
 import com.kenai.jffi.CallingConvention;
 import java.util.Arrays;
 import org.jruby.RubyHash;
+import org.jruby.ext.ffi.Enums;
 import org.jruby.ext.ffi.Type;
 
 /**

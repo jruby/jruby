@@ -335,9 +335,9 @@ public class InvocationLinker {
      */
     private static MethodHandle updateInvocationTarget(MethodHandle target, JRubyCallSite site, IRubyObject self, RubyModule selfClass, String name, CacheEntry entry, SwitchPoint switchPoint, boolean block, int arity) {
         if (target == null ||
-                site.clearCount() > RubyInstanceConfig.MAX_FAIL_COUNT ||
+                site.clearCount() > Options.INVOKEDYNAMIC_MAXFAIL.load() ||
                 (!site.hasSeenType(selfClass.id)
-                && site.seenTypesCount() + 1 > RubyInstanceConfig.MAX_POLY_COUNT)) {
+                && site.seenTypesCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load())) {
             site.setTarget(target = createFail((block?FAILS_B:FAILS)[arity], site, name, entry.method));
         } else {
             target = postProcess(site, target);
@@ -349,13 +349,13 @@ public class InvocationLinker {
             // if we've cached no types, and the site is bound and we haven't seen this new type...
             if (site.seenTypesCount() > 0 && site.getTarget() != null && !site.hasSeenType(selfClass.id)) {
                 // stack it up into a PIC
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tadded to PIC " + logMethod(entry.method));
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(name + "\tadded to PIC " + logMethod(entry.method));
                 fallback = site.getTarget();
                 curry = false;
             } else {
                 // wipe out site with this new type and method
                 String bind = site.boundOnce() ? "rebind" : "bind";
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\ttriggered site #" + site.siteID() + " " + bind + " (" + site.file() + ":" + site.line() + ")");
+                if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(name + "\ttriggered site #" + site.siteID() + " " + bind + " (" + site.file() + ":" + site.line() + ")");
                 fallback = (block?FALLBACKS_B:FALLBACKS)[arity];
                 site.clearTypes();
                 curry = true;
@@ -382,7 +382,7 @@ public class InvocationLinker {
                 
             } else {
                 
-                if (RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT) {
+                if (Options.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load()) {
                     selfTest = selfTest.insert(0, "selfClass", selfClass);
                 } else {
                     selfTest = selfTest.insert(0, "token", entry.token);
@@ -395,7 +395,7 @@ public class InvocationLinker {
             
             gwt = createGWT(test, target, fallback, entry, site, curry);
             
-            if (RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT) {
+            if (Options.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load()) {
                 // wrap in switchpoint for mutation invalidation
                 gwt = switchPoint.guardWithTest(gwt, curry ? insertArguments(fallback, 0, site) : fallback);
             }
@@ -437,7 +437,7 @@ public class InvocationLinker {
     }
 
     private static MethodHandle createFail(MethodHandle fail, JRubyCallSite site, String name, DynamicMethod method) {
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to inline cache failed " + logMethod(method));
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(name + "\tbound to inline cache failed " + logMethod(method));
         
         MethodHandle myFail = insertArguments(fail, 0, site);
         myFail = postProcess(site, myFail);
@@ -509,7 +509,7 @@ public class InvocationLinker {
                 throw new IndirectBindingException("MH dynamic method does not have needed arity");
             }
             
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound from MHDynMethod " + logMethod(method) + ":" + handle);
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tbound from MHDynMethod " + logMethod(method) + ":" + handle);
             
             Signature fullSig = site.fullSignature();
             MethodHandle nativeTarget =  Binder
@@ -528,7 +528,7 @@ public class InvocationLinker {
         public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
             if (method instanceof AttrReaderMethod) {
                 // attr reader
-                if (!RubyInstanceConfig.INVOKEDYNAMIC_ATTR) {
+                if (!Options.INVOKEDYNAMIC_INVOCATION_ATTR.load()) {
                     throw new IndirectBindingException("direct attribute dispatch not enabled");
                 }
                 if (site.arity() != 0) {
@@ -550,7 +550,7 @@ public class InvocationLinker {
             VariableAccessor accessor = cls.getRealClass().getVariableAccessorForWrite(varName);
             
             // Ruby to attr reader
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) {
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 if (accessor instanceof FieldVariableAccessor) {
                     LOG.info(site.name() + "\tbound as field attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
                 } else {
@@ -568,7 +568,7 @@ public class InvocationLinker {
         public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
             if (method instanceof AttrWriterMethod) {
                 // attr writer
-                if (!RubyInstanceConfig.INVOKEDYNAMIC_ATTR) {
+                if (!Options.INVOKEDYNAMIC_INVOCATION_ATTR.load()) {
                     throw new IndirectBindingException("direct attribute dispatch not enabled");
                 }
                 if (site.arity() != 1) {
@@ -590,7 +590,7 @@ public class InvocationLinker {
             VariableAccessor accessor = cls.getRealClass().getVariableAccessorForWrite(varName);
             
             // Ruby to attr reader
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) {
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 if (accessor instanceof FieldVariableAccessor) {
                     LOG.info(site.name() + "\tbound as field attr writer " + logMethod(method) + ":" + ((AttrWriterMethod) method).getVariableName());
                 } else {
@@ -605,7 +605,7 @@ public class InvocationLinker {
 
         @Override
         public boolean canGenerate(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
-            if (!RubyInstanceConfig.INVOKEDYNAMIC_FFI) {
+            if (!Options.INVOKEDYNAMIC_INVOCATION_FFI.load()) {
                 throw new IndirectBindingException("direct FFI dispatch not enabled");
             }
 
@@ -658,7 +658,7 @@ public class InvocationLinker {
                 // has an explicit native call path
 
                 if (nativeCall.isJava()) {
-                    if (!RubyInstanceConfig.INVOKEDYNAMIC_JAVA) {
+                    if (!Options.INVOKEDYNAMIC_INVOCATION_JAVA.load()) {
                         throw new IndirectBindingException("direct Java dispatch not enabled");
                     }
 
@@ -683,7 +683,7 @@ public class InvocationLinker {
         @Override
         public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method, String realName) {
             // Ruby to Java
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to Java method " + logMethod(method) + ": " + method.getNativeCall());
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tbound to Java method " + logMethod(method) + ": " + method.getNativeCall());
             
             return postProcessNativeHandle(createJavaHandle(site, method), site, method, false, Options.REWRITE_JAVA_TRACE.load());
         }
@@ -715,7 +715,7 @@ public class InvocationLinker {
         @Override
         public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method, String realName) {
             // Ruby to Ruby
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to Ruby method " + logMethod(method) + ": " + method.getNativeCall());
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tbound to Ruby method " + logMethod(method) + ": " + method.getNativeCall());
             return postProcessNativeHandle(createRubyHandle(site, method, realName), site, method, true, false);
         }
         
@@ -744,7 +744,7 @@ public class InvocationLinker {
         @Override
         public MethodHandle generate(JRubyCallSite site, RubyClass cls, DynamicMethod method, String realName) {
             // Ruby to Core
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to native method " + logMethod(method) + ": " + method.getNativeCall());
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tbound to native method " + logMethod(method) + ": " + method.getNativeCall());
             return postProcessNativeHandle(createNativeHandle(cls.getClassRuntime(), site, method, realName), site, method, true, false);
         }
         
@@ -783,14 +783,14 @@ public class InvocationLinker {
         }
 
         // if indirect indy-bound methods (via DynamicMethod.call) are disabled, bail out
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_INDIRECT) {
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS)
+        if (!Options.INVOKEDYNAMIC_INVOCATION_INDIRECT.load()) {
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load())
                 LOG.info(site.name() + "\tfailed to bind to " + logMethod(entry.method) + ": " + ibe.getMessage());
             return null;
         }
 
         // no direct native path, use DynamicMethod.call
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS)
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load())
             LOG.info(site.name() + "\tbound indirectly to " + logMethod(entry.method) + ": " + ibe.getMessage());
 
         MethodHandle dynMethodTarget = getDynamicMethodTarget(site.type(), arity, entry.method);
@@ -1972,7 +1972,7 @@ public class InvocationLinker {
             .invokeStaticQuiet(lookup(), InvocationLinker.class, "testMetaclass");
     
     private static final MethodHandle TEST =
-            RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT ?
+            Options.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load() ?
             TEST_METACLASS :
             TEST_GENERATION;
     

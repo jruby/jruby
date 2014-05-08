@@ -33,9 +33,9 @@ public class TryNode extends RubyNode {
 
     public TryNode(RubyContext context, SourceSection sourceSection, RubyNode tryPart, RescueNode[] rescueParts, RubyNode elsePart) {
         super(context, sourceSection);
-        this.tryPart = adoptChild(tryPart);
-        this.rescueParts = adoptChildren(rescueParts);
-        this.elsePart = adoptChild(elsePart);
+        this.tryPart = tryPart;
+        this.rescueParts = rescueParts;
+        this.elsePart = elsePart;
     }
 
     @Override

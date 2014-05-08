@@ -19,4 +19,4 @@ fails:A method definition in an eval creates an instance method
 fails:A method definition in an eval creates a class method
 fails:A method definition in an eval creates a singleton method
 fails:a method definition that sets more than one default parameter all to the same value assigns them all the same object by default
-fails:The def keyword within a closure looks outside the closure for the visibility
+fails(inherited):The def keyword within a closure looks outside the closure for the visibility

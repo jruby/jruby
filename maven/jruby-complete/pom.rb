@@ -1,6 +1,6 @@
 project 'JRuby Complete' do
 
-  version = '9000.dev' #File.read( File.join( basedir, '..', '..', 'VERSION' ) )
+  version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
   id "org.jruby:jruby-complete:#{version}"
@@ -23,6 +23,10 @@ project 'JRuby Complete' do
                         'org.ow2.asm:asm-analysis',
                         'org.ow2.asm:asm-util' ] )
   jar 'org.jruby:jruby-stdlib:${project.version}'
+
+  build do
+    final_name "#{model.artifact_id}-#{version.sub(/-SNAPSHOT/,'')}"
+  end
 
   plugin( 'org.apache.felix:maven-bundle-plugin',
           :archive => {

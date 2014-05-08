@@ -15,7 +15,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 
-@NodeInfo(shortName = "fixnum")
+@NodeInfo(shortName = "fixnum(int)")
 public class FixnumLiteralNode extends RubyNode {
 
     private final int value;
@@ -27,15 +27,19 @@ public class FixnumLiteralNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return executeFixnum(frame);
+        return executeIntegerFixnum(frame);
     }
 
     @Override
-    public int executeFixnum(VirtualFrame frame) {
+    public int executeIntegerFixnum(VirtualFrame frame) {
         return value;
     }
 
-    // TODO(CS): remove this - shouldn't be fiddling with nodes from the outside
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        return getContext().makeString("expression");
+    }
+
     public int getValue() {
         return value;
     }

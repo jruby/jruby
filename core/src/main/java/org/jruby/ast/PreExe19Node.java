@@ -50,7 +50,7 @@ public class PreExe19Node extends PreExeNode {
     }
 
     @Override
-    public Object accept(NodeVisitor iVisitor) {
+    public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitPreExeNode(this);
     }
     

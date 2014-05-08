@@ -11,6 +11,11 @@ package org.jruby.truffle.runtime.methods;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.NodeUtil;
+import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.InlinableMethodImplementation;
+import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.methods.arguments.BehaveAsBlockNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -20,22 +25,18 @@ import org.jruby.truffle.runtime.core.*;
  */
 public class RubyMethod {
 
-    private final SourceSection sourceSection;
+    private final SharedMethodInfo sharedMethodInfo;
     private final RubyModule declaringModule;
-    private final UniqueMethodIdentifier uniqueIdentifier;
-    private final String intrinsicName;
     private final String name;
     private final Visibility visibility;
     private final boolean undefined;
 
     private final MethodImplementation implementation;
 
-    public RubyMethod(SourceSection sourceSection, RubyModule declaringModule, UniqueMethodIdentifier uniqueIdentifier, String intrinsicName, String name, Visibility visibility, boolean undefined,
+    public RubyMethod(SharedMethodInfo sharedMethodInfo, RubyModule declaringModule, String name, Visibility visibility, boolean undefined,
                     MethodImplementation implementation) {
-        this.sourceSection = sourceSection;
+        this.sharedMethodInfo = sharedMethodInfo;
         this.declaringModule = declaringModule;
-        this.uniqueIdentifier = uniqueIdentifier;
-        this.intrinsicName = intrinsicName;
         this.name = name;
         this.visibility = visibility;
         this.undefined = undefined;
@@ -53,16 +54,8 @@ public class RubyMethod {
         return result;
     }
 
-    public SourceSection getSourceSection() {
-        return sourceSection;
-    }
-
-    public UniqueMethodIdentifier getUniqueIdentifier() {
-        return uniqueIdentifier;
-    }
-
-    public String getIntrinsicName() {
-        return intrinsicName;
+    public SharedMethodInfo getSharedMethodInfo() {
+        return sharedMethodInfo;
     }
 
     public RubyModule getDeclaringModule() { return declaringModule; }
@@ -83,36 +76,108 @@ public class RubyMethod {
         return implementation;
     }
 
-    public RubyMethod withNewName(String newName) {
-        if (newName.equals(name)) {
-            return this;
-        }
+    public RubyMethod withDeclaringModule(RubyModule newDeclaringModule) {
+        final InlinableMethodImplementation inlinableMethodImplementation = (InlinableMethodImplementation) implementation;
 
-        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, intrinsicName, newName, visibility, undefined, implementation);
+        final RubyRootNode modifiedRootNode = inlinableMethodImplementation.getCloneOfPristineRootNode();
+
+        final InlinableMethodImplementation newImplementation = new InlinableMethodImplementation(
+                Truffle.getRuntime().createCallTarget(modifiedRootNode),
+                inlinableMethodImplementation.getDeclarationFrame(),
+                inlinableMethodImplementation.getFrameDescriptor(),
+                NodeUtil.cloneNode(modifiedRootNode),
+                inlinableMethodImplementation.alwaysInline(),
+                inlinableMethodImplementation.getShouldAppendCallNode());
+
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, newDeclaringModule, name, visibility, undefined, newImplementation);
+
+        newImplementation.setMethod(method);
+
+        return method;
+    }
+
+    public RubyMethod withNewName(String newName) {
+        final InlinableMethodImplementation inlinableMethodImplementation = (InlinableMethodImplementation) implementation;
+
+        final RubyRootNode modifiedRootNode = inlinableMethodImplementation.getCloneOfPristineRootNode();
+
+        final InlinableMethodImplementation newImplementation = new InlinableMethodImplementation(
+                Truffle.getRuntime().createCallTarget(modifiedRootNode),
+                inlinableMethodImplementation.getDeclarationFrame(),
+                inlinableMethodImplementation.getFrameDescriptor(),
+                NodeUtil.cloneNode(modifiedRootNode),
+                inlinableMethodImplementation.alwaysInline(),
+                inlinableMethodImplementation.getShouldAppendCallNode());
+
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, declaringModule, newName, visibility, undefined, newImplementation);
+
+        newImplementation.setMethod(method);
+
+        return method;
     }
 
     public RubyMethod withNewVisibility(Visibility newVisibility) {
-        if (newVisibility == visibility) {
-            return this;
-        }
+        final InlinableMethodImplementation inlinableMethodImplementation = (InlinableMethodImplementation) implementation;
 
-        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, intrinsicName, name, newVisibility, undefined, implementation);
+        final RubyRootNode modifiedRootNode = inlinableMethodImplementation.getCloneOfPristineRootNode();
+
+        final InlinableMethodImplementation newImplementation = new InlinableMethodImplementation(
+                Truffle.getRuntime().createCallTarget(modifiedRootNode),
+                inlinableMethodImplementation.getDeclarationFrame(),
+                inlinableMethodImplementation.getFrameDescriptor(),
+                NodeUtil.cloneNode(modifiedRootNode),
+                inlinableMethodImplementation.alwaysInline(),
+                inlinableMethodImplementation.getShouldAppendCallNode());
+
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, declaringModule, name, newVisibility, undefined, newImplementation);
+
+        newImplementation.setMethod(method);
+
+        return method;
     }
 
-    public RubyMethod withDeclaringModule(RubyModule newDeclaringModule) {
-        if (newDeclaringModule == declaringModule) {
-            return this;
+    public RubyMethod withoutBlockDestructureSemantics() {
+        final InlinableMethodImplementation inlinableMethodImplementation = (InlinableMethodImplementation) implementation;
+
+        final RubyRootNode modifiedRootNode = inlinableMethodImplementation.getCloneOfPristineRootNode();
+
+        for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(modifiedRootNode, BehaveAsBlockNode.class)) {
+            behaveAsBlockNode.setBehaveAsBlock(false);
         }
 
-        return new RubyMethod(sourceSection, newDeclaringModule, uniqueIdentifier, intrinsicName, name, visibility, undefined, implementation);
+        final InlinableMethodImplementation newImplementation = new InlinableMethodImplementation(
+                Truffle.getRuntime().createCallTarget(modifiedRootNode),
+                inlinableMethodImplementation.getDeclarationFrame(),
+                inlinableMethodImplementation.getFrameDescriptor(),
+                modifiedRootNode,
+                inlinableMethodImplementation.alwaysInline(),
+                inlinableMethodImplementation.getShouldAppendCallNode());
+
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, declaringModule, name, visibility, undefined, newImplementation);
+
+        newImplementation.setMethod(method);
+
+        return method;
     }
 
     public RubyMethod undefined() {
-        if (undefined) {
-            return this;
-        }
+        final InlinableMethodImplementation inlinableMethodImplementation = (InlinableMethodImplementation) implementation;
 
-        return new RubyMethod(sourceSection, declaringModule, uniqueIdentifier, intrinsicName, name, visibility, true, implementation);
+        final RubyRootNode modifiedRootNode = inlinableMethodImplementation.getCloneOfPristineRootNode();
+
+        final InlinableMethodImplementation newImplementation = new InlinableMethodImplementation(
+                Truffle.getRuntime().createCallTarget(modifiedRootNode),
+                inlinableMethodImplementation.getDeclarationFrame(),
+                inlinableMethodImplementation.getFrameDescriptor(),
+                NodeUtil.cloneNode(modifiedRootNode),
+                inlinableMethodImplementation.alwaysInline(),
+                inlinableMethodImplementation.getShouldAppendCallNode());
+
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, declaringModule, name, visibility, true, newImplementation);
+
+        newImplementation.setMethod(method);
+
+        return method;
     }
 
     public boolean isVisibleTo(RubyBasicObject caller, RubyBasicObject receiver) {
@@ -150,7 +215,19 @@ public class RubyMethod {
                 return true;
 
             case PROTECTED:
-                return true;
+                if (module == declaringModule) {
+                    return true;
+                }
+
+                if (module.getSingletonClass() == declaringModule) {
+                    return true;
+                }
+
+                if (module.getParentModule() != null && isVisibleTo(module.getParentModule())) {
+                    return true;
+                }
+
+                return false;
 
             case PRIVATE:
                 if (module == declaringModule) {
@@ -170,11 +247,6 @@ public class RubyMethod {
             default:
                 return false;
         }
-    }
-
-    @Override
-    public String toString() {
-        return implementation.toString();
     }
 
 }

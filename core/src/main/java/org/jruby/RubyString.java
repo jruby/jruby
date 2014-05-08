@@ -2730,7 +2730,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 } else {            // block given
                     match = RubyRegexp.createMatchData19(context, this, matcher, pattern);
                     match.regexp = regexp;
-                    context.setBackRef(match);
+                    if (useBackref) context.setBackRef(match);
                     val = objAsString(context, block.yield(context, substr));
                 }
                 modifyCheck(spBytes, slen, str_enc);
@@ -2761,7 +2761,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         } else {
             match = RubyRegexp.createMatchData19(context, this, matcher, pattern);
             match.regexp = regexp;
-            context.setBackRef(match);
+            if (useBackref) context.setBackRef(match);
         }
 
         if (bang) {
@@ -5925,10 +5925,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject to_c(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        IRubyObject s = Helpers.invoke(
-                context, this, "gsub",
-                RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat),
-                runtime.newString(new ByteList(new byte[]{'_'})));
+        RubyString underscore = runtime.newString(new ByteList(new byte[]{'_'}));
+        RubyRegexp underscore_pattern = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat);
+        IRubyObject s = this.gsubCommon19(context, null, underscore, null, underscore_pattern, false, 0, false);
 
         RubyArray a = RubyComplex.str_to_c_internal(context, s);
 
@@ -5946,10 +5945,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject to_r(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        IRubyObject s = Helpers.invoke(
-                context, this, "gsub",
-                RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat),
-                runtime.newString(new ByteList(new byte[]{'_'})));
+        RubyString underscore = runtime.newString(new ByteList(new byte[]{'_'}));
+        RubyRegexp underscore_pattern = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat);
+        IRubyObject s = this.gsubCommon19(context, null, underscore, null, underscore_pattern, false, 0, false);
 
         RubyArray a = RubyRational.str_to_r_internal(context, s);
 
@@ -6099,7 +6097,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return RubyEncoding.decodeUTF8(value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
     }
 
-    private static ByteList encodeBytelist(CharSequence value, Encoding encoding) {
+    public static ByteList encodeBytelist(CharSequence value, Encoding encoding) {
 
         Charset charset = encoding.getCharset();
 

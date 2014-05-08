@@ -1,3 +1,1 @@
-fails:Invoking a method with an object as a block uses 'to_proc' for coercion
-fails:Invoking a method with a space separating method name and parenthesis treats expression in parenthesis as first argument
 fails:Invoking a private getter method does not permit self as a receiver

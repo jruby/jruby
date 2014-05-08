@@ -20,11 +20,11 @@ import org.jruby.truffle.runtime.methods.*;
 @NodeInfo(shortName = "lambda")
 public class LambdaNode extends RubyNode {
 
-    @Child private RubyNode definition;
+    @Child protected RubyNode definition;
 
     public LambdaNode(RubyContext context, SourceSection sourceSection, RubyNode definition) {
         super(context, sourceSection);
-        this.definition = adoptChild(definition);
+        this.definition = definition;
     }
 
     @Override

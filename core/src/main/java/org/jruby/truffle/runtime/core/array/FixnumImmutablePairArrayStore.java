@@ -65,7 +65,7 @@ public final class FixnumImmutablePairArrayStore extends BaseArrayStore {
             return null; // Represents Nil
         }
 
-        return new FixnumArrayStore(Arrays.copyOfRange(new int[]{first, second}, normalisedBegin, truncatedNormalisedExclusiveEnd));
+        return new IntegerArrayStore(Arrays.copyOfRange(new int[]{first, second}, normalisedBegin, truncatedNormalisedExclusiveEnd));
     }
 
     @Override

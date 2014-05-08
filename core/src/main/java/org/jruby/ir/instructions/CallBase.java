@@ -1,7 +1,6 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyArray;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
@@ -22,7 +21,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,19 +33,18 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     private static long callSiteCounter = 1;
 
     public final long callSiteId;
+    private final CallType callType;
     protected Operand   receiver;
     protected Operand[] arguments;
     protected Operand   closure;
     protected MethAddr methAddr;
     protected CallSite callSite;
-    private final CallType callType;
 
     private boolean flagsComputed;
     private boolean canBeEval;
     private boolean targetRequiresCallersBinding;    // Does this call make use of the caller's binding?
-    public HashMap<DynamicMethod, Integer> profile;
     private boolean dontInline;
-    private boolean containsSplat;
+    private boolean containsArgSplat;
 
     protected CallBase(Operation op, CallType callType, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         super(op);
@@ -59,7 +56,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         this.methAddr = methAddr;
         this.callType = callType;
         this.callSite = getCallSiteFor(callType, methAddr);
-        containsSplat = containsSplat(args);
+        containsArgSplat = containsArgSplat(args);
         flagsComputed = false;
         canBeEval = true;
         targetRequiresCallersBinding = true;
@@ -189,8 +186,8 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
             arguments[i] = arguments[i].getSimplifiedOperand(valueMap, force);
         }
 
-        // Recompute containsSplat flag
-        containsSplat = containsSplat(arguments);
+        // Recompute containsArgSplat flag
+        containsArgSplat = containsArgSplat(arguments);
 
         if (closure != null) closure = closure.getSimplifiedOperand(valueMap, force);
         flagsComputed = false; // Forces recomputation of flags
@@ -355,9 +352,9 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
                 (closure == null ? "" : ", &" + closure) + ")";
     }
 
-    protected static boolean containsSplat(Operand[] arguments) {
+    protected static boolean containsArgSplat(Operand[] arguments) {
         for (Operand argument : arguments) {
-            if (argument instanceof Splat) return true;
+            if (argument instanceof Splat && ((Splat)argument).unsplatArgs) return true;
         }
 
         return false;
@@ -389,7 +386,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope dynamicScope, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
         IRubyObject object = (IRubyObject) receiver.retrieve(context, self, dynamicScope, temp);
         IRubyObject[] values = prepareArguments(context, self, arguments, dynamicScope, temp);
         Block preparedBlock = prepareBlock(context, self, dynamicScope, temp);
@@ -398,7 +395,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     }
 
     protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] arguments, DynamicScope dynamicScope, Object[] temp) {
-        return containsSplat ?
+        return containsArgSplat ?
                 prepareArgumentsComplex(context, self, arguments, dynamicScope, temp) :
                 prepareArgumentsSimple(context, self, arguments, dynamicScope, temp);
     }
@@ -434,15 +431,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     protected Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         if (closure == null) return Block.NULL_BLOCK;
 
-        Object value = closure.retrieve(context, self, currDynScope, temp);
-
-        Block block = IRRuntimeHelpers.getBlockFromObject(context, value);
-
-        // ENEBO: This came from duplicated logic from SuperInstr....
-        // Blocks passed in through calls are always normal blocks, no matter where they came from
-        block.type = Block.Type.NORMAL;
-
-        return block;
+        return IRRuntimeHelpers.getBlockFromObject(context, closure.retrieve(context, self, currDynScope, temp));
     }
 
 }

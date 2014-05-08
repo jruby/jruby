@@ -22,7 +22,7 @@ public class ReadAllArgumentsNode extends RubyNode {
 
     @Override
     public Object[] executeObjectArray(VirtualFrame frame) {
-        return frame.getArguments(RubyArguments.class).getArguments();
+        return frame.getArguments(RubyArguments.class).getArgumentsClone();
     }
 
     @Override

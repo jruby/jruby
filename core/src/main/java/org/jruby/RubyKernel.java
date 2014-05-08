@@ -430,36 +430,16 @@ public class RubyKernel {
 
     @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
     public static IRubyObject new_integer19(ThreadContext context, IRubyObject recv, IRubyObject object) {
-        if (object instanceof RubyFloat) {
-            double val = ((RubyFloat)object).getDoubleValue(); 
-            if (val > (double) RubyFixnum.MAX && val < (double) RubyFixnum.MIN) {
-                return RubyNumeric.dbl2num(context.runtime,((RubyFloat)object).getDoubleValue());
-            }
-        } else if (object instanceof RubyFixnum || object instanceof RubyBignum) {
-            return object;
-        } else if (object instanceof RubyString) {
-            return RubyNumeric.str2inum(context.runtime,(RubyString)object,0,true);
-        } else if(object instanceof RubyNil) {
-            throw context.runtime.newTypeError("can't convert nil into Integer");
-        }
-
-        IRubyObject tmp = TypeConverter.convertToType(object, context.runtime.getInteger(), "to_int", false);
-        if (tmp.isNil()) return object.convertToInteger("to_i");
-        return tmp;
+        return newIntegerCommon(context, object, 0);
     }
 
     @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
     public static IRubyObject new_integer19(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject base) {
-        int bs = RubyNumeric.num2int(base);
-        if(object instanceof RubyString) {
-            return RubyNumeric.str2inum(context.runtime,(RubyString)object,bs,true);
-        } else {
-            IRubyObject tmp = object.checkStringType();
-            if(!tmp.isNil()) {
-                return RubyNumeric.str2inum(context.runtime,(RubyString)tmp,bs,true);
-            }
-        }
-        throw context.runtime.newArgumentError("base specified for non string value");
+        return newIntegerCommon(context, object, RubyNumeric.num2int(base));
+    }
+
+    private static IRubyObject newIntegerCommon(ThreadContext context, IRubyObject object, int bs) {
+        return TypeConverter.convertToInteger(context, object, bs);
     }
 
     public static IRubyObject new_string(ThreadContext context, IRubyObject recv, IRubyObject object) {

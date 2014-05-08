@@ -25,7 +25,7 @@ public class NextNode extends RubyNode {
     public NextNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
 
-        this.child = adoptChild(child);
+        this.child = child;
     }
 
     @Override

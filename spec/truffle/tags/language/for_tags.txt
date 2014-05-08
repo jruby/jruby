@@ -1,3 +1,0 @@
-fails:The for expression iterates over an Hash passing each key-value pair to the block
-fails:The for expression allows a class variable as an iterator name
-fails:The for expression returns expr

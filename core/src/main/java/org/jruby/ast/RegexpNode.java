@@ -68,7 +68,7 @@ public class RegexpNode extends Node implements ILiteralNode {
         return NodeType.REGEXPNODE;
     }
 
-    public Object accept(NodeVisitor iVisitor) {
+    public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitRegexpNode(this);
     }
 

@@ -8,7 +8,7 @@ import org.jruby.ir.instructions.BranchInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.ReturnInstr;
-import org.jruby.ir.representations.CFG.EdgeType;
+import static org.jruby.ir.representations.CFG.EdgeType.*;
 
 /**
  * This produces a linear list of BasicBlocks so that the linearized instruction
@@ -53,28 +53,28 @@ public class CFGLinearizer {
         if (processed.get(current.getID())) return;
 
         // Cannot lay out current block till its fall-through predecessor has been laid out already
-        BasicBlock source = cfg.getIncomingSourceOfType(current, EdgeType.FALL_THROUGH);
+        BasicBlock source = cfg.getIncomingSourceOfType(current, FALL_THROUGH);
         if (source != null && !processed.get(source.getID())) return;
 
         list.add(current);
         processed.set(current.getID());
 
         // First, fall-through BB
-        BasicBlock fallThrough = cfg.getOutgoingDestinationOfType(current, EdgeType.FALL_THROUGH);
+        BasicBlock fallThrough = cfg.getOutgoingDestinationOfType(current, FALL_THROUGH);
         if (fallThrough != null) linearizeInner(cfg, list, processed, fallThrough);
 
         // Next, regular edges
-        for (BasicBlock destination: cfg.getOutgoingDestinationsOfType(current, EdgeType.REGULAR)) {
+        for (BasicBlock destination: cfg.getOutgoingDestinationsOfType(current, REGULAR)) {
             linearizeInner(cfg, list, processed, destination);
         }
 
         // Next, exception edges
-        for (BasicBlock destination: cfg.getOutgoingDestinationsOfType(current, EdgeType.EXCEPTION)) {
+        for (BasicBlock destination: cfg.getOutgoingDestinationsOfType(current, EXCEPTION)) {
             linearizeInner(cfg, list, processed, destination);
         }
 
         // Next, exit
-        for (BasicBlock destination: cfg.getOutgoingDestinationsOfType(current, EdgeType.EXIT)) {
+        for (BasicBlock destination: cfg.getOutgoingDestinationsOfType(current, EXIT)) {
             linearizeInner(cfg, list, processed, destination);
         }
     }
@@ -115,7 +115,7 @@ public class CFGLinearizer {
                 //
                 // Verify that we have exactly one non-exception target
                 // SSS FIXME: Is this assertion any different from the BranchInstr assertion above?
-                Iterator<BasicBlock> iter = cfg.getOutgoingDestinationsNotOfType(current, EdgeType.EXCEPTION).iterator();
+                Iterator<BasicBlock> iter = cfg.getOutgoingDestinationsNotOfType(current, EXCEPTION).iterator();
                 BasicBlock target = iter.next();
                 assert (target != null && !iter.hasNext());
 

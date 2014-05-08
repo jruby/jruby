@@ -7,7 +7,6 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -34,14 +33,6 @@ public class GetFieldInstr extends GetInstr implements FixedArityInstr {
             accessor = localAccessor;
         }
         return localAccessor;
-    }
-
-    @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        IRubyObject object = (IRubyObject) getSource().retrieve(context, self, currDynScope, temp);
-        VariableAccessor a = getAccessor(object);
-        IRubyObject value = a == null ? context.nil : (IRubyObject)a.get(object);
-        return value == null ? context.nil : value;
     }
 
     @Override

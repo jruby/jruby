@@ -15,6 +15,7 @@ import org.jruby.ext.ffi.AbstractMemory;
 import org.jruby.ext.ffi.ArrayMemoryIO;
 import org.jruby.ext.ffi.Buffer;
 import org.jruby.ext.ffi.CallbackInfo;
+import org.jruby.ext.ffi.Enums;
 import org.jruby.ext.ffi.MappedType;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.MemoryPointer;
@@ -173,7 +174,7 @@ public final class DefaultMethodFactory extends MethodFactory {
     static ParameterMarshaller getEnumMarshaller(Type type, CallingConvention convention, IRubyObject enums) {
         if (!(enums instanceof RubyHash)) {
             throw type.getRuntime().newArgumentError("wrong argument type "
-                    + enums.getMetaClass().getName() + " (expected Hash)");
+                    + enums.getMetaClass().getName() + " (expected Hash or Enums)");
         }
         NativeDataConverter converter = DataConverters.getParameterConverter(type, (RubyHash) enums);
         ParameterMarshaller marshaller = getMarshaller(type.getNativeType());

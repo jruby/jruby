@@ -11,7 +11,6 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -55,6 +54,8 @@ public class Match2Instr extends Instr implements ResultInstr, FixedArityInstr {
 
     @Override
     public boolean computeScopeFlags(IRScope scope) {
+        // $~ is implicitly used since Backref and NthRef operands
+        // access it and $~ is not made explicit in those operands.
         scope.getFlags().add(USES_BACKREF_OR_LASTLINE);
         return true;
     }
@@ -82,7 +83,7 @@ public class Match2Instr extends Instr implements ResultInstr, FixedArityInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         RubyRegexp regexp = (RubyRegexp) receiver.retrieve(context, self, currDynScope, temp);
         IRubyObject argValue = (IRubyObject) arg.retrieve(context, self, currDynScope, temp);
         return regexp.op_match19(context, argValue);

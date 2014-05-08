@@ -77,6 +77,23 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
     end
   end
 
+  it "supports expansions within the jar entry path" do
+    FileUtils.cd('glob_test') do
+      jar_path = "file:#{File.expand_path(Dir.pwd)}/glob-test.jar"
+
+      Dir.glob("#{jar_path}!/foo/./bar/../../**/*").should have_jar_entries([
+        '/foo/./bar/../../META-INF',
+        '/foo/./bar/../../META-INF/MANIFEST.MF',
+        '/foo/./bar/../../glob_target',
+        '/foo/./bar/../../glob_target/bar.txt'
+      ])
+
+      Dir.glob("#{jar_path}!foo/./bar/../../glob_target/**").should have_jar_entries([
+        "foo/./bar/../../glob_target/bar.txt"
+      ])
+    end
+  end
+
   it "respects jar content filesystem changes" do
     jar_path = File.join(Dir.pwd, 'glob_test', 'modified-glob-test.jar')
     FileUtils.cp 'glob-test.jar', jar_path

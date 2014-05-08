@@ -36,14 +36,14 @@ public class RubyProxyNode extends RubyNode implements InstrumentationProxyNode 
     public RubyProxyNode(RubyContext context, RubyNode child) {
         super(context, SourceSection.NULL);
         assert !(child instanceof RubyProxyNode);
-        this.child = adoptChild(child);
+        this.child = child;
         this.probeChain = context.getDebugManager().getProbeChain(child.getSourceSection());
     }
 
     public RubyProxyNode(RubyContext context, RubyNode child, ProbeChain probeChain) {
         super(context, SourceSection.NULL);
         assert !(child instanceof RubyProxyNode);
-        this.child = adoptChild(child);
+        this.child = child;
         this.probeChain = probeChain;
     }
 
@@ -134,13 +134,13 @@ public class RubyProxyNode extends RubyNode implements InstrumentationProxyNode 
     }
 
     @Override
-    public int executeFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
         probeChain.notifyEnter(child, frame);
 
         int result;
 
         try {
-            result = child.executeFixnum(frame);
+            result = child.executeIntegerFixnum(frame);
             probeChain.notifyLeave(child, frame, result);
         } catch (Exception e) {
             probeChain.notifyLeaveExceptional(child, frame, e);

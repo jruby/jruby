@@ -537,7 +537,8 @@ public class SocketUtils {
 
         if(domain instanceof RubyString || domain instanceof RubySymbol) {
             String domainString = domain.toString();
-            addressFamily = AddressFamily.valueOf("AF_" + domainString);
+            if (!domainString.startsWith("AF_")) domainString = "AF_" + domainString;
+            addressFamily = AddressFamily.valueOf(domainString);
         } else {
             int domainInt = RubyNumeric.fix2int(domain);
             addressFamily = AddressFamily.valueOf(domainInt);

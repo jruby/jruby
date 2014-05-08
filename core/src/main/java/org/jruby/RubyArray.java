@@ -2425,7 +2425,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             concurrentModification();
         }
 
-        return context.is19 ? value : item;
+        return value;
     }
 
     /** rb_ary_delete_at
@@ -3184,9 +3184,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     private IRubyObject sortInternal(final ThreadContext context, boolean honorOverride) {
+        Ruby runtime = context.runtime;
+
         // One check per specialized fast-path to make the check invariant.
-        final boolean fixnumBypass = !honorOverride || context.runtime.newFixnum(0).isBuiltin("<=>");
-        final boolean stringBypass = !honorOverride || context.runtime.newString("").isBuiltin("<=>");
+        final boolean fixnumBypass = !honorOverride || runtime.getFixnum().isMethodBuiltin("<=>");
+        final boolean stringBypass = !honorOverride || runtime.getString().isMethodBuiltin("<=>");
 
         try {
             Qsort.sort(values, begin, begin + realLength, new Comparator() {
@@ -4034,18 +4036,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return arg.checkArrayType();
     }
 
-    /**
-     * @see org.jruby.util.Pack#pack
-     */
-    public RubyString pack(ThreadContext context, IRubyObject obj) {
-        return pack19(context, obj);
-    }
-
     @JRubyMethod(name = "pack", required = 1)
-    public RubyString pack19(ThreadContext context, IRubyObject obj) {
+    public RubyString pack(ThreadContext context, IRubyObject obj) {
         RubyString iFmt = obj.convertToString();
         try {
-            return Pack.pack19(context, context.runtime, this, iFmt);
+            return Pack.pack(context, context.runtime, this, iFmt);
         } catch (ArrayIndexOutOfBoundsException aioob) {
             concurrentModification();
             return null; // not reached

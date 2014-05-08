@@ -51,6 +51,7 @@ import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ByteList;
 import static org.jruby.util.CodegenUtils.*;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.cli.Options;
 
 /**
  * A CacheCompiler that uses invokedynamic as a lazy thunk for literals and other
@@ -74,7 +75,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheConstant(BaseBodyCompiler method, String constantName) {
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_CONSTANTS) {
+        if (!Options.INVOKEDYNAMIC_CACHE_CONSTANTS.load()) {
             super.cacheConstant(method, constantName);
             return;
         }
@@ -100,7 +101,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheConstantBoolean(BaseBodyCompiler method, String constantName) {
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_CONSTANTS) {
+        if (!Options.INVOKEDYNAMIC_CACHE_CONSTANTS.load()) {
             super.cacheConstantBoolean(method, constantName);
             return;
         }
@@ -124,7 +125,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheByteList(BaseBodyCompiler method, ByteList contents) {
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+        if (!Options.INVOKEDYNAMIC_CACHE_LITERALS.load()) {
             super.cacheByteList(method, contents);
             return;
         }
@@ -148,7 +149,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheRubyEncoding(BaseBodyCompiler method, Encoding encoding) {
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+        if (!Options.INVOKEDYNAMIC_CACHE_LITERALS.load()) {
             super.cacheRubyEncoding(method, encoding);
             return;
         }
@@ -228,7 +229,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheRegexp(BaseBodyCompiler method, ByteList pattern, int options) {
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+        if (!Options.INVOKEDYNAMIC_CACHE_LITERALS.load()) {
             super.cacheRegexp(method, pattern, options);
             return;
         }
@@ -255,7 +256,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheFixnum(BaseBodyCompiler method, long value) {
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+        if (!Options.INVOKEDYNAMIC_CACHE_LITERALS.load()) {
             super.cacheFixnum(method, value);
             return;
         }
@@ -277,7 +278,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheFloat(BaseBodyCompiler method, double value) {
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+        if (!Options.INVOKEDYNAMIC_CACHE_LITERALS.load()) {
             super.cacheFloat(method, value);
             return;
         }
@@ -373,7 +374,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheString(BaseBodyCompiler method, ByteList contents, int codeRange) {
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+        if (!Options.INVOKEDYNAMIC_CACHE_LITERALS.load()) {
             super.cacheString(method, contents, codeRange);
             return;
         }
@@ -401,7 +402,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheFrozenString(BaseBodyCompiler method, ByteList contents, int codeRange) {
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+        if (!Options.INVOKEDYNAMIC_CACHE_LITERALS.load()) {
             super.cacheString(method, contents, codeRange);
             return;
         }
@@ -428,7 +429,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      */
     @Override
     public void cacheBigInteger(BaseBodyCompiler method, BigInteger bigint) {
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+        if (!Options.INVOKEDYNAMIC_CACHE_LITERALS.load()) {
             super.cacheBigInteger(method, bigint);
             return;
         }
@@ -449,7 +450,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      * @param symbol the string of the Symbol to cache
      */
     public void cacheSymbol(BaseBodyCompiler method, String symbol) {
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
+        if (!Options.INVOKEDYNAMIC_CACHE_LITERALS.load()) {
             super.cacheSymbol(method, symbol);
             return;
         }
@@ -464,7 +465,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
     }
 
     public void cachedGetVariable(BaseBodyCompiler method, String name) {
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_IVARS) {
+        if (!Options.INVOKEDYNAMIC_CACHE_IVARS.load()) {
             super.cachedGetVariable(method, name);
             return;
         }
@@ -481,7 +482,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
     }
 
     public void cachedSetVariable(BaseBodyCompiler method, String name, CompilerCallback valueCallback) {
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_IVARS) {
+        if (!Options.INVOKEDYNAMIC_CACHE_IVARS.load()) {
             super.cachedSetVariable(method, name, valueCallback);
             return;
         }

@@ -10,11 +10,7 @@
 package org.jruby.truffle.nodes.constants;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
-import com.oracle.truffle.api.utilities.*;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
 /**
@@ -23,7 +19,7 @@ import org.jruby.truffle.runtime.core.*;
  * class of the receiver changes we also uninitialize.
  */
 @NodeInfo(shortName = "cached-read-constant")
-public class CachedReadConstantNode extends ReadConstantNode {
+public class CachedReadConstantNode extends ReadConstantChainNode {
 
     private final RubyClass expectedClass;
     private final Assumption unmodifiedAssumption;
@@ -33,17 +29,18 @@ public class CachedReadConstantNode extends ReadConstantNode {
     private final boolean hasBoolean;
     private final boolean booleanValue;
 
-    private final boolean hasInt;
-    private final int intValue;
+    private final boolean hasIntegerFixnum;
+    private final int integerFixnumValue;
 
-    private final boolean hasDouble;
-    private final double doubleValue;
+    private final boolean hasLongFixnum;
+    private final long longFixnumValue;
 
-    private final BranchProfile boxBranchProfile = new BranchProfile();
+    private final boolean hasFloat;
+    private final double floatValue;
 
-    public CachedReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyClass expectedClass, Object value) {
-        super(context, sourceSection, name, receiver);
+    @Child protected ReadConstantChainNode next;
 
+    public CachedReadConstantNode(RubyClass expectedClass, Object value, ReadConstantChainNode next) {
         this.expectedClass = expectedClass;
         unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
 
@@ -58,119 +55,115 @@ public class CachedReadConstantNode extends ReadConstantNode {
             hasBoolean = true;
             booleanValue = (boolean) value;
 
-            hasInt = false;
-            intValue = -1;
+            hasIntegerFixnum = false;
+            integerFixnumValue = -1;
 
-            hasDouble = false;
-            doubleValue = -1;
+            hasLongFixnum = false;
+            longFixnumValue = -1;
+
+            hasFloat = false;
+            floatValue = -1;
         } else if (value instanceof Integer) {
             hasBoolean = false;
             booleanValue = false;
 
-            hasInt = true;
-            intValue = (int) value;
+            hasIntegerFixnum = true;
+            integerFixnumValue = (int) value;
 
-            hasDouble = true;
-            doubleValue = (int) value;
+            hasLongFixnum = true;
+            longFixnumValue = (int) value;
+
+            hasFloat = true;
+            floatValue = (int) value;
+        } else if (value instanceof Long) {
+            hasBoolean = false;
+            booleanValue = false;
+
+            if ((long) value <= Integer.MAX_VALUE) {
+                hasIntegerFixnum = true;
+                integerFixnumValue = (int) (long) value;
+            } else {
+                hasIntegerFixnum = false;
+                integerFixnumValue = -1;
+            }
+
+            hasLongFixnum = true;
+            longFixnumValue = (long) value;
+
+            hasFloat = true;
+            floatValue = (long) value;
         } else if (value instanceof Double) {
             hasBoolean = false;
             booleanValue = false;
 
-            hasInt = false;
-            intValue = -1;
+            hasIntegerFixnum = false;
+            integerFixnumValue = -1;
 
-            hasDouble = true;
-            doubleValue = (double) value;
+            hasLongFixnum = false;
+            longFixnumValue = -1;
+
+            hasFloat = true;
+            floatValue = (double) value;
         } else {
             hasBoolean = false;
             booleanValue = false;
 
-            hasInt = false;
-            intValue = -1;
+            hasIntegerFixnum = false;
+            integerFixnumValue = -1;
 
-            hasDouble = false;
-            doubleValue = -1;
+            hasLongFixnum = false;
+            longFixnumValue = -1;
+
+            hasFloat = false;
+            floatValue = -1;
+        }
+
+        this.next = next;
+    }
+
+    @Override
+    public Object execute(RubyBasicObject receiver) {
+        if (receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
+            return value;
+        } else {
+            return next.execute(receiver);
         }
     }
 
     @Override
-    public Object execute(VirtualFrame frame) {
-        try {
-            guard(frame);
-        } catch (UnexpectedResultException e) {
-            return e.getResult();
-        }
-
-        return value;
-    }
-
-    @Override
-    public boolean executeBoolean(VirtualFrame frame) throws UnexpectedResultException {
-        guard(frame);
-
-        if (hasBoolean) {
+    public boolean executeBoolean(RubyBasicObject receiver) throws UnexpectedResultException {
+        if (hasBoolean && receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
             return booleanValue;
         } else {
-            throw new UnexpectedResultException(value);
+            return next.executeBoolean(receiver);
         }
     }
 
     @Override
-    public int executeFixnum(VirtualFrame frame) throws UnexpectedResultException {
-        guard(frame);
-
-        if (hasInt) {
-            return intValue;
+    public int executeIntegerFixnum(RubyBasicObject receiver) throws UnexpectedResultException {
+        if (hasIntegerFixnum && receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
+            return integerFixnumValue;
         } else {
-            throw new UnexpectedResultException(value);
+            return next.executeIntegerFixnum(receiver);
         }
     }
 
     @Override
-    public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
-        guard(frame);
-
-        if (hasDouble) {
-            return doubleValue;
+    public long executeLongFixnum(RubyBasicObject receiver) throws UnexpectedResultException {
+        if (hasLongFixnum && receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
+            return longFixnumValue;
         } else {
-            throw new UnexpectedResultException(value);
+            return next.executeLongFixnum(receiver);
         }
     }
 
     @Override
-    public void executeVoid(VirtualFrame frame) {
-    }
-
-    public void guard(VirtualFrame frame) throws UnexpectedResultException {
-        final RubyContext context = getContext();
-
-        final Object receiverObject = receiver.execute(frame);
-
-        RubyBasicObject receiverRubyObject;
-
-        // TODO(CS): put the boxing into a separate node that can specialize for each type it sees
-
-        if (receiverObject instanceof RubyBasicObject) {
-            receiverRubyObject = (RubyBasicObject) receiverObject;
+    public double executeFloat(RubyBasicObject receiver) throws UnexpectedResultException {
+        if (hasFloat && receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
+            return integerFixnumValue;
         } else {
-            boxBranchProfile.enter();
-            receiverRubyObject = context.getCoreLibrary().box(receiverObject);
+            return next.executeFloat(receiver);
         }
-
-        if (receiverRubyObject.getRubyClass() != expectedClass) {
-            CompilerDirectives.transferToInterpreter();
-            throw new UnexpectedResultException(uninitialize(receiverRubyObject));
-        }
-
-        try {
-            unmodifiedAssumption.check();
-        } catch (InvalidAssumptionException e) {
-            throw new UnexpectedResultException(uninitialize(receiverRubyObject));
-        }
-    }
-
-    private Object uninitialize(RubyBasicObject receiverObject) {
-        return replace(new UninitializedReadConstantNode(getContext(), getSourceSection(), name, receiver)).execute(receiverObject);
     }
 
 }

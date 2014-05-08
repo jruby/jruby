@@ -9,43 +9,41 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.runtime.objectstorage.IntegerStorageLocation;
 import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 
-public class ReadIntegerObjectFieldNode extends ReadSpecializedObjectFieldNode {
+public class ReadIntegerObjectFieldNode extends ReadObjectFieldChainNode {
 
+    private final ObjectLayout objectLayout;
     private final IntegerStorageLocation storageLocation;
 
-    public ReadIntegerObjectFieldNode(String name, ObjectLayout objectLayout, IntegerStorageLocation storageLocation, RespecializeHook hook) {
-        super(name, objectLayout, hook);
+    public ReadIntegerObjectFieldNode(ObjectLayout objectLayout, IntegerStorageLocation storageLocation, ReadObjectFieldNode next) {
+        super(next);
+        this.objectLayout = objectLayout;
         this.storageLocation = storageLocation;
     }
 
     @Override
     public int executeInteger(ObjectStorage object) throws UnexpectedResultException {
-        final ObjectLayout receiverLayout = object.getObjectLayout();
-
-        final boolean condition = receiverLayout == objectLayout;
+        final boolean condition = object.getObjectLayout() == objectLayout;
 
         if (condition) {
-            assert receiverLayout != null;
-
             return storageLocation.readInteger(object, condition);
         } else {
-            CompilerDirectives.transferToInterpreter();
-            throw new UnexpectedResultException(readAndRespecialize(object));
+            return next.executeInteger(object);
         }
     }
 
     @Override
     public Object execute(ObjectStorage object) {
-        try {
-            return executeInteger(object);
-        } catch (UnexpectedResultException e) {
-            return e.getResult();
+        final boolean condition = object.getObjectLayout() == objectLayout;
+
+        if (condition) {
+            return storageLocation.read(object, condition);
+        } else {
+            return next.execute(object);
         }
     }
 

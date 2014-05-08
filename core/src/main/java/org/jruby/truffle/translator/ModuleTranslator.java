@@ -11,12 +11,17 @@ package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.ast.*;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.constants.*;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.literal.*;
+import org.jruby.truffle.nodes.literal.NilNode;
 import org.jruby.truffle.nodes.methods.*;
+import org.jruby.truffle.nodes.methods.AliasNode;
 import org.jruby.truffle.nodes.objects.*;
+import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.methods.*;
 
@@ -29,44 +34,42 @@ import org.jruby.truffle.runtime.methods.*;
  * newly allocated module or class. We then have to treat at least method and constant definitions
  * differently.
  */
-class ModuleTranslator extends Translator {
+class ModuleTranslator extends BodyTranslator {
 
-    public ModuleTranslator(RubyContext context, Translator parent, TranslatorEnvironment environment, Source source) {
+    public ModuleTranslator(RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source) {
         super(context, parent, environment, source);
+        useClassVariablesAsIfInClass = true;
     }
 
-    public MethodDefinitionNode compileClassNode(org.jruby.lexer.yacc.ISourcePosition sourcePosition, String name, org.jruby.ast.Node bodyNode) {
+    public MethodDefinitionNode compileClassNode(ISourcePosition sourcePosition, String name, org.jruby.ast.Node bodyNode) {
         final SourceSection sourceSection = translate(sourcePosition);
 
         environment.addMethodDeclarationSlots();
 
-        final String methodName = "(" + name + "-def" + ")";
-        environment.setMethodName(methodName);
-
         RubyNode body;
 
         if (bodyNode != null) {
-            body = (RubyNode) bodyNode.accept(this);
+            body = bodyNode.accept(this);
         } else {
             body = new NilNode(context, sourceSection);
         }
 
         if (environment.getFlipFlopStates().size() > 0) {
-            body = new SequenceNode(context, sourceSection, initFlipFlopStates(sourceSection), body);
+            body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
         }
 
-        body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID());
+        body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID(), false);
 
-        final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), methodName, body);
+        final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), body);
 
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRootNode));
 
-        return new MethodDefinitionNode(context, sourceSection, methodName, environment.getUniqueMethodIdentifier(), environment.getFrameDescriptor(), environment.needsDeclarationFrame(),
-                        pristineRootNode, callTarget);
+        return new MethodDefinitionNode(context, sourceSection, name, environment.getSharedMethodInfo(), environment.getFrameDescriptor(), environment.needsDeclarationFrame(),
+                        pristineRootNode, callTarget, false);
     }
 
     @Override
-    public Object visitConstDeclNode(org.jruby.ast.ConstDeclNode node) {
+    public RubyNode visitConstDeclNode(org.jruby.ast.ConstDeclNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final SelfNode selfNode = new SelfNode(context, sourceSection);
@@ -75,49 +78,48 @@ class ModuleTranslator extends Translator {
     }
 
     @Override
-    public Object visitConstNode(org.jruby.ast.ConstNode node) {
+    public RubyNode visitConstNode(org.jruby.ast.ConstNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final SelfNode selfNode = new SelfNode(context, sourceSection);
 
-        return new UninitializedReadConstantNode(context, sourceSection, node.getName(), selfNode);
+        return new ReadConstantNode(context, sourceSection, node.getName(), selfNode);
     }
 
     @Override
-    public Object visitDefnNode(org.jruby.ast.DefnNode node) {
+    public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
+        final SourceSection sourceSection = translate(node.getPosition());
+
         /*
          * The top-level translator puts methods into Object. We put ours into the self, which is
          * the class being defined.
          */
 
-        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
-                        new UniqueMethodIdentifier());
-        final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, source);
-        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), node.getName(), node.getArgsNode(), node.getBodyNode());
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, node.getName(), node.getBodyNode());
 
-        final SourceSection sourceSection = translate(node.getPosition());
+        final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
+                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo);
+        final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, false, source);
+        final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), node.getName(), node.getArgsNode(), node.getBodyNode(), false);
+
         return new AddMethodNode(context, sourceSection, new SelfNode(context, sourceSection), functionExprNode);
     }
 
     @Override
-    public Object visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node) {
+    public RubyNode visitClassVarAsgnNode(org.jruby.ast.ClassVarAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-
-        final RubyNode receiver = new SelfNode(context, sourceSection);
-
-        final RubyNode rhs = (RubyNode) node.getValueNode().accept(this);
-
-        return new WriteClassVariableNode(context, sourceSection, node.getName(), receiver, rhs);
+        final RubyNode rhs = node.getValueNode().accept(this);
+        return new WriteClassVariableNode(context, sourceSection, node.getName(), new SelfNode(context, sourceSection), rhs);
     }
 
     @Override
-    public Object visitClassVarNode(org.jruby.ast.ClassVarNode node) {
+    public RubyNode visitClassVarNode(org.jruby.ast.ClassVarNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
         return new ReadClassVariableNode(context, sourceSection, node.getName(), new SelfNode(context, sourceSection));
     }
 
     @Override
-    public Object visitAliasNode(org.jruby.ast.AliasNode node) {
+    public RubyNode visitAliasNode(org.jruby.ast.AliasNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final org.jruby.ast.LiteralNode oldName = (org.jruby.ast.LiteralNode) node.getOldName();

@@ -57,6 +57,7 @@ import org.jruby.compiler.ASTCompiler;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.JITCompiler;
 import org.jruby.compiler.impl.StandardASMCompiler;
+import org.jruby.embed.Extension;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
@@ -66,18 +67,25 @@ import org.jruby.ext.JRubyPOSIXHandler;
 import org.jruby.ext.LateLoadingLibrary;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ext.ffi.FFI;
+import org.jruby.ext.fiber.ThreadFiber;
+import org.jruby.ext.fiber.ThreadFiberLibrary;
 import org.jruby.ext.jruby.JRubyConfigLibrary;
+import org.jruby.ext.tracepoint.TracePoint;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
+import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.ir.Compiler;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.persistence.IRReader;
+import org.jruby.ir.persistence.IRReaderFile;
 import org.jruby.ir.persistence.util.IRFileExpert;
 import org.jruby.javasupport.JavaSupport;
-import org.jruby.runtime.*;
-import org.jruby.runtime.Helpers;
+import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
 import org.jruby.management.ClassCache;
@@ -89,6 +97,21 @@ import org.jruby.parser.ParserConfiguration;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Binding;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.EventHook;
+import org.jruby.runtime.GlobalVariable;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.IAccessor;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ObjectSpace;
+import org.jruby.runtime.RubyEvent;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.invokedynamic.MethodNames;
@@ -98,10 +121,10 @@ import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
-import org.jruby.runtime.profile.ProfileData;
-import org.jruby.runtime.profile.ProfilePrinter;
-import org.jruby.runtime.profile.ProfiledMethod;
-import org.jruby.runtime.profile.ProfileOutput;
+import org.jruby.runtime.profile.ProfileCollection;
+import org.jruby.runtime.profile.ProfilingService;
+import org.jruby.runtime.profile.ProfilingServiceLookup;
+import org.jruby.runtime.profile.builtin.ProfiledMethods;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.truffle.TruffleBridgeImpl;
@@ -130,25 +153,36 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.channels.ClosedChannelException;
 import java.security.AccessControlException;
 import java.security.SecureRandom;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.Stack;
+import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
-import org.jruby.embed.Extension;
-import org.jruby.ext.fiber.ThreadFiber;
-import org.jruby.ext.fiber.ThreadFiberLibrary;
-import org.jruby.ext.tracepoint.TracePoint;
-import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 
-import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
-import org.jruby.internal.runtime.methods.CallConfiguration;
-import org.jruby.internal.runtime.methods.JavaMethod;
-import org.jruby.ir.persistence.IRReader;
-import org.jruby.ir.persistence.IRReaderFile;
+import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -181,11 +215,18 @@ public final class Ruby {
     private Ruby(RubyInstanceConfig config) {
         this.config             = config;
         this.threadService      = new ThreadService(this);
+
+        if( config.isProfiling() ) {
+            this.profiledMethods        = new ProfiledMethods(this);
+            this.profilingServiceLookup = new ProfilingServiceLookup(this);
+        } else {
+            this.profiledMethods        = null;
+            this.profilingServiceLookup = null;
+        }
         
         getJRubyClassLoader(); // force JRubyClassLoader to init if possible
         
-        if (config.getCompileMode() == CompileMode.OFFIR ||
-                config.getCompileMode() == CompileMode.FORCEIR) {
+        if (config.getCompileMode().isIR()) {
             this.staticScopeFactory = new IRStaticScopeFactory(this);
         } else {
             this.staticScopeFactory = new StaticScopeFactory(this);
@@ -234,8 +275,7 @@ public final class Ruby {
     void reinitialize(boolean reinitCore) {
         this.doNotReverseLookupEnabled = true;
 
-        if (config.getCompileMode() == CompileMode.OFFIR ||
-                config.getCompileMode() == CompileMode.FORCEIR) {
+        if (config.getCompileMode().isIR()) {
             this.staticScopeFactory = new IRStaticScopeFactory(this);
         } else {
             this.staticScopeFactory = new StaticScopeFactory(this);
@@ -816,7 +856,7 @@ public final class Ruby {
            if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
                assert parseResult instanceof RootNode;
                return getTruffleBridge().toJRuby(getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) parseResult));
-           } else if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
+           } else if (getInstanceConfig().getCompileMode().isIR()) {
                return Interpreter.getInstance().execute(this, parseResult, self);
            } else {
                assert parseResult instanceof RootNode;
@@ -835,7 +875,7 @@ public final class Ruby {
             if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
                 assert rootNode instanceof RootNode;
                 return getTruffleBridge().toJRuby(getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) rootNode));
-            } else if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
+            } else if (getInstanceConfig().getCompileMode().isIR()) {
                 // FIXME: retrieve from IRManager unless lifus does it later
                 return Interpreter.getInstance().execute(this, rootNode, self);
             } else {
@@ -2536,7 +2576,7 @@ public final class Ruby {
     }
 
     public static ClassLoader getClassLoader() {
-        // we try to get the classloader that loaded JRuby, falling back on System
+        // we try to getService the classloader that loaded JRuby, falling back on System
         ClassLoader loader = Ruby.class.getClassLoader();
         if (loader == null) {
             loader = ClassLoader.getSystemClassLoader();
@@ -2545,12 +2585,36 @@ public final class Ruby {
         return loader;
     }
 
+    /**
+     * TODO the property {@link #jrubyClassLoader} will only be set in constructor. in the first call of
+     * {@link #getJRubyClassLoader() getJRubyClassLoader}. So the field {@link #jrubyClassLoader} can be final
+     * set in the constructor directly and we avoid the synchronized here.
+     *
+     * @return
+     */
     public synchronized JRubyClassLoader getJRubyClassLoader() {
         // FIXME: Get rid of laziness and handle restricted access elsewhere
         if (!Ruby.isSecurityRestricted() && jrubyClassLoader == null) {
             jrubyClassLoader = new JRubyClassLoader(config.getLoader());
+
+            // if jit code cache is used, we need to add the cache directory to the classpath
+            // so the previously generated class files can be reused.
+            if( config.JIT_CODE_CACHE != null && !config.JIT_CODE_CACHE.trim().isEmpty() ) {
+                File file = new File( config.JIT_CODE_CACHE );
+
+                if( file.exists() == false || file.isDirectory() == false ) {
+                    getWarnings().warning("The jit.codeCache '" + config.JIT_CODE_CACHE + "' directory doesn't exit.");
+                } else {
+                    try {
+                        URL url = file.toURI().toURL();
+                        jrubyClassLoader.addURL( url );
+                    } catch (MalformedURLException e) {
+                        getWarnings().warning("Unable to add the jit.codeCache '" + config.JIT_CODE_CACHE + "' directory to the classpath." + e.getMessage());
+                    }
+                }
+            }
         }
-        
+
         return jrubyClassLoader;
     }
 
@@ -2735,7 +2799,7 @@ public final class Ruby {
 
     public PrintStream getErrorStream() {
         // FIXME: We can't guarantee this will always be a RubyIO...so the old code here is not safe
-        /*java.io.OutputStream os = ((RubyIO) getGlobalVariables().get("$stderr")).getOutStream();
+        /*java.io.OutputStream os = ((RubyIO) getGlobalVariables().getService("$stderr")).getOutStream();
         if(null != os) {
             return new PrintStream(os);
         } else {
@@ -3079,7 +3143,7 @@ public final class Ruby {
     }
 
     /**
-     * Make sure Kernel#at_exit procs get invoked on runtime shutdown.
+     * Make sure Kernel#at_exit procs getService invoked on runtime shutdown.
      * This method needs to be explicitly called to work properly.
      * I thought about using finalize(), but that did not work and I
      * am not sure the runtime will be at a state to run procs by the
@@ -3171,8 +3235,8 @@ public final class Ruby {
 
         if (config.isProfilingEntireRun()) {
             // not using logging because it's formatted
-            ProfileData profileData = threadService.getMainThread().getContext().getProfileData();
-            printProfileData(profileData);
+            ProfileCollection profileCollection = threadService.getMainThread().getContext().getProfileCollection();
+            printProfileData(profileCollection);
         }
 
         if (systemExit && status != 0) {
@@ -3181,27 +3245,29 @@ public final class Ruby {
     }
     
     /**
-     * Print the gathered profiling data.
+     * TDOD remove the synchronized. Synchronization should be a implementation detail of the ProfilingService.
      * @param profileData
-     * @param out
-     * @see RubyInstanceConfig#getProfilingMode()
-     * @deprecated use printProfileData(ProfileData) or printProfileData(ProfileData,ProfileOutput)
+     * @param output
      */
-    public void printProfileData(ProfileData profileData, PrintStream out) {
-        printProfileData(profileData, new ProfileOutput(out));
+    public synchronized void printProfileData( ProfileCollection profileData ) {
+        getProfilingService().newProfileReporter(getCurrentContext()).report(profileData);
     }
 
-    public void printProfileData(ProfileData profileData) {
-        printProfileData(profileData, config.getProfileOutput());
+    /**
+     * Simple getter for #profilingServiceLookup to avoid direct property access
+     * @return #profilingServiceLookup
+     */
+    private ProfilingServiceLookup getProfilingServiceLookup() {
+        return profilingServiceLookup;
     }
 
-    public synchronized void printProfileData(ProfileData profileData, ProfileOutput output) {
-        ProfilePrinter profilePrinter = ProfilePrinter.newPrinter(config.getProfilingMode(), profileData);
-        if (profilePrinter != null) {
-            output.printProfile(profilePrinter);
-        } else {
-            out.println("\nno printer for profile mode: " + config.getProfilingMode() + " !");
-        }
+    /**
+     *
+     * @return the, for this ruby instance, configured implementation of ProfilingService, or null
+     */
+    public ProfilingService getProfilingService() {
+        ProfilingServiceLookup lockup = getProfilingServiceLookup();
+        return lockup == null ? null : lockup.getService();
     }
 
     // new factory methods ------------------------------------------------------------------------
@@ -3915,7 +3981,7 @@ public final class Ruby {
      * the shared 0, 1, and 2 filenos, which we can't actually share across
      * JRuby runtimes.
      *
-     * @param descriptor The descriptor for which to get the fileno
+     * @param descriptor The descriptor for which to getService the fileno
      * @return The external fileno for the descriptor
      */
     public int getFileno(ChannelDescriptor descriptor) {
@@ -4366,7 +4432,7 @@ public final class Ruby {
     /**
      * Get the runtime-global selector pool
      *
-     * @return a SelectorPool from which to get Selector instances
+     * @return a SelectorPool from which to getService Selector instances
      */
     public SelectorPool getSelectorPool() {
         return selectorPool;
@@ -4382,8 +4448,11 @@ public final class Ruby {
 
     /**
      * Get the list of method holders for methods being profiled.
+     * @return all known profiled methods
+     * @deprecated This should be an implementation detail of the ProfilingService and should remove from the Ruby class.
      */
-    public ProfiledMethod[] getProfiledMethods() {
+    @Deprecated
+    public ProfiledMethods getProfiledMethods() {
         return profiledMethods;
     }
     
@@ -4392,31 +4461,15 @@ public final class Ruby {
      *
      * @param name the name of the method
      * @param method
+     * @deprecated This should be an implementation detail of the ProfilingService and should remove from the Ruby class.
      */
+    @Deprecated
     void addProfiledMethod(final String name, final DynamicMethod method) {
         if (!config.isProfiling()) return;
         if (method.isUndefined()) return;
 
-        final int index = (int) method.getSerialNumber();
+        getProfiledMethods().addProfiledMethod( name, method );
 
-        if (index >= config.getProfileMaxMethods()) {
-            warnings.warnOnce(ID.PROFILE_MAX_METHODS_EXCEEDED, "method count exceeds max of " + config.getProfileMaxMethods() + "; no new methods will be profiled");
-            return;
-        }
-
-        synchronized(this) {
-            if (profiledMethods.length <= index) {
-                int newSize = Math.min((int) index * 2 + 1, config.getProfileMaxMethods());
-                ProfiledMethod[] newProfiledMethods = new ProfiledMethod[newSize];
-                System.arraycopy(profiledMethods, 0, newProfiledMethods, 0, profiledMethods.length);
-                profiledMethods = newProfiledMethods;
-            }
-    
-            // only add the first one we encounter, since others will probably share the original
-            if (profiledMethods[index] == null) {
-                profiledMethods[index] = new ProfiledMethod(name, method);
-            }
-        }
     }
     
     /**
@@ -4856,7 +4909,7 @@ public final class Ruby {
     private final RuntimeCache runtimeCache;
     
     // The method objects for serial numbers
-    private ProfiledMethod[] profiledMethods = new ProfiledMethod[0];
+    private final ProfiledMethods profiledMethods;
     
     // Message for Errno exceptions that will not generate a backtrace
     public static final String ERRNO_BACKTRACE_MESSAGE = "errno backtraces disabled; run with -Xerrno.backtrace=true to enable";
@@ -4912,6 +4965,9 @@ public final class Ruby {
     private FFI ffi;
     
     private JavaProxyClassFactory javaProxyClassFactory;
+
+    /** Used to find the ProfilingService implementation to use. If profiling is disabled it's null */
+    private final ProfilingServiceLookup profilingServiceLookup;
 
     private EnumMap<DefinedMessage, RubyString> definedMessages = new EnumMap<DefinedMessage, RubyString>(DefinedMessage.class);
     private EnumMap<RubyThread.Status, RubyString> threadStatuses = new EnumMap<RubyThread.Status, RubyString>(RubyThread.Status.class);

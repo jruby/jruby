@@ -1,53 +1,75 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.jruby</groupId>
-    <artifactId>jruby-ext</artifactId>
-    <version>9000.dev</version>
-  </parent>
-  <artifactId>readline</artifactId>
-  <version>1.0</version>
-  <packaging>jar</packaging>
-
+  <groupId>org.jruby.gems</groupId>
+  <artifactId>jruby-readline</artifactId>
+  <version>1.0.dev-SNAPSHOT</version>
+  <packaging>gem</packaging>
   <name>JRuby Readline</name>
-
+  <description>readline extension for JRuby</description>
+  <url>https://github.com/jruby/jruby</url>
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <readline.dir>${project.basedir}/../../lib/ruby/shared/readline</readline.dir>
-    <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
+    <gem.path>${gem.home}</gem.path>
+    <gem.home>../target/rubygems</gem.home>
+    <jruby.plugins.version>1.0.0-rc4</jruby.plugins.version>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
   </properties>
-
   <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-core</artifactId>
-      <version>${project.parent.version}</version>
-      <scope>provided</scope>
-    </dependency>
     <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
       <version>2.11</version>
-      <type>jar</type>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby</artifactId>
+      <version>1.7.11</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
-  
+  <repositories>
+    <repository>
+      <id>rubygems-releases</id>
+      <url>http://rubygems-proxy.torquebox.org/releases</url>
+    </repository>
+  </repositories>
   <build>
+    <extensions>
+      <extension>
+        <groupId>de.saumya.mojo</groupId>
+        <artifactId>gem-extension</artifactId>
+        <version>${jruby.plugins.version}</version>
+      </extension>
+    </extensions>
+    <directory>${basedir}/pkg</directory>
     <plugins>
       <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.4</version>
+        <executions>
+          <execution>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <outputDirectory>lib</outputDirectory>
+          <finalName>readline</finalName>
+        </configuration>
+      </plugin>
+      <plugin>
         <artifactId>maven-clean-plugin</artifactId>
+        <version>2.4</version>
         <configuration>
           <filesets>
             <fileset>
-              <directory>${readline.dir}</directory>
+              <directory>lib</directory>
               <includes>
-                <include>jline-*.jar</include>
                 <include>readline.jar</include>
               </includes>
             </fileset>
@@ -55,89 +77,36 @@
         </configuration>
       </plugin>
       <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <encoding>utf-8</encoding>
-          <debug>true</debug>
-          <verbose>true</verbose>
-          <fork>true</fork>
-          <showWarnings>true</showWarnings>
-          <showDeprecation>true</showDeprecation>
-          <source>${base.java.version}</source>
-          <target>${base.javac.version}</target>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-dependency-plugin</artifactId>
+        <groupId>de.saumya.mojo</groupId>
+        <artifactId>gem-maven-plugin</artifactId>
+        <version>${jruby.plugins.version}</version>
         <executions>
           <execution>
-            <id>copy jline</id>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>copy</goal>
-            </goals>
+            <id>default-push</id>
             <configuration>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>jline</groupId>
-                  <artifactId>jline</artifactId>
-                  <version>2.11</version>
-                  <type>jar</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${readline.dir}</outputDirectory>
-                </artifactItem>
-              </artifactItems>
+              <skip>true</skip>
             </configuration>
           </execution>
         </executions>
+        <configuration>
+          <gemspec>readline.gemspec</gemspec>
+          <includeDependencies>true</includeDependencies>
+        </configuration>
       </plugin>
       <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
+        <artifactId>maven-deploy-plugin</artifactId>
         <executions>
           <execution>
-            <phase>package</phase>
             <goals>
-              <goal>shade</goal>
+              <goal>deploy</goal>
             </goals>
             <configuration>
-              <outputFile>${readline.dir}/readline.jar</outputFile>
+              <skip>false</skip>
+              <altDeploymentRepository>sonatype-nexus-snapshots::default::https://oss.sonatype.org/content/repositories/snapshots/</altDeploymentRepository>
             </configuration>
           </execution>
         </executions>
       </plugin>
     </plugins>
-    <pluginManagement>
-    	<plugins>
-    		<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
-    		<plugin>
-    			<groupId>org.eclipse.m2e</groupId>
-    			<artifactId>lifecycle-mapping</artifactId>
-    			<version>1.0.0</version>
-    			<configuration>
-    				<lifecycleMappingMetadata>
-    					<pluginExecutions>
-    						<pluginExecution>
-    							<pluginExecutionFilter>
-    								<groupId>
-    									org.apache.maven.plugins
-    								</groupId>
-    								<artifactId>
-    									maven-dependency-plugin
-    								</artifactId>
-    								<versionRange>[2.8,)</versionRange>
-    								<goals>
-    									<goal>copy</goal>
-    								</goals>
-    							</pluginExecutionFilter>
-    							<action>
-    								<ignore></ignore>
-    							</action>
-    						</pluginExecution>
-    					</pluginExecutions>
-    				</lifecycleMappingMetadata>
-    			</configuration>
-    		</plugin>
-    	</plugins>
-    </pluginManagement>
   </build>
 </project>

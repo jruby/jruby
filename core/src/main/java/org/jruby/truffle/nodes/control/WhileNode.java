@@ -33,8 +33,8 @@ public class WhileNode extends RubyNode {
 
     public WhileNode(RubyContext context, SourceSection sourceSection, BooleanCastNode condition, RubyNode body) {
         super(context, sourceSection);
-        this.condition = adoptChild(condition);
-        this.body = adoptChild(body);
+        this.condition = condition;
+        this.body = body;
     }
 
     @Override
@@ -44,13 +44,12 @@ public class WhileNode extends RubyNode {
         try {
             outer: while (condition.executeBoolean(frame)) {
                 while (true) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
                     try {
                         body.execute(frame);
-
-                        if (CompilerDirectives.inInterpreter()) {
-                            count++;
-                        }
-
                         continue outer;
                     } catch (BreakException e) {
                         breakProfile.enter();
@@ -65,19 +64,11 @@ public class WhileNode extends RubyNode {
             }
         } finally {
             if (CompilerDirectives.inInterpreter()) {
-                reportLoopCount(count);
+                getRootNode().reportLoopCount(count);
             }
         }
 
         return NilPlaceholder.INSTANCE;
-    }
-
-    private void reportLoopCount(int count) {
-        CompilerAsserts.neverPartOfCompilation();
-        RootNode root = NodeUtil.findOutermostRootNode(this);
-        if (root != null) {
-            root.reportLoopCount(count);
-        }
     }
 
 }

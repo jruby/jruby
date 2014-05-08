@@ -53,7 +53,7 @@ public class InlinedYieldDispatchNode extends YieldDispatchNode {
 
         final InlinableMethodImplementation implementation = (InlinableMethodImplementation) block.getMethod().getImplementation();
 
-        final RubyArguments arguments = new RubyArguments(implementation.getDeclarationFrame(), block.getSelf(), block.getBlock(), argumentsObjects);
+        final RubyArguments arguments = new RubyArguments(RubyArguments.create(implementation.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects));
         final VirtualFrame inlinedFrame = Truffle.getRuntime().createVirtualFrame(frame.pack(), arguments, frameDescriptor);
         return rootNode.execute(inlinedFrame);
     }

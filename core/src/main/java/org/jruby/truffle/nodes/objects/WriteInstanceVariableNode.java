@@ -47,21 +47,37 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
     @Child protected BoxingNode receiver;
     @Child protected RubyNode rhs;
-    @Child protected WriteObjectFieldNode writeNode;
+    @Child protected WriteHeadObjectFieldNode writeNode;
+    private final boolean isGlobal;
 
-    public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs) {
+    public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs, boolean isGlobal) {
         super(context, sourceSection);
-        this.receiver = adoptChild(new BoxingNode(context, sourceSection, receiver));
-        this.rhs = adoptChild(rhs);
-        writeNode = adoptChild(new UninitializedWriteObjectFieldNode(name, hook));
+        this.receiver = new BoxingNode(context, sourceSection, receiver);
+        this.rhs = rhs;
+        writeNode = new WriteHeadObjectFieldNode(name, hook);
+        this.isGlobal = isGlobal;
     }
 
     @Override
-    public int executeFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
         final RubyBasicObject object = receiver.executeRubyBasicObject(frame);
 
         try {
-            final int value = rhs.executeFixnum(frame);
+            final int value = rhs.executeIntegerFixnum(frame);
+            writeNode.execute(object, value);
+            return value;
+        } catch (UnexpectedResultException e) {
+            writeNode.execute(object, e.getResult());
+            throw e;
+        }
+    }
+
+    @Override
+    public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
+        final RubyBasicObject object = receiver.executeRubyBasicObject(frame);
+
+        try {
+            final long value = rhs.executeLongFixnum(frame);
             writeNode.execute(object, value);
             return value;
         } catch (UnexpectedResultException e) {
@@ -95,6 +111,6 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
     @Override
     public RubyNode makeReadNode() {
-        return new ReadInstanceVariableNode(getContext(), getSourceSection(), writeNode.getName(), receiver);
+        return new ReadInstanceVariableNode(getContext(), getSourceSection(), writeNode.getName(), receiver, isGlobal);
     }
 }

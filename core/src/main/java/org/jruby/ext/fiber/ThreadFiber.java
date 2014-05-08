@@ -15,8 +15,13 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
+
+import org.jruby.ir.runtime.IRBreakJump;
+import org.jruby.ir.runtime.IRReturnJump;
+import org.jruby.ir.operands.IRException;
 
 public class ThreadFiber extends RubyObject implements ExecutionContext {
     public ThreadFiber(Ruby runtime, RubyClass klass) {
@@ -29,7 +34,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         ThreadFiber rootFiber = new ThreadFiber(runtime, runtime.getClass("Fiber")); // FIXME: getFiber()
         
         assert runtime.getClass("SizedQueue") != null : "SizedQueue has not been loaded";
-        rootFiber.data = new FiberData(new SizedQueue(runtime, runtime.getClass("SizedQueue")), null, rootFiber);
+        rootFiber.data = new FiberData(new SizedQueue(runtime, runtime.getClass("SizedQueue"), 1), null, rootFiber);
         rootFiber.thread = context.getThread();
         context.setRootFiber(rootFiber);
     }
@@ -39,8 +44,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         Ruby runtime = context.runtime;
         
         if (!block.isGiven()) throw runtime.newArgumentError("tried to create Proc object without block");
-        
-        data = new FiberData(new SizedQueue(runtime, runtime.getClass("SizedQueue")), context.getFiberCurrentThread(), this);
+
+        data = new FiberData(new SizedQueue(runtime, runtime.getClass("SizedQueue"), 1), context.getFiberCurrentThread(), this);
         
         FiberData currentFiberData = context.getFiber().data;
         
@@ -185,7 +190,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     
     @JRubyMethod
     public IRubyObject __alive__(ThreadContext context) {
-        return context.runtime.newBoolean(thread != null && thread.isAlive());
+        return context.runtime.newBoolean(alive());
     }
     
     @JRubyMethod(meta = true)
@@ -232,6 +237,18 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                     if (data.prev != null) {
                         data.prev.thread.raise(fce.buildException(runtime).getException());
                     }
+                } catch (IRBreakJump bj) {
+                    // This is one of the rare cases where IR flow-control jumps
+                    // leaks into the runtime impl.
+                    if (data.prev != null) {
+                        data.prev.thread.raise(((RaiseException)IRException.BREAK_LocalJumpError.getException(runtime)).getException());
+                    }
+                } catch (IRReturnJump rj) {
+                    // This is one of the rare cases where IR flow-control jumps
+                    // leaks into the runtime impl.
+                    if (data.prev != null) {
+                        data.prev.thread.raise(((RaiseException)IRException.RETURN_LocalJumpError.getException(runtime)).getException());
+                    }
                 } catch (RaiseException re) {
                     if (data.prev != null) {
                         data.prev.thread.raise(re.getException());
@@ -240,6 +257,10 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                     if (data.prev != null) {
                         data.prev.thread.raise(JavaUtil.convertJavaToUsableRubyObject(runtime, t));
                     }
+                } finally {
+                    // clear reference to the fiber's thread
+                    ThreadFiber tf = data.fiber.get();
+                    if (tf != null) tf.thread = null;
                 }
             }
         });

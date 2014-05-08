@@ -217,7 +217,7 @@ public final class StringSupport {
                 Unsafe us = (Unsafe)UNSAFE;
                 int eend = ~LOWBITS & end;
                 while (p < eend) {
-                    len += countUtf8LeadBytes(us.getLong(bytes, OFFSET + p));
+                    len += countUtf8LeadBytes(us.getLong(bytes, (long)(OFFSET + p)));
                     p += LONG_SIZE;
                 }
             }
@@ -377,7 +377,7 @@ public final class StringSupport {
                 Unsafe us = (Unsafe)UNSAFE;
                 int eend = ~LOWBITS & end;
                 do {
-                    n -= countUtf8LeadBytes(us.getLong(bytes, OFFSET + p));
+                    n -= countUtf8LeadBytes(us.getLong(bytes, (long)(OFFSET + p)));
                     p += LONG_SIZE;
                 } while (p < eend && n >= LONG_SIZE);
             }

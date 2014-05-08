@@ -129,7 +129,7 @@ public class ListNode extends Node {
         return list;
     }
     
-    public Object accept(NodeVisitor visitor) {
+    public <T> T accept(NodeVisitor<T> visitor) {
         return visitor.visitListNode(this);
     }
     

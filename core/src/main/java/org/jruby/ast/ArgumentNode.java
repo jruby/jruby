@@ -58,9 +58,10 @@ public class ArgumentNode extends Node implements INameNode {
     public NodeType getNodeType() {
         return NodeType.ARGUMENTNODE;
     }
-    
-    public Object accept(NodeVisitor visitor) {
-        return null;
+
+    @Override
+    public <T> T accept(NodeVisitor<T> visitor) {
+        return visitor.visitArgumentNode(this);
     }
 
     /**

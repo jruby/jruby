@@ -55,7 +55,7 @@ public class FixnumNode extends Node implements ILiteralNode, IEqlNode {
         this.value = value;
     }
 
-    public Object accept(NodeVisitor iVisitor) {
+    public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitFixnumNode(this);
     }
 

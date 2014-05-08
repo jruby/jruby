@@ -27,14 +27,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -45,20 +44,30 @@ import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyFile;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.openssl.x509store.PEMInputOutput;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
+
+import org.jruby.ext.openssl.x509store.PEMInputOutput;
+import static org.jruby.ext.openssl.OpenSSLReal.isDebug;
+import static org.jruby.ext.openssl.OpenSSLReal.debug;
+import static org.jruby.ext.openssl.OpenSSLReal.debugStackTrace;
+import static org.jruby.ext.openssl.impl.PKey.readPrivateKey;
+import static org.jruby.ext.openssl.impl.PKey.readPublicKey;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -67,31 +76,35 @@ public abstract class PKey extends RubyObject {
     private static final long serialVersionUID = 6114668087816965720L;
 
     public static void createPKey(Ruby runtime, RubyModule ossl) {
-        RubyModule mPKey = ossl.defineModuleUnder("PKey");
-        mPKey.defineAnnotatedMethods(PKeyModule.class);
+        RubyModule _PKey = ossl.defineModuleUnder("PKey");
+        _PKey.defineAnnotatedMethods(PKeyModule.class);
         // PKey is abstract
-        RubyClass cPKey = mPKey.defineClassUnder("PKey",runtime.getObject(),ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        RubyClass openSSLError = ossl.getClass("OpenSSLError");
-        mPKey.defineClassUnder("PKeyError",openSSLError,openSSLError.getAllocator());
+        RubyClass _PKeyPkey = _PKey.defineClassUnder("PKey", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass _OpenSSLError = ossl.getClass("OpenSSLError");
+        _PKey.defineClassUnder("PKeyError", _OpenSSLError, _OpenSSLError.getAllocator());
 
-        cPKey.defineAnnotatedMethods(PKey.class);
+        _PKeyPkey.defineAnnotatedMethods(PKey.class);
 
-        PKeyRSA.createPKeyRSA(runtime,mPKey);
-        PKeyDSA.createPKeyDSA(runtime,mPKey);
-        PKeyDH.createPKeyDH(runtime, mPKey, cPKey);
+        PKeyRSA.createPKeyRSA(runtime, _PKey);
+        PKeyDSA.createPKeyDSA(runtime, _PKey);
+        PKeyDH.createPKeyDH(runtime, _PKey, _PKeyPkey);
     }
 
     public static RaiseException newPKeyError(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::PKey::PKeyError", message);
+        return Utils.newError(runtime, _PKey(runtime).getClass("PKeyError"), message);
+    }
+
+    static RubyModule _PKey(final Ruby runtime) {
+        return (RubyModule) runtime.getModule("OpenSSL").getConstant("PKey");
     }
 
     public static class PKeyModule {
 
         @JRubyMethod(name = "read", meta = true, required = 1, optional = 1)
-        public static IRubyObject read(ThreadContext ctx, IRubyObject recv, IRubyObject[] args) {
-            Ruby runtime = ctx.runtime;
-            IRubyObject data;
-            char[] pass;
+        public static IRubyObject read(final ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+            final Ruby runtime = context.runtime;
+
+            final IRubyObject data; final char[] pass;
             switch (args.length) {
             case 1:
                 data = args[0];
@@ -101,11 +114,12 @@ public abstract class PKey extends RubyObject {
                 data = args[0];
                 pass = args[1].isNil() ? null : args[1].toString().toCharArray();
             }
-            byte[] input = OpenSSLImpl.readX509PEM(data);
+
+            final byte[] input = OpenSSLImpl.readX509PEM(context, data);
             KeyPair key = null;
             // d2i_PrivateKey_bio
             try {
-                key = org.jruby.ext.openssl.impl.PKey.readPrivateKey(input);
+                key = readPrivateKey(input);
             } catch (IOException ioe) {
                 // ignore
             } catch (GeneralSecurityException gse) {
@@ -121,10 +135,10 @@ public abstract class PKey extends RubyObject {
             }
             if (key != null) {
                 if (key.getPublic().getAlgorithm().equals("RSA")) {
-                    return new PKeyRSA(runtime, Utils.getClassFromPath(runtime, "OpenSSL::PKey::RSA"), (RSAPrivateCrtKey) key.getPrivate(),
+                    return new PKeyRSA(runtime, _PKey(runtime).getClass("RSA"), (RSAPrivateCrtKey) key.getPrivate(),
                             (RSAPublicKey) key.getPublic());
                 } else if (key.getPublic().getAlgorithm().equals("DSA")) {
-                    return new PKeyDSA(runtime, Utils.getClassFromPath(runtime, "OpenSSL::PKey::DSA"), (DSAPrivateKey) key.getPrivate(),
+                    return new PKeyDSA(runtime, _PKey(runtime).getClass("DSA"), (DSAPrivateKey) key.getPrivate(),
                             (DSAPublicKey) key.getPublic());
                 }
             }
@@ -132,7 +146,7 @@ public abstract class PKey extends RubyObject {
             PublicKey pubKey = null;
             // d2i_PUBKEY_bio
             try {
-                pubKey = org.jruby.ext.openssl.impl.PKey.readPublicKey(input);
+                pubKey = readPublicKey(input);
             } catch (IOException ioe) {
                 // ignore
             } catch (GeneralSecurityException gse) {
@@ -149,9 +163,9 @@ public abstract class PKey extends RubyObject {
 
             if (pubKey != null) {
                 if (pubKey.getAlgorithm().equals("RSA")) {
-                    return new PKeyRSA(runtime, Utils.getClassFromPath(runtime, "OpenSSL::PKey::RSA"), (RSAPublicKey) pubKey);
+                    return new PKeyRSA(runtime, _PKey(runtime).getClass("RSA"), (RSAPublicKey) pubKey);
                 } else if (key.getPublic().getAlgorithm().equals("DSA")) {
-                    return new PKeyDSA(runtime, Utils.getClassFromPath(runtime, "OpenSSL::PKey::DSA"), (DSAPublicKey) pubKey);
+                    return new PKeyDSA(runtime, _PKey(runtime).getClass("DSA"), (DSAPublicKey) pubKey);
                 }
             }
 
@@ -191,11 +205,11 @@ public abstract class PKey extends RubyObject {
         }
         String digAlg = ((Digest) digest).getShortAlgorithm();
         try {
-            Signature sig = Signature.getInstance(digAlg + "WITH" + getAlgorithm());
-            sig.initSign(getPrivateKey());
+            Signature signature = SecurityHelper.getSignature(digAlg + "WITH" + getAlgorithm());
+            signature.initSign(getPrivateKey());
             byte[] inp = data.convertToString().getBytes();
-            sig.update(inp);
-            byte[] sigge = sig.sign();
+            signature.update(inp);
+            byte[] sigge = signature.sign();
             return RubyString.newString(getRuntime(), sigge);
         } catch (GeneralSecurityException gse) {
             throw newPKeyError(getRuntime(), gse.getMessage());
@@ -218,21 +232,21 @@ public abstract class PKey extends RubyObject {
 
     @JRubyMethod(name = "verify")
     public IRubyObject verify(IRubyObject digest, IRubyObject sig, IRubyObject data) {
-        if (!(digest instanceof Digest)) {
+        if ( ! (digest instanceof Digest) ) {
             throw newPKeyError(getRuntime(), "invalid digest");
         }
-        if (!(sig instanceof RubyString)) {
+        if ( ! (sig instanceof RubyString) ) {
             throw newPKeyError(getRuntime(), "invalid signature");
         }
-        if (!(data instanceof RubyString)) {
+        if ( ! (data instanceof RubyString) ) {
             throw newPKeyError(getRuntime(), "invalid data");
         }
-        byte[] sigBytes = ((RubyString)sig).getBytes();
-        byte[] dataBytes = ((RubyString)data).getBytes();
-        String algorithm = ((Digest)digest).getShortAlgorithm() + "WITH" + getAlgorithm();
+        byte[] sigBytes = ((RubyString) sig).getBytes();
+        byte[] dataBytes = ((RubyString) data).getBytes();
+        String algorithm = ((Digest) digest).getShortAlgorithm() + "WITH" + getAlgorithm();
         boolean valid;
         try {
-            Signature signature = Signature.getInstance(algorithm);
+            Signature signature = SecurityHelper.getSignature(algorithm);
             signature.initVerify(getPublicKey());
             signature.update(dataBytes);
             valid = signature.verify(sigBytes);
@@ -244,6 +258,66 @@ public abstract class PKey extends RubyObject {
             throw newPKeyError(getRuntime(), "invalid key");
         }
         return getRuntime().newBoolean(valid);
+    }
+
+    // shared Helpers for PKeyRSA / PKEyDSA :
+
+    protected PrivateKey tryPKCS8EncodedKey(final Ruby runtime, final KeyFactory keyFactory, final byte[] encodedKey) {
+        try {
+            return keyFactory.generatePrivate(new PKCS8EncodedKeySpec(encodedKey));
+        }
+        catch (InvalidKeySpecException e) {
+            if ( isDebug(runtime) ) {
+                debug(runtime, getClass().getSimpleName() + " could not generate (PKCS8) private key", e);
+            }
+        }
+        catch (RuntimeException e) {
+            if ( isKeyGenerationFailure(e) ) {
+                if( isDebug(runtime) ) {
+                    debug(runtime, getClass().getSimpleName() + " could not generate (PKCS8) private key", e);
+                }
+            }
+            else debugStackTrace(runtime, e);
+        }
+        return null;
+    }
+
+    protected static boolean isKeyGenerationFailure(final RuntimeException e) {
+        // NOTE handle "common-failure" more gently (no need for stack trace) :
+        // java.lang.ClassCastException: org.bouncycastle.asn1.DLSequence cannot be cast to org.bouncycastle.asn1.ASN1Integer
+        //   at org.bouncycastle.asn1.pkcs.PrivateKeyInfo.<init>(Unknown Source)
+        //	 at org.bouncycastle.asn1.pkcs.PrivateKeyInfo.getInstance(Unknown Source)
+        //   at org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi.engineGeneratePrivate(Unknown Source)
+        //   at org.bouncycastle.jcajce.provider.asymmetric.dsa.KeyFactorySpi.engineGeneratePrivate(Unknown Source)
+        //   at java.security.KeyFactory.generatePrivate(KeyFactory.java:366)
+        if ( e instanceof ClassCastException ) {
+            // RSA :
+            final String msg = e.getMessage();
+            if ( msg != null && msg.contains("DLSequence cannot be cast to") ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected PublicKey tryX509EncodedKey(final Ruby runtime, final KeyFactory keyFactory, final byte[] encodedKey) {
+        try {
+            return keyFactory.generatePublic(new X509EncodedKeySpec(encodedKey));
+        }
+        catch (InvalidKeySpecException e) {
+            if ( isDebug(runtime) ) {
+                debug(runtime, getClass().getSimpleName() + " could not generate (X509) public key", e);
+            }
+        }
+        catch (RuntimeException e) {
+            if ( isKeyGenerationFailure(e) ) { // NOTE: not (yet) detected with X.509
+                if( isDebug(runtime) ) {
+                    debug(runtime, getClass().getSimpleName() + " could not generate (X509) public key", e);
+                }
+            }
+            else debugStackTrace(runtime, e);
+        }
+        return null;
     }
 
     protected static void addSplittedAndFormatted(StringBuilder result, BigInteger value) {
@@ -262,4 +336,21 @@ public abstract class PKey extends RubyObject {
         }
         result.append("\n");
     }
+
+    protected static char[] password(final IRubyObject pass) {
+        if ( pass != null && ! pass.isNil() ) {
+            return pass.toString().toCharArray();
+        }
+        return null;
+    }
+
+    protected static RubyString readInitArg(final ThreadContext context, IRubyObject arg) {
+        arg = OpenSSLImpl.to_der_if_possible(context, arg);
+        if ( arg instanceof RubyFile ) {
+            return (RubyString)( (RubyFile) arg.dup() ).read(context);
+        } else {
+            return arg.convertToString();
+        }
+    }
+
 }// PKey

@@ -1,17 +1,18 @@
-fails:Basic assignment calls to_a on the given argument when using a splat
-fails:Basic assignment allows assignment through lambda
+fails:Basic assignment allows the assignment of the rhs to the lhs using the lhs splat operator
 fails:Basic multiple assignment with a single RHS value does not call #to_ary on an Array subclass instance
 fails:Basic multiple assignment with a single RHS value does not call #to_a on an Array subclass instance
 fails:Basic multiple assignment with a single RHS value calls #to_ary on an object
+fails:Basic multiple assignment with a single RHS value calls #to_ary on an object
+fails:Basic multiple assignment with a single RHS value does not call #to_a on an object if #to_ary is not defined
 fails:Basic multiple assignment with a splatted single RHS value does not call #to_ary on an Array subclass instance
 fails:Basic multiple assignment with a splatted single RHS value does not call #to_a on an Array subclass instance
-fails:Basic multiple assignment with a splatted single RHS value calls #to_a on an object if #to_ary is not defined
-fails:Assigning multiple values calls #to_ary on RHS arg if the corresponding LHS var is a splat
+fails:Assigning multiple values bundles remaining values to an array when using the splat operator
+fails(inherited):Assigning multiple values calls #to_ary on RHS arg if the corresponding LHS var is a splat
 fails:Assigning multiple values allows complex parallel assignment
 fails:Conditional operator assignment 'obj.meth op= expr' is equivalent to 'obj.meth op obj.meth = expr'
 fails:Conditional operator assignment 'obj.meth op= expr' may not assign at all, depending on the truthiness of lhs
 fails:Operator assignment 'obj.meth op= expr' evaluates lhs one time
-fails:Unconditional operator assignment 'obj[idx] op= expr' is equivalent to 'obj[idx] = obj[idx] op expr'
+fails:An exception occurred during: Mock.verify_count
 fails:Conditional operator assignment 'obj[idx] op= expr' may not assign at all, depending on the truthiness of lhs
 fails:Operator assignment 'obj[idx] op= expr' handles empty index (idx) arguments
 fails:Operator assignment 'obj[idx] op= expr' handles complex index (idx) arguments
@@ -24,4 +25,3 @@ fails:Multiple assignments with grouping A group on the lhs is considered one po
 fails:Multiple assignments with grouping supports multiple levels of nested groupings
 fails:Multiple assignment has the proper return value
 fails:Multiple assignment, array-style returns an array of all rhs values
-fails:Basic assignment supports the {|r,| } form of block assignment

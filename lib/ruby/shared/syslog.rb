@@ -38,15 +38,21 @@ module Syslog
 
     ##
     # returns the ident of the last open call
-    attr_reader :ident
+    def ident
+      @opened ? @ident : nil
+    end
     
     ##
     # returns the options of the last open call
-    attr_reader :options
+    def options
+      @opened ? @options : nil
+    end
 
     ##
     # returns the facility of the last open call
-    attr_reader :facility
+    def facility
+      @opened ? @facility : nil
+    end
 
     ##
     # mask
@@ -58,7 +64,10 @@ module Syslog
     #
     # Example:
     #   Syslog.mask = Syslog::LOG_UPTO(Syslog::LOG_ERR)
-    def mask; @mask ||= -1; end
+    def mask
+      @mask ||= -1
+      @opened ? @mask : nil
+    end
     attr_writer :mask
 
     ##

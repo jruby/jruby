@@ -399,7 +399,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Is this value a true value or not? Based on the {@link #FALSE_F} flag.
+     * Is this value a truthy value or not? Based on the {@link #FALSE_F} flag.
      */
     @Override
     public final boolean isTrue() {
@@ -407,7 +407,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Is this value a false value or not? Based on the {@link #FALSE_F} flag.
+     * Is this value a falsey value or not? Based on the {@link #FALSE_F} flag.
      */
     public final boolean isFalse() {
         return (flags & FALSE_F) != 0;
@@ -1099,7 +1099,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             
             // if RubyBasicObject#op_cmp is used, the result may be nil
             if (!cmp.isNil()) {
-            } else {
                 return (int) cmp.convertToInteger().getLongValue();
             }
         } catch (RaiseException ex) {
@@ -1502,9 +1501,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return true if so
      */
     public boolean isBuiltin(String methodName) {
-        DynamicMethod method = getMetaClass().searchMethodInner(methodName);
-
-        return method != null && method.isBuiltin();
+        return getMetaClass().isMethodBuiltin(methodName);
     }
 
     @JRubyMethod(name = "singleton_method_added", module = true, visibility = PRIVATE)

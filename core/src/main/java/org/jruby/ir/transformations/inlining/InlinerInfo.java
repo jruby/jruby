@@ -89,7 +89,7 @@ public class InlinerInfo {
         this.callArgs = call.getCallArgs();
         this.callReceiver = callReceiver;
         this.canMapArgsStatically = !containsSplat(callArgs);
-        this.argsArray = this.canMapArgsStatically ?  null : getInlineHostScope().getNewTemporaryVariable();
+        this.argsArray = this.canMapArgsStatically ?  null : getInlineHostScope().createTemporaryVariable();
         synchronized(globalInlineCount) {
             this.inlineVarPrefix = "%in" + globalInlineCount + "_";
             globalInlineCount++;
@@ -165,7 +165,7 @@ public class InlinerInfo {
             // that takes care of aligning the stars and bringing good fortune to arg yielder and arg receiver.
             IRScope callerScope   = getInlineHostScope();
             boolean needSpecialProcessing = (blockArityValue != -1) && (blockArityValue != 1);
-            Variable yieldArgArray = callerScope.getNewTemporaryVariable();
+            Variable yieldArgArray = callerScope.createTemporaryVariable();
             yieldBB.addInstr(new ToAryInstr(yieldArgArray, yieldInstrArg));
             this.yieldArg = yieldArgArray;
         }
@@ -196,7 +196,7 @@ public class InlinerInfo {
                         int depth = lv.getScopeDepth();
                         newVar = getInlineHostScope().getLocalVariable(lv.getName(), depth > 1 ? depth - 1 : 0);
                     } else {
-                        newVar = getInlineHostScope().getNewTemporaryVariable();
+                        newVar = getInlineHostScope().createTemporaryVariable();
                     }
                     break;
                 case METHOD_INLINE:

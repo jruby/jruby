@@ -14,6 +14,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.JRubyCallSite;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -56,13 +57,13 @@ public final class InvokeDynamic {
                 : fast;
         
         } catch (IndyNotSupportedException inse) {
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) {
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 LOG.info(site.name() + "\t" + inse.getLocalizedMessage());
             }
             return null;
 
         } catch (NullPointerException npe) {
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) {
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 LOG.info(site.name() + "\t" + npe.getLocalizedMessage());
             }
 
@@ -120,7 +121,7 @@ public final class InvokeDynamic {
         MethodHandle methodHandle = Binder.from(site.type())
                 .drop(0, 3).invoke(targetHandle);
 
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name()
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name()
                 + "\tbound to ffi method "
                 + logMethod(method)
                 + String.format("[function address=%x]: ", functionAddress)
@@ -178,7 +179,7 @@ public final class InvokeDynamic {
                 .invoke(nativeTarget.bindTo(method));
 
         method.setHandle(nativeTarget);
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to ffi method "
+        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(site.name() + "\tbound to ffi method "
                 + logMethod(method) + ": "
                 + IRubyObject.class.getSimpleName() + " "
                 + method.getClass().getSimpleName() + ".call"

@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -32,8 +32,10 @@ import java.security.SecureRandom;
 import java.util.Random;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
@@ -41,23 +43,23 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.runtime.Visibility;
 
 /**
  * OpenSSL::BN implementation. Wraps java.math.BigInteger, which provides
  * most functionality directly; the rest is easily derived.
- * 
- * Beware that BN's are mutable -- I don't agree with this approach, but 
+ *
+ * Beware that BN's are mutable -- I don't agree with this approach, but
  * must conform for compatibility with MRI's implementation. The offending methods
  * are set_bit!, clear_bit!, mask_bits! and copy.<p>
- * 
+ *
  * I've included a few operations (& | ^ ~) that aren't defined by MRI/OpenSSL.
  * These are non-portable (i.e., won't work in C-Ruby), so use at your own risk.<p>
- * 
+ *
  * @author <a href="mailto:bill.dortch@gmail.com">Bill Dortch</a>
  */
 public class BN extends RubyObject {
@@ -66,8 +68,6 @@ public class BN extends RubyObject {
     private static final BigInteger MAX_INT = BigInteger.valueOf(Integer.MAX_VALUE);
     private static final BigInteger TWO = BigInteger.valueOf(2);
     private static final int DEFAULT_CERTAINTY = 100;
-    private static Random _random;
-    private static SecureRandom _secureRandom;
 
     private static ObjectAllocator BN_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -103,22 +103,23 @@ public class BN extends RubyObject {
     public BigInteger getValue() {
         return value;
     }
-    
+
     // TODO: check whether this is really needed for JRuby 1.0x (not used in 1.1x)
     public IRubyObject doClone() {
         return newBN(getRuntime(), this.value);
     }
-    
-    public IRubyObject initialize_copy(IRubyObject original) {
-        super.initialize_copy(original);
-        if (this != original) {
-            this.value = ((BN)original).value;
+
+    @Override
+    public IRubyObject initialize_copy(IRubyObject that) {
+        super.initialize_copy(that);
+        if (this != that) {
+            this.value = ((BN) that).value;
         }
         return this;
     }
 
     @JRubyMethod(name="initialize", required=1, optional=1, visibility = Visibility.PRIVATE)
-    public synchronized IRubyObject bn_initialize(IRubyObject[] args) {
+    public synchronized IRubyObject _initialize(IRubyObject[] args) {
         Ruby runtime = getRuntime();
         if (this.value != BigInteger.ZERO) { // already initialized
             throw newBNError(runtime, "illegal initialization");
@@ -159,18 +160,19 @@ public class BN extends RubyObject {
         }
         return this;
     }
-    
-    @JRubyMethod(name="copy")
-    public synchronized IRubyObject bn_copy(IRubyObject other) {
+
+    @JRubyMethod(name = "copy")
+    public synchronized IRubyObject copy(IRubyObject other) {
         if (this != other) {
             this.value = getBigInteger(other);
         }
         return this;
     }
 
-    @JRubyMethod(name="to_s", rest=true)
-    public IRubyObject bn_to_s(IRubyObject[] args) {
-        Ruby runtime = getRuntime();
+    @JRubyMethod(name = "to_s", rest = true)
+    public RubyString to_s(IRubyObject[] args) {
+        final Ruby runtime = getRuntime();
+
         int argc = Arity.checkArgumentCount(runtime, args, 0, 1);
         int base = argc == 1 ? RubyNumeric.num2int(args[0]) : 10;
         byte[] bytes;
@@ -224,42 +226,42 @@ public class BN extends RubyObject {
         }
     }
 
-    @JRubyMethod(name="to_i")
-    public IRubyObject bn_to_i() {
-        Ruby runtime = getRuntime();
-        // FIXME: s/b faster way to convert than going through RubyString
-        return RubyNumeric.str2inum(runtime, runtime.newString(value.toString()), 10, true);
+    private static final BigInteger MIN_LONG = BigInteger.valueOf(Long.MIN_VALUE);
+    private static final BigInteger MAX_LONG = BigInteger.valueOf(Long.MAX_VALUE);
+
+    @JRubyMethod(name = "to_i")
+    public IRubyObject to_i() {
+        if ( value.compareTo( MAX_LONG ) > 0 || value.compareTo( MIN_LONG ) < 0 ) {
+            return RubyBignum.newBignum(getRuntime(), value);
+        }
+        return RubyFixnum.newFixnum(getRuntime(), value.longValue());
     }
 
-    @JRubyMethod(name="to_bn")
-    public IRubyObject bn_to_bn() {
+    @JRubyMethod(name = "to_bn")
+    public IRubyObject to_bn() {
         return this;
     }
 
     @JRubyMethod(name="coerce")
     // FIXME: is this right? don't see how it would be useful...
-    public IRubyObject bn_coerce(IRubyObject other) {
-        Ruby runtime = getRuntime();
+    public IRubyObject coerce(IRubyObject other) {
+        final Ruby runtime = getRuntime();
         IRubyObject self;
-        switch (other.getMetaClass().getClassIndex()) {
-        case STRING:
+        if ( other instanceof RubyString ) {
             self = runtime.newString(value.toString());
-            break;
-        case FIXNUM:
-        case BIGNUM:
-            // FIXME: s/b faster way to convert than going through RubyString
-            self = RubyNumeric.str2inum(runtime, runtime.newString(value.toString()), 10, true);
-            break;
-        default:
-            if (other instanceof BN) {
-                self = this;
-            } else {
-                throw runtime.newTypeError("Don't know how to coerce");
-            }
+        }
+        else if ( other instanceof RubyInteger ) {
+            self = to_i();
+        }
+        else if ( other instanceof BN ) {
+            self = this;
+        }
+        else {
+            throw runtime.newTypeError("don't know how to coerce to " + other.getMetaClass().getName());
         }
         return runtime.newArray(other, self);
     }
-    
+
     @JRubyMethod(name="zero?")
     public IRubyObject bn_is_zero() {
         return getRuntime().newBoolean(value.equals(BigInteger.ZERO));
@@ -274,7 +276,7 @@ public class BN extends RubyObject {
     public IRubyObject bn_is_odd() {
         return getRuntime().newBoolean(value.testBit(0));
     }
-    
+
     @JRubyMethod(name={"cmp", "<=>"})
     public IRubyObject bn_cmp(IRubyObject other) {
         return getRuntime().newFixnum(value.compareTo(getBigInteger(other)));
@@ -284,7 +286,7 @@ public class BN extends RubyObject {
     public IRubyObject bn_ucmp(IRubyObject other) {
         return getRuntime().newFixnum(value.abs().compareTo(getBigInteger(other).abs()));
     }
-    
+
     @JRubyMethod(name={"eql?", "==", "==="})
     public IRubyObject bn_eql(IRubyObject other) {
         return getRuntime().newBoolean(value.equals(getBigInteger(other)));
@@ -335,7 +337,7 @@ public class BN extends RubyObject {
             throw runtime.newZeroDivisionError();
         }
     }
-    
+
     @JRubyMethod(name="&")
     public IRubyObject bn_and(IRubyObject other) {
         return newBN(getRuntime(), value.and(getBigInteger(other)));
@@ -352,42 +354,42 @@ public class BN extends RubyObject {
     }
 
     @JRubyMethod(name="**")
-    public IRubyObject bn_exp(IRubyObject other) {
+    public IRubyObject bn_exp(final ThreadContext context, IRubyObject other) {
         // somewhat strangely, BigInteger takes int rather than BigInteger
         // as the argument to pow.  so we'll have to narrow the value, and
         // raise an exception if data would be lost. (on the other hand, an
         // exponent even approaching Integer.MAX_VALUE would be silly big, and
         // the value would take a very, very long time to calculate.)
         // we'll check for values < 0 (illegal) while we're at it
-        int exp;
-        switch(other.getMetaClass().getClassIndex()) {
-        case FIXNUM: {
-            long val = ((RubyFixnum)other).getLongValue();
-            if (val >= 0 && val <= Integer.MAX_VALUE) {
-                exp = (int)val;
-                break;
+        int exp = -1;
+
+        if ( other instanceof RubyInteger ) {
+            long val = ((RubyInteger) other).getLongValue();
+            if ( val >= 0 && val <= Integer.MAX_VALUE ) {
+                exp = (int) val;
+            }
+            else if ( other instanceof RubyBignum ) { // inherently too big
+                throw newBNError(context.runtime, "invalid exponent");
             }
         }
-        case BIGNUM:
-            // Bignum is inherently too big
-            throw newBNError(getRuntime(), "invalid exponent");
-        default: {
-            if (!(other instanceof BN)) {
-                throw getRuntime().newTypeError("Cannot convert into OpenSSL::BN");
+
+        if ( exp == -1 ) {
+            if ( ! (other instanceof BN) ) {
+                throw context.runtime.newTypeError("Cannot convert into " + other.getMetaClass().getName());
             }
-            BigInteger val = ((BN)other).value;
+            BigInteger val = ((BN) other).value;
             if (val.compareTo(BigInteger.ZERO) < 0 || val.compareTo(MAX_INT) > 0) {
-                throw newBNError(getRuntime(), "invalid exponent");
+                throw newBNError(context.runtime, "invalid exponent");
             }
             exp = val.intValue();
-            break;
         }
-        }
+
         try {
-            return newBN(getRuntime(), value.pow(exp));
-        } catch (ArithmeticException e) {
+            return newBN(context.runtime, value.pow(exp));
+        }
+        catch (ArithmeticException e) {
             // shouldn't happen, we've already checked for < 0
-            throw newBNError(getRuntime(), "invalid exponent");
+            throw newBNError(context.runtime, "invalid exponent");
         }
     }
 
@@ -404,7 +406,7 @@ public class BN extends RubyObject {
             throw getRuntime().newZeroDivisionError();
         }
     }
-    
+
     @JRubyMethod(name="mod_inverse")
     public IRubyObject bn_mod_inverse(IRubyObject other) {
         try {
@@ -414,7 +416,7 @@ public class BN extends RubyObject {
         }
     }
 
-    @JRubyMethod(name="mod_add")    
+    @JRubyMethod(name="mod_add")
     public IRubyObject bn_mod_add(IRubyObject other, IRubyObject mod) {
         try {
             return newBN(getRuntime(), value.add(getBigInteger(other)).mod(getBigInteger(mod)));
@@ -449,7 +451,7 @@ public class BN extends RubyObject {
             throw getRuntime().newZeroDivisionError();
         }
     }
-    
+
     @JRubyMethod(name="set_bit!")
     public synchronized IRubyObject bn_set_bit(IRubyObject n) {
         // evil mutable BN
@@ -460,7 +462,7 @@ public class BN extends RubyObject {
         // combination of clear_bit! and/or mask_bits! calls), and later call set_bit!,
         // the resulting value will be negative.  this seems unintuitive and, frankly,
         // wrong, not to mention expensive to carry the extra sign field.
-        // I'm not duplicating this behavior here at this time. -BD 
+        // I'm not duplicating this behavior here at this time. -BD
         try {
             if (oldValue.signum() >= 0) {
                 this.value = oldValue.setBit(pos);
@@ -491,7 +493,7 @@ public class BN extends RubyObject {
     }
 
     /**
-     * Truncates value to n bits 
+     * Truncates value to n bits
      */
     @JRubyMethod(name="mask_bits!")
     public synchronized IRubyObject bn_mask_bits(IRubyObject n) {
@@ -499,7 +501,7 @@ public class BN extends RubyObject {
 
         int pos = RubyNumeric.num2int(n);
         if (pos < 0) throw newBNError(getRuntime(), "invalid pos");
-        
+
         BigInteger oldValue = this.value;
 
         // TODO: cache 2 ** n values?
@@ -511,10 +513,10 @@ public class BN extends RubyObject {
             if (absValue.bitLength() < pos) throw newBNError(getRuntime(), "invalid pos");
             this.value = absValue.mod(TWO.pow(pos)).negate();
         }
-        
+
         return this;
     }
-    
+
     @JRubyMethod(name="bit_set?")
     public IRubyObject bn_is_bit_set(IRubyObject n) {
         int pos = RubyNumeric.num2int(n);
@@ -551,7 +553,7 @@ public class BN extends RubyObject {
             return newBN(getRuntime(), val.abs().shiftRight(nbits).negate());
         }
     }
-    
+
     @JRubyMethod(name="num_bits")
     public IRubyObject bn_num_bits() {
         return getRuntime().newFixnum(this.value.abs().bitLength());
@@ -561,7 +563,7 @@ public class BN extends RubyObject {
     public IRubyObject bn_num_bytes() {
         return getRuntime().newFixnum((this.value.abs().bitLength() + 7) / 8);
     }
-    
+
     @JRubyMethod(name="num_bits_set")
     public IRubyObject bn_num_bits_set() {
         return getRuntime().newFixnum(this.value.abs().bitCount());
@@ -569,30 +571,30 @@ public class BN extends RubyObject {
 
     // note that there is a bug in the MRI version, in argument handling,
     // so apparently no one ever calls this...
-    @JRubyMethod(name="prime?", rest=true)
-    public IRubyObject bn_is_prime(IRubyObject[] args) {
-        Ruby runtime = getRuntime();
+    @JRubyMethod(name = "prime?", rest = true)
+    public IRubyObject prime_p(IRubyObject[] args) {
+        final Ruby runtime = getRuntime();
         int argc = Arity.checkArgumentCount(runtime, args, 0, 1);
-        // BigInteger#isProbablePrime will actually limit checks to a maximum of 50, 
+        // BigInteger#isProbablePrime will actually limit checks to a maximum of 50,
         // depending on bit count.
         int certainty = argc == 0 ? DEFAULT_CERTAINTY : RubyNumeric.fix2int(args[0]);
         return runtime.newBoolean(this.value.isProbablePrime(certainty));
     }
-    
-    // FIXME? BigInteger doesn't supply this, so right now this is (essentially)
-    // the same as bn_is_prime
-    @JRubyMethod(name="prime_fasttest?", rest=true)
-    public IRubyObject bn_is_prime_fasttest(IRubyObject[] args) {
-        Ruby runtime = getRuntime();
+
+    // NOTE: BigInteger doesn't supply this, so right now this is
+    // ... (essentially) the same as prime?
+    @JRubyMethod(name = "prime_fasttest?", rest = true)
+    public IRubyObject prime_fasttest_p(IRubyObject[] args) {
+        final Ruby runtime = getRuntime();
         int argc = Arity.checkArgumentCount(runtime, args, 0, 2);
-        // BigInteger#isProbablePrime will actually limit checks to a maximum of 50, 
+        // BigInteger#isProbablePrime will actually limit checks to a maximum of 50,
         // depending on bit count.
         int certainty = argc == 0 ? DEFAULT_CERTAINTY : RubyNumeric.fix2int(args[0]);
         return runtime.newBoolean(this.value.isProbablePrime(certainty));
     }
-    
-    @JRubyMethod(name="generate_prime", meta=true, rest=true)
-    public static IRubyObject bn_generate_prime(IRubyObject recv, IRubyObject[] args) {
+
+    @JRubyMethod(name = "generate_prime", meta = true, rest = true)
+    public static IRubyObject generate_prime(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         int argc = Arity.checkArgumentCount(runtime, args, 1, 4);
         int bits = RubyNumeric.num2int(args[0]);
@@ -605,11 +607,11 @@ public class BN extends RubyObject {
         }
         return newBN(runtime, generatePrime(bits, safe, add, rem));
     }
-    
+
     public static BigInteger generatePrime(int bits, boolean safe, BigInteger add, BigInteger rem) {
         // From OpenSSL man page BN_generate_prime(3):
         //
-        // "If add is not NULL, the prime will fulfill the condition p % add == rem 
+        // "If add is not NULL, the prime will fulfill the condition p % add == rem
         // (p % add == 1 if rem == NULL) in order to suit a given generator."
         //
         // "If safe is true, it will be a safe prime (i.e. a prime p so that
@@ -621,7 +623,7 @@ public class BN extends RubyObject {
         if (add != null && rem == null) {
             rem = BigInteger.ONE;
         }
-        
+
         // borrowing technique from org.bouncycastle.crypto.generators.DHParametersHelper
         // (unfortunately the code has package visibility), wherein for safe primes,
         // we'll use the lowest useful certainty (2) for generation of q, then if
@@ -643,26 +645,26 @@ public class BN extends RubyObject {
                     p = q.shiftLeft(1).setBit(0);
                 } while (!(p.isProbablePrime(DEFAULT_CERTAINTY) && q.isProbablePrime(DEFAULT_CERTAINTY)));
             } else {
-                p = BigInteger.probablePrime(bits, secureRandom); 
+                p = BigInteger.probablePrime(bits, secureRandom);
             }
         } while (add != null && !p.mod(add).equals(rem));
         return p;
     }
-    
+
     public static BigInteger generatePrime(int bits, boolean safe) {
         return generatePrime(bits, safe, null, null);
     }
-    
-    @JRubyMethod(name="rand", meta=true, rest=true)
-    public static IRubyObject bn_rand(IRubyObject recv, IRubyObject[] args) {
-        return getRandomBN(recv.getRuntime(), args, getSecureRandom()); 
+
+    @JRubyMethod(name = "rand", meta = true, rest = true)
+    public static IRubyObject rand(IRubyObject recv, IRubyObject[] args) {
+        return getRandomBN(recv.getRuntime(), args, getSecureRandom());
     }
-    
-    @JRubyMethod(name="pseudo_rand", meta=true, rest=true)
-    public static IRubyObject bn_pseudo_rand(IRubyObject recv, IRubyObject[] args) {
-        return getRandomBN(recv.getRuntime(), args, getRandom()); 
+
+    @JRubyMethod(name = "pseudo_rand", meta = true, rest = true)
+    public static IRubyObject pseudo_rand(IRubyObject recv, IRubyObject[] args) {
+        return getRandomBN(recv.getRuntime(), args, getRandom());
     }
-    
+
     public static BN getRandomBN(Ruby runtime, IRubyObject[] args, Random random) {
         int argc = Arity.checkArgumentCount(runtime, args, 1, 3);
         int bits = RubyNumeric.num2int(args[0]);
@@ -684,7 +686,7 @@ public class BN extends RubyObject {
         }
         return newBN(runtime, value);
     }
-    
+
     public static BigInteger getRandomBI(int bits, int top, boolean bottom, Random random) {
         // From OpenSSL man page BN_rand(3):
         //
@@ -702,7 +704,7 @@ public class BN extends RubyObject {
         if (top < -1 || top > 1) {
             throw new IllegalArgumentException("Illegal top value");
         }
-        
+
         // top/bottom handling adapted from OpenSSL's crypto/bn/bn_rand.c
         int bytes = (bits + 7) / 8;
         int bit = (bits - 1) % 8;
@@ -727,31 +729,32 @@ public class BN extends RubyObject {
         if (bottom) {
             buf[bytes-1] |= 1;
         }
-        
+
         // treating result as unsigned
         return new BigInteger(1, buf);
     }
-    
-    @JRubyMethod(name="rand_range", meta=true)
-    public static IRubyObject bn_rand_range(IRubyObject recv, IRubyObject arg) {
-        return getRandomBNInRange(recv.getRuntime(), getBigInteger(arg), getSecureRandom()); 
+
+    @JRubyMethod(name = "rand_range", meta = true)
+    public static IRubyObject rand_range(IRubyObject recv, IRubyObject arg) {
+        return getRandomBNInRange(recv.getRuntime(), getBigInteger(arg), getSecureRandom());
     }
-    
-    @JRubyMethod(name="pseudo_rand_range", meta=true)
-    public static IRubyObject bn_pseudo_rand_range(IRubyObject recv, IRubyObject arg) {
-        return getRandomBNInRange(recv.getRuntime(), getBigInteger(arg), getRandom()); 
+
+    @JRubyMethod(name = "pseudo_rand_range", meta = true)
+    public static IRubyObject pseudo_rand_range(IRubyObject recv, IRubyObject arg) {
+        return getRandomBNInRange(recv.getRuntime(), getBigInteger(arg), getRandom());
     }
-    
+
     private static BN getRandomBNInRange(Ruby runtime, BigInteger limit, Random random) {
         BigInteger value;
         try {
             value = getRandomBIInRange(limit, random);
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e) {
             throw newBNError(runtime, "illegal range");
         }
         return newBN(runtime, value);
     }
-    
+
     public static BigInteger getRandomBIInRange(BigInteger limit, Random random) {
         if (limit.signum() < 0) {
             throw new IllegalArgumentException("illegal range");
@@ -763,40 +766,42 @@ public class BN extends RubyObject {
         } while (value.compareTo(limit) >= 0);
         return value;
     }
-    
+
+    private static Random random;
+
     private static Random getRandom() {
-        Random rand;
-        if ((rand = _random) != null) {
-            return rand;
+        final Random rnd;
+        if ( ( rnd = BN.random ) != null ) {
+            return rnd;
         }
-        return _random = new Random();
+        return BN.random = new Random();
     }
-    
+
+    private static SecureRandom secureRandom;
+
     private static SecureRandom getSecureRandom() {
-        SecureRandom rand;
-        if ((rand = _secureRandom) != null) {
-            return rand;
+        final SecureRandom rnd;
+        if ( ( rnd = BN.secureRandom ) != null ) {
+            return rnd;
         }
-        // FIXME: do we want a particular algorithm / provider? BC?
-        return _secureRandom = new SecureRandom();
+        // NOTE: will use (default) Sun's even if BC provider is set
+        return BN.secureRandom = new SecureRandom();
     }
 
     public static RaiseException newBNError(Ruby runtime, String message) {
         return new RaiseException(runtime, runtime.getModule("OpenSSL").getClass("BNError"), message, true);
     }
-    
-    public static BigInteger getBigInteger(IRubyObject arg) {
-        if (arg.isNil()) return null;
-        switch(arg.getMetaClass().getClassIndex()) {
-        case FIXNUM:
-        case BIGNUM:
-            return new BigInteger(arg.toString());
-        default:
-            if (arg instanceof BN) {
-                return ((BN)arg).value;
-            }
-            throw arg.getRuntime().newTypeError("Cannot convert into OpenSSL::BN");
+
+    public static BigInteger getBigInteger(final IRubyObject arg) {
+        if ( arg.isNil() ) return null;
+
+        if ( arg instanceof RubyInteger ) {
+            return ((RubyInteger) arg).getBigIntegerValue();
         }
+
+        if ( arg instanceof BN ) return ((BN) arg).value;
+
+        throw arg.getRuntime().newTypeError("Cannot convert into OpenSSL::BN");
     }
 
 }

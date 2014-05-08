@@ -81,6 +81,9 @@ public class ObjectLayout {
                 if (type == Integer.class) {
                     canStoreInPrimitive = true;
                     primitivesNeeded = 1;
+                } else if (type == Long.class) {
+                    canStoreInPrimitive = true;
+                    primitivesNeeded = 2;
                 } else if (type == Double.class) {
                     canStoreInPrimitive = true;
                     primitivesNeeded = 2;
@@ -94,6 +97,8 @@ public class ObjectLayout {
 
                     if (type == Integer.class) {
                         newStorageLocation = new IntegerStorageLocation(this, offset, mask);
+                    } else if (type == Long.class) {
+                        newStorageLocation = new LongStorageLocation(this, offset, mask);
                     } else if (type == Double.class) {
                         newStorageLocation = new DoubleStorageLocation(this, offset, mask);
                     }

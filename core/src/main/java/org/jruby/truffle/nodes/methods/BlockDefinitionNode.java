@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.methods;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -24,16 +25,16 @@ import org.jruby.truffle.runtime.methods.*;
 @NodeInfo(shortName = "block-def")
 public class BlockDefinitionNode extends MethodDefinitionNode {
 
-    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, String name, UniqueMethodIdentifier uniqueIdentifier, FrameDescriptor frameDescriptor,
+    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo uniqueIdentifier, FrameDescriptor frameDescriptor,
                     boolean requiresDeclarationFrame, RubyRootNode pristineRootNode, CallTarget callTarget) {
-        super(context, sourceSection, name, uniqueIdentifier, frameDescriptor, requiresDeclarationFrame, pristineRootNode, callTarget);
+        super(context, sourceSection, name, uniqueIdentifier, frameDescriptor, requiresDeclarationFrame, pristineRootNode, callTarget, false);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
         final RubyContext context = getContext();
 
-        MaterializedFrame declarationFrame;
+        final MaterializedFrame declarationFrame;
 
         if (requiresDeclarationFrame) {
             declarationFrame = frame.materialize();
@@ -44,8 +45,8 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
         final RubyArguments arguments = frame.getArguments(RubyArguments.class);
 
         final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, declarationFrame, frameDescriptor, pristineRootNode, true, false);
-        final RubyMethod method = new RubyMethod(getSourceSection(), null, uniqueIdentifier, null, name, Visibility.PUBLIC, false, methodImplementation);
-
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, null, name, Visibility.PUBLIC, false, methodImplementation);
+        methodImplementation.setMethod(method);
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, arguments.getSelf(), arguments.getBlock(), method);
     }
 

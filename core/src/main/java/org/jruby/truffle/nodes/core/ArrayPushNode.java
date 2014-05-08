@@ -22,8 +22,8 @@ public class ArrayPushNode extends RubyNode {
 
     public ArrayPushNode(RubyContext context, SourceSection sourceSection, RubyNode array, RubyNode pushed) {
         super(context, sourceSection);
-        this.array = adoptChild(array);
-        this.pushed = adoptChild(pushed);
+        this.array = array;
+        this.pushed = pushed;
     }
 
     @Override

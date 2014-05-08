@@ -28,7 +28,25 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.ast.executable.Script;
+import org.jruby.compiler.ASTCompiler;
+import org.jruby.embed.util.SystemPropertyCatcher;
+import org.jruby.exceptions.MainExitException;
+import org.jruby.runtime.Constants;
+import org.jruby.runtime.backtrace.TraceType;
+import org.jruby.runtime.load.LoadService;
+import org.jruby.runtime.profile.builtin.ProfileOutput;
+import org.jruby.util.ClassCache;
+import org.jruby.util.InputStreamMarkCursor;
+import org.jruby.util.JRubyFile;
+import org.jruby.util.KCode;
+import org.jruby.util.NormalizedFile;
+import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.ArgumentProcessor;
+import org.jruby.util.cli.Options;
+import org.jruby.util.cli.OutputStrings;
+import org.objectweb.asm.Opcodes;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -52,24 +70,6 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
-
-import org.jruby.ast.executable.Script;
-import org.jruby.compiler.ASTCompiler;
-import org.jruby.exceptions.MainExitException;
-import org.jruby.embed.util.SystemPropertyCatcher;
-import org.jruby.runtime.Constants;
-import org.jruby.runtime.backtrace.TraceType;
-import org.jruby.runtime.load.LoadService;
-import org.jruby.runtime.profile.ProfileOutput;
-import org.jruby.util.ClassCache;
-import org.jruby.util.InputStreamMarkCursor;
-import org.jruby.util.JRubyFile;
-import org.jruby.util.KCode;
-import org.jruby.util.NormalizedFile;
-import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.cli.OutputStrings;
-import org.jruby.util.cli.Options;
-import org.objectweb.asm.Opcodes;
 
 /**
  * A structure used to configure new JRuby instances. All publicly-tweakable
@@ -136,7 +136,10 @@ public class RubyInstanceConfig {
         excludedMethods = parentConfig.excludedMethods;
         threadDumpSignal = parentConfig.threadDumpSignal;
         updateNativeENVEnabled = parentConfig.updateNativeENVEnabled;
-        
+
+        profilingService = parentConfig.profilingService;
+        profilingMode = parentConfig.profilingMode;
+
         classCache = new ClassCache<Script>(loader, jitMax);
 
         try {
@@ -1338,7 +1341,7 @@ public class RubyInstanceConfig {
     }
     
     /**
-     * get whether IPv4 is preferred
+     * getService whether IPv4 is preferred
      * 
      * @see Options.PREFER_IPV4
      */
@@ -1347,7 +1350,7 @@ public class RubyInstanceConfig {
     }
 
     /**
-     * get whether uppercase package names will be honored
+     * getService whether uppercase package names will be honored
      */
     public boolean getAllowUppercasePackageNames() {
         return allowUppercasePackageNames;
@@ -1359,7 +1362,15 @@ public class RubyInstanceConfig {
     public void setAllowUppercasePackageNames(boolean allow) {
         allowUppercasePackageNames = allow;
     }
-    
+
+    public String getProfilingService() {
+        return profilingService;
+    }
+
+    public void setProfilingService( String service )  {
+        this.profilingService = service;
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // Configuration fields.
     ////////////////////////////////////////////////////////////////////////////
@@ -1402,6 +1413,7 @@ public class RubyInstanceConfig {
 
     private ProfilingMode profilingMode = Options.CLI_PROFILING_MODE.load();
     private ProfileOutput profileOutput = new ProfileOutput(System.err);
+    private String profilingService;
     
     private ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
     private ClassLoader loader = contextLoader == null ? RubyInstanceConfig.class.getClassLoader() : contextLoader;
@@ -1489,11 +1501,11 @@ public class RubyInstanceConfig {
     }
 
     public enum ProfilingMode {
-		OFF, API, FLAT, GRAPH, HTML, JSON
+		OFF, API, FLAT, GRAPH, HTML, JSON, SERVICE
 	}
 
     public enum CompileMode {
-        JIT, FORCE, FORCEIR, OFF, OFFIR, TRUFFLE;
+        JIT, FORCE, FORCEIR, OFF, OFFIR, TRUFFLE, JITIR;
 
         public boolean shouldPrecompileCLI() {
             switch (this) {
@@ -1505,14 +1517,21 @@ public class RubyInstanceConfig {
 
         public boolean shouldJIT() {
             switch (this) {
-            case JIT: case FORCE: case FORCEIR:
+            case JIT: case FORCE: case FORCEIR: case JITIR:
                 return true;
             }
             return false;
         }
 
         public boolean shouldPrecompileAll() {
-            return this == FORCE;
+            return this == FORCE || this == FORCEIR;
+        }
+
+        /**
+         * Whether to use the JRuby 9000+ IR runtime instead of the earlier AST runtime.
+         */
+        public boolean isIR() {
+            return this == OFFIR || this == FORCEIR || this == JITIR;
         }
     }
     
@@ -1722,60 +1741,16 @@ public class RubyInstanceConfig {
     public static final boolean JIT_LOADING_DEBUG = Options.JIT_DEBUG.load();
 
     public static final boolean CAN_SET_ACCESSIBLE = Options.JI_SETACCESSIBLE.load();
-    /**
-     * In Java integration, allow upper case name for a Java package;
-     * e.g., com.example.UpperCase.Class
-     */
-    @Deprecated
-    public static final boolean UPPER_CASE_PACKAGE_NAME_ALLOWED = Options.JI_UPPER_CASE_PACKAGE_NAME_ALLOWED.load();
-    
-    
-    public static final boolean USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load();
-    
-    // max times an indy call site can fail before it goes to simple IC
-    public static final int MAX_FAIL_COUNT = Options.INVOKEDYNAMIC_MAXFAIL.load();
-    
-    // max polymorphism at a call site to build a chained method handle PIC
-    public static final int MAX_POLY_COUNT = Options.INVOKEDYNAMIC_MAXPOLY.load();
-    
-    // logging of various indy aspects
-    public static final boolean LOG_INDY_BINDINGS = Options.INVOKEDYNAMIC_LOG_BINDING.load();
-    public static final boolean LOG_INDY_CONSTANTS = Options.INVOKEDYNAMIC_LOG_CONSTANTS.load();
-    
-    // properties enabling or disabling certain uses of invokedynamic
-    public static final boolean INVOKEDYNAMIC_ALL = USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_ALL.load();
-    public static final boolean INVOKEDYNAMIC_SAFE = USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_SAFE.load();
-    
-    private static final boolean invokedynamicOn = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE || USE_INVOKEDYNAMIC;
-    
-    public static final boolean INVOKEDYNAMIC_INVOCATION = invokedynamicOn && Options.INVOKEDYNAMIC_INVOCATION.load();
-    
-    private static final boolean invokedynamicInvocation = invokedynamicOn && INVOKEDYNAMIC_INVOCATION;
-    
-    public static final boolean INVOKEDYNAMIC_INVOCATION_SWITCHPOINT = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load();
-    public static final boolean INVOKEDYNAMIC_INDIRECT = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_INDIRECT.load();
-    public static final boolean INVOKEDYNAMIC_JAVA = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_JAVA.load();
-    public static final boolean INVOKEDYNAMIC_ATTR = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_ATTR.load();
-    public static final boolean INVOKEDYNAMIC_FFI = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_FFI.load();
-    public static final boolean INVOKEDYNAMIC_FASTOPS = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_FASTOPS.load();
 
-    public static final boolean INVOKEDYNAMIC_CACHE = invokedynamicOn && Options.INVOKEDYNAMIC_CACHE.load();
-    
-    private static final boolean invokedynamicCache = invokedynamicOn && INVOKEDYNAMIC_CACHE;
-    
-    public static final boolean INVOKEDYNAMIC_CONSTANTS = invokedynamicCache && Options.INVOKEDYNAMIC_CACHE_CONSTANTS.load();
-    public static final boolean INVOKEDYNAMIC_LITERALS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_LITERALS.load();
-    public static final boolean INVOKEDYNAMIC_IVARS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_IVARS.load();
-    
     // properties for logging exceptions, backtraces, and caller invocations
     public static final boolean LOG_EXCEPTIONS = Options.LOG_EXCEPTIONS.load();
     public static final boolean LOG_BACKTRACES = Options.LOG_BACKTRACES.load();
     public static final boolean LOG_CALLERS = Options.LOG_CALLERS.load();
     public static final boolean LOG_WARNINGS = Options.LOG_WARNINGS.load();
-    
+
     public static final boolean ERRNO_BACKTRACE = Options.ERRNO_BACKTRACE.load();
     public static final boolean STOPITERATION_BACKTRACE = Options.STOPITERATION_BACKTRACE.load();
-    
+
     public static boolean IR_DEBUG = Options.IR_DEBUG.load();
     public static boolean IR_PROFILE = Options.IR_PROFILE.load();
     public static boolean IR_COMPILER_DEBUG = Options.IR_COMPILER_DEBUG.load();
@@ -1788,9 +1763,9 @@ public class RubyInstanceConfig {
     public static String IR_COMPILER_PASSES = Options.IR_COMPILER_PASSES.load();
     public static String IR_JIT_PASSES = Options.IR_JIT_PASSES.load();
     public static String IR_INLINE_COMPILER_PASSES = Options.IR_INLINE_COMPILER_PASSES.load();
-    
+
     public static final boolean COROUTINE_FIBERS = Options.FIBER_COROUTINES.load();
-    
+
     /**
      * Whether to calculate consistent hashes across JVM instances, or to ensure
      * un-predicatable hash values using SecureRandom.
@@ -1800,14 +1775,14 @@ public class RubyInstanceConfig {
     public static final boolean CONSISTENT_HASHING_ENABLED = Options.CONSISTENT_HASHING.load();
 
     private static volatile boolean loadedNativeExtensions = false;
-    
+
     ////////////////////////////////////////////////////////////////////////////
     // Static initializers
     ////////////////////////////////////////////////////////////////////////////
-    
+
     private static int initGlobalJavaVersion() {
         String specVersion = Options.BYTECODE_VERSION.load();
-        
+
         // stack map calculation is failing for some compilation scenarios, so
         // forcing both 1.5 and 1.6 to use 1.5 bytecode for the moment.
         if (specVersion.equals("1.5")) {// || specVersion.equals("1.6")) {
@@ -1889,12 +1864,12 @@ public class RubyInstanceConfig {
     public boolean isShouldRunInterpreter() {
         return shouldRunInterpreter;
     }
-    
+
     @Deprecated
     public boolean isxFlag() {
         return xFlag;
     }
-    
+
     /**
      * The max count of active methods eligible for JIT-compilation.
      */
@@ -1912,7 +1887,7 @@ public class RubyInstanceConfig {
      */
     @Deprecated
     public static final int JIT_THRESHOLD = Constants.JIT_THRESHOLD;
-    
+
     /**
      * Default size for chained compilation.
      */
@@ -1926,7 +1901,7 @@ public class RubyInstanceConfig {
     public boolean isSamplingEnabled() {
         return false;
     }
-    
+
     @Deprecated
     public void setBenchmarking(boolean benchmarking) {
     }
@@ -1944,4 +1919,48 @@ public class RubyInstanceConfig {
     public boolean isCextEnabled() {
         return false;
     }
+
+    /**
+     * In Java integration, allow upper case name for a Java package;
+     * e.g., com.example.UpperCase.Class
+     */
+    @Deprecated
+    public static final boolean UPPER_CASE_PACKAGE_NAME_ALLOWED = Options.JI_UPPER_CASE_PACKAGE_NAME_ALLOWED.load();
+
+    @Deprecated public static final boolean USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load();
+
+    // max times an indy call site can fail before it goes to simple IC
+    @Deprecated public static final int MAX_FAIL_COUNT = Options.INVOKEDYNAMIC_MAXFAIL.load();
+
+    // max polymorphism at a call site to build a chained method handle PIC
+    @Deprecated public static final int MAX_POLY_COUNT = Options.INVOKEDYNAMIC_MAXPOLY.load();
+
+    // logging of various indy aspects
+    @Deprecated public static final boolean LOG_INDY_BINDINGS = Options.INVOKEDYNAMIC_LOG_BINDING.load();
+    @Deprecated public static final boolean LOG_INDY_CONSTANTS = Options.INVOKEDYNAMIC_LOG_CONSTANTS.load();
+
+    // properties enabling or disabling certain uses of invokedynamic
+    @Deprecated public static final boolean INVOKEDYNAMIC_ALL = USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_ALL.load();
+    @Deprecated public static final boolean INVOKEDYNAMIC_SAFE = USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_SAFE.load();
+
+    @Deprecated private static final boolean invokedynamicOn = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE || USE_INVOKEDYNAMIC;
+
+    @Deprecated public static final boolean INVOKEDYNAMIC_INVOCATION = invokedynamicOn && Options.INVOKEDYNAMIC_INVOCATION.load();
+
+    @Deprecated private static final boolean invokedynamicInvocation = invokedynamicOn && INVOKEDYNAMIC_INVOCATION;
+
+    @Deprecated public static final boolean INVOKEDYNAMIC_INVOCATION_SWITCHPOINT = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load();
+    @Deprecated public static final boolean INVOKEDYNAMIC_INDIRECT = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_INDIRECT.load();
+    @Deprecated public static final boolean INVOKEDYNAMIC_JAVA = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_JAVA.load();
+    @Deprecated public static final boolean INVOKEDYNAMIC_ATTR = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_ATTR.load();
+    @Deprecated public static final boolean INVOKEDYNAMIC_FFI = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_FFI.load();
+    @Deprecated public static final boolean INVOKEDYNAMIC_FASTOPS = invokedynamicInvocation && Options.INVOKEDYNAMIC_INVOCATION_FASTOPS.load();
+
+    @Deprecated public static final boolean INVOKEDYNAMIC_CACHE = invokedynamicOn && Options.INVOKEDYNAMIC_CACHE.load();
+
+    @Deprecated private static final boolean invokedynamicCache = invokedynamicOn && INVOKEDYNAMIC_CACHE;
+
+    @Deprecated public static final boolean INVOKEDYNAMIC_CONSTANTS = invokedynamicCache && Options.INVOKEDYNAMIC_CACHE_CONSTANTS.load();
+    @Deprecated public static final boolean INVOKEDYNAMIC_LITERALS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_LITERALS.load();
+    @Deprecated public static final boolean INVOKEDYNAMIC_IVARS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_IVARS.load();
 }

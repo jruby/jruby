@@ -26,7 +26,7 @@ public class NotNode extends RubyNode {
 
     public NotNode(RubyContext context, SourceSection sourceSection, BooleanCastNode child) {
         super(context, sourceSection);
-        this.child = adoptChild(child);
+        this.child = child;
     }
 
     @Override

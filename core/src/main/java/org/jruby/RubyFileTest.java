@@ -326,6 +326,7 @@ public class RubyFileTest {
         Ruby runtime = recv.getRuntime();
         FileResource file = fileResource(filename);
 
+        IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
         try {
             // Note: We can't use file.exists() to check whether the symlink
             // exists or not, because that method returns false for existing
@@ -336,6 +337,7 @@ public class RubyFileTest {
         } catch (SecurityException re) {
             return runtime.getFalse();
         } catch (RaiseException re) {
+            runtime.getGlobalVariables().set("$!", oldExc);
             return runtime.getFalse();
         }
     }

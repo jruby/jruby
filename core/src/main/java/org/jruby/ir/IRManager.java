@@ -8,7 +8,6 @@ import java.util.Set;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.listeners.InstructionsListener;
-import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.Nil;
 import org.jruby.ir.passes.BasicCompilerPassListener;
 import org.jruby.ir.passes.CompilerPass;
@@ -19,16 +18,16 @@ import org.jruby.ir.passes.CompilerPassScheduler;
  */
 public class IRManager {
     public static String SAFE_COMPILER_PASSES = "LinearizeCFG";
-    public static String DEFAULT_COMPILER_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,AddLocalVarLoadStoreInstructions,LinearizeCFG";
-    public static String DEFAULT_JIT_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,AddLocalVarLoadStoreInstructions,AddCallProtocolInstructions,LinearizeCFG";
+    public static String DEFAULT_COMPILER_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,AddLocalVarLoadStoreInstructions,EnsureTempsAssigned,LinearizeCFG";
+    public static String DEFAULT_JIT_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,AddLocalVarLoadStoreInstructions,EnsureTempsAssigned,AddCallProtocolInstructions,LinearizeCFG";
     public static String DEFAULT_INLINING_COMPILER_PASSES = "LocalOptimizationPass";
 
     private int dummyMetaClassCount = 0;
     private final IRModuleBody classMetaClass = new IRMetaClassBody(this, null, getMetaClassName(), "", 0, null);
     private final IRModuleBody object = new IRClassBody(this, null, "Object", "", 0, null);
     private final Nil nil = new Nil();
-    private final UnboxedBoolean trueObject = new UnboxedBoolean(true);
-    private final UnboxedBoolean falseObject = new UnboxedBoolean(false);
+    private final org.jruby.ir.operands.Boolean trueObject = new org.jruby.ir.operands.Boolean(true);
+    private final org.jruby.ir.operands.Boolean falseObject = new org.jruby.ir.operands.Boolean(false);
     // Listeners for debugging and testing of IR
     private Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
     private CompilerPassListener defaultListener = new BasicCompilerPassListener();
@@ -38,10 +37,10 @@ public class IRManager {
 
 
     // FIXME: Eventually make these attrs into either a) set b) part of state machine
-    private List<CompilerPass> compilerPasses = new ArrayList<CompilerPass>();
-    private List<CompilerPass> inliningCompilerPasses = new ArrayList<CompilerPass>();
-    private List<CompilerPass> jitPasses = new ArrayList<CompilerPass>();
-    private List<CompilerPass> safePasses = new ArrayList<CompilerPass>();
+    private List<CompilerPass> compilerPasses;
+    private List<CompilerPass> inliningCompilerPasses;
+    private List<CompilerPass> jitPasses;
+    private List<CompilerPass> safePasses;
 
     // If true then code will not execute (see ir/ast tool)
     private boolean dryRun = false;
@@ -49,7 +48,7 @@ public class IRManager {
     public IRManager() {
         compilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_COMPILER_PASSES);
         inliningCompilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_INLINING_COMPILER_PASSES);
-        jitPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_JIT_PASSES);
+        jitPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_JIT_PASSES, DEFAULT_JIT_PASSES);
         safePasses = CompilerPass.getPassesFromString(null, SAFE_COMPILER_PASSES);
     }
 
@@ -65,11 +64,11 @@ public class IRManager {
         return nil;
     }
 
-    public UnboxedBoolean getTrue() {
+    public org.jruby.ir.operands.Boolean getTrue() {
         return trueObject;
     }
 
-    public UnboxedBoolean getFalse() {
+    public org.jruby.ir.operands.Boolean getFalse() {
         return falseObject;
     }
 

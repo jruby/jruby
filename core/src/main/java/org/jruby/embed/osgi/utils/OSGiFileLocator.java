@@ -46,16 +46,7 @@ import org.osgi.framework.FrameworkUtil;
 public class OSGiFileLocator {
 	
 	public static final String JRUBY_SYMBOLIC_NAME = "org.jruby.jruby";
-	
-	/**
-	 * @return The home for gems and other files as provided by jruby.
-	 */
-	public static File getJRubyHomeFolder() throws IOException {
-		//TODO: system property to override this?
-	    //TODO: add some clutches to support jarred up jruby bundles?
-	    return getFileInBundle(JRUBY_SYMBOLIC_NAME, "/META-INF/jruby.home");
-	}
-	
+		
 	public static File getFileInBundle(String symbolicName, String path) throws IOException {
 		Bundle bundle = getBundle(symbolicName);
 		if (bundle == null) {

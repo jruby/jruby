@@ -9,29 +9,27 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorageLocation;
 
-public class WriteObjectObjectFieldNode extends WriteSpecializedObjectFieldNode {
+public class WriteObjectObjectFieldNode extends WriteObjectFieldChainNode {
 
+    private final ObjectLayout objectLayout;
     private final ObjectStorageLocation storageLocation;
 
-    public WriteObjectObjectFieldNode(String name, ObjectLayout objectLayout, ObjectStorageLocation storageLocation, RespecializeHook hook) {
-        super(name, objectLayout, hook);
+    public WriteObjectObjectFieldNode(ObjectLayout objectLayout, ObjectStorageLocation storageLocation, WriteObjectFieldNode next) {
+        super(next);
+        this.objectLayout = objectLayout;
         this.storageLocation = storageLocation;
     }
 
     @Override
     public void execute(ObjectStorage object, Object value) {
-        final ObjectLayout actualLayout = object.getObjectLayout();
-
-        if (actualLayout == objectLayout) {
+        if (object.getObjectLayout() == objectLayout) {
             storageLocation.write(object, value);
         } else {
-            CompilerDirectives.transferToInterpreter();
-            writeAndRespecialize(object, value);
+            next.execute(object, value);
         }
     }
 

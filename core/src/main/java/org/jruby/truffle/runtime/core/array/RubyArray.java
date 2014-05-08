@@ -13,7 +13,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
-import org.jruby.truffle.runtime.core.GeneralConversions;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyObject;
@@ -64,8 +64,14 @@ public final class RubyArray extends RubyObject {
     public static RubyArray specializedFromObject(RubyClass arrayClass, Object object) {
         ArrayStore store;
 
-        if (object instanceof Integer || object instanceof RubyFixnum) {
-            store = new FixnumArrayStore(new int[]{GeneralConversions.toFixnum(object)});
+        if (object instanceof Integer) {
+            store = new IntegerArrayStore(new int[]{(int) object});
+        } else if (object instanceof RubyFixnum.IntegerFixnum) {
+            store = new IntegerArrayStore(new int[]{((RubyFixnum.IntegerFixnum) object).getValue()});
+        } else if (object instanceof Long) {
+            store = new LongArrayStore(new long[]{(long) object});
+        } else if (object instanceof RubyFixnum.LongFixnum) {
+            store = new LongArrayStore(new long[]{((RubyFixnum.LongFixnum) object).getValue()});
         } else {
             store = new ObjectArrayStore(new Object[]{object});
         }
@@ -83,11 +89,28 @@ public final class RubyArray extends RubyObject {
         }
 
         boolean canUseFixnum = true;
+        boolean canUseLongFixnum = true;
 
         for (Object object : objects) {
-            if (!(object instanceof Integer || object instanceof RubyFixnum)) {
-                canUseFixnum = false;
+            boolean canUseFixnumForThis = false;
+            boolean canUseLongFixnumForThis = false;
+
+            if (object instanceof Integer) {
+                canUseFixnumForThis = true;
+                canUseLongFixnumForThis = true;
+            } else if (object instanceof RubyFixnum.IntegerFixnum) {
+                canUseFixnumForThis = true;
+                canUseLongFixnumForThis = true;
+            } else if (object instanceof Long) {
+                canUseFixnumForThis = RubyFixnum.fitsIntoInteger((long) object);
+                canUseLongFixnumForThis = true;
+            } else if (object instanceof RubyFixnum.LongFixnum) {
+                canUseFixnumForThis = RubyFixnum.fitsIntoInteger(((RubyFixnum.LongFixnum) object).getValue());
+                canUseLongFixnumForThis = true;
             }
+
+            canUseFixnum = canUseFixnum && canUseFixnumForThis;
+            canUseLongFixnum = canUseLongFixnum && canUseLongFixnumForThis;
         }
 
         ArrayStore store;
@@ -96,10 +119,20 @@ public final class RubyArray extends RubyObject {
             final int[] values = new int[objects.length];
 
             for (int n = 0; n < objects.length; n++) {
-                values[n] = GeneralConversions.toFixnum(objects[n]);
+
+                values[n] = RubyFixnum.toInt(objects[n]);
             }
 
-            store = new FixnumArrayStore(values);
+            store = new IntegerArrayStore(values);
+        } else if (canUseLongFixnum) {
+            final long[] values = new long[objects.length];
+
+            for (int n = 0; n < objects.length; n++) {
+
+                values[n] = RubyFixnum.toLong(objects[n]);
+            }
+
+            store = new LongArrayStore(values);
         } else {
             store = new ObjectArrayStore(objects);
         }
@@ -107,6 +140,7 @@ public final class RubyArray extends RubyObject {
         return new RubyArray(arrayClass, store);
     }
 
+    @SlowPath
     public Object get(int index) {
         return store.get(ArrayUtilities.normaliseIndex(store.size(), index));
     }
@@ -202,6 +236,7 @@ public final class RubyArray extends RubyObject {
         }
     }
 
+    @SlowPath
     public void insert(int index, Object value) {
         checkFrozen();
 
@@ -221,6 +256,7 @@ public final class RubyArray extends RubyObject {
         }
     }
 
+    @SlowPath
     public void push(Object value) {
         checkFrozen();
 
@@ -230,7 +266,7 @@ public final class RubyArray extends RubyObject {
              * special case of an empty array is common, will never cause rewrites and has a simple
              * implementation, so treat it as a special case.
              */
-            store = ((EmptyArrayStore) store).generalizeFor(value);
+            store = store.generalizeFor(value);
         }
 
         try {
@@ -246,6 +282,7 @@ public final class RubyArray extends RubyObject {
         }
     }
 
+    @SlowPath
     public void unshift(Object value) {
         insert(0, value);
     }
@@ -257,6 +294,24 @@ public final class RubyArray extends RubyObject {
         final int normalisedIndex = ArrayUtilities.normaliseIndex(l, index);
 
         return store.deleteAt(normalisedIndex);
+    }
+
+    public void setSize(int size, Object defaultValue) {
+        final Object[] objects = new Object[size];
+
+        for (int n = 0; n < objects.length; n++) {
+            objects[n] = defaultValue;
+        }
+
+        store = new ObjectArrayStore(objects);
+    }
+
+    public void clear() {
+        store = EmptyArrayStore.INSTANCE;
+    }
+
+    public void replace(RubyArray other) {
+        store = other.store.dup();
     }
 
     @Override
@@ -367,7 +422,7 @@ public final class RubyArray extends RubyObject {
         int hash = 0;
 
         for (Object value : asList()) {
-            hash = hash + value.hashCode();
+            hash ^= value.hashCode();
         }
 
         return hash;
@@ -429,6 +484,38 @@ public final class RubyArray extends RubyObject {
 
     public boolean isEmpty() {
         return store.size() == 0;
+    }
+
+    public org.jruby.RubyArray toJRubyArray() {
+        final org.jruby.RubyArray jrubyArray = org.jruby.RubyArray.newArray(getRubyClass().getContext().getRuntime());
+
+        for (Object value : this.asList()) {
+            jrubyArray.add(getRubyClass().getContext().toJRuby(value));
+        }
+
+        return jrubyArray;
+    }
+
+    @SlowPath
+    @Override
+    public String inspect() {
+
+        final StringBuilder builder = new StringBuilder();
+
+        builder.append("[");
+
+        for (int n = 0; n < size(); n++) {
+            if (n > 0) {
+                builder.append(", ");
+            }
+
+            // TODO(CS): slow path send
+            builder.append(getRubyClass().getContext().getCoreLibrary().box(get(n)).send("inspect", null));
+        }
+
+        builder.append("]");
+
+        return builder.toString();
     }
 
 }

@@ -107,7 +107,7 @@ one of the gems to a newer version or clean out all installed gems.
 After changing Java code, you can recompile quickly by running:
 
 ```
-mvn compile
+mvn
 ```
 
 ### Day to Day Testing
@@ -214,12 +214,25 @@ the gem will be in ./maven/jruby-jars/target
 mvn -Pall
 ```
 
+### cleaning the build ###
+
+this will also clean the **ext** directories, i.e. a new build will then use the latest code from there for **lib/ruby**
+
+```
+mvn -Pclean
+```
+
 ## release ##
 
-first set the new version:
+first set the new version (on jruby-1_7 branch):
 
 ```
 mvn versions:set -DnewVersion=1.7.5 -Pall
+```
+
+on master you need to run
+```
+rake maven:set_version
 ```
 
 manually rollback the poms in ./ext/ if their main versions have been changed
@@ -232,28 +245,21 @@ mvn clean deploy -Psonatype-oss-release -Prelease
 
 go to oss.sonatype.org and close the deployment which will check if all 'required' files are in place and then finally push the release to maven central and . . . 
 
-# RUBY-MAVEN #
+# hacking the build system #
 
-install/update the gem with (MRI or jruby) - needs version 3.1.1.0.2 or newer
+the build system uses the **ruby-maven** gem and with this the build files are **pom.rb** and **Mavenfile**. the **Mavenfile** are used whenever the module produces a gem and uses the gemspec file for the gem for setting up the POM. otherwise **pom.rb** are used. so any change in the build-system is done in those files !!!!
 
-```
-gem install ruby-maven
-```
+instead of ```mvn``` the ```rmvn``` command is used. this command will also geneate **pom.xml** files which can be used by regular maven.
 
-for the embedded ruby script ruby-maven uses jruby 1.7.10 with MRI or the jruby version launching rmvn
+to (re)generate all pom.xml use
+```
+rake maven:dump_poms
+```
+(which is basically ```rmvn validate -Pall```)
 
-```
-rmvn clean install
-```
+about the ruby DSL for those poms just look in the existing pom.rb/Mavenfile files - there are plenty of examples for all kind of situations. (more documention to come).
 
 regular maven uses the the jruby from the installion, i.e. 9000.dev. this also means that a regular maven run does not depend under the hood on any other jruby versions from maven central.
 
-ruby-maven is just maven with a ruby DSL and it is a stripped version of [tesla-polyglot-cli](https://github.com/tesla/tesla-polyglot) which comes with further DSL like yaml, scala, groovy, etc
+at some parts there are **inline** plugins in **pom.rb** or **Mavenfile** which will work directly with regular maven where there is a special plugin running those ruby parts. see **./lib/pom.rb**.
 
-running rmvn or tesla-poluglot-cli will generate the pom.xml from pom.rb or Mavenfile (with the accompanied gemspec file).
-
-changes on the scripts in **pom.rb** or **Mavenfile** will work directly with regular maven. any changes with the actual pom DSL needs to be translated to opm.xml via
-
-```
-rmvn validate -Pall
-```

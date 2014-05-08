@@ -1,1 +1,1 @@
-fails:A Symbol literal can contain null in the string
+fails(inherited):A Symbol literal can contain null in the string

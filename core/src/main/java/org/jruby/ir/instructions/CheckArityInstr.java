@@ -13,7 +13,7 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
     public final int opt;
     public final int rest;
     public final boolean receivesKeywords;
-    private final int restKey;
+    public final int restKey;
 
     public CheckArityInstr(int required, int opt, int rest, boolean receivesKeywords, int restKey) {
         super(Operation.CHECK_ARITY);

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.translator.BodyTranslator;
 
 public abstract class ReadLocalVariableNode extends FrameSlotNode implements ReadNode {
 
@@ -36,6 +37,11 @@ public abstract class ReadLocalVariableNode extends FrameSlotNode implements Rea
     }
 
     @Specialization(rewriteOn = {FrameSlotTypeException.class})
+    public long doLongFixnum(VirtualFrame frame) throws FrameSlotTypeException {
+        return getLongFixnum(frame);
+    }
+
+    @Specialization(rewriteOn = {FrameSlotTypeException.class})
     public double doFloat(VirtualFrame frame) throws FrameSlotTypeException {
         return getFloat(frame);
     }
@@ -48,6 +54,19 @@ public abstract class ReadLocalVariableNode extends FrameSlotNode implements Rea
     @Override
     public RubyNode makeWriteNode(RubyNode rhs) {
         return WriteLocalVariableNodeFactory.create(getContext(), getSourceSection(), frameSlot, rhs);
+    }
+
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        if (BodyTranslator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(frameSlot.getIdentifier())) {
+            if (frameSlot.getIdentifier().equals("$+") && getObject(frame) == NilPlaceholder.INSTANCE) {
+                return NilPlaceholder.INSTANCE;
+            } else {
+                return getContext().makeString("global-variable");
+            }
+        } else {
+            return getContext().makeString("local-variable");
+        }
     }
 
 }

@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import java.util.*;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.lookup.*;
@@ -57,6 +58,8 @@ public class RubyClass extends RubyModule {
 
     public RubyClass(RubyModule parentModule, RubyClass rubySuperclass, String name, boolean isSingleton) {
         this(rubySuperclass.getContext(), rubySuperclass.getContext().getCoreLibrary().getClassClass(), parentModule, rubySuperclass, name);
+
+        // TODO(CS): Why am I doing this? Why does it break if I don't?
 
         if (!isSingleton) {
             getSingletonClass();
@@ -117,6 +120,7 @@ public class RubyClass extends RubyModule {
         objectLayoutForInstances = new ObjectLayout(superclass.objectLayoutForInstances);
     }
 
+    @SlowPath
     public RubyBasicObject newInstance() {
         return new RubyObject(this);
     }
@@ -149,6 +153,10 @@ public class RubyClass extends RubyModule {
      * Change the layout to be used for instances of this object.
      */
     public void setObjectLayoutForInstances(ObjectLayout newObjectLayoutForInstances) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        assert newObjectLayoutForInstances != objectLayoutForInstances;
+
         objectLayoutForInstances = newObjectLayoutForInstances;
 
         for (RubyClass subClass : subClasses) {
@@ -157,6 +165,8 @@ public class RubyClass extends RubyModule {
     }
 
     private void renewObjectLayoutForInstances() {
+        CompilerAsserts.neverPartOfCompilation();
+
         objectLayoutForInstances = objectLayoutForInstances.withNewParent(superclass.objectLayoutForInstances);
 
         for (RubyClass subClass : subClasses) {

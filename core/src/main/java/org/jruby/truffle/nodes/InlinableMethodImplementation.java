@@ -64,4 +64,9 @@ public class InlinableMethodImplementation extends CallTargetMethodImplementatio
         return shouldAppendCallNode;
     }
 
+    public void setMethod(RubyMethod method) {
+        super.setMethod(method);
+        pristineRootNode.setMethod(method);
+    }
+
 }

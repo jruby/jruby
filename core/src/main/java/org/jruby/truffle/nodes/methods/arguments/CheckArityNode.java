@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.methods.*;
 
 /**
@@ -31,8 +32,24 @@ public class CheckArityNode extends RubyNode {
 
     @Override
     public void executeVoid(VirtualFrame frame) {
-        final RubyArguments arguments = frame.getArguments(RubyArguments.class);
-        arity.checkArguments(getContext(), getSourceSection(), arguments.getArguments());
+        final int given = frame.getArguments(RubyArguments.class).getUserArgumentsCount();
+
+        if (!checkArity(given)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError(given, arity.getMaximum()));
+        }
+    }
+
+    private boolean checkArity(int given) {
+        if (arity.getMinimum() != Arity.NO_MINIMUM && given < arity.getMinimum()) {
+            return false;
+        }
+
+        if (arity.getMaximum() != Arity.NO_MAXIMUM && given > arity.getMaximum()) {
+            return false;
+        }
+
+        return true;
     }
 
     @Override

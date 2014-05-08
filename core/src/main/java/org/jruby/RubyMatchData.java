@@ -49,6 +49,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -271,6 +272,15 @@ public class RubyMatchData extends RubyObject {
 
     public IRubyObject group(int n) {
         return RubyRegexp.nth_match(n, this);
+    }
+
+    public int getNameToBackrefNumber(String name) {
+        try {
+            byte[] bytes = name.getBytes();
+            return pattern.nameToBackrefNumber(bytes, 0, bytes.length, regs);
+        } catch (JOniException je) {
+            throw getRuntime().newIndexError(je.getMessage());
+        }
     }
 
     // This returns a list of values in the order the names are defined (named capture local var

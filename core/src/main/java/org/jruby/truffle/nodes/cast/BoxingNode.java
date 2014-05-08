@@ -24,7 +24,7 @@ public class BoxingNode extends RubyNode {
 
     public BoxingNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
-        this.child = adoptChild(child);
+        this.child = child;
     }
 
     @Override

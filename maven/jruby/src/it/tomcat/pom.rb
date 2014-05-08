@@ -7,14 +7,13 @@ gem 'flickraw', '0.9.7'
 repository( 'http://rubygems-proxy.torquebox.org/releases',
             :id => 'rubygems-releases' )
 
-# TODO switch jrubyVersion  to ${jruby.version} 
-jruby_plugin :gem, :includeRubygemsInTestResources => false, :includeRubygemsInResources => true, :jrubyVersion => '1.7.10' do
+jruby_plugin :gem, :includeRubygemsInTestResources => false, :includeRubygemsInResources => true do
   execute_goal :initialize
 end 
 
 properties( 'tesla.version' => '0.0.9',
-            'jruby.version' => '9000.dev',
-            'jruby.plugins.version' => '1.0.0-rc4',
+            'jruby.version' => '@project.version@',
+            'jruby.plugins.version' => '1.0.0',
             'gem.home' => '${project.build.outputDirectory}',
             'gem.path' => '${gem.home}',
             'project.build.sourceEncoding' => 'utf-8',

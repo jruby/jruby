@@ -24,7 +24,7 @@ public class BreakNode extends RubyNode {
 
     public BreakNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
-        this.child = adoptChild(child);
+        this.child = child;
     }
 
     @Override

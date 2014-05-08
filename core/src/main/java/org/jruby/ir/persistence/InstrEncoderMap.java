@@ -88,16 +88,7 @@ import org.jruby.ir.instructions.UndefMethodInstr;
 import org.jruby.ir.instructions.UnresolvedSuperInstr;
 import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.instructions.ZSuperInstr;
-import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
-import org.jruby.ir.instructions.defined.DefinedObjectNameInstr;
-import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
-import org.jruby.ir.instructions.defined.GlobalIsDefinedInstr;
-import org.jruby.ir.instructions.defined.HasInstanceVarInstr;
-import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
-import org.jruby.ir.instructions.defined.MethodDefinedInstr;
-import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
-import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Operand;
 
@@ -122,7 +113,6 @@ public class InstrEncoderMap {
         switch(instr.getOperation()) {
             case ALIAS: encodeAliasInstr((AliasInstr) instr); break;
             case ATTR_ASSIGN: encodeAttrAssignInstr((AttrAssignInstr) instr); break;
-            case BACKREF_IS_MATCH_DATA: /* no state */ break;
             case BEQ: encodeBEQInstr((BEQInstr) instr); break;
             case BINDING_LOAD: encodeLoadLocalVarInstr((LoadLocalVarInstr) instr); break;
             case BINDING_STORE:encodeStoreLocalVarInstr((StoreLocalVarInstr) instr); break;
@@ -136,11 +126,9 @@ public class InstrEncoderMap {
             case CALL: encodeCallBaseInstr((CallInstr) instr); break;
             case CHECK_ARGS_ARRAY_ARITY: encodeCheckArgsArrayArityInstr((CheckArgsArrayArityInstr) instr); break;
             case CHECK_ARITY: encodeCheckArityInstr((CheckArityInstr) instr); break;
-            case CLASS_VAR_IS_DEFINED: encodeClassVarIsDefinedInstr((ClassVarIsDefinedInstr) instr); break;
             case CLASS_VAR_MODULE: encodeGetClassVarContainerModuleInstr((GetClassVarContainerModuleInstr) instr); break;
             case CONST_MISSING: encodeConstMissingInstr((ConstMissingInstr) instr); break;
             case COPY: encodeCopyInstr((CopyInstr) instr); break;
-            case DEFINED_CONSTANT_OR_METHOD: encodeGetDefinedConstantOrMethodInstr((GetDefinedConstantOrMethodInstr) instr); break;
             case DEF_CLASS: encodeDefineClassInstr((DefineClassInstr) instr); break;
             case DEF_CLASS_METH: encodeDefineClassMethodInstr((DefineClassMethodInstr) instr); break;
             case DEF_INST_METH: encodeDefineInstanceMethodInstr((DefineInstanceMethodInstr) instr); break;
@@ -149,17 +137,13 @@ public class InstrEncoderMap {
             case EQQ: encodeEQQInstr((EQQInstr) instr); break;
             case EXC_REGION_END: /* no state */ break;
             case EXC_REGION_START: encodeExceptionRegionStartMarkerInstr((ExceptionRegionStartMarkerInstr) instr); break;
-            case GET_BACKREF: /* no state */ break;
             case GET_CVAR: encodeGetClassVariableInstr((GetClassVariableInstr) instr); break;
             case GET_ENCODING: encodeGetEncodingInstr((GetEncodingInstr) instr); break;
             case GET_ERROR_INFO: /* no state */ break;
             case GET_FIELD: encodeGetFieldInstr((GetFieldInstr) instr); break;
             case GET_GLOBAL_VAR: encodeGetGlobalVariableInstr((GetGlobalVariableInstr) instr); break;
-            case GLOBAL_IS_DEFINED: encodeGlobalIsDefinedInstr((GlobalIsDefinedInstr) instr); break;
             case GVAR_ALIAS: encodeGVarAliasInstr((GVarAliasInstr) instr); break;
-            case HAS_INSTANCE_VAR: encodeHasInstanceVarInstr((HasInstanceVarInstr) instr); break;
             case INHERITANCE_SEARCH_CONST: encodeInheritanceSearchConstInstr((InheritanceSearchConstInstr) instr); break;
-            case IS_METHOD_BOUND: encodeIsMethodBoundInstr((IsMethodBoundInstr) instr); break;
             case JUMP: encodeJumpInstr((JumpInstr) instr); break;
             case LABEL: encodeLabelInstr((LabelInstr) instr); break;
             case LAMBDA: encodeBuildLambdaInstr((BuildLambdaInstr) instr); break;
@@ -171,8 +155,6 @@ public class InstrEncoderMap {
             case MATCH: encodeMatchInstr((MatchInstr) instr); break;
             case MATCH2: encodeMatch2Instr((Match2Instr) instr); break;
             case MATCH3: encodeMatch3Instr((Match3Instr) instr); break;
-            case METHOD_DEFINED: encodeMethodDefinedInstr((MethodDefinedInstr) instr); break;
-            case METHOD_IS_PUBLIC: encodeMethodIsPublicInstr((MethodIsPublicInstr) instr); break;
             case METHOD_LOOKUP: encodeMethodLookupInstr((MethodLookupInstr) instr); break;
             case NONLOCAL_RETURN: encodeNonlocalReturnInstr((NonlocalReturnInstr) instr); break;
             case NOP: /* no state */ break;
@@ -206,7 +188,6 @@ public class InstrEncoderMap {
             case CLASS_SUPER: encodeClassSuperInstr((ClassSuperInstr) instr); break;
             case INSTANCE_SUPER: encodeInstanceSuperInstr((InstanceSuperInstr) instr); break;
             case UNRESOLVED_SUPER: encodeUnresolvedSuperInstr((UnresolvedSuperInstr) instr); break;
-            case SUPER_METHOD_BOUND: encodeSuperMethodBoundInstr((SuperMethodBoundInstr) instr); break;
             case THREAD_POLL: encodeThreadPollInstr((ThreadPollInstr) instr); break;
             case THROW: encodeThrowExceptionInstr((ThrowExceptionInstr) instr); break;
             case TO_ARY: encodeToAryInstr((ToAryInstr) instr); break;
@@ -261,7 +242,6 @@ public class InstrEncoderMap {
     private void encodeBreakInstr(BreakInstr instr) {
         e.encode(instr.getReturnValue());
         e.encode(instr.getScopeName());
-        e.encode(instr.getScopeIdToReturnTo());
     }
 
     private void encodeBFalseInstr(BFalseInstr instr) {
@@ -294,10 +274,6 @@ public class InstrEncoderMap {
         e.encode(instr.receivesKeywords);
     }
 
-    private void encodeClassVarIsDefinedInstr(ClassVarIsDefinedInstr instr) {
-        encodeDefinedObjectNameInstr(instr);
-    }
-
     private void encodeGetClassVarContainerModuleInstr(GetClassVarContainerModuleInstr instr) {
         e.encode(instr.getStartingScope());
         e.encode(instr.getObject());
@@ -310,10 +286,6 @@ public class InstrEncoderMap {
 
     private void encodeCopyInstr(CopyInstr instr) {
         e.encode(instr.getSource());
-    }
-
-    private void encodeGetDefinedConstantOrMethodInstr(GetDefinedConstantOrMethodInstr instr) {
-        encodeDefinedObjectNameInstr(instr);
     }
 
     private void encodeDefineClassInstr(DefineClassInstr instr) {
@@ -368,27 +340,15 @@ public class InstrEncoderMap {
         e.encode(((GlobalVariable) instr.getSource()).getName());
     }
 
-    private void encodeGlobalIsDefinedInstr(GlobalIsDefinedInstr instr) {
-        e.encode(instr.getName());
-    }
-
     private void encodeGVarAliasInstr(GVarAliasInstr instr) {
         e.encode(instr.getNewName());
         e.encode(instr.getOldName());
-    }
-
-    private void encodeHasInstanceVarInstr(HasInstanceVarInstr instr) {
-        encodeDefinedObjectNameInstr(instr);
     }
 
     private void encodeInheritanceSearchConstInstr(InheritanceSearchConstInstr instr) {
         e.encode(instr.getCurrentModule());
         e.encode(instr.getConstName());
         e.encode(instr.isNoPrivateConsts());
-    }
-
-    private void encodeIsMethodBoundInstr(IsMethodBoundInstr instr) {
-        encodeDefinedObjectNameInstr(instr);
     }
 
     private void encodeJumpInstr(JumpInstr instr) {
@@ -450,14 +410,6 @@ public class InstrEncoderMap {
         e.encode(instr.getArg());
     }
 
-    private void encodeMethodDefinedInstr(MethodDefinedInstr instr) {
-        encodeDefinedObjectNameInstr(instr);
-    }
-
-    private void encodeMethodIsPublicInstr(MethodIsPublicInstr instr) {
-        encodeDefinedObjectNameInstr(instr);
-    }
-
     private void encodeMethodLookupInstr(MethodLookupInstr instr) {
         e.encode(instr.getMethodHandle());
     }
@@ -465,7 +417,7 @@ public class InstrEncoderMap {
     private void encodeNonlocalReturnInstr(NonlocalReturnInstr instr) {
         e.encode(instr.getReturnValue());
         e.encode(instr.methodName);
-        e.encode(instr.methodIdToReturnFrom);
+        e.encode(instr.maybeLambda);
     }
 
     private void encodeCallBaseInstr(CallBase instr) {
@@ -485,6 +437,7 @@ public class InstrEncoderMap {
 
     private void encodeProcessModuleBodyInstr(ProcessModuleBodyInstr instr) {
         e.encode(instr.getModuleBody());
+        e.encode(instr.getBlockArg());
     }
 
     private void encodePushBindingInstr(PushBindingInstr instr) {
@@ -595,10 +548,6 @@ public class InstrEncoderMap {
         if (hasClosure) e.encode(instr.getClosureArg(null));
     }
 
-    private void encodeSuperMethodBoundInstr(SuperMethodBoundInstr instr) {
-        e.encode(instr.getObject());
-    }
-
     private void encodeThreadPollInstr(ThreadPollInstr instr) {
         e.encode(instr.onBackEdge);
     }
@@ -653,11 +602,6 @@ public class InstrEncoderMap {
         e.encode(instr.getJumpTarget());
     }
 
-    private void encodeDefinedObjectNameInstr(DefinedObjectNameInstr instr) {
-        e.encode(instr.getObject());
-        e.encode(instr.getName());
-    }
-
     private void encodeGetInstr(GetInstr instr) {
         e.encode(instr.getSource());
         e.encode(instr.getRef());
@@ -675,7 +619,7 @@ public class InstrEncoderMap {
     }
 
     private void encodeRuntimeHelperCall(RuntimeHelperCall instr) {
-        e.encode(instr.getHelperMethod());
+        e.encode(instr.getHelperMethod().ordinal());
         //FIXME: Probably make an Operand[] encoder
         Operand[] args = instr.getArgs();
         e.encode(args.length);

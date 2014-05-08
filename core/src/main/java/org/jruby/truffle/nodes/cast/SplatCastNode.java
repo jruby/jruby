@@ -15,7 +15,9 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 
 /**
  * Splat as used to cast a value to an array if it isn't already, as in {@code *value}.
@@ -24,12 +26,21 @@ import org.jruby.truffle.runtime.core.array.*;
 @NodeChild("child")
 public abstract class SplatCastNode extends RubyNode {
 
-    public SplatCastNode(RubyContext context, SourceSection sourceSection) {
+    public static enum NilBehavior {
+        EMPTY_ARRAY,
+        ARRAY_WITH_NIL
+    }
+
+    private final NilBehavior nilBehavior;
+
+    public SplatCastNode(RubyContext context, SourceSection sourceSection, NilBehavior nilBehavior) {
         super(context, sourceSection);
+        this.nilBehavior = nilBehavior;
     }
 
     public SplatCastNode(SplatCastNode prev) {
         super(prev);
+        nilBehavior = prev.nilBehavior;
     }
 
     protected abstract RubyNode getChild();
@@ -40,10 +51,37 @@ public abstract class SplatCastNode extends RubyNode {
     }
 
     @Specialization
-    public RubyArray doObject(Object object) {
-        if (object instanceof RubyArray) {
+    public RubyArray doObject(VirtualFrame frame, Object object) {
+        if (object == NilPlaceholder.INSTANCE) {
+            switch (nilBehavior) {
+                case EMPTY_ARRAY:
+                    return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+
+                case ARRAY_WITH_NIL:
+                    return RubyArray.specializedFromObject(getContext().getCoreLibrary().getArrayClass(), NilPlaceholder.INSTANCE);
+
+                default: {
+                    CompilerAsserts.neverPartOfCompilation();
+                    throw new UnsupportedOperationException();
+                }
+            }
+        } else if (object instanceof RubyArray) {
             return (RubyArray) object;
         } else {
+            // TODO(CS): need to specialize for this
+
+            final RubyBasicObject boxedObject = getContext().getCoreLibrary().box(object);
+
+            final RubyMethod toA = boxedObject.getLookupNode().lookupMethod("to_a");
+
+            if (toA != null) {
+                final Object toAResult = toA.call(frame.pack(), boxedObject, null);
+
+                if (toAResult instanceof RubyArray) {
+                    return (RubyArray) toAResult;
+                }
+            }
+
             return RubyArray.specializedFromObject(getContext().getCoreLibrary().getArrayClass(), object);
         }
     }

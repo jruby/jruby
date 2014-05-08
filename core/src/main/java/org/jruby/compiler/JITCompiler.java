@@ -587,11 +587,7 @@ public class JITCompiler implements JITCompilerMBean {
                     context.consumeCurrentValue();
                 }
 
-                if (iterNode.getBlockVarNode() != null) {
-                    astCompiler.compileAssignment(iterNode.getBlockVarNode(), context);
-                } else {
-                    context.consumeCurrentValue();
-                }
+                context.consumeCurrentValue();
             }
         };
 

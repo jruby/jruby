@@ -49,7 +49,7 @@ public class ThrowExceptionInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         if (exceptionArg instanceof IRException) {
             throw ((IRException) exceptionArg).getException(context.runtime);
         }

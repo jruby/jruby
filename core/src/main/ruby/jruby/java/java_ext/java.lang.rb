@@ -89,7 +89,7 @@ module JavaUtilities::ModifierShortcuts
   end
   
   def static?
-    Modifier.is_final(modifiers)
+    Modifier.is_static(modifiers)
   end
 end
 

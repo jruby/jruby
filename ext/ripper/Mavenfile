@@ -1,0 +1,33 @@
+#-*- mode: ruby -*-
+
+gemspec :jar => 'ripper'
+
+version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
+version.gsub!( /-SNAPSHOT$/, '' )
+
+if model.version.to_s.match /[a-zA-Z]/
+  model.group_id = 'org.jruby.gems'
+
+  plugin :deploy do
+    execute_goal( :deploy, 
+                  :skip => false,
+                  :altDeploymentRepository => 'sonatype-nexus-snapshots::default::https://oss.sonatype.org/content/repositories/snapshots/' )
+
+  end
+else
+  parent 'org.jruby:jruby-ext', version
+end
+
+jruby_plugin! :gem do
+  execute_goals :id => 'default-push', :skip => true
+end
+
+# we need the jruby API here, the version should be less important here
+jar 'org.jruby:jruby:1.7.11', :scope => :provided
+
+properties( 'gem.home' => '../target/rubygems',
+            'gem.path' => '${gem.home}',
+            'tesla.dump.pom' => 'pom.xml',
+            'tesla.dump.readonly' => true )
+
+# vim: syntax=Ruby

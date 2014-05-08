@@ -11,16 +11,15 @@ package org.jruby.truffle.nodes.objects;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.cast.BoxingNode;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.ReadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.RespecializeHook;
 import org.jruby.truffle.nodes.objectstorage.UninitializedReadObjectFieldNode;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.GeneralConversions;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.objectstorage.*;
 
@@ -51,19 +50,26 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     };
 
     @Child protected BoxingNode receiver;
-    @Child protected ReadObjectFieldNode readNode;
+    @Child protected ReadHeadObjectFieldNode readNode;
+    private final boolean isGlobal;
 
     private final BranchProfile nullProfile = new BranchProfile();
 
-    public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
+    public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean isGlobal) {
         super(context, sourceSection);
-        this.receiver = adoptChild(new BoxingNode(context, sourceSection, receiver));
-        readNode = adoptChild(new UninitializedReadObjectFieldNode(name, hook));
+        this.receiver = new BoxingNode(context, sourceSection, receiver);
+        readNode = new ReadHeadObjectFieldNode(name, hook);
+        this.isGlobal = isGlobal;
     }
 
     @Override
-    public int executeFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
         return readNode.executeInteger(receiver.executeRubyBasicObject(frame));
+    }
+
+    @Override
+    public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
+        return readNode.executeLong(receiver.executeRubyBasicObject(frame));
     }
 
     @Override
@@ -85,6 +91,14 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
+        if (isGlobal) {
+            if (readNode.getName().equals("$~") || readNode.isSet(receiver.executeRubyBasicObject(frame))) {
+                return getContext().makeString("global-variable");
+            } else{
+                return NilPlaceholder.INSTANCE;
+            }
+        }
+
         final RubyContext context = getContext();
 
         try {
@@ -106,6 +120,6 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
     @Override
     public RubyNode makeWriteNode(RubyNode rhs) {
-        return new WriteInstanceVariableNode(getContext(), getSourceSection(), readNode.getName(), receiver, rhs);
+        return new WriteInstanceVariableNode(getContext(), getSourceSection(), readNode.getName(), receiver, rhs, isGlobal);
     }
 }

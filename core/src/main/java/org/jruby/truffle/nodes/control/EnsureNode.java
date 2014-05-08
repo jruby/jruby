@@ -26,8 +26,8 @@ public class EnsureNode extends RubyNode {
 
     public EnsureNode(RubyContext context, SourceSection sourceSection, RubyNode tryPart, RubyNode ensurePart) {
         super(context, sourceSection);
-        this.tryPart = adoptChild(tryPart);
-        this.ensurePart = adoptChild(ensurePart);
+        this.tryPart = tryPart;
+        this.ensurePart = ensurePart;
     }
 
     @Override

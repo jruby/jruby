@@ -30,10 +30,11 @@ public class ReadPostArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final Object[] arguments = frame.getArguments(RubyArguments.class).getArguments();
-        final int effectiveIndex = arguments.length - 1 - indexFromEnd;
-        assert effectiveIndex < arguments.length;
-        return arguments[effectiveIndex];
+        final RubyArguments arguments = frame.getArguments(RubyArguments.class);
+        int count = arguments.getUserArgumentsCount();
+        final int effectiveIndex = count - 1 - indexFromEnd;
+        assert effectiveIndex < count;
+        return arguments.getUserArgument(effectiveIndex);
     }
 
 }

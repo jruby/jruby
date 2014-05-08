@@ -10,9 +10,11 @@
 package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.debug.DebugManager;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.impl.DefaultSourceSection;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.literal.*;
@@ -24,6 +26,8 @@ import org.jruby.truffle.runtime.methods.*;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+
+import java.io.InputStreamReader;
 
 public class TranslatorDriver {
 
@@ -45,9 +49,15 @@ public class TranslatorDriver {
         this.instrumenter = instrumenter;
     }
 
-    public MethodDefinitionNode parse(RubyContext context, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
-        // TODO(cs) should this get a new unique method identifier or not?
-        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, null), this, allocateReturnID(), true, true, new UniqueMethodIdentifier());
+    public MethodDefinitionNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
+        final SourceSection sourceSection = new DefaultSourceSection(
+                context.getSourceManager().get(bodyNode.getPosition().getFile()),
+                "(unknown)", bodyNode.getPosition().getStartLine() + 1, -1, -1, -1);
+
+        final SharedMethodInfo sharedMethod = new SharedMethodInfo(sourceSection, "(unknown)", parseTree);
+
+        final TranslatorEnvironment environment = new TranslatorEnvironment(
+                context, environmentForFrame(context, null), this, allocateReturnID(), true, true, sharedMethod);
 
         // All parsing contexts have a visibility slot at their top level
 
@@ -55,9 +65,9 @@ public class TranslatorDriver {
 
         // Translate to Ruby Truffle nodes
 
-        final MethodTranslator translator = new MethodTranslator(context, null, environment, false, context.getSourceManager().get(bodyNode.getPosition().getFile()));
+        final MethodTranslator translator = new MethodTranslator(context, null, environment, false, false, context.getSourceManager().get(bodyNode.getPosition().getFile()));
 
-        return translator.compileFunctionNode(new DefaultSourceSection(context.getSourceManager().get(bodyNode.getPosition().getFile()), "(unknown)", bodyNode.getPosition().getStartLine() + 1, -1, -1, -1), "(unknown)", argsNode, bodyNode);
+        return translator.compileFunctionNode(sourceSection, "(unknown)", argsNode, bodyNode, false);
     }
 
     public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame) {
@@ -76,8 +86,6 @@ public class TranslatorDriver {
 
             MaterializedFrame frame = parentFrame;
 
-            final org.jruby.lexer.yacc.ISourcePosition scopeSourceSection = new org.jruby.lexer.yacc.SimpleSourcePosition("(scope)", 0);
-
             while (frame != null) {
                 for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
                     if (slot.getIdentifier() instanceof String) {
@@ -90,7 +98,7 @@ public class TranslatorDriver {
             }
         }
 
-        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(jruby, 0, false, org.jruby.CompatVersion.RUBY2_1);
+        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(jruby, 0, false, false, parserContext == ParserContext.TOP_LEVEL, true);
 
         // Parse to the JRuby AST
 
@@ -112,8 +120,17 @@ public class TranslatorDriver {
     }
 
     public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
-        // TODO(cs) should this get a new unique method identifier or not?
-        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, new UniqueMethodIdentifier());
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(null, "(root)", rootNode);
+
+        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, sharedMethodInfo);
+
+        // Get the DATA constant
+
+        final Object data = getData(context);
+
+        if (data != null) {
+            context.getCoreLibrary().getObjectClass().setConstant("DATA", data);
+        }
 
         // All parsing contexts have a visibility slot at their top level
 
@@ -121,12 +138,12 @@ public class TranslatorDriver {
 
         // Translate to Ruby Truffle nodes
 
-        final Translator translator;
+        final BodyTranslator translator;
 
         if (parserContext == TranslatorDriver.ParserContext.MODULE) {
             translator = new ModuleTranslator(context, null, environment, source);
         } else {
-            translator = new Translator(context, null, environment, source);
+            translator = new BodyTranslator(context, null, environment, source);
         }
 
         RubyNode truffleNode;
@@ -141,13 +158,13 @@ public class TranslatorDriver {
             if (rootNode.getBodyNode() == null) {
                 truffleNode = new NilNode(context, null);
             } else {
-                truffleNode = (RubyNode) rootNode.getBodyNode().accept(translator);
+                truffleNode = rootNode.getBodyNode().accept(translator);
             }
 
             // Load flip-flop states
 
             if (environment.getFlipFlopStates().size() > 0) {
-                truffleNode = new SequenceNode(context, truffleNode.getSourceSection(), translator.initFlipFlopStates(truffleNode.getSourceSection()), truffleNode);
+                truffleNode = SequenceNode.sequence(context, truffleNode.getSourceSection(), translator.initFlipFlopStates(truffleNode.getSourceSection()), truffleNode);
             }
 
             // Catch next
@@ -157,6 +174,10 @@ public class TranslatorDriver {
             // Catch return
 
             truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
+
+            // Catch retry
+
+            truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
 
             // Shell result
 
@@ -182,7 +203,7 @@ public class TranslatorDriver {
                     throw new UnsupportedOperationException();
             }
 
-            final RootNode root = new RubyRootNode(truffleNode.getSourceSection(), environment.getFrameDescriptor(), indicativeName, truffleNode);
+            final RootNode root = new RubyRootNode(truffleNode.getSourceSection(), environment.getFrameDescriptor(), truffleNode);
 
             // Return the root and the frame descriptor
 
@@ -192,6 +213,23 @@ public class TranslatorDriver {
                 debugManager.notifyFinishedLoading(source);
             }
         }
+    }
+
+    private Object getData(RubyContext context) {
+        // TODO(CS) how do we know this has been populated already?
+
+        // TODO(CS) rough translation of File object just to get up and running
+
+        final IRubyObject jrubyData = context.getRuntime().getObject().getConstantNoConstMissing("DATA", false, false);
+
+        if (jrubyData == null) {
+            return null;
+        }
+
+        final org.jruby.RubyFile jrubyFile = (org.jruby.RubyFile) jrubyData;
+        final RubyFile truffleFile = new RubyFile(context.getCoreLibrary().getFileClass(), new InputStreamReader(jrubyFile.getInStream()), null);
+
+        return truffleFile;
     }
 
     public long allocateReturnID() {
@@ -209,7 +247,8 @@ public class TranslatorDriver {
             return null;
         } else {
             final MaterializedFrame parent = frame.getArguments(RubyArguments.class).getDeclarationFrame();
-            return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, new UniqueMethodIdentifier());
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(null, null, null);
+            return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, sharedMethodInfo);
         }
     }
 

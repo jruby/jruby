@@ -27,7 +27,7 @@ public class NoResultCallInstr extends CallBase {
     @Override
     public CallBase specializeForInterpretation() {
         Operand[] callArgs = getCallArgs();
-        if (hasClosure() || containsSplat(callArgs)) return this;
+        if (hasClosure() || containsArgSplat(callArgs)) return this;
 
         switch (callArgs.length) {
 //            case 0:

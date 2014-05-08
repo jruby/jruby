@@ -25,15 +25,22 @@ public class AliasNode extends RubyNode {
 
     public AliasNode(RubyContext context, SourceSection sourceSection, RubyNode module, String newName, String oldName) {
         super(context, sourceSection);
-        this.module = adoptChild(module);
+        this.module = module;
         this.newName = newName;
         this.oldName = oldName;
     }
 
     @Override
     public void executeVoid(VirtualFrame frame) {
-        final RubyModule moduleObject = (RubyModule) module.execute(frame);
-        moduleObject.alias(newName, oldName);
+        final Object object = module.execute(frame);
+
+        if (object instanceof RubyModule) {
+            // Module definition or class_eval
+            ((RubyModule) object).alias(newName, oldName);
+        } else {
+            // instance_eval?
+            ((RubyBasicObject) object).getSingletonClass().alias(newName, oldName);
+        }
     }
 
     @Override

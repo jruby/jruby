@@ -25,8 +25,8 @@ public class HashLiteralNode extends RubyNode {
     public HashLiteralNode(SourceSection sourceSection, RubyNode[] keys, RubyNode[] values, RubyContext context) {
         super(context, sourceSection);
         assert keys.length == values.length;
-        this.keys = adoptChildren(keys);
-        this.values = adoptChildren(values);
+        this.keys = keys;
+        this.values = values;
     }
 
     @ExplodeLoop

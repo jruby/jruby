@@ -1033,7 +1033,7 @@ public class Helpers {
                 // rescue Object needs to catch Java exceptions
                 runtime.getObject() == catchable ||
 
-                // rescue StandardError needs t= catch Java exceptions
+                // rescue StandardError needs to catch Java exceptions
                 runtime.getStandardError() == catchable) {
 
             if (throwable instanceof RaiseException) {
@@ -1056,6 +1056,12 @@ public class Helpers {
                     return true;
                 }
             }
+
+        } else if (catchable instanceof RubyModule) {
+            IRubyObject exception = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
+            IRubyObject result = invoke(context, catchable, "===", exception);
+            return result.isTrue();
+
         }
 
         return false;
@@ -1663,10 +1669,8 @@ public class Helpers {
             throw runtime.newTypeError("no class to make alias");
         }
 
-        String newName = (newNameArg instanceof String) ?
-            (String) newNameArg : newNameArg.toString();
-        String oldName = (oldNameArg instanceof String) ? 
-            (String) oldNameArg : oldNameArg.toString();
+        String newName = newNameArg.toString();
+        String oldName = oldNameArg.toString();
 
         module.defineAlias(newName, oldName);
         module.callMethod(context, "method_added", runtime.newSymbol(newName));
@@ -2103,6 +2107,7 @@ public class Helpers {
             MethodNodes methodNodes) {
         
         DynamicMethod method;
+        final Ruby runtime = containingClass.getRuntime();
 
         if (name.equals("initialize") || name.equals("initialize_copy") || name.equals("initialize_clone") || name.equals("initialize_dup") || name.equals("respond_to_missing?") || visibility == Visibility.MODULE_FUNCTION) {
             visibility = Visibility.PRIVATE;
@@ -2701,6 +2706,7 @@ public class Helpers {
             IRubyObject nil = runtime.getNil();
 
             for (int i = 0; i < scopeOffsets.length; i++) {
+                // SSS FIXME: This is not doing the offset/depth extraction as in the else case
                 context.getCurrentScope().setValue(nil, scopeOffsets[i], 0);
             }
         } else {
@@ -2971,7 +2977,10 @@ public class Helpers {
 
         RubyClass sc = null;
 
-        if (superClass != null) {
+
+        if (superClass == UndefinedValue.UNDEFINED) {
+            sc = context.runtime.getObject();
+        } else if (superClass != null) {
             if (!(superClass instanceof RubyClass)) {
                 throw context.runtime.newTypeError("superclass must be Class (" + superClass + " given)");
             }
@@ -3017,7 +3026,7 @@ public class Helpers {
     }
     
     public static RubyArray irSplat(ThreadContext context, IRubyObject maybeAry) {
-        return context.is19 ? splatValue19(maybeAry) : splatValue(maybeAry);
+        return splatValue19(maybeAry);
     }
 
     public static IRubyObject irToAry(ThreadContext context, IRubyObject value) {

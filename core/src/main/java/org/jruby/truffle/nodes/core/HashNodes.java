@@ -145,12 +145,12 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public NilPlaceholder each(VirtualFrame frame, RubyHash hash, RubyProc block) {
+        public RubyHash each(VirtualFrame frame, RubyHash hash, RubyProc block) {
             for (Map.Entry<Object, Object> entry : hash.storage.entrySet()) {
-                yield(frame, block, entry.getKey(), entry.getValue());
+                yield(frame, block, RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), entry.getKey(), entry.getValue()));
             }
 
-            return NilPlaceholder.INSTANCE;
+            return hash;
         }
 
     }
@@ -245,6 +245,28 @@ public abstract class HashNodes {
             }
 
             return result;
+        }
+
+    }
+
+    @CoreMethod(names = "merge", minArgs = 1, maxArgs = 1)
+    public abstract static class MergeNode extends CoreMethodNode {
+
+        public MergeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public MergeNode(MergeNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.SlowPath
+        @Specialization
+        public RubyHash merge(RubyHash hash, RubyHash other) {
+            final RubyHash merged = new RubyHash(getContext().getCoreLibrary().getHashClass());
+            merged.getMap().putAll(hash.getMap());
+            merged.getMap().putAll(other.getMap());
+            return merged;
         }
 
     }

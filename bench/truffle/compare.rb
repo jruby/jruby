@@ -22,10 +22,10 @@ while not args.empty?
     puts "Note: use a system Ruby to run this script, not the development JRuby, as that seems to sometimes get in a twist"
     puts
     puts "Set a reference point, running for 5 minutes:"
-    puts "    GRAAL_DIR=... ruby benchmark-compare.rb --reference -m 5"
+    puts "    JAVACMD=... ruby benchmark-compare.rb --reference -m 5"
     puts
     puts "Compare against that reference point:"
-    puts "    GRAAL_DIR=... ruby benchmark-compare.rb"
+    puts "    JAVACMD=... ruby benchmark-compare.rb"
     puts
     puts "  -s n  run for n seconds (default 60)"
     puts "  -m n  run for n minutes"
@@ -61,8 +61,8 @@ else
   end
 end
 
-if ENV["GRAAL_DIR"].nil? or not Dir.exist? File.expand_path(ENV["GRAAL_DIR"])
-  puts "warning: couldn't find $GRAAL_DIR - set this to the path of graalvm-jdk1.8.0"
+if ENV["JAVACMD"].nil? or not File.exist? File.expand_path(ENV["JAVACMD"])
+  puts "warning: couldn't find $JAVACMD - set this to the path of the Java command in graalvm-jdk1.8.0 or a build of the Graal repo"
 end
 
 benchmarks = [
@@ -72,7 +72,9 @@ benchmarks = [
   "n-body",
   "pidigits",
   "spectral-norm",
-  "neural-net"
+  "neural-net",
+  "richards",
+  "deltablue"
 ]
 
 time_budget_per_run = time_budget / benchmarks.length
@@ -81,8 +83,7 @@ puts time_budget_per_run.to_s + "s for each benchmark"
 scores = {}
 
 benchmarks.each do |benchmark|
-  execute = "JAVACMD=$GRAAL_DIR/bin/java ../../bin/jruby -J-server -J-d64 -X+T -Xtruffle.printRuntime=true"
-  output = `#{execute} harness.rb -s #{time_budget_per_run} #{benchmark}.rb`
+  output = `../../bin/jruby -J-server -J-d64 -X+T -Xtruffle.printRuntime=true harness.rb -s #{time_budget_per_run} #{benchmark}.rb`
   score_match = /[a-z\-]+: (\d+\.\d+)/.match(output)
   if score_match.nil?
     score = 0

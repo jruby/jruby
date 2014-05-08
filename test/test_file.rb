@@ -560,7 +560,7 @@ class TestFile < Test::Unit::TestCase
   end
 
   def test_file_size_query
-    assert(File.size?('build.xml'))
+    assert(File.size?('pom.xml'))
   end
 
   # JRUBY-2275
@@ -583,6 +583,7 @@ class TestFile < Test::Unit::TestCase
   def test_file_exists_uri_prefixes
     assert(File.exists?("file:test/dir with spaces/test_jar.jar!/abc/foo.rb"))
     assert(File.exists?("jar:file:test/dir with spaces/test_jar.jar!/abc/foo.rb"))
+    assert(File.exists?("jar:file:test/dir with spaces/./test_jar.jar!/abc/./foo/../foo.rb"))
   end
 
   # JRUBY-2524
@@ -676,7 +677,7 @@ class TestFile < Test::Unit::TestCase
 
   def test_file_stat # File::Stat tests
     stat = File.stat('test');
-    stat2 = File.stat('build.xml');
+    stat2 = File.stat('pom.xml');
     assert(stat.directory?)
     assert(stat2.file?)
     assert_equal("directory", stat.ftype)
@@ -692,32 +693,32 @@ class TestFile < Test::Unit::TestCase
       # numerous regressions in this area
       begin
         # TODO: See JRUBY-2818.
-        File.readlink('build.xml')
+        File.readlink('pom.xml')
       rescue NotImplementedError
       rescue Errno::EINVAL  # TODO: this exception is wrong (see bug above)
       end
 
       begin
         # TODO: See JRUBY-2817.
-        File.chown(100, 100, 'build.xml')
+        File.chown(100, 100, 'pom.xml')
       rescue NotImplementedError
       end
 
-      assert_raise(NotImplementedError) { File.lchown(100, 100, 'build.xml') }
-      assert_raise(NotImplementedError) { File.lchmod(0644, 'build.xml') }
+      assert_raise(NotImplementedError) { File.lchown(100, 100, 'pom.xml') }
+      assert_raise(NotImplementedError) { File.lchmod(0644, 'pom.xml') }
     end
   end
 
   unless(WINDOWS) # no symlinks on Windows
     def test_file_symlink
       # Test File.symlink? if possible
-      system("ln -s build.xml build.xml.link")
-      if File.exist? "build.xml.link"
-        assert(File.symlink?("build.xml.link"))
+      system("ln -s pom.xml pom.xml.link")
+      if File.exist? "pom.xml.link"
+        assert(File.symlink?("pom.xml.link"))
         # JRUBY-683 -  Test that symlinks don't effect Dir and File.expand_path
-        assert_equal(['build.xml.link'], Dir['build.xml.link'])
-        assert_equal(File.expand_path('.') + '/build.xml.link', File.expand_path('build.xml.link'))
-        File.delete("build.xml.link")
+        assert_equal(['pom.xml.link'], Dir['pom.xml.link'])
+        assert_equal(File.expand_path('.') + '/pom.xml.link', File.expand_path('pom.xml.link'))
+        File.delete("pom.xml.link")
       end
     end
     def test_require_symlink
@@ -742,7 +743,7 @@ class TestFile < Test::Unit::TestCase
   def test_file_times
     # Note: atime, mtime, ctime are all implemented using modification time
     assert_nothing_raised do
-      [ "build.xml", "file:test/dir with spaces/test_jar.jar!/abc/foo.rb" ].each do |file|
+      [ "pom.xml", "file:test/dir with spaces/test_jar.jar!/abc/foo.rb" ].each do |file|
         File.mtime(file)
         File.atime(file)
         File.ctime(file)
@@ -757,12 +758,12 @@ class TestFile < Test::Unit::TestCase
 
   def test_file_times_types
     # Note: atime, mtime, ctime are all implemented using modification time
-    assert_instance_of Time, File.mtime("build.xml")
-    assert_instance_of Time, File.atime("build.xml")
-    assert_instance_of Time, File.ctime("build.xml")
-    assert_instance_of Time, File.new("build.xml").mtime
-    assert_instance_of Time, File.new("build.xml").atime
-    assert_instance_of Time, File.new("build.xml").ctime
+    assert_instance_of Time, File.mtime("pom.xml")
+    assert_instance_of Time, File.atime("pom.xml")
+    assert_instance_of Time, File.ctime("pom.xml")
+    assert_instance_of Time, File.new("pom.xml").mtime
+    assert_instance_of Time, File.new("pom.xml").atime
+    assert_instance_of Time, File.new("pom.xml").ctime
   end
 
   def test_more_constants
@@ -894,13 +895,13 @@ class TestFile < Test::Unit::TestCase
   unless(WINDOWS)
     def test_chown_accepts_nil_and_minus_one
       # chown
-      assert_equal(1, File.chown(-1, -1, 'build.xml'))
-      assert_equal(1, File.chown(nil, nil, 'build.xml'))
+      assert_equal(1, File.chown(-1, -1, 'pom.xml'))
+      assert_equal(1, File.chown(nil, nil, 'pom.xml'))
       # lchown
-      assert_equal(1, File.lchown(-1, -1, 'build.xml'))
-      assert_equal(1, File.lchown(nil, nil, 'build.xml'))
+      assert_equal(1, File.lchown(-1, -1, 'pom.xml'))
+      assert_equal(1, File.lchown(nil, nil, 'pom.xml'))
 
-      File.open('build.xml') { |file|
+      File.open('pom.xml') { |file|
         # chown
         assert_equal(0, file.chown(-1, -1))
 	assert_equal(0, file.chown(nil, nil))
@@ -980,9 +981,9 @@ class TestFile < Test::Unit::TestCase
   end
 
   def test_file_size
-    size = File.size('build.xml')
+    size = File.size('pom.xml')
     assert(size > 0)
-    assert_equal(size, File.size(File.new('build.xml')))
+    assert_equal(size, File.size(File.new('pom.xml')))
   end
 
   # JRUBY-4073

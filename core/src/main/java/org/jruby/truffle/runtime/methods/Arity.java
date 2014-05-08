@@ -32,14 +32,6 @@ public class Arity {
         this.maximum = maximum;
     }
 
-    public void checkArguments(RubyContext context, SourceSection sourceSection, Object[] arguments) {
-        if (arguments.length < minimum || arguments.length > maximum) {
-            CompilerDirectives.transferToInterpreter();
-            System.err.println(sourceSection);
-            throw new RaiseException(context.getCoreLibrary().argumentError(arguments.length, minimum));
-        }
-    }
-
     public int getMinimum() {
         return minimum;
     }
@@ -53,4 +45,23 @@ public class Arity {
         return String.format("Arity(%d, %d)", minimum, maximum);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Arity arity = (Arity) o;
+
+        if (maximum != arity.maximum) return false;
+        if (minimum != arity.minimum) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = minimum;
+        result = 31 * result + maximum;
+        return result;
+    }
 }

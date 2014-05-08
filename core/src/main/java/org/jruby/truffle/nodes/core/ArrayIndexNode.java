@@ -43,13 +43,13 @@ public abstract class ArrayIndexNode extends RubyNode {
 
     @Specialization(guards = "isFixnumStore", rewriteOn = UnexpectedResultException.class, order = 2)
     public int indexFixnum(RubyArray array) throws UnexpectedResultException {
-        final FixnumArrayStore store = (FixnumArrayStore) array.getArrayStore();
+        final IntegerArrayStore store = (IntegerArrayStore) array.getArrayStore();
         return store.getFixnum(ArrayUtilities.normaliseIndex(store.size(), index));
     }
 
     @Specialization(guards = "isFixnumStore", order = 3)
     public Object indexMaybeFixnum(RubyArray array) {
-        final FixnumArrayStore store = (FixnumArrayStore) array.getArrayStore();
+        final IntegerArrayStore store = (IntegerArrayStore) array.getArrayStore();
 
         try {
             return store.getFixnum(ArrayUtilities.normaliseIndex(store.size(), index));
@@ -92,7 +92,7 @@ public abstract class ArrayIndexNode extends RubyNode {
     }
 
     protected boolean isFixnumStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof FixnumArrayStore;
+        return receiver.getArrayStore() instanceof IntegerArrayStore;
     }
 
     protected boolean isFixnumImmutablePairStore(RubyArray receiver) {

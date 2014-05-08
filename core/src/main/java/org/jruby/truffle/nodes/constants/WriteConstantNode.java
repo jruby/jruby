@@ -29,12 +29,14 @@ public class WriteConstantNode extends RubyNode {
     public WriteConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode module, RubyNode rhs) {
         super(context, sourceSection);
         this.name = name;
-        this.module = adoptChild(module);
-        this.rhs = adoptChild(rhs);
+        this.module = module;
+        this.rhs = rhs;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
+        CompilerDirectives.transferToInterpreter();
+
         // TODO(cs): can module ever not evaluate to a RubyModule?
 
         final RubyModule moduleObject = (RubyModule) module.execute(frame);

@@ -16,7 +16,7 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 
 /**
- * A node that does nothing and evaluates to Nil. A no-op.
+ * A node that does nothing and evaluates to {@code nil}. A no-op.
  */
 @NodeInfo(shortName = "nil")
 public final class NilNode extends RubyNode {
@@ -37,6 +37,11 @@ public final class NilNode extends RubyNode {
 
     @Override
     public void executeVoid(VirtualFrame frame) {
+    }
+
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        return NilPlaceholder.INSTANCE;
     }
 
 }

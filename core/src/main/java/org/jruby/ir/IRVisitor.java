@@ -2,18 +2,8 @@ package org.jruby.ir;
 
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.boxing.*;
-import org.jruby.ir.instructions.defined.BackrefIsMatchDataInstr;
-import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
-import org.jruby.ir.instructions.defined.GetBackrefInstr;
-import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
-import org.jruby.ir.instructions.defined.GlobalIsDefinedInstr;
-import org.jruby.ir.instructions.defined.HasInstanceVarInstr;
-import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
-import org.jruby.ir.instructions.defined.MethodDefinedInstr;
-import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
-import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 
@@ -36,6 +26,7 @@ public abstract class IRVisitor {
     // standard instructions
     public void AliasInstr(AliasInstr aliasinstr) { error(aliasinstr); }
     public void AttrAssignInstr(AttrAssignInstr attrassigninstr) { error(attrassigninstr); }
+    public void BacktickInstr(BacktickInstr instr) { error(instr); }
     public void BEQInstr(BEQInstr beqinstr) { error(beqinstr); }
     public void BFalseInstr(BFalseInstr bfalseinstr) { error(bfalseinstr); }
     public void BlockGivenInstr(BlockGivenInstr blockgiveninstr) { error(blockgiveninstr); }
@@ -44,6 +35,7 @@ public abstract class IRVisitor {
     public void BreakInstr(BreakInstr breakinstr) { error(breakinstr); }
     public void BTrueInstr(BTrueInstr btrueinstr) { error(btrueinstr); }
     public void BUndefInstr(BUndefInstr bundefinstr) { error(bundefinstr); }
+    public void BuildCompoundArrayInstr(BuildCompoundArrayInstr instr) { error(instr); }
     public void CallInstr(CallInstr callinstr) { error(callinstr); }
     public void CheckArgsArrayArityInstr(CheckArgsArrayArityInstr checkargsarrayarityinstr) { error(checkargsarrayarityinstr); }
     public void CheckArityInstr(CheckArityInstr checkarityinstr) { error(checkarityinstr); }
@@ -105,6 +97,7 @@ public abstract class IRVisitor {
     public void ReturnInstr(ReturnInstr returninstr) { error(returninstr); }
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) { error(runtimehelpercall); }
     public void SearchConstInstr(SearchConstInstr searchconstinstr) { error(searchconstinstr); }
+    public void SetCapturedVarInstr(SetCapturedVarInstr instr) { error(instr); }
     public void StoreLocalVarInstr(StoreLocalVarInstr storelocalvarinstr) { error(storelocalvarinstr); }
     public void ThreadPollInstr(ThreadPollInstr threadpollinstr) { error(threadpollinstr); }
     public void ThrowExceptionInstr(ThrowExceptionInstr throwexceptioninstr) { error(throwexceptioninstr); }
@@ -115,18 +108,8 @@ public abstract class IRVisitor {
     public void ZSuperInstr(ZSuperInstr zsuperinstr) { error(zsuperinstr); }
 
     // "defined" instructions
-    public void BackrefIsMatchDataInstr(BackrefIsMatchDataInstr backrefismatchdatainstr) { error(backrefismatchdatainstr); }
-    public void ClassVarIsDefinedInstr(ClassVarIsDefinedInstr classvarisdefinedinstr) { error(classvarisdefinedinstr); }
-    public void GetBackrefInstr(GetBackrefInstr getbackrefinstr) { error(getbackrefinstr); }
-    public void GetDefinedConstantOrMethodInstr(GetDefinedConstantOrMethodInstr getdefinedconstantormethodinstr) { error(getdefinedconstantormethodinstr); }
     public void GetErrorInfoInstr(GetErrorInfoInstr geterrorinfoinstr) { error(geterrorinfoinstr); }
-    public void GlobalIsDefinedInstr(GlobalIsDefinedInstr globalisdefinedinstr) { error(globalisdefinedinstr); }
-    public void HasInstanceVarInstr(HasInstanceVarInstr hasinstancevarinstr) { error(hasinstancevarinstr); }
-    public void IsMethodBoundInstr(IsMethodBoundInstr ismethodboundinstr) { error(ismethodboundinstr); }
-    public void MethodDefinedInstr(MethodDefinedInstr methoddefinedinstr) { error(methoddefinedinstr); }
-    public void MethodIsPublicInstr(MethodIsPublicInstr methodispublicinstr) { error(methodispublicinstr); }
     public void RestoreErrorInfoInstr(RestoreErrorInfoInstr restoreerrorinfoinstr) { error(restoreerrorinfoinstr); }
-    public void SuperMethodBoundInstr(SuperMethodBoundInstr supermethodboundinstr) { error(supermethodboundinstr); }
 
     // ruby 1.9 specific
     public void BuildLambdaInstr(BuildLambdaInstr buildlambdainstr) { error(buildlambdainstr); }
@@ -146,12 +129,10 @@ public abstract class IRVisitor {
     public void Array(Array array) { error(array); }
     public void AsString(AsString asstring) { error(asstring); }
     public void Backref(Backref backref) { error(backref); }
-    public void BacktickString(BacktickString backtickstring) { error(backtickstring); }
     public void Bignum(Bignum bignum) { error(bignum); }
     public void Boolean(Boolean bool) { error(bool); }
     public void UnboxedBoolean(UnboxedBoolean bool) { error(bool); }
     public void ClosureLocalVariable(ClosureLocalVariable closurelocalvariable) { error(closurelocalvariable); }
-    public void CompoundArray(CompoundArray compoundarray) { error(compoundarray); }
     public void CompoundString(CompoundString compoundstring) { error(compoundstring); }
     public void CurrentScope(CurrentScope currentscope) { error(currentscope); }
     public void DynamicSymbol(DynamicSymbol dynamicsymbol) { error(dynamicsymbol); }

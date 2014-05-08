@@ -1215,24 +1215,15 @@ public class ASTCompiler {
         Node leftNode = iVisited.getLeftNode();
         final String name = iVisited.getName();
 
-        if (leftNode == null) {
+        if (leftNode == null) { //Colon2ImplictNode
             context.loadObject();
             context.retrieveConstantFromModule(name);
+        } else if (node instanceof Colon2ConstNode) {
+            compile(iVisited.getLeftNode(), context, true);
+            context.retrieveConstantFromModule(name);
         } else {
-            if (node instanceof Colon2ConstNode) {
-                compile(iVisited.getLeftNode(), context, true);
-                context.retrieveConstantFromModule(name);
-            } else if (node instanceof Colon2MethodNode) {
-                final CompilerCallback receiverCallback = new CompilerCallback() {
-                    public void call(BodyCompiler context) {
-                        compile(iVisited.getLeftNode(), context,true);
-                    }
-                };
-                
-                context.getInvocationCompiler().invokeDynamic(name, receiverCallback, null, CallType.FUNCTIONAL, null, false);
-            } else {
-                compile(iVisited.getLeftNode(), context, true);
-            }
+            // FIXME: This is dead but ASTCompiler is dying and I don't want to prove it.
+            compile(iVisited.getLeftNode(), context, true);
         }
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
@@ -2023,26 +2014,21 @@ public class ASTCompiler {
 
                 switch (nextNode.getNodeType()) {
                     case STRNODE:
-                        context.appendByteList(((StrNode) nextNode).getValue(), ((StrNode) nextNode).getCodeRange(), dNode.is19());
+                        context.appendByteList(((StrNode) nextNode).getValue(), ((StrNode) nextNode).getCodeRange(), true);
                         break;
                     case EVSTRNODE:
                         compile(((EvStrNode)nextNode).getBody(), context, true);
-                        context.shortcutAppend(dNode.is19());
+                        context.shortcutAppend(true);
                         break;
                     default:
                         compile(nextNode, context, true);
-                        context.appendObject(dNode.is19());
+                        context.appendObject(true);
                 }
             }
         };
 
         if (expr) {
-            Encoding enc = null;
-            if (dNode.is19()) {
-                enc = dNode.getEncoding();
-            }
-
-            context.buildNewString(dstrCallback, dNode.size(), enc);
+            context.buildNewString(dstrCallback, dNode.size(), dNode.getEncoding());
         } else {
             // not an expression, only compile the elements
             for (Node nextNode : dNode.childNodes()) {
@@ -2061,7 +2047,7 @@ public class ASTCompiler {
         compileDNode(dsymbolNode, context, expr);
 
         if (expr) {
-            context.stringToSymbol(dsymbolNode.is19());
+            context.stringToSymbol(true);
         }
     }
 

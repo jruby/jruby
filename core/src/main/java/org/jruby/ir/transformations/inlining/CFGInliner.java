@@ -121,7 +121,7 @@ public class CFGInliner {
         if (callReceiver instanceof Variable) {
             callReceiverVar = (Variable)callReceiver;
         } else {
-            callReceiverVar = hostScope.getNewTemporaryVariable();
+            callReceiverVar = hostScope.createTemporaryVariable();
         }
 
         InlinerInfo ii = new InlinerInfo(call, cfg, callReceiverVar);

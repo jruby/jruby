@@ -35,6 +35,7 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -267,7 +268,7 @@ public class JZlibDeflate extends ZStream {
     }
 
     @Override
-    protected IRubyObject internalFinish() {
+    protected IRubyObject internalFinish(Block block) {
         return finish();
     }
 

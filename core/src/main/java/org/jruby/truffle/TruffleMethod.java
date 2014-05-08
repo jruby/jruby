@@ -35,13 +35,15 @@ public class TruffleMethod extends DynamicMethod {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         final TruffleBridge bridge = context.getRuntime().getTruffleBridge();
 
-        final Object[] truffleArgumentsObjects = new Object[args.length];
+        final Object[] internalArguments = RubyArguments.create(args.length);
+        RubyArguments.setSelf(internalArguments, bridge.toTruffle(self));
 
         for (int n = 0; n < args.length; n++) {
-            truffleArgumentsObjects[n] = bridge.toTruffle(args[n]);
+            Object arg = bridge.toTruffle(args[n]);
+            RubyArguments.setUserArgument(internalArguments, n, arg);
         }
 
-        final Arguments truffleArguments = new RubyArguments(null, bridge.toTruffle(self), null, truffleArgumentsObjects);
+        final Arguments truffleArguments = new RubyArguments(internalArguments);
 
         return bridge.toJRuby(callTarget.call(truffleArguments));
     }

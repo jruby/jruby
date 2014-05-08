@@ -65,17 +65,19 @@ public class RubyHash extends RubyObject {
         return newHash;
     }
 
+    @CompilerDirectives.SlowPath
     public void put(Object key, Object value) {
         checkFrozen();
 
         if (key instanceof RubyString) {
-            key = new RubyString(getRubyClass().getContext().getCoreLibrary().getStringClass(), key.toString());
+            key = RubyString.fromJavaString(getRubyClass().getContext().getCoreLibrary().getStringClass(), key.toString());
             ((RubyString) key).frozen = true;
         }
 
         storage.put(key, value);
     }
 
+    @CompilerDirectives.SlowPath
     public Object get(Object key) {
         return storage.get(key);
     }

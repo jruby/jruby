@@ -40,6 +40,11 @@ public abstract class ClassNodes {
         public boolean containsInstance(RubyClass rubyClass, RubyBasicObject instance) {
             return instance.getRubyClass().assignableTo(rubyClass);
         }
+
+        @Specialization
+        public boolean containsInstance(RubyClass rubyClass, Object instance) {
+            return getContext().getCoreLibrary().box(instance).getRubyClass().assignableTo(rubyClass);
+        }
     }
 
     @CoreMethod(names = "new", needsBlock = true, isSplatted = true)
@@ -49,12 +54,12 @@ public abstract class ClassNodes {
 
         public NewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = adoptChild(new DispatchHeadNode(context, getSourceSection(), "initialize", false));
+            initialize = new DispatchHeadNode(context, getSourceSection(), "initialize", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public NewNode(NewNode prev) {
             super(prev);
-            initialize = adoptChild(prev.initialize);
+            initialize = prev.initialize;
         }
 
         @Specialization

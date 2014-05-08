@@ -123,7 +123,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
 
         // Allocate global-ensure block, if necessary
         if ((mightRequireGlobalEnsureBlock == true) && !dirtyVars.isEmpty()) {
-            Variable exc = cfgScope.getNewTemporaryVariable();
+            Variable exc = cfgScope.createTemporaryVariable();
             BasicBlock geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
 
             ListIterator instrs = geb.getInstrs().listIterator();

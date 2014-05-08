@@ -33,9 +33,9 @@ public class IfNode extends RubyNode {
 
     public IfNode(RubyContext context, SourceSection sourceSection, BooleanCastNode condition, RubyNode thenBody, RubyNode elseBody) {
         super(context, sourceSection);
-        this.condition = adoptChild(condition);
-        this.thenBody = adoptChild(thenBody);
-        this.elseBody = adoptChild(elseBody);
+        this.condition = condition;
+        this.thenBody = thenBody;
+        this.elseBody = elseBody;
     }
 
     @Override

@@ -28,6 +28,7 @@ import org.jruby.truffle.runtime.core.range.ObjectRange;
 import org.jruby.truffle.runtime.core.range.RubyRange;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 import java.math.BigInteger;
 
@@ -78,20 +79,12 @@ public abstract class RubyNode extends Node {
         return RubyTypesGen.RUBYTYPES.expectBoolean(execute(frame));
     }
 
-    public RubyBignum executeBoxedBignum(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyBignum(execute(frame));
-    }
-
-    public RubyFixnum executeBoxedFixnum(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyFixnum(execute(frame));
-    }
-
-    public RubyFloat executeBoxedFloat(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyFloat(execute(frame));
-    }
-
-    public int executeFixnum(VirtualFrame frame) throws UnexpectedResultException {
+    public int executeIntegerFixnum(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectInteger(execute(frame));
+    }
+
+    public long executeLongFixnum(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectLong(execute(frame));
     }
 
     public FixnumRange executeFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
@@ -152,10 +145,6 @@ public abstract class RubyNode extends Node {
 
     public RubyMatchData executeRubyMatchData(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectRubyMatchData(execute(frame));
-    }
-
-    public RubyMethod executeRubyMethod(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectRubyMethod(execute(frame));
     }
 
     public RubyModule executeRubyModule(VirtualFrame frame) throws UnexpectedResultException {
@@ -220,6 +209,10 @@ public abstract class RubyNode extends Node {
 
     public RubyContext getContext() {
         return context;
+    }
+
+    public RubyMethod getMethod() {
+        return ((RubyRootNode) getRootNode()).getMethod();
     }
 
 }

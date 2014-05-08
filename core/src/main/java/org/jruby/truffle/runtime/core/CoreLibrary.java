@@ -13,14 +13,19 @@ import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.SJISEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.runtime.Constants;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.array.ObjectArrayStore;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.hash.RubyHash;
+import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.Map;
 
 public class CoreLibrary {
@@ -35,6 +40,7 @@ public class CoreLibrary {
     private RubyClass classClass;
     private RubyClass continuationClass;
     private RubyClass dirClass;
+    private RubyClass encodingClass;
     private RubyClass exceptionClass;
     private RubyClass falseClass;
     private RubyClass fiberClass;
@@ -72,17 +78,16 @@ public class CoreLibrary {
     private RubyClass trueClass;
     private RubyClass typeErrorClass;
     private RubyClass zeroDivisionErrorClass;
-    private RubyClass encodingClass;
-
     private RubyModule comparableModule;
     private RubyModule configModule;
+    private RubyModule debugModule;
+    private RubyModule enumerableModule;
     private RubyModule errnoModule;
     private RubyModule kernelModule;
     private RubyModule mathModule;
     private RubyModule objectSpaceModule;
     private RubyModule signalModule;
 
-    private RubyModule debugModule;
     private RubyArray argv;
     private RubyBasicObject globalVariablesObject;
     private RubyBasicObject mainObject;
@@ -123,12 +128,14 @@ public class CoreLibrary {
         arrayClass = new RubyArray.RubyArrayClass(objectClass);
         bignumClass = new RubyClass(null, integerClass, "Bignum");
         bindingClass = new RubyClass(null, objectClass, "Binding");
-        continuationClass = new RubyClass(null, objectClass, "Continuation");
         comparableModule = new RubyModule(moduleClass, null, "Comparable");
         configModule = new RubyModule(moduleClass, null, "Config");
+        continuationClass = new RubyClass(null, objectClass, "Continuation");
         debugModule = new RubyModule(moduleClass, null, "Debug");
         dirClass = new RubyClass(null, objectClass, "Dir");
+        encodingClass = new RubyEncoding.RubyEncodingClass(objectClass);
         errnoModule = new RubyModule(moduleClass, null, "Errno");
+        enumerableModule = new RubyModule(moduleClass, null, "Enumerable");
         falseClass = new RubyClass(null, objectClass, "FalseClass");
         fiberClass = new RubyFiber.RubyFiberClass(objectClass);
         fileClass = new RubyClass(null, ioClass, "File");
@@ -151,10 +158,9 @@ public class CoreLibrary {
         regexpClass = new RubyRegexp.RubyRegexpClass(objectClass);
         rubyTruffleErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RubyTruffleError");
         runtimeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RuntimeError");
-        stringClass = new RubyString.RubyStringClass(objectClass);
-        encodingClass = new RubyEncoding.RubyEncodingClass(objectClass);
-        structClass = new RubyClass(null, ioClass, "Struct");
         signalModule = new RubyModule(moduleClass, null, "Signal");
+        stringClass = new RubyString.RubyStringClass(objectClass);
+        structClass = new RubyClass(null, ioClass, "Struct");
         symbolClass = new RubyClass(null, objectClass, "Symbol");
         syntaxErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "SyntaxError");
         systemCallErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "SystemCallError");
@@ -171,30 +177,33 @@ public class CoreLibrary {
 
         // Set constants
 
-        objectClass.setConstant("RUBY_VERSION", new RubyString(stringClass, "2.1.0"));
+        objectClass.setConstant("RUBY_VERSION", RubyString.fromJavaString(stringClass, "2.1.0"));
         objectClass.setConstant("RUBY_PATCHLEVEL", 0);
-        objectClass.setConstant("RUBY_ENGINE", new RubyString(stringClass, "rubytruffle"));
-        objectClass.setConstant("RUBY_PLATFORM", new RubyString(stringClass, "jvm"));
+        objectClass.setConstant("RUBY_ENGINE", RubyString.fromJavaString(stringClass, "rubytruffle"));
+        objectClass.setConstant("RUBY_PLATFORM", RubyString.fromJavaString(stringClass, "jvm"));
 
         argv = new RubyArray(arrayClass, new ObjectArrayStore());
         objectClass.setConstant("ARGV", argv);
         objectClass.setConstant("ENV", getEnv());
+        objectClass.setConstant("TRUE", true);
+        objectClass.setConstant("FALSE", false);
+        objectClass.setConstant("NIL", NilPlaceholder.INSTANCE);
 
         final RubyHash configHash = new RubyHash(hashClass);
-        configHash.put(new RubyString(stringClass, "ruby_install_name"), new RubyString(stringClass, "rubytruffle"));
-        configHash.put(new RubyString(stringClass, "RUBY_INSTALL_NAME"), new RubyString(stringClass, "rubytruffle"));
-        configHash.put(new RubyString(stringClass, "host_os"), new RubyString(stringClass, "unknown"));
-        configHash.put(new RubyString(stringClass, "exeext"), new RubyString(stringClass, ""));
-        configHash.put(new RubyString(stringClass, "EXEEXT"), new RubyString(stringClass, "rubytruffle"));
+        configHash.put(RubyString.fromJavaString(stringClass, "ruby_install_name"), RubyString.fromJavaString(stringClass, "rubytruffle"));
+        configHash.put(RubyString.fromJavaString(stringClass, "RUBY_INSTALL_NAME"), RubyString.fromJavaString(stringClass, "rubytruffle"));
+        configHash.put(RubyString.fromJavaString(stringClass, "host_os"), RubyString.fromJavaString(stringClass, "unknown"));
+        configHash.put(RubyString.fromJavaString(stringClass, "exeext"), RubyString.fromJavaString(stringClass, ""));
+        configHash.put(RubyString.fromJavaString(stringClass, "EXEEXT"), RubyString.fromJavaString(stringClass, "rubytruffle"));
         configModule.setConstant("CONFIG", configHash);
         objectClass.setConstant("RbConfig", configModule);
 
         mathModule.setConstant("PI", Math.PI);
 
-        fileClass.setConstant("SEPARATOR", new RubyString(stringClass, File.separator));
-        fileClass.setConstant("Separator", new RubyString(stringClass, File.separator));
+        fileClass.setConstant("SEPARATOR", RubyString.fromJavaString(stringClass, File.separator));
+        fileClass.setConstant("Separator", RubyString.fromJavaString(stringClass, File.separator));
         fileClass.setConstant("ALT_SEPARATOR", NilPlaceholder.INSTANCE);
-        fileClass.setConstant("PATH_SEPARATOR", new RubyString(stringClass, File.pathSeparator));
+        fileClass.setConstant("PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
         fileClass.setConstant("FNM_SYSCASE", 0);
 
         errnoModule.setConstant("ENOENT", new RubyClass(null, systemCallErrorClass, "ENOENT"));
@@ -217,6 +226,7 @@ public class CoreLibrary {
                         configModule, //
                         debugModule, //
                         dirClass, //
+                        enumerableModule, //
                         errnoModule, //
                         exceptionClass, //
                         falseClass, //
@@ -276,12 +286,27 @@ public class CoreLibrary {
 
         globalVariablesObject = new RubyBasicObject(objectClass);
         globalVariablesObject.switchToPrivateLayout();
-        globalVariablesObject.setInstanceVariable("$:", new RubyArray(arrayClass, new ObjectArrayStore()));
+        globalVariablesObject.setInstanceVariable("$LOAD_PATH", new RubyArray(arrayClass, new ObjectArrayStore()));
+        globalVariablesObject.setInstanceVariable("$LOADED_FEATURES", new RubyArray(arrayClass, new ObjectArrayStore()));
+        globalVariablesObject.setInstanceVariable("$:", globalVariablesObject.getInstanceVariable("$LOAD_PATH"));
+        globalVariablesObject.setInstanceVariable("$\"", globalVariablesObject.getInstanceVariable("$LOADED_FEATURES"));
 
         initializeEncodingConstants();
     }
 
     public void initializeAfterMethodsAdded() {
+        // Just create a dummy object for $stdout - we can use Kernel#print
+
+        final RubyBasicObject stdout = new RubyBasicObject(objectClass);
+        stdout.getSingletonClass().addMethod(stdout.getLookupNode().lookupMethod("print").withNewVisibility(Visibility.PUBLIC));
+        globalVariablesObject.setInstanceVariable("$stdout", stdout);
+
+        objectClass.setConstant("STDIN", new RubyBasicObject(objectClass));
+        objectClass.setConstant("STDOUT", globalVariablesObject.getInstanceVariable("$stdout"));
+        objectClass.setConstant("STDERR", globalVariablesObject.getInstanceVariable("$stdout"));
+        objectClass.setConstant("RUBY_RELEASE_DATE", context.makeString(Constants.COMPILE_DATE));
+        objectClass.setConstant("RUBY_DESCRIPTION", context.makeString(OutputStrings.getVersionString()));
+
         bignumClass.getSingletonClass().undefMethod("new");
         falseClass.getSingletonClass().undefMethod("new");
         fixnumClass.getSingletonClass().undefMethod("new");
@@ -320,7 +345,11 @@ public class CoreLibrary {
         }
 
         if (object instanceof Integer) {
-            return new RubyFixnum(fixnumClass, (int) object);
+            return new RubyFixnum.IntegerFixnum(fixnumClass, (int) object);
+        }
+
+        if (object instanceof Long) {
+            return new RubyFixnum.LongFixnum(fixnumClass, (long) object);
         }
 
         if (object instanceof BigInteger) {
@@ -333,6 +362,10 @@ public class CoreLibrary {
 
         if (object instanceof NilPlaceholder) {
             return nilObject;
+        }
+
+        if (object instanceof String) {
+            return context.makeString((String) object);
         }
 
         CompilerDirectives.transferToInterpreter();
@@ -366,6 +399,10 @@ public class CoreLibrary {
 
     public RubyException unexpectedReturn() {
         return localJumpError("unexpected return");
+    }
+
+    public RubyException noBlockToYieldTo() {
+        return localJumpError("no block given (yield)");
     }
 
     public RubyException typeError(String message) {
@@ -432,20 +469,16 @@ public class CoreLibrary {
         return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), "divided by 0");
     }
 
+    public RubyException syntaxError(String message) {
+        return new RubyException(syntaxErrorClass, message);
+    }
+
     public RubyContext getContext() {
         return context;
     }
 
-    public RubyClass getArgumentErrorClass() {
-        return argumentErrorClass;
-    }
-
     public RubyClass getArrayClass() {
         return arrayClass;
-    }
-
-    public RubyClass getBasicObjectClass() {
-        return basicObjectClass;
     }
 
     public RubyClass getBignumClass() {
@@ -460,20 +493,8 @@ public class CoreLibrary {
         return classClass;
     }
 
-    public RubyModule getComparableClass() {
-        return comparableModule;
-    }
-
     public RubyClass getContinuationClass() {
         return continuationClass;
-    }
-
-    public RubyClass getDirClass() {
-        return dirClass;
-    }
-
-    public RubyClass getExceptionClass() {
-        return exceptionClass;
     }
 
     public RubyClass getFalseClass() {
@@ -500,20 +521,8 @@ public class CoreLibrary {
         return hashClass;
     }
 
-    public RubyClass getIntegerClass() {
-        return integerClass;
-    }
-
-    public RubyClass getIoClass() {
-        return ioClass;
-    }
-
     public RubyClass getLoadErrorClass() {
         return loadErrorClass;
-    }
-
-    public RubyClass getLocalJumpErrorClass() {
-        return localJumpErrorClass;
     }
 
     public RubyClass getMatchDataClass() {
@@ -536,10 +545,6 @@ public class CoreLibrary {
         return noMethodErrorClass;
     }
 
-    public RubyClass getNumericClass() {
-        return numericClass;
-    }
-
     public RubyClass getObjectClass() {
         return objectClass;
     }
@@ -548,16 +553,8 @@ public class CoreLibrary {
         return procClass;
     }
 
-    public RubyClass getProcessClass() {
-        return processClass;
-    }
-
     public RubyClass getRangeClass() {
         return rangeClass;
-    }
-
-    public RubyClass getRangeErrorClass() {
-        return rangeErrorClass;
     }
 
     public RubyClass getRegexpClass() {
@@ -570,14 +567,6 @@ public class CoreLibrary {
 
     public RubyClass getRuntimeErrorClass() {
         return runtimeErrorClass;
-    }
-
-    public RubyModule getSignalModule() {
-        return signalModule;
-    }
-
-    public RubyClass getStandardErrorClass() {
-        return standardErrorClass;
     }
 
     public RubyClass getStringClass() {
@@ -598,10 +587,6 @@ public class CoreLibrary {
         return syntaxErrorClass;
     }
 
-    public RubyClass getSystemCallErrorClass() {
-        return systemCallErrorClass;
-    }
-
     public RubyClass getThreadClass() {
         return threadClass;
     }
@@ -614,28 +599,12 @@ public class CoreLibrary {
         return trueClass;
     }
 
-    public RubyClass getTypeErrorClass() {
-        return typeErrorClass;
-    }
-
     public RubyClass getZeroDivisionErrorClass() {
         return zeroDivisionErrorClass;
     }
 
     public RubyModule getKernelModule() {
         return kernelModule;
-    }
-
-    public RubyModule getMathModule() {
-        return mathModule;
-    }
-
-    public RubyModule getObjectSpaceModule() {
-        return objectSpaceModule;
-    }
-
-    public RubyModule getDebugModule() {
-        return debugModule;
     }
 
     public RubyArray getArgv() {
@@ -646,20 +615,16 @@ public class CoreLibrary {
         return globalVariablesObject;
     }
 
+    public RubyArray getLoadPath() {
+        return (RubyArray) globalVariablesObject.getInstanceVariable("$LOAD_PATH");
+    }
+
+    public RubyArray getLoadedFeatures() {
+        return (RubyArray) globalVariablesObject.getInstanceVariable("$LOADED_FEATURES");
+    }
+
     public RubyBasicObject getMainObject() {
         return mainObject;
-    }
-
-    public RubyFalseClass getFalseObject() {
-        return falseObject;
-    }
-
-    public RubyNilClass getNilObject() {
-        return nilObject;
-    }
-
-    public RubyTrueClass getTrueObject() {
-        return trueObject;
     }
 
     public RubyEncoding getDefaultEncoding() { return RubyEncoding.findEncodingByName(context.makeString("US-ASCII")); }

@@ -75,3 +75,11 @@ install/updates.xml
 # IntelliJ project files
 .idea
 *.iml
+
+# Truffle benchmark stuff
+bench/truffle/c/mandelbrot
+bench/truffle/java/*.class
+bench/truffle/report/*.pdf
+bench/truffle/report/*.data
+bench/truffle/lib/*.rbc
+bench/truffle/*.rbc

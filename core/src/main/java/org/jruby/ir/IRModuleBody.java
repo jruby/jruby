@@ -40,13 +40,6 @@ public class IRModuleBody extends IRScope {
     }
 
     @Override
-    public LocalVariable getImplicitBlockArg() {
-        assert false: "A module/class/metaclass body never accepts block args";
-
-        return null;
-    }
-
-    @Override
     public boolean isModuleBody() {
         return true;
     }

@@ -20,6 +20,17 @@ public class RubyNilClass extends RubyObject {
         super(rubyClass);
     }
 
+    /**
+     * Given a reference, produce either {@code nil} or the object. .
+     */
+    public static Object instanceOrNil(Object object) {
+        if (object == null) {
+            return NilPlaceholder.INSTANCE;
+        } else {
+            return object;
+        }
+    }
+
     @Override
     public boolean equals(Object other) {
         return other instanceof RubyNilClass || other instanceof NilPlaceholder;

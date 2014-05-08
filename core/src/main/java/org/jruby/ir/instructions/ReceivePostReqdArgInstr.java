@@ -5,6 +5,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -61,8 +62,9 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase implements FixedArit
         }
     }
 
-    public IRubyObject receivePostReqdArg(IRubyObject[] args) {
-        int n = args.length;
+    public IRubyObject receivePostReqdArg(IRubyObject[] args, boolean acceptsKeywordArgument) {
+        boolean kwargs = IRRuntimeHelpers.extractKwargsHash(args, preReqdArgsCount + postReqdArgsCount, acceptsKeywordArgument) != null;
+        int n = kwargs ? args.length - 1 : args.length;
         int remaining = n - preReqdArgsCount;
         if (remaining <= argIndex) return null;  // For blocks!
 

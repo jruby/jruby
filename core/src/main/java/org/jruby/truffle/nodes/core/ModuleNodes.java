@@ -11,16 +11,16 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameDescriptor;
-import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.InlinableMethodImplementation;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
+import org.jruby.truffle.nodes.methods.CatchReturnNode;
 import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
@@ -32,10 +32,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
-import org.jruby.truffle.runtime.methods.Arity;
-import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.methods.UniqueMethodIdentifier;
-import org.jruby.truffle.runtime.methods.Visibility;
+import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.translator.TranslatorDriver;
 
 import java.util.List;
@@ -108,15 +105,16 @@ public abstract class ModuleNodes {
             final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, Arity.NO_ARGS);
 
             final SelfNode self = new SelfNode(context, sourceSection);
-            final ReadInstanceVariableNode readInstanceVariable = new ReadInstanceVariableNode(context, sourceSection, "@" + name, self);
+            final ReadInstanceVariableNode readInstanceVariable = new ReadInstanceVariableNode(context, sourceSection, "@" + name, self, false);
 
-            final SequenceNode block = new SequenceNode(context, sourceSection, checkArity, readInstanceVariable);
+            final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, readInstanceVariable);
 
-            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, name + "(attr_reader)", block);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name + "(attr_reader)", null);
+            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRoot));
             final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRoot, true, false);
-            final RubyMethod method = new RubyMethod(sourceSection, module, new UniqueMethodIdentifier(), null, name, Visibility.PUBLIC, false, methodImplementation);
-
+            final RubyMethod method = new RubyMethod(sharedMethodInfo, module, name, Visibility.PUBLIC, false, methodImplementation);
+            methodImplementation.setMethod(method);
             module.addMethod(method);
         }
     }
@@ -151,15 +149,16 @@ public abstract class ModuleNodes {
 
             final SelfNode self = new SelfNode(context, sourceSection);
             final ReadPreArgumentNode readArgument = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
-            final WriteInstanceVariableNode writeInstanceVariable = new WriteInstanceVariableNode(context, sourceSection, "@" + name, self, readArgument);
+            final WriteInstanceVariableNode writeInstanceVariable = new WriteInstanceVariableNode(context, sourceSection, "@" + name, self, readArgument, false);
 
-            final SequenceNode block = new SequenceNode(context, sourceSection, checkArity, writeInstanceVariable);
+            final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, writeInstanceVariable);
 
-            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, name + "(attr_writer)", block);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name + "(attr_writer)", null);
+            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRoot));
             final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRoot, true, false);
-            final RubyMethod method = new RubyMethod(sourceSection, module, new UniqueMethodIdentifier(), null, name + "=", Visibility.PUBLIC, false, methodImplementation);
-
+            final RubyMethod method = new RubyMethod(sharedMethodInfo, module, name + "=", Visibility.PUBLIC, false, methodImplementation);
+            methodImplementation.setMethod(method);
             module.addMethod(method);
         }
     }
@@ -226,7 +225,7 @@ public abstract class ModuleNodes {
 
         @Specialization(order = 4)
         public Object classEval(VirtualFrame frame, RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
-            return block.call(frame.pack(), self);
+            return block.callWithModifiedSelf(frame.pack(), self);
         }
 
     }
@@ -324,31 +323,55 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(order = 1)
-        public RubyMethod defineMethod(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
-            final RubyMethod method = block.getMethod();
-            module.addMethod(method.withNewName(name.toString()));
-            return method;
+        public RubySymbol defineMethod(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
+            return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
         }
 
         @Specialization(order = 2)
-        public RubyMethod defineMethod(RubyModule module, RubyString name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            final RubyMethod method = proc.getMethod();
-            module.addMethod(method.withNewName(name.toString()));
-            return method;
+        public RubySymbol defineMethod(RubyModule module, RubyString name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+            final RubySymbol symbol = getContext().getSymbolTable().getSymbol(name.getBytes());
+            defineMethod(module, symbol, proc);
+            return symbol;
         }
 
         @Specialization(order = 3)
-        public RubyMethod defineMethod(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
-            final RubyMethod method = block.getMethod();
-            module.addMethod(method.withNewName(name.toString()));
-            return method;
+        public RubySymbol defineMethod(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
+            return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
         }
 
         @Specialization(order = 4)
-        public RubyMethod defineMethod(RubyModule module, RubySymbol name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public RubySymbol defineMethod(RubyModule module, RubySymbol name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+            defineMethod(module, name, proc);
+            return name;
+        }
+
+        private static void defineMethod(RubyModule module, RubySymbol name, RubyProc proc) {
             final RubyMethod method = proc.getMethod();
-            module.addMethod(method.withNewName(name.toString()));
-            return method;
+
+            if (!(method.getImplementation() instanceof InlinableMethodImplementation)) {
+                throw new UnsupportedOperationException("Can only use define_method with methods where we have the original AST, as we need to clone and modify it");
+            }
+
+            final InlinableMethodImplementation methodImplementation = (InlinableMethodImplementation) method.getImplementation();
+
+            final RubyRootNode modifiedRootNode = methodImplementation.getCloneOfPristineRootNode();
+            final CatchReturnNode modifiedCatchReturn = NodeUtil.findFirstNodeInstance(modifiedRootNode, CatchReturnNode.class);
+
+            if (modifiedCatchReturn == null) {
+                throw new UnsupportedOperationException("Doesn't seem to have a " + CatchReturnNode.class.getName());
+            }
+
+            modifiedCatchReturn.setIsProc(false);
+
+            final CallTarget modifiedCallTarget = Truffle.getRuntime().createCallTarget(modifiedRootNode);
+
+            final InlinableMethodImplementation modifiedMethodImplementation = new InlinableMethodImplementation(
+                    modifiedCallTarget, methodImplementation.getDeclarationFrame(), methodImplementation.getFrameDescriptor(),
+                    modifiedRootNode, methodImplementation.alwaysInline(), methodImplementation.getShouldAppendCallNode());
+
+            final RubyMethod modifiedMethod = new RubyMethod(method.getSharedMethodInfo(), method.getDeclaringModule(), name.toString(), method.getVisibility(), method.isUndefined(), modifiedMethodImplementation);
+            methodImplementation.setMethod(modifiedMethod);
+            module.addMethod(modifiedMethod);
         }
 
     }
@@ -627,12 +650,39 @@ public abstract class ModuleNodes {
         @Specialization
         public RubyModule privateConstant(RubyModule module, Object[] args) {
             final Node callNode = (Node) args[args.length - 1];
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "private_constant does nothing at the moment");
+            for (Object ob : args) {
+                if (ob instanceof RubySymbol){
+                    module.changeConstantVisibility((RubySymbol) ob, true);
+                }
+            }
             return module;
         }
     }
 
-    @CoreMethod(names = "protected", appendCallNode = true, isSplatted = true)
+    @CoreMethod(names = "public_constant", appendCallNode = true, isSplatted = true)
+    public abstract static class PublicConstantNode extends CoreMethodNode {
+
+        public PublicConstantNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PublicConstantNode(PublicConstantNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyModule publicConstant(RubyModule module, Object[] args) {
+            final Node callNode = (Node) args[args.length - 1];
+            for (Object ob : args) {
+                if (ob instanceof RubySymbol){
+                    module.changeConstantVisibility((RubySymbol) ob, false);
+                }
+            }
+            return module;
+        }
+    }
+
+    @CoreMethod(names = "protected", isSplatted = true)
     public abstract static class ProtectedNode extends CoreMethodNode {
 
         public ProtectedNode(RubyContext context, SourceSection sourceSection) {
@@ -644,9 +694,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule doProtected(RubyModule module, @SuppressWarnings("unused") Object[] args) {
-            final Node callNode = (Node) args[args.length - 1];
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "protected does nothing at the moment");
+        public RubyModule doProtected(VirtualFrame frame, RubyModule module, Object... args) {
+            module.visibilityMethod(frame.getCaller(), args, Visibility.PROTECTED);
             return module;
         }
     }
@@ -745,4 +794,22 @@ public abstract class ModuleNodes {
 
     }
 
+    @CoreMethod(names = "const_set", minArgs = 2, maxArgs = 2)
+    public abstract static class ConstSetNode extends CoreMethodNode {
+
+        public ConstSetNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ConstSetNode(ConstSetNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyModule setConstant(RubyModule module, RubyString name, Object object) {
+            module.setConstant(name.toString(), object);
+            return module;
+        }
+
+    }
 }

@@ -70,6 +70,11 @@ public class JRubyOsgiEmbedTest {
                 "require 'java'; java_import '%s'; %s.new.result.to_java :string", JRubyOsgiEmbedTest.class.getName(),
                 JRubyOsgiEmbedTest.class.getSimpleName()));
         assertEquals(getResult(), result);
+
+	// ensure we can load openssl (with its bouncy-castle jars)
+        boolean openssl = (Boolean) scriptingContainer.runScriptlet( "require 'openssl'" );
+        assertEquals(true, openssl);
+
         // OK, this is super ugly. Pax Exam is sometimes unregistering bundles
         // before they've been fully registered with a quick test like this.
         Thread.sleep(500);

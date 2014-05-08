@@ -10,12 +10,16 @@
 package org.jruby.truffle.nodes.core;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.core.hash.RubyHash;
 
 /**
  * Represents an expression that is evaluated by running it as a system command via forking and
@@ -28,12 +32,20 @@ public class SystemNode extends RubyNode {
 
     public SystemNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
-        this.child = adoptChild(child);
+        this.child = child;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
         final RubyContext context = getContext();
+
+        final RubyHash env = (RubyHash) getContext().getCoreLibrary().getObjectClass().lookupConstant("ENV").value;
+
+        final List<String> envp = new ArrayList<>();
+
+        for (Map.Entry<Object, Object> entry : env.getMap().entrySet()) {
+            envp.add(entry.getKey().toString() + "=" + entry.getValue().toString());
+        }
 
         final String command = child.execute(frame).toString();
 
@@ -41,24 +53,23 @@ public class SystemNode extends RubyNode {
 
         try {
             // We need to run via bash to get the variable and other expansion we expect
-            process = Runtime.getRuntime().exec(new String[]{"bash", "-c", command});
+            process = Runtime.getRuntime().exec(new String[]{"bash", "-c", command}, envp.toArray(new String[envp.size()]));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         final InputStream stdout = process.getInputStream();
-        final BufferedReader reader = new BufferedReader(new InputStreamReader(stdout));
+        final InputStreamReader reader = new InputStreamReader(stdout);
 
         final StringBuilder resultBuilder = new StringBuilder();
-
-        String line;
 
         // TODO(cs): this isn't great for binary output
 
         try {
-            while ((line = reader.readLine()) != null) {
-                resultBuilder.append(line);
-                resultBuilder.append("\n");
+            int c;
+
+            while ((c = reader.read()) != -1) {
+                resultBuilder.append((char) c);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

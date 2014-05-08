@@ -13,20 +13,25 @@ import java.io.*;
 import java.math.*;
 import java.util.concurrent.atomic.*;
 
-import com.oracle.truffle.api.impl.DefaultDebugManager;
-import org.jruby.Ruby;
+import com.oracle.truffle.api.debug.ASTPrinter;
+import com.oracle.truffle.api.debug.DebugContext;
+import com.oracle.truffle.api.debug.DebugManager;
+import com.oracle.truffle.api.debug.DefaultDebugManager;
+import org.jruby.*;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.source.*;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyBinding;
+import org.jruby.truffle.runtime.core.RubyFixnum;
+import org.jruby.truffle.runtime.core.RubyFloat;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.runtime.debug.RubyDebugManager;
@@ -94,31 +99,30 @@ public class RubyContext implements ExecutionContext {
         return debugManager;
     }
 
-    public ASTPrinter getASTPrinter() {
-        return astPrinter;
-    }
-
     public void load(Source source) {
         execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
     }
 
     public void loadFile(String fileName) {
+        if (new File(fileName).isAbsolute()) {
+            loadFileAbsolute(fileName);
+        } else {
+            loadFileAbsolute(this.getRuntime().getCurrentDirectory() + File.separator + fileName);
+        }
+    }
+
+    private void loadFileAbsolute(String fileName) {
         final Source source = sourceManager.get(fileName);
         final String code = source.getCode();
         if (code == null) {
             throw new RuntimeException("Can't read file " + fileName);
         }
+        coreLibrary.getLoadedFeatures().push(makeString(fileName));
         execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
     }
 
     public RubySymbol.SymbolTable getSymbolTable() {
         return symbolTable;
-    }
-    /**
-     * Receives runtime notification that execution has halted.
-     */
-    public void haltedAt(Node node, MaterializedFrame frame) {
-        runShell(node, frame);
     }
 
     public RubySymbol newSymbol(String name) {
@@ -185,7 +189,7 @@ public class RubyContext implements ExecutionContext {
     public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame) {
         try {
             final RubyParserResult parseResult = translator.parse(context, source, parserContext, parentFrame);
-            final RubyArguments arguments = new RubyArguments(parentFrame, self, null);
+            final RubyArguments arguments = new RubyArguments(RubyArguments.create(parentFrame, self, null));
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
 
             return callTarget.call(null, arguments);
@@ -226,11 +230,57 @@ public class RubyContext implements ExecutionContext {
     }
 
     public RubyString makeString(String string) {
-        return new RubyString(coreLibrary.getStringClass(), string);
+        return RubyString.fromJavaString(coreLibrary.getStringClass(), string);
     }
 
     public RubyString makeString(char string) {
         return makeString(Character.toString(string));
+    }
+
+    public IRubyObject toJRuby(Object object) {
+        if (object instanceof NilPlaceholder) {
+            return runtime.getNil();
+        } else if (object == getCoreLibrary().getKernelModule()) {
+            return runtime.getKernel();
+        } else if (object == getCoreLibrary().getMainObject()) {
+            return runtime.getTopSelf();
+        } else if (object instanceof Boolean) {
+            return runtime.newBoolean((boolean) object);
+        } else if (object instanceof Integer) {
+            return runtime.newFixnum((int) object);
+        } else if (object instanceof Double) {
+            return runtime.newFloat((double) object);
+        } else if (object instanceof RubyString) {
+            return ((RubyString) object).toJRubyString();
+        } else {
+            throw getRuntime().newRuntimeError("cannot pass " + object + " to JRuby");
+        }
+    }
+
+    public Object toTruffle(IRubyObject object) {
+        if (object == runtime.getTopSelf()) {
+            return getCoreLibrary().getMainObject();
+        } else if (object == runtime.getKernel()) {
+            return getCoreLibrary().getKernelModule();
+        } else if (object instanceof RubyNil) {
+            return NilPlaceholder.INSTANCE;
+        } else if (object instanceof RubyBoolean.True) {
+            return true;
+        } else if (object instanceof RubyBoolean.False) {
+            return false;
+        } else if (object instanceof org.jruby.RubyFixnum) {
+            final long value = ((org.jruby.RubyFixnum) object).getLongValue();
+
+            if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+                throw new UnsupportedOperationException();
+            }
+
+            return (int) value;
+        } else if (object instanceof org.jruby.RubyFloat) {
+            return ((org.jruby.RubyFloat) object).getDoubleValue();
+        } else {
+            throw object.getRuntime().newRuntimeError("cannot pass " + object.inspect() + " to Truffle");
+        }
     }
 
     public Ruby getRuntime() {
@@ -271,17 +321,13 @@ public class RubyContext implements ExecutionContext {
      * so.
      */
     public static boolean shouldObjectBeVisible(Object object) {
-        // TODO(cs): RubyMethod should never be visible
-
         return object instanceof UndefinedPlaceholder || //
                         object instanceof Boolean || //
                         object instanceof Integer || //
                         object instanceof BigInteger || //
                         object instanceof Double || //
                         object instanceof RubyBasicObject || //
-                        object instanceof RubyMethod || //
-                        object instanceof NilPlaceholder || //
-                        object instanceof RubyMethod;
+                        object instanceof NilPlaceholder;
     }
 
     public static boolean shouldObjectsBeVisible(Object... objects) {
@@ -300,6 +346,11 @@ public class RubyContext implements ExecutionContext {
 
     public SourceManager getSourceManager() {
         return sourceManager;
+    }
+
+    @Override
+    public DebugContext getDebugContext() {
+        throw new UnsupportedOperationException();
     }
 
     public RubyDebugManager getRubyDebugManager() {

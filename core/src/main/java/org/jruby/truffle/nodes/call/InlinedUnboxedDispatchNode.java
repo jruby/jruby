@@ -39,7 +39,7 @@ public class InlinedUnboxedDispatchNode extends UnboxedDispatchNode {
         this.unmodifiedAssumption = unmodifiedAssumption;
         this.method = method;
         this.rootNode = method.getCloneOfPristineRootNode();
-        this.next = adoptChild(next);
+        this.next = next;
     }
 
     @Override
@@ -71,14 +71,14 @@ public class InlinedUnboxedDispatchNode extends UnboxedDispatchNode {
             modifiedArgumentsObjects = argumentsObjects;
         }
 
-        final RubyArguments arguments = new RubyArguments(method.getDeclarationFrame(), receiverObject, blockObject, modifiedArgumentsObjects);
+        final RubyArguments arguments = new RubyArguments(RubyArguments.create(method.getDeclarationFrame(), receiverObject, blockObject, modifiedArgumentsObjects));
         final VirtualFrame inlinedFrame = Truffle.getRuntime().createVirtualFrame(frame.pack(), arguments, method.getFrameDescriptor());
         return rootNode.execute(inlinedFrame);
     }
 
     @Override
     public void setNext(UnboxedDispatchNode next) {
-        this.next = adoptChild(next);
+        this.next = insert(next);
     }
 
 }

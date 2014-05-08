@@ -41,7 +41,7 @@ import org.jruby.truffle.runtime.methods.*;
  * methods involved.
  * <p>
  * If we have too many dispatch nodes we replace the whole chain with {@link DispatchHeadNode} -&gt;
- * {@link BoxingDispatchNode} -&gt; {@link GeneralBoxedDispatchNode}.
+ * {@link BoxingDispatchNode} -&gt; {@link GeneralDispatchNode}.
  * <p>
  * This system allows us to dispatch based purely on Java class, before we have to turn the object
  * into a full {@link RubyBasicObject} and consider the full Ruby lookup process, and something such
@@ -59,26 +59,26 @@ public class RubyCallNode extends RubyNode {
 
     @Child protected DispatchHeadNode dispatchHead;
 
-    public RubyCallNode(RubyContext context, SourceSection section, String name, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode[] arguments) {
+    public RubyCallNode(RubyContext context, SourceSection section, String name, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
         super(context, section);
 
         assert receiver != null;
         assert arguments != null;
         assert name != null;
 
-        this.receiver = adoptChild(receiver);
+        this.receiver = receiver;
 
         if (block == null) {
             this.block = null;
         } else {
-            this.block = adoptChild(ProcOrNullNodeFactory.create(context, section, block));
+            this.block = ProcOrNullNodeFactory.create(context, section, block);
         }
 
-        this.arguments = adoptChildren(arguments);
+        this.arguments = arguments;
         this.name = name;
         this.isSplatted = isSplatted;
 
-        dispatchHead = adoptChild(new DispatchHeadNode(context, section, name, isSplatted));
+        dispatchHead = new DispatchHeadNode(context, section, name, isSplatted, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
     }
 
     @Override
@@ -117,6 +117,16 @@ public class RubyCallNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
+        if (receiver.isDefined(frame) == NilPlaceholder.INSTANCE) {
+            return NilPlaceholder.INSTANCE;
+        }
+
+        for (RubyNode argument : arguments) {
+            if (argument.isDefined(frame) == NilPlaceholder.INSTANCE) {
+                return NilPlaceholder.INSTANCE;
+            }
+        }
+
         final RubyContext context = getContext();
 
         Object receiverObject;
@@ -140,11 +150,17 @@ public class RubyCallNode extends RubyNode {
 
         final RubyBasicObject self = context.getCoreLibrary().box(frame.getArguments(RubyArguments.class).getSelf());
 
-        if (method == null || method.isUndefined()) {
-            return NilPlaceholder.INSTANCE;
-        }
+        if (method == null) {
+            final RubyMethod respondToMissing = receiverBasicObject.getLookupNode().lookupMethod("respond_to_missing?");
 
-        if (!method.isVisibleTo(self)) {
+            if (respondToMissing != null) {
+                if (!RubyTrueClass.toBoolean(respondToMissing.call(frame.pack(), receiverBasicObject, null, context.makeString(name), true))) {
+                    return NilPlaceholder.INSTANCE;
+                }
+            }
+        } else if (method.isUndefined()) {
+            return NilPlaceholder.INSTANCE;
+        } else if (!method.isVisibleTo(self)) {
             return NilPlaceholder.INSTANCE;
         }
 

@@ -69,7 +69,7 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public Object accept(NodeVisitor iVisitor) {
+    public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitInstVarNode(this);
     }
 

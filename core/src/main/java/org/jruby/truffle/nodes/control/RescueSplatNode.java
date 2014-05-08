@@ -29,7 +29,7 @@ public class RescueSplatNode extends RescueNode {
 
     public RescueSplatNode(RubyContext context, SourceSection sourceSection, RubyNode handlingClassesArray, RubyNode body) {
         super(context, sourceSection, body);
-        this.handlingClassesArray = adoptChild(handlingClassesArray);
+        this.handlingClassesArray = handlingClassesArray;
     }
 
     @ExplodeLoop

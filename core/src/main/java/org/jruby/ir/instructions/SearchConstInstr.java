@@ -9,7 +9,6 @@ import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -111,7 +110,7 @@ public class SearchConstInstr extends Instr implements ResultInstr, FixedArityIn
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Object constant = cachedConstant; // Store to temp so it does null out on us mid-stream
         if (!isCached(context, constant)) constant = cache(context, currDynScope, self, temp);
 

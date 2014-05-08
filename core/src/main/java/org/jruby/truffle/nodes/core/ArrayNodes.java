@@ -11,10 +11,13 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.dsl.Generic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -99,6 +102,32 @@ public abstract class ArrayNodes {
 
     }
 
+    @CoreMethod(names = "|", minArgs = 1, maxArgs = 1)
+    public abstract static class UnionNode extends CoreMethodNode {
+
+        public UnionNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public UnionNode(UnionNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray equal(RubyArray a, RubyArray b) {
+            final RubyArray result = (RubyArray) a.dup();
+
+            for (Object value : b.asList()) {
+                if (!result.contains(value)) {
+                    result.push(value);
+                }
+            }
+
+            return result;
+        }
+
+    }
+
     @CoreMethod(names = "==", minArgs = 1, maxArgs = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
@@ -145,13 +174,13 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isFixnumStore", rewriteOn = UnexpectedResultException.class, order = 2)
         public int indexFixnum(RubyArray array, int index, @SuppressWarnings("unused") UndefinedPlaceholder unused) throws UnexpectedResultException {
-            final FixnumArrayStore store = (FixnumArrayStore) array.getArrayStore();
+            final IntegerArrayStore store = (IntegerArrayStore) array.getArrayStore();
             return store.getFixnum(ArrayUtilities.normaliseIndex(store.size(), index));
         }
 
         @Specialization(guards = "isFixnumStore", order = 3)
         public Object indexMaybeFixnum(RubyArray array, int index, @SuppressWarnings("unused") UndefinedPlaceholder unused) {
-            final FixnumArrayStore store = (FixnumArrayStore) array.getArrayStore();
+            final IntegerArrayStore store = (IntegerArrayStore) array.getArrayStore();
 
             try {
                 return store.getFixnum(ArrayUtilities.normaliseIndex(store.size(), index));
@@ -177,16 +206,15 @@ public abstract class ArrayNodes {
             }
         }
 
-        @Specialization(guards = "isObjectStore", order = 6)
-        public Object indexObject(RubyArray array, int index, @SuppressWarnings("unused") UndefinedPlaceholder unused) {
-            final ObjectArrayStore store = (ObjectArrayStore) array.getArrayStore();
-            return store.get(ArrayUtilities.normaliseIndex(store.size(), index));
-        }
-
-        @Specialization(guards = "isObjectImmutablePairStore", order = 7)
+        @Specialization(guards = "isObjectImmutablePairStore", order = 6)
         public Object indexObjectImmutablePair(RubyArray array, int index, @SuppressWarnings("unused") UndefinedPlaceholder unused) {
             final ObjectImmutablePairArrayStore store = (ObjectImmutablePairArrayStore) array.getArrayStore();
             return store.get(ArrayUtilities.normaliseIndex(store.size(), index));
+        }
+
+        @Specialization(order = 7)
+        public Object indexObject(RubyArray array, int index, @SuppressWarnings("unused") UndefinedPlaceholder unused) {
+            return array.get(index);
         }
 
         @Specialization(order = 8)
@@ -226,7 +254,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isFixnumStore", rewriteOn = GeneraliseArrayStoreException.class, order = 2)
         public int indexSetFixnum(RubyArray array, int index, int value, @SuppressWarnings("unused") UndefinedPlaceholder unused) throws GeneraliseArrayStoreException {
-            final FixnumArrayStore store = (FixnumArrayStore) array.getArrayStore();
+            final IntegerArrayStore store = (IntegerArrayStore) array.getArrayStore();
             final int normalisedIndex = ArrayUtilities.normaliseIndex(store.size(), index);
             store.setFixnum(normalisedIndex, value);
             return value;
@@ -234,7 +262,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isFixnumStore", order = 3)
         public int indexSetFixnumMayGeneralise(RubyArray array, int index, int value, @SuppressWarnings("unused") UndefinedPlaceholder unused) {
-            final FixnumArrayStore store = (FixnumArrayStore) array.getArrayStore();
+            final IntegerArrayStore store = (IntegerArrayStore) array.getArrayStore();
             final int normalisedIndex = ArrayUtilities.normaliseIndex(store.size(), index);
 
             try {
@@ -246,17 +274,9 @@ public abstract class ArrayNodes {
             return value;
         }
 
-        @Specialization(guards = "isObjectStore", order = 4)
+        @Specialization(order = 4)
         public Object indexSetObject(RubyArray array, int index, Object value, @SuppressWarnings("unused") UndefinedPlaceholder unused) {
-            final ObjectArrayStore store = (ObjectArrayStore) array.getArrayStore();
-            final int normalisedIndex = ArrayUtilities.normaliseIndex(store.size(), index);
-
-            try {
-                store.set(normalisedIndex, value);
-            } catch (GeneraliseArrayStoreException e) {
-                array.set(normalisedIndex, value);
-            }
-
+            array.set(index, value);
             return value;
         }
 
@@ -293,7 +313,7 @@ public abstract class ArrayNodes {
             if (value instanceof UndefinedPlaceholder) {
                 if (array.getArrayStore() instanceof EmptyArrayStore) {
                     return indexSetEmpty(array, begin, rangeLength, UndefinedPlaceholder.INSTANCE);
-                } else if (array.getArrayStore() instanceof FixnumArrayStore) {
+                } else if (array.getArrayStore() instanceof IntegerArrayStore) {
                     return indexSetFixnumMayGeneralise(array, begin, rangeLength, UndefinedPlaceholder.INSTANCE);
                 } else {
                     return indexSetObject(array, begin, rangeLength, UndefinedPlaceholder.INSTANCE);
@@ -350,6 +370,43 @@ public abstract class ArrayNodes {
             }
 
             return false;
+        }
+
+    }
+
+    @CoreMethod(names = "at", minArgs = 1, maxArgs = 1)
+    public abstract static class AtNode extends CoreMethodNode {
+
+        public AtNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AtNode(AtNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object at(RubyArray array, int index) {
+            return array.get(index);
+        }
+
+    }
+
+    @CoreMethod(names = "clear", maxArgs = 0)
+    public abstract static class ClearNode extends ArrayCoreMethodNode {
+
+        public ClearNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ClearNode(ClearNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray clear(RubyArray array) {
+            array.clear();
+            return array;
         }
 
     }
@@ -641,6 +698,33 @@ public abstract class ArrayNodes {
 
     }
 
+    @CoreMethod(names = "initialize", needsBlock = true, minArgs = 1, maxArgs = 2)
+    public abstract static class InitializeNode extends CoreMethodNode {
+
+        public InitializeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InitializeNode(InitializeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray initialize(RubyArray array, int size, UndefinedPlaceholder defaultValue) {
+            // TODO(CS): will set most general type
+            array.setSize(size, NilPlaceholder.INSTANCE);
+            return array;
+        }
+
+        @Specialization
+        public RubyArray initialize(RubyArray array, int size, Object defaultValue) {
+            // TODO(CS): will set most general type
+            array.setSize(size, defaultValue);
+            return array;
+        }
+
+    }
+
     @CoreMethod(names = {"inject", "reduce"}, needsBlock = true, minArgs = 0, maxArgs = 1)
     public abstract static class InjectNode extends YieldingCoreMethodNode {
 
@@ -693,7 +777,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isFixnumStore", rewriteOn = GeneraliseArrayStoreException.class)
         public int insert(RubyArray array, int index, int value) throws GeneraliseArrayStoreException {
-            final FixnumArrayStore store = (FixnumArrayStore) array.getArrayStore();
+            final IntegerArrayStore store = (IntegerArrayStore) array.getArrayStore();
             store.insertFixnum(ArrayUtilities.normaliseIndex(store.size(), index), value);
             return value;
         }
@@ -719,28 +803,11 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyString inspect(RubyArray array) {
-            final RubyContext context = getContext();
-            return getContext().makeString(inspect(context, array));
+            return getContext().makeString(createInspectString(array));
         }
 
-        @SlowPath
-        private static String inspect(RubyContext context, RubyArray array) {
-            final StringBuilder builder = new StringBuilder();
-
-            builder.append("[");
-
-            for (int n = 0; n < array.size(); n++) {
-                if (n > 0) {
-                    builder.append(", ");
-                }
-
-                // TODO(CS): slow path send
-                builder.append(context.getCoreLibrary().box(array.get(n)).send("inspect", null));
-            }
-
-            builder.append("]");
-
-            return builder.toString();
+        private String createInspectString(RubyArray array) {
+            return array.inspect();
         }
 
     }
@@ -828,6 +895,109 @@ public abstract class ArrayNodes {
 
             return array;
         }
+    }
+
+    @CoreMethod(names = "min", maxArgs = 0)
+    public abstract static class MinNode extends ArrayCoreMethodNode {
+
+        @Child protected DispatchHeadNode compareDispatchNode;
+
+        public MinNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            compareDispatchNode = new DispatchHeadNode(context, sourceSection, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        }
+
+        public MinNode(MinNode prev) {
+            super(prev);
+            compareDispatchNode = prev.compareDispatchNode;
+        }
+
+        @Specialization(guards = "isFixnumStore", rewriteOn = GeneraliseArrayStoreException.class)
+        public int minFixnum(VirtualFrame frame, RubyArray array) {
+            final int[] values = ((IntegerArrayStore) array.getArrayStore()).getValues();
+
+            int min = values[0];
+
+            for (int n = 1; n < values.length; n++) {
+                int value = values[n];
+
+                final Object relative = compareDispatchNode.dispatch(frame, value, null, min);
+
+                // TODO(CS): implement rb_cmpint and its particular semantics as a new node
+
+                if ((int) relative < 0) {
+                    min = value;
+                }
+            }
+
+            return min;
+        }
+
+        @Specialization(guards = "isLongFixnumStore", rewriteOn = GeneraliseArrayStoreException.class)
+        public long minLongFixum(VirtualFrame frame, RubyArray array) {
+            final long[] values = ((LongArrayStore) array.getArrayStore()).getValues();
+
+            long min = values[0];
+
+            for (int n = 1; n < values.length; n++) {
+                long value = values[n];
+
+                final Object relative = compareDispatchNode.dispatch(frame, value, null, min);
+
+                // TODO(CS): implement rb_cmpint and its particular semantics as a new node
+
+                if ((int) relative < 0) {
+                    min = value;
+                }
+            }
+
+            return min;
+        }
+
+        @Specialization
+        public Object minGeneric(VirtualFrame frame, RubyArray array) {
+            final Object[] values = array.toObjectArray();
+
+            Object min = values[0];
+
+            for (int n = 1; n < values.length; n++) {
+                Object value = values[n];
+
+                final Object relative = compareDispatchNode.dispatch(frame, value, null, min);
+
+                // TODO(CS): implement rb_cmpint and its particular semantics as a new node
+
+                if ((int) relative < 0) {
+                    min = value;
+                }
+            }
+
+            return min;
+        }
+
+    }
+
+    @CoreMethod(names = "pack", minArgs = 1, maxArgs = 1)
+    public abstract static class PackNode extends ArrayCoreMethodNode {
+
+        public PackNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PackNode(PackNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString pack(RubyArray array, RubyString format) {
+            return new RubyString(
+                    getContext().getCoreLibrary().getStringClass(),
+                    org.jruby.util.Pack.pack(
+                            getContext().getRuntime(),
+                            array.toJRubyArray(),
+                            format.toJRubyString().getByteList()).getByteList());
+        }
+
     }
 
     @CoreMethod(names = "pop", maxArgs = 0)
@@ -931,6 +1101,25 @@ public abstract class ArrayNodes {
 
     }
 
+    @CoreMethod(names = "replace", minArgs = 1, maxArgs = 1)
+    public abstract static class ReplaceNode extends ArrayCoreMethodNode {
+
+        public ReplaceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ReplaceNode(ReplaceNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray clear(RubyArray array, RubyArray other) {
+            array.replace(other);
+            return array;
+        }
+
+    }
+
     @CoreMethod(names = "select", needsBlock = true, maxArgs = 0)
     public abstract static class SelectNode extends YieldingCoreMethodNode {
 
@@ -1001,6 +1190,24 @@ public abstract class ArrayNodes {
 
     }
 
+    @CoreMethod(names = "slice", minArgs = 2, maxArgs = 2)
+    public abstract static class SliceNode extends ArrayCoreMethodNode {
+
+        public SliceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SliceNode(SliceNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray slice(RubyArray array, int start, int length) {
+            return array.getRangeExclusive(start, start + length);
+        }
+
+    }
+
     @CoreMethod(names = "sort", maxArgs = 0)
     public abstract static class SortNode extends CoreMethodNode {
 
@@ -1029,6 +1236,24 @@ public abstract class ArrayNodes {
             });
 
             return RubyArray.specializedFromObjects(context.getCoreLibrary().getArrayClass(), objects);
+        }
+
+    }
+
+    @CoreMethod(names = "to_a", maxArgs = 0)
+    public abstract static class ToANode extends CoreMethodNode {
+
+        public ToANode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToANode(ToANode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray toA(RubyArray array) {
+            return array;
         }
 
     }
@@ -1103,8 +1328,8 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public RubyFixnum hashNumber(RubyArray array) {
-            return new RubyFixnum(array.getRubyClass().getContext().getCoreLibrary().getFixnumClass(), array.hashCode());
+        public long hashNumber(RubyArray array) {
+            return array.hashCode();
         }
 
     }

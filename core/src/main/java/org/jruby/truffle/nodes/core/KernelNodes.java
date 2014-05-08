@@ -18,6 +18,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.nodes.cast.*;
@@ -32,7 +33,8 @@ import org.jruby.truffle.runtime.core.hash.RubyHash;
 import org.jruby.truffle.runtime.subsystems.*;
 
 @CoreClass(name = "Kernel")
-public abstract class KernelNodes {
+public abstract class
+        KernelNodes {
 
     @CoreMethod(names = "Array", isModuleMethod = true, needsSelf = false, isSplatted = true)
     public abstract static class ArrayNode extends CoreMethodNode {
@@ -214,7 +216,7 @@ public abstract class KernelNodes {
             final ProcessBuilder builder = new ProcessBuilder(commandLine);
             builder.inheritIO();
 
-            final RubyHash env = (RubyHash) context.getCoreLibrary().getObjectClass().lookupConstant("ENV");
+            final RubyHash env = (RubyHash) context.getCoreLibrary().getObjectClass().lookupConstant("ENV").value;
 
             for (Map.Entry<Object, Object> entry : env.getMap().entrySet()) {
                 builder.environment().put(entry.getKey().toString(), entry.getValue().toString());
@@ -343,12 +345,12 @@ public abstract class KernelNodes {
 
         public IntegerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toInt = adoptChild(new DispatchHeadNode(context, getSourceSection(), "to_int", false));
+            toInt = new DispatchHeadNode(context, getSourceSection(), "to_int", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public IntegerNode(IntegerNode prev) {
             super(prev);
-            toInt = adoptChild(prev.toInt);
+            toInt = prev.toInt;
         }
 
         @Specialization
@@ -391,7 +393,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public RubyProc proc(Object self, RubyProc block) {
-            return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA, self, block, block.getMethod());
+            return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA, self, block, block.getMethod().withoutBlockDestructureSemantics());
 
         }
     }
@@ -421,15 +423,15 @@ public abstract class KernelNodes {
 
         public LoopNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            whileNode = adoptChild(
-                    new WhileNode(context, sourceSection, BooleanCastNodeFactory.create(context, sourceSection,
-                            new BooleanLiteralNode(context, sourceSection, true)),
-                            new YieldNode(context, getSourceSection(), new RubyNode[]{}, false)));
+            whileNode = new WhileNode(context, sourceSection, BooleanCastNodeFactory.create(context, sourceSection,
+                    new BooleanLiteralNode(context, sourceSection, true)),
+                    new YieldNode(context, getSourceSection(), new RubyNode[]{}, false)
+            );
         }
 
         public LoopNode(LoopNode prev) {
             super(prev);
-            whileNode = adoptChild(prev.whileNode);
+            whileNode = prev.whileNode;
         }
 
         @Specialization
@@ -438,7 +440,46 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "print", isModuleMethod = true, needsSelf = false, isSplatted = true)
+    @CoreMethod(names = "p", visibility = Visibility.PRIVATE, isModuleMethod = true, needsSelf = false, isSplatted = true)
+    public abstract static class PNode extends CoreMethodNode {
+
+        public PNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PNode(PNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public NilPlaceholder p(Object[] args) {
+            final ThreadManager threadManager = getContext().getThreadManager();
+
+            final RubyThread runningThread = threadManager.leaveGlobalLock();
+
+            try {
+                for (Object arg : args) {
+                    final String string;
+
+                    if (arg instanceof NilPlaceholder) {
+                        string = "nil";
+                    } else if (arg instanceof RubyBasicObject) {
+                        string = ((RubyBasicObject) arg).inspect();
+                    } else {
+                        string = arg.toString();
+                    }
+
+                    getContext().getRuntime().getInstanceConfig().getOutput().println(string);
+                }
+            } finally {
+                threadManager.enterGlobalLock(runningThread);
+            }
+
+            return NilPlaceholder.INSTANCE;
+        }
+    }
+
+    @CoreMethod(names = "print", visibility = Visibility.PRIVATE, isModuleMethod = true, needsSelf = false, isSplatted = true)
     public abstract static class PrintNode extends CoreMethodNode {
 
         public PrintNode(RubyContext context, SourceSection sourceSection) {
@@ -457,20 +498,10 @@ public abstract class KernelNodes {
 
             try {
                 for (Object arg : args) {
-                    /*
-                     * TODO(cs): If it's a RubyString and made up of bytes, just write the bytes out
-                     * - using toString will mess up the encoding. We need to stop using toString
-                     * everywhere, and write our own bytes, possibly using JRuby's library for this.
-                     */
-
-                    if (arg instanceof RubyString && !((RubyString) arg).isFromJavaString()) {
-                        try {
-                            getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) arg).getBytes().bytes());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    } else {
-                        getContext().getRuntime().getInstanceConfig().getOutput().print(arg);
+                    try {
+                        getContext().getRuntime().getInstanceConfig().getOutput().write(((RubyString) arg).getBytes().bytes());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
                 }
             } finally {
@@ -526,12 +557,12 @@ public abstract class KernelNodes {
 
         public PrettyInspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = adoptChild(new DispatchHeadNode(context, getSourceSection(), "to_s", false));
+            toS = new DispatchHeadNode(context, getSourceSection(), "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public PrettyInspectNode(PrettyInspectNode prev) {
             super(prev);
-            toS = adoptChild(prev.toS);
+            toS = prev.toS;
         }
 
         @Specialization
@@ -615,12 +646,12 @@ public abstract class KernelNodes {
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = adoptChild(new DispatchHeadNode(context, getSourceSection(), "initialize", false));
+            initialize = new DispatchHeadNode(context, getSourceSection(), "initialize", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public RaiseNode(RaiseNode prev) {
             super(prev);
-            initialize = adoptChild(prev.initialize);
+            initialize = prev.initialize;
         }
 
         @Specialization(order = 1)
@@ -699,12 +730,12 @@ public abstract class KernelNodes {
 
         public StringNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = adoptChild(new DispatchHeadNode(context, getSourceSection(), "to_s", false));
+            toS = new DispatchHeadNode(context, getSourceSection(), "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public StringNode(StringNode prev) {
             super(prev);
-            toS = adoptChild(prev.toS);
+            toS = prev.toS;
         }
 
         @Specialization

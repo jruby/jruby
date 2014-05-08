@@ -147,7 +147,7 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public TemporaryLocalVariable getNewTemporaryVariable() {
+    public TemporaryLocalVariable createTemporaryVariable() {
         return getNewTemporaryVariable(TemporaryVariableType.CLOSURE);
     }
 
@@ -213,7 +213,7 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
+    protected LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
         LocalVariable lvar = lookupExistingLVar(name);
         if (lvar != null) return lvar;
 
@@ -293,36 +293,6 @@ public class IRClosure extends IRScope {
         return nestingDepth;
     }
 
-    public LocalVariable getImplicitBlockArg() {
-        // SSS: FIXME: Ugly! We cannot use 'getLocalVariable(Variable.BLOCK, getNestingDepth())' because
-        // of scenario 3. below.  Can we clean up this code?
-        //
-        // 1. If the variable has previously been defined, return a copy usable at the closure's nesting depth.
-        // 2. If not, and if the closure is ultimately nested within a method, build a local variable that will
-        //    be defined in that method.
-        // 3. If not, and if the closure is not nested within a method, the closure can never receive a block.
-        //    So, we could return 'null', but it creates problems for IR generation.  So, for this scenario,
-        //    we simply create a dummy var at depth 0 (meaning, it is local to the closure itself) and return it.
-        LocalVariable blockVar = findExistingLocalVariable(Variable.BLOCK, getNestingDepth());
-        if (blockVar != null) {
-            // Create a copy of the variable usable at the right depth
-            if (blockVar.getScopeDepth() != getNestingDepth()) blockVar = blockVar.cloneForDepth(getNestingDepth());
-        } else {
-            IRScope s = this;
-            while (s instanceof IRClosure) s = s.getLexicalParent();
-
-            if (s instanceof IRMethod) {
-                blockVar = s.getNewLocalVariable(Variable.BLOCK, 0);
-                // Create a copy of the variable usable at the right depth
-                if (getNestingDepth() != 0) blockVar = blockVar.cloneForDepth(getNestingDepth());
-            } else {
-                // Dummy var
-                blockVar = getNewLocalVariable(Variable.BLOCK, 0);
-            }
-        }
-        return blockVar;
-    }
-
     protected IRClosure cloneForInlining(InlinerInfo ii, IRClosure clone) {
         clone.nestingDepth  = this.nestingDepth;
         clone.parameterList = this.parameterList;
@@ -372,11 +342,12 @@ public class IRClosure extends IRScope {
         BasicBlock geb = cfg.getGlobalEnsureBB();
         if (geb == null) {
             geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
-            Variable exc = getNewTemporaryVariable();
+            Variable exc = createTemporaryVariable();
             geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby implementation exception
             // Handle uncaught break and non-local returns using runtime helpers
-            Variable ret = getNewTemporaryVariable();
-            geb.addInstr(new RuntimeHelperCall(ret, "handleBreakAndReturnsInLambdas", new Operand[]{exc} ));
+            Variable ret = createTemporaryVariable();
+            geb.addInstr(new RuntimeHelperCall(ret,
+                    RuntimeHelperCall.Methods.HANDLE_BREAK_AND_RETURNS_IN_LAMBDA, new Operand[]{exc} ));
             geb.addInstr(new ReturnInstr(ret));
             cfg.addGlobalEnsureBB(geb);
         } else {
@@ -387,8 +358,9 @@ public class IRClosure extends IRScope {
 
             List<Instr> instrs = geb.getInstrs();
             Variable exc = ((ReceiveExceptionBase)instrs.get(0)).getResult();
-            Variable ret = getNewTemporaryVariable();
-            instrs.set(instrs.size()-1, new RuntimeHelperCall(ret, "handleBreakAndReturnsInLambdas", new Operand[]{exc} ));
+            Variable ret = createTemporaryVariable();
+            instrs.set(instrs.size()-1, new RuntimeHelperCall(ret,
+                    RuntimeHelperCall.Methods.HANDLE_BREAK_AND_RETURNS_IN_LAMBDA, new Operand[]{exc} ));
             geb.addInstr(new ReturnInstr(ret));
         }
 

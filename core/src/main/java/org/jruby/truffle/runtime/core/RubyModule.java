@@ -15,13 +15,13 @@ import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.PackedFrame;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.lookup.LookupFork;
 import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.lookup.LookupTerminal;
 import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.methods.Visibility;
 
 import java.util.*;
 
@@ -77,7 +77,7 @@ public class RubyModule extends RubyObject implements LookupNode {
 
     private final String name;
     private final Map<String, RubyMethod> methods = new HashMap<>();
-    private final Map<String, Object> constants = new HashMap<>();
+    private final Map<String, RubyConstant> constants = new HashMap<>();
     private final Map<String, Object> classVariables = new HashMap<>();
 
     private final CyclicAssumption unmodifiedAssumption;
@@ -128,12 +128,16 @@ public class RubyModule extends RubyObject implements LookupNode {
      */
     public void setConstant(String constantName, Object value) {
         assert RubyContext.shouldObjectBeVisible(value);
-
         checkFrozen();
-
-        getConstants().put(constantName, value);
+        getConstants().put(constantName, new RubyConstant(value, false));
         newVersion();
         // TODO(CS): warn when redefining a constant
+    }
+
+    public void removeConstant(String data) {
+        checkFrozen();
+        getConstants().remove(data);
+        newVersion();
     }
 
     public void setClassVariable(String variableName, Object value) {
@@ -215,15 +219,15 @@ public class RubyModule extends RubyObject implements LookupNode {
     }
 
     @Override
-    public Object lookupConstant(String constantName) {
-        Object value;
+    public RubyConstant lookupConstant(String constantName) {
+        RubyConstant value;
 
         // Look in this module
 
         value = getConstants().get(constantName);
 
-        if (value != null) {
-            return value;
+        if (value instanceof RubyConstant) {
+            return ((RubyConstant) value);
         }
 
         // Look in the parent module
@@ -239,6 +243,19 @@ public class RubyModule extends RubyObject implements LookupNode {
         // Look in the lookup parent
 
         return lookupParent.lookupConstant(constantName);
+    }
+
+    public void changeConstantVisibility(RubySymbol constant, boolean isPrivate) {
+        RubyConstant rubyConstant = lookupConstant(constant.toString());
+        checkFrozen();
+
+        if (rubyConstant != null) {
+            rubyConstant.isPrivate = isPrivate;
+        } else {
+            throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(constant.toString()));
+        }
+
+        newVersion();
     }
 
     @Override
@@ -283,9 +300,9 @@ public class RubyModule extends RubyObject implements LookupNode {
     public void appendFeatures(RubyModule other) {
         // TODO(CS): check only run once
 
-        for (Map.Entry<String, Object> constantEntry : getConstants().entrySet()) {
+        for (Map.Entry<String, RubyConstant> constantEntry : getConstants().entrySet()) {
             final String constantName = constantEntry.getKey();
-            final Object constantValue = constantEntry.getValue();
+            final Object constantValue = constantEntry.getValue().value;
             other.setModuleConstant(constantName, constantValue);
         }
 
@@ -341,9 +358,7 @@ public class RubyModule extends RubyObject implements LookupNode {
     }
 
     public static void setCurrentVisibility(Frame frame, Visibility visibility) {
-        final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot(VISIBILITY_FRAME_SLOT_ID);
-
-        frame.setObject(slot, visibility);
+        frame.setObject(frame.getFrameDescriptor().findFrameSlot(VISIBILITY_FRAME_SLOT_ID), visibility);
     }
 
     public void visibilityMethod(PackedFrame frame, Object[] arguments, Visibility visibility) {
@@ -376,12 +391,23 @@ public class RubyModule extends RubyObject implements LookupNode {
         getRubyClass().getContext().eval(source, this);
     }
 
-    public Map<String, Object> getConstants() {
+    public Map<String, RubyConstant> getConstants() {
         return constants;
     }
 
     public Map<String, RubyMethod> getMethods() {
         return methods;
+    }
+
+    public static class RubyConstant {
+        public final Object value;
+        public boolean isPrivate;
+
+        public RubyConstant(Object value, boolean isPrivate) {
+            this.value = value;
+            this.isPrivate = isPrivate;
+        }
+
     }
 
 }

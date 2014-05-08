@@ -29,18 +29,29 @@ package org.jruby.util;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import org.jruby.Ruby;
+<<<<<<< HEAD
 import org.jruby.RubyBasicObject;
+=======
+import org.jruby.RubyBignum;
+>>>>>>> master
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
+<<<<<<< HEAD
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ClassIndex;
+=======
+import org.jruby.RubyNil;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyString;
+import org.jruby.exceptions.RaiseException;
+>>>>>>> master
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingService;
@@ -283,12 +294,18 @@ public class TypeConverter {
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_hash");
     }
 
+    // rb_check_string_type
+    public static IRubyObject checkStringType(Ruby runtime, IRubyObject obj) {
+        return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_str");
+    }
+
     public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) throws RaiseException {
         if (raise) throw obj.getRuntime().newTypeError("can't convert " + typeAsString(obj) + " into " + target);
 
         return obj.getRuntime().getNil();
     }
 
+<<<<<<< HEAD
     // rb_check_type and Check_Type
     public static void checkType(ThreadContext context, IRubyObject x, RubyModule t) {
         ClassIndex xt;
@@ -307,5 +324,50 @@ public class TypeConverter {
             }
             throw context.runtime.newRuntimeError("bug: unknown type " + t.getClassIndex() + " (" + xt + " given)");
         }
+=======
+    // rb_convert_to_integer
+    public static IRubyObject convertToInteger(ThreadContext context, IRubyObject val, int base) {
+        Ruby runtime = context.runtime;
+        IRubyObject tmp = null;
+
+        LOOP: for (;;) {
+            if (val instanceof RubyFloat) {
+                if (base != 0) raiseIntegerBaseError(context);
+                double value = ((RubyFloat)val).getValue();
+                if (value <= RubyFixnum.MAX ||
+                        value >= RubyFixnum.MIN) {
+                    return RubyNumeric.dbl2num(context.runtime, value);
+                }
+            } else if (val instanceof RubyFixnum || val instanceof RubyBignum) {
+                if (base != 0) raiseIntegerBaseError(context);
+                return val;
+            } else if (val instanceof RubyString) {
+                return RubyNumeric.str2inum(context.runtime, (RubyString)val, base, true);
+            } else if (val instanceof RubyNil) {
+                if (base != 0) raiseIntegerBaseError(context);
+                throw context.runtime.newTypeError("can't convert nil into Integer");
+            }
+
+            if (base != 0) {
+                tmp = TypeConverter.checkStringType(context.runtime, val);
+                if (!tmp.isNil()) {
+                    continue LOOP;
+                }
+                raiseIntegerBaseError(context);
+            }
+
+            break;
+        }
+
+        tmp = TypeConverter.convertToType19(val, runtime.getString(), "to_int", false);
+        if (tmp.isNil()) {
+            return val.convertToInteger("to_i");
+        }
+        return tmp;
+    }
+
+    private static void raiseIntegerBaseError(ThreadContext context) {
+        throw context.runtime.newArgumentError("base specified for non string value");
+>>>>>>> master
     }
 }

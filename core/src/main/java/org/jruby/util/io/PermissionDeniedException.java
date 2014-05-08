@@ -30,36 +30,14 @@ package org.jruby.util.io;
 
 import java.io.FileNotFoundException;
 
-/**
- * Signals that an attempt to open the file denoted by a specified pathname
- * has failed by 'Permission Denied'.
- *
- * <p>This exception might be thrown by the {@link ChannelDescriptor#open}
- * when trying to create new file and the specified pathname cannot be written.
- * Bear in mind that {@link ChannelDescriptor#open} throws
- * not PermissionDeniedException but FileNotFindException as same as Java
- * manner when trying to read existing but unreadable file.
- * See org.jruby.RubyFile#fopen and sysopen how we handle that situation.</p>
- */
+@Deprecated // This class is fully deprecated and is retained in 1.7 branch only for compile compatibility
 public class PermissionDeniedException extends FileNotFoundException {
 
-    /**
-     * Constructs a PermissionDeniedException with null as its error detail
-     * message.
-     */
     public PermissionDeniedException() {
-        super();
+      throw new UnsupportedOperationException("Deprecated!");
     }
 
-    /**
-     * Constructs a PermissionDeniedException with the specified detail
-     * message.  The string msg can be retrieved later by the
-     * {@link java.lang.Throwable#getMessage} method of class
-     * java.lang.Throwable.
-     *
-     * @param msg the detail message.
-     */
     public PermissionDeniedException(String msg) {
-        super(msg);
+      throw new UnsupportedOperationException("Deprecated!");
     }
 }

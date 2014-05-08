@@ -138,7 +138,7 @@ public class ConvertBytes {
         } while ((i /= radix) > 0);
         if (neg) buf[--pos] = (byte)'-';
         
-        return new ByteList(buf, pos, len - pos, false);
+        return new ByteList(buf, pos, len - pos);
     }
 
     private static final ByteList intToUnsignedByteList(int i, int shift, byte[] digitmap) {
@@ -663,27 +663,41 @@ public class ConvertBytes {
 
         byte nondigit = -1;
 
-        while(str < end) {
-            byte c = data[str++];
-            byte cx = c;
-            if(c == '_') {
-                if(nondigit != -1) {
-                    if(badcheck) {
-                        invalidString("Integer");
+        // str2big_scan_digits
+        {
+            while(str < end) {
+                byte c = data[str++];
+                byte cx = c;
+                if(c == '_') {
+                    if(nondigit != -1) {
+                        if(badcheck) {
+                            invalidString("Integer");
+                        }
+                        break;
                     }
+                    nondigit = c;
+                    continue;
+                } else if((c = convertDigit(c)) < 0) {
                     break;
                 }
-                nondigit = c;
-                continue;
-            } else if((c = convertDigit(c)) < 0) {
-                break;
+                if(c >= base) {
+                    break;
+                }
+                nondigit = -1;
+                //System.err.println("ADDING CHAR: " + (char)cx + " with number: " + cx);
+                result[resultIndex++] = (char)cx;
             }
-            if(c >= base) {
-                break;
+
+            int tmpStr = str;
+            if (badcheck) {
+                // no str-- here because we don't null-terminate strings
+                if (_str.getBegin()+1 < tmpStr && data[tmpStr-1] == '_') invalidString("Integer");
+                while (tmpStr < end && Character.isWhitespace(data[tmpStr])) tmpStr++;
+                if (tmpStr < end) {
+                    invalidString("Integer");
+                }
+
             }
-            nondigit = -1;
-            //System.err.println("ADDING CHAR: " + (char)cx + " with number: " + cx);
-            result[resultIndex++] = (char)cx;
         }
 
         BigInteger z;

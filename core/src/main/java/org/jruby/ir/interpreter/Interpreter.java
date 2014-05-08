@@ -14,6 +14,7 @@ import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
+import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.IRTranslator;
@@ -33,7 +34,6 @@ import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
 import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
-import org.jruby.ir.instructions.ReceiveOptArgInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.RecordEndBlockInstr;
 import org.jruby.ir.instructions.ResultInstr;
@@ -71,6 +71,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.jruby.common.IRubyWarnings.ID;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
@@ -102,24 +103,30 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static IRScope getEvalContainerScope(StaticScope evalScope) {
-        // SSS FIXME: Weirdness here.  We cannot get the containing IR scope from evalScope because of static-scope wrapping
-        // that is going on
+    private static IRScope getEvalContainerScope(StaticScope evalScope, boolean isModuleEval) {
+        // We cannot get the containing IR scope from evalScope because of static-scope wrapping
+        // that is going on.
         // 1. In all cases, DynamicScope.getEvalScope wraps the executing static scope in a new local scope.
         // 2. For instance-eval (module-eval, class-eval) scenarios, there is an extra scope that is added to
         //    the stack in ThreadContext.java:preExecuteUnder
-        // I dont know what rule to apply when.  However, in both these cases, since there is no IR-scope associated,
-        // I have used the hack below where I first unwrap once and see if I get a non-null IR scope.  If that doesn't
-        // work, I unwarp once more and I am guaranteed to get the IR scope I want.
-        IRScope containingIRScope = ((IRStaticScope)evalScope.getEnclosingScope()).getIRScope();
-        if (containingIRScope == null) containingIRScope = ((IRStaticScope)evalScope.getEnclosingScope().getEnclosingScope()).getIRScope();
-        return containingIRScope;
+
+        // SSS FIXME: Hack! Have to figure out why moduleEvals introduce an extra static scope
+        // and, if possible, eliminate it.
+        //
+        // The unwrapping is based on the binding that is used for the eval.
+        // If the binding came from an instance/module eval, we need to unpeel 3 layers.
+        // If the binding came from a non-module eval, we need to unpeel 2 layers.
+        IRScope s = ((IRStaticScope)evalScope.getEnclosingScope()).getIRScope();
+        if (s == null) {
+            s = ((IRStaticScope)evalScope.getEnclosingScope().getEnclosingScope()).getIRScope();
+        }
+        return s;
     }
 
-    public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, String backtraceName, RootNode rootNode, IRubyObject self, Block block) {
+    public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, String backtraceName, RootNode rootNode, IRubyObject self, Block block, boolean isModuleEval) {
         StaticScope ss = rootNode.getStaticScope();
-        IRScope containingIRScope = getEvalContainerScope(ss);
-        IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
+        IRScope containingIRScope = getEvalContainerScope(ss, isModuleEval);
+        IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode, isModuleEval);
         evalScript.prepareForInterpretation(false);
         ThreadContext context = runtime.getCurrentContext();
 
@@ -147,11 +154,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     public static IRubyObject interpretSimpleEval(Ruby runtime, String file, int lineNumber, String backtraceName, Node node, IRubyObject self) {
-        return interpretCommonEval(runtime, file, lineNumber, backtraceName, (RootNode)node, self, Block.NULL_BLOCK);
+        return interpretCommonEval(runtime, file, lineNumber, backtraceName, (RootNode)node, self, Block.NULL_BLOCK, true);
     }
 
     public static IRubyObject interpretBindingEval(Ruby runtime, String file, int lineNumber, String backtraceName, Node node, IRubyObject self, Block block) {
-        return interpretCommonEval(runtime, file, lineNumber, backtraceName, (RootNode)node, self, block);
+        return interpretCommonEval(runtime, file, lineNumber, backtraceName, (RootNode)node, self, block, false);
     }
 
     public static void runBeginEndBlocks(List<IRClosure> beBlocks, ThreadContext context, IRubyObject self, Object[] temp) {
@@ -295,7 +302,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean receivesKeywordArgument, DynamicScope currDynScope, Object[] temp, Object exception, Block block) {
+    private static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean acceptsKeywordArgument, DynamicScope currDynScope, Object[] temp, Object exception, Block block) {
         Object result;
         ResultInstr instr = (ResultInstr)i;
         switch(operation) {
@@ -309,7 +316,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
         case RECV_POST_REQD_ARG:
-            result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(args);
+            result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(args, acceptsKeywordArgument);
             // For blocks, missing arg translates to nil
             setResult(temp, currDynScope, instr.getResult(), result == null ? context.nil : result);
             return;
@@ -320,13 +327,13 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             setResult(temp, currDynScope, instr.getResult(), exception);
             return;
         default:
-            result = ((ReceiveArgBase)instr).receiveArg(context, args, receivesKeywordArgument);
+            result = ((ReceiveArgBase)instr).receiveArg(context, args, acceptsKeywordArgument);
             setResult(temp, currDynScope, instr.getResult(), result);
             return;
         }
     }
 
-    private static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block) {
+    private static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self) {
         Object result;
         switch(operation) {
         case CALL_1F: {
@@ -359,11 +366,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             break;
         }
         case NORESULT_CALL:
-            instr.interpret(context, currDynScope, self, temp, block);
+            instr.interpret(context, currDynScope, self, temp);
             break;
         case CALL:
         default:
-            result = instr.interpret(context, currDynScope, self, temp, block);
+            result = instr.interpret(context, currDynScope, self, temp);
             setResult(temp, currDynScope, instr, result);
             break;
         }
@@ -403,6 +410,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     {
         switch(operation) {
         // --------- Return flavored instructions --------
+        case RETURN: {
+            return (IRubyObject)retrieveOp(((ReturnBase)instr).getReturnValue(), context, self, currDynScope, temp);
+        }
         case BREAK: {
             BreakInstr bi = (BreakInstr)instr;
             IRubyObject rv = (IRubyObject)bi.getReturnValue().retrieve(context, self, currDynScope, temp);
@@ -411,17 +421,14 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             // SSS FIXME: Assumes that scopes with break instr. have a frame / dynamic scope pushed so that we can get to its static scope
             // Discovered that for-loops don't leave any information on the runtime stack -- hmm ... that sucks! So, we need to figure out
             // a way of pushing a scope onto the stack and exploit that info.
-            return IRRuntimeHelpers.initiateBreak(context, (IRStaticScope)currDynScope.getStaticScope(), bi.getScopeIdToReturnTo(), rv, blockType);
-        }
-        case RETURN: {
-            return (IRubyObject)retrieveOp(((ReturnBase)instr).getReturnValue(), context, self, currDynScope, temp);
+            return IRRuntimeHelpers.initiateBreak(context, currDynScope, rv, blockType);
         }
         case NONLOCAL_RETURN: {
             NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
             IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, temp);
             // If not in a lambda, check if this was a non-local return
             if (!IRRuntimeHelpers.inLambda(blockType)) {
-                IRRuntimeHelpers.initiateNonLocalReturn(context, (IRStaticScope)currDynScope.getStaticScope(), ri.methodIdToReturnFrom, rv);
+                IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, ri.maybeLambda, rv);
             }
             return rv;
         }
@@ -429,7 +436,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         return null;
     }
 
-    private static void processOtherOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block block, Block.Type blockType, double[] floats, long[] fixnums, boolean[] booleans)
+    private static void processOtherOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block.Type blockType, double[] floats, long[] fixnums, boolean[] booleans)
     {
         Object result;
         switch(operation) {
@@ -453,6 +460,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             VariableAccessor a = gfi.getAccessor(object);
             result = a == null ? null : (IRubyObject)a.get(object);
             if (result == null) {
+                if (context.runtime.isVerbose()) {
+                    context.runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, "instance variable " + gfi.getRef() + " not initialized");
+                }
                 result = context.nil;
             }
             setResult(temp, currDynScope, gfi.getResult(), result);
@@ -516,7 +526,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         // ---------- All the rest ---------
         default:
-            result = instr.interpret(context, currDynScope, self, temp, block);
+            result = instr.interpret(context, currDynScope, self, temp);
             setResult(temp, currDynScope, instr, result);
             break;
         }
@@ -573,7 +583,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 case CALL_OP:
                     if (profile) Profiler.updateCallSite(instr, scope, scopeVersion);
-                    processCall(context, instr, operation, currDynScope, temp, self, block);
+                    processCall(context, instr, operation, currDynScope, temp, self);
                     break;
                 case RET_OP:
                     return processReturnOp(context, instr, operation, scope, currDynScope, temp, self, blockType);
@@ -585,18 +595,25 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 case BOOK_KEEPING_OP:
                     if (operation == Operation.PUSH_BINDING) {
-                        // SSS NOTE: Method scopes only!
+                        // SSS NOTE: Method/module scopes only!
                         //
                         // Blocks are a headache -- so, these instrs. are only added to IRMethods.
                         // Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
-                        currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope());
+                        if (scope instanceof IRMetaClassBody) {
+                            // Add a parent-link to current dynscope to support non-local returns cheaply
+                            // This doesn't affect variable scoping since local variables will all have
+                            // the right scope depth.
+                            currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope(), context.getCurrentScope());
+                        } else {
+                            currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope());
+                        }
                         context.pushScope(currDynScope);
                     } else {
                         processBookKeepingOp(context, instr, operation, scope, args, self, block, implClass, visibility);
                     }
                     break;
                 case OTHER_OP:
-                    processOtherOp(context, instr, operation, currDynScope, temp, self, block, blockType, floats, fixnums, booleans);
+                    processOtherOp(context, instr, operation, currDynScope, temp, self, blockType, floats, fixnums, booleans);
                     break;
                 }
             } catch (Throwable t) {

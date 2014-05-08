@@ -47,6 +47,7 @@ public enum IRFlags {
     HAS_UNUSED_IMPLICIT_BLOCK_ARG,// Is %block implicit block arg unused?
     RECEIVES_CLOSURE_ARG,         // This scope (or parent receives a closure
     RECEIVES_KEYWORD_ARGS,        // receives keyword args
+    REQUIRES_DYNSCOPE,            // does this scope require a dynamic scope?
     USES_BACKREF_OR_LASTLINE,     // Since backref ($~) and lastline ($_) vars are allocated space on the dynamic scope.
     USES_EVAL,                    // calls eval
     USES_ZSUPER,                  // has zsuper instr

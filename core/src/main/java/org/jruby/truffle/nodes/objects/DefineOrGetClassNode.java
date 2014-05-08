@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.objects;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
@@ -22,14 +23,14 @@ import org.jruby.truffle.runtime.core.*;
 public class DefineOrGetClassNode extends RubyNode {
 
     private final String name;
-    @Child protected RubyNode moduleDefinedIn;
+    @Child protected RubyNode parentModule;
     @Child protected RubyNode superClass;
 
-    public DefineOrGetClassNode(RubyContext context, SourceSection sourceSection, String name, RubyNode moduleDefinedIn, RubyNode superClass) {
+    public DefineOrGetClassNode(RubyContext context, SourceSection sourceSection, String name, RubyNode parentModule, RubyNode superClass) {
         super(context, sourceSection);
         this.name = name;
-        this.moduleDefinedIn = adoptChild(moduleDefinedIn);
-        this.superClass = adoptChild(superClass);
+        this.parentModule = parentModule;
+        this.superClass = superClass;
     }
 
     @Override
@@ -38,43 +39,38 @@ public class DefineOrGetClassNode extends RubyNode {
 
         final RubyContext context = getContext();
 
-        final RubyModule moduleDefinedInObject = (RubyModule) moduleDefinedIn.execute(frame);
+        RubyModule parentModuleObject;
+
+        try {
+            parentModuleObject = parentModule.executeRubyModule(frame);
+        } catch (UnexpectedResultException e) {
+            throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(e.getResult().toString(), "module"));
+        }
 
         // Look for a current definition of the class, or create a new one
 
-        final Object constantValue = moduleDefinedInObject.lookupConstant(name);
+        final RubyModule.RubyConstant constant = parentModuleObject.lookupConstant(name);
 
         RubyClass definingClass;
 
-        if (constantValue == null) {
-            final Object self = frame.getArguments(RubyArguments.class).getSelf();
-
-            RubyModule parentModule;
-
-            if (self instanceof RubyModule) {
-                parentModule = (RubyModule) self;
-            } else {
-                // Because it's top level, and so self is the magic main object
-                parentModule = null;
-            }
-
+        if (constant == null) {
             final RubyClass superClassObject = (RubyClass) superClass.execute(frame);
 
             if (superClassObject instanceof RubyException.RubyExceptionClass) {
                 definingClass = new RubyException.RubyExceptionClass(superClassObject, name);
+            } else if (superClassObject instanceof RubyString.RubyStringClass) {
+                definingClass = new RubyString.RubyStringClass(superClassObject);
             } else {
-                definingClass = new RubyClass(parentModule, superClassObject, name);
+                definingClass = new RubyClass(parentModuleObject, superClassObject, name);
             }
 
-            moduleDefinedInObject.setConstant(name, definingClass);
-            moduleDefinedInObject.getSingletonClass().setConstant(name, definingClass);
-
-            definingClass.getRubyClass().include(moduleDefinedInObject);
+            parentModuleObject.setConstant(name, definingClass);
+            parentModuleObject.getSingletonClass().setConstant(name, definingClass);
         } else {
-            if (constantValue instanceof RubyClass) {
-                definingClass = (RubyClass) constantValue;
+            if (constant.value instanceof RubyClass) {
+                definingClass = (RubyClass) constant.value;
             } else {
-                throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constantValue.toString(), "class"));
+                throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constant.value.toString(), "class"));
             }
         }
 

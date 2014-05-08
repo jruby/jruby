@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.methods;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -25,7 +26,7 @@ import org.jruby.truffle.runtime.methods.*;
 public class MethodDefinitionNode extends RubyNode {
 
     protected final String name;
-    protected final UniqueMethodIdentifier uniqueIdentifier;
+    protected final SharedMethodInfo sharedMethodInfo;
 
     protected final FrameDescriptor frameDescriptor;
     protected final RubyRootNode pristineRootNode;
@@ -34,21 +35,24 @@ public class MethodDefinitionNode extends RubyNode {
 
     protected final boolean requiresDeclarationFrame;
 
-    public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, UniqueMethodIdentifier uniqueIdentifier, FrameDescriptor frameDescriptor,
-            boolean requiresDeclarationFrame, RubyRootNode pristineRootNode, CallTarget callTarget) {
+    protected final boolean ignoreLocalVisibility;
+
+    public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo, FrameDescriptor frameDescriptor,
+            boolean requiresDeclarationFrame, RubyRootNode pristineRootNode, CallTarget callTarget, boolean ignoreLocalVisibility) {
         super(context, sourceSection);
         this.name = name;
-        this.uniqueIdentifier = uniqueIdentifier;
+        this.sharedMethodInfo = sharedMethodInfo;
         this.frameDescriptor = frameDescriptor;
         this.requiresDeclarationFrame = requiresDeclarationFrame;
         this.pristineRootNode = pristineRootNode;
         this.callTarget = callTarget;
+        this.ignoreLocalVisibility = ignoreLocalVisibility;
     }
 
     public RubyMethod executeMethod(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
-        MaterializedFrame declarationFrame;
+        final MaterializedFrame declarationFrame;
 
         if (requiresDeclarationFrame) {
             declarationFrame = frame.materialize();
@@ -56,17 +60,17 @@ public class MethodDefinitionNode extends RubyNode {
             declarationFrame = null;
         }
 
-        final FrameSlot visibilitySlot = frame.getFrameDescriptor().findFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID);
-
         Visibility visibility;
 
-        if (name.equals("initialize") || name.equals("initialize_copy") || name.equals("initialize_clone") || name.equals("initialize_dup") || name.equals("respond_to_missing?")) {
+        if (ignoreLocalVisibility) {
+            visibility = Visibility.PUBLIC;
+        } else if (name.equals("initialize") || name.equals("initialize_copy") || name.equals("initialize_clone") || name.equals("initialize_dup") || name.equals("respond_to_missing?")) {
             visibility = Visibility.PRIVATE;
         } else {
+            final FrameSlot visibilitySlot = frame.getFrameDescriptor().findFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID);
+
             if (visibilitySlot == null) {
-
                 visibility = Visibility.PUBLIC;
-
             } else {
                 Object visibilityObject;
 
@@ -85,7 +89,14 @@ public class MethodDefinitionNode extends RubyNode {
         }
 
         final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, declarationFrame, frameDescriptor, pristineRootNode, false, false);
-        return new RubyMethod(getSourceSection(), null, uniqueIdentifier, null, name, visibility, false, methodImplementation);
+
+        // Define the method with no declaring module - this will be filled in by AddMethodNode in the typical case
+
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, null, name, visibility, false, methodImplementation);
+
+        methodImplementation.setMethod(method);
+
+        return method;
     }
 
     @Override

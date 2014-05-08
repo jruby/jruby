@@ -16,6 +16,7 @@ import java.util.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.array.*;
 
 /**
@@ -27,59 +28,75 @@ public class FeatureManager {
 
     private RubyContext context;
 
-    private final Set<String> requiredFiles = new HashSet<>();
-
     public FeatureManager(RubyContext context) {
         this.context = context;
     }
 
     public boolean require(String feature) throws IOException {
-        // Some features are handled specially
+        final RubyModule.RubyConstant dataConstantBefore = context.getCoreLibrary().getObjectClass().lookupConstant("DATA");
 
-        if (feature.equals("stringio")) {
-            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "stringio not yet implemented");
-            return true;
-        }
+        try {
+            // Some features are handled specially
 
-        if (feature.equals("rbconfig")) {
-            // Kernel#rbconfig is always there
-            return true;
-        }
-
-        if (feature.equals("pp")) {
-            // Kernel#pretty_inspect is always there
-            return true;
-        }
-
-        // Get the load path
-
-        final Object loadPathObject = context.getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$:");
-
-        if (!(loadPathObject instanceof RubyArray)) {
-            throw new RuntimeException("$: is not an array");
-        }
-
-        final List<Object> loadPath = ((RubyArray) loadPathObject).asList();
-
-        // Try as a full path
-
-        if (requireInPath("", feature)) {
-            return true;
-        }
-
-        // Try each load path in turn
-
-        for (Object pathObject : loadPath) {
-            final String path = pathObject.toString();
-
-            if (requireInPath(path, feature)) {
+            if (feature.equals("stringio")) {
+                context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "stringio not yet implemented");
                 return true;
             }
+
+            if (feature.equals("zlib")) {
+                context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "zlib not yet implemented");
+                return true;
+            }
+
+            if (feature.equals("enumerator")) {
+                context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "enumerator not yet implemented");
+                return true;
+            }
+
+            if (feature.equals("rbconfig")) {
+                // Kernel#rbconfig is always there
+                return true;
+            }
+
+            if (feature.equals("pp")) {
+                // Kernel#pretty_inspect is always there
+                return true;
+            }
+
+            // Get the load path
+
+            // Try as a full path
+
+            if (requireInPath("", feature)) {
+                return true;
+            }
+
+            // Try as a path relative to the current director
+
+            if (requireInPath(context.getRuntime().getCurrentDirectory(), feature)) {
+                return true;
+            }
+
+            // Try each load path in turn
+
+            for (Object pathObject : context.getCoreLibrary().getLoadPath().asList()) {
+                final String path = pathObject.toString();
+
+                if (requireInPath(path, feature)) {
+                    return true;
+                }
+            }
+
+            // Didn't find the feature
+
+            throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature));
+        } finally {
+            if (dataConstantBefore == null) {
+                context.getCoreLibrary().getObjectClass().removeConstant("DATA");
+            } else {
+                context.getCoreLibrary().getObjectClass().setConstant("DATA", dataConstantBefore.value);
+            }
         }
-
-        // Didn't find the feature
-
-        throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature));
     }
 
     public boolean requireInPath(String path, String feature) throws IOException {
@@ -103,7 +120,7 @@ public class FeatureManager {
     }
 
     private boolean requireFile(String fileName) throws IOException {
-        if (requiredFiles.contains(fileName)) {
+        if (context.getCoreLibrary().getLoadedFeatures().contains(fileName)) {
             return true;
         }
 
@@ -114,7 +131,7 @@ public class FeatureManager {
 
         if (new File(fileName).isFile()) {
             context.loadFile(fileName);
-            requiredFiles.add(fileName);
+            context.getCoreLibrary().getLoadedFeatures().push(context.makeString(fileName));
             return true;
         } else {
             URL url;
@@ -134,7 +151,8 @@ public class FeatureManager {
             }
 
             context.load(context.getSourceManager().get(url.toString(), inputStream));
-            requiredFiles.add(fileName);
+            context.getCoreLibrary().getLoadedFeatures().push(context.makeString(fileName));
+            ((RubyArray) context.getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$LOADED_FEATURES")).push(context.makeString(fileName));
             return true;
         }
     }

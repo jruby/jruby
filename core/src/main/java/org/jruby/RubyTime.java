@@ -580,7 +580,11 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "===", required = 1)
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return (RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) == 0) ? getRuntime().getTrue() : getRuntime().getFalse();
+        if (other instanceof RubyTime) {
+            return context.runtime.newBoolean(RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) == 0);
+        }
+
+        return context.getRuntime().getFalse();
     }
 
     @JRubyMethod(name = "<=>", required = 1)
@@ -589,6 +593,7 @@ public class RubyTime extends RubyObject {
         if (other instanceof RubyTime) {
             return context.runtime.newFixnum(cmp((RubyTime) other));
         }
+        
         return invcmp(context, this, other);
     }
 

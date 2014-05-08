@@ -46,13 +46,7 @@ public abstract class ActiveEnterDebugProbe extends RubyProbe {
             return;
         }
 
-        final MaterializedFrame materializedFrame = frame.materialize();
-
-        final RubyBinding binding = new RubyBinding(context.getCoreLibrary().getBindingClass(), frame.getArguments(RubyArguments.class).getSelf(), materializedFrame);
-
-        //final RubyArguments arguments = new RubyArguments(inlinable.getDeclarationFrame(), NilPlaceholder.INSTANCE, null, binding);
-        //final VirtualFrame inlinedFrame = Truffle.getRuntime().createVirtualFrame(frame.pack(), arguments, inlinable.getFrameDescriptor());
-        //inlinedRoot.execute(inlinedFrame);
+        final RubyBinding binding = new RubyBinding(context.getCoreLibrary().getBindingClass(), frame.getArguments(RubyArguments.class).getSelf(), frame.materialize());
         proc.call(frame.pack(), binding);
     }
 

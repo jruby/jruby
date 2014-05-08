@@ -21,12 +21,12 @@ public abstract class YieldingCoreMethodNode extends CoreMethodNode {
 
     public YieldingCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        dispatchNode = adoptChild(new UninitializedYieldDispatchNode(context, getSourceSection()));
+        dispatchNode = new UninitializedYieldDispatchNode(context, getSourceSection());
     }
 
     public YieldingCoreMethodNode(YieldingCoreMethodNode prev) {
         super(prev);
-        dispatchNode = adoptChild(prev.dispatchNode);
+        dispatchNode = prev.dispatchNode;
     }
 
     public Object yield(VirtualFrame frame, RubyProc block, Object... arguments) {
@@ -34,7 +34,7 @@ public abstract class YieldingCoreMethodNode extends CoreMethodNode {
     }
 
     public boolean yieldBoolean(VirtualFrame frame, RubyProc block, Object... arguments) {
-        return GeneralConversions.toBoolean(dispatchNode.dispatch(frame, block, arguments));
+        return RubyTrueClass.toBoolean(dispatchNode.dispatch(frame, block, arguments));
     }
 
 }

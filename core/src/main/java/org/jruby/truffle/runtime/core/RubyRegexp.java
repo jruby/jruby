@@ -80,6 +80,8 @@ public class RubyRegexp extends RubyObject {
 
     @CompilerDirectives.SlowPath
     public Object matchOperator(Frame frame, String string) {
+        // TODO(CS) merge with match
+
         final RubyContext context = getRubyClass().getContext();
 
         final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
@@ -89,25 +91,65 @@ public class RubyRegexp extends RubyObject {
         if (match != -1) {
             final Region region = matcher.getEagerRegion();
 
-            for (int n = 1; n < region.numRegs + 1; n++) {
+            final Object[] values = new Object[region.numRegs];
+
+            for (int n = 0; n < region.numRegs; n++) {
+                final int start = region.beg[n];
+                final int end = region.end[n];
+
+                final Object groupString;
+
+                if (start > -1 && end > -1) {
+                    groupString = context.makeString(string.substring(start, end));
+                } else {
+                    groupString = NilPlaceholder.INSTANCE;
+                }
+
+                values[n] = groupString;
+
                 final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$" + n);
 
                 if (slot != null) {
-                    final int start = region.beg[n];
-                    final int end = region.end[n];
-                    final RubyString groupString = context.makeString(string.substring(start, end));
                     frame.setObject(slot, groupString);
                 }
             }
 
+            if (values.length > 0) {
+                final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$+");
+
+                int nonNil = values.length - 1;
+
+                while (values[nonNil] == NilPlaceholder.INSTANCE) {
+                    nonNil--;
+                }
+
+                if (slot != null) {
+                    frame.setObject(slot, values[nonNil]);
+                }
+            }
+
+            final RubyMatchData matchObject =  new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), values);
+
+            final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
+
+            if (slot != null) {
+                frame.setObject(slot, matchObject);
+            }
+
             return matcher.getBegin();
         } else {
+            final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
+
+            if (slot != null) {
+                frame.setObject(slot, NilPlaceholder.INSTANCE);
+            }
+
             return NilPlaceholder.INSTANCE;
         }
     }
 
     @CompilerDirectives.SlowPath
-    public Object match(String string) {
+    public Object match(Frame frame, String string) {
         final RubyContext context = getRubyClass().getContext();
 
         final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
@@ -131,8 +173,22 @@ public class RubyRegexp extends RubyObject {
                 }
             }
 
-            return new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), values);
+            final RubyMatchData matchObject =  new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), values);
+
+            final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
+
+            if (slot != null) {
+                frame.setObject(slot, matchObject);
+            }
+
+            return matchObject;
         } else {
+            final FrameSlot slot = frame.getFrameDescriptor().findFrameSlot("$~");
+
+            if (slot != null) {
+                frame.setObject(slot, NilPlaceholder.INSTANCE);
+            }
+
             return NilPlaceholder.INSTANCE;
         }
     }

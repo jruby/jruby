@@ -14,13 +14,14 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.methods.Visibility;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.math.BigInteger;
@@ -30,6 +31,63 @@ import java.util.Map;
 
 @CoreClass(name = "Object")
 public abstract class ObjectNodes {
+
+    @CoreMethod(names = "===", minArgs = 1, maxArgs = 1)
+    public abstract static class ThreeEqualNode extends CoreMethodNode {
+
+        public ThreeEqualNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ThreeEqualNode(ThreeEqualNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean equal(Object a, Object b) {
+            // TODO(CS): placeholder
+            return a.equals(b);
+        }
+
+    }
+
+    @CoreMethod(names = "=~", minArgs = 1, maxArgs = 1)
+    public abstract static class MatchNode extends CoreMethodNode {
+
+        public MatchNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public MatchNode(MatchNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean equal(Object a, Object b) {
+            // TODO(CS): placeholder
+            return a.equals(b);
+        }
+
+    }
+
+    @CoreMethod(names = "!~", minArgs = 1, maxArgs = 1)
+    public abstract static class NotMatchNode extends CoreMethodNode {
+
+        public NotMatchNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public NotMatchNode(NotMatchNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean equal(Object a, Object b) {
+            // TODO(CS): placeholder
+            return !a.equals(b);
+        }
+
+    }
 
     @CoreMethod(names = "class", maxArgs = 0)
     public abstract static class ClassNode extends CoreMethodNode {
@@ -73,7 +131,7 @@ public abstract class ObjectNodes {
 
     }
 
-    @CoreMethod(names = "dup", maxArgs = 0)
+    @CoreMethod(names = {"dup", "clone"}, maxArgs = 0)
     public abstract static class DupNode extends CoreMethodNode {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
@@ -200,8 +258,17 @@ public abstract class ObjectNodes {
         }
 
         @Specialization
-        public Object instanceEval(VirtualFrame frame, RubyObject self, RubyProc block) {
-            return block.callWithModifiedSelf(frame.pack(), self);
+        public Object instanceEval(VirtualFrame frame, RubyBasicObject receiver, RubyProc block) {
+            if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
+                throw new RaiseException(getContext().getCoreLibrary().typeError("no class to make alias"));
+            }
+
+            return block.callWithModifiedSelf(frame.pack(), receiver);
+        }
+
+        @Specialization
+        public Object instanceEval(VirtualFrame frame, Object self, RubyProc block) {
+            return instanceEval(frame, getContext().getCoreLibrary().box(self), block);
         }
 
     }
@@ -297,7 +364,7 @@ public abstract class ObjectNodes {
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (String name : instanceVariableNames) {
-                array.push(new RubyString(getContext().getCoreLibrary().getStringClass(), name));
+                array.push(RubyString.fromJavaString(getContext().getCoreLibrary().getStringClass(), name));
             }
 
             return array;
@@ -396,8 +463,47 @@ public abstract class ObjectNodes {
         }
 
         @Specialization
-        public Object objectID(RubyBasicObject object) {
-            return GeneralConversions.fixnumOrBignum(object.getObjectID());
+        public long objectID(RubyBasicObject object) {
+            return object.getObjectID();
+        }
+
+    }
+
+    @CoreMethod(names = "public_methods", appendCallNode = true, minArgs = 1, maxArgs = 2)
+    public abstract static class PublicMethodsNode extends CoreMethodNode {
+
+        public PublicMethodsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PublicMethodsNode(PublicMethodsNode prev) {
+            super(prev);
+        }
+
+        @Specialization(order = 1)
+        public RubyArray methods(RubyObject self, boolean includeInherited, Node callNode) {
+            if (!includeInherited) {
+                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "Object#methods always returns inherited methods at the moment");
+            }
+
+            return methods(self, callNode, UndefinedPlaceholder.INSTANCE);
+        }
+
+        @Specialization(order = 2)
+        public RubyArray methods(RubyObject self, @SuppressWarnings("unused") Node callNode, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
+            final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
+
+            final Map<String, RubyMethod> methods = new HashMap<>();
+
+            self.getLookupNode().getMethods(methods);
+
+            for (RubyMethod method : methods.values()) {
+                if (method.getVisibility() == Visibility.PUBLIC) {
+                    array.push(self.getRubyClass().getContext().newSymbol(method.getName()));
+                }
+            }
+
+            return array;
         }
 
     }
@@ -449,20 +555,43 @@ public abstract class ObjectNodes {
 
     }
 
-    @CoreMethod(names = "singleton_class", maxArgs = 0)
-    public abstract static class SingletonClassNode extends CoreMethodNode {
+    @CoreMethod(names = "respond_to_missing?", minArgs = 1, maxArgs = 2)
+    public abstract static class RespondToMissingNode extends CoreMethodNode {
 
-        public SingletonClassNode(RubyContext context, SourceSection sourceSection) {
+        public RespondToMissingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public SingletonClassNode(SingletonClassNode prev) {
+        public RespondToMissingNode(RespondToMissingNode prev) {
             super(prev);
         }
 
         @Specialization
-        public RubyClass singletonClass(RubyBasicObject self) {
-            return self.getSingletonClass();
+        public boolean doesRespondToMissing(Object object, RubySymbol name, boolean includeAll) {
+            return false;
+        }
+
+        @Specialization
+        public boolean doesRespondToMissing(Object object, RubyString name, boolean includeAll) {
+            return false;
+        }
+
+    }
+
+    @CoreMethod(names = "singleton_class", maxArgs = 0)
+    public abstract static class SingletonClassMethodNode extends CoreMethodNode {
+
+        public SingletonClassMethodNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SingletonClassMethodNode(SingletonClassMethodNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyClass singletonClass(Object self) {
+            return getContext().getCoreLibrary().box(self).getSingletonClass();
         }
 
     }

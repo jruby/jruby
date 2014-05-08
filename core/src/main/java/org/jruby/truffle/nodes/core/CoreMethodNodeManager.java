@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.InlinableMethodImplementation;
 import org.jruby.truffle.nodes.RubyNode;
@@ -25,12 +26,12 @@ import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.debug.*;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.RubyMethod;
-import org.jruby.truffle.runtime.methods.UniqueMethodIdentifier;
-import org.jruby.truffle.runtime.methods.Visibility;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
@@ -126,7 +127,7 @@ public abstract class CoreMethodNodeManager {
         if (methodDetails.getClassAnnotation().name().equals("main")) {
             module = context.getCoreLibrary().getMainObject().getSingletonClass();
         } else {
-            module = (RubyModule) rubyObjectClass.lookupConstant(methodDetails.getClassAnnotation().name());
+            module = (RubyModule) rubyObjectClass.lookupConstant(methodDetails.getClassAnnotation().name()).value;
         }
 
         assert module != null : methodDetails.getClassAnnotation().name();
@@ -137,17 +138,19 @@ public abstract class CoreMethodNodeManager {
         final String canonicalName = names.get(0);
         final List<String> aliases = names.subList(1, names.size());
 
-        final UniqueMethodIdentifier uniqueIdentifier = new UniqueMethodIdentifier();
-        final Visibility visibility = Visibility.PUBLIC;
+        final Visibility visibility = methodDetails.getMethodAnnotation().visibility();
 
         final RubyRootNode pristineRootNode = makeGenericMethod(context, methodDetails);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRootNode));
 
-        final String intrinsicName = methodDetails.getClassAnnotation().name() + "#" + canonicalName;
-
         final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRootNode, true,
                         methodDetails.getMethodAnnotation().appendCallNode());
-        final RubyMethod method = new RubyMethod(pristineRootNode.getSourceSection(), module, uniqueIdentifier, intrinsicName, canonicalName, visibility, false, methodImplementation);
+
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(pristineRootNode.getSourceSection(), methodDetails.getIndicativeName(), null);
+
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, module, canonicalName, visibility, false, methodImplementation);
+
+        methodImplementation.setMethod(method);
 
         module.addMethod(method);
 
@@ -188,14 +191,14 @@ public abstract class CoreMethodNodeManager {
         }
 
         if (methodDetails.getMethodAnnotation().needsBlock()) {
-            argumentsNodes.add(new ReadBlockArgumentNode(context, sourceSection, true));
+            argumentsNodes.add(new ReadBlockNode(context, sourceSection, UndefinedPlaceholder.INSTANCE));
         }
 
         final RubyNode methodNode = methodDetails.getNodeFactory().createNode(context, sourceSection, argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]));
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
-        final SequenceNode block = new SequenceNode(context, sourceSection, checkArity, methodNode);
+        final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
 
-        return new RubyRootNode(sourceSection, null, methodDetails.getClassAnnotation().name() + "#" + methodDetails.getMethodAnnotation().names()[0] + "(core)", block);
+        return new RubyRootNode(sourceSection, null, block);
     }
 
     public static class MethodDetails {
@@ -223,6 +226,10 @@ public abstract class CoreMethodNodeManager {
 
         public NodeFactory<? extends RubyNode> getNodeFactory() {
             return nodeFactory;
+        }
+
+        public String getIndicativeName() {
+            return classAnnotation.name() + "#" + methodAnnotation.names()[0] + "(core)";
         }
 
     }

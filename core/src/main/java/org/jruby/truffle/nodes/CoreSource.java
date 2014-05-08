@@ -24,10 +24,12 @@ public final class CoreSource implements Source {
         this.name = name;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getCode() {
         return name;
     }
@@ -37,34 +39,42 @@ public final class CoreSource implements Source {
         return name;
     }
 
+    @Override
     public String getPath() {
         return null;
     }
 
+    @Override
     public Reader getReader() {
         return null;
     }
 
+    @Override
     public InputStream getInputStream() {
         return null;
     }
 
+    @Override
     public String getCode(int lineNumber) {
         return null;
     }
 
+    @Override
     public int getLineCount() {
         return 0;
     }
 
+    @Override
     public int getLineNumber(int offset) {
         return 0;
     }
 
+    @Override
     public int getLineStartOffset(int lineNumber) {
         return 0;
     }
 
+    @Override
     public int getLineLength(int lineNumber) {
         return 0;
     }

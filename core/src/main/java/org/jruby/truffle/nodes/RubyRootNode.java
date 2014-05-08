@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 
 /**
  * The root node in an AST for a method. Unlike {@link RubyNode}, this has a single entry point,
@@ -19,17 +20,25 @@ import com.oracle.truffle.api.nodes.*;
  */
 public class RubyRootNode extends RootNode {
 
-    protected final String indicativeName;
+    // The method refers to root node, and vice versa, so this field is only compilation final and is set ex post to close the loop
+
+    @CompilerDirectives.CompilationFinal private RubyMethod method;
+
     @Child protected RubyNode body;
 
-    public RubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, String indicativeName, RubyNode body) {
+    public RubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, RubyNode body) {
         super(sourceSection, frameDescriptor);
-
-        assert indicativeName != null;
         assert body != null;
+        this.body = body;
+    }
 
-        this.body = adoptChild(body);
-        this.indicativeName = indicativeName;
+    public void setMethod(RubyMethod method) {
+        assert this.method != null;
+        this.method = method;
+    }
+
+    public RubyMethod getMethod() {
+        return method;
     }
 
     @Override
@@ -41,7 +50,8 @@ public class RubyRootNode extends RootNode {
     public String toString() {
         final SourceSection sourceSection = getSourceSection();
         final String source = sourceSection == null ? "<unknown>" : sourceSection.toString();
-        return "Method " + indicativeName + ":" + source + "@" + Integer.toHexString(hashCode());
+        final String methodName = method == null ? "<unknown>" : method.getName();
+        return "Method " + methodName + ":" + source + "@" + Integer.toHexString(hashCode());
     }
 
 }

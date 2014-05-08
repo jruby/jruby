@@ -9,14 +9,13 @@
  */
 package org.jruby.truffle.nodes.objects;
 
-import java.math.*;
-
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.cast.BoxingNode;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
 
 /**
  * Reads the singleton (meta, eigen) class of an object.
@@ -24,27 +23,21 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 @NodeInfo(shortName = "singleton")
 public class SingletonClassNode extends RubyNode {
 
-    @Child protected RubyNode child;
+    @Child protected BoxingNode child;
 
-    public SingletonClassNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+    public SingletonClassNode(RubyContext context, SourceSection sourceSection, BoxingNode child) {
         super(context, sourceSection);
-        this.child = adoptChild(child);
+        this.child = child;
+    }
+
+    @Override
+    public RubyClass executeRubyClass(VirtualFrame frame) {
+        return child.executeRubyBasicObject(frame).getSingletonClass();
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final Object childResult = child.execute(frame);
-
-        final RubyContext context = getContext();
-
-        if (childResult instanceof NilPlaceholder) {
-            return context.getCoreLibrary().getNilClass();
-        } else if (childResult instanceof BigInteger) {
-            // TODO(CS): this is problematic - do Bignums have singletons or not?
-            return context.getCoreLibrary().box(childResult).getSingletonClass();
-        } else {
-            return ((RubyBasicObject) childResult).getSingletonClass();
-        }
+        return executeRubyClass(frame);
     }
 
 }

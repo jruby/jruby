@@ -9,6 +9,11 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.truffle.runtime.NilPlaceholder;
+
+import java.math.BigInteger;
+
 /**
  * Represents the Ruby {@code Float} class.
  */
@@ -19,6 +24,49 @@ public class RubyFloat extends RubyObject implements Unboxable {
     public RubyFloat(RubyClass floatClass, double value) {
         super(floatClass);
         this.value = value;
+    }
+
+    /**
+     * Convert a value to a {@code Float}, without doing any lookup.
+     */
+    public static double toFloat(Object value) {
+        assert value != null;
+
+        if (value instanceof NilPlaceholder || value instanceof RubyNilClass) {
+            return 0;
+        }
+
+        if (value instanceof Integer) {
+            return (int) value;
+        }
+
+        if (value instanceof RubyFixnum.IntegerFixnum) {
+            return ((RubyFixnum.IntegerFixnum) value).getValue();
+        }
+
+        if (value instanceof RubyFixnum.LongFixnum) {
+            return ((RubyFixnum.LongFixnum) value).getValue();
+        }
+
+        if (value instanceof BigInteger) {
+            return ((BigInteger) value).doubleValue();
+        }
+
+        if (value instanceof RubyBignum) {
+            return ((RubyBignum) value).getValue().doubleValue();
+        }
+
+        if (value instanceof Double) {
+            return (double) value;
+        }
+
+        if (value instanceof RubyFloat) {
+            return ((RubyFloat) value).getValue();
+        }
+
+        CompilerDirectives.transferToInterpreter();
+
+        throw new UnsupportedOperationException();
     }
 
     public double getValue() {
@@ -34,8 +82,10 @@ public class RubyFloat extends RubyObject implements Unboxable {
     public boolean equals(Object other) {
         if (other instanceof Integer) {
             return value == (int) other;
-        } else if (other instanceof RubyFixnum) {
-            return value == ((RubyFixnum) other).getValue();
+        } else if (other instanceof RubyFixnum.IntegerFixnum) {
+            return value == ((RubyFixnum.IntegerFixnum) other).getValue();
+        } else if (other instanceof RubyFixnum.LongFixnum) {
+            return value == ((RubyFixnum.LongFixnum) other).getValue();
         } else if (other instanceof Double) {
             return value == (double) other;
         } else if (other instanceof RubyFloat) {

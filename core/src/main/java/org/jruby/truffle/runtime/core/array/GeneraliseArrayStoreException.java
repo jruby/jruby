@@ -15,7 +15,7 @@ import com.oracle.truffle.api.nodes.*;
  * An exception that signals that an ArrayStore cannot store a given object because of its type, and
  * that the store must be generalized to accommodate it.
  */
-public class GeneraliseArrayStoreException extends SlowPathException {
+public class GeneraliseArrayStoreException extends ControlFlowException {
 
     private static final long serialVersionUID = -7648655548414168177L;
 

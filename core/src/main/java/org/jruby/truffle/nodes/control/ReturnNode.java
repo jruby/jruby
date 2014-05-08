@@ -29,7 +29,7 @@ public class ReturnNode extends RubyNode {
     public ReturnNode(RubyContext context, SourceSection sourceSection, long returnID, RubyNode value) {
         super(context, sourceSection);
         this.returnID = returnID;
-        this.value = adoptChild(value);
+        this.value = value;
     }
 
     @Override

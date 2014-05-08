@@ -27,7 +27,7 @@ public class CatchNextNode extends RubyNode {
 
     public CatchNextNode(RubyContext context, SourceSection sourceSection, RubyNode body) {
         super(context, sourceSection);
-        this.body = adoptChild(body);
+        this.body = body;
     }
 
     @Override

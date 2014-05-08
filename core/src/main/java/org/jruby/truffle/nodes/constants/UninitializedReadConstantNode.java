@@ -17,71 +17,70 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 
-/**
- * Represents an uninitialized constant read from some object. After the first read it will be
- * specialized to some other node. This is the starting point for all constant reads.
- */
-@NodeInfo(shortName = "uninitialized-read-constant")
-public class UninitializedReadConstantNode extends ReadConstantNode {
+public class UninitializedReadConstantNode extends ReadConstantChainNode {
 
-    private boolean replaceCache = true;
+    private final String name;
 
-    public UninitializedReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver) {
-        super(context, sourceSection, name, receiver);
+    public UninitializedReadConstantNode(String name) {
+        this.name = name;
     }
 
-    public UninitializedReadConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean replaceCache) {
-        super(context, sourceSection, name, receiver);
-        this.replaceCache = replaceCache;
+    @Override
+    public boolean executeBoolean(RubyBasicObject receiver) throws UnexpectedResultException {
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+        throw new UnexpectedResultException(execute(receiver));
+    }
+
+    @Override
+    public int executeIntegerFixnum(RubyBasicObject receiver) throws UnexpectedResultException {
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+        throw new UnexpectedResultException(execute(receiver));
+    }
+
+    @Override
+    public long executeLongFixnum(RubyBasicObject receiver) throws UnexpectedResultException {
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+        throw new UnexpectedResultException(execute(receiver));
+    }
+
+    @Override
+    public double executeFloat(RubyBasicObject receiver) throws UnexpectedResultException {
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+        throw new UnexpectedResultException(execute(receiver));
     }
 
     /**
      * This execute method allows us to pass in the already executed receiver object, so that during
      * uninitialization it is not executed once by the specialized node and again by this node.
      */
-    public Object execute(RubyBasicObject receiverObject) {
-        CompilerAsserts.neverPartOfCompilation();
+    public Object execute(RubyBasicObject receiver) {
+        CompilerDirectives.transferToInterpreterAndInvalidate();
 
-        final RubyContext context = receiverObject.getRubyClass().getContext();
+        final RubyContext context = receiver.getRubyClass().getContext();
 
-        Object value;
+        RubyModule.RubyConstant constant;
 
-        value = receiverObject.getLookupNode().lookupConstant(name);
+        constant = receiver.getLookupNode().lookupConstant(name);
 
-        if (value == null && receiverObject instanceof RubyModule) {
+        if (constant == null && receiver instanceof RubyModule) {
             /*
              * FIXME(CS): I'm obviously doing something wrong with constant lookup in nested modules
              * here, but explicitly looking in the Module itself, not its lookup node, seems to fix
              * it for now.
              */
 
-            value = ((RubyModule) receiverObject).lookupConstant(name);
+            constant = ((RubyModule) receiver).lookupConstant(name);
         }
 
-        if (value == null) {
+        if (constant == null) {
             throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(name));
         }
 
-        // When reading a colon2const (ie: Foo::Bar) then we don' need to replace cache
-        if (replaceCache){
-            replace(new CachedReadConstantNode(context, getSourceSection(), name, receiver, receiverObject.getRubyClass(), value));
-        }
+        replace(new CachedReadConstantNode(receiver.getRubyClass(), constant.value, this));
 
-        assert RubyContext.shouldObjectBeVisible(value);
+        assert RubyContext.shouldObjectBeVisible(constant.value);
 
-        return value;
-    }
-
-    @Override
-    public Object execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
-
-        final RubyContext context = getContext();
-
-        final Object receiverObject = receiver.execute(frame);
-        final RubyBasicObject receiverRubyObject = context.getCoreLibrary().box(receiverObject);
-
-        return execute(receiverRubyObject);
+        return constant.value;
     }
 
 }

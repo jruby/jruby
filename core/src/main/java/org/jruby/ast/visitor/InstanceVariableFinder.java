@@ -25,7 +25,14 @@ import org.jruby.ast.PreExeNode;
  * System.out.println("found: " + finder.getFoundVariables);
  * </code>
  */
-public class InstanceVariableFinder extends AbstractNodeVisitor {
+public class InstanceVariableFinder extends AbstractNodeVisitor<Void> {
+
+    @Override
+    protected Void defaultVisit(Node iVisited) {
+        visitChildren(iVisited);
+        return null;
+    }
+
     /** The set of instance variables found during walking. */
     private final Set<String> foundVariables = new HashSet<String>();
     
@@ -57,7 +64,7 @@ public class InstanceVariableFinder extends AbstractNodeVisitor {
      * @return null
      */
     @Override
-    public Object visitClassNode(ClassNode iVisited) {
+    public Void visitClassNode(ClassNode iVisited) {
         return null;
     }
 
@@ -68,7 +75,7 @@ public class InstanceVariableFinder extends AbstractNodeVisitor {
      * @return null
      */
     @Override
-    public Object visitInstAsgnNode(InstAsgnNode iVisited) {
+    public Void visitInstAsgnNode(InstAsgnNode iVisited) {
         foundVariables.add(iVisited.getName());
         List<Node> nodes = iVisited.childNodes();
         for (int i = 0; i < nodes.size(); i++) {
@@ -85,7 +92,7 @@ public class InstanceVariableFinder extends AbstractNodeVisitor {
      * @return null
      */
     @Override
-    public Object visitInstVarNode(InstVarNode iVisited) {
+    public Void visitInstVarNode(InstVarNode iVisited) {
         foundVariables.add(iVisited.getName());
         List<Node> nodes = iVisited.childNodes();
         for (int i = 0; i < nodes.size(); i++) {
@@ -100,7 +107,7 @@ public class InstanceVariableFinder extends AbstractNodeVisitor {
      * @return null
      */
     @Override
-    public Object visitModuleNode(ModuleNode iVisited) {
+    public Void visitModuleNode(ModuleNode iVisited) {
         return null;
     }
 
@@ -110,7 +117,7 @@ public class InstanceVariableFinder extends AbstractNodeVisitor {
      * @return null
      */
     @Override
-    public Object visitPreExeNode(PreExeNode iVisited) {
+    public Void visitPreExeNode(PreExeNode iVisited) {
         return null;
     }
 
@@ -120,7 +127,7 @@ public class InstanceVariableFinder extends AbstractNodeVisitor {
      * @return null
      */
     @Override
-    public Object visitPostExeNode(PostExeNode iVisited) {
+    public Void visitPostExeNode(PostExeNode iVisited) {
         return null;
     }
 }

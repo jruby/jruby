@@ -75,7 +75,7 @@ public class NewlineNode extends Node {
      * accepts the visitor
      * @param iVisitor the visitor to accept
      **/
-    public Object accept(NodeVisitor iVisitor) {
+    public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitNewlineNode(this);
     }
 

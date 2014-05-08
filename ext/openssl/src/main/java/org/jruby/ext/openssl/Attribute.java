@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,19 +27,26 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
+import java.io.IOException;
+
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DERSet;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
+
+import static org.jruby.ext.openssl.OpenSSLReal.warn;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -52,14 +59,20 @@ public class Attribute extends RubyObject {
             return new Attribute(runtime, klass);
         }
     };
-    
-    public static void createAttribute(Ruby runtime, RubyModule mX509) {
-        RubyClass cAttribute = mX509.defineClassUnder("Attribute",runtime.getObject(), ATTRIBUTE_ALLOCATOR);
+
+    public static void createAttribute(Ruby runtime, RubyModule _X509) {
+        RubyClass _Attribute = _X509.defineClassUnder("Attribute", runtime.getObject(), ATTRIBUTE_ALLOCATOR);
 
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
-        mX509.defineClassUnder("AttributeError",openSSLError, openSSLError.getAllocator());
+        _X509.defineClassUnder("AttributeError", openSSLError, openSSLError.getAllocator());
 
-        cAttribute.defineAnnotatedMethods(Attribute.class);
+        _Attribute.defineAnnotatedMethods(Attribute.class);
+    }
+
+
+    static RubyClass _Attribute(final Ruby runtime) {
+        RubyModule _X509 = (RubyModule) runtime.getModule("OpenSSL").getConstant("X509");
+        return _X509.getClass("Attribute");
     }
 
     public Attribute(Ruby runtime, RubyClass type) {
@@ -69,13 +82,8 @@ public class Attribute extends RubyObject {
     private IRubyObject oid;
     private IRubyObject value;
 
-    private ASN1ObjectIdentifier getObjectIdentifier(String nameOrOid) {
-        Object val1 = ASN1.getOIDLookup(getRuntime()).get(nameOrOid.toLowerCase());
-        if(null != val1) {
-            return (ASN1ObjectIdentifier)val1;
-        }
-        ASN1ObjectIdentifier val2 = new ASN1ObjectIdentifier(nameOrOid);
-        return val2;
+    private ASN1ObjectIdentifier getObjectIdentifier(final String nameOrOid) {
+        return ASN1.getObjectIdentifier(getRuntime(), nameOrOid);
     }
 
     ASN1Primitive toASN1() {
@@ -92,21 +100,20 @@ public class Attribute extends RubyObject {
     }
 
     @JRubyMethod(name="initialize", required=1, optional=1, visibility = Visibility.PRIVATE)
-    public IRubyObject _initialize(IRubyObject[] str) {
-        if(org.jruby.runtime.Arity.checkArgumentCount(getRuntime(),str,1,2) == 1) {
-            IRubyObject _oid = OpenSSLImpl.to_der_if_possible(str[0]);
-            set_oid(_oid);
+    public IRubyObject _initialize(final ThreadContext context, IRubyObject[] str) {
+        if ( Arity.checkArgumentCount(context.runtime, str, 1, 2) == 1 ) {
+            set_oid( OpenSSLImpl.to_der_if_possible(context, str[0]) );
             return this;
         }
         set_oid(str[0]);
-        set_value(str[1]);
+        set_value(context, str[1]);
         return this;
     }
 
     @JRubyMethod
-    public IRubyObject to_der() {
-        System.err.println("WARNING: unimplemented method called: attr#to_der");
-        return getRuntime().getNil();
+    public IRubyObject to_der(final ThreadContext context) {
+        warn(context, "WARNING: unimplemented method called: attribute#to_der");
+        return context.runtime.getNil();
     }
 
     @JRubyMethod
@@ -115,9 +122,8 @@ public class Attribute extends RubyObject {
     }
 
     @JRubyMethod(name="oid=")
-    public IRubyObject set_oid(IRubyObject val) {
-        this.oid = val;
-        return val;
+    public IRubyObject set_oid(final IRubyObject oid) {
+        return this.oid = oid;
     }
 
     @JRubyMethod
@@ -126,9 +132,16 @@ public class Attribute extends RubyObject {
     }
 
     @JRubyMethod(name="value=")
-    public IRubyObject set_value(IRubyObject val) {
-        IRubyObject tmp = OpenSSLImpl.to_der_if_possible(val);
-        this.value = ASN1.decode(getRuntime().getClassFromPath("OpenSSL::ASN1"), tmp);
-        return val;
+    public IRubyObject set_value(final ThreadContext context, IRubyObject val) {
+        try {
+            return this.value = ASN1.decodeImpl(context, val);
+        }
+        catch (IOException e) {
+            throw Utils.newIOError(context.runtime, e);
+        }
+        catch (IllegalArgumentException e) {
+            throw context.runtime.newArgumentError(e.getMessage());
+        }
     }
+
 }// Attribute

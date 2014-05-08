@@ -131,6 +131,9 @@ public enum Operation {
     LINE_NUM(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op),
 
     /** JRuby-impl instructions **/
+    // FIXME: BUILD_COMPOUND_ARRAY is marked side-effecting since it *can* call to_a methods
+    BUILD_COMPOUND_ARRAY(OpFlags.f_has_side_effect),
+    BACKTICK_STRING(OpFlags.f_has_side_effect),
     CHECK_ARGS_ARRAY_ARITY(OpFlags.f_can_raise_exception),
     CHECK_ARITY(OpFlags.f_is_book_keeping_op | OpFlags.f_can_raise_exception),
     CLASS_VAR_MODULE(0),
@@ -144,6 +147,7 @@ public enum Operation {
     RECORD_END_BLOCK(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     RESCUE_EQQ(OpFlags.f_can_raise_exception), // a === call used in rescue
     RUNTIME_HELPER(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    SET_CAPTURED_VAR(OpFlags.f_can_raise_exception),
     THREAD_POLL(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     THROW(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_exception),
     // FIXME: TO_ARY is marked side-effecting since it can allocate new objects
@@ -151,19 +155,11 @@ public enum Operation {
     TO_ARY(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
 
     /* Instructions to support defined? */
-    BACKREF_IS_MATCH_DATA(0),
     BLOCK_GIVEN(0),
-    CLASS_VAR_IS_DEFINED(0),
     DEFINED_CONSTANT_OR_METHOD(OpFlags.f_can_raise_exception),
-    GET_BACKREF(0),
     GET_ERROR_INFO(0),
-    GLOBAL_IS_DEFINED(0),
-    HAS_INSTANCE_VAR(0),
-    IS_METHOD_BOUND(0),
     METHOD_DEFINED(OpFlags.f_can_raise_exception),
-    METHOD_IS_PUBLIC(0),
     RESTORE_ERROR_INFO(OpFlags.f_has_side_effect), // SSS FIXME: Side effecting? Really?
-    SUPER_METHOD_BOUND(0),
 
     /* Boxing/Unboxing between Ruby <--> Java types */
     BOX_FIXNUM(0),

@@ -6,11 +6,9 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.AsString;
 import org.jruby.ir.operands.Backref;
-import org.jruby.ir.operands.BacktickString;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.ClosureLocalVariable;
-import org.jruby.ir.operands.CompoundArray;
 import org.jruby.ir.operands.CompoundString;
 import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.DynamicSymbol;
@@ -78,15 +76,6 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void Backref(Backref backref) { encoder.encode(backref.type); }
 
-    @Override public void BacktickString(BacktickString backtickstring) {
-        List<Operand> operands = backtickstring.pieces;
-
-        encoder.encode(operands.size());
-
-        for (Operand operand: operands) {
-            encode(operand);
-        }
-    }
     @Override public void Bignum(Bignum bignum) { encoder.encode(bignum.value.toString()); }
 
     @Override public void Boolean(Boolean booleanliteral) { encoder.encode(booleanliteral.isTrue()); }
@@ -95,12 +84,6 @@ class OperandEncoderMap extends IRVisitor {
         // We can refigure out closure scope it is in.
         encoder.encode(variable.getName());
         encoder.encode(variable.getScopeDepth());
-    }
-
-    @Override public void CompoundArray(CompoundArray compoundarray) {
-        encode(compoundarray.getA1());
-        encode(compoundarray.getA2());
-        encoder.encode(compoundarray.isArgsPush());
     }
 
     @Override public void CompoundString(CompoundString compoundstring) {
@@ -181,7 +164,7 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void Self(Self self) {} // No data
 
-    @Override public void Splat(Splat splat) { encode(splat.getArray()); }
+    @Override public void Splat(Splat splat) { encode(splat.getArray()); encoder.encode(splat.unsplatArgs); }
 
     @Override public void StandardError(StandardError standarderror) {} // No data
 

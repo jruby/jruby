@@ -181,11 +181,14 @@ public class JavaProxy extends RubyObject {
 
     private static Class<?> getJavaClass(ThreadContext context, RubyModule module) {
         try {
-        IRubyObject jClass = Helpers.invoke(context, module, "java_class");
+            IRubyObject jClass = Helpers.invoke(context, module, "java_class");
 
-
-        return !(jClass instanceof JavaClass) ? null : ((JavaClass) jClass).javaClass();
-        } catch (Exception e) { return null; }
+            return !(jClass instanceof JavaClass) ? null : ((JavaClass) jClass).javaClass();
+        } catch (Exception e) {
+            // clear $! since our "java_class" invoke above may have failed and set it
+            context.setErrorInfo(context.nil);
+            return null;
+        }
     }
     
     /**

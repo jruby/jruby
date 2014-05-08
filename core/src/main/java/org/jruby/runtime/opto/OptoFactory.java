@@ -26,8 +26,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.opto;
 
-import java.lang.reflect.Constructor;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.CacheCompiler;
 import org.jruby.compiler.InvocationCompiler;
@@ -45,76 +43,89 @@ import org.jruby.util.cli.Options;
  * cache invalidation, and so on.
  */
 public class OptoFactory {
-    // failure switches to avoid retrying classes that can't be instantiated
-    public static boolean tryIndy = Options.COMPILE_INVOKEDYNAMIC.load();
-    
     public static InvocationCompiler newInvocationCompiler(BaseBodyCompiler bodyCompiler, SkinnyMethodAdapter method) {
-        if (tryIndy) {
+        if (indyEnabled()) {
             try {
                 return new InvokeDynamicInvocationCompiler(bodyCompiler, method);
             } catch (Error e) {
-                tryIndy = false;
+                disableIndy();
                 throw e;
             } catch (Throwable t) {
-                tryIndy = false;
+                disableIndy();
             }
         }
         return new StandardInvocationCompiler(bodyCompiler, method);
     }
     
     public static CacheCompiler newCacheCompiler(StandardASMCompiler scriptCompiler) {
-        if (tryIndy) {
+        if (indyEnabled()) {
             try {
                 return new InvokeDynamicCacheCompiler(scriptCompiler);
             } catch (Error e) {
-                tryIndy = false;
+                disableIndy();
                 throw e;
             } catch (Throwable t) {
-                tryIndy = false;
+                disableIndy();
             }
         }
         return new InheritedCacheCompiler(scriptCompiler);
     }
     
     public static Invalidator newConstantInvalidator() {
-        if (tryIndy && Options.COMPILE_INVOKEDYNAMIC.load() && RubyInstanceConfig.INVOKEDYNAMIC_CONSTANTS) {
+        if (indyEnabled() && indyConstants()) {
             try {
                 return new SwitchPointInvalidator();
             } catch (Error e) {
-                tryIndy = false;
+                disableIndy();
                 throw e;
             } catch (Throwable t) {
-                tryIndy = false;
+                disableIndy();
             }
         }
         return new ObjectIdentityInvalidator();
     }
-    
+
+    private static Boolean indyEnabled() {
+        return Options.COMPILE_INVOKEDYNAMIC.load();
+    }
+
     public static Invalidator newGlobalInvalidator(int maxFailures) {
-        if (tryIndy && Options.COMPILE_INVOKEDYNAMIC.load() && RubyInstanceConfig.INVOKEDYNAMIC_CONSTANTS) {
+        if (indyEnabled() && indyConstants()) {
             try {
                 return new FailoverSwitchPointInvalidator(maxFailures);
             } catch (Error e) {
-                tryIndy = false;
+                disableIndy();
                 throw e;
             } catch (Throwable t) {
-                tryIndy = false;
+                disableIndy();
             }
         }
         return new ObjectIdentityInvalidator();
     }
-    
+
     public static Invalidator newMethodInvalidator(RubyModule module) {
-        if (tryIndy && Options.COMPILE_INVOKEDYNAMIC.load() && RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT) {
+        if (indyEnabled() && indyInvocationSwitchpoint()) {
             try {
                 return new GenerationAndSwitchPointInvalidator(module);
             } catch (Error e) {
-                tryIndy = false;
+                disableIndy();
                 throw e;
             } catch (Throwable t) {
-                tryIndy = false;
+                disableIndy();
             }
         }
         return new GenerationInvalidator(module);
+    }
+
+    private static Boolean indyConstants() {
+        return Options.INVOKEDYNAMIC_CACHE_CONSTANTS.load();
+    }
+
+    private static Boolean indyInvocationSwitchpoint() {
+        return Options.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load();
+    }
+
+    private static void disableIndy() {
+        Options.COMPILE_INVOKEDYNAMIC.force("false");
     }
 }

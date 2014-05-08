@@ -73,7 +73,7 @@ public class DRegexpNode extends DNode implements ILiteralNode {
      * @param iVisitor the visitor
      **/
     @Override
-    public Object accept(NodeVisitor iVisitor) {
+    public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitDRegxNode(this);
     }
 

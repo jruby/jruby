@@ -1,53 +1,16 @@
 package org.jruby.ir;
 
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.instructions.*;
-import org.jruby.ir.instructions.defined.BackrefIsMatchDataInstr;
-import org.jruby.ir.instructions.defined.ClassVarIsDefinedInstr;
-import org.jruby.ir.instructions.defined.GetDefinedConstantOrMethodInstr;
+import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
-import org.jruby.ir.instructions.defined.GlobalIsDefinedInstr;
-import org.jruby.ir.instructions.defined.HasInstanceVarInstr;
-import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
-import org.jruby.ir.instructions.defined.MethodDefinedInstr;
-import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
-import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
-import org.jruby.ir.operands.Array;
-import org.jruby.ir.operands.AsString;
-import org.jruby.ir.operands.Backref;
-import org.jruby.ir.operands.BacktickString;
-import org.jruby.ir.operands.Bignum;
-import org.jruby.ir.operands.CompoundArray;
-import org.jruby.ir.operands.CompoundString;
-import org.jruby.ir.operands.ScopeModule;
-import org.jruby.ir.operands.CurrentScope;
-import org.jruby.ir.operands.DynamicSymbol;
-import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.*;
+import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.operands.Hash;
-import org.jruby.ir.operands.IRException;
-import org.jruby.ir.operands.KeyValuePair;
-import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.MethAddr;
-import org.jruby.ir.operands.NthRef;
-import org.jruby.ir.operands.ObjectClass;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Range;
-import org.jruby.ir.operands.Regexp;
-import org.jruby.ir.operands.SValue;
-import org.jruby.ir.operands.Splat;
-import org.jruby.ir.operands.StringLiteral;
-import org.jruby.ir.operands.Symbol;
-import org.jruby.ir.operands.UndefinedValue;
-import org.jruby.ir.operands.UnexecutableNil;
-import org.jruby.ir.operands.Variable;
-import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.transformations.inlining.CloneMode;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
@@ -63,7 +26,6 @@ import java.io.IOException;
 import java.util.*;
 
 import org.jruby.ir.listeners.IRScopeListener;
-import org.jruby.ir.operands.TemporaryVariable;
 
 // This class converts an AST into a bunch of IR instructions
 
@@ -124,9 +86,6 @@ public class IRBuilder {
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
 
-        // set to IR mode, since we use different scopes, etc for IR
-        ruby.getInstanceConfig().setCompileMode(CompileMode.OFFIR);
-
         // inline script
         if (isCommandLineScript) return ruby.parse(ByteList.create(arg), "-e", null, 0, false);
 
@@ -163,7 +122,7 @@ public class IRBuilder {
             loopEndLabel   = s.getNewLabel("_LOOP_END");
             iterStartLabel = s.getNewLabel("_ITER_BEGIN");
             iterEndLabel   = s.getNewLabel("_ITER_END");
-            loopResult     = s.getNewTemporaryVariable();
+            loopResult     = s.createTemporaryVariable();
             s.setHasLoopsFlag();
         }
     }
@@ -320,6 +279,31 @@ public class IRBuilder {
         }
     }
 
+    private Operand getImplicitBlockArg(IRScope s) {
+        int n = 0;
+        while (s != null && s instanceof IRClosure) {
+            // We have this oddity of an extra inserted scope for instance/class/module evals
+            if (s instanceof IREvalScript && ((IREvalScript)s).isModuleEval()) {
+                n++;
+            }
+            n++;
+            s = s.getLexicalParent();
+        }
+
+        if (s != null) {
+            LocalVariable v = null;
+            if (s instanceof IRMethod || s instanceof IRMetaClassBody) {
+                v = s.getLocalVariable(Variable.BLOCK, 0);
+            }
+
+            if (v != null) {
+                return n == 0 ? v : v.cloneForDepth(n);
+            }
+        }
+
+        return manager.getNil();
+    }
+
     // Emit cloned ensure bodies by walking up the ensure block stack.
     // If we have been passed a loop value, only emit bodies that are nested within that loop.
     private void emitEnsureBlocks(IRScope s, IRLoop loop) {
@@ -366,7 +350,7 @@ public class IRBuilder {
             case CONSTDECLNODE: return buildConstDecl((ConstDeclNode) node, s);
             case CONSTNODE: return searchConst(s, s, ((ConstNode) node).getName());
             case DASGNNODE: return buildDAsgn((DAsgnNode) node, s);
-            case DEFINEDNODE: return buildGetDefinitionBase(((DefinedNode) node).getExpressionNode(), s);
+            case DEFINEDNODE: return buildGetDefinition(((DefinedNode) node).getExpressionNode(), s);
             case DEFNNODE: return buildDefn((MethodDefNode) node, s);
             case DEFSNODE: return buildDefs((DefsNode) node, s);
             case DOTNODE: return buildDot((DotNode) node, s);
@@ -375,6 +359,7 @@ public class IRBuilder {
             case DSYMBOLNODE: return buildDSymbol((DSymbolNode) node, s);
             case DVARNODE: return buildDVar((DVarNode) node, s);
             case DXSTRNODE: return buildDXStr((DXStrNode) node, s);
+            case ENCODINGNODE: return buildEncoding((EncodingNode)node, s);
             case ENSURENODE: return buildEnsureNode((EnsureNode) node, s);
             case EVSTRNODE: return buildEvStr((EvStrNode) node, s);
             case FALSENODE: return buildFalse(node, s);
@@ -390,6 +375,7 @@ public class IRBuilder {
             case INSTASGNNODE: return buildInstAsgn((InstAsgnNode) node, s);
             case INSTVARNODE: return buildInstVar((InstVarNode) node, s);
             case ITERNODE: return buildIter((IterNode) node, s);
+            case LAMBDANODE: return buildLambda((LambdaNode)node, s);
             case LITERALNODE: return buildLiteral((LiteralNode) node, s);
             case LOCALASGNNODE: return buildLocalAsgn((LocalAsgnNode) node, s);
             case LOCALVARNODE: return buildLocalVar((LocalVarNode) node, s);
@@ -398,6 +384,7 @@ public class IRBuilder {
             case MATCHNODE: return buildMatch((MatchNode) node, s);
             case MODULENODE: return buildModule((ModuleNode) node, s);
             case MULTIPLEASGNNODE: return buildMultipleAsgn((MultipleAsgnNode) node, s); // Only for 1.8
+            case MULTIPLEASGN19NODE: return buildMultipleAsgn19((MultipleAsgn19Node) node, s);
             case NEWLINENODE: return buildNewline((NewlineNode) node, s);
             case NEXTNODE: return buildNext((NextNode) node, s);
             case NTHREFNODE: return buildNthRef((NthRefNode) node, s);
@@ -419,7 +406,7 @@ public class IRBuilder {
             case ROOTNODE:
                 throw new NotCompilableException("Use buildRoot(); Root node at: " + node.getPosition());
             case SCLASSNODE: return buildSClass((SClassNode) node, s);
-            case SELFNODE: return buildSelf(node, s);
+            case SELFNODE: return buildSelf(s);
             case SPLATNODE: return buildSplat((SplatNode) node, s);
             case STRNODE: return buildStr((StrNode) node, s);
             case SUPERNODE: return buildSuper((SuperNode) node, s);
@@ -429,7 +416,7 @@ public class IRBuilder {
             case TRUENODE: return buildTrue(node, s);
             case UNDEFNODE: return buildUndef(node, s);
             case UNTILNODE: return buildUntil((UntilNode) node, s);
-            case VALIASNODE: return buildVAlias(node, s);
+            case VALIASNODE: return buildVAlias((VAliasNode) node, s);
             case VCALLNODE: return buildVCall((VCallNode) node, s);
             case WHILENODE: return buildWhile((WhileNode) node, s);
             case WHENNODE: assert false : "When nodes are handled by case node compilation."; return null;
@@ -437,7 +424,7 @@ public class IRBuilder {
             case YIELDNODE: return buildYield((YieldNode) node, s);
             case ZARRAYNODE: return buildZArray(node, s);
             case ZSUPERNODE: return buildZSuper((ZSuperNode) node, s);
-            default: return buildVersionSpecificNodes(node, s);
+            default: throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
         }
     }
 
@@ -496,7 +483,6 @@ public class IRBuilder {
 
         // args
         closureBuilder.receiveBlockArgs(node, closure);
-        closureBuilder.receiveBlockClosureArg(node.getBlockVarNode(), closure);
 
         Operand closureRetVal = node.getBody() == null ? manager.getNil() : closureBuilder.build(node.getBody(), closure);
 
@@ -506,7 +492,7 @@ public class IRBuilder {
         // Added as part of 'prepareForInterpretation' code.
         // handleBreakAndReturnsInLambdas(closure);
 
-        Variable lambda = s.getNewTemporaryVariable();
+        Variable lambda = s.createTemporaryVariable();
         // SSS FIXME: Is this the right self here?
         WrappedIRClosure lambdaBody = new WrappedIRClosure(s.getSelf(), closure);
         addInstr(s, new BuildLambdaInstr(lambda, lambdaBody, node.getPosition()));
@@ -514,7 +500,7 @@ public class IRBuilder {
     }
 
     public Operand buildEncoding(EncodingNode node, IRScope s) {
-        Variable ret = s.getNewTemporaryVariable();
+        Variable ret = s.createTemporaryVariable();
         addInstr(s, new GetEncodingInstr(ret, node.getEncoding()));
         return ret;
     }
@@ -523,25 +509,14 @@ public class IRBuilder {
     public Operand buildMultipleAsgn19(MultipleAsgn19Node multipleAsgnNode, IRScope s) {
         Operand  values = build(multipleAsgnNode.getValueNode(), s);
         Variable ret = getValueInTemporaryVariable(s, values);
-        Variable tmp = s.getNewTemporaryVariable();
+        Variable tmp = s.createTemporaryVariable();
         addInstr(s, new ToAryInstr(tmp, ret));
         buildMultipleAsgn19Assignment(multipleAsgnNode, s, null, tmp);
         return ret;
     }
 
-    protected Operand buildVersionSpecificNodes(Node node, IRScope s) {
-        switch (node.getNodeType()) {
-            case ENCODINGNODE: return buildEncoding((EncodingNode)node, s);
-            case MULTIPLEASGN19NODE: return buildMultipleAsgn19((MultipleAsgn19Node) node, s);
-            case LAMBDANODE: return buildLambda((LambdaNode)node, s);
-            default: throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
-        }
-    }
-
     protected Variable copyAndReturnValue(IRScope s, Operand val) {
-        Variable v = s.getNewTemporaryVariable();
-        addInstr(s, new CopyInstr(v, val));
-        return v;
+        return addResultInstr(s, new CopyInstr(s.createTemporaryVariable(), val));
     }
 
     protected Variable getValueInTemporaryVariable(IRScope s, Operand val) {
@@ -556,52 +531,40 @@ public class IRBuilder {
         args = skipOverNewlines(s, args);
         switch (args.getNodeType()) {
             case ARGSCATNODE: {
-                CompoundArray a = (CompoundArray)build(args, s);
-                argsList.add(new Splat(a));
-                return a.getAppendedArg();
+                ArgsCatNode argsCatNode = (ArgsCatNode)args;
+                Operand v1 = build(argsCatNode.getFirstNode(), s);
+                Operand v2 = build(argsCatNode.getSecondNode(), s);
+                Variable res = s.createTemporaryVariable();
+                addInstr(s, new BuildCompoundArrayInstr(res, v1, v2, false));
+                argsList.add(new Splat(res, true));
+                return v2;
             }
             case ARGSPUSHNODE:  {
-                ArgsPushNode ap = (ArgsPushNode)args;
-                Operand v1 = build(ap.getFirstNode(), s);
-                Operand v2 = build(ap.getSecondNode(), s);
-                argsList.add(new Splat(new CompoundArray(v1, v2, true)));
+                ArgsPushNode argsPushNode = (ArgsPushNode)args;
+                Operand v1 = build(argsPushNode.getFirstNode(), s);
+                Operand v2 = build(argsPushNode.getSecondNode(), s);
+                Variable res = s.createTemporaryVariable();
+                addInstr(s, new BuildCompoundArrayInstr(res, v1, v2, true));
+                argsList.add(new Splat(res, true));
                 return v2;
             }
             case ARRAYNODE: {
                 ArrayNode arrayNode = (ArrayNode)args;
                 if (arrayNode.isLightweight()) {
                     List<Node> children = arrayNode.childNodes();
-                    if (children.size() == 1) {
-                        // skipOverNewlines is required because the parser inserts a NewLineNode in between!
-                        Node child = skipOverNewlines(s, children.get(0));
-                        if (child instanceof SplatNode) {
-                            // SSS: If the only child is a splat, the splat is supposed to get through
-                            // as an array without being expanded into the call arg list.
-                            //
-                            // The AST for the foo([*1]) is: ArrayNode(Splat19Node(..))
-                            // The AST for the foo(*1) is: Splat19Node(..)
-                            //
-                            // Since a lone splat in call args is always expanded, we convert the splat
-                            // into a compound array: *n --> args-cat([], *n)
-                            SplatNode splat = (SplatNode)child;
-                            Variable splatArray = getValueInTemporaryVariable(s, build(splat.getValue(), s));
-                            argsList.add(new CompoundArray(new Array(), splatArray));
-                            return new Splat(splatArray);
-                        } else {
-                            Operand childOperand = build(child, s);
-                            argsList.add(childOperand);
-                            return childOperand;
-                        }
-                    } else {
-                        // explode array, it's an internal "args" array
-                        for (Node n: children) {
-                            argsList.add(build(n, s));
-                        }
+                    // explode array, it's an internal "args" array
+                    for (Node n: children) {
+                        argsList.add(build(n, s));
                     }
                 } else {
                     // use array as-is, it's a literal array
                     argsList.add(build(arrayNode, s));
                 }
+                break;
+            }
+            case SPLATNODE: {
+                Splat splat = new Splat(build(((SplatNode)args).getValue(), s), true);
+                argsList.add(splat);
                 break;
             }
             default: {
@@ -623,7 +586,7 @@ public class IRBuilder {
     public void buildVersionSpecificAssignment(Node node, IRScope s, Variable v) {
         switch (node.getNodeType()) {
         case MULTIPLEASGN19NODE: {
-            Variable tmp = s.getNewTemporaryVariable();
+            Variable tmp = s.createTemporaryVariable();
             addInstr(s, new ToAryInstr(tmp, v));
             buildMultipleAsgn19Assignment((MultipleAsgn19Node)node, s, null, tmp);
             break;
@@ -680,7 +643,7 @@ public class IRBuilder {
         return s.getLocalVariable(name, depth);
     }
 
-    protected void receiveBlockArg(IRScope s, Variable v, Operand argsArray, int argIndex, boolean isClosureArg, boolean isSplat) {
+    protected void receiveBlockArg(IRScope s, Variable v, Operand argsArray, int argIndex, boolean isSplat) {
         if (argsArray != null) {
             // We are in a nested receive situation -- when we are not at the root of a masgn tree
             // Ex: We are trying to receive (b,c) in this example: "|a, (b,c), d| = ..."
@@ -689,11 +652,11 @@ public class IRBuilder {
         } else {
             // argsArray can be null when the first node in the args-node-ast is a multiple-assignment
             // For example, for-nodes
-            addInstr(s, isClosureArg ? new ReceiveClosureInstr(v) : (isSplat ? new ReceiveRestArgInstr(v, argIndex, argIndex) : new ReceivePreReqdArgInstr(v, argIndex)));
+            addInstr(s, isSplat ? new ReceiveRestArgInstr(v, argIndex, argIndex) : new ReceivePreReqdArgInstr(v, argIndex));
         }
     }
 
-    public void buildVersionSpecificBlockArgsAssignment(Node node, IRScope s, Operand argsArray, int argIndex, boolean isMasgnRoot, boolean isClosureArg, boolean isSplat) {
+    public void buildVersionSpecificBlockArgsAssignment(Node node, IRScope s) {
         if (!(s instanceof IRFor)) throw new NotCompilableException("Should not have come here for block args assignment in 1.9 mode: " + node);
 
         // Argh!  For-loop bodies and regular iterators are different in terms of block-args!
@@ -703,7 +666,7 @@ public class IRBuilder {
                 int i = 0;
                 for (Node an: sourceArray.childNodes()) {
                     // Use 1.8 mode version for this
-                    buildBlockArgsAssignment(an, s, null, i, false, false, false);
+                    buildBlockArgsAssignment(an, s, null, i, false);
                     i++;
                 }
                 break;
@@ -714,43 +677,43 @@ public class IRBuilder {
     }
 
     // This method is called to build arguments for a block!
-    public void buildBlockArgsAssignment(Node node, IRScope s, Operand argsArray, int argIndex, boolean isMasgnRoot, boolean isClosureArg, boolean isSplat) {
+    public void buildBlockArgsAssignment(Node node, IRScope s, Operand argsArray, int argIndex, boolean isSplat) {
         Variable v;
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE:
-                v = s.getNewTemporaryVariable();
-                receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
+                v = s.createTemporaryVariable();
+                receiveBlockArg(s, v, argsArray, argIndex, isSplat);
                 buildAttrAssignAssignment(node, s, v);
                 break;
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
                 v = getBlockArgVariable(s, dynamicAsgn.getName(), dynamicAsgn.getDepth());
-                receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
+                receiveBlockArg(s, v, argsArray, argIndex, isSplat);
                 break;
             }
             case CLASSVARASGNNODE:
-                v = s.getNewTemporaryVariable();
-                receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
+                v = s.createTemporaryVariable();
+                receiveBlockArg(s, v, argsArray, argIndex, isSplat);
                 addInstr(s, new PutClassVariableInstr(classVarDefinitionContainer(s), ((ClassVarAsgnNode)node).getName(), v));
                 break;
             case CLASSVARDECLNODE:
-                v = s.getNewTemporaryVariable();
-                receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
+                v = s.createTemporaryVariable();
+                receiveBlockArg(s, v, argsArray, argIndex, isSplat);
                 addInstr(s, new PutClassVariableInstr(classVarDeclarationContainer(s), ((ClassVarDeclNode)node).getName(), v));
                 break;
             case CONSTDECLNODE:
-                v = s.getNewTemporaryVariable();
-                receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
+                v = s.createTemporaryVariable();
+                receiveBlockArg(s, v, argsArray, argIndex, isSplat);
                 buildConstDeclAssignment((ConstDeclNode) node, s, v);
                 break;
             case GLOBALASGNNODE:
-                v = s.getNewTemporaryVariable();
-                receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
+                v = s.createTemporaryVariable();
+                receiveBlockArg(s, v, argsArray, argIndex, isSplat);
                 addInstr(s, new PutGlobalVarInstr(((GlobalAsgnNode)node).getName(), v));
                 break;
             case INSTASGNNODE:
-                v = s.getNewTemporaryVariable();
-                receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
+                v = s.createTemporaryVariable();
+                receiveBlockArg(s, v, argsArray, argIndex, isSplat);
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
                 addInstr(s, new PutFieldInstr(s.getSelf(), ((InstAsgnNode)node).getName(), v));
                 break;
@@ -758,13 +721,13 @@ public class IRBuilder {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
                 int depth = localVariable.getDepth();
                 v = getBlockArgVariable(s, localVariable.getName(), depth);
-                receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
+                receiveBlockArg(s, v, argsArray, argIndex, isSplat);
                 break;
             }
             case ZEROARGNODE:
                 throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
             default:
-                buildVersionSpecificBlockArgsAssignment(node, s, argsArray, argIndex, isMasgnRoot, isClosureArg, isSplat);
+                buildVersionSpecificBlockArgsAssignment(node, s);
         }
     }
 
@@ -818,13 +781,17 @@ public class IRBuilder {
     public Operand buildArgsCat(final ArgsCatNode argsCatNode, IRScope s) {
         Operand v1 = build(argsCatNode.getFirstNode(), s);
         Operand v2 = build(argsCatNode.getSecondNode(), s);
-        return new CompoundArray(v1, v2);
+        Variable res = s.createTemporaryVariable();
+        addInstr(s, new BuildCompoundArrayInstr(res, v1, v2, false));
+        return res;
     }
 
     public Operand buildArgsPush(final ArgsPushNode node, IRScope s) {
         Operand v1 = build(node.getFirstNode(), s);
         Operand v2 = build(node.getSecondNode(), s);
-        return new CompoundArray(v1, v2, true);
+        Variable res = s.createTemporaryVariable();
+        addInstr(s, new BuildCompoundArrayInstr(res, v1, v2, true));
+        return res;
     }
 
     private Operand buildAttrAssign(final AttrAssignNode attrAssignNode, IRScope s) {
@@ -888,7 +855,7 @@ public class IRBuilder {
                 IRScope returnScope = s.getLexicalParent();
                 // In 1.9 and later modes, no breaks from evals
                 if (s instanceof IREvalScript || returnScope == null) addInstr(s, new ThrowExceptionInstr(IRException.BREAK_LocalJumpError));
-                else addInstr(s, new BreakInstr(rv, returnScope.getName(), returnScope.getScopeId()));
+                else addInstr(s, new BreakInstr(rv, returnScope.getName()));
             } else {
                 // We are not in a closure or a loop => bad break instr!
                 addInstr(s, new ThrowExceptionInstr(IRException.BREAK_LocalJumpError));
@@ -914,13 +881,13 @@ public class IRBuilder {
 
         // Receive exceptions (could be anything, but the handler only processes IRReturnJumps)
         addInstr(s, new LabelInstr(gebLabel));
-        Variable exc = s.getNewTemporaryVariable();
+        Variable exc = s.createTemporaryVariable();
         addInstr(s, new ReceiveJRubyExceptionInstr(exc));
 
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.handleNonlocalReturn(scope, bj, blockType)
-        Variable ret = s.getNewTemporaryVariable();
-        addInstr(s, new RuntimeHelperCall(ret, "handleNonlocalReturn", new Operand[]{exc} ));
+        Variable ret = s.createTemporaryVariable();
+        addInstr(s, new RuntimeHelperCall(ret, HANDLE_NONLOCAL_RETURN, new Operand[]{exc} ));
         addInstr(s, new ReturnInstr(ret));
 
         // End
@@ -951,12 +918,12 @@ public class IRBuilder {
 
         // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
         addInstr(s, new LabelInstr(rescueLabel));
-        Variable exc = s.getNewTemporaryVariable();
+        Variable exc = s.createTemporaryVariable();
         addInstr(s, new ReceiveJRubyExceptionInstr(exc));
 
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.handlePropagatedBreak(context, scope, bj, blockType)
-        addInstr(s, new RuntimeHelperCall(callInstr.getResult(), "handlePropagatedBreak", new Operand[]{exc} ));
+        addInstr(s, new RuntimeHelperCall(callInstr.getResult(), HANDLE_PROPAGATE_BREAK, new Operand[]{exc} ));
 
         // End
         addInstr(s, new LabelInstr(rEndLabel));
@@ -972,7 +939,7 @@ public class IRBuilder {
         Operand       receiver     = build(receiverNode, s);
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
-        Variable      callResult   = s.getNewTemporaryVariable();
+        Variable      callResult   = s.createTemporaryVariable();
         CallInstr     callInstr    = CallInstr.create(callResult, new MethAddr(callNode.getName()), receiver, args.toArray(new Operand[args.size()]), block);
         receiveBreakException(s, block, callInstr);
         return callResult;
@@ -992,7 +959,7 @@ public class IRBuilder {
         Label     endLabel  = s.getNewLabel();
         boolean   hasElse   = (caseNode.getElseNode() != null);
         Label     elseLabel = s.getNewLabel();
-        Variable  result    = s.getNewTemporaryVariable();
+        Variable  result    = s.createTemporaryVariable();
 
         List<Label> labels = new ArrayList<Label>();
         Map<Label, Node> bodies = new HashMap<Label, Node>();
@@ -1002,7 +969,7 @@ public class IRBuilder {
             WhenNode whenNode = (WhenNode)aCase;
             Label bodyLabel = s.getNewLabel();
 
-            Variable eqqResult = s.getNewTemporaryVariable();
+            Variable eqqResult = s.createTemporaryVariable();
             labels.add(bodyLabel);
             Operand v1, v2;
             if (whenNode.getExpressionNodes() instanceof ListNode) {
@@ -1090,10 +1057,10 @@ public class IRBuilder {
         Operand container = getContainerFromCPath(cpath, s);
 
         IRClassBody classBody = new IRClassBody(manager, s, className, classNode.getPosition().getLine(), classNode.getScope());
-        Variable tmpVar = s.getNewTemporaryVariable();
+        Variable tmpVar = s.createTemporaryVariable();
         addInstr(s, new DefineClassInstr(tmpVar, classBody, container, superClass));
-        Variable ret = s.getNewTemporaryVariable();
-        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar));
+        Variable ret = s.createTemporaryVariable();
+        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar, getImplicitBlockArg(s)));
 
         addInstr(classBody, new ReceiveSelfInstr(classBody.getSelf()));
         // Set %current_scope = <c>
@@ -1122,15 +1089,15 @@ public class IRBuilder {
 
         // Create a dummy meta class and record it as being lexically defined in scope s
         IRModuleBody metaClassBody = new IRMetaClassBody(manager, s, manager.getMetaClassName(), sclassNode.getPosition().getLine(), sclassNode.getScope());
-        Variable tmpVar = s.getNewTemporaryVariable();
+        Variable tmpVar = s.createTemporaryVariable();
         addInstr(s, new DefineMetaClassInstr(tmpVar, receiver, metaClassBody));
-        Variable ret = s.getNewTemporaryVariable();
-        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar));
+        Variable ret = s.createTemporaryVariable();
+        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar, getImplicitBlockArg(s)));
 
         addInstr(metaClassBody, new ReceiveSelfInstr(metaClassBody.getSelf()));
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        addInstr(metaClassBody, new ReceiveClosureInstr(metaClassBody.getImplicitBlockArg()));
+        addInstr(metaClassBody, new ReceiveClosureInstr((Variable)getImplicitBlockArg(metaClassBody)));
         addInstr(metaClassBody, new CopyInstr(metaClassBody.getCurrentScopeVariable(), new CurrentScope(metaClassBody)));
         addInstr(metaClassBody, new CopyInstr(metaClassBody.getCurrentModuleVariable(), new ScopeModule(metaClassBody)));
         // Create a new nested builder to ensure this gets its own IR builder state
@@ -1142,9 +1109,16 @@ public class IRBuilder {
 
     // @@c
     public Operand buildClassVar(ClassVarNode node, IRScope s) {
-        Variable ret = s.getNewTemporaryVariable();
+        Variable ret = s.createTemporaryVariable();
         addInstr(s, new GetClassVariableInstr(ret, classVarDefinitionContainer(s), node.getName()));
         return ret;
+    }
+
+    // Add the specified result instruction to the scope and return its result variable.
+    private Variable addResultInstr(IRScope s, ResultInstr instr) {
+        addInstr(s, (Instr) instr);
+
+        return instr.getResult();
     }
 
     // ClassVarAsgn node is assignment within a method/closure scope
@@ -1196,15 +1170,13 @@ public class IRBuilder {
         if ((cvarScope != null) && cvarScope.isNonSingletonClassBody()) {
             return new ScopeModule(cvarScope);
         } else {
-            Variable tmp = s.getNewTemporaryVariable();
-            addInstr(s, new GetClassVarContainerModuleInstr(tmp, s.getCurrentScopeVariable(), declContext ? null : s.getSelf()));
-            return tmp;
+            return addResultInstr(s, new GetClassVarContainerModuleInstr(s.createTemporaryVariable(),
+                    s.getCurrentScopeVariable(), declContext ? null : s.getSelf()));
         }
     }
 
     public Operand buildConstDecl(ConstDeclNode node, IRScope s) {
-        Operand val = build(node.getValueNode(), s);
-        return buildConstDeclAssignment(node, s, val);
+        return buildConstDeclAssignment(node, s, build(node.getValueNode(), s));
     }
 
     private Operand findContainerModule(IRScope s) {
@@ -1241,14 +1213,14 @@ public class IRBuilder {
     }
 
     private Operand searchConstInInheritanceHierarchy(IRScope s, Operand startingModule, String name) {
-        Variable constVal = s.getNewTemporaryVariable();
+        Variable constVal = s.createTemporaryVariable();
         genInheritanceSearchInstrs(s, startingModule, constVal, s.getNewLabel(), true, name);
         return constVal;
     }
 
     private Operand searchConst(IRScope s, IRScope startingScope, String name) {
         boolean noPrivateConstants = (s != startingScope);
-        Variable v = s.getNewTemporaryVariable();
+        Variable v = s.createTemporaryVariable();
 /**
  * SSS FIXME: Go back to a single instruction for now.
  *
@@ -1267,25 +1239,14 @@ public class IRBuilder {
         Node leftNode = iVisited.getLeftNode();
         final String name = iVisited.getName();
 
-        // ENEBO: Does this really happen?
+        // Colon2ImplicitNode
         if (leftNode == null) return searchConst(s, s, name);
 
-        if (iVisited instanceof Colon2ConstNode) {
-            // 1. Load the module first (lhs of node)
-            // 2. Then load the constant from the module
-            Operand module = build(leftNode, s);
-            return searchConstInInheritanceHierarchy(s, module, name);
-        } else if (iVisited instanceof Colon2MethodNode) {
-            Colon2MethodNode c2mNode = (Colon2MethodNode)iVisited;
-            List<Operand> args       = setupCallArgs(null, s);
-            Variable      callResult = s.getNewTemporaryVariable();
-            Instr         callInstr  = CallInstr.create(callResult, new MethAddr(c2mNode.getName()),
-                    null, args.toArray(new Operand[args.size()]), null);
-            addInstr(s, callInstr);
-            return callResult;
-        } else {
-            throw new NotCompilableException("Not compilable: " + iVisited);
-        }
+        // Colon2ConstNode
+        // 1. Load the module first (lhs of node)
+        // 2. Then load the constant from the module
+        Operand module = build(leftNode, s);
+        return searchConstInInheritanceHierarchy(s, module, name);
     }
 
     public Operand buildColon3(Colon3Node node, IRScope s) {
@@ -1293,14 +1254,14 @@ public class IRBuilder {
     }
 
     interface CodeBlock {
-        public Operand run(Object[] args);
+        public Operand run();
     }
 
-    private Operand protectCodeWithRescue(IRScope s, CodeBlock protectedCode, Object[] protectedCodeArgs, CodeBlock rescueBlock, Object[] rescueBlockArgs) {
+    private Operand protectCodeWithRescue(IRScope s, CodeBlock protectedCode, CodeBlock rescueBlock) {
         // This effectively mimics a begin-rescue-end code block
         // Except this catches all exceptions raised by the protected code
 
-        Variable rv = s.getNewTemporaryVariable();
+        Variable rv = s.createTemporaryVariable();
         Label rBeginLabel = s.getNewLabel();
         Label rEndLabel   = s.getNewLabel();
         Label rescueLabel = s.getNewLabel();
@@ -1308,7 +1269,7 @@ public class IRBuilder {
         // Protected region code
         addInstr(s, new LabelInstr(rBeginLabel));
         addInstr(s, new ExceptionRegionStartMarkerInstr(rescueLabel));
-        Object v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
+        Object v1 = protectedCode.run(); // YIELD: Run the protected code block
         addInstr(s, new CopyInstr(rv, (Operand)v1));
         addInstr(s, new JumpInstr(rEndLabel));
         addInstr(s, new ExceptionRegionEndMarkerInstr());
@@ -1327,8 +1288,8 @@ public class IRBuilder {
 
         // Rescue code
         Label caughtLabel = s.getNewLabel();
-        Variable exc = s.getNewTemporaryVariable();
-        Variable excType = s.getNewTemporaryVariable();
+        Variable exc = s.createTemporaryVariable();
+        Variable excType = s.createTemporaryVariable();
 
         // Receive 'exc' and verify that 'exc' is of ruby-type 'Exception'
         addInstr(s, new LabelInstr(rescueLabel));
@@ -1341,7 +1302,7 @@ public class IRBuilder {
 
         // exc === Exception; Run the rescue block
         addInstr(s, new LabelInstr(caughtLabel));
-        Object v2 = rescueBlock.run(rescueBlockArgs); // YIELD: Run the protected code block
+        Object v2 = rescueBlock.run(); // YIELD: Run the protected code block
         if (v2 != null) addInstr(s, new CopyInstr(rv, manager.getNil()));
 
         // End
@@ -1350,95 +1311,237 @@ public class IRBuilder {
         return rv;
     }
 
-    public Operand buildVersionSpecificGetDefinitionIR(Node node, IRScope s) {
+    public Operand buildGetDefinition(Node node, final IRScope scope) {
+        node = skipOverNewlines(scope, node);
+
+        // FIXME: Do we still have MASGN and MASGN19?
         switch (node.getNodeType()) {
-            case ORNODE:
-            case ANDNODE: {
-                return new StringLiteral("expression");
-            }
-            case MULTIPLEASGN19NODE: {
-                return new StringLiteral("assignment");
-            }
-            case DVARNODE: {
-                return new StringLiteral("local-variable");
-            }
-            case BACKREFNODE: {
-                return buildDefinitionCheck(s, new BackrefIsMatchDataInstr(s.getNewTemporaryVariable()), "global-variable");
-            }
-            case DREGEXPNODE:
-            case DSTRNODE: {
-                Operand v = buildGetDefinition(node, s);
-                Label doneLabel = s.getNewLabel();
-                Variable tmpVar = getValueInTemporaryVariable(s, v);
-                addInstr(s, BNEInstr.create(tmpVar, manager.getNil(), doneLabel));
-                addInstr(s, new CopyInstr(tmpVar, new StringLiteral("expression")));
-                addInstr(s, new LabelInstr(doneLabel));
-                return tmpVar;
-            }
-            case NTHREFNODE: {
+        case CLASSVARASGNNODE: case CLASSVARDECLNODE: case CONSTDECLNODE:
+        case DASGNNODE: case GLOBALASGNNODE: case LOCALASGNNODE: case MULTIPLEASGNNODE:
+        case MULTIPLEASGN19NODE: case OPASGNNODE: case OPASGNANDNODE: case OPASGNORNODE:
+        case OPELEMENTASGNNODE: case INSTASGNNODE:
+            return new ConstantStringLiteral("assignment");
+        case ORNODE: case ANDNODE:
+            return new ConstantStringLiteral("expression");
+        case FALSENODE:
+            return new ConstantStringLiteral("false");
+        case LOCALVARNODE: case DVARNODE:
+            return new ConstantStringLiteral("local-variable");
+        case MATCH2NODE: case MATCH3NODE:
+            return new ConstantStringLiteral("method");
+        case NILNODE:
+            return new ConstantStringLiteral("nil");
+        case SELFNODE:
+            return new ConstantStringLiteral("self");
+        case TRUENODE:
+            return new ConstantStringLiteral("true");
+        case DREGEXPNODE: case DSTRNODE: {
+            final Node dNode = node;
+
+            // protected code
+            CodeBlock protectedCode = new CodeBlock() {
+                public Operand run() {
+                    build(dNode, scope);
+                    // always an expression as long as we get through here without an exception!
+                    return new StringLiteral("expression");
+                }
+            };
+            // rescue block
+            CodeBlock rescueBlock = new CodeBlock() {
+                public Operand run() { return manager.getNil(); } // Nothing to do if we got an exception
+            };
+
+            // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
+            Operand v = protectCodeWithRescue(scope, protectedCode, rescueBlock);
+            Label doneLabel = scope.getNewLabel();
+            Variable tmpVar = getValueInTemporaryVariable(scope, v);
+            addInstr(scope, BNEInstr.create(tmpVar, manager.getNil(), doneLabel));
+            addInstr(scope, new CopyInstr(tmpVar, new ConstantStringLiteral("expression")));
+            addInstr(scope, new LabelInstr(doneLabel));
+
+            return tmpVar;
+        }
+        case BACKREFNODE:
+            return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_BACKREF,
+                    Operand.EMPTY_ARRAY));
+        case GLOBALVARNODE:
+            return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_GLOBAL,
+                    new Operand[] { new StringLiteral(((GlobalVarNode) node).getName()) }));
+        case NTHREFNODE: {
+            return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_NTH_REF,
+                    new Operand[] { new Fixnum(((NthRefNode) node).getMatchNumber()) }));
+        }
+        case INSTVARNODE:
+            return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_INSTANCE_VAR,
+                    new Operand[] { scope.getSelf(), new StringLiteral(((InstVarNode) node).getName()) }));
+        case CLASSVARNODE:
+            return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_CLASS_VAR,
+                    new Operand[]{classVarDefinitionContainer(scope), new StringLiteral(((ClassVarNode) node).getName())}));
+        case SUPERNODE: {
+            Label undefLabel = scope.getNewLabel();
+            Variable tmpVar  = addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_SUPER,
+                    new Operand[] { scope.getSelf() }));
+            addInstr(scope, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
+            Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), scope, "super");
+            return buildDefnCheckIfThenPaths(scope, undefLabel, superDefnVal);
+        }
+        case VCALLNODE:
+            return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_METHOD,
+                    new Operand[] { scope.getSelf(), new StringLiteral(((VCallNode) node).getName()), Boolean.FALSE}));
+        case YIELDNODE:
+            return buildDefinitionCheck(scope, new BlockGivenInstr(scope.createTemporaryVariable(), getImplicitBlockArg(scope)), "yield");
+        case ZSUPERNODE:
+            return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_SUPER,
+                    new Operand[] { scope.getSelf() } ));
+        case CONSTNODE: {
+            Label defLabel = scope.getNewLabel();
+            Label doneLabel = scope.getNewLabel();
+            Variable tmpVar  = scope.createTemporaryVariable();
+            String constName = ((ConstNode) node).getName();
+            addInstr(scope, new LexicalSearchConstInstr(tmpVar, startingSearchScope(scope), constName));
+            addInstr(scope, BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
+            addInstr(scope, new InheritanceSearchConstInstr(tmpVar, findContainerModule(scope), constName, false)); // SSS FIXME: should this be the current-module var or something else?
+            addInstr(scope, BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
+            addInstr(scope, new CopyInstr(tmpVar, manager.getNil()));
+            addInstr(scope, new JumpInstr(doneLabel));
+            addInstr(scope, new LabelInstr(defLabel));
+            addInstr(scope, new CopyInstr(tmpVar, new ConstantStringLiteral("constant")));
+            addInstr(scope, new LabelInstr(doneLabel));
+            return tmpVar;
+        }
+        case COLON3NODE: case COLON2NODE: {
             // SSS FIXME: Is there a reason to do this all with low-level IR?
             // Can't this all be folded into a Java method that would be part
             // of the runtime library, which then can be used by buildDefinitionCheck method above?
             // This runtime library would be used both by the interpreter & the compiled code!
 
-                /* -------------------------------------------------------------------------------------
-                 * We have to generate IR for this:
-                 *    v = backref; (!(v instanceof RubyMatchData) || v.group(n).nil?) ? nil : "global-variable"
-                 *
-                 * which happens to be identical to: (where nthRef implicitly fetches backref again!)
-                 *    v = backref; (!(v instanceof RubyMatchData) || nthRef(n).nil?) ? nil : "global-variable"
-                 *
-                 * I am using the second form since it let us encode it in fewer IR instructions.
-                 * But, note that this second form is not as clean as the first one plus it fetches backref twice!
-                 * ------------------------------------------------------------------------------------- */
-                int n = ((NthRefNode) node).getMatchNumber();
-                Label undefLabel = s.getNewLabel();
-                Variable tmpVar = s.getNewTemporaryVariable();
-                addInstr(s, new BackrefIsMatchDataInstr(tmpVar));
-                addInstr(s, BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
-                // SSS FIXME:
-                // - Can/should I use BEQInstr(new NthRef(n), manager.getNil(), undefLabel)? instead of .nil? & compare with flag?
-                // - Or, even create a new IsNilInstr and NotNilInstr to represent optimized scenarios where
-                //   the nil? method is not monkey-patched?
-                // This matters because if String.nil? is monkey-patched, the two sequences can behave differently.
-                addInstr(s, CallInstr.create(tmpVar, new MethAddr("nil?"), new NthRef(n), NO_ARGS, null));
-                addInstr(s, BEQInstr.create(tmpVar, manager.getTrue(), undefLabel));
-                return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral("global-variable"));
-            }
-            default: {
-                return buildGetDefinition(node, s);
-            }
+            final Colon3Node colon = (Colon3Node) node;
+            final String name = colon.getName();
+            final Variable errInfo = scope.createTemporaryVariable();
+
+            // store previous exception for restoration if we rescue something
+            addInstr(scope, new GetErrorInfoInstr(errInfo));
+
+            CodeBlock protectedCode = new CodeBlock() {
+                public Operand run() {
+                    Operand v = colon instanceof Colon2Node ?
+                            build(((Colon2Node)colon).getLeftNode(), scope) : new ObjectClass();
+
+                    Variable tmpVar = scope.createTemporaryVariable();
+                    addInstr(scope, new RuntimeHelperCall(tmpVar, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {v, new ConstantStringLiteral(name)}));
+                    return tmpVar;
+                }
+            };
+
+            // rescue block
+            CodeBlock rescueBlock = new CodeBlock() {
+                 public Operand run() {
+                 // Nothing to do -- ignore the exception, and restore stashed error info!
+                 addInstr(scope, new RestoreErrorInfoInstr(errInfo));
+                 return manager.getNil();
+                 }
+            };
+
+                // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
+            return protectCodeWithRescue(scope, protectedCode, rescueBlock);
         }
-    }
+        case FCALLNODE: {
+            /* ------------------------------------------------------------------
+             * Generate IR for:
+             *    r = self/receiver
+             *    mc = r.metaclass
+             *    return mc.methodBound(meth) ? buildGetArgumentDefn(..) : false
+             * ----------------------------------------------------------------- */
+            Label undefLabel = scope.getNewLabel();
+            Variable tmpVar = addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_METHOD,
+                    new Operand[]{scope.getSelf(), new StringLiteral(((FCallNode) node).getName()), Boolean.FALSE}));
+            addInstr(scope, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
+            Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), scope, "method");
+            return buildDefnCheckIfThenPaths(scope, undefLabel, argsCheckDefn);
+        }
+        case CALLNODE: {
+            final Label undefLabel = scope.getNewLabel();
+            final CallNode callNode = (CallNode) node;
+            Operand  receiverDefn = buildGetDefinition(callNode.getReceiverNode(), scope);
+            addInstr(scope, BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
 
-    public Operand buildGetDefinitionBase(Node node, IRScope s) {
-        node = skipOverNewlines(s, node);
-        switch (node.getNodeType()) {
-        case CLASSVARASGNNODE:
-        case CLASSVARDECLNODE:
-        case CONSTDECLNODE:
-        case DASGNNODE:
-        case GLOBALASGNNODE:
-        case LOCALASGNNODE:
-        case MULTIPLEASGNNODE:
-        case OPASGNNODE:
-        case OPELEMENTASGNNODE:
-        case FALSENODE:
-        case TRUENODE:
-        case LOCALVARNODE:
-        case INSTVARNODE:
-        case SELFNODE:
-        case VCALLNODE:
-        case YIELDNODE:
-        case GLOBALVARNODE:
-        case CONSTNODE:
-        case FCALLNODE:
-        case CLASSVARNODE:
-            // these are all "simple" cases that don't require the heavier defined logic
-            return buildGetDefinition(node, s);
+            // protected main block
+            CodeBlock protectedCode = new CodeBlock() {
+                public Operand run() {
+                    Variable tmpVar = scope.createTemporaryVariable();
+                    addInstr(scope, new RuntimeHelperCall(tmpVar, IS_DEFINED_CALL,
+                            new Operand[]{build(callNode.getReceiverNode(), scope), new StringLiteral(callNode.getName())}));
+                    return buildDefnCheckIfThenPaths(scope, undefLabel, tmpVar);
+                }
+            };
 
-        default:
-            return buildVersionSpecificGetDefinitionIR(node, s);
+            // rescue block
+            CodeBlock rescueBlock = new CodeBlock() {
+                public Operand run() { return manager.getNil(); } // Nothing to do if we got an exception
+            };
+
+            // Try verifying definition, and if we get an exception, throw it out, and return nil
+            return protectCodeWithRescue(scope, protectedCode, rescueBlock);
+        }
+        case ATTRASSIGNNODE: {
+            final Label  undefLabel = scope.getNewLabel();
+            final AttrAssignNode attrAssign = (AttrAssignNode) node;
+            Operand receiverDefn = buildGetDefinition(attrAssign.getReceiverNode(), scope);
+            addInstr(scope, BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
+
+            // protected main block
+            CodeBlock protectedCode = new CodeBlock() {
+                public Operand run() {
+                    /* --------------------------------------------------------------------------
+                     * This basically combines checks from CALLNODE and FCALLNODE
+                     *
+                     * Generate IR for this sequence
+                     *
+                     *    1. r  = receiver
+                     *    2. mc = r.metaClass
+                     *    3. v  = mc.getVisibility(methodName)
+                     *    4. f  = !v || v.isPrivate? || (v.isProtected? && receiver/self?.kindof(mc.getRealClass))
+                     *    5. return !f && mc.methodBound(attrmethod) ? buildGetArgumentDefn(..) : false
+                     *
+                     * Hide the complexity of instrs 2-4 into a verifyMethodIsPublicAccessible call
+                     * which can executely entirely in Java-land.  No reason to expose the guts in IR.
+                     * ------------------------------------------------------------------------------ */
+                    Variable tmpVar     = scope.createTemporaryVariable();
+                    Operand  receiver   = build(attrAssign.getReceiverNode(), scope);
+                    addInstr(scope, new RuntimeHelperCall(tmpVar, IS_DEFINED_METHOD,
+                            new Operand[] { receiver, new StringLiteral(attrAssign.getName()), Boolean.TRUE }));
+                    addInstr(scope, BEQInstr.create(tmpVar, manager.getNil(), undefLabel));
+                    Operand argsCheckDefn = buildGetArgumentDefinition(attrAssign.getArgsNode(), scope, "assignment");
+                    return buildDefnCheckIfThenPaths(scope, undefLabel, argsCheckDefn);
+                }
+            };
+
+            // rescue block
+            CodeBlock rescueBlock = new CodeBlock() {
+                public Operand run() { return manager.getNil(); } // Nothing to do if we got an exception
+            };
+
+            // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
+            return protectCodeWithRescue(scope, protectedCode, rescueBlock);
+        }
+        default: {
+            final Node aNode = node;
+            // protected code
+            CodeBlock protectedCode = new CodeBlock() {
+                public Operand run() {
+                    build(aNode, scope);
+                    // always an expression as long as we get through here without an exception!
+                    return new StringLiteral("expression");
+                }
+            };
+            // rescue block
+            CodeBlock rescueBlock = new CodeBlock() {
+                public Operand run() { return manager.getNil(); } // Nothing to do if we got an exception
+            };
+
+            // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
+            return protectCodeWithRescue(scope, protectedCode, rescueBlock);
+        }
         }
     }
 
@@ -1456,13 +1559,13 @@ public class IRBuilder {
         Label undefLabel = s.getNewLabel();
         addInstr(s, (Instr) definedInstr);
         addInstr(s, BEQInstr.create(definedInstr.getResult(), manager.getFalse(), undefLabel));
-        return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral(definedReturnValue));
+        return buildDefnCheckIfThenPaths(s, undefLabel, new ConstantStringLiteral(definedReturnValue));
     }
 
     public Operand buildGetArgumentDefinition(final Node node, IRScope s, String type) {
         if (node == null) return new StringLiteral(type);
 
-        Operand rv = new StringLiteral(type);
+        Operand rv = new ConstantStringLiteral(type);
         boolean failPathReqd = false;
         Label failLabel = s.getNewLabel();
         if (node instanceof ArrayNode) {
@@ -1490,269 +1593,6 @@ public class IRBuilder {
         // Optimization!
         return failPathReqd ? buildDefnCheckIfThenPaths(s, failLabel, rv) : rv;
 
-    }
-
-    public Operand buildGetDefinition(Node defnNode, IRScope s) {
-        final Node node = skipOverNewlines(s, defnNode);
-        switch (node.getNodeType()) {
-            case CLASSVARASGNNODE:
-            case CLASSVARDECLNODE:
-            case CONSTDECLNODE:
-            case DASGNNODE:
-            case GLOBALASGNNODE:
-            case LOCALASGNNODE:
-            case MULTIPLEASGNNODE:
-            case OPASGNNODE:
-            case OPASGNANDNODE:
-            case OPASGNORNODE:
-            case OPELEMENTASGNNODE:
-            case INSTASGNNODE: // simple assignment cases
-                return new StringLiteral("assignment");
-            case DVARNODE:
-                return new StringLiteral("local-variable(in-block)");
-            case FALSENODE:
-                return new StringLiteral("false");
-            case TRUENODE:
-                return new StringLiteral("true");
-            case LOCALVARNODE:
-                return new StringLiteral("local-variable");
-            case MATCH2NODE:
-            case MATCH3NODE:
-                return new StringLiteral("method");
-            case NILNODE:
-                return new StringLiteral("nil");
-            case SELFNODE:
-                return new StringLiteral("self");
-            case CONSTNODE: {
-                Label defLabel = s.getNewLabel();
-                Label doneLabel = s.getNewLabel();
-                Variable tmpVar  = s.getNewTemporaryVariable();
-                String constName = ((ConstNode) node).getName();
-                addInstr(s, new LexicalSearchConstInstr(tmpVar, startingSearchScope(s), constName));
-                addInstr(s, BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
-                addInstr(s, new InheritanceSearchConstInstr(tmpVar, findContainerModule(s), constName, false)); // SSS FIXME: should this be the current-module var or something else?
-                addInstr(s, BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
-                addInstr(s, new CopyInstr(tmpVar, manager.getNil()));
-                addInstr(s, new JumpInstr(doneLabel));
-                addInstr(s, new LabelInstr(defLabel));
-                addInstr(s, new CopyInstr(tmpVar, new StringLiteral("constant")));
-                addInstr(s, new LabelInstr(doneLabel));
-                return tmpVar;
-            }
-            case GLOBALVARNODE:
-                return buildDefinitionCheck(s, new GlobalIsDefinedInstr(s.getNewTemporaryVariable(), new StringLiteral(((GlobalVarNode) node).getName())), "global-variable");
-            case INSTVARNODE:
-                return buildDefinitionCheck(s, new HasInstanceVarInstr(s.getNewTemporaryVariable(), s.getSelf(), new StringLiteral(((InstVarNode) node).getName())), "instance-variable");
-            case YIELDNODE:
-                return buildDefinitionCheck(s, new BlockGivenInstr(s.getNewTemporaryVariable(), s.getImplicitBlockArg()), "yield");
-            case BACKREFNODE:
-                return buildDefinitionCheck(s, new BackrefIsMatchDataInstr(s.getNewTemporaryVariable()), "$" + ((BackRefNode) node).getType());
-            case NTHREFNODE: {
-            // SSS FIXME: Is there a reason to do this all with low-level IR?
-            // Can't this all be folded into a Java method that would be part
-            // of the runtime library, which then can be used by buildDefinitionCheck method above?
-            // This runtime library would be used both by the interpreter & the compiled code!
-
-                /* -------------------------------------------------------------------------------------
-                 * We have to generate IR for this:
-                 *    v = backref; (!(v instanceof RubyMatchData) || v.group(n).nil?) ? nil : "$#{n}"
-                 *
-                 * which happens to be identical to: (where nthRef implicitly fetches backref again!)
-                 *    v = backref; (!(v instanceof RubyMatchData) || nthRef(n).nil?) ? nil : "$#{n}"
-                 *
-                 * I am using the second form since it let us encode it in fewer IR instructions.
-                 * But, note that this second form is not as clean as the first one plus it fetches backref twice!
-                 * ------------------------------------------------------------------------------------- */
-                int n = ((NthRefNode) node).getMatchNumber();
-                Label undefLabel = s.getNewLabel();
-                Variable tmpVar = s.getNewTemporaryVariable();
-                addInstr(s, new BackrefIsMatchDataInstr(tmpVar));
-                addInstr(s, BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
-                // SSS FIXME:
-                // - Can/should I use BEQInstr(new NthRef(n), manager.getNil(), undefLabel)? instead of .nil? & compare with flag?
-                // - Or, even create a new IsNilInstr and NotNilInstr to represent optimized scenarios where
-                //   the nil? method is not monkey-patched?
-                // This matters because if String.nil? is monkey-patched, the two sequences can behave differently.
-                addInstr(s, CallInstr.create(tmpVar, new MethAddr("nil?"), new NthRef(n), NO_ARGS, null));
-                addInstr(s, BEQInstr.create(tmpVar, manager.getTrue(), undefLabel));
-                return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral("$" + n));
-            }
-            case COLON3NODE:
-            case COLON2NODE: {
-            // SSS FIXME: Is there a reason to do this all with low-level IR?
-            // Can't this all be folded into a Java method that would be part
-            // of the runtime library, which then can be used by buildDefinitionCheck method above?
-            // This runtime library would be used both by the interpreter & the compiled code!
-
-                final Colon3Node iVisited = (Colon3Node) node;
-                final String name = iVisited.getName();
-
-                // store previous exception for restoration if we rescue something
-                Variable errInfo = s.getNewTemporaryVariable();
-                addInstr(s, new GetErrorInfoInstr(errInfo));
-
-                CodeBlock protectedCode = new CodeBlock() {
-                    public Operand run(Object[] args) {
-                        IRScope s    = (IRScope)args[0];
-                        Node    n    = (Node)args[1];
-                        String  name = (String)args[2];
-                        Operand v    = (n instanceof Colon2Node) ? build(((Colon2Node)n).getLeftNode(), s) : new ObjectClass();
-
-                        Variable tmpVar = s.getNewTemporaryVariable();
-                        addInstr(s, new GetDefinedConstantOrMethodInstr(tmpVar, v, new StringLiteral(name)));
-                        return tmpVar;
-                    }
-                };
-
-                // rescue block
-                CodeBlock rescueBlock = new CodeBlock() {
-                    public Operand run(Object[] args) {
-                        // Nothing to do -- ignore the exception, and restore stashed error info!
-                        IRScope s  = (IRScope)args[0];
-                        addInstr(s, new RestoreErrorInfoInstr((Operand) args[1]));
-                        return manager.getNil();
-                    }
-                };
-
-                // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
-                return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, name}, rescueBlock, new Object[] {s, errInfo});
-            }
-            case FCALLNODE: {
-                /* ------------------------------------------------------------------
-                 * Generate IR for:
-                 *    r = self/receiver
-                 *    mc = r.metaclass
-                 *    return mc.methodBound(meth) ? buildGetArgumentDefn(..) : false
-                 * ----------------------------------------------------------------- */
-                Label undefLabel = s.getNewLabel();
-                Variable tmpVar = s.getNewTemporaryVariable();
-                StringLiteral mName = new StringLiteral(((FCallNode)node).getName());
-                addInstr(s, new IsMethodBoundInstr(tmpVar, s.getSelf(), mName));
-                addInstr(s, BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
-                Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "method");
-                return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
-            }
-            case VCALLNODE:
-                return buildDefinitionCheck(s, new IsMethodBoundInstr(s.getNewTemporaryVariable(), s.getSelf(), new StringLiteral(((VCallNode) node).getName())), "method");
-            case CALLNODE: {
-            // SSS FIXME: Is there a reason to do this all with low-level IR?
-            // Can't this all be folded into a Java method that would be part
-            // of the runtime library?
-
-                Label    undefLabel = s.getNewLabel();
-                CallNode iVisited = (CallNode) node;
-                Operand  receiverDefn = buildGetDefinition(iVisited.getReceiverNode(), s);
-                addInstr(s, BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
-
-                // protected main block
-                CodeBlock protectedCode = new CodeBlock() {
-                    public Operand run(Object[] args) {
-                        IRScope  s          = (IRScope)args[0];
-                        CallNode iVisited   = (CallNode)args[1];
-                        String   methodName = iVisited.getName();
-                        Variable tmpVar     = s.getNewTemporaryVariable();
-                        Operand  receiver   = build(iVisited.getReceiverNode(), s);
-                        addInstr(s, new MethodDefinedInstr(tmpVar, receiver, new StringLiteral(methodName)));
-                        return buildDefnCheckIfThenPaths(s, (Label)args[2], tmpVar);
-                    }
-                };
-
-                // rescue block
-                CodeBlock rescueBlock = new CodeBlock() {
-                    public Operand run(Object[] args) { return manager.getNil(); } // Nothing to do if we got an exception
-                };
-
-                // Try verifying definition, and if we get an exception, throw it out, and return nil
-                return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, undefLabel}, rescueBlock, null);
-            }
-            case CLASSVARNODE: {
-            // SSS FIXME: Is there a reason to do this all with low-level IR?
-            // Can't this all be folded into a Java method that would be part
-            // of the runtime library, which would be used both by the interpreter & the compiled code!
-
-                /* --------------------------------------------------------------------------
-                 * Generate IR for this ruby pseudo-code:
-                 *   cm = tc.getCurrentScope.getStaticScope.getModule || self.metaclass
-                 *   cm.isClassVarDefined ? "class variable" : nil
-                 * ------------------------------------------------------------------------------ */
-                ClassVarNode iVisited = (ClassVarNode) node;
-                Operand cm = classVarDefinitionContainer(s);
-                return buildDefinitionCheck(s, new ClassVarIsDefinedInstr(s.getNewTemporaryVariable(), cm, new StringLiteral(iVisited.getName())), "class variable");
-            }
-            case ATTRASSIGNNODE: {
-                Label  undefLabel = s.getNewLabel();
-                AttrAssignNode iVisited = (AttrAssignNode) node;
-                Operand receiverDefn = buildGetDefinition(iVisited.getReceiverNode(), s);
-                addInstr(s, BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
-
-                // protected main block
-                CodeBlock protectedCode = new CodeBlock() {
-                    public Operand run(Object[] args) {
-                        /* --------------------------------------------------------------------------
-                         * This basically combines checks from CALLNODE and FCALLNODE
-                         *
-                         * Generate IR for this sequence
-                         *
-                         *    1. r  = receiver
-                         *    2. mc = r.metaClass
-                         *    3. v  = mc.getVisibility(methodName)
-                         *    4. f  = !v || v.isPrivate? || (v.isProtected? && receiver/self?.kindof(mc.getRealClass))
-                         *    5. return !f && mc.methodBound(attrmethod) ? buildGetArgumentDefn(..) : false
-                         *
-                         * Hide the complexity of instrs 2-4 into a verifyMethodIsPublicAccessible call
-                         * which can executely entirely in Java-land.  No reason to expose the guts in IR.
-                         * ------------------------------------------------------------------------------ */
-                        IRScope s = (IRScope)args[0];
-                        AttrAssignNode iVisited = (AttrAssignNode)args[1];
-                        Label undefLabel = (Label)args[2];
-                        StringLiteral attrMethodName = new StringLiteral(iVisited.getName());
-                        Variable tmpVar     = s.getNewTemporaryVariable();
-                        Operand  receiver   = build(iVisited.getReceiverNode(), s);
-                        addInstr(s, new MethodIsPublicInstr(tmpVar, receiver, attrMethodName));
-                        addInstr(s, BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
-                        addInstr(s, new IsMethodBoundInstr(tmpVar, s.getSelf(), attrMethodName));
-                        addInstr(s, BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
-                        Operand argsCheckDefn = buildGetArgumentDefinition(((AttrAssignNode) node).getArgsNode(), s, "assignment");
-                        return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
-                    }
-                };
-
-                // rescue block
-                CodeBlock rescueBlock = new CodeBlock() {
-                    public Operand run(Object[] args) { return manager.getNil(); } // Nothing to do if we got an exception
-                };
-
-                // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
-                return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, undefLabel}, rescueBlock, null);
-            }
-            case ZSUPERNODE:
-                return buildDefinitionCheck(s, new SuperMethodBoundInstr(s.getNewTemporaryVariable(), s.getSelf()), "super");
-            case SUPERNODE: {
-                Label undefLabel = s.getNewLabel();
-                Variable tmpVar  = s.getNewTemporaryVariable();
-                addInstr(s, new SuperMethodBoundInstr(tmpVar, s.getSelf()));
-                addInstr(s, BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
-                Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), s, "super");
-                return buildDefnCheckIfThenPaths(s, undefLabel, superDefnVal);
-            }
-            default: {
-                // protected code
-                CodeBlock protectedCode = new CodeBlock() {
-                    public Operand run(Object[] args) {
-                        build((Node)args[0], (IRScope)args[1]);
-                        // always an expression as long as we get through here without an exception!
-                        return new StringLiteral("expression");
-                    }
-                };
-                // rescue block
-                CodeBlock rescueBlock = new CodeBlock() {
-                    public Operand run(Object[] args) { return manager.getNil(); } // Nothing to do if we got an exception
-                };
-
-                // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
-                return protectCodeWithRescue(s, protectedCode, new Object[]{node, s}, rescueBlock, null);
-            }
-        }
     }
 
     public Operand buildDAsgn(final DAsgnNode dasgnNode, IRScope s) {
@@ -1876,10 +1716,10 @@ public class IRBuilder {
             }
             case MULTIPLEASGN19NODE: {
                 MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
-                Variable v = s.getNewTemporaryVariable();
+                Variable v = s.createTemporaryVariable();
                 addArgReceiveInstr(s, v, argIndex, post, numPreReqd, numPostRead);
-                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("rest", "");
-                Variable tmp = s.getNewTemporaryVariable();
+                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("req", "");
+                Variable tmp = s.createTemporaryVariable();
                 addInstr(s, new ToAryInstr(tmp, v));
                 buildMultipleAsgn19Assignment(childNode, s, tmp, null);
                 break;
@@ -1897,11 +1737,12 @@ public class IRBuilder {
             addInstr(s, new ReceiveClosureInstr(blockVar));
         }
 
-        // SSS FIXME: This instruction is only needed if there is an yield instr somewhere!
         // In addition, store the block argument in an implicit block variable
-        Variable implicitBlockArg = s.getImplicitBlockArg();
-        if (blockVar == null) addInstr(s, new ReceiveClosureInstr(implicitBlockArg));
-        else addInstr(s, new CopyInstr(implicitBlockArg, blockVar));
+        if (s instanceof IRMethod) {
+            Variable implicitBlockArg = (Variable)getImplicitBlockArg(s);
+            if (blockVar == null) addInstr(s, new ReceiveClosureInstr(implicitBlockArg));
+            else addInstr(s, new CopyInstr(implicitBlockArg, blockVar));
+        }
     }
 
     protected void receiveNonBlockArgs(final ArgsNode argsNode, IRScope s) {
@@ -1987,7 +1828,7 @@ public class IRBuilder {
         // For methods, we always receive it (implicitly, if the block arg is not explicit)
         // For closures, only if it is explicitly present
         BlockArgNode blockArg = argsNode.getBlock();
-        if ((s instanceof IRMethod) || (blockArg != null)) receiveClosureArg(blockArg, s);
+        if (s instanceof IRMethod || blockArg != null) receiveClosureArg(blockArg, s);
     }
 
     public void receiveArgs(final ArgsNode argsNode, IRScope s) {
@@ -2058,10 +1899,10 @@ public class IRBuilder {
             case MULTIPLEASGN19NODE: {
                 MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
                 if (!isMasgnRoot) {
-                    v = s.getNewTemporaryVariable();
+                    v = s.createTemporaryVariable();
                     if (isSplat) addInstr(s, new RestArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
                     else addInstr(s, new ReqdArgMultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index));
-                    Variable tmp = s.getNewTemporaryVariable();
+                    Variable tmp = s.createTemporaryVariable();
                     addInstr(s, new ToAryInstr(tmp, v));
                     argsArray = tmp;
                 }
@@ -2088,7 +1929,7 @@ public class IRBuilder {
                 if (values == null) {
                     buildArgsMasgn(an, s, argsArray, false, -1, -1, i, false);
                 } else {
-                    Variable rhsVal = s.getNewTemporaryVariable();
+                    Variable rhsVal = s.createTemporaryVariable();
                     addInstr(s, new ReqdArgMultipleAsgnInstr(rhsVal, values, i));
                     buildAssignment(an, s, rhsVal);
                 }
@@ -2105,7 +1946,7 @@ public class IRBuilder {
             } else if (values == null) {
                 buildArgsMasgn(restNode, s, argsArray, false, i, postArgsCount, 0, true); // rest of the argument array!
             } else {
-                Variable rhsVal = s.getNewTemporaryVariable();
+                Variable rhsVal = s.createTemporaryVariable();
                 addInstr(s, new RestArgMultipleAsgnInstr(rhsVal, values, i, postArgsCount, 0));
                 buildAssignment(restNode, s, rhsVal); // rest of the argument array!
             }
@@ -2119,7 +1960,7 @@ public class IRBuilder {
                 if (values == null) {
                     buildArgsMasgn(an, s, argsArray, false, i, postArgsCount, j, false);
                 } else {
-                    Variable rhsVal = s.getNewTemporaryVariable();
+                    Variable rhsVal = s.createTemporaryVariable();
                     addInstr(s, new ReqdArgMultipleAsgnInstr(rhsVal, values, i, postArgsCount, j));  // Fetch from the end
                     buildAssignment(an, s, rhsVal);
                 }
@@ -2145,12 +1986,12 @@ public class IRBuilder {
 
         // Receive exceptions (could be anything, but the handler only processes IRBreakJumps)
         addInstr(s, new LabelInstr(rescueLabel));
-        Variable exc = s.getNewTemporaryVariable();
+        Variable exc = s.createTemporaryVariable();
         addInstr(s, new ReceiveJRubyExceptionInstr(exc));
 
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, scope, bj, blockType)
-        Variable ret = getNewTemporaryVariable();
+        Variable ret = createTemporaryVariable();
         addInstr(s, new RuntimeHelperCall(ret, "handleBreakAndReturnsInLambdas", new Operand[]{exc} ));
         addInstr(s, new ReturnInstr(ret));
 
@@ -2172,9 +2013,8 @@ public class IRBuilder {
             addInstr(s, new ReceiveClosureInstr(blockVar));
         }
 
-        // SSS FIXME: This instruction is only needed if there is an yield instr somewhere!
         // In addition, store the block argument in an implicit block variable
-        Variable implicitBlockArg = s.getImplicitBlockArg();
+        Variable implicitBlockArg = (Variable)getImplicitBlockArg(s);
         if (blockVar == null) addInstr(s, new ReceiveClosureInstr(implicitBlockArg));
         else addInstr(s, new CopyInstr(implicitBlockArg, blockVar));
     }
@@ -2186,12 +2026,8 @@ public class IRBuilder {
             receiveArgs((ArgsNode)args, s);
         } else  {
             // for loops -- reuse code in IRBuilder:buildBlockArgsAssignment
-            buildBlockArgsAssignment(args, s, null, 0, false, false, false);
+            buildBlockArgsAssignment(args, s, null, 0, false);
         }
-    }
-
-    public void receiveBlockClosureArg(Node node, IRScope s) {
-        // Nothing to do here.  iterNode.blockVarNode is not valid in 1.9 mode
     }
 
     public String buildType(Node typeNode) {
@@ -2252,7 +2088,9 @@ public class IRBuilder {
             strPieces.add(dynamicPiece(nextNode, s));
         }
 
-        return copyAndReturnValue(s, new BacktickString(strPieces));
+        Variable res = s.createTemporaryVariable();
+        addInstr(s, new BacktickInstr(res, strPieces));
+        return res;
     }
 
     /* ****************************************************************
@@ -2339,7 +2177,7 @@ public class IRBuilder {
         // ------------ Emit the ensure body alongwith dummy rescue block ------------
         // Now build the dummy rescue block that:
         // * catches all exceptions thrown by the body
-        Variable exc = s.getNewTemporaryVariable();
+        Variable exc = s.createTemporaryVariable();
         addInstr(s, new LabelInstr(ebi.dummyRescueBlockLabel));
         addInstr(s, new ReceiveJRubyExceptionInstr(exc));
 
@@ -2373,7 +2211,7 @@ public class IRBuilder {
         Node          callArgsNode = fcallNode.getArgsNode();
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
-        Variable      callResult   = s.getNewTemporaryVariable();
+        Variable      callResult   = s.createTemporaryVariable();
         CallInstr     callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, new MethAddr(fcallNode.getName()), s.getSelf(), args.toArray(new Operand[args.size()]), block);
         receiveBreakException(s, block, callInstr);
         return callResult;
@@ -2439,7 +2277,7 @@ public class IRBuilder {
         }
 
         // Variables and labels needed for the code
-        Variable returnVal = s.getNewTemporaryVariable();
+        Variable returnVal = s.createTemporaryVariable();
         Label    s2Label   = s.getNewLabel();
         Label    doneLabel = s.getNewLabel();
 
@@ -2488,7 +2326,7 @@ public class IRBuilder {
     }
 
     public Operand buildFor(ForNode forNode, IRScope s) {
-        Variable result = s.getNewTemporaryVariable();
+        Variable result = s.createTemporaryVariable();
         Operand  receiver = build(forNode.getIterNode(), s);
         Operand  forBlock = buildForIter(forNode, s);
         CallInstr callInstr = new CallInstr(CallType.NORMAL, result, new MethAddr("each"), receiver, NO_ARGS, forBlock);
@@ -2539,9 +2377,7 @@ public class IRBuilder {
     }
 
     public Operand buildGlobalVar(GlobalVarNode node, IRScope s) {
-        Variable rv  = s.getNewTemporaryVariable();
-        addInstr(s, new GetGlobalVariableInstr(rv, node.getName()));
-        return rv;
+        return addResultInstr(s, new GetGlobalVariableInstr(s.createTemporaryVariable(), node.getName()));
     }
 
     public Operand buildHash(HashNode hashNode, IRScope s) {
@@ -2594,17 +2430,15 @@ public class IRBuilder {
             if (thenResult != U_NIL) { // thenResult can be U_NIL if then-body ended with a return!
                 // SSS FIXME: Can look at the last instr and short-circuit this jump if it is a break rather
                 // than wait for dead code elimination to do it
-                Label tgt = doneLabel;
                 result = getValueInTemporaryVariable(s, thenResult);
-                addInstr(s, new JumpInstr(tgt));
+                addInstr(s, new JumpInstr(doneLabel));
             } else {
-                result = s.getNewTemporaryVariable();
+                result = s.createTemporaryVariable();
                 thenUnil = true;
             }
         } else {
             thenNull = true;
-            result = s.getNewTemporaryVariable();
-            addInstr(s, new CopyInstr(result, manager.getNil()));
+            result = addResultInstr(s, new CopyInstr(s.createTemporaryVariable(), manager.getNil()));
             addInstr(s, new JumpInstr(doneLabel));
         }
 
@@ -2642,9 +2476,7 @@ public class IRBuilder {
     }
 
     public Operand buildInstVar(InstVarNode node, IRScope s) {
-        Variable ret = s.getNewTemporaryVariable();
-        addInstr(s, new GetFieldInstr(ret, s.getSelf(), node.getName()));
-        return ret;
+        return addResultInstr(s, new GetFieldInstr(s.createTemporaryVariable(), s.getSelf(), node.getName()));
     }
 
     public Operand buildIter(final IterNode iterNode, IRScope s) {
@@ -2661,7 +2493,6 @@ public class IRBuilder {
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
         if ((iterNode.getVarNode() != null) && (argsNodeId != null))
             closureBuilder.receiveBlockArgs(iterNode, closure);
-        closureBuilder.receiveBlockClosureArg(iterNode.getBlockVarNode(), closure);
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
@@ -2722,25 +2553,36 @@ public class IRBuilder {
 
     public Operand buildMatch(MatchNode matchNode, IRScope s) {
         Operand regexp = build(matchNode.getRegexpNode(), s);
-        Variable result = s.getNewTemporaryVariable();
-        addInstr(s, new MatchInstr(result, regexp));
-        return result;
+
+        return addResultInstr(s, new MatchInstr(s.createTemporaryVariable(), regexp));
     }
 
     public Operand buildMatch2(Match2Node matchNode, IRScope s) {
         Operand receiver = build(matchNode.getReceiverNode(), s);
         Operand value    = build(matchNode.getValueNode(), s);
-        Variable result = s.getNewTemporaryVariable();
+        Variable result  = s.createTemporaryVariable();
         addInstr(s, new Match2Instr(result, receiver, value));
+        if (matchNode instanceof Match2CaptureNode) {
+            Match2CaptureNode m2c = (Match2CaptureNode)matchNode;
+            String[] vars = s.getStaticScope().getVariables();
+            for (int slot:  m2c.getScopeOffsets()) {
+                // Static scope scope offsets store both depth and offset
+                int depth = slot >> 16;
+                int offset = slot & 0xffff;
+
+                // For now, we'll continue to implicitly reference "$~"
+                String var = vars[offset];
+                addInstr(s, new SetCapturedVarInstr(s.getLocalVariable(var, depth), result, var));
+            }
+        }
         return result;
     }
 
     public Operand buildMatch3(Match3Node matchNode, IRScope s) {
         Operand receiver = build(matchNode.getReceiverNode(), s);
         Operand value    = build(matchNode.getValueNode(), s);
-        Variable result = s.getNewTemporaryVariable();
-        addInstr(s, new Match3Instr(result, receiver, value));
-        return result;
+
+        return addResultInstr(s, new Match3Instr(s.createTemporaryVariable(), receiver, value));
     }
 
     private Operand getContainerFromCPath(Colon3Node cpath, IRScope s) {
@@ -2768,10 +2610,8 @@ public class IRBuilder {
 
         // Build the new module
         IRModuleBody moduleBody = new IRModuleBody(manager, s, moduleName, moduleNode.getPosition().getLine(), moduleNode.getScope());
-        Variable tmpVar = s.getNewTemporaryVariable();
-        addInstr(s, new DefineModuleInstr(tmpVar, moduleBody, container));
-        Variable ret = s.getNewTemporaryVariable();
-        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar));
+        Variable tmpVar = addResultInstr(s, new DefineModuleInstr(s.createTemporaryVariable(), moduleBody, container));
+        Variable ret = addResultInstr(s, new ProcessModuleBodyInstr(s.createTemporaryVariable(), tmpVar, getImplicitBlockArg(s)));
 
         addInstr(moduleBody, new ReceiveSelfInstr(moduleBody.getSelf()));
         // Set %current_scope = <c>
@@ -2804,10 +2644,9 @@ public class IRBuilder {
         if (sourceArray != null) {
             for (Node an: sourceArray.childNodes()) {
                 if (values == null) {
-                    buildBlockArgsAssignment(an, s, argsArray, i, false, false, false);
+                    buildBlockArgsAssignment(an, s, argsArray, i, false);
                 } else {
-                    Variable rhsVal = s.getNewTemporaryVariable();
-                    addInstr(s, new ReqdArgMultipleAsgnInstr(rhsVal, values, i));
+                    Variable rhsVal = addResultInstr(s, new ReqdArgMultipleAsgnInstr(s.createTemporaryVariable(), values, i));
                     buildAssignment(an, s, rhsVal);
                 }
                 i++;
@@ -2822,11 +2661,10 @@ public class IRBuilder {
         } else if (argsNode instanceof StarNode) {
             // do nothing
         } else if (values != null) {
-            Variable rhsVal = s.getNewTemporaryVariable();
-            addInstr(s, new RestArgMultipleAsgnInstr(rhsVal, values, i));
-            buildAssignment(argsNode, s, rhsVal); // rest of the argument array!
+            buildAssignment(argsNode, s,    // rest of the argument array!
+                    addResultInstr(s, new RestArgMultipleAsgnInstr(s.createTemporaryVariable(), values, i)));
         } else {
-            buildBlockArgsAssignment(argsNode, s, argsArray, i, false, false, true); // rest of the argument array!
+            buildBlockArgsAssignment(argsNode, s, argsArray, i, true); // rest of the argument array!
         }
 
     }
@@ -2868,8 +2706,8 @@ public class IRBuilder {
 
     public Operand buildOpAsgn(OpAsgnNode opAsgnNode, IRScope s) {
         Label l;
-        Variable readerValue = s.getNewTemporaryVariable();
-        Variable writerValue = s.getNewTemporaryVariable();
+        Variable readerValue = s.createTemporaryVariable();
+        Variable writerValue = s.createTemporaryVariable();
 
         // get attr
         Operand  v1 = build(opAsgnNode.getReceiverNode(), s);
@@ -2897,7 +2735,7 @@ public class IRBuilder {
         else {
             // call operator
             Operand  v2 = build(opAsgnNode.getValueNode(), s);
-            Variable setValue = s.getNewTemporaryVariable();
+            Variable setValue = s.createTemporaryVariable();
             addInstr(s, CallInstr.create(setValue, new MethAddr(opAsgnNode.getOperatorName()), readerValue, new Operand[]{v2}, null));
 
             // set attr
@@ -2942,12 +2780,12 @@ public class IRBuilder {
     public Operand buildOpAsgnOr(final OpAsgnOrNode orNode, IRScope s) {
         Label    l1 = s.getNewLabel();
         Label    l2 = null;
-        Variable flag = s.getNewTemporaryVariable();
+        Variable flag = s.createTemporaryVariable();
         Operand  v1;
         boolean  needsDefnCheck = needsDefinitionCheck(orNode.getFirstNode());
         if (needsDefnCheck) {
             l2 = s.getNewLabel();
-            v1 = buildGetDefinitionBase(orNode.getFirstNode(), s);
+            v1 = buildGetDefinition(orNode.getFirstNode(), s);
             addInstr(s, new CopyInstr(flag, v1));
             addInstr(s, BEQInstr.create(flag, manager.getNil(), l2)); // if v1 is undefined, go to v2's computation
         }
@@ -3020,7 +2858,7 @@ public class IRBuilder {
     public Operand buildOpElementAsgnWithOr(OpElementAsgnNode opElementAsgnNode, IRScope s) {
         Operand array = build(opElementAsgnNode.getReceiverNode(), s);
         Label    l     = s.getNewLabel();
-        Variable elt   = s.getNewTemporaryVariable();
+        Variable elt   = s.createTemporaryVariable();
         List<Operand> argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
         addInstr(s, CallInstr.create(elt, new MethAddr("[]"), array, argList.toArray(new Operand[argList.size()]), null));
         addInstr(s, BEQInstr.create(elt, manager.getTrue(), l));
@@ -3036,7 +2874,7 @@ public class IRBuilder {
     public Operand buildOpElementAsgnWithAnd(OpElementAsgnNode opElementAsgnNode, IRScope s) {
         Operand array = build(opElementAsgnNode.getReceiverNode(), s);
         Label    l     = s.getNewLabel();
-        Variable elt   = s.getNewTemporaryVariable();
+        Variable elt   = s.createTemporaryVariable();
         List<Operand> argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
         addInstr(s, CallInstr.create(elt, new MethAddr("[]"), array, argList.toArray(new Operand[argList.size()]), null));
         addInstr(s, BEQInstr.create(elt, manager.getFalse(), l));
@@ -3058,14 +2896,14 @@ public class IRBuilder {
     public Operand buildOpElementAsgnWithMethod(OpElementAsgnNode opElementAsgnNode, IRScope s) {
         Operand array = build(opElementAsgnNode.getReceiverNode(), s);
         List<Operand> argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
-        Variable elt = s.getNewTemporaryVariable();
+        Variable elt = s.createTemporaryVariable();
         addInstr(s, CallInstr.create(elt, new MethAddr("[]"), array, argList.toArray(new Operand[argList.size()]), null)); // elt = a[args]
         Operand value = build(opElementAsgnNode.getValueNode(), s);                                       // Load 'value'
         String  operation = opElementAsgnNode.getOperatorName();
         addInstr(s, CallInstr.create(elt, new MethAddr(operation), elt, new Operand[] { value }, null)); // elt = elt.OPERATION(value)
         // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
         // We already know what the result is going be .. we are just storing it back into the array
-        Variable tmp = s.getNewTemporaryVariable();
+        Variable tmp = s.createTemporaryVariable();
         argList.add(elt);
         addInstr(s, CallInstr.create(tmp, new MethAddr("[]="), array, argList.toArray(new Operand[argList.size()]), null));   // a[args] = elt
         return elt;
@@ -3173,7 +3011,7 @@ public class IRBuilder {
         Label rescueLabel = s.getNewLabel(); // Label marking start of the first rescue code.
 
         // Save $! in a temp var so it can be restored when the exception gets handled.
-        Variable savedGlobalException = s.getNewTemporaryVariable();
+        Variable savedGlobalException = s.createTemporaryVariable();
         addInstr(s, new GetGlobalVariableInstr(savedGlobalException, "$!"));
         if (ensure != null) ensure.savedGlobalException = savedGlobalException;
 
@@ -3185,7 +3023,7 @@ public class IRBuilder {
 
         // Body
         Operand tmp = manager.getNil();  // default return value if for some strange reason, we neither have the body node or the else node!
-        Variable rv = s.getNewTemporaryVariable();
+        Variable rv = s.createTemporaryVariable();
         if (rescueNode.getBodyNode() != null) tmp = build(rescueNode.getBodyNode(), s);
 
         // Push rescue block *after* body has been built.
@@ -3243,8 +3081,7 @@ public class IRBuilder {
         addInstr(s, new LabelInstr(rescueLabel));
 
         // Save off exception & exception comparison type
-        Variable exc = s.getNewTemporaryVariable();
-        addInstr(s, new ReceiveRubyExceptionInstr(exc));
+        Variable exc = addResultInstr(s, new ReceiveRubyExceptionInstr(s.createTemporaryVariable()));
 
         // Build the actual rescue block(s)
         buildRescueBodyInternal(s, rescueNode.getRescueNode(), rv, exc, rEndLabel);
@@ -3257,8 +3094,7 @@ public class IRBuilder {
     }
 
     private void outputExceptionCheck(IRScope s, Operand excType, Operand excObj, Label caughtLabel) {
-        Variable eqqResult = s.getNewTemporaryVariable();
-        addInstr(s, new RescueEQQInstr(eqqResult, excType, excObj));
+        Variable eqqResult = addResultInstr(s, new RescueEQQInstr(s.createTemporaryVariable(), excType, excObj));
         addInstr(s, BEQInstr.create(eqqResult, manager.getTrue(), caughtLabel));
     }
 
@@ -3292,8 +3128,7 @@ public class IRBuilder {
             // of StandardError.  I am ignoring this for now and treating this as undefined behavior.
             //
             // SSS FIXME: Create a 'StandardError' operand type to eliminate this.
-            Variable v = s.getNewTemporaryVariable();
-            addInstr(s, new InheritanceSearchConstInstr(v, s.getCurrentModuleVariable(), "StandardError", false));
+            Variable v = addResultInstr(s, new InheritanceSearchConstInstr(s.createTemporaryVariable(),                    s.getCurrentModuleVariable(), "StandardError", false));
             outputExceptionCheck(s, v, exc, caughtLabel);
         }
 
@@ -3353,9 +3188,7 @@ public class IRBuilder {
         //   this code also takes care of resetting "$!"
         // - if we have a rescue block, reset "$!".
         if (!activeEnsureBlockStack.empty()) {
-            Variable ret = s.getNewTemporaryVariable();
-            addInstr(s, new CopyInstr(ret, retVal));
-            retVal = ret;
+            retVal = addResultInstr(s, new CopyInstr(s.createTemporaryVariable(), retVal));
             emitEnsureBlocks(s, null);
         } else if (!activeRescueBlockStack.empty()) {
             // Restore $!
@@ -3365,17 +3198,16 @@ public class IRBuilder {
 
         if (s instanceof IRClosure) {
             // If 'm' is a block scope, a return returns from the closest enclosing method.
-            // If this happens to be a module body, the runtime throws a local jump error if
-            // the closure is a proc. If the closure is a lambda, then this is just a normal
-            // return and the static methodIdToReturnFrom value is ignored
+            // If this happens to be a module body, the runtime throws a local jump error if the
+            // closure is a proc. If the closure is a lambda, then this becomes a normal return.
             IRMethod m = s.getNearestMethod();
-            addInstr(s, new NonlocalReturnInstr(retVal, m == null ? "--none--" : m.getName(), m == null ? -1 : m.getScopeId()));
+            addInstr(s, new NonlocalReturnInstr(retVal, m == null ? "--none--" : m.getName(), m == null));
         } else if (s.isModuleBody()) {
             IRMethod sm = s.getNearestMethod();
 
             // Cannot return from top-level module bodies!
             if (sm == null) addInstr(s, new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
-            else addInstr(s, new NonlocalReturnInstr(retVal, sm.getName(), sm.getScopeId()));
+            else addInstr(s, new NonlocalReturnInstr(retVal, sm.getName(), false));
         } else {
             addInstr(s, new ReturnInstr(retVal));
         }
@@ -3386,9 +3218,9 @@ public class IRBuilder {
         return U_NIL;
     }
 
-    public IREvalScript buildEvalRoot(StaticScope staticScope, IRScope containingScope, String file, int lineNumber, RootNode rootNode) {
+    public IREvalScript buildEvalRoot(StaticScope staticScope, IRScope containingScope, String file, int lineNumber, RootNode rootNode, boolean isModuleEval) {
         // Top-level script!
-        IREvalScript script = new IREvalScript(manager, containingScope, file, lineNumber, staticScope);
+        IREvalScript script = new IREvalScript(manager, containingScope, file, lineNumber, staticScope, isModuleEval);
 
         // Debug info: record line number
         addInstr(script, new LineNumberInstr(script, lineNumber));
@@ -3422,7 +3254,7 @@ public class IRBuilder {
         return script;
     }
 
-    public Operand buildSelf(Node node, IRScope s) {
+    public Operand buildSelf(IRScope s) {
         return s.getSelf();
     }
 
@@ -3438,7 +3270,7 @@ public class IRBuilder {
 
     private Operand buildSuperInstr(IRScope s, Operand block, Operand[] args) {
         CallInstr superInstr;
-        Variable ret = s.getNewTemporaryVariable();
+        Variable ret = s.createTemporaryVariable();
         if ((s instanceof IRMethod) && (s.getLexicalParent() instanceof IRClassBody)) {
             IRMethod m = (IRMethod)s;
             if (m.isInstanceMethod) {
@@ -3463,14 +3295,12 @@ public class IRBuilder {
 
         List<Operand> args = setupCallArgs(superNode.getArgsNode(), s);
         Operand block = setupCallClosure(superNode.getIterNode(), s);
-        if (block == null) block = s.getImplicitBlockArg();
+        if (block == null) block = getImplicitBlockArg(s);
         return buildSuperInstr(s, block, args.toArray(new Operand[args.size()]));
     }
 
     private Operand buildSuperInScriptBody(IRScope s) {
-        Variable ret = s.getNewTemporaryVariable();
-        addInstr(s, new UnresolvedSuperInstr(ret, s.getSelf(), NO_ARGS, null));
-        return ret;
+        return addResultInstr(s, new UnresolvedSuperInstr(s.createTemporaryVariable(), s.getSelf(), NO_ARGS, null));
     }
 
     public Operand buildSValue(SValueNode node, IRScope s) {
@@ -3487,9 +3317,8 @@ public class IRBuilder {
     // could make this an ordinary method and then depend on inlining.
     public Operand buildToAry(ToAryNode node, IRScope s) {
         Operand array = build(node.getValue(), s);
-        Variable result = s.getNewTemporaryVariable();
-        addInstr(s, new ToAryInstr(result, array));
-        return result;
+
+        return addResultInstr(s, new ToAryInstr(s.createTemporaryVariable(), array));
     }
 
     public Operand buildTrue(Node node, IRScope s) {
@@ -3498,9 +3327,8 @@ public class IRBuilder {
 
     public Operand buildUndef(Node node, IRScope s) {
         Operand methName = build(((UndefNode) node).getName(), s);
-        Variable result = s.getNewTemporaryVariable();
-        addInstr(s, new UndefMethodInstr(result, methName));
-        return result;
+
+        return addResultInstr(s, new UndefMethodInstr(s.createTemporaryVariable(), methName));
     }
 
     private Operand buildConditionalLoop(IRScope s, Node conditionNode,
@@ -3562,14 +3390,14 @@ public class IRBuilder {
         return buildConditionalLoop(s, untilNode.getConditionNode(), untilNode.getBodyNode(), false, untilNode.evaluateAtStart());
     }
 
-    public Operand buildVAlias(Node node, IRScope s) {
-        VAliasNode valiasNode = (VAliasNode) node;
+    public Operand buildVAlias(VAliasNode valiasNode, IRScope s) {
         addInstr(s, new GVarAliasInstr(new StringLiteral(valiasNode.getNewName()), new StringLiteral(valiasNode.getOldName())));
+
         return manager.getNil();
     }
 
     public Operand buildVCall(VCallNode node, IRScope s) {
-        Variable callResult = s.getNewTemporaryVariable();
+        Variable callResult = s.createTemporaryVariable();
         Instr    callInstr  = CallInstr.create(CallType.VARIABLE, callResult, new MethAddr(node.getName()), s.getSelf(), NO_ARGS, null);
         addInstr(s, callInstr);
         return callResult;
@@ -3580,7 +3408,9 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node, IRScope s) {
-        return copyAndReturnValue(s, new BacktickString(new StringLiteral(node.getValue())));
+        Variable res = s.createTemporaryVariable();
+        addInstr(s, new BacktickInstr(res, new StringLiteral(node.getValue())));
+        return res;
     }
 
     public Operand buildYield(YieldNode node, IRScope s) {
@@ -3592,8 +3422,8 @@ public class IRBuilder {
             unwrap = false;
         }
 
-        Variable ret = s.getNewTemporaryVariable();
-        addInstr(s, new YieldInstr(ret, s.getImplicitBlockArg(), build(argNode, s), unwrap));
+        Variable ret = s.createTemporaryVariable();
+        addInstr(s, new YieldInstr(ret, getImplicitBlockArg(s), build(argNode, s), unwrap));
         return ret;
     }
 
@@ -3622,7 +3452,7 @@ public class IRBuilder {
         if (s.isModuleBody()) return buildSuperInScriptBody(s);
 
         Operand block = setupCallClosure(zsuperNode.getIterNode(), s);
-        if (block == null) block = s.getImplicitBlockArg();
+        if (block == null) block = getImplicitBlockArg(s);
 
         // Enebo:ZSuper in for (or nested for) can be statically resolved like method but it needs
         // to fixup depth.
@@ -3642,7 +3472,7 @@ public class IRBuilder {
             // till the nearest method scope and select the right set at runtime based
             // on which one happened to be a method scope. This has the additional
             // advantage of making explicit all used arguments.
-            Variable ret = s.getNewTemporaryVariable();
+            Variable ret = s.createTemporaryVariable();
             List<Integer> argsCount = new ArrayList<Integer>();
             List<Operand> allPossibleArgs = new ArrayList<Operand>();
             IRScope superScope = s;

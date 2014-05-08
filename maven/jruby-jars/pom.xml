@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
-    <version>9000.dev</version>
+    <version>9000.dev-SNAPSHOT</version>
   </parent>
   <groupId>rubygems</groupId>
   <artifactId>jruby-jars</artifactId>
@@ -25,12 +25,6 @@ freezing to) a specific jruby-complete jar version.</description>
     <tesla.version>0.0.9</tesla.version>
   </properties>
   <dependencies>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>rake</artifactId>
-      <version>[0,)</version>
-      <type>gem</type>
-    </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-stdlib</artifactId>
@@ -52,6 +46,7 @@ freezing to) a specific jruby-complete jar version.</description>
       </extension>
     </extensions>
     <directory>${basedir}/pkg</directory>
+    <finalName>jruby-jars-9000.dev</finalName>
     <plugins>
       <plugin>
         <groupId>de.saumya.mojo</groupId>

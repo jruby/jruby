@@ -269,6 +269,9 @@ do
         JAVA_VM=-client ;;
      --server)
         JAVA_VM=-server ;;
+     --dev)
+        JAVA_VM=-client
+        JAVA_OPTS="$JAVA_OPTS -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djruby.compile.mode=OFF -Djruby.compile.invokedynamic=false" ;;
      --noclient)         # JRUBY-4296
         unset JAVA_VM ;; # For IBM JVM, neither '-client' nor '-server' is applicable
      --sample)

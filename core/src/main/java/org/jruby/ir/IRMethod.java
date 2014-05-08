@@ -43,7 +43,7 @@ public class IRMethod extends IRScope {
     @Override
     public void addInstr(Instr i) {
         // Accumulate call arguments
-        if (i instanceof ReceiveRestArgInstr) callArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult()));
+        if (i instanceof ReceiveRestArgInstr) callArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult(), true));
         else if (i instanceof ReceiveArgBase) callArgs.add(((ReceiveArgBase) i).getResult());
 
         super.addInstr(i);
@@ -62,7 +62,7 @@ public class IRMethod extends IRScope {
     }
 
     @Override
-    public LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
+    protected LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
         assert scopeDepth == 0: "Local variable depth in IRMethod should always be zero (" + name + " had depth of " + scopeDepth + ")";
         return localVars.get(name);
     }
@@ -72,9 +72,5 @@ public class IRMethod extends IRScope {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) lvar = getNewLocalVariable(name, scopeDepth);
         return lvar;
-    }
-
-    public LocalVariable getImplicitBlockArg() {
-        return getLocalVariable(Variable.BLOCK, 0);
     }
 }

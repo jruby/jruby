@@ -60,7 +60,7 @@ public abstract class ZStream extends RubyObject {
     protected abstract long internalAdler();
 
     // TODO: eliminate?
-    protected abstract IRubyObject internalFinish();
+    protected abstract IRubyObject internalFinish(Block block);
 
     protected abstract void internalClose();
 
@@ -74,7 +74,7 @@ public abstract class ZStream extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject flush_next_out(ThreadContext context) {
+    public IRubyObject flush_next_out(ThreadContext context, Block block) {
         return RubyString.newEmptyString(context.getRuntime());
     }
 
@@ -128,10 +128,10 @@ public abstract class ZStream extends RubyObject {
     }
 
     @JRubyMethod(name = "finish")
-    public IRubyObject finish(ThreadContext context) {
+    public IRubyObject finish(ThreadContext context, Block block) {
         checkClosed();
         
-        IRubyObject result = internalFinish();
+        IRubyObject result = internalFinish(block);
         
         return result;
     }

@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
-    <version>9000.dev</version>
+    <version>9000.dev-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-dist</artifactId>
   <packaging>pom</packaging>
@@ -56,6 +56,7 @@
           </execution>
         </executions>
         <configuration>
+          <finalName>jruby-dist-9000.dev</finalName>
           <tarLongFileMode>gnu</tarLongFileMode>
           <descriptors>
             <descriptor>src/main/assembly/jruby.xml</descriptor>

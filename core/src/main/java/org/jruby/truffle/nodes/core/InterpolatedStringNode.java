@@ -28,7 +28,7 @@ public final class InterpolatedStringNode extends RubyNode {
 
     public InterpolatedStringNode(RubyContext context, SourceSection sourceSection, RubyNode[] children) {
         super(context, sourceSection);
-        this.children = adoptChildren(children);
+        this.children = children;
     }
 
     @ExplodeLoop

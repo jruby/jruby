@@ -58,6 +58,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Visibility;
 import org.jruby.util.Dir;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
@@ -753,15 +754,15 @@ public class RubyDir extends RubyObject {
         IRubyObject home = null;
 
         if (home == null || home.isNil()) {
-            home = envHash.op_aref(context, runtime.newString("LOGDIR"));
-        }
-
-        if (home == null || home.isNil()) {
             home = envHash.op_aref(context, runtime.newString("HOME"));
         }
 
         if (home == null || home.isNil()) {
             home = systemHash.callMethod(context, "[]", runtime.newString("user.home"));
+        }
+
+        if (home == null || home.isNil()) {
+            home = envHash.op_aref(context, runtime.newString("LOGDIR"));
         }
 
         if (home == null || home.isNil()) {

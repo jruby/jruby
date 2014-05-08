@@ -9,45 +9,177 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.truffle.runtime.NilPlaceholder;
+
 import java.math.*;
 
 /**
  * Represents the Ruby {@code Fixnum} class.
  */
-public class RubyFixnum extends RubyObject implements Unboxable {
+public abstract class RubyFixnum extends RubyObject implements Unboxable {
 
-    public static final int MIN_VALUE = Integer.MIN_VALUE;
-    public static final int MAX_VALUE = Integer.MAX_VALUE;
+    public static final long MIN_VALUE = Long.MIN_VALUE;
+    public static final long MAX_VALUE = Long.MAX_VALUE;
 
     public static final BigInteger MIN_VALUE_BIG = BigInteger.valueOf(MIN_VALUE);
     public static final BigInteger MAX_VALUE_BIG = BigInteger.valueOf(MAX_VALUE);
 
-    public static final int SIZE = Integer.SIZE;
+    public static final long SIZE = Long.SIZE;
 
-    private final int value;
-
-    public RubyFixnum(RubyClass fixnumClass, int value) {
+    protected RubyFixnum(RubyClass fixnumClass) {
         super(fixnumClass);
-        this.value = value;
     }
 
-    public int getValue() {
-        return value;
+    public static int toInt(Object value) {
+        // TODO(CS): stop using this in compilation - use a specialising node instead
+
+        assert value != null;
+
+        if (value instanceof NilPlaceholder || value instanceof RubyNilClass) {
+            return 0;
+        }
+
+        if (value instanceof Integer) {
+            return (int) value;
+        }
+
+        if (value instanceof IntegerFixnum) {
+            return (int) value;
+        }
+
+        if (value instanceof LongFixnum) {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException();
+        }
+
+        if (value instanceof IntegerFixnum) {
+            return ((IntegerFixnum) value).getValue();
+        }
+
+        if (value instanceof BigInteger) {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException();
+        }
+
+        if (value instanceof RubyBignum) {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException();
+        }
+
+        if (value instanceof Double) {
+            return (int) (double) value;
+        }
+
+        if (value instanceof RubyFloat) {
+            return (int) ((RubyFloat) value).getValue();
+        }
+
+        CompilerDirectives.transferToInterpreter();
+
+        throw new UnsupportedOperationException(value.getClass().toString());
     }
 
-    @Override
-    public String toString() {
-        return Integer.toString(value);
+    public static long toLong(Object value) {
+        // TODO(CS): stop using this in compilation - use a specialising node instead
+
+        assert value != null;
+
+        if (value instanceof NilPlaceholder || value instanceof RubyNilClass) {
+            return 0;
+        }
+
+        if (value instanceof Integer) {
+            return (int) value;
+        }
+
+        if (value instanceof Long) {
+            return (long) value;
+        }
+
+        if (value instanceof IntegerFixnum) {
+            return ((IntegerFixnum) value).getValue();
+        }
+
+        if (value instanceof LongFixnum) {
+            return ((IntegerFixnum) value).getValue();
+        }
+
+        if (value instanceof BigInteger) {
+            throw new UnsupportedOperationException();
+        }
+
+        if (value instanceof RubyBignum) {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException();
+        }
+
+        if (value instanceof Double) {
+            return (long) (double) value;
+        }
+
+        if (value instanceof RubyFloat) {
+            return (long) ((RubyFloat) value).getValue();
+        }
+
+        CompilerDirectives.transferToInterpreter();
+
+        throw new UnsupportedOperationException(value.getClass().toString());
     }
 
-    @Override
-    public boolean equals(Object other) {
+    public static boolean fitsIntoInteger(long value) {
+        return value >= Integer.MAX_VALUE && value <= Integer.MAX_VALUE;
+    }
+
+    public static int toUnsignedInt(byte x) {
+        return ((int) x) & 0xff;
+    }
+
+    public static Object fixnumOrBignum(BigInteger value) {
+        assert value != null;
+
+        // TODO(CS): make this a node?
+
+        if (value.compareTo(MIN_VALUE_BIG) >= 0 && value.compareTo(MAX_VALUE_BIG) <= 0) {
+            final long longValue = value.longValue();
+
+            if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
+                return (int) longValue;
+            } else {
+                return value;
+            }
+        } else {
+            return value;
+        }
+    }
+
+    public static Object fixnumOrBignum(double value) {
+        // TODO(CS): make this a node?
+
+        if (value >= MIN_VALUE && value <= MAX_VALUE) {
+            final long longValue = (long) value;
+
+            if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
+                return (int) longValue;
+            } else {
+                return value;
+            }
+        } else {
+            return value;
+        }
+    }
+
+    protected boolean equals(long value, Object other) {
         if (other instanceof Integer) {
             return value == (int) other;
-        } else if (other instanceof RubyFixnum) {
-            return value == ((RubyFixnum) other).value;
+        } else if (other instanceof Long) {
+            return value == (long) other;
+        } else if (other instanceof IntegerFixnum) {
+            return value == ((IntegerFixnum) other).getValue();
+        } else if (other instanceof LongFixnum) {
+            return value == ((LongFixnum) other).getValue();
         } else if (other instanceof BigInteger) {
-            return ((BigInteger) other).equals(value);
+            return other.equals(value);
         } else if (other instanceof RubyBignum) {
             return ((RubyBignum) other).getValue().equals(value);
         } else if (other instanceof Double) {
@@ -64,8 +196,64 @@ public class RubyFixnum extends RubyObject implements Unboxable {
         throw new UnsupportedOperationException();
     }
 
-    public Object unbox() {
-        return value;
+    public static class IntegerFixnum extends RubyFixnum {
+
+        private final int value;
+
+        public IntegerFixnum(RubyClass fixnumClass, int value) {
+            super(fixnumClass);
+            this.value = value;
+        }
+
+        public int getValue() {
+            return value;
+        }
+
+        @Override
+        public Object unbox() {
+            return value;
+        }
+
+        @Override
+        public String toString() {
+            return Integer.toString(value);
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return equals(value, other);
+        }
+
+    }
+
+    public static class LongFixnum extends RubyFixnum {
+
+        private final long value;
+
+        public LongFixnum(RubyClass fixnumClass, long value) {
+            super(fixnumClass);
+            this.value = value;
+        }
+
+        public long getValue() {
+            return value;
+        }
+
+        @Override
+        public Object unbox() {
+            return value;
+        }
+
+        @Override
+        public String toString() {
+            return Long.toString(value);
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return equals(value, other);
+        }
+
     }
 
 }

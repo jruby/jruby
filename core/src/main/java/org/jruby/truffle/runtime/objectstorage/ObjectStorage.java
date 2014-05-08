@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.objectstorage;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,7 +19,7 @@ import java.util.Set;
 
 public class ObjectStorage {
 
-    public ObjectLayout objectLayout = ObjectLayout.EMPTY;
+    public ObjectLayout objectLayout;
 
     public static final int PRIMITIVE_STORAGE_LOCATIONS_COUNT = 14;
     protected int primitiveStorageLocation01;
@@ -41,13 +42,17 @@ public class ObjectStorage {
 
     protected Object[] objectStorageLocations;
 
+    public ObjectStorage(ObjectLayout objectLayout) {
+        assert objectLayout != null;
+        this.objectLayout = objectLayout;
+        allocateObjectStorageLocations();
+    }
+
     public ObjectLayout getObjectLayout() {
         return objectLayout;
     }
 
     public void allocateObjectStorageLocations() {
-        CompilerAsserts.neverPartOfCompilation();
-
         final int objectStorageLocationsUsed = objectLayout.getObjectStorageLocationsUsed();
 
         if (objectStorageLocationsUsed == 0) {
@@ -166,6 +171,8 @@ public class ObjectStorage {
 
     public void changeLayout(ObjectLayout newLayout) {
         CompilerAsserts.neverPartOfCompilation();
+
+        assert newLayout != objectLayout;
 
         final Map<String, Object> fieldsMap = getFields();
 

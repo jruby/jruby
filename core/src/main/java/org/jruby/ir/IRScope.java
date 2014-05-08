@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 
@@ -82,7 +84,7 @@ import static org.jruby.ir.IRFlags.*;
 public abstract class IRScope implements ParseResult {
     private static final Logger LOG = LoggerFactory.getLogger("IRScope");
 
-    private static Integer globalScopeCount = 0;
+    private static AtomicInteger globalScopeCount = new AtomicInteger();
 
     /** Unique global scope id */
     private int scopeId;
@@ -182,7 +184,7 @@ public abstract class IRScope implements ParseResult {
         this.flags = s.flags.clone();
 
         this.localVars = new HashMap<String, LocalVariable>(s.localVars);
-        synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
+        this.scopeId = globalScopeCount.getAndIncrement();
         this.relinearizeCFG = false;
 
         setupLexicalContainment();
@@ -223,10 +225,11 @@ public abstract class IRScope implements ParseResult {
         flags.add(BINDING_HAS_ESCAPED);
         flags.add(USES_EVAL);
         flags.add(USES_BACKREF_OR_LASTLINE);
+        flags.add(REQUIRES_DYNSCOPE);
         flags.add(USES_ZSUPER);
 
         this.localVars = new HashMap<String, LocalVariable>();
-        synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
+        this.scopeId = globalScopeCount.getAndIncrement();
         this.relinearizeCFG = false;
 
         setupLexicalContainment();
@@ -586,9 +589,9 @@ public abstract class IRScope implements ParseResult {
     }
 
     private void runDeadCodeAndVarLoadStorePasses() {
-        // For methods with unescaped bindings, inline the binding
-        // by converting local var loads/store to tmp var loads/stores
-        if (this instanceof IRMethod && !this.bindingHasEscaped() && !flags.contains(HAS_END_BLOCKS)) {
+        // For methods that don't require a dynamic scope,
+        // inline add lvar loads/store to tmp-var loads/stores.
+        if (!flags.contains(HAS_END_BLOCKS) && !flags.contains(REQUIRES_DYNSCOPE)) {
             CompilerPass pass;
             pass = new DeadCodeElimination();
             if (pass.previouslyRun(this) == null) {
@@ -629,7 +632,7 @@ public abstract class IRScope implements ParseResult {
 
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
-    public Tuple<Instr[], Map<Integer,Label[]>> prepareForCompilation() {
+    public List<BasicBlock> prepareForCompilation() {
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) {
             runCompilerPasses(getManager().getJITPasses(this));
@@ -653,24 +656,7 @@ public abstract class IRScope implements ParseResult {
 
         prepareInstructionsForInterpretation();
 
-        // Set up IPCs
-        // FIXME: Would be nice to collapse duplicate labels; for now, using Label[]
-        HashMap<Integer, Label[]> ipcLabelMap = new HashMap<Integer, Label[]>();
-        List<Instr> newInstrs = new ArrayList<Instr>();
-        int ipc = 0;
-        for (BasicBlock b : linearizedBBList) {
-            Label l = b.getLabel();
-            ipcLabelMap.put(ipc, catLabels(ipcLabelMap.get(ipc), l));
-            for (Instr i : b.getInstrs()) {
-                if (!(i instanceof ReceiveSelfInstr)) {
-                    newInstrs.add(i);
-                    i.setIPC(ipc);
-                    ipc++;
-                }
-            }
-        }
-
-        return new Tuple<Instr[], Map<Integer,Label[]>>(newInstrs.toArray(new Instr[newInstrs.size()]), ipcLabelMap);
+        return buildLinearization();
     }
 
     private void setupLinearization() {
@@ -686,19 +672,20 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    private List<Object[]> buildJVMExceptionTable() {
-        List<Object[]> etEntries = new ArrayList<Object[]>();
-        for (BasicBlock b: linearizedBBList) {
-            BasicBlock rBB = cfg().getRescuerBBFor(b);
-            if (rBB != null) {
-                etEntries.add(new Object[] {b.getLabel(), rBB.getLabel(), Throwable.class});
+    public Map<BasicBlock, Label> buildJVMExceptionTable() {
+        Map<BasicBlock, Label> map = new HashMap<BasicBlock, Label>();
+
+        for (BasicBlock bb: buildLinearization()) {
+            BasicBlock rescueBB = cfg().getRescuerBBFor(bb);
+            if (rescueBB != null) {
+                map.put(bb, rescueBB.getLabel());
             }
         }
 
         // SSS FIXME: This could be optimized by compressing entries for adjacent BBs that have identical handlers
         // This could be optimized either during generation or as another pass over the table.  But, if the JVM
         // does that already, do we need to bother with it?
-        return etEntries;
+        return map;
     }
 
     private static Label[] catLabels(Label[] labels, Label cat) {
@@ -727,6 +714,7 @@ public abstract class IRScope implements ParseResult {
         flags.remove(USES_ZSUPER);
         flags.remove(USES_EVAL);
         flags.remove(USES_BACKREF_OR_LASTLINE);
+        flags.remove(REQUIRES_DYNSCOPE);
         // NOTE: bindingHasEscaped is the crucial flag and it effectively is
         // unconditionally true whenever it has a call that receives a closure.
         // See CallBase.computeRequiresCallersBindingFlag
@@ -769,6 +757,20 @@ public abstract class IRScope implements ParseResult {
                     flags.add(USES_ZSUPER);
                 }
             }
+        }
+
+        if (!(this instanceof IRMethod)
+            || flags.contains(CAN_RECEIVE_BREAKS)
+            || flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS)
+            || flags.contains(BINDING_HAS_ESCAPED)
+               // SSS FIXME: checkArity for keyword args
+               // looks up a keyword arg in the static scope
+               // which currently requires a dynamic scope to
+               // be recovered. If there is another way to do this,
+               // we can get rid of this.
+            || flags.contains(RECEIVES_KEYWORD_ARGS))
+        {
+            flags.add(REQUIRES_DYNSCOPE);
         }
 
         flagsComputed = true;
@@ -829,8 +831,6 @@ public abstract class IRScope implements ParseResult {
         return currentScopeVariable;
     }
 
-    public abstract LocalVariable getImplicitBlockArg();
-
     /**
      * Get the local variables for this scope.
      * This should only be used by persistence layer.
@@ -856,7 +856,7 @@ public abstract class IRScope implements ParseResult {
         return localVars.get(name);
     }
 
-    public LocalVariable findExistingLocalVariable(String name, int depth) {
+    protected LocalVariable findExistingLocalVariable(String name, int depth) {
         return localVars.get(name);
     }
 
@@ -887,7 +887,7 @@ public abstract class IRScope implements ParseResult {
         if (reset || evalScopeVars == null) evalScopeVars = new HashMap<String, LocalVariable>();
     }
 
-    public TemporaryLocalVariable getNewTemporaryVariable() {
+    public TemporaryLocalVariable createTemporaryVariable() {
         return getNewTemporaryVariable(TemporaryVariableType.LOCAL);
     }
 
@@ -967,7 +967,7 @@ public abstract class IRScope implements ParseResult {
             LocalVariable lv = (LocalVariable)v;
             return getLocalVariable(inlinePrefix + lv.getName(), lv.getScopeDepth());
         } else {
-            return getNewTemporaryVariable();
+            return createTemporaryVariable();
         }
     }
 

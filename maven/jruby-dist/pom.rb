@@ -1,6 +1,6 @@
 project 'JRuby Dist' do
 
-  version = '9000.dev' #File.read( File.join( basedir, '..', '..', 'VERSION' ) )
+  version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
   id "org.jruby:jruby-dist:#{version}"
@@ -42,6 +42,7 @@ project 'JRuby Dist' do
 
   phase :package do
     plugin( :assembly, '2.4',
+            'finalName' => "#{model.artifact_id}-#{version.sub(/-SNAPSHOT/, '')}",
             'tarLongFileMode' =>  'gnu',
             'descriptors' => [ 'src/main/assembly/jruby.xml' ] ) do
       execute_goals( 'single' )
@@ -109,7 +110,7 @@ project 'JRuby Dist' do
 
       revision = `git show`.gsub( /\n.*|commit /, '' )
       
-      basefile = "#{ctx.project.build.directory}/#{ctx.project.artifactId}-#{ctx.project.version}-src"
+      basefile = "#{ctx.project.build.directory}/#{ctx.project.artifactId}-#{ctx.project.version}-src".sub(/-SNAPSHOT/, '')
 
       FileUtils.cd( File.join( ctx.project.basedir.to_s, '..', '..' ) ) do
         [ 'tar', 'zip' ].each do |format|

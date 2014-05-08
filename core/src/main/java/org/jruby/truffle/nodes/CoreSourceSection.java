@@ -22,18 +22,22 @@ public final class CoreSourceSection implements NullSourceSection {
         this.name = name;
     }
 
+    @Override
     public Source getSource() {
         return new CoreSource(name);
     }
 
+    @Override
     public int getStartLine() {
         return 0;
     }
 
+    @Override
     public int getStartColumn() {
         return 0;
     }
 
+    @Override
     public int getCharIndex() {
         return 0;
     }
@@ -43,14 +47,17 @@ public final class CoreSourceSection implements NullSourceSection {
         return 0;
     }
 
+    @Override
     public int getCharEndIndex() {
         return 0;
     }
 
+    @Override
     public String getIdentifier() {
         return null;
     }
 
+    @Override
     public String getCode() {
         return name;
     }

@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.util.ByteList;
@@ -35,7 +36,7 @@ public class RubySymbol extends RubyObject {
         return runtime.getSymbolTable().getSymbol(name);
     }
 
-    public RubyProc toProc() {
+    public RubyProc toProc(SourceSection sourceSection) {
         final RubyContext context = getRubyClass().getContext();
 
         final CallTarget callTarget = new CallTarget() {
@@ -43,17 +44,20 @@ public class RubySymbol extends RubyObject {
             @Override
             public Object call(PackedFrame frame, Arguments args) {
                 final RubyArguments rubyArgs = (RubyArguments) args;
-                final Object receiver = rubyArgs.getArguments()[0];
-                final Object[] sendArgs = Arrays.copyOfRange(rubyArgs.getArguments(), 1, rubyArgs.getArguments().length);
+                final Object receiver = rubyArgs.getUserArgument(0);
+                final Object[] arguments = rubyArgs.getArgumentsClone();
+                final Object[] sendArgs = Arrays.copyOfRange(arguments, 1, arguments.length);
                 final RubyBasicObject receiverObject = context.getCoreLibrary().box(receiver);
                 return receiverObject.send(symbol, rubyArgs.getBlock(), sendArgs);
             }
 
         };
 
-        final CallTargetMethodImplementation methodImplementation = new CallTargetMethodImplementation(callTarget, null);
-        final RubyMethod method = new RubyMethod(null, null, new UniqueMethodIdentifier(), symbol, null, Visibility.PUBLIC, false, methodImplementation);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, symbol, null);
 
+        final CallTargetMethodImplementation methodImplementation = new CallTargetMethodImplementation(callTarget, null);
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, null, symbol, Visibility.PUBLIC, false, methodImplementation);
+        methodImplementation.setMethod(method);
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, NilPlaceholder.INSTANCE, null, method);
     }
 

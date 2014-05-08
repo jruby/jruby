@@ -21,7 +21,7 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     public ArrayLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] values) {
         super(context, sourceSection);
-        this.values = adoptChildren(values);
+        this.values = values;
     }
 
     protected RubyArray makeGeneric(VirtualFrame frame, Object[] alreadyExecuted) {

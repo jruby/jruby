@@ -36,15 +36,15 @@ public class ReadRestArgumentNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         final RubyArguments rubyArguments = frame.getArguments(RubyArguments.class);
 
-        final Object[] arguments = rubyArguments.getArguments();
 
         final RubyClass arrayClass = getContext().getCoreLibrary().getArrayClass();
 
-        if (arguments.length <= index) {
+        if (rubyArguments.getUserArgumentsCount() <= index) {
             return new RubyArray(arrayClass);
         } else if (index == 0) {
-            return new RubyArray(arrayClass, new ObjectArrayStore(arguments));
+            return new RubyArray(arrayClass, new ObjectArrayStore(rubyArguments.getArgumentsClone()));
         } else {
+            final Object[] arguments = rubyArguments.getArgumentsClone();
             return new RubyArray(arrayClass, new ObjectArrayStore(Arrays.copyOfRange(arguments, index, arguments.length)));
         }
     }

@@ -9,32 +9,30 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorageLocation;
 
-public class ReadObjectObjectFieldNode extends ReadSpecializedObjectFieldNode {
+public class ReadObjectObjectFieldNode extends ReadObjectFieldChainNode {
 
+    private final ObjectLayout objectLayout;
     private final ObjectStorageLocation storageLocation;
 
-    public ReadObjectObjectFieldNode(String name, ObjectLayout objectLayout, ObjectStorageLocation storageLocation, RespecializeHook hook) {
-        super(name, objectLayout, hook);
+    public ReadObjectObjectFieldNode(ObjectLayout objectLayout, ObjectStorageLocation storageLocation, ReadObjectFieldNode next) {
+        super(next);
+        this.objectLayout = objectLayout;
         this.storageLocation = storageLocation;
     }
 
     @Override
     public Object execute(ObjectStorage object) {
-        final ObjectLayout receiverLayout = object.getObjectLayout();
-
-        final boolean condition = receiverLayout == objectLayout;
+        final boolean condition = object.getObjectLayout() == objectLayout;
 
         if (condition) {
-            assert receiverLayout != null;
             return storageLocation.read(object, condition);
         } else {
-            CompilerDirectives.transferToInterpreter();
-            return readAndRespecialize(object);
+            return next.execute(object);
         }
     }
 

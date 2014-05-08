@@ -74,7 +74,7 @@ public final class InlinedTraceProbe extends RubyProbe {
         context.getTraceManager().setSuspended(true);
 
         try {
-            final RubyArguments arguments = new RubyArguments(inlinable.getDeclarationFrame(), NilPlaceholder.INSTANCE, null, event, file, line, objectId, binding, className);
+            final RubyArguments arguments = new RubyArguments(RubyArguments.create(inlinable.getDeclarationFrame(), NilPlaceholder.INSTANCE, null, event, file, line, objectId, binding, className));
             final VirtualFrame inlinedFrame = Truffle.getRuntime().createVirtualFrame(frame.pack(), arguments, inlinable.getFrameDescriptor());
             inlinedRoot.execute(inlinedFrame);
         } finally {

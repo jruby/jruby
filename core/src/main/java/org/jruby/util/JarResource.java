@@ -2,13 +2,17 @@ package org.jruby.util;
 
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
+import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.ModeFlags;
+
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-public abstract class JarResource implements FileResource {
+abstract class JarResource implements FileResource {
     private static Pattern PREFIX_MATCH = Pattern.compile("^(?:jar:)?(?:file:)?(.*)$");
 
     private static final JarCache jarCache = new JarCache();
@@ -23,16 +27,16 @@ public abstract class JarResource implements FileResource {
         }
 
         String jarPath = sanitized.substring(0, bang);
-        String slashPath = sanitized.substring(bang + 1);
-        if (!slashPath.startsWith("/")) {
-            slashPath = "/" + slashPath;
+        String entryPath = sanitized.substring(bang + 1);
+        if (!entryPath.startsWith("/")) {
+            entryPath = "/" + entryPath;
         }
 
         // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
-        JarResource resource = createJarResource(jarPath, slashPath);
+        JarResource resource = createJarResource(jarPath, entryPath);
 
         if (resource == null) {
-            resource = createJarResource(jarPath, slashPath.substring(1));
+            resource = createJarResource(jarPath, entryPath.substring(1));
         }
         
         return resource;
@@ -48,14 +52,15 @@ public abstract class JarResource implements FileResource {
 
         // Try it as directory first, because jars tend to have foo/ entries
         // and it's not really possible disambiguate between files and directories.
-        String[] entries = index.cachedDirEntries.get(path);
+        String[] entries = index.getDirEntries(path);
         if (entries != null) {
             return new JarDirectoryResource(jarPath, path, entries);
         }
 
         JarEntry jarEntry = index.getJarEntry(path);
         if (jarEntry != null) {
-            return new JarFileResource(jarPath, jarEntry);
+            InputStream jarEntryStream = index.getInputStream(jarEntry);
+            return new JarFileResource(path, jarEntry, jarEntryStream);
         }
 
         return null;

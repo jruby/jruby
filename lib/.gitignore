@@ -1,8 +1,11 @@
 ruby/2.1/json*
 ruby/2.1/rdoc*
+ruby/2.1/ripper*
 ruby/shared/krypt*
-ruby/shared/rake*
+ruby/shared/*openssl*
+ruby/shared/rake**
+ruby/shared/readline*
 ruby/shared/bouncy-castle-java.rb
-ruby/shared/bc*.jar
+ruby/shared/*.jar
 ruby/gems/shared/specifications/default/*
 ruby/gems/shared/gems/*/bin/*

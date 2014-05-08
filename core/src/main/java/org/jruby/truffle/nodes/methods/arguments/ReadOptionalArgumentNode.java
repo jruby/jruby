@@ -32,19 +32,19 @@ public class ReadOptionalArgumentNode extends RubyNode {
         super(context, sourceSection);
         this.index = index;
         this.minimum = minimum;
-        this.defaultValue = adoptChild(defaultValue);
+        this.defaultValue = defaultValue;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final Object[] arguments = frame.getArguments(RubyArguments.class).getArguments();
+        final RubyArguments arguments = frame.getArguments(RubyArguments.class);
 
-        if (arguments.length < minimum) {
+        if (arguments.getUserArgumentsCount() < minimum) {
             defaultValueProfile.enter();
             return defaultValue.execute(frame);
         } else {
-            assert index < arguments.length;
-            return arguments[index];
+            assert index < arguments.getUserArgumentsCount();
+            return arguments.getUserArgument(index);
         }
     }
 

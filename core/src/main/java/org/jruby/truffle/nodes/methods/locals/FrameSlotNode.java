@@ -20,6 +20,7 @@ public abstract class FrameSlotNode extends RubyNode {
 
     protected FrameSlotNode(RubyContext context, SourceSection sourceSection, FrameSlot frameSlot) {
         super(context, sourceSection);
+        assert frameSlot != null;
         this.frameSlot = frameSlot;
     }
 
@@ -40,6 +41,10 @@ public abstract class FrameSlotNode extends RubyNode {
         frame.setInt(frameSlot, value);
     }
 
+    protected final void setLongFixnum(Frame frame, long value) {
+        frame.setLong(frameSlot, value);
+    }
+
     protected final void setFloat(Frame frame, double value) {
         frame.setDouble(frameSlot, value);
     }
@@ -54,6 +59,10 @@ public abstract class FrameSlotNode extends RubyNode {
 
     protected final int getFixnum(Frame frame) throws FrameSlotTypeException {
         return frame.getInt(frameSlot);
+    }
+
+    protected final long getLongFixnum(Frame frame) throws FrameSlotTypeException {
+        return frame.getLong(frameSlot);
     }
 
     protected final double getFloat(Frame frame) throws FrameSlotTypeException {
@@ -74,6 +83,10 @@ public abstract class FrameSlotNode extends RubyNode {
 
     protected final boolean isFixnumKind() {
         return isKind(FrameSlotKind.Int);
+    }
+
+    protected final boolean isLongFixnumKind() {
+        return isKind(FrameSlotKind.Long);
     }
 
     protected final boolean isFloatKind() {
