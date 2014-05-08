@@ -265,6 +265,10 @@ public abstract class BlockBody {
         return EMPTY_PARAMETER_LIST;
     }
 
+    /**
+     * This is only for 'for' iters since 1.9+ blocks are only ever ArgsNode instances for their vars.
+     */
+    // FIXME: Change this to only be ForNode or encapsulate into ForNode altogether once non-9k runtimes removed.
     public static NodeType getArgumentTypeWackyHack(IterNode iterNode) {
         NodeType argsNodeId = null;
         if (iterNode.getVarNode() != null && iterNode.getVarNode().getNodeType() != NodeType.ZEROARGNODE) {

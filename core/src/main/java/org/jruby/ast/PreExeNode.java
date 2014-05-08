@@ -43,7 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class PreExeNode extends IterNode {
     public PreExeNode(ISourcePosition position, StaticScope scope, Node body) {
-        super(position, null, scope, body);
+        super(position, new ArgsNode(position, null, null, null, null, null, null, null), body, scope);
     }
 
     @Override
