@@ -13,7 +13,7 @@
   <properties>
     <jruby.home>${basedir}/..</jruby.home>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
-    <tesla.version>0.1.0-SNAPSHOT</tesla.version>
+    <tesla.version>0.0.9</tesla.version>
   </properties>
   <dependencies>
     <dependency>
