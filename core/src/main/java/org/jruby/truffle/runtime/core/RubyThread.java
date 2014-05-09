@@ -61,7 +61,7 @@ public class RubyThread extends RubyObject {
             @Override
             public void run() {
                 try {
-                    finalBlock.call(null);
+                    finalBlock.call();
                 } catch (ReturnException e) {
                     exception = getRubyClass().getContext().getCoreLibrary().unexpectedReturn();
                 }

@@ -16,7 +16,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.InlinableMethodImplementation;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
@@ -28,6 +27,7 @@ import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
@@ -76,7 +76,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "attr_reader", isSplatted = true, appendCallNode = true)
+    @CoreMethod(names = "attr_reader", isSplatted = true)
     public abstract static class AttrReaderNode extends CoreMethodNode {
 
         public AttrReaderNode(RubyContext context, SourceSection sourceSection) {
@@ -89,10 +89,9 @@ public abstract class ModuleNodes {
 
         @Specialization
         public NilPlaceholder attrReader(RubyModule module, Object[] args) {
-            final Node callSite = (Node) args[args.length - 1];
-            final SourceSection sourceSection = callSite.getSourceSection();
+            final SourceSection sourceSection = RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
-            for (int n = 0; n < args.length - 1; n++) {
+            for (int n = 0; n < args.length; n++) {
                 attrReader(getContext(), sourceSection, module, args[n].toString());
             }
 
@@ -109,17 +108,17 @@ public abstract class ModuleNodes {
 
             final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, readInstanceVariable);
 
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name + "(attr_reader)", null);
-            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, block);
-            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRoot));
-            final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRoot, true, false);
-            final RubyMethod method = new RubyMethod(sharedMethodInfo, module, name, Visibility.PUBLIC, false, methodImplementation);
-            methodImplementation.setMethod(method);
+            final String indicativeName = name + "(attr_reader)";
+
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, indicativeName, null);
+            final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
+            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+            final RubyMethod method = new RubyMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null, true);
             module.addMethod(method);
         }
     }
 
-    @CoreMethod(names = "attr_writer", isSplatted = true, appendCallNode = true)
+    @CoreMethod(names = "attr_writer", isSplatted = true)
     public abstract static class AttrWriterNode extends CoreMethodNode {
 
         public AttrWriterNode(RubyContext context, SourceSection sourceSection) {
@@ -132,10 +131,9 @@ public abstract class ModuleNodes {
 
         @Specialization
         public NilPlaceholder attrWriter(RubyModule module, Object[] args) {
-            final Node callSite = (Node) args[args.length - 1];
-            final SourceSection sourceSection = callSite.getSourceSection();
+            final SourceSection sourceSection = RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
-            for (int n = 0; n < args.length - 1; n++) {
+            for (int n = 0; n < args.length; n++) {
                 attrWriter(getContext(), sourceSection, module, args[n].toString());
             }
 
@@ -153,17 +151,17 @@ public abstract class ModuleNodes {
 
             final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, writeInstanceVariable);
 
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name + "(attr_writer)", null);
-            final RubyRootNode pristineRoot = new RubyRootNode(sourceSection, null, block);
-            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRoot));
-            final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRoot, true, false);
-            final RubyMethod method = new RubyMethod(sharedMethodInfo, module, name + "=", Visibility.PUBLIC, false, methodImplementation);
-            methodImplementation.setMethod(method);
+            final String indicativeName = name + "(attr_writer)";
+
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, indicativeName, null);
+            final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
+            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+            final RubyMethod method = new RubyMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null, true);
             module.addMethod(method);
         }
     }
 
-    @CoreMethod(names = {"attr_accessor", "attr"}, isSplatted = true, appendCallNode = true)
+    @CoreMethod(names = {"attr_accessor", "attr"}, isSplatted = true)
     public abstract static class AttrAccessorNode extends CoreMethodNode {
 
         public AttrAccessorNode(RubyContext context, SourceSection sourceSection) {
@@ -176,10 +174,9 @@ public abstract class ModuleNodes {
 
         @Specialization
         public NilPlaceholder attrAccessor(RubyModule module, Object[] args) {
-            final Node callSite = (Node) args[args.length - 1];
-            final SourceSection sourceSection = callSite.getSourceSection();
+            final SourceSection sourceSection = RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
-            for (int n = 0; n < args.length - 1; n++) {
+            for (int n = 0; n < args.length; n++) {
                 attrAccessor(getContext(), sourceSection, module, args[n].toString());
             }
 
@@ -224,8 +221,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization(order = 4)
-        public Object classEval(VirtualFrame frame, RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
-            return block.callWithModifiedSelf(frame.pack(), self);
+        public Object classEval(RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
+            return block.callWithModifiedSelf(self);
         }
 
     }
@@ -253,7 +250,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "constants", appendCallNode = true, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "constants", maxArgs = 0)
     public abstract static class ConstantsNode extends CoreMethodNode {
 
         public ConstantsNode(RubyContext context, SourceSection sourceSection) {
@@ -265,8 +262,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray constants(@SuppressWarnings("unused") RubyModule module, Node callNode) {
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "Module#constants returns an empty array");
+        public RubyArray constants(@SuppressWarnings("unused") RubyModule module) {
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Module#constants returns an empty array");
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         }
     }
@@ -348,13 +345,11 @@ public abstract class ModuleNodes {
         private static void defineMethod(RubyModule module, RubySymbol name, RubyProc proc) {
             final RubyMethod method = proc.getMethod();
 
-            if (!(method.getImplementation() instanceof InlinableMethodImplementation)) {
+            if (!(method.getCallTarget() instanceof RootCallTarget)) {
                 throw new UnsupportedOperationException("Can only use define_method with methods where we have the original AST, as we need to clone and modify it");
             }
 
-            final InlinableMethodImplementation methodImplementation = (InlinableMethodImplementation) method.getImplementation();
-
-            final RubyRootNode modifiedRootNode = methodImplementation.getCloneOfPristineRootNode();
+            final RubyRootNode modifiedRootNode = (RubyRootNode) ((RootCallTarget) method.getCallTarget()).getRootNode();
             final CatchReturnNode modifiedCatchReturn = NodeUtil.findFirstNodeInstance(modifiedRootNode, CatchReturnNode.class);
 
             if (modifiedCatchReturn == null) {
@@ -364,13 +359,7 @@ public abstract class ModuleNodes {
             modifiedCatchReturn.setIsProc(false);
 
             final CallTarget modifiedCallTarget = Truffle.getRuntime().createCallTarget(modifiedRootNode);
-
-            final InlinableMethodImplementation modifiedMethodImplementation = new InlinableMethodImplementation(
-                    modifiedCallTarget, methodImplementation.getDeclarationFrame(), methodImplementation.getFrameDescriptor(),
-                    modifiedRootNode, methodImplementation.alwaysInline(), methodImplementation.getShouldAppendCallNode());
-
-            final RubyMethod modifiedMethod = new RubyMethod(method.getSharedMethodInfo(), method.getDeclaringModule(), name.toString(), method.getVisibility(), method.isUndefined(), modifiedMethodImplementation);
-            methodImplementation.setMethod(modifiedMethod);
+            final RubyMethod modifiedMethod = new RubyMethod(method.getSharedMethodInfo(), name.toString(), method.getDeclaringModule(), method.getVisibility(), method.isUndefined(), modifiedCallTarget, method.getDeclarationFrame(), true);
             module.addMethod(modifiedMethod);
         }
 
@@ -396,7 +385,7 @@ public abstract class ModuleNodes {
                     final RubyModule included = (RubyModule) args[n];
 
                     // Note that we do appear to do full method lookup here
-                    included.getLookupNode().lookupMethod("append_features").call(null, included, null, module);
+                    included.getLookupNode().lookupMethod("append_features").call(included, null, module);
 
                     // TODO(cs): call included hook
                 }
@@ -475,9 +464,9 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public NilPlaceholder moduleFunction(VirtualFrame frame, RubyModule module, Object... args) {
+        public NilPlaceholder moduleFunction(RubyModule module, Object... args) {
             if (args.length == 0) {
-                final Frame unpacked = frame.getCaller().unpack();
+                final Frame unpacked = RubyArguments.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
                 final FrameSlot slot = unpacked.getFrameDescriptor().findFrameSlot(RubyModule.MODULE_FUNCTION_FLAG_FRAME_SLOT_ID);
 
@@ -510,8 +499,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule doPublic(VirtualFrame frame, RubyModule module, Object... args) {
-            module.visibilityMethod(frame.getCaller(), args, Visibility.PUBLIC);
+        public RubyModule doPublic(RubyModule module, Object... args) {
+            module.visibilityMethod(args, Visibility.PUBLIC);
             return module;
         }
     }
@@ -528,8 +517,8 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule doPrivate(VirtualFrame frame, RubyModule module, Object... args) {
-            module.visibilityMethod(frame.getCaller(), args, Visibility.PRIVATE);
+        public RubyModule doPrivate(RubyModule module, Object... args) {
+            module.visibilityMethod(args, Visibility.PRIVATE);
             return module;
         }
     }
@@ -636,7 +625,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "private_constant", appendCallNode = true, isSplatted = true)
+    @CoreMethod(names = "private_constant", isSplatted = true)
     public abstract static class PrivateConstantNode extends CoreMethodNode {
 
         public PrivateConstantNode(RubyContext context, SourceSection sourceSection) {
@@ -649,7 +638,6 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule privateConstant(RubyModule module, Object[] args) {
-            final Node callNode = (Node) args[args.length - 1];
             for (Object ob : args) {
                 if (ob instanceof RubySymbol){
                     module.changeConstantVisibility((RubySymbol) ob, true);
@@ -659,7 +647,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "public_constant", appendCallNode = true, isSplatted = true)
+    @CoreMethod(names = "public_constant", isSplatted = true)
     public abstract static class PublicConstantNode extends CoreMethodNode {
 
         public PublicConstantNode(RubyContext context, SourceSection sourceSection) {
@@ -672,7 +660,6 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule publicConstant(RubyModule module, Object[] args) {
-            final Node callNode = (Node) args[args.length - 1];
             for (Object ob : args) {
                 if (ob instanceof RubySymbol){
                     module.changeConstantVisibility((RubySymbol) ob, false);
@@ -695,7 +682,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule doProtected(VirtualFrame frame, RubyModule module, Object... args) {
-            module.visibilityMethod(frame.getCaller(), args, Visibility.PROTECTED);
+            module.visibilityMethod(args, Visibility.PROTECTED);
             return module;
         }
     }

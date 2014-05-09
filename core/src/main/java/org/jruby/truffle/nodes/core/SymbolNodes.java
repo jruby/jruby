@@ -71,7 +71,7 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = "to_proc", maxArgs = 1, appendCallNode = true)
+    @CoreMethod(names = "to_proc", maxArgs = 0)
     public abstract static class ToProcNode extends CoreMethodNode {
 
         public ToProcNode(RubyContext context, SourceSection sourceSection) {
@@ -83,9 +83,9 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public RubyProc toProc(RubySymbol symbol, Node callNode) {
+        public RubyProc toProc(RubySymbol symbol) {
             // TODO(CS): this should be doing all kinds of caching
-            return symbol.toProc(callNode.getEncapsulatingSourceSection());
+            return symbol.toProc(RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection());
         }
     }
 

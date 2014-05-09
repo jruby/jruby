@@ -31,7 +31,7 @@ public class OpenModuleNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return definitionMethod.executeMethod(frame).call(frame.pack(), definingModule.execute(frame), null);
+        return definitionMethod.executeMethod(frame).call(definingModule.execute(frame), null);
     }
 
 }

@@ -40,8 +40,6 @@ public class ShouldDestructureNode extends RubyNode {
     public boolean executeBoolean(VirtualFrame frame) {
         // TODO(CS): express this using normal nodes?
 
-        final RubyArguments arguments = frame.getArguments(RubyArguments.class);
-
         // If we don't accept any arguments, there's never any need to destructure
         // TODO(CS): is this guaranteed by the translator anyway?
 
@@ -57,14 +55,14 @@ public class ShouldDestructureNode extends RubyNode {
 
         // If the caller supplied no arguments, or more than one argument, there's no need to destructure this time
 
-        if (arguments.getUserArgumentsCount() != 1) {
+        if (RubyArguments.getUserArgumentsCount(frame.getArguments()) != 1) {
             return false;
         }
 
         // If the single argument is a RubyArray, destructure
         // TODO(CS): can we not just reply on the respondToCheck? Should experiment.
 
-        if (arguments.getUserArgument(0) instanceof RubyArray) {
+        if (RubyArguments.getUserArgument(frame.getArguments(), 0) instanceof RubyArray) {
             return true;
         }
 

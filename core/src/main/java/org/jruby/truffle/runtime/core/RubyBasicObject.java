@@ -143,7 +143,7 @@ public class RubyBasicObject extends ObjectStorage {
             throw new RaiseException(getRubyClass().getContext().getCoreLibrary().noMethodError(name, toString()));
         }
 
-        return method.call(null, this, block, args);
+        return method.call(this, block, args);
     }
 
     public void unsafeSetRubyClass(RubyClass newRubyClass) {

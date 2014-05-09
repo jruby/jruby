@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "Struct")
 public abstract class StructNodes {
 
-    @CoreMethod(names = "initialize", needsBlock = true, appendCallNode = true, isSplatted = true)
+    @CoreMethod(names = "initialize", needsBlock = true, isSplatted = true)
     public abstract static class InitalizeNode extends CoreMethodNode {
 
         public InitalizeNode(RubyContext context, SourceSection sourceSection) {
@@ -31,7 +31,7 @@ public abstract class StructNodes {
         }
 
         @Specialization
-        public NilPlaceholder initialize(VirtualFrame frame, RubyClass struct, Object[] args, Object block, Node callSite) {
+        public NilPlaceholder initialize(RubyClass struct, Object[] args, Object block) {
             CompilerDirectives.transferToInterpreter();
 
             final RubySymbol[] symbols = new RubySymbol[args.length];
@@ -41,11 +41,11 @@ public abstract class StructNodes {
             }
 
             for (RubySymbol symbol : symbols) {
-                ModuleNodes.AttrAccessorNode.attrAccessor(getContext(), callSite.getSourceSection(), struct, symbol.toString());
+                ModuleNodes.AttrAccessorNode.attrAccessor(getContext(), RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection(), struct, symbol.toString());
             }
 
             if (!RubyNilClass.isNil(block)) {
-                ((RubyProc) block).callWithModifiedSelf(frame.pack(), struct);
+                ((RubyProc) block).callWithModifiedSelf(struct);
             }
 
             return NilPlaceholder.INSTANCE;

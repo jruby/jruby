@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
@@ -32,10 +33,13 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
     private final Map<LookupNode, MethodCacheEntry> cache = new HashMap<>();
     @CompilerDirectives.CompilationFinal private boolean hasAnyMethodsMissing = false;
 
+    @Child private final IndirectCallNode callNode;
+
     public GeneralDispatchNode(RubyContext context, SourceSection sourceSection, String name) {
         super(context, sourceSection);
         assert name != null;
         this.name = name;
+        callNode = Truffle.getRuntime().createIndirectCallNode();
     }
 
     @Override
@@ -45,11 +49,13 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
         if (entry == null) {
             CompilerDirectives.transferToInterpreter();
 
+            final RubyBasicObject boxedCallingSelf = getContext().getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
+
             try {
-                entry = new MethodCacheEntry(lookup(frame, receiverObject, name), false);
+                entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, name), false);
             } catch (UseMethodMissingException e) {
                 try {
-                    entry = new MethodCacheEntry(lookup(frame, receiverObject, "method_missing"), true);
+                    entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, "method_missing"), true);
                 } catch (UseMethodMissingException e2) {
                     throw new RaiseException(getContext().getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing"));
                 }
@@ -64,15 +70,18 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
             getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getSourceSection().getSource().getName(), getSourceSection().getStartLine(), "general call node cache has grown to " + cache.size());
         }
 
+        final Object[] argumentsToUse;
+
         if (hasAnyMethodsMissing && entry.isMethodMissing()) {
             final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjects.length];
             modifiedArgumentsObjects[0] = getContext().newSymbol(name);
             System.arraycopy(argumentsObjects, 0, modifiedArgumentsObjects, 1, argumentsObjects.length);
-
-            return entry.getMethod().call(frame.pack(), receiverObject, blockObject, modifiedArgumentsObjects);
+            argumentsToUse = modifiedArgumentsObjects;
         } else {
-            return entry.getMethod().call(frame.pack(), receiverObject, blockObject, argumentsObjects);
+            argumentsToUse = argumentsObjects;
         }
+
+        return callNode.call(frame, entry.getMethod().getCallTarget(), RubyArguments.pack(entry.getMethod().getDeclarationFrame(), receiverObject, blockObject, argumentsToUse));
     }
 
     @CompilerDirectives.SlowPath

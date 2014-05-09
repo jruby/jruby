@@ -10,7 +10,6 @@
 package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.debug.DebugManager;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.impl.DefaultSourceSection;
 import com.oracle.truffle.api.nodes.*;
@@ -38,15 +37,8 @@ public class TranslatorDriver {
     private final Ruby jruby;
     private long nextReturnID = 0;
 
-    private final RubyNodeInstrumenter instrumenter;
-
     public TranslatorDriver(Ruby jruby) {
-        this(jruby, new DefaultRubyNodeInstrumenter());
-    }
-
-    public TranslatorDriver(Ruby jruby, RubyNodeInstrumenter instrumenter) {
         this.jruby = jruby;
-        this.instrumenter = instrumenter;
     }
 
     public MethodDefinitionNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
@@ -57,7 +49,7 @@ public class TranslatorDriver {
         final SharedMethodInfo sharedMethod = new SharedMethodInfo(sourceSection, "(unknown)", parseTree);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(
-                context, environmentForFrame(context, null), this, allocateReturnID(), true, true, sharedMethod);
+                context, environmentForFrame(context, null), this, allocateReturnID(), true, true, sharedMethod, sharedMethod.getName());
 
         // All parsing contexts have a visibility slot at their top level
 
@@ -94,7 +86,7 @@ public class TranslatorDriver {
                     }
                 }
 
-                frame = frame.getArguments(RubyArguments.class).getDeclarationFrame();
+                frame = RubyArguments.getDeclarationFrame(frame.getArguments());
             }
         }
 
@@ -122,7 +114,7 @@ public class TranslatorDriver {
     public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(null, "(root)", rootNode);
 
-        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, sharedMethodInfo);
+        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName());
 
         // Get the DATA constant
 
@@ -148,71 +140,38 @@ public class TranslatorDriver {
 
         RubyNode truffleNode;
 
-        final DebugManager debugManager = context.getDebugManager();
-
-        try {
-            if (debugManager != null) {
-                debugManager.notifyStartLoading(source);
-            }
-
-            if (rootNode.getBodyNode() == null) {
-                truffleNode = new NilNode(context, null);
-            } else {
-                truffleNode = rootNode.getBodyNode().accept(translator);
-            }
-
-            // Load flip-flop states
-
-            if (environment.getFlipFlopStates().size() > 0) {
-                truffleNode = SequenceNode.sequence(context, truffleNode.getSourceSection(), translator.initFlipFlopStates(truffleNode.getSourceSection()), truffleNode);
-            }
-
-            // Catch next
-
-            truffleNode = new CatchNextNode(context, truffleNode.getSourceSection(), truffleNode);
-
-            // Catch return
-
-            truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
-
-            // Catch retry
-
-            truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
-
-            // Shell result
-
-            if (parserContext == TranslatorDriver.ParserContext.SHELL) {
-                truffleNode = new ShellResultNode(context, truffleNode.getSourceSection(), truffleNode);
-            }
-
-            // Root Node
-
-            String indicativeName;
-
-            switch (parserContext) {
-                case TOP_LEVEL:
-                    indicativeName = "(main)";
-                    break;
-                case SHELL:
-                    indicativeName = "(shell)";
-                    break;
-                case MODULE:
-                    indicativeName = "(module)";
-                    break;
-                default:
-                    throw new UnsupportedOperationException();
-            }
-
-            final RootNode root = new RubyRootNode(truffleNode.getSourceSection(), environment.getFrameDescriptor(), truffleNode);
-
-            // Return the root and the frame descriptor
-
-            return new RubyParserResult(root);
-        } finally {
-            if (debugManager != null) {
-                debugManager.notifyFinishedLoading(source);
-            }
+        if (rootNode.getBodyNode() == null) {
+            truffleNode = new NilNode(context, null);
+        } else {
+            truffleNode = rootNode.getBodyNode().accept(translator);
         }
+
+        // Load flip-flop states
+
+        if (environment.getFlipFlopStates().size() > 0) {
+            truffleNode = SequenceNode.sequence(context, truffleNode.getSourceSection(), translator.initFlipFlopStates(truffleNode.getSourceSection()), truffleNode);
+        }
+
+        // Catch next
+
+        truffleNode = new CatchNextNode(context, truffleNode.getSourceSection(), truffleNode);
+
+        // Catch return
+
+        truffleNode = new CatchReturnAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
+
+        // Catch retry
+
+        truffleNode = new CatchRetryAsErrorNode(context, truffleNode.getSourceSection(), truffleNode);
+
+        // Shell result
+
+        if (parserContext == TranslatorDriver.ParserContext.SHELL) {
+            truffleNode = new ShellResultNode(context, truffleNode.getSourceSection(), truffleNode);
+        }
+
+        final RootNode root = new RubyRootNode(truffleNode.getSourceSection(), environment.getFrameDescriptor(), environment.getSharedMethodInfo(), truffleNode);
+        return new RubyParserResult(root);
     }
 
     private Object getData(RubyContext context) {
@@ -246,14 +205,10 @@ public class TranslatorDriver {
         if (frame == null) {
             return null;
         } else {
-            final MaterializedFrame parent = frame.getArguments(RubyArguments.class).getDeclarationFrame();
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(null, null, null);
-            return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, sharedMethodInfo);
+            final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame.getArguments());
+            return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName());
         }
-    }
-
-    public RubyNodeInstrumenter getNodeInstrumenter() {
-        return instrumenter;
     }
 
 }

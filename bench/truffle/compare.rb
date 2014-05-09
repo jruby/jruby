@@ -83,7 +83,7 @@ puts time_budget_per_run.to_s + "s for each benchmark"
 scores = {}
 
 benchmarks.each do |benchmark|
-  output = `../../bin/jruby -J-server -J-d64 -X+T -Xtruffle.printRuntime=true harness.rb -s #{time_budget_per_run} #{benchmark}.rb`
+  output = `../../bin/jruby -J-server -J-d64 -J-G:TruffleGraphMaxNodes=200000 -X+T -Xtruffle.printRuntime=true harness.rb -s #{time_budget_per_run} #{benchmark}.rb`
   score_match = /[a-z\-]+: (\d+\.\d+)/.match(output)
   if score_match.nil?
     score = 0

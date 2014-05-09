@@ -28,6 +28,7 @@ public class CachedBoxedDispatchNode extends BoxedDispatchNode {
     private final Assumption unmodifiedAssumption;
     private final RubyMethod method;
 
+    @Child protected DirectCallNode callNode;
     @Child protected BoxedDispatchNode next;
 
     public CachedBoxedDispatchNode(RubyContext context, SourceSection sourceSection, LookupNode expectedLookupNode, RubyMethod method, BoxedDispatchNode next) {
@@ -40,6 +41,8 @@ public class CachedBoxedDispatchNode extends BoxedDispatchNode {
         unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
         this.method = method;
         this.next = next;
+
+        callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
     }
 
     @Override
@@ -60,7 +63,7 @@ public class CachedBoxedDispatchNode extends BoxedDispatchNode {
 
         // Call the method
 
-        return method.call(frame.pack(), receiverObject, blockObject, argumentsObjects);
+        return callNode.call(frame, RubyArguments.pack(method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
     }
 
 }

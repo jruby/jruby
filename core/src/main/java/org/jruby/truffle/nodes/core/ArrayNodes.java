@@ -1036,6 +1036,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
+        @SlowPath
         public Object product(RubyArray array, Object... args) {
             final RubyArray[] arrays = new RubyArray[1 + args.length];
             arrays[0] = array;
@@ -1056,6 +1057,7 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
+        @SlowPath
         @Specialization
         public RubyArray push(RubyArray array, Object... args) {
             for (int n = 0; n < args.length; n++) {
@@ -1230,7 +1232,7 @@ public abstract class ArrayNodes {
                 @Override
                 public int compare(Object a, Object b) {
                     final RubyBasicObject aBoxed = context.getCoreLibrary().box(a);
-                    return (int) aBoxed.getLookupNode().lookupMethod("<=>").call(null, aBoxed, null, b);
+                    return (int) aBoxed.getLookupNode().lookupMethod("<=>").call(aBoxed, null, b);
                 }
 
             });
@@ -1291,6 +1293,7 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
+        @SlowPath
         @Specialization
         public RubyArray zip(RubyArray array, Object... args) {
             final RubyContext context = getContext();

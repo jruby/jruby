@@ -85,7 +85,7 @@ public class BooleanDispatchNode extends UnboxedDispatchNode {
 
         // Call the method
 
-        return method.call(frame.pack(), receiverObject, blockObject, argumentsObjects);
+        return method.call(receiverObject, blockObject, argumentsObjects);
     }
 
     @Override

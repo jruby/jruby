@@ -10,12 +10,14 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.dsl.Generic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -263,7 +265,7 @@ public abstract class ObjectNodes {
                 throw new RaiseException(getContext().getCoreLibrary().typeError("no class to make alias"));
             }
 
-            return block.callWithModifiedSelf(frame.pack(), receiver);
+            return block.callWithModifiedSelf(receiver);
         }
 
         @Specialization
@@ -384,18 +386,19 @@ public abstract class ObjectNodes {
         }
 
         @Specialization
-        public boolean isA(@SuppressWarnings("unused") RubyObject self, @SuppressWarnings("unused") NilPlaceholder nil) {
+        public boolean isA(@SuppressWarnings("unused") RubyBasicObject self, @SuppressWarnings("unused") NilPlaceholder nil) {
             return false;
         }
 
         @Specialization
-        public boolean isA(RubyObject self, RubyClass rubyClass) {
-            return self.getRubyClass().assignableTo(rubyClass);
+        public boolean isA(Object self, RubyClass rubyClass) {
+            // TODO(CS): fast path
+            return getContext().getCoreLibrary().box(self).getRubyClass().assignableTo(rubyClass);
         }
 
     }
 
-    @CoreMethod(names = "methods", appendCallNode = true, minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = "methods", maxArgs = 1)
     public abstract static class MethodsNode extends CoreMethodNode {
 
         public MethodsNode(RubyContext context, SourceSection sourceSection) {
@@ -407,16 +410,16 @@ public abstract class ObjectNodes {
         }
 
         @Specialization(order = 1)
-        public RubyArray methods(RubyObject self, boolean includeInherited, Node callNode) {
+        public RubyArray methods(RubyObject self, boolean includeInherited) {
             if (!includeInherited) {
-                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "Object#methods always returns inherited methods at the moment");
+                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Object#methods always returns inherited methods at the moment");
             }
 
-            return methods(self, callNode, UndefinedPlaceholder.INSTANCE);
+            return methods(self, UndefinedPlaceholder.INSTANCE);
         }
 
         @Specialization(order = 2)
-        public RubyArray methods(RubyObject self, @SuppressWarnings("unused") Node callNode, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
+        public RubyArray methods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
             final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
 
             final Map<String, RubyMethod> methods = new HashMap<>();
@@ -469,7 +472,7 @@ public abstract class ObjectNodes {
 
     }
 
-    @CoreMethod(names = "public_methods", appendCallNode = true, minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = "public_methods", maxArgs = 1)
     public abstract static class PublicMethodsNode extends CoreMethodNode {
 
         public PublicMethodsNode(RubyContext context, SourceSection sourceSection) {
@@ -481,16 +484,16 @@ public abstract class ObjectNodes {
         }
 
         @Specialization(order = 1)
-        public RubyArray methods(RubyObject self, boolean includeInherited, Node callNode) {
+        public RubyArray methods(RubyObject self, boolean includeInherited) {
             if (!includeInherited) {
-                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "Object#methods always returns inherited methods at the moment");
+                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Object#methods always returns inherited methods at the moment");
             }
 
-            return methods(self, callNode, UndefinedPlaceholder.INSTANCE);
+            return methods(self, UndefinedPlaceholder.INSTANCE);
         }
 
         @Specialization(order = 2)
-        public RubyArray methods(RubyObject self, @SuppressWarnings("unused") Node callNode, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
+        public RubyArray methods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
             final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
 
             final Map<String, RubyMethod> methods = new HashMap<>();
@@ -596,7 +599,7 @@ public abstract class ObjectNodes {
 
     }
 
-    @CoreMethod(names = "singleton_methods", appendCallNode = true, minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = "singleton_methods", maxArgs = 1)
     public abstract static class SingletonMethodsNode extends CoreMethodNode {
 
         public SingletonMethodsNode(RubyContext context, SourceSection sourceSection) {
@@ -608,16 +611,16 @@ public abstract class ObjectNodes {
         }
 
         @Specialization(order = 1)
-        public RubyArray singletonMethods(RubyObject self, boolean includeInherited, Node callNode) {
+        public RubyArray singletonMethods(RubyObject self, boolean includeInherited) {
             if (!includeInherited) {
-                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "Object#singleton_methods always returns inherited methods at the moment");
+                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Object#singleton_methods always returns inherited methods at the moment");
             }
 
-            return singletonMethods(self, callNode, UndefinedPlaceholder.INSTANCE);
+            return singletonMethods(self, UndefinedPlaceholder.INSTANCE);
         }
 
         @Specialization(order = 2)
-        public RubyArray singletonMethods(RubyObject self, Node callNode, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
+        public RubyArray singletonMethods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
             final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
 
             for (RubyMethod method : self.getSingletonClass().getDeclaredMethods()) {
@@ -641,7 +644,7 @@ public abstract class ObjectNodes {
         }
 
         @Specialization
-        public RubyString toS(RubyObject self) {
+        public RubyString toS(Object self) {
             return getContext().makeString(self.toString());
         }
 

@@ -89,7 +89,7 @@ public abstract class
 
         @Specialization
         public Object binding(VirtualFrame frame, Object self) {
-            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(), self, frame.getCaller().unpack().materialize());
+            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(), self, RubyArguments.getCallerFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize());
         }
     }
 
@@ -105,8 +105,8 @@ public abstract class
         }
 
         @Specialization
-        public boolean blockGiven(VirtualFrame frame) {
-            return frame.getCaller().unpack().getArguments(RubyArguments.class).getBlock() != null;
+        public boolean blockGiven() {
+            return RubyArguments.getBlock(RubyArguments.getCallerFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
         }
     }
 
@@ -289,6 +289,8 @@ public abstract class
         public RubyString gets(VirtualFrame frame) {
             final RubyContext context = getContext();
 
+            final Frame caller = RubyArguments.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+
             final ThreadManager threadManager = context.getThreadManager();
 
             String line;
@@ -307,11 +309,10 @@ public abstract class
 
             // Set the local variable $_ in the caller
 
-            final Frame unpacked = frame.getCaller().unpack();
-            final FrameSlot slot = unpacked.getFrameDescriptor().findFrameSlot("$_");
+            final FrameSlot slot = caller.getFrameDescriptor().findFrameSlot("$_");
 
             if (slot != null) {
-                unpacked.setObject(slot, rubyLine);
+                caller.setObject(slot, rubyLine);
             }
 
             return rubyLine;

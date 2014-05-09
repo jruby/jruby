@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -49,7 +50,7 @@ public class SystemNode extends RubyNode {
 
         final String command = child.execute(frame).toString();
 
-        Process process;
+        final Process process;
 
         try {
             // We need to run via bash to get the variable and other expansion we expect
