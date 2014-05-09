@@ -78,8 +78,11 @@ public final class RubyArguments {
 
         final Iterator<FrameInstance> stack = stackIterable.iterator();
 
-        assert stack.hasNext();
-        return stack.next();
+        if (stack.hasNext()) {
+            return stack.next();
+        } else {
+            return null;
+        }
     }
 
     public static Frame getCallerFrame(FrameInstance.FrameAccess access, boolean slowPath) {

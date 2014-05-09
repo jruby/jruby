@@ -300,6 +300,7 @@ public class RubyContext {
         return object instanceof UndefinedPlaceholder || //
                         object instanceof Boolean || //
                         object instanceof Integer || //
+                        object instanceof Long || //
                         object instanceof BigInteger || //
                         object instanceof Double || //
                         object instanceof RubyBasicObject || //

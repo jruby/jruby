@@ -89,7 +89,7 @@ public class RubyMethod {
 
     public RubyMethod withDeclaringModule(RubyModule newDeclaringModule) {
         if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
-            final RubyRootNode newRootNode = (RubyRootNode) ((RootCallTarget) callTarget).getRootNode();
+            final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
             final RubyMethod newMethod = new RubyMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame);
             newRootNode.setMethod(newMethod);
             return newMethod;
@@ -100,7 +100,7 @@ public class RubyMethod {
 
     public RubyMethod withNewName(String newName) {
         if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
-            final RubyRootNode newRootNode = (RubyRootNode) ((RootCallTarget) callTarget).getRootNode();
+            final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
             final RubyMethod newMethod = new RubyMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame);
             newRootNode.setMethod(newMethod);
             return newMethod;
@@ -111,7 +111,7 @@ public class RubyMethod {
 
     public RubyMethod withNewVisibility(Visibility newVisibility) {
         if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
-            final RubyRootNode newRootNode = (RubyRootNode) ((RootCallTarget) callTarget).getRootNode();
+            final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
             final RubyMethod newMethod = new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame);
             newRootNode.setMethod(newMethod);
             return newMethod;
@@ -122,7 +122,7 @@ public class RubyMethod {
 
     public RubyMethod withoutBlockDestructureSemantics() {
         if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
-            final RubyRootNode newRootNode = (RubyRootNode) ((RootCallTarget) callTarget).getRootNode();
+            final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
 
             for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNode, BehaveAsBlockNode.class)) {
                 behaveAsBlockNode.setBehaveAsBlock(false);
@@ -138,7 +138,7 @@ public class RubyMethod {
 
     public RubyMethod undefined() {
         if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
-            final RubyRootNode newRootNode = (RubyRootNode) ((RootCallTarget) callTarget).getRootNode();
+            final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
             final RubyMethod newMethod = new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, true, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame);
             newRootNode.setMethod(newMethod);
             return newMethod;

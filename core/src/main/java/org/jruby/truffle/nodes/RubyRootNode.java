@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 /**
@@ -35,7 +36,7 @@ public class RubyRootNode extends RootNode {
     }
 
     public void setMethod(RubyMethod method) {
-        assert this.method != null;
+        assert this.method == null;
         this.method = method;
     }
 
@@ -44,20 +45,23 @@ public class RubyRootNode extends RootNode {
     }
 
     @Override
+    public Object execute(VirtualFrame frame) {
+        return body.execute(frame);
+    }
+
+    public RubyRootNode cloneRubyRootNode() {
+        return new RubyRootNode(getSourceSection(), getFrameDescriptor(), NodeUtil.cloneNode(uninitializedBody));
+    }
+
+    @Override
     public RootNode split() {
-        final RubyRootNode splitRoot = new RubyRootNode(getSourceSection(), getFrameDescriptor(), NodeUtil.cloneNode(uninitializedBody));
-        splitRoot.method = method;
+        final RubyRootNode splitRoot = cloneRubyRootNode();
         return splitRoot;
     }
 
     @Override
     public boolean isSplittable() {
         return true;
-    }
-
-    @Override
-    public Object execute(VirtualFrame frame) {
-        return body.execute(frame);
     }
 
     @Override
