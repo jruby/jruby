@@ -618,14 +618,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 // TODO: NEED_NEWLINE_DECORATOR_ON_READ_CHECK(fptr);
                 return getlineFast(runtime, rs.get(0) & 0xFF, cache);
             } else {
-                int c = -1, newline = -1;
+                int c, newline = -1;
                 byte[] rsptrBytes = null;
                 int rsptr = 0;
                 int rslen = 0;
                 boolean rspara = false;
                 int extraLimit = 16;
-
-                int[] limit_p = {_limit};
 
                 SET_BINARY_MODE();
                 enc = getReadEncoding();
@@ -640,9 +638,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
                         fptr.swallow(context, '\n');
                         rs = null;
                         if (!enc.isAsciiCompatible()) {
-                            RubyString tmprs = RubyString.newUsAsciiStringShared(runtime, rs);
-                            tmprs = (RubyString)EncodingUtils.strEncode(context, tmprs, IRubyObject.NULL_ARRAY);
+                            RubyString tmprs = RubyString.newUsAsciiStringShared(runtime, rsptrBytes, rsptr, rslen);
+                            tmprs = (RubyString)EncodingUtils.rbStrEncode(context, tmprs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
                             rs = tmprs.getByteList();
+                            rsptrBytes = rs.getUnsafeBytes();
+                            rsptr = rs.getBegin();
+                            rslen = rs.getRealSize();
                         }
                     } else {
                         rsptrBytes = rs.unsafeBytes();
@@ -653,8 +654,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
                 ByteList buf = cache != null ? cache.allocate(0) : new ByteList(0);
                 try {
-                    ByteList[] strPtr = {((RubyString)str).getByteList()};
-                    
+                    ByteList[] strPtr = {
+                            str instanceof RubyString ?
+                            ((RubyString)str).getByteList() :
+                            null
+                    };
+
+                    int[] limit_p = {_limit};
                     while ((c = fptr.appendline(context, newline, strPtr, limit_p)) != OpenFile.EOF) {
                         int s, p, pp, e;
 
@@ -681,9 +687,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
                             }
                         }
                     }
+                    _limit = limit_p[0];
 
                     if (rspara && c != OpenFile.EOF) {
-                        fptr.swallow(context, '\n');
+                        // FIXME: if we can check for more newlines to scrub without blocking, do it
+                        // As-is this will block waiting for more newlines to come in
+//                        fptr.swallow(context, '\n');
                     }
                     if (!str.isNil()) {
                         str = ioEncStr(str);
@@ -866,7 +875,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
             
             IRubyObject[] pm = new IRubyObject[] { runtime.newFixnum(0), vmodeArg };
             int[] fmode_p = {0};
-            EncodingUtils.extractModeEncoding(context, this, pm, opt, oflags_p, fmode_p);
+            ConvConfig convconfig = new ConvConfig();
+            EncodingUtils.extractModeEncoding(context, convconfig, pm, opt, oflags_p, fmode_p);
             
             oflags_p[0] = descriptor.getOriginalModes().getFlags();
 
@@ -887,6 +897,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             ModeFlags modes = ModeFlags.createModeFlags(oflags_p[0]);
             
             openFile.setMode(fmode_p[0]);
+            openFile.encs = convconfig;
             openFile.setMainStream(fdopen(descriptor, modes));
             openFile.clearCodeConversion();
             

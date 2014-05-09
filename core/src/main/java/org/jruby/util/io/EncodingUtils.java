@@ -1426,26 +1426,35 @@ public class EncodingUtils {
         // negative length check here, we shouldn't need
         strBufCat(runtime, str, ptrBytes, ptr, len);
     }
+    public static void  rbStrBufCat(Ruby runtime, ByteList str, byte[] ptrBytes, int ptr, int len) {
+        if (len == 0) return;
+        // negative length check here, we shouldn't need
+        strBufCat(str, ptrBytes, ptr, len);
+    }
 
     // str_buf_cat
     public static void strBufCat(Ruby runtime, RubyString str, ByteList ptr) {
         strBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize());
     }
     public static void strBufCat(Ruby runtime, RubyString str, byte[] ptrBytes, int ptr, int len) {
+        str.modify();
+        strBufCat(str.getByteList(), ptrBytes, ptr, len);
+    }
+    public static void strBufCat(ByteList str, byte[] ptrBytes, int ptr, int len) {
         int total, off = -1;
 
         // termlen is not relevant since we have no termination sequence
 
         // missing: if ptr string is inside str, off = ptr start minus str start
 
-        str.modify();
+//        str.modify();
         if (len == 0) return;
 
         // much logic is missing here, since we don't manually manage the ByteList buffer
 
-        total = str.size() + len;
-        str.getByteList().ensure(total);
-        str.getByteList().append(ptrBytes, ptr, len);
+        total = str.getRealSize() + len;
+        str.ensure(total);
+        str.append(ptrBytes, ptr, len);
     }
 
     // rb_enc_str_buf_cat

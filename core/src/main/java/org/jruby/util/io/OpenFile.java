@@ -87,6 +87,7 @@ public class OpenFile {
 
     public boolean READ_DATA_PENDING() {return rbuf.len != 0;}
     public int READ_DATA_PENDING_COUNT() {return rbuf.len;}
+    // goes with READ_DATA_PENDING_OFF
     public byte[] READ_DATA_PENDING_PTR() {return rbuf.ptr;}
     public int READ_DATA_PENDING_OFF() {return rbuf.off;}
     public int READ_DATA_PENDING_START() {return rbuf.start;}
@@ -94,6 +95,7 @@ public class OpenFile {
 
     public boolean READ_CHAR_PENDING() {return cbuf.len != 0;}
     public int READ_CHAR_PENDING_COUNT() {return cbuf.len;}
+    // goes with READ_CHAR_PENDING_OFF
     public byte[] READ_CHAR_PENDING_PTR() {return cbuf.ptr;}
     public int READ_CHAR_PENDING_OFF() {return cbuf.off;}
     public int READ_CHAR_PENDING_START() {return cbuf.start;}
@@ -880,17 +882,16 @@ public class OpenFile {
             makeReadConversion(context);
             do {
                 int p, e;
-                int searchlen = cbuf.len;
+                int searchlen = READ_CHAR_PENDING_COUNT();
                 if (searchlen > 0) {
-                    byte[] pBytes = cbuf.ptr;
-                    p = cbuf.start;
+                    byte[] pBytes = READ_CHAR_PENDING_PTR();
+                    p = READ_CHAR_PENDING_OFF();
                     if (0 < limit && limit < searchlen)
                         searchlen = limit;
-                    e = 0;
-                    for (int i = p; i < p + searchlen; i++) if ((pBytes[i] & 0xFF) == delim) e = i;
-                    if (e != 0) {
+                    e = memchr(pBytes, p, delim, searchlen);
+                    if (e != -1) {
                         int len = (int)(e-p+1);
-                        if (str != null) {
+                        if (str == null) {
                             strp[0] = str = new ByteList(pBytes, p, len);
                         } else {
                             str.append(pBytes, p, len);
@@ -905,7 +906,7 @@ public class OpenFile {
                     if (str == null) {
                         strp[0] = str = new ByteList(pBytes, p, searchlen);
                     } else {
-                        str.append(pBytes, p, searchlen);
+                        EncodingUtils.rbStrBufCat(context.runtime, str, pBytes, p, searchlen);
                     }
                     cbuf.off += searchlen;
                     cbuf.len -= searchlen;
@@ -924,24 +925,24 @@ public class OpenFile {
 
         NEED_NEWLINE_DECORATOR_ON_READ_CHECK();
         do {
-            int pending = rbuf.len;
+            int pending = READ_DATA_PENDING_COUNT();
             if (pending > 0) {
-                byte[] pBytes = rbuf.ptr;
-                int p = rbuf.start;
-                int e;
+                byte[] pBytes = READ_DATA_PENDING_PTR();
+                int p = READ_DATA_PENDING_OFF();
+                int e = -1;
                 int last;
 
                 if (limit > 0 && pending > limit) pending = limit;
-                e = -1;
-                for (int i = p; i < p + pending; i++) if ((pBytes[i] & 0xFF) == delim) e = i;
+                e = memchr(pBytes, p, delim, pending);
                 if (e != -1) pending = e - p + 1;
                 if (str != null) {
                     last = str.getRealSize();
-                    str.ensure(last + pending);
+                    str.length(last + pending);
                 }
                 else {
                     last = 0;
                     strp[0] = str = new ByteList(pending);
+                    str.setRealSize(pending);
                 }
                 readBufferedData(str.getUnsafeBytes(), str.getBegin() + last, pending); /* must not fail */
                 limit -= pending;
@@ -951,10 +952,19 @@ public class OpenFile {
                     return str.get(str.getRealSize() - 1) & 0xFF;
                 }
             }
-//            checkReadable(context.runtime);
+            READ_CHECK(context);
         } while (fillbuf(context) >= 0);
         lp[0] = limit;
         return EOF;
+    }
+
+    private int memchr(byte[] pBytes, int p, int delim, int length) {
+        for (int i = p; i < p + length; i++) {
+            if ((pBytes[i] & 0xFF) == delim) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private void NEED_NEWLINE_DECORATOR_ON_READ_CHECK() {
@@ -1113,10 +1123,11 @@ public class OpenFile {
             makeReadConversion(context);
             do {
                 int cnt;
+                int[] i = {0};
                 while ((cnt = READ_CHAR_PENDING_COUNT()) > 0) {
                     byte[] pBytes = READ_CHAR_PENDING_PTR();
                     int p = READ_CHAR_PENDING_OFF();
-                    int[] i = {0};
+                    i[0] = 0;
                     if (!needconv) {
                         if (pBytes[p] != term) return true;
                         i[0] = (int)cnt;
@@ -1143,10 +1154,10 @@ public class OpenFile {
                 int p = READ_DATA_PENDING_OFF();
                 int i;
                 if (cnt > buf.length) cnt = buf.length;
-                if (pBytes[p] != term) return true;
+                if ((pBytes[p] &  0xFF) != term) return true;
                 i = (int)cnt;
-                while (--i != 0 && pBytes[++p] == term);
-                if (readBufferedData(buf, 0, cnt - i) != 0) /* must not fail */
+                while (--i != 0 && (pBytes[++p] & 0xFF) == term);
+                if (readBufferedData(buf, 0, cnt - i) == 0) /* must not fail */
                     throw context.runtime.newRuntimeError("failure copying buffered IO bytes");
             }
             READ_CHECK(context);
