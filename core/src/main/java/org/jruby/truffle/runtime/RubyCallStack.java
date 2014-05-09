@@ -9,9 +9,15 @@
  */
 package org.jruby.truffle.runtime;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.nodes.RootNode;
+import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 
 public abstract class RubyCallStack {
 
@@ -27,6 +33,55 @@ public abstract class RubyCallStack {
         }
 
         System.err.println("---------------------");
+    }
+
+    public static RubyMethod getCurrentMethod() {
+        CompilerAsserts.neverPartOfCompilation();
+
+        RubyMethod method;
+
+        final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
+
+        method = getMethod(currentFrame);
+
+        if (method != null) {
+            return method;
+        }
+
+        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
+            method = getMethod(frame);
+
+            if (method != null) {
+                return method;
+            }
+        }
+
+        throw new UnsupportedOperationException();
+    }
+
+    private static RubyMethod getMethod(FrameInstance frame) {
+        final CallTarget callTarget = frame.getCallTarget();
+
+        if (!(callTarget instanceof RootCallTarget)) {
+            return null;
+        }
+
+        final RootCallTarget rootCallTarget = (RootCallTarget) callTarget;
+
+        final RootNode rootNode = rootCallTarget.getRootNode();
+
+        if (!(rootNode instanceof RubyRootNode)) {
+            return null;
+        }
+
+        final RubyRootNode rubyRootNode = (RubyRootNode) rootNode;
+
+        return RubyMethod.getMethod(rubyRootNode.getSharedMethodInfo());
+    }
+
+
+    public static RubyModule getCurrentDeclaringModule() {
+        return getCurrentMethod().getDeclaringModule();
     }
 
 }

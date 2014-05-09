@@ -48,7 +48,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
     protected void lookup() {
         CompilerAsserts.neverPartOfCompilation();
 
-        final RubyModule declaringModule = RubyMethod.getCurrentDeclaringModule();
+        final RubyModule declaringModule = RubyCallStack.getCurrentDeclaringModule();
 
         method = ((RubyClass) declaringModule).getSuperclass().lookupMethod(name);
 
