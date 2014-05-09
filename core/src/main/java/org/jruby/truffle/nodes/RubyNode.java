@@ -201,8 +201,4 @@ public abstract class RubyNode extends Node {
         return context;
     }
 
-    public RubyMethod getMethod() {
-        return ((RubyRootNode) getRootNode()).getMethod();
-    }
-
 }

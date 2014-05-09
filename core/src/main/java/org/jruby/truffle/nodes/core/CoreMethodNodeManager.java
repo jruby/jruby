@@ -132,10 +132,8 @@ public abstract class CoreMethodNodeManager {
 
         final RubyRootNode rootNode = makeGenericMethod(context, methodDetails);
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(rootNode.getSourceSection(), methodDetails.getIndicativeName(), null);
-
-        final RubyMethod method = new RubyMethod(sharedMethodInfo, canonicalName, module, visibility, false,
-                Truffle.getRuntime().createCallTarget(rootNode), null);
+        final RubyMethod method = new RubyMethod(rootNode.getSharedMethodInfo(), canonicalName, module, visibility, false,
+                Truffle.getRuntime().createCallTarget(rootNode), null, true);
 
         module.addMethod(method);
 
@@ -155,7 +153,11 @@ public abstract class CoreMethodNodeManager {
     }
 
     private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails) {
-        final SourceSection sourceSection = new CoreSourceSection(methodDetails.getClassAnnotation().name() + "#" + methodDetails.getMethodAnnotation().names()[0]);
+        final String indicativeName = methodDetails.getClassAnnotation().name() + "#" + methodDetails.getMethodAnnotation().names()[0];
+
+        final SourceSection sourceSection = new CoreSourceSection(indicativeName);
+
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, methodDetails.getIndicativeName(), null);
 
         final Arity arity = new Arity(methodDetails.getMethodAnnotation().minArgs(), methodDetails.getMethodAnnotation().maxArgs());
 
@@ -183,7 +185,7 @@ public abstract class CoreMethodNodeManager {
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
 
-        return new RubyRootNode(sourceSection, null, block);
+        return new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
     }
 
     public static class MethodDetails {

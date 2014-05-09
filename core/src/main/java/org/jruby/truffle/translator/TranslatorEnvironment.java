@@ -38,13 +38,15 @@ public class TranslatorEnvironment {
     private boolean needsDeclarationFrame = false;
     private final SharedMethodInfo sharedMethodInfo;
 
+    private final String namedMethodName;
+
     // TODO(CS): overflow?
     private static AtomicInteger tempIndex = new AtomicInteger();
 
     public boolean hasRestParameter = false;
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, FrameDescriptor frameDescriptor, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments,
-                    boolean neverAssignInParentScope, SharedMethodInfo sharedMethodInfo) {
+                    boolean neverAssignInParentScope, SharedMethodInfo sharedMethodInfo, String namedMethodName) {
         this.context = context;
         this.parent = parent;
         this.frameDescriptor = frameDescriptor;
@@ -53,11 +55,12 @@ public class TranslatorEnvironment {
         this.ownScopeForAssignments = ownScopeForAssignments;
         this.neverAssignInParentScope = neverAssignInParentScope;
         this.sharedMethodInfo = sharedMethodInfo;
+        this.namedMethodName = namedMethodName;
     }
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
-                    SharedMethodInfo methodIdentifier) {
-        this(context, parent, new FrameDescriptor(RubyFrameTypeConversion.getInstance()), parser, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier);
+                    SharedMethodInfo methodIdentifier, String namedMethodName) {
+        this(context, parent, new FrameDescriptor(RubyFrameTypeConversion.getInstance()), parser, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier, namedMethodName);
     }
 
     public TranslatorEnvironment getParent() {
@@ -168,4 +171,7 @@ public class TranslatorEnvironment {
         return flipFlopStates;
     }
 
+    public String getNamedMethodName() {
+        return namedMethodName;
+    }
 }

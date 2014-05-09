@@ -108,11 +108,12 @@ public abstract class ModuleNodes {
 
             final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, readInstanceVariable);
 
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name + "(attr_reader)", null);
-            final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, block);
+            final String indicativeName = name + "(attr_reader)";
+
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, indicativeName, null);
+            final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final RubyMethod method = new RubyMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null);
-            rootNode.setMethod(method);
+            final RubyMethod method = new RubyMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null, true);
             module.addMethod(method);
         }
     }
@@ -150,11 +151,12 @@ public abstract class ModuleNodes {
 
             final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, writeInstanceVariable);
 
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name + "(attr_writer)", null);
-            final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, block);
+            final String indicativeName = name + "(attr_writer)";
+
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, indicativeName, null);
+            final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
-            final RubyMethod method = new RubyMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null);
-            rootNode.setMethod(method);
+            final RubyMethod method = new RubyMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null, true);
             module.addMethod(method);
         }
     }
@@ -357,8 +359,7 @@ public abstract class ModuleNodes {
             modifiedCatchReturn.setIsProc(false);
 
             final CallTarget modifiedCallTarget = Truffle.getRuntime().createCallTarget(modifiedRootNode);
-            final RubyMethod modifiedMethod = new RubyMethod(method.getSharedMethodInfo(), name.toString(), method.getDeclaringModule(), method.getVisibility(), method.isUndefined(), modifiedCallTarget, method.getDeclarationFrame());
-            modifiedRootNode.setMethod(modifiedMethod);
+            final RubyMethod modifiedMethod = new RubyMethod(method.getSharedMethodInfo(), name.toString(), method.getDeclaringModule(), method.getVisibility(), method.isUndefined(), modifiedCallTarget, method.getDeclarationFrame(), true);
             module.addMethod(modifiedMethod);
         }
 

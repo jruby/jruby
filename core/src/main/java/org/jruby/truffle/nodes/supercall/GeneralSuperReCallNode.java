@@ -28,15 +28,12 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
-public class GeneralSuperReCallNode extends RubyNode {
+public class GeneralSuperReCallNode extends AbstractGeneralSuperCallNode {
 
     @Child protected IndirectCallNode callNode;
 
-    @CompilerDirectives.CompilationFinal private Assumption unmodifiedAssumption;
-    @CompilerDirectives.CompilationFinal private RubyMethod method;
-
-    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, String name) {
+        super(context, sourceSection, name);
         callNode = Truffle.getRuntime().createIndirectCallNode();
     }
 
@@ -45,46 +42,14 @@ public class GeneralSuperReCallNode extends RubyNode {
     public final Object execute(VirtualFrame frame) {
         // Check we have a method and the module is unmodified
 
-        if (method == null || !unmodifiedAssumption.isValid()) {
+        if (!guard()) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-
-            // Lookup method
-
-            final RubyModule declaringModule = getMethod().getDeclaringModule();
-
-            method = ((RubyClass) declaringModule).getSuperclass().lookupMethod(getMethod().getName());
-
-            if (method == null || method.isUndefined()) {
-                method = null;
-                throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(getMethod().getName(), RubyArguments.getSelf(frame.getArguments()).toString()));
-            }
-
-            unmodifiedAssumption = declaringModule.getUnmodifiedAssumption();
+            lookup();
         }
 
         // Call the method
 
         return callNode.call(frame, method.getCallTarget(), frame.getArguments());
-    }
-
-    @Override
-    public Object isDefined(VirtualFrame frame) {
-        final RubyContext context = getContext();
-
-        try {
-            final RubyBasicObject self = context.getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
-            final RubyBasicObject receiverRubyObject = context.getCoreLibrary().box(self);
-
-            final RubyMethod method = receiverRubyObject.getRubyClass().getSuperclass().lookupMethod(getMethod().getName());
-
-            if (method == null || method.isUndefined() || !method.isVisibleTo(self)) {
-                return NilPlaceholder.INSTANCE;
-            } else {
-                return context.makeString("super");
-            }
-        } catch (Exception e) {
-            return NilPlaceholder.INSTANCE;
-        }
     }
 
 }

@@ -14,6 +14,9 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The root node in an AST for a method. Unlike {@link RubyNode}, this has a single entry point,
@@ -21,27 +24,17 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
  */
 public class RubyRootNode extends RootNode {
 
-    // The method refers to root node, and vice versa, so this field is only compilation final and is set ex post to close the loop
-
-    @CompilerDirectives.CompilationFinal private RubyMethod method;
-
+    private final SharedMethodInfo sharedMethodInfo;
     @Child protected RubyNode body;
     private final RubyNode uninitializedBody;
 
-    public RubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, RubyNode body) {
+
+    public RubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, SharedMethodInfo sharedMethodInfo, RubyNode body) {
         super(sourceSection, frameDescriptor);
         assert body != null;
         this.body = body;
+        this.sharedMethodInfo = sharedMethodInfo;
         uninitializedBody = NodeUtil.cloneNode(body);
-    }
-
-    public void setMethod(RubyMethod method) {
-        assert this.method == null;
-        this.method = method;
-    }
-
-    public RubyMethod getMethod() {
-        return method;
     }
 
     @Override
@@ -50,13 +43,12 @@ public class RubyRootNode extends RootNode {
     }
 
     public RubyRootNode cloneRubyRootNode() {
-        return new RubyRootNode(getSourceSection(), getFrameDescriptor(), NodeUtil.cloneNode(uninitializedBody));
+        return new RubyRootNode(getSourceSection(), getFrameDescriptor(), sharedMethodInfo, NodeUtil.cloneNode(uninitializedBody));
     }
 
     @Override
     public RootNode split() {
-        final RubyRootNode splitRoot = cloneRubyRootNode();
-        return splitRoot;
+        return cloneRubyRootNode();
     }
 
     @Override
@@ -68,8 +60,11 @@ public class RubyRootNode extends RootNode {
     public String toString() {
         final SourceSection sourceSection = getSourceSection();
         final String source = sourceSection == null ? "<unknown>" : sourceSection.toString();
-        final String methodName = method == null ? "<unknown>" : method.getName();
-        return "Method " + methodName + ":" + source + "@" + Integer.toHexString(hashCode());
+        return sharedMethodInfo.getName() + ":" + source + "@" + Integer.toHexString(hashCode());
+    }
+
+    public SharedMethodInfo getSharedMethodInfo() {
+        return sharedMethodInfo;
     }
 
 }

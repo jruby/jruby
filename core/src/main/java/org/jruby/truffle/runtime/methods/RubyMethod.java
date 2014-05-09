@@ -12,17 +12,23 @@ package org.jruby.truffle.runtime.methods;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.methods.arguments.BehaveAsBlockNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Any kind of Ruby method - so normal methods in classes and modules, but also blocks, procs,
  * lambdas and native methods written in Java.
  */
 public class RubyMethod {
+
+    // TODO(CS): should be weak
+    private static final ConcurrentHashMap<SharedMethodInfo, RubyMethod> methodMap = new ConcurrentHashMap<>();
 
     private final SharedMethodInfo sharedMethodInfo;
     private final String name;
@@ -33,10 +39,11 @@ public class RubyMethod {
 
     private final CallTarget callTarget;
     private final MaterializedFrame declarationFrame;
+    private final boolean mapCallTarget;
 
     public RubyMethod(SharedMethodInfo sharedMethodInfo, String name,
                       RubyModule declaringModule, Visibility visibility, boolean undefined,
-                      CallTarget callTarget, MaterializedFrame declarationFrame) {
+                      CallTarget callTarget, MaterializedFrame declarationFrame, boolean mapCallTarget) {
         this.sharedMethodInfo = sharedMethodInfo;
         this.declaringModule = declaringModule;
         this.name = name;
@@ -44,6 +51,13 @@ public class RubyMethod {
         this.undefined = undefined;
         this.callTarget = callTarget;
         this.declarationFrame = declarationFrame;
+        this.mapCallTarget = mapCallTarget;
+
+        CompilerAsserts.compilationConstant(mapCallTarget);
+
+        if (mapCallTarget) {
+            mapMethod(sharedMethodInfo, this);
+        }
     }
 
     @Deprecated
@@ -88,36 +102,15 @@ public class RubyMethod {
     }
 
     public RubyMethod withDeclaringModule(RubyModule newDeclaringModule) {
-        if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
-            final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
-            final RubyMethod newMethod = new RubyMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame);
-            newRootNode.setMethod(newMethod);
-            return newMethod;
-        } else {
-            return new RubyMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame);
-        }
+        return new RubyMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame, mapCallTarget);
     }
 
     public RubyMethod withNewName(String newName) {
-        if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
-            final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
-            final RubyMethod newMethod = new RubyMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame);
-            newRootNode.setMethod(newMethod);
-            return newMethod;
-        } else {
-            return new RubyMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame);
-        }
+        return new RubyMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame, mapCallTarget);
     }
 
     public RubyMethod withNewVisibility(Visibility newVisibility) {
-        if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
-            final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
-            final RubyMethod newMethod = new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame);
-            newRootNode.setMethod(newMethod);
-            return newMethod;
-        } else {
-            return new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame);
-        }
+        return new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame, mapCallTarget);
     }
 
     public RubyMethod withoutBlockDestructureSemantics() {
@@ -128,23 +121,14 @@ public class RubyMethod {
                 behaveAsBlockNode.setBehaveAsBlock(false);
             }
 
-            final RubyMethod newMethod = new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, undefined, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame);
-            newRootNode.setMethod(newMethod);
-            return newMethod;
+            return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, undefined, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame, mapCallTarget);
         } else {
             throw new UnsupportedOperationException("Can't change the semantics of an opaque call target");
         }
     }
 
     public RubyMethod undefined() {
-        if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
-            final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
-            final RubyMethod newMethod = new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, true, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame);
-            newRootNode.setMethod(newMethod);
-            return newMethod;
-        } else {
-            return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame);
-        }
+        return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame, mapCallTarget);
     }
 
     public boolean isVisibleTo(RubyBasicObject caller, RubyBasicObject receiver) {
@@ -214,6 +198,72 @@ public class RubyMethod {
             default:
                 return false;
         }
+    }
+
+    @CompilerDirectives.SlowPath
+    private static void mapMethod(SharedMethodInfo sharedMethodInfo, RubyMethod method) {
+        System.err.println("mapping");
+        methodMap.put(sharedMethodInfo, method);
+    }
+
+    private static RubyMethod getMethod(SharedMethodInfo sharedMethodInfo) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        return methodMap.get(sharedMethodInfo);
+    }
+
+    public static RubyMethod getCurrentMethod() {
+        CompilerAsserts.neverPartOfCompilation();
+
+        RubyMethod method;
+
+        final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
+
+        method = getMethod(currentFrame);
+
+        if (method != null) {
+            return method;
+        }
+
+        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
+            method = getMethod(frame);
+
+            if (method != null) {
+                return method;
+            }
+        }
+
+        throw new UnsupportedOperationException();
+    }
+
+    private static RubyMethod getMethod(FrameInstance frame) {
+        final CallTarget callTarget = frame.getCallTarget();
+
+        if (!(callTarget instanceof RootCallTarget)) {
+            return null;
+        }
+
+        final RootCallTarget rootCallTarget = (RootCallTarget) callTarget;
+
+        final RootNode rootNode = rootCallTarget.getRootNode();
+
+        if (!(rootNode instanceof RubyRootNode)) {
+            return null;
+        }
+
+        final RubyRootNode rubyRootNode = (RubyRootNode) rootNode;
+
+        return getMethod(rubyRootNode.getSharedMethodInfo());
+    }
+
+
+    public static RubyModule getCurrentDeclaringModule() {
+        return getCurrentMethod().getDeclaringModule();
+    }
+
+    @Override
+    public String toString() {
+        return name + ":" + getSharedMethodInfo().getSourceSection() + "@" + Integer.toHexString(hashCode());
     }
 
 }

@@ -60,7 +60,7 @@ class ModuleTranslator extends BodyTranslator {
 
         body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID(), false);
 
-        final RubyRootNode rootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), body);
+        final RubyRootNode rootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
 
         return new MethodDefinitionNode(context, sourceSection, environment.getSharedMethodInfo().getName(), environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), rootNode, false);
     }
@@ -95,7 +95,7 @@ class ModuleTranslator extends BodyTranslator {
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, node.getName(), node.getBodyNode());
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo);
+                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName());
         final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, false, source);
         final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), node.getName(), node.getArgsNode(), node.getBodyNode(), false);
 

@@ -85,9 +85,7 @@ public class MethodDefinitionNode extends RubyNode {
 
         final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
-        final RubyMethod method = new RubyMethod(sharedMethodInfo, name, null, visibility, false, callTarget, declarationFrame);
-        rootNodeClone.setMethod(method);
-        return method;
+        return new RubyMethod(sharedMethodInfo, name, null, visibility, false, callTarget, declarationFrame, true);
     }
 
     @Override

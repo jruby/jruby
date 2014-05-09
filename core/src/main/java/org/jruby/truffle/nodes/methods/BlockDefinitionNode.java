@@ -46,10 +46,7 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
             declarationFrame = null;
         }
 
-        //final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
-        //final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
-        final RubyMethod method = new RubyMethod(sharedMethodInfo, name, null, Visibility.PUBLIC, false, callTarget, declarationFrame);
-        //rootNodeClone.setMethod(method);
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, name, null, Visibility.PUBLIC, false, callTarget, declarationFrame, false);
 
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, RubyArguments.getSelf(frame.getArguments()), RubyArguments.getBlock(frame.getArguments()), method);
     }

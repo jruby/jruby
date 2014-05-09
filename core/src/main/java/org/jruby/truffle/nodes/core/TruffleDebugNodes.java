@@ -74,7 +74,8 @@ public abstract class TruffleDebugNodes {
 
         @Specialization
         public RubyString parseTree() {
-            return getContext().makeString(((RubyRootNode) RubyArguments.getCallerFrame().getCallNode().getRootNode()).getMethod().getSharedMethodInfo().getParseTree().toString(true, 0));
+            final RubyMethod currentMethod = RubyMethod.getCurrentMethod();
+            return getContext().makeString(currentMethod.getSharedMethodInfo().getParseTree().toString(true, 0));
         }
 
     }

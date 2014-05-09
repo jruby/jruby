@@ -49,7 +49,7 @@ public class TranslatorDriver {
         final SharedMethodInfo sharedMethod = new SharedMethodInfo(sourceSection, "(unknown)", parseTree);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(
-                context, environmentForFrame(context, null), this, allocateReturnID(), true, true, sharedMethod);
+                context, environmentForFrame(context, null), this, allocateReturnID(), true, true, sharedMethod, sharedMethod.getName());
 
         // All parsing contexts have a visibility slot at their top level
 
@@ -114,7 +114,7 @@ public class TranslatorDriver {
     public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(null, "(root)", rootNode);
 
-        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, sharedMethodInfo);
+        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName());
 
         // Get the DATA constant
 
@@ -170,7 +170,7 @@ public class TranslatorDriver {
             truffleNode = new ShellResultNode(context, truffleNode.getSourceSection(), truffleNode);
         }
 
-        final RootNode root = new RubyRootNode(truffleNode.getSourceSection(), environment.getFrameDescriptor(), truffleNode);
+        final RootNode root = new RubyRootNode(truffleNode.getSourceSection(), environment.getFrameDescriptor(), environment.getSharedMethodInfo(), truffleNode);
         return new RubyParserResult(root);
     }
 
@@ -207,7 +207,7 @@ public class TranslatorDriver {
         } else {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(null, null, null);
             final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame.getArguments());
-            return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, sharedMethodInfo);
+            return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName());
         }
     }
 

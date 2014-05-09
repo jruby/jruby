@@ -54,7 +54,7 @@ public class RubySymbol extends RubyObject {
         };
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, symbol, null);
-        final RubyMethod method = new RubyMethod(sharedMethodInfo, symbol, null, Visibility.PUBLIC, false, callTarget, null);
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, symbol, null, Visibility.PUBLIC, false, callTarget, null, true);
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, NilPlaceholder.INSTANCE, null, method);
     }
 
