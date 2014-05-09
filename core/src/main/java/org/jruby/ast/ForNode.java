@@ -39,6 +39,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.SharedScopeBlock;
@@ -75,6 +76,11 @@ public class ForNode extends IterNode {
     
     public Node getIterNode() {
         return iterNode;
+    }
+
+    @Override
+    public int getArgumentType() {
+        return BlockBody.asArgumentType(BlockBody.getArgumentTypeWackyHack(this));
     }
 
     /**

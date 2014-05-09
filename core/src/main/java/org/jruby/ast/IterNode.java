@@ -55,7 +55,11 @@ public class IterNode extends Node {
     // What static scoping relationship exists when it comes into being.
     private StaticScope scope;
     private BlockBody blockBody;
-    
+
+    /**
+     *  Used by Truffle 'for' and by ForNode only.
+     * This is to support 1.8-style assignments which only 'for' expressions use.
+     */
     public IterNode(ISourcePosition position, Node args, StaticScope scope, Node body) {
         super(position);
 
@@ -65,6 +69,9 @@ public class IterNode extends Node {
         this.blockBody = InterpretedBlock.newBlockBody(this, Arity.procArityOf(varNode), getArgumentType());
     }
 
+    /**
+     * Used for all non-for types of blocks.
+     */
     public IterNode(ISourcePosition position, ArgsNode args, Node body, StaticScope scope) {
         super(position);
 
@@ -74,8 +81,8 @@ public class IterNode extends Node {
         this.blockBody = Interpreted19Block.newBlockBody(this);
     }
 
-    public final int getArgumentType() {
-        return BlockBody.asArgumentType(BlockBody.getArgumentTypeWackyHack(this));
+    public int getArgumentType() {
+        return BlockBody.asArgumentType(varNode.getNodeType());
     }
 
     public NodeType getNodeType() {

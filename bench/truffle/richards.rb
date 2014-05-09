@@ -42,6 +42,7 @@ def run(iterations)
        return false
      end
    end
+
    return true
 end
 
@@ -67,6 +68,8 @@ class Scheduler
    end   
    
    def reset()
+      @table = Array.new(MAXTASKS,nil)
+      @list = nil
       @queueCount = 0
       @holdCount = 0
    end
