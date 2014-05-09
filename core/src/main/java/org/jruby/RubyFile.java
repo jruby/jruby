@@ -1194,11 +1194,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         
         int[] oflags_p = {0}, fmode_p = {0};
-        EncodingUtils.extractModeEncoding(context, this, pm, options, oflags_p, fmode_p);
+        IOEncodable convconfig = new ConvConfig();
+        EncodingUtils.extractModeEncoding(context, convconfig, pm, options, oflags_p, fmode_p);
         int perm = (pm[EncodingUtils.PERM] != null && !pm[EncodingUtils.PERM].isNil()) ? 
                 RubyNumeric.num2int(pm[EncodingUtils.PERM]) : 0666;
         
-        return fileOpenGeneric(context, filename, oflags_p[0], fmode_p[0], this, perm);
+        return fileOpenGeneric(context, filename, oflags_p[0], fmode_p[0], convconfig, perm);
     }
     
     // rb_file_open_generic

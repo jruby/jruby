@@ -3611,16 +3611,18 @@ public class RubyIO extends RubyObject implements IOEncodable {
         IRubyObject cmd;
         
         IRubyObject[] pm = {vperm, vmode};
-        
-        RubyFile file = (RubyFile)context.runtime.getFile().allocate();
-        EncodingUtils.extractModeEncoding(context, file, pm, opt, oflags_p, fmode_p);
+
+        IOEncodable convconfig = new IOEncodable.ConvConfig();
+        EncodingUtils.extractModeEncoding(context, convconfig, pm, opt, oflags_p, fmode_p);
         perm = (pm[EncodingUtils.PERM] == null || pm[EncodingUtils.PERM].isNil()) ? 0666 : RubyNumeric.num2int(pm[EncodingUtils.PERM]);
     
         if (!(cmd = checkPipeCommand(context, filename)).isNil()) {
+            // FIXME: not passing convconfig for transcoding
+//            return pipe_open_s(cmd, rb_io_oflags_modestr(oflags), fmode, &convconfig);
             return (RubyIO) RubyKernel.open19(context, context.runtime.getIO(), new IRubyObject[]{filename, vmode, opt}, Block.NULL_BLOCK);
             // TODO: lots of missing logic for pipe opening
         } else {
-            return file.fileOpenGeneric(context, filename, oflags_p[0], fmode_p[0], file, perm);
+            return ((RubyFile)context.runtime.getFile().allocate()).fileOpenGeneric(context, filename, oflags_p[0], fmode_p[0], convconfig, perm);
         }
     }
     
