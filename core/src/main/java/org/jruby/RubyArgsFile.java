@@ -48,7 +48,7 @@ import org.jruby.util.ByteList;
 import org.jruby.internal.runtime.GlobalVariable;
 
 public class RubyArgsFile {
-    private static final class ArgsFileData {
+    static final class ArgsFileData {
         private final Ruby runtime;
         public ArgsFileData(Ruby runtime) {
             this.runtime = runtime;

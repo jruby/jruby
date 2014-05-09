@@ -76,7 +76,6 @@ import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.ResourceException;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.encoding.Transcoder;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ChannelStream;
@@ -93,8 +92,6 @@ import org.jruby.util.io.Stream;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.encoding.EncodingService;
-import org.jruby.util.io.EncodingUtils;
-import org.jruby.util.io.IOEncodable;
 
 /**
  * Ruby File class equivalent in java.
@@ -1301,7 +1298,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         IOOptions modes = newIOOptions(getRuntime(), modeString);
         openFile.setMode(modes.getModeFlags().getOpenFileFlags());
-        if (modes.getModeFlags().isBinary()) enc = ASCIIEncoding.INSTANCE;
+        if (modes.getModeFlags().isBinary()) openFile.encs.enc = ASCIIEncoding.INSTANCE;
         openFile.setPath(path);
         openFile.setMainStream(fopen(path, modes.getModeFlags()));
     }

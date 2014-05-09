@@ -29,32 +29,22 @@ package org.jruby.util;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import org.jruby.Ruby;
-<<<<<<< HEAD
 import org.jruby.RubyBasicObject;
-=======
 import org.jruby.RubyBignum;
->>>>>>> master
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
-<<<<<<< HEAD
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ClassIndex;
-=======
 import org.jruby.RubyNil;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
-import org.jruby.exceptions.RaiseException;
->>>>>>> master
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.encoding.EncodingService;
 
 public class TypeConverter {
     /**
@@ -305,7 +295,6 @@ public class TypeConverter {
         return obj.getRuntime().getNil();
     }
 
-<<<<<<< HEAD
     // rb_check_type and Check_Type
     public static void checkType(ThreadContext context, IRubyObject x, RubyModule t) {
         ClassIndex xt;
@@ -324,7 +313,8 @@ public class TypeConverter {
             }
             throw context.runtime.newRuntimeError("bug: unknown type " + t.getClassIndex() + " (" + xt + " given)");
         }
-=======
+    }
+
     // rb_convert_to_integer
     public static IRubyObject convertToInteger(ThreadContext context, IRubyObject val, int base) {
         Ruby runtime = context.runtime;
@@ -368,6 +358,5 @@ public class TypeConverter {
 
     private static void raiseIntegerBaseError(ThreadContext context) {
         throw context.runtime.newArgumentError("base specified for non string value");
->>>>>>> master
     }
 }

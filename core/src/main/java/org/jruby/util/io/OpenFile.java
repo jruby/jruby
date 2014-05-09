@@ -3,14 +3,24 @@ package org.jruby.util.io;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.WritableByteChannel;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.jcodings.Encoding;
+import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvFlags;
 import org.jcodings.transcode.EConvResult;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -40,7 +50,11 @@ public class OpenFile {
 
         public void finalize(Ruby runtime, boolean raise);
     }
-    private Channel mainChannel;
+    private Channel fd;
+    private ReadableByteChannel fdRead;
+    private WritableByteChannel fdWrite;
+    private SeekableByteChannel fdSeek;
+    private SelectableChannel fdSelect;
     private Stream mainStream;
     private Stream pipeStream;
     private int mode;
@@ -67,21 +81,30 @@ public class OpenFile {
     public IRubyObject writeconvPreEcopts;
     public boolean writeconvInitialized;
 
-    // unnecessary with JVM locking?
-    // VALUE write_lock;
+    public final ReentrantReadWriteLock write_lock = new ReentrantReadWriteLock();
 
     public final Buffer wbuf = new Buffer(), rbuf = new Buffer(), cbuf = new Buffer();
 
     public boolean READ_DATA_PENDING() {return rbuf.len != 0;}
     public int READ_DATA_PENDING_COUNT() {return rbuf.len;}
     public byte[] READ_DATA_PENDING_PTR() {return rbuf.ptr;}
+    public int READ_DATA_PENDING_OFF() {return rbuf.off;}
     public int READ_DATA_PENDING_START() {return rbuf.start;}
     public boolean READ_DATA_BUFFERED() {return READ_DATA_PENDING();}
 
     public boolean READ_CHAR_PENDING() {return cbuf.len != 0;}
     public int READ_CHAR_PENDING_COUNT() {return cbuf.len;}
     public byte[] READ_CHAR_PENDING_PTR() {return cbuf.ptr;}
+    public int READ_CHAR_PENDING_OFF() {return cbuf.off;}
     public int READ_CHAR_PENDING_START() {return cbuf.start;}
+
+    public void READ_CHECK(ThreadContext context) {
+        if (!READ_DATA_PENDING()) {
+            checkClosed(context.runtime);
+        }
+    }
+
+    public static final int PIPE_BUF = 512; // value of _POSIX_PIPE_BUF from Mac OS X 10.9
 
     public Stream getMainStream() {
         return mainStream;
@@ -95,7 +118,11 @@ public class OpenFile {
 
     public void setMainStream(Stream mainStream) {
         this.mainStream = mainStream;
-        this.mainChannel = mainStream.getChannel();
+        this.fd = mainStream.getChannel();
+        if (fd instanceof ReadableByteChannel) fdRead = (ReadableByteChannel)fd;
+        if (fd instanceof WritableByteChannel) fdWrite = (WritableByteChannel)fd;
+        if (fd instanceof SeekableByteChannel) fdSeek = (SeekableByteChannel)fd;
+        if (fd instanceof SelectableChannel) fdSelect = (SelectableChannel)fd;
     }
 
     public Stream getPipeStream() {
@@ -231,25 +258,206 @@ public class OpenFile {
         return null;
     }
 
-    public void checkReadable(Ruby runtime) throws IOException, BadDescriptorException, InvalidValueException {
+    // rb_io_check_char_readable
+    public void checkCharReadable(Ruby runtime) {
         checkClosed(runtime);
 
         if ((mode & READABLE) == 0) {
             throw runtime.newIOError("not opened for reading");
         }
 
-        if (((mode & WBUF) != 0 || (mode & (SYNCWRITE | RBUF)) == SYNCWRITE) &&
-                !mainStream.feof() && pipeStream == null) {
-            try {
-                // seek to force underlying buffer to flush
-                seek(0, Stream.SEEK_CUR);
-            } catch (PipeException p) {
-                // ignore unseekable streams for purposes of checking readability
-            } catch (IOException ioe) {
-                // MRI ignores seek errors, presumably for unseekable files like
-                // serial ports (JRUBY-2979), so we shall too.
+        if (wbuf.len != 0) {
+            if (fflush(runtime) < 0) {
+                throw runtime.newSystemCallError("error flushing");
             }
         }
+        // don't know what this is
+//        if (fptr->tied_io_for_writing) {
+//            rb_io_t *wfptr;
+//            GetOpenFile(fptr->tied_io_for_writing, wfptr);
+//            if (io_fflush(wfptr) < 0)
+//                rb_sys_fail(0);
+//        }
+    }
+
+    // rb_io_check_byte_readable
+    public void checkByteReadable(Ruby runtime) {
+        checkCharReadable(runtime);
+        if (READ_CHAR_PENDING()) {
+            throw runtime.newIOError("byte oriented read for character buffered IO");
+        }
+    }
+
+    // rb_io_check_readable
+    public void checkReadable(Ruby runtime) {
+        checkByteReadable(runtime);
+    }
+
+    // io_fflush
+    public int fflush(Ruby runtime) {
+        checkClosed(runtime);
+
+        if (wbuf.len == 0) return 0;
+
+        checkClosed(runtime);
+
+        while (wbuf.len > 0 && flushBuffer(runtime) != 0) {
+            if (!waitWritable(runtime)) {
+                return -1;
+            }
+            checkClosed(runtime);
+        }
+
+        return 0;
+    }
+
+    // rb_io_wait_writable
+    public boolean waitWritable(Ruby runtime) {
+        // errno logic checking here
+        return ready(runtime, SelectionKey.OP_WRITE | SelectionKey.OP_ACCEPT);
+    }
+
+    public boolean ready(Ruby runtime, int ops) {
+        try {
+            if (fdSelect != null) {
+                int ready_stat = 0;
+                java.nio.channels.Selector sel = SelectorFactory.openWithRetryFrom(null, fdSelect.provider());
+                synchronized (fdSelect.blockingLock()) {
+                    boolean is_block = fdSelect.isBlocking();
+                    try {
+                        fdSelect.configureBlocking(false);
+                        fdSelect.register(sel, ops);
+                        ready_stat = sel.selectNow();
+                        sel.close();
+                    } finally {
+                        if (sel != null) {
+                            try {
+                                sel.close();
+                            } catch (Exception e) {
+                            }
+                        }
+                        fdSelect.configureBlocking(is_block);
+                    }
+                }
+                return ready_stat == 1;
+            } else {
+                if (fdSeek != null) {
+                    return fdSeek.position() < fdSeek.size();
+                }
+                return false;
+            }
+        } catch (IOException ioe) {
+            throw runtime.newIOErrorFromException(ioe);
+        }
+
+    }
+
+    // io_flush_buffer
+    public int flushBuffer(Ruby runtime) {
+        if (write_lock != null) {
+            write_lock.writeLock().lock();
+            try {
+                return flushBufferAsync2(runtime);
+            } finally {
+                write_lock.writeLock().unlock();
+            }
+        }
+        return flushBufferAsync2(runtime);
+    }
+
+    // io_flush_buffer_async2
+    public int flushBufferAsync2(Ruby runtime)
+    {
+        int ret;
+
+
+        // GVL-free call to io_flush_buffer_sync2 here
+
+//        ret = (VALUE)rb_thread_call_without_gvl2(io_flush_buffer_sync2, fptr,
+//                RUBY_UBF_IO, NULL);
+        ret = flushBufferSync2(runtime);
+
+        if (ret == 0) {
+            // TODO
+	/* pending async interrupt is there. */
+//            errno = EAGAIN;
+            return -1;
+        } else if (ret == 1) {
+            return 0;
+        } else
+            return ret;
+    }
+
+    // io_flush_buffer_sync2
+    public int flushBufferSync2(Ruby runtime)
+    {
+        int result = flushBufferSync(runtime);
+
+    /*
+     * rb_thread_call_without_gvl2 uses 0 as interrupted.
+     * So, we need to avoid to use 0.
+     */
+        return result == 0 ? 1 : result;
+    }
+
+    // io_flush_buffer_sync
+    public int flushBufferSync(Ruby runtime)
+    {
+        int l = writableLength(wbuf.len);
+        ByteBuffer tmp = ByteBuffer.wrap(wbuf.ptr, wbuf.off, l);
+        try {
+            int r = fdWrite.write(tmp);
+
+            if (wbuf.len <= r) {
+                wbuf.off = 0;
+                wbuf.len = 0;
+                return 0;
+            }
+            if (0 <= r) {
+                wbuf.off += (int)r;
+                wbuf.len -= (int)r;
+//                errno = EAGAIN;
+            }
+            return -1;
+        } catch (IOException ioe) {
+            throw runtime.newIOErrorFromException(ioe);
+        }
+    }
+
+    // io_writable_length
+    public int writableLength(int l)
+    {
+        // we should always assume other threads, so we don't use rb_thread_alone
+        if (PIPE_BUF < l &&
+//                !rb_thread_alone() &&
+                wsplit()) {
+            l = PIPE_BUF;
+        }
+        return l;
+    }
+
+    // wsplit_p
+    boolean wsplit()
+    {
+        int r;
+
+        if ((mode & WSPLIT_INITIALIZED) == 0) {
+            // Unsure what wsplit mode is, but only appears to be active for
+            // regular files that are doing blocking reads. Since we can't do
+            // nonblocking file reads, we just check if the write channel is
+            // selectable and set flags accordingly.
+//            struct stat buf;
+            if (fd instanceof FileChannel
+//            if (fstat(fptr->fd, &buf) == 0 &&
+//                    !S_ISREG(buf.st_mode)
+//                    && (r = fcntl(fptr->fd, F_GETFL)) != -1 &&
+//                    !(r & O_NONBLOCK)
+            ) {
+                mode |= WSPLIT;
+            }
+            mode |= WSPLIT_INITIALIZED;
+        }
+        return (mode & WSPLIT) != 0;
     }
 
     public void seek(long offset, int whence) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
@@ -547,7 +755,7 @@ public class OpenFile {
     }
 
     // MRI: NEED_WRITECONV (FIXME: Windows has slightly different version)
-    private boolean needsWriteConversion(ThreadContext context) {
+    public boolean needsWriteConversion(ThreadContext context) {
         Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
 
         return (encs.enc != null && encs.enc != ascii8bit) || isTextMode() ||
@@ -556,7 +764,7 @@ public class OpenFile {
 
     // MRI: make_readconv
     // Missing flags and doubling readTranscoder as transcoder and whether transcoder has been initializer (ick).
-    private void makeReadConversion(ThreadContext context) {
+    public void makeReadConversion(ThreadContext context) {
         if (readconv != null) return;
 
         int ecflags;
@@ -582,7 +790,7 @@ public class OpenFile {
     }
 
     // MRI: make_writeconv
-    private void makeWriteConversion(ThreadContext context) {
+    public void makeWriteConversion(ThreadContext context) {
         if (writeconvInitialized) return;
 
         byte[] senc;
@@ -640,11 +848,11 @@ public class OpenFile {
         }
     }
 
-    private void clearReadConversion() {
+    public void clearReadConversion() {
         readconv = null;
     }
 
-    private void clearCodeConversion() {
+    public void clearCodeConversion() {
         readconv = null;
         writeconv = null;
     }
@@ -652,6 +860,13 @@ public class OpenFile {
     private static final int MORE_CHAR_SUSPENDED = 0;
     private static final int MORE_CHAR_FINISHED = 1;
     public static final int EOF = -1;
+
+    public static final int IO_RBUF_CAPA_MIN = 8192;
+    public static final int IO_CBUF_CAPA_MIN = (128*1024);
+    public int IO_RBUF_CAPA_FOR() {
+        return needsReadConversion() ? IO_CBUF_CAPA_MIN : IO_RBUF_CAPA_MIN;
+    }
+    public static final int IO_WBUF_CAPA_MIN = 8192;
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
@@ -701,7 +916,7 @@ public class OpenFile {
                         return str.get(str.getRealSize() - 1) & 0xFF;
                     }
                 }
-            } while (moreChar() != MORE_CHAR_FINISHED);
+            } while (moreChar(context) != MORE_CHAR_FINISHED);
             clearReadConversion();
             lp[0] = limit;
             return EOF;
@@ -736,8 +951,8 @@ public class OpenFile {
                     return str.get(str.getRealSize() - 1) & 0xFF;
                 }
             }
-            checkReadable(runtime);
-        } while (fillbuf() >= 0);
+//            checkReadable(context.runtime);
+        } while (fillbuf(context) >= 0);
         lp[0] = limit;
         return EOF;
     }
@@ -757,82 +972,85 @@ public class OpenFile {
         return isTextMode();
     }
 
-    private int moreChar() {
-
+    private int moreChar(ThreadContext context) {
+        Object v;
+        v = fillCbuf(context, EConvFlags.AFTER_OUTPUT);
+        if (!(v instanceof Integer) ||
+                ((Integer)v != MORE_CHAR_SUSPENDED && (Integer)v != MORE_CHAR_FINISHED))
+            throw (RaiseException)v;
+        return (Integer)v;
     }
 
-    private int fillCbuf() {
-        byte[] sBytes, dBytes;
-        int ss, sp, se;
-        int ds, dp, de;
+    private Object fillCbuf(ThreadContext context, int ec_flags) {
+        int ss, se;
+        int ds, de;
         EConvResult res;
         int putbackable;
         int cbuf_len0;
         RaiseException exc;
 
-        Stream readStream = getOpenFile().getMainStream();
-        ByteBuffer readBuffer = readStream.getBuffer();
+        ec_flags |= EConvFlags.PARTIAL_INPUT;
 
-        ecflags |= EConvFlags.PARTIAL_INPUT;
+        if (cbuf.len == cbuf.capa)
+            return MORE_CHAR_SUSPENDED; /* cbuf full */
+        if (cbuf.len == 0)
+            cbuf.off = 0;
+        else if (cbuf.off + cbuf.len == cbuf.capa) {
+            System.arraycopy(cbuf.ptr, cbuf.off, cbuf.ptr, 0, cbuf.len);
+            cbuf.off = 0;
+        }
 
-        // taken care of by fill below
-//        if (fptr->cbuf.len == fptr->cbuf.capa)
-//            return MORE_CHAR_SUSPENDED; /* cbuf full */
-//        if (fptr->cbuf.len == 0)
-//            fptr->cbuf.off = 0;
-//        else if (fptr->cbuf.off + fptr->cbuf.len == fptr->cbuf.capa) {
-//            memmove(fptr->cbuf.ptr, fptr->cbuf.ptr+fptr->cbuf.off, fptr->cbuf.len);
-//            fptr->cbuf.off = 0;
-//        }
-//
-//        cbuf_len0 = fptr->cbuf.len;
+        cbuf_len0 = cbuf.len;
+
+        Ptr spPtr = new Ptr();
+        Ptr dpPtr = new Ptr();
 
         while (true) {
-            ss = sp = (const unsigned char *)fptr->rbuf.ptr + fptr->rbuf.off;
-            se = sp + fptr->rbuf.len;
-            ds = dp = (unsigned char *)fptr->cbuf.ptr + fptr->cbuf.off + fptr->cbuf.len;
-            de = (unsigned char *)fptr->cbuf.ptr + fptr->cbuf.capa;
-            res = rb_econv_convert(fptr->readconv, &sp, se, &dp, de, ec_flags);
-            fptr->rbuf.off += (int)(sp - ss);
-            fptr->rbuf.len -= (int)(sp - ss);
-            fptr->cbuf.len += (int)(dp - ds);
+            ss = spPtr.p = rbuf.off;
+            se = spPtr.p + rbuf.len;
+            ds = dpPtr.p = cbuf.off + cbuf.len;
+            de = cbuf.capa;
+            res = readconv.convert(rbuf.ptr, spPtr, se, cbuf.ptr, dpPtr, de, ec_flags);
+            rbuf.off += (int)(spPtr.p - ss);
+            rbuf.len -= (int)(spPtr.p - ss);
+            cbuf.len += (int)(dpPtr.p - ds);
 
-            putbackable = rb_econv_putbackable(fptr->readconv);
-            if (putbackable) {
-                rb_econv_putback(fptr->readconv, (unsigned char *)fptr->rbuf.ptr + fptr->rbuf.off - putbackable, putbackable);
-                fptr->rbuf.off -= putbackable;
-                fptr->rbuf.len += putbackable;
+            putbackable = readconv.putbackable();
+            if (putbackable != 0) {
+                readconv.putback(rbuf.ptr, rbuf.off - putbackable, putbackable);
+                rbuf.off -= putbackable;
+                rbuf.len += putbackable;
             }
 
-            exc = rb_econv_make_exception(fptr->readconv);
-            if (!NIL_P(exc))
+            exc = EncodingUtils.makeEconvException(context, readconv);
+            if (exc != null)
                 return exc;
 
-            if (cbuf_len0 != fptr->cbuf.len)
+            if (cbuf_len0 != cbuf.len)
                 return MORE_CHAR_SUSPENDED;
 
-            if (res == econv_finished) {
+            if (res == EConvResult.Finished) {
                 return MORE_CHAR_FINISHED;
             }
 
-            if (res == econv_source_buffer_empty) {
-                if (fptr->rbuf.len == 0) {
-                    READ_CHECK(fptr);
-                    if (io_fillbuf(fptr) == -1) {
-                        if (!fptr->readconv) {
+            if (res == EConvResult.SourceBufferEmpty) {
+                if (rbuf.len == 0) {
+                    READ_CHECK(context);
+                    if (fillbuf(context) == -1) {
+                        if (readconv == null) {
                             return MORE_CHAR_FINISHED;
                         }
-                        ds = dp = (unsigned char *)fptr->cbuf.ptr + fptr->cbuf.off + fptr->cbuf.len;
-                        de = (unsigned char *)fptr->cbuf.ptr + fptr->cbuf.capa;
-                        res = rb_econv_convert(fptr->readconv, NULL, NULL, &dp, de, 0);
-                        fptr->cbuf.len += (int)(dp - ds);
-                        rb_econv_check_error(fptr->readconv);
+                        ds = dpPtr.p = cbuf.off + cbuf.len;
+                        de = cbuf.capa;
+                        res = readconv.convert(null, null, 0, cbuf.ptr, dpPtr, de, 0);
+                        cbuf.len += (int)(dpPtr.p - ds);
+                        EncodingUtils.econvCheckError(context, readconv);
                         break;
                     }
                 }
             }
         }
-        if (cbuf_len0 != fptr->cbuf.len)
+        if (cbuf_len0 != cbuf.len)
             return MORE_CHAR_SUSPENDED;
 
         return MORE_CHAR_FINISHED;
@@ -849,4 +1067,117 @@ public class OpenFile {
         rbuf.len -= n;
         return n;
     }
+
+    // io_fillbuf
+    int fillbuf(ThreadContext context) {
+        int r;
+
+        if (rbuf.ptr == null) {
+            rbuf.off = 0;
+            rbuf.len = 0;
+            rbuf.capa = IO_RBUF_CAPA_FOR();
+            rbuf.ptr = new byte[rbuf.capa];
+            if (Platform.IS_WINDOWS) {
+                rbuf.capa--;
+            }
+        }
+        if (rbuf.len == 0) {
+            // FIXME: inefficient to recreate every time
+            ByteBuffer tmp = ByteBuffer.wrap(rbuf.ptr, 0, rbuf.capa);
+            try {
+                r = fdRead.read(tmp);
+            } catch (IOException ioe) {
+                throw context.runtime.newIOErrorFromException(ioe);
+            }
+            rbuf.off = 0;
+            rbuf.len = (int)r; /* r should be <= rbuf_capa */
+            if (r == 0)
+                return -1; /* EOF */
+        }
+        return 0;
+    }
+
+    // io_read_encoding
+    public Encoding readEncoding(Ruby runtime) {
+        return encs.enc != null ? encs.enc : EncodingUtils.defaultExternalEncoding(runtime);
+    }
+
+    // swallow
+    public boolean swallow(ThreadContext context, int term) {
+        Ruby runtime = context.runtime;
+
+        if (needsReadConversion()) {
+            Encoding enc = readEncoding(runtime);
+            boolean needconv = enc.minLength() != 1;
+            setBinmode();
+            makeReadConversion(context);
+            do {
+                int cnt;
+                while ((cnt = READ_CHAR_PENDING_COUNT()) > 0) {
+                    byte[] pBytes = READ_CHAR_PENDING_PTR();
+                    int p = READ_CHAR_PENDING_OFF();
+                    int[] i = {0};
+                    if (!needconv) {
+                        if (pBytes[p] != term) return true;
+                        i[0] = (int)cnt;
+                        while ((--i[0] != 0) && pBytes[++p] == term);
+                    }
+                    else {
+                        int e = p + cnt;
+                        if (EncodingUtils.encAscget(pBytes, p, e, i, enc) != term) return true;
+                        while ((p += i[0]) < e && EncodingUtils.encAscget(pBytes, p, e, i, enc) == term);
+                        i[0] = (int)(e - p);
+                    }
+                    shiftCbuf(context, (int)cnt - i[0], null);
+                }
+            } while (moreChar(context) != MORE_CHAR_FINISHED);
+            return false;
+        }
+
+        NEED_NEWLINE_DECORATOR_ON_READ_CHECK();
+        do {
+            int cnt;
+            while ((cnt = READ_DATA_PENDING_COUNT()) > 0) {
+                byte[] buf = new byte[1024];
+                byte[] pBytes = READ_DATA_PENDING_PTR();
+                int p = READ_DATA_PENDING_OFF();
+                int i;
+                if (cnt > buf.length) cnt = buf.length;
+                if (pBytes[p] != term) return true;
+                i = (int)cnt;
+                while (--i != 0 && pBytes[++p] == term);
+                if (readBufferedData(buf, 0, cnt - i) != 0) /* must not fail */
+                    throw context.runtime.newRuntimeError("failure copying buffered IO bytes");
+            }
+            READ_CHECK(context);
+        } while (fillbuf(context) == 0);
+        return false;
+    }
+
+    // io_shift_cbuf
+    public Object shiftCbuf(ThreadContext context, int len, IRubyObject strp) {
+        IRubyObject str = null;
+        if (strp != null) {
+            str = strp;
+            if (str.isNil()) {
+                strp = str = RubyString.newString(context.runtime, cbuf.ptr, cbuf.off, len);
+            }
+            else {
+                ((RubyString)str).cat(cbuf.ptr, cbuf.off, len);
+            }
+            str.setTaint(true);
+            ((RubyString)str).setEncoding(encs.enc);
+        }
+        cbuf.off += len;
+        cbuf.len -= len;
+    /* xxx: set coderange */
+        if (cbuf.len == 0)
+            cbuf.off = 0;
+        else if (cbuf.capa/2 < cbuf.off) {
+            System.arraycopy(cbuf.ptr, cbuf.off, cbuf.ptr, 0, cbuf.len);
+            cbuf.off = 0;
+        }
+        return str;
+    }
+
 }

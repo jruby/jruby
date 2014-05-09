@@ -455,7 +455,7 @@ public class EncodingUtils {
     }
 
     // rb_econv_check_error
-    private static void econvCheckError(ThreadContext context, EConv ec) {
+    public static void econvCheckError(ThreadContext context, EConv ec) {
         RaiseException re = makeEconvException(context, ec);
         if (re != null) throw re;
     }

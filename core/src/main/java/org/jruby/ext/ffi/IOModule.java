@@ -85,9 +85,6 @@ public class IOModule {
             }
             
             return runtime.newFixnum(stream.read(buffer));
-
-        } catch (InvalidValueException ex) {
-            throw runtime.newErrnoEINVALError();
         } catch (EOFException e) {
             return runtime.newFixnum(-1);
         } catch (BadDescriptorException e) {
