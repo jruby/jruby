@@ -213,7 +213,7 @@ public class RubyMethod {
 
     @Override
     public String toString() {
-        return name + ":" + getSharedMethodInfo().getSourceSection() + "@" + Integer.toHexString(hashCode());
+        return sharedMethodInfo.toString();
     }
 
 }

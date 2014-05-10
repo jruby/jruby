@@ -45,4 +45,9 @@ public class SharedMethodInfo {
         return parseTree;
     }
 
+    @Override
+    public String toString() {
+        return name + ":" + sourceSection.getShortDescription();
+    }
+
 }

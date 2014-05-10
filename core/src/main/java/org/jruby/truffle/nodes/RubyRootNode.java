@@ -71,9 +71,7 @@ public class RubyRootNode extends RootNode {
 
     @Override
     public String toString() {
-        final SourceSection sourceSection = getSourceSection();
-        final String source = sourceSection == null ? "<unknown>" : sourceSection.toString();
-        return sharedMethodInfo.getName() + ":" + source + "@" + Integer.toHexString(hashCode());
+        return sharedMethodInfo.toString();
     }
 
     public SharedMethodInfo getSharedMethodInfo() {
