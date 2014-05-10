@@ -89,7 +89,7 @@ public abstract class
 
         @Specialization
         public Object binding(VirtualFrame frame, Object self) {
-            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(), self, RubyArguments.getCallerFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize());
+            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(), self, RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize());
         }
     }
 
@@ -106,7 +106,7 @@ public abstract class
 
         @Specialization
         public boolean blockGiven() {
-            return RubyArguments.getBlock(RubyArguments.getCallerFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
+            return RubyArguments.getBlock(RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
         }
     }
 
@@ -289,7 +289,7 @@ public abstract class
         public RubyString gets(VirtualFrame frame) {
             final RubyContext context = getContext();
 
-            final Frame caller = RubyArguments.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+            final Frame caller = RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
             final ThreadManager threadManager = context.getThreadManager();
 

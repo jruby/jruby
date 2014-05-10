@@ -12,11 +12,8 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.runtime.RubyArguments;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The root node in an AST for a method. Unlike {@link RubyNode}, this has a single entry point,
@@ -37,13 +34,13 @@ public class RubyRootNode extends RootNode {
         uninitializedBody = NodeUtil.cloneNode(body);
     }
 
+    public RubyRootNode cloneRubyRootNode() {
+        return new RubyRootNode(getSourceSection(), getFrameDescriptor(), sharedMethodInfo, NodeUtil.cloneNode(uninitializedBody));
+    }
+
     @Override
     public Object execute(VirtualFrame frame) {
         return body.execute(frame);
-    }
-
-    public RubyRootNode cloneRubyRootNode() {
-        return new RubyRootNode(getSourceSection(), getFrameDescriptor(), sharedMethodInfo, NodeUtil.cloneNode(uninitializedBody));
     }
 
     @Override
@@ -54,6 +51,22 @@ public class RubyRootNode extends RootNode {
     @Override
     public boolean isSplittable() {
         return true;
+    }
+
+    public void reportLoopCountThroughBlocks(int count) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
+            final RootNode rootNode = frame.getCallNode().getRootNode();
+
+            rootNode.reportLoopCount(count);
+
+            if (rootNode instanceof RubyRootNode && !((RubyRootNode) rootNode).getSharedMethodInfo().isBlock()) {
+                break;
+            }
+        }
+
+        reportLoopCount(count);
     }
 
     @Override

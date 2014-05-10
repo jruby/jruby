@@ -11,16 +11,9 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
-import com.oracle.truffle.api.source.*;
-import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.debug.*;
-import org.jruby.truffle.runtime.methods.*;
 
 @CoreClass(name = "Debug")
 public abstract class TruffleDebugNodes {
@@ -38,7 +31,7 @@ public abstract class TruffleDebugNodes {
 
         @Specialization
         public RubyString tree() {
-            return getContext().makeString(NodeUtil.printCompactTreeToString(RubyArguments.getCallerFrame().getCallNode().getRootNode()));
+            return getContext().makeString(NodeUtil.printCompactTreeToString(RubyCallStack.getCallerFrame().getCallNode().getRootNode()));
         }
 
     }
@@ -56,7 +49,7 @@ public abstract class TruffleDebugNodes {
 
         @Specialization
         public RubyString fullTree() {
-            return getContext().makeString(NodeUtil.printTreeToString(RubyArguments.getCallerFrame().getCallNode().getRootNode()));
+            return getContext().makeString(NodeUtil.printTreeToString(RubyCallStack.getCallerFrame().getCallNode().getRootNode()));
         }
 
     }

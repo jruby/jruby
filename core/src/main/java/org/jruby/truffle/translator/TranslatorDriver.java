@@ -46,7 +46,7 @@ public class TranslatorDriver {
                 context.getSourceManager().get(bodyNode.getPosition().getFile()),
                 "(unknown)", bodyNode.getPosition().getStartLine() + 1, -1, -1, -1);
 
-        final SharedMethodInfo sharedMethod = new SharedMethodInfo(sourceSection, "(unknown)", parseTree);
+        final SharedMethodInfo sharedMethod = new SharedMethodInfo(sourceSection, "(unknown)", false, parseTree);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(
                 context, environmentForFrame(context, null), this, allocateReturnID(), true, true, sharedMethod, sharedMethod.getName());
@@ -112,7 +112,7 @@ public class TranslatorDriver {
     }
 
     public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(null, "(root)", rootNode);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(null, "(root)", false, rootNode);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName());
 
@@ -205,7 +205,7 @@ public class TranslatorDriver {
         if (frame == null) {
             return null;
         } else {
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(null, null, null);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(null, null, false, null);
             final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame.getArguments());
             return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName());
         }

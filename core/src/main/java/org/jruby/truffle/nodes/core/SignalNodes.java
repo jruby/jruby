@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
@@ -31,7 +30,7 @@ public abstract class SignalNodes {
 
         @Specialization
         public NilPlaceholder trap(@SuppressWarnings("unused") Object signal) {
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Signal#trap doesn't do anything");
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Signal#trap doesn't do anything");
             return NilPlaceholder.INSTANCE;
         }
 

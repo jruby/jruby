@@ -9,12 +9,8 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import java.util.regex.*;
-
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.Node;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -63,7 +59,7 @@ public abstract class RegexpNodes {
 
             // TODO(CS) perhaps I shouldn't be converting match operators to simple calls - they seem to get switched around like this
 
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), getSourceSection().getStartLine(), "strange reversed match operator");
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), getSourceSection().getStartLine(), "strange reversed match operator");
 
             return other.getLookupNode().lookupMethod("=~").call(other, null, regexp);
         }

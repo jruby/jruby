@@ -11,8 +11,6 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -41,7 +39,7 @@ public abstract class StructNodes {
             }
 
             for (RubySymbol symbol : symbols) {
-                ModuleNodes.AttrAccessorNode.attrAccessor(getContext(), RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection(), struct, symbol.toString());
+                ModuleNodes.AttrAccessorNode.attrAccessor(getContext(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection(), struct, symbol.toString());
             }
 
             if (!RubyNilClass.isNil(block)) {

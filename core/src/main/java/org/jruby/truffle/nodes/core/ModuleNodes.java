@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
@@ -26,10 +25,7 @@ import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
-import org.jruby.truffle.runtime.RubyArguments;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.methods.*;
@@ -89,7 +85,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public NilPlaceholder attrReader(RubyModule module, Object[] args) {
-            final SourceSection sourceSection = RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+            final SourceSection sourceSection = RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
             for (int n = 0; n < args.length; n++) {
                 attrReader(getContext(), sourceSection, module, args[n].toString());
@@ -110,7 +106,7 @@ public abstract class ModuleNodes {
 
             final String indicativeName = name + "(attr_reader)";
 
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, indicativeName, null);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, indicativeName, false, null);
             final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final RubyMethod method = new RubyMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null, true);
@@ -131,7 +127,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public NilPlaceholder attrWriter(RubyModule module, Object[] args) {
-            final SourceSection sourceSection = RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+            final SourceSection sourceSection = RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
             for (int n = 0; n < args.length; n++) {
                 attrWriter(getContext(), sourceSection, module, args[n].toString());
@@ -153,7 +149,7 @@ public abstract class ModuleNodes {
 
             final String indicativeName = name + "(attr_writer)";
 
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, indicativeName, null);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, indicativeName, false, null);
             final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final RubyMethod method = new RubyMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null, true);
@@ -174,7 +170,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public NilPlaceholder attrAccessor(RubyModule module, Object[] args) {
-            final SourceSection sourceSection = RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+            final SourceSection sourceSection = RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
             for (int n = 0; n < args.length; n++) {
                 attrAccessor(getContext(), sourceSection, module, args[n].toString());
@@ -263,7 +259,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyArray constants(@SuppressWarnings("unused") RubyModule module) {
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Module#constants returns an empty array");
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Module#constants returns an empty array");
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         }
     }
@@ -466,7 +462,7 @@ public abstract class ModuleNodes {
         @Specialization
         public NilPlaceholder moduleFunction(RubyModule module, Object... args) {
             if (args.length == 0) {
-                final Frame unpacked = RubyArguments.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+                final Frame unpacked = RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
                 final FrameSlot slot = unpacked.getFrameDescriptor().findFrameSlot(RubyModule.MODULE_FUNCTION_FLAG_FRAME_SLOT_ID);
 

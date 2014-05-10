@@ -19,7 +19,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.joni.*;
 import org.joni.exception.ValueException;
 import org.jruby.truffle.runtime.NilPlaceholder;
-import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.nio.ByteBuffer;
@@ -84,7 +84,7 @@ public class RubyRegexp extends RubyObject {
     public Object matchOperator(String string) {
         // TODO(CS) merge with match
 
-        final Frame frame = RubyArguments.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+        final Frame frame = RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
         final RubyContext context = getRubyClass().getContext();
 
@@ -156,7 +156,7 @@ public class RubyRegexp extends RubyObject {
     public Object match(String string) {
         final RubyContext context = getRubyClass().getContext();
 
-        final Frame frame = RubyArguments.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+        final Frame frame = RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
         final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
         final Matcher matcher = regex.matcher(stringBytes);

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.*;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -40,8 +41,20 @@ public abstract class RangeNodes {
 
             final RubyArray array = new RubyArray(context.getCoreLibrary().getArrayClass());
 
-            for (int n = range.getBegin(); n < range.getExclusiveEnd(); n++) {
-                array.push(yield(frame, block, n));
+            int count = 0;
+
+            try {
+                for (int n = range.getBegin(); n < range.getExclusiveEnd(); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    array.push(yield(frame, block, n));
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
             }
 
             return array;
@@ -66,20 +79,33 @@ public abstract class RangeNodes {
 
         @Specialization
         public Object each(VirtualFrame frame, FixnumRange range, RubyProc block) {
-            outer: for (int n = range.getBegin(); n < range.getExclusiveEnd(); n++) {
-                while (true) {
-                    try {
-                        yield(frame, block, n);
-                        continue outer;
-                    } catch (BreakException e) {
-                        breakProfile.enter();
-                        return e.getResult();
-                    } catch (NextException e) {
-                        nextProfile.enter();
-                        continue outer;
-                    } catch (RedoException e) {
-                        redoProfile.enter();
+            int count = 0;
+
+            try {
+                outer:
+                for (int n = range.getBegin(); n < range.getExclusiveEnd(); n++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, n);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
                     }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
                 }
             }
 
@@ -215,20 +241,33 @@ public abstract class RangeNodes {
 
         @Specialization
         public Object step(VirtualFrame frame, FixnumRange range, int step, RubyProc block) {
-            outer: for (int n = range.getBegin(); n < range.getExclusiveEnd(); n += step) {
-                while (true) {
-                    try {
-                        yield(frame, block, n);
-                        continue outer;
-                    } catch (BreakException e) {
-                        breakProfile.enter();
-                        return e.getResult();
-                    } catch (NextException e) {
-                        nextProfile.enter();
-                        continue outer;
-                    } catch (RedoException e) {
-                        redoProfile.enter();
+            int count = 0;
+
+            try {
+                outer:
+                for (int n = range.getBegin(); n < range.getExclusiveEnd(); n += step) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, n);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
                     }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
                 }
             }
 

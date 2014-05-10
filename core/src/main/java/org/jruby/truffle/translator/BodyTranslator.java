@@ -522,7 +522,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitClassNode(org.jruby.ast.ClassNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, node.getCPath().getName(), node.getBodyNode());
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, node.getCPath().getName(), false, node.getBodyNode());
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
                         sharedMethodInfo, sharedMethodInfo.getName());
@@ -720,7 +720,7 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, methodName, parseTree);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, methodName, false, parseTree);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, methodName);
@@ -1097,7 +1097,7 @@ public class BodyTranslator extends Translator {
 
         // Unset this flag for any for any blocks within the for statement's body
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(block)", node.getBodyNode());
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(" + currentCallMethodName + "-block)", true, node.getBodyNode());
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getReturnID(), hasOwnScope, false, sharedMethodInfo, environment.getNamedMethodName());
@@ -1122,7 +1122,7 @@ public class BodyTranslator extends Translator {
             methodCompiler.useClassVariablesAsIfInClass = true;
         }
 
-        return methodCompiler.compileFunctionNode(translate(node.getPosition()), "(" + currentCallMethodName + "-block)", argsNode, node.getBodyNode(), false);
+        return methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false);
     }
 
     @Override
@@ -1208,7 +1208,7 @@ public class BodyTranslator extends Translator {
 
         final String name = node.getCPath().getName();
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name, node);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name, false, node);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, name);
@@ -1771,7 +1771,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitSClassNode(org.jruby.ast.SClassNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(singleton-def)", node);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(singleton-def)", false, node);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName());
@@ -1947,7 +1947,7 @@ public class BodyTranslator extends Translator {
 
         // TODO(cs): code copied and modified from visitIterNode - extract common
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(lambda)", node);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(lambda)", true, node);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getReturnID(), false, false, sharedMethodInfo, sharedMethodInfo.getName());

@@ -72,23 +72,6 @@ public final class RubyArguments {
         return (MaterializedFrame) arguments[DECLARATION_FRAME_INDEX];
     }
 
-    public static FrameInstance getCallerFrame() {
-        final Iterable<FrameInstance> stackIterable = Truffle.getRuntime().getStackTrace();
-        assert stackIterable != null;
-
-        final Iterator<FrameInstance> stack = stackIterable.iterator();
-
-        if (stack.hasNext()) {
-            return stack.next();
-        } else {
-            return null;
-        }
-    }
-
-    public static Frame getCallerFrame(FrameInstance.FrameAccess access, boolean slowPath) {
-        return getCallerFrame().getFrame(access, slowPath);
-    }
-
     /**
      * Get the declaration frame a certain number of levels up from the current frame, where the
      * current frame is 0.

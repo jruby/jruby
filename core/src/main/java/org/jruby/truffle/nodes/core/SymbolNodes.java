@@ -11,8 +11,6 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
@@ -85,7 +83,7 @@ public abstract class SymbolNodes {
         @Specialization
         public RubyProc toProc(RubySymbol symbol) {
             // TODO(CS): this should be doing all kinds of caching
-            return symbol.toProc(RubyArguments.getCallerFrame().getCallNode().getEncapsulatingSourceSection());
+            return symbol.toProc(RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection());
         }
     }
 

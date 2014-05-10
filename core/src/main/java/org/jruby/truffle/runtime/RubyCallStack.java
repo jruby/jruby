@@ -13,11 +13,14 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+
+import java.util.Iterator;
 
 public abstract class RubyCallStack {
 
@@ -33,6 +36,23 @@ public abstract class RubyCallStack {
         }
 
         System.err.println("---------------------");
+    }
+
+    public static FrameInstance getCallerFrame() {
+        final Iterable<FrameInstance> stackIterable = Truffle.getRuntime().getStackTrace();
+        assert stackIterable != null;
+
+        final Iterator<FrameInstance> stack = stackIterable.iterator();
+
+        if (stack.hasNext()) {
+            return stack.next();
+        } else {
+            return null;
+        }
+    }
+
+    public static Frame getCallerFrame(FrameInstance.FrameAccess access, boolean slowPath) {
+        return getCallerFrame().getFrame(access, slowPath);
     }
 
     public static RubyMethod getCurrentMethod() {
@@ -83,5 +103,4 @@ public abstract class RubyCallStack {
     public static RubyModule getCurrentDeclaringModule() {
         return getCurrentMethod().getDeclaringModule();
     }
-
 }
