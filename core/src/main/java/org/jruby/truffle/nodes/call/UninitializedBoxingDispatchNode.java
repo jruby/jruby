@@ -21,8 +21,8 @@ public class UninitializedBoxingDispatchNode extends UnboxedDispatchNode {
 
     @Child protected BoxedDispatchNode next;
 
-    public UninitializedBoxingDispatchNode(RubyContext context, SourceSection sourceSection, BoxedDispatchNode next) {
-        super(context, sourceSection);
+    public UninitializedBoxingDispatchNode(RubyContext context, BoxedDispatchNode next) {
+        super(context);
 
         this.next = next;
     }
@@ -41,7 +41,7 @@ public class UninitializedBoxingDispatchNode extends UnboxedDispatchNode {
          */
 
         if (next instanceof UninitializedDispatchNode) {
-            this.replace(new BoxingDispatchNode(getContext(), getSourceSection(), next));
+            this.replace(new BoxingDispatchNode(getContext(), next));
         }
 
         return next.dispatch(frame, getContext().getCoreLibrary().box(receiverObject), blockObject, argumentsObjects);

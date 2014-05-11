@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.call;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
-import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -31,8 +30,8 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
 
     @Child protected IndirectCallNode callNode;
 
-    public GeneralDispatchNode(RubyContext context, SourceSection sourceSection, String name) {
-        super(context, sourceSection);
+    public GeneralDispatchNode(RubyContext context, String name) {
+        super(context);
         assert name != null;
         this.name = name;
         callNode = Truffle.getRuntime().createIndirectCallNode();
@@ -63,7 +62,7 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
 
             cache.put(receiverObject.getLookupNode(), entry);
 
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getSourceSection().getSource().getName(), getSourceSection().getStartLine(), "general call node cache has grown to " + cache.size());
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "general call node cache has grown to " + cache.size());
         }
 
         final Object[] argumentsToUse;

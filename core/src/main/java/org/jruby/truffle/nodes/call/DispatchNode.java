@@ -24,12 +24,8 @@ public class DispatchNode extends Node {
 
     private final RubyContext context;
 
-    public DispatchNode(RubyContext context, SourceSection sourceSection) {
-        super(sourceSection);
-
+    public DispatchNode(RubyContext context) {
         assert context != null;
-        assert sourceSection != null;
-
         this.context = context;
     }
 

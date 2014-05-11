@@ -14,9 +14,6 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.truffle.nodes.call.BoxingDispatchNode;
-import org.jruby.truffle.nodes.call.DispatchHeadNode;
-import org.jruby.truffle.nodes.call.GeneralDispatchNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -25,8 +22,8 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
     private static final int MAX_DISPATCHES = 4;
     private static final int MAX_DEPTH = MAX_DISPATCHES + 1; // MAX_DISPATCHES + UninitializedDispatchNode
 
-    public UninitializedYieldDispatchNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public UninitializedYieldDispatchNode(RubyContext context) {
+        super(context);
     }
 
     @Override
@@ -39,12 +36,12 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
         if (depth > MAX_DEPTH) {
             getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "resorting to a general yield node");
 
-            final GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext(), getSourceSection());
+            final GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext());
             dispatchHead.getDispatch().replace(newGeneralYield);
             return newGeneralYield.dispatch(frame, block, argumentsObjects);
         }
 
-        final CachedYieldDispatchNode dispatch = new CachedYieldDispatchNode(getContext(), getSourceSection(), block, this);
+        final CachedYieldDispatchNode dispatch = new CachedYieldDispatchNode(getContext(), block, this);
         replace(dispatch);
         return dispatch.dispatch(frame, block, argumentsObjects);
     }

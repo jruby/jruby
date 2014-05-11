@@ -19,8 +19,7 @@ public abstract class YieldDispatchNode extends Node {
 
     private final RubyContext context;
 
-    public YieldDispatchNode(RubyContext context, SourceSection sourceSection) {
-        super(sourceSection);
+    public YieldDispatchNode(RubyContext context) {
         assert context != null;
         this.context = context;
     }

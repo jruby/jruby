@@ -21,7 +21,7 @@ public abstract class YieldingCoreMethodNode extends CoreMethodNode {
 
     public YieldingCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        dispatchNode = new YieldDispatchHeadNode(context, getSourceSection());
+        dispatchNode = new YieldDispatchHeadNode(context);
     }
 
     public YieldingCoreMethodNode(YieldingCoreMethodNode prev) {

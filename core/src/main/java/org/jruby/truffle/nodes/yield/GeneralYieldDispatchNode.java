@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.yield;
 
-import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
@@ -22,8 +21,8 @@ public class GeneralYieldDispatchNode extends YieldDispatchNode {
 
     @Child protected IndirectCallNode callNode;
 
-    public GeneralYieldDispatchNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public GeneralYieldDispatchNode(RubyContext context) {
+        super(context);
         callNode = Truffle.getRuntime().createIndirectCallNode();
     }
 

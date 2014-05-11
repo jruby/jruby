@@ -346,7 +346,7 @@ public abstract class
 
         public IntegerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toInt = new DispatchHeadNode(context, getSourceSection(), "to_int", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toInt = new DispatchHeadNode(context, "to_int", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public IntegerNode(IntegerNode prev) {
@@ -558,7 +558,7 @@ public abstract class
 
         public PrettyInspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context, getSourceSection(), "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public PrettyInspectNode(PrettyInspectNode prev) {
@@ -647,7 +647,7 @@ public abstract class
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = new DispatchHeadNode(context, getSourceSection(), "initialize", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initialize = new DispatchHeadNode(context, "initialize", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public RaiseNode(RaiseNode prev) {
@@ -731,7 +731,7 @@ public abstract class
 
         public StringNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context, getSourceSection(), "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public StringNode(StringNode prev) {

@@ -76,7 +76,7 @@ public class RubyCallNode extends RubyNode {
         this.arguments = arguments;
         this.isSplatted = isSplatted;
 
-        dispatchHead = new DispatchHeadNode(context, section, name, isSplatted, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        dispatchHead = new DispatchHeadNode(context, name, isSplatted, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
     }
 
     @Override

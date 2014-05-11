@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.yield;
 
-import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -18,9 +17,9 @@ public class YieldDispatchHeadNode extends YieldDispatchNode {
 
     @Child protected YieldDispatchNode dispatch;
 
-    public YieldDispatchHeadNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
-        dispatch = new UninitializedYieldDispatchNode(context, sourceSection);
+    public YieldDispatchHeadNode(RubyContext context) {
+        super(context);
+        dispatch = new UninitializedYieldDispatchNode(context);
 
     }
 

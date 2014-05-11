@@ -31,8 +31,8 @@ public class CachedBoxedDispatchNode extends BoxedDispatchNode {
     @Child protected DirectCallNode callNode;
     @Child protected BoxedDispatchNode next;
 
-    public CachedBoxedDispatchNode(RubyContext context, SourceSection sourceSection, LookupNode expectedLookupNode, RubyMethod method, BoxedDispatchNode next) {
-        super(context, sourceSection);
+    public CachedBoxedDispatchNode(RubyContext context, LookupNode expectedLookupNode, RubyMethod method, BoxedDispatchNode next) {
+        super(context);
 
         assert expectedLookupNode != null;
         assert method != null;

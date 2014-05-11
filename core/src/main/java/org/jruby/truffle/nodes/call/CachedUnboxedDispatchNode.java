@@ -29,8 +29,8 @@ public class CachedUnboxedDispatchNode extends UnboxedDispatchNode {
     @Child protected DirectCallNode callNode;
     @Child protected UnboxedDispatchNode next;
 
-    public CachedUnboxedDispatchNode(RubyContext context, SourceSection sourceSection, Class expectedClass, Assumption unmodifiedAssumption, RubyMethod method, UnboxedDispatchNode next) {
-        super(context, sourceSection);
+    public CachedUnboxedDispatchNode(RubyContext context, Class expectedClass, Assumption unmodifiedAssumption, RubyMethod method, UnboxedDispatchNode next) {
+        super(context);
 
         assert expectedClass != null;
         assert unmodifiedAssumption != null;

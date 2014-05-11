@@ -36,9 +36,9 @@ public class BooleanDispatchNode extends UnboxedDispatchNode {
 
     @Child protected UnboxedDispatchNode next;
 
-    public BooleanDispatchNode(RubyContext context, SourceSection sourceSection, Assumption falseUnmodifiedAssumption, RubyMethod falseMethod, Assumption trueUnmodifiedAssumption,
-                    RubyMethod trueMethod, UnboxedDispatchNode next) {
-        super(context, sourceSection);
+    public BooleanDispatchNode(RubyContext context, Assumption falseUnmodifiedAssumption, RubyMethod falseMethod, Assumption trueUnmodifiedAssumption,
+                               RubyMethod trueMethod, UnboxedDispatchNode next) {
+        super(context);
 
         assert falseUnmodifiedAssumption != null;
         assert falseMethod != null;

@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.call;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.*;
 import org.jruby.truffle.runtime.*;
@@ -27,8 +26,8 @@ public class BoxingDispatchNode extends UnboxedDispatchNode {
 
     private final BranchProfile boxBranch = new BranchProfile();
 
-    public BoxingDispatchNode(RubyContext context, SourceSection sourceSection, BoxedDispatchNode next) {
-        super(context, sourceSection);
+    public BoxingDispatchNode(RubyContext context, BoxedDispatchNode next) {
+        super(context);
 
         this.next = next;
     }

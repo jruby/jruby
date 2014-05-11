@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.yield;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.DirectCallNode;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -21,8 +20,8 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
     @Child protected DirectCallNode callNode;
     @Child protected YieldDispatchNode next;
 
-    public CachedYieldDispatchNode(RubyContext context, SourceSection sourceSection, RubyProc block, YieldDispatchNode next) {
-        super(context, sourceSection);
+    public CachedYieldDispatchNode(RubyContext context, RubyProc block, YieldDispatchNode next) {
+        super(context);
         callNode = Truffle.getRuntime().createDirectCallNode(block.getMethod().getCallTarget());
         this.next = next;
     }

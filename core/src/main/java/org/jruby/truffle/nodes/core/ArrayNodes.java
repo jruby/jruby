@@ -977,7 +977,7 @@ public abstract class ArrayNodes {
 
         public MinNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareDispatchNode = new DispatchHeadNode(context, sourceSection, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            compareDispatchNode = new DispatchHeadNode(context, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public MinNode(MinNode prev) {

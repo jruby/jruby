@@ -13,7 +13,6 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -31,8 +30,8 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
     private final String name;
     private final DispatchHeadNode.MissingBehavior missingBehavior;
 
-    public UninitializedDispatchNode(RubyContext context, SourceSection sourceSection, String name, DispatchHeadNode.MissingBehavior missingBehavior) {
-        super(context, sourceSection);
+    public UninitializedDispatchNode(RubyContext context, String name, DispatchHeadNode.MissingBehavior missingBehavior) {
+        super(context);
         assert name != null;
         this.name = name;
         this.missingBehavior = missingBehavior;
@@ -53,10 +52,10 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
              * GeneralDispatchNode.
              */
 
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getSourceSection().getSource().getName(), getSourceSection().getStartLine(), "resorting to a general call node");
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "resorting to a general call node");
 
-            final GeneralDispatchNode newGeneralDispatch = new GeneralDispatchNode(getContext(), getSourceSection(), name);
-            final BoxingDispatchNode newBoxing = new BoxingDispatchNode(getContext(), getSourceSection(), newGeneralDispatch);
+            final GeneralDispatchNode newGeneralDispatch = new GeneralDispatchNode(getContext(), name);
+            final BoxingDispatchNode newBoxing = new BoxingDispatchNode(getContext(), newGeneralDispatch);
 
             dispatchHead.getDispatch().replace(newBoxing);
             return newBoxing.dispatch(frame, receiverObject, blockObject, argumentsObjects);
@@ -71,7 +70,7 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
         } catch (UseMethodMissingException e) {
             switch (missingBehavior) {
                 case RETURN_MISSING: {
-                    BoxedDispatchNode newDispatch = new CachedBoxedReturnMissingDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), this);
+                    BoxedDispatchNode newDispatch = new CachedBoxedReturnMissingDispatchNode(getContext(), receiverObject.getLookupNode(), this);
                     replace(newDispatch, "appending new boxed return nil dispatch node to chain");
                     return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
                 }
@@ -83,7 +82,7 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
                         throw new RaiseException(context.getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing"));
                     }
 
-                    BoxedDispatchNode newDispatch = new CachedBoxedMethodMissingDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), method, name, this);
+                    BoxedDispatchNode newDispatch = new CachedBoxedMethodMissingDispatchNode(getContext(), receiverObject.getLookupNode(), method, name, this);
                     replace(newDispatch, "appending new boxed method missing dispatch node to chain");
                     return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
                 }
@@ -109,7 +108,7 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
                     final Assumption trueUnmodifiedAssumption = context.getCoreLibrary().getTrueClass().getUnmodifiedAssumption();
                     final RubyMethod trueMethod = lookup(boxedCallingSelf, context.getCoreLibrary().box(true), name);
 
-                    final BooleanDispatchNode newDispatch = new BooleanDispatchNode(getContext(), getSourceSection(), falseUnmodifiedAssumption, falseMethod, trueUnmodifiedAssumption, trueMethod, null);
+                    final BooleanDispatchNode newDispatch = new BooleanDispatchNode(getContext(), falseUnmodifiedAssumption, falseMethod, trueUnmodifiedAssumption, trueMethod, null);
                     firstDispatch.replace(newDispatch, "prepending new unboxed dispatch node to chain");
                     newDispatch.setNext(firstDispatch);
                     return newDispatch.dispatch(frame, receiverUnboxed, blockObject, argumentsObjects);
@@ -118,7 +117,7 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
                 }
             }
 
-            final UnboxedDispatchNode newDispatch = new CachedUnboxedDispatchNode(getContext(), getSourceSection(), receiverUnboxed.getClass(), receiverObject.getRubyClass().getUnmodifiedAssumption(), method, null);
+            final UnboxedDispatchNode newDispatch = new CachedUnboxedDispatchNode(getContext(), receiverUnboxed.getClass(), receiverObject.getRubyClass().getUnmodifiedAssumption(), method, null);
             firstDispatch.replace(newDispatch, "prepending new unboxed dispatch node to chain");
             newDispatch.setNext(firstDispatch);
             return newDispatch.dispatch(frame, receiverUnboxed, blockObject, argumentsObjects);
@@ -129,8 +128,8 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
          * the point where receivers are guaranteed to be boxed.
         */
 
-        final UninitializedDispatchNode newUninitializedDispatch = new UninitializedDispatchNode(getContext(), getSourceSection(), name, missingBehavior);
-        final BoxedDispatchNode newDispatch = new CachedBoxedDispatchNode(getContext(), getSourceSection(), receiverObject.getLookupNode(), method, newUninitializedDispatch);
+        final UninitializedDispatchNode newUninitializedDispatch = new UninitializedDispatchNode(getContext(), name, missingBehavior);
+        final BoxedDispatchNode newDispatch = new CachedBoxedDispatchNode(getContext(), receiverObject.getLookupNode(), method, newUninitializedDispatch);
         replace(newDispatch, "appending new boxed dispatch node to chain");
         return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
     }

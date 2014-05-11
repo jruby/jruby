@@ -13,13 +13,10 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
-import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.lookup.LookupNode;
-import org.jruby.truffle.runtime.methods.RubyMethod;
 
 public class CachedBoxedReturnMissingDispatchNode extends BoxedDispatchNode {
 
@@ -28,8 +25,8 @@ public class CachedBoxedReturnMissingDispatchNode extends BoxedDispatchNode {
 
     @Child protected BoxedDispatchNode next;
 
-    public CachedBoxedReturnMissingDispatchNode(RubyContext context, SourceSection sourceSection, LookupNode expectedLookupNode, BoxedDispatchNode next) {
-        super(context, sourceSection);
+    public CachedBoxedReturnMissingDispatchNode(RubyContext context, LookupNode expectedLookupNode, BoxedDispatchNode next) {
+        super(context);
         this.expectedLookupNode = expectedLookupNode;
         unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
         this.next = next;

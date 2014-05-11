@@ -31,8 +31,8 @@ public class DispatchHeadNode extends DispatchNode {
 
     @Child protected UnboxedDispatchNode dispatch;
 
-    public DispatchHeadNode(RubyContext context, SourceSection sourceSection, String name, boolean isSplatted, MissingBehavior missingBehavior) {
-        super(context, sourceSection);
+    public DispatchHeadNode(RubyContext context, String name, boolean isSplatted, MissingBehavior missingBehavior) {
+        super(context);
 
         assert context != null;
         assert name != null;
@@ -40,8 +40,8 @@ public class DispatchHeadNode extends DispatchNode {
         this.name = name;
         this.isSplatted = isSplatted;
 
-        final UninitializedDispatchNode uninitializedDispatch = new UninitializedDispatchNode(context, sourceSection, name, missingBehavior);
-        dispatch = new UninitializedBoxingDispatchNode(context, sourceSection, uninitializedDispatch);
+        final UninitializedDispatchNode uninitializedDispatch = new UninitializedDispatchNode(context, name, missingBehavior);
+        dispatch = new UninitializedBoxingDispatchNode(context, uninitializedDispatch);
     }
 
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
@@ -56,7 +56,7 @@ public class DispatchHeadNode extends DispatchNode {
     public Object respecialize(VirtualFrame frame, String reason, Object receiverObject, RubyProc blockObject, Object... argumentObjects) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), getSourceSection(), name, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
+        final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), name, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
         replace(newHead, reason);
         return newHead.dispatch(frame, receiverObject, blockObject, argumentObjects);
     }
