@@ -35,9 +35,6 @@ public class DoWhileNode extends RubyNode {
     @CompilerDirectives.CompilationFinal private int thenCount;
     @CompilerDirectives.CompilationFinal private int elseCount;
 
-    private final BranchProfile thenProfile = new BranchProfile();
-    private final BranchProfile elseProfile = new BranchProfile();
-
     private final BranchProfile breakProfile = new BranchProfile();
     private final BranchProfile nextProfile = new BranchProfile();
     private final BranchProfile redoProfile = new BranchProfile();
@@ -76,13 +73,13 @@ public class DoWhileNode extends RubyNode {
                     if (CompilerDirectives.inInterpreter()) {
                         thenCount++;
                     }
-                    thenProfile.enter();
+                    nextProfile.enter();
                     continue outer;
                 } else {
                     if (CompilerDirectives.inInterpreter()) {
                         elseCount++;
                     }
-                    elseProfile.enter();
+                    breakProfile.enter();
                     break outer;
                 }
             }

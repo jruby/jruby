@@ -31,6 +31,9 @@ public class IfNode extends RubyNode {
     private final BranchProfile thenProfile = new BranchProfile();
     private final BranchProfile elseProfile = new BranchProfile();
 
+    @CompilerDirectives.CompilationFinal private int thenCount;
+    @CompilerDirectives.CompilationFinal private int elseCount;
+
     public IfNode(RubyContext context, SourceSection sourceSection, BooleanCastNode condition, RubyNode thenBody, RubyNode elseBody) {
         super(context, sourceSection);
         this.condition = condition;
@@ -40,10 +43,17 @@ public class IfNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (condition.executeBoolean(frame)) {
+
+        if (CompilerDirectives.injectBranchProbability((double) thenCount / (double) (thenCount + elseCount), condition.executeBoolean(frame))) {
+            if (CompilerDirectives.inInterpreter()) {
+                thenCount++;
+            }
             thenProfile.enter();
             return thenBody.execute(frame);
         } else {
+            if (CompilerDirectives.inInterpreter()) {
+                elseCount++;
+            }
             elseProfile.enter();
             return elseBody.execute(frame);
         }
