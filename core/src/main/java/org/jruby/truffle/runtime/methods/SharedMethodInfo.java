@@ -47,7 +47,11 @@ public class SharedMethodInfo {
 
     @Override
     public String toString() {
-        return name + ":" + sourceSection.getShortDescription();
+        if (sourceSection != null) {
+            return name + ":" + sourceSection.getShortDescription();
+        } else {
+            return name;
+        }
     }
 
 }
