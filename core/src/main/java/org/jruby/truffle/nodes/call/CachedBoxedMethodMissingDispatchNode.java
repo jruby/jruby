@@ -15,6 +15,8 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import com.oracle.truffle.api.nodes.NodeCost;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.RubyContext;
@@ -27,6 +29,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
  * A node that calls {@code #method_missing} because at the point of lookup no method was found. We have a full dispatch
  * node for this because some frameworks might use {@code #method_missing} as dynamic programming on the fast path.
  */
+@NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class CachedBoxedMethodMissingDispatchNode extends BoxedDispatchNode {
 
     private final LookupNode expectedLookupNode;

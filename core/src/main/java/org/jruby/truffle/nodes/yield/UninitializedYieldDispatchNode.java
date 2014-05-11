@@ -12,11 +12,14 @@ package org.jruby.truffle.nodes.yield;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.NodeCost;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
+@NodeInfo(cost = NodeCost.UNINITIALIZED)
 public class UninitializedYieldDispatchNode extends YieldDispatchNode {
 
     private static final int MAX_DISPATCHES = 4;

@@ -22,6 +22,7 @@ import org.jruby.truffle.runtime.methods.*;
  * boxed Ruby BasicObject, matching it by looking at the lookup node and assuming it has not been
  * modified.
  */
+@NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class CachedBoxedDispatchNode extends BoxedDispatchNode {
 
     private final LookupNode expectedLookupNode;

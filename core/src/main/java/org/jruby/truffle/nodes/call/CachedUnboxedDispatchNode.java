@@ -20,6 +20,7 @@ import org.jruby.truffle.runtime.methods.*;
  * A node in the dispatch chain that comes before the boxing point and caches a method on a Java
  * object, matching it by looking at the class and assuming it has not been modified.
  */
+@NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class CachedUnboxedDispatchNode extends UnboxedDispatchNode {
 
     private final Class expectedClass;

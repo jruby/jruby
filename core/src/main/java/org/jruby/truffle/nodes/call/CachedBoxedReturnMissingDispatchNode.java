@@ -13,11 +13,14 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import com.oracle.truffle.api.nodes.NodeCost;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.lookup.LookupNode;
 
+@NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class CachedBoxedReturnMissingDispatchNode extends BoxedDispatchNode {
 
     private final LookupNode expectedLookupNode;

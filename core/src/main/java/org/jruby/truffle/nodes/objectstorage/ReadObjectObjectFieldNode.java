@@ -9,11 +9,13 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.nodes.NodeCost;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorageLocation;
 
+@NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class ReadObjectObjectFieldNode extends ReadObjectFieldChainNode {
 
     private final ObjectLayout objectLayout;

@@ -12,9 +12,12 @@ package org.jruby.truffle.nodes.yield;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.NodeCost;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
+@NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class CachedYieldDispatchNode extends YieldDispatchNode {
 
     @Child protected DirectCallNode callNode;

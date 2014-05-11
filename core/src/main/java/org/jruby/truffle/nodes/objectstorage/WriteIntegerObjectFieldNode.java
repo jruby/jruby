@@ -9,10 +9,13 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
+import com.oracle.truffle.api.nodes.NodeCost;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.runtime.objectstorage.IntegerStorageLocation;
 import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 
+@NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class WriteIntegerObjectFieldNode extends WriteObjectFieldChainNode {
 
     private final ObjectLayout objectLayout;

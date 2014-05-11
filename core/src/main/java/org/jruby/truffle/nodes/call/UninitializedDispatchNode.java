@@ -22,6 +22,7 @@ import org.jruby.truffle.runtime.methods.*;
  * The uninitialized dispatch node. Only reached when the method is not expected by any node in the
  * dispatch chain, and only creates new nodes or modifies the existing chain.
  */
+@NodeInfo(cost = NodeCost.UNINITIALIZED)
 public class UninitializedDispatchNode extends BoxedDispatchNode {
 
     private static final int MAX_DISPATCHES = 4;

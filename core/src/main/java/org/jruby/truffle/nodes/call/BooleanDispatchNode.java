@@ -27,6 +27,7 @@ import org.jruby.truffle.runtime.methods.*;
  * TODO(CS): it would be nice if we could {@link RubyNode#executeBoolean} the receiver, but by the
  * time we get to this dispatch node the receiver is already executed.
  */
+@NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class BooleanDispatchNode extends UnboxedDispatchNode {
 
     private final Assumption falseUnmodifiedAssumption;
