@@ -11,8 +11,11 @@ package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -32,6 +35,7 @@ public class CachedBoxedMethodMissingDispatchNode extends BoxedDispatchNode {
     private final RubySymbol symbol;
 
     @Child protected BoxedDispatchNode next;
+    @Child protected DirectCallNode callNode;
 
     public CachedBoxedMethodMissingDispatchNode(RubyContext context, LookupNode expectedLookupNode, RubyMethod method, String name, BoxedDispatchNode next) {
         super(context);
@@ -42,8 +46,10 @@ public class CachedBoxedMethodMissingDispatchNode extends BoxedDispatchNode {
         this.expectedLookupNode = expectedLookupNode;
         unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
         this.method = method;
-        this.next = next;
         symbol = context.newSymbol(name);
+        this.next = next;
+
+        callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
     }
 
     @Override
@@ -70,7 +76,7 @@ public class CachedBoxedMethodMissingDispatchNode extends BoxedDispatchNode {
 
         // Call the method
 
-        return method.call(receiverObject, blockObject, modifiedArgumentsObjects);
+        return callNode.call(frame, RubyArguments.pack(method.getDeclarationFrame(), receiverObject, blockObject, modifiedArgumentsObjects));
     }
 
 }

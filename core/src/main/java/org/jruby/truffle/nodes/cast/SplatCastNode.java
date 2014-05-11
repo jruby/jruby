@@ -51,7 +51,7 @@ public abstract class SplatCastNode extends RubyNode {
     }
 
     @Specialization
-    public RubyArray doObject(VirtualFrame frame, Object object) {
+    public RubyArray doObject(Object object) {
         if (object == NilPlaceholder.INSTANCE) {
             switch (nilBehavior) {
                 case EMPTY_ARRAY:

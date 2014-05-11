@@ -1298,26 +1298,32 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "sort", maxArgs = 0)
     public abstract static class SortNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode compareDispatchNode;
+
         public SortNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            compareDispatchNode = new DispatchHeadNode(context, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public SortNode(SortNode prev) {
             super(prev);
+            compareDispatchNode = prev.compareDispatchNode;
         }
 
         @Specialization
-        public RubyArray sort(RubyArray array) {
+        public RubyArray sort(VirtualFrame frame, RubyArray array) {
             final RubyContext context = array.getRubyClass().getContext();
 
             final Object[] objects = array.asList().toArray();
+
+            final VirtualFrame finalFrame = frame;
 
             Arrays.sort(objects, new Comparator<Object>() {
 
                 @Override
                 public int compare(Object a, Object b) {
-                    final RubyBasicObject aBoxed = context.getCoreLibrary().box(a);
-                    return (int) aBoxed.getLookupNode().lookupMethod("<=>").call(aBoxed, null, b);
+                    // TODO(CS): node for this cast
+                    return (int) compareDispatchNode.dispatch(finalFrame, a, null, b);
                 }
 
             });

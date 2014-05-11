@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.call;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -30,9 +31,13 @@ public class BooleanDispatchNode extends UnboxedDispatchNode {
 
     private final Assumption falseUnmodifiedAssumption;
     private final RubyMethod falseMethod;
+    private final BranchProfile falseProfile = new BranchProfile();
+    @Child protected DirectCallNode falseCall;
 
     private final Assumption trueUnmodifiedAssumption;
     private final RubyMethod trueMethod;
+    private final BranchProfile trueProfile = new BranchProfile();
+    @Child protected DirectCallNode trueCall;
 
     @Child protected UnboxedDispatchNode next;
 
@@ -47,9 +52,11 @@ public class BooleanDispatchNode extends UnboxedDispatchNode {
 
         this.falseUnmodifiedAssumption = falseUnmodifiedAssumption;
         this.falseMethod = falseMethod;
+        falseCall = Truffle.getRuntime().createDirectCallNode(falseMethod.getCallTarget());
 
         this.trueUnmodifiedAssumption = trueUnmodifiedAssumption;
         this.trueMethod = trueMethod;
+        trueCall = Truffle.getRuntime().createDirectCallNode(trueMethod.getCallTarget());
 
         this.next = next;
     }
@@ -62,30 +69,27 @@ public class BooleanDispatchNode extends UnboxedDispatchNode {
             return next.dispatch(frame, receiverObject, blockObject, argumentsObjects);
         }
 
-        // Check the value
-
-        Assumption unmodifiedAssumption;
-        RubyMethod method;
-
         if ((boolean) receiverObject) {
-            unmodifiedAssumption = trueUnmodifiedAssumption;
-            method = trueMethod;
+            trueProfile.enter();
+
+            try {
+                trueUnmodifiedAssumption.check();
+            } catch (InvalidAssumptionException e) {
+                return respecialize("class modified", frame, receiverObject, blockObject, argumentsObjects);
+            }
+
+            return trueCall.call(frame, RubyArguments.pack(trueMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
         } else {
-            unmodifiedAssumption = falseUnmodifiedAssumption;
-            method = falseMethod;
+            falseProfile.enter();
+
+            try {
+                falseUnmodifiedAssumption.check();
+            } catch (InvalidAssumptionException e) {
+                return respecialize("class modified", frame, receiverObject, blockObject, argumentsObjects);
+            }
+
+            return falseCall.call(frame, RubyArguments.pack(falseMethod.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
         }
-
-        // Check the class has not been modified
-
-        try {
-            unmodifiedAssumption.check();
-        } catch (InvalidAssumptionException e) {
-            return respecialize("class modified", frame, receiverObject, blockObject, argumentsObjects);
-        }
-
-        // Call the method
-
-        return method.call(receiverObject, blockObject, argumentsObjects);
     }
 
     @Override

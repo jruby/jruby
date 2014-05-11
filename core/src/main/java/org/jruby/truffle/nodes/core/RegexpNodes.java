@@ -11,7 +11,9 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
@@ -40,12 +42,16 @@ public abstract class RegexpNodes {
     @CoreMethod(names = "=~", minArgs = 1, maxArgs = 1)
     public abstract static class MatchOperatorNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode matchNode;
+
         public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            matchNode = new DispatchHeadNode(context, "=~", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public MatchOperatorNode(MatchOperatorNode prev) {
             super(prev);
+            matchNode = prev.matchNode;
         }
 
         @Specialization
@@ -54,14 +60,14 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public Object match(RubyRegexp regexp, RubyBasicObject other) {
+        public Object match(VirtualFrame frame, RubyRegexp regexp, RubyBasicObject other) {
             CompilerAsserts.neverPartOfCompilation();
 
             // TODO(CS) perhaps I shouldn't be converting match operators to simple calls - they seem to get switched around like this
 
             getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), getSourceSection().getStartLine(), "strange reversed match operator");
 
-            return other.getLookupNode().lookupMethod("=~").call(other, null, regexp);
+            return matchNode.dispatch(frame, other, null, regexp);
         }
 
     }

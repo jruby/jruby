@@ -70,6 +70,8 @@ public class RubyMethod {
         assert self != null;
         assert args != null;
 
+        CompilerAsserts.neverPartOfCompilation();
+
         assert RubyContext.shouldObjectBeVisible(self) : self.getClass();
         assert RubyContext.shouldObjectsBeVisible(args);
 

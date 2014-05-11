@@ -17,6 +17,7 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.CatchReturnNode;
 import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
@@ -364,16 +365,20 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "include", isSplatted = true, minArgs = 1)
     public abstract static class IncludeNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode appendFeaturesNode;
+
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            appendFeaturesNode = new DispatchHeadNode(context, "append_features", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public IncludeNode(IncludeNode prev) {
             super(prev);
+            appendFeaturesNode = prev.appendFeaturesNode;
         }
 
         @Specialization
-        public NilPlaceholder include(RubyModule module, Object[] args) {
+        public NilPlaceholder include(VirtualFrame frame, RubyModule module, Object[] args) {
             // Note that we traverse the arguments backwards
 
             for (int n = args.length - 1; n >= 0; n--) {
@@ -381,7 +386,7 @@ public abstract class ModuleNodes {
                     final RubyModule included = (RubyModule) args[n];
 
                     // Note that we do appear to do full method lookup here
-                    included.getLookupNode().lookupMethod("append_features").call(included, null, module);
+                    appendFeaturesNode.dispatch(frame, included, null, module);
 
                     // TODO(cs): call included hook
                 }
