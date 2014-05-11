@@ -15,19 +15,13 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
-/**
- * A node in the yield dispatch chain.
- */
 public abstract class YieldDispatchNode extends Node {
 
     private final RubyContext context;
 
     public YieldDispatchNode(RubyContext context, SourceSection sourceSection) {
         super(sourceSection);
-
         assert context != null;
-        assert sourceSection != null;
-
         this.context = context;
     }
 

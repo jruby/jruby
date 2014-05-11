@@ -23,10 +23,6 @@ import org.jruby.truffle.runtime.methods.*;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * A node in the dispatch chain that does no caching and looks up methods from scratch each time it
- * is called.
- */
 public class GeneralDispatchNode extends BoxedDispatchNode {
 
     private final String name;

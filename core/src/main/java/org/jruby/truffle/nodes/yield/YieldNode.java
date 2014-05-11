@@ -25,13 +25,13 @@ import org.jruby.truffle.runtime.core.array.RubyArray;
 public class YieldNode extends RubyNode {
 
     @Children protected final RubyNode[] arguments;
-    @Child protected YieldDispatchNode dispatch;
+    @Child protected YieldDispatchHeadNode dispatch;
     private final boolean unsplat;
 
     public YieldNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments, boolean unsplat) {
         super(context, sourceSection);
         this.arguments = arguments;
-        dispatch = new UninitializedYieldDispatchNode(getContext(), getSourceSection());
+        dispatch = new YieldDispatchHeadNode(getContext(), getSourceSection());
         this.unsplat = unsplat;
     }
 

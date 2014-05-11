@@ -17,11 +17,11 @@ import org.jruby.truffle.runtime.core.*;
 
 public abstract class YieldingCoreMethodNode extends CoreMethodNode {
 
-    @Child protected YieldDispatchNode dispatchNode;
+    @Child protected YieldDispatchHeadNode dispatchNode;
 
     public YieldingCoreMethodNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        dispatchNode = new UninitializedYieldDispatchNode(context, getSourceSection());
+        dispatchNode = new YieldDispatchHeadNode(context, getSourceSection());
     }
 
     public YieldingCoreMethodNode(YieldingCoreMethodNode prev) {
@@ -34,6 +34,7 @@ public abstract class YieldingCoreMethodNode extends CoreMethodNode {
     }
 
     public boolean yieldBoolean(VirtualFrame frame, RubyProc block, Object... arguments) {
+        // TODO(CS): this should be a node!
         return RubyTrueClass.toBoolean(dispatchNode.dispatch(frame, block, arguments));
     }
 

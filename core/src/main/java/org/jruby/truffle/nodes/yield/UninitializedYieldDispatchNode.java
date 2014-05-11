@@ -11,13 +11,19 @@ package org.jruby.truffle.nodes.yield;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.NodeUtil;
+import org.jruby.common.IRubyWarnings;
+import org.jruby.truffle.nodes.call.BoxingDispatchNode;
+import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.nodes.call.GeneralDispatchNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
-/**
- * An uninitialized node in the yield dispatch chain.
- */
 public class UninitializedYieldDispatchNode extends YieldDispatchNode {
+
+    private static final int MAX_DISPATCHES = 4;
+    private static final int MAX_DEPTH = MAX_DISPATCHES + 1; // MAX_DISPATCHES + UninitializedDispatchNode
 
     public UninitializedYieldDispatchNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -25,11 +31,34 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, RubyProc block, Object[] argumentsObjects) {
-        CompilerDirectives.transferToInterpreter();
+        CompilerDirectives.transferToInterpreterAndInvalidate();
 
-        final CachedYieldDispatchNode dispatch = new CachedYieldDispatchNode(getContext(), getSourceSection(), block);
+        int depth = getDepth();
+        final YieldDispatchHeadNode dispatchHead = (YieldDispatchHeadNode) NodeUtil.getNthParent(this, depth);
+
+        if (depth > MAX_DEPTH) {
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "resorting to a general yield node");
+
+            final GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext(), getSourceSection());
+            dispatchHead.getDispatch().replace(newGeneralYield);
+            return newGeneralYield.dispatch(frame, block, argumentsObjects);
+        }
+
+        final CachedYieldDispatchNode dispatch = new CachedYieldDispatchNode(getContext(), getSourceSection(), block, this);
         replace(dispatch);
         return dispatch.dispatch(frame, block, argumentsObjects);
+    }
+
+    public int getDepth() {
+        int depth = 1;
+        Node parent = this.getParent();
+
+        while (!(parent instanceof YieldDispatchHeadNode)) {
+            parent = parent.getParent();
+            depth++;
+        }
+
+        return depth;
     }
 
 }

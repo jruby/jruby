@@ -54,7 +54,6 @@ public class RubyCallNode extends RubyNode {
     @Child protected ProcOrNullNode block;
     @Children protected final RubyNode[] arguments;
 
-    private final String name;
     private final boolean isSplatted;
 
     @Child protected DispatchHeadNode dispatchHead;
@@ -75,7 +74,6 @@ public class RubyCallNode extends RubyNode {
         }
 
         this.arguments = arguments;
-        this.name = name;
         this.isSplatted = isSplatted;
 
         dispatchHead = new DispatchHeadNode(context, section, name, isSplatted, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
@@ -146,7 +144,7 @@ public class RubyCallNode extends RubyNode {
 
         final RubyBasicObject receiverBasicObject = context.getCoreLibrary().box(receiverObject);
 
-        final RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(name);
+        final RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(dispatchHead.getName());
 
         final RubyBasicObject self = context.getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
 
@@ -154,7 +152,7 @@ public class RubyCallNode extends RubyNode {
             final RubyMethod respondToMissing = receiverBasicObject.getLookupNode().lookupMethod("respond_to_missing?");
 
             if (respondToMissing != null) {
-                if (!RubyTrueClass.toBoolean(respondToMissing.call(receiverBasicObject, null, context.makeString(name), true))) {
+                if (!RubyTrueClass.toBoolean(respondToMissing.call(receiverBasicObject, null, context.makeString(dispatchHead.getName()), true))) {
                     return NilPlaceholder.INSTANCE;
                 }
             }
@@ -168,7 +166,7 @@ public class RubyCallNode extends RubyNode {
     }
 
     public String getName() {
-        return name;
+        return dispatchHead.getName();
     }
 
 }
