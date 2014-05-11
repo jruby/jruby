@@ -32,9 +32,6 @@ public class DoWhileNode extends RubyNode {
     @Child protected BooleanCastNode condition;
     @Child protected RubyNode body;
 
-    @CompilerDirectives.CompilationFinal private int thenCount;
-    @CompilerDirectives.CompilationFinal private int elseCount;
-
     private final BranchProfile breakProfile = new BranchProfile();
     private final BranchProfile nextProfile = new BranchProfile();
     private final BranchProfile redoProfile = new BranchProfile();
@@ -69,16 +66,11 @@ public class DoWhileNode extends RubyNode {
                         redoProfile.enter();
                     }
                 }
-                if (CompilerDirectives.injectBranchProbability((double) thenCount / (double) (thenCount + elseCount), condition.executeBoolean(frame))) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        thenCount++;
-                    }
+
+                if (condition.executeBoolean(frame)) {
                     nextProfile.enter();
                     continue outer;
                 } else {
-                    if (CompilerDirectives.inInterpreter()) {
-                        elseCount++;
-                    }
                     breakProfile.enter();
                     break outer;
                 }

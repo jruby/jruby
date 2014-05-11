@@ -33,7 +33,7 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
     private final Map<LookupNode, MethodCacheEntry> cache = new HashMap<>();
     @CompilerDirectives.CompilationFinal private boolean hasAnyMethodsMissing = false;
 
-    @Child private final IndirectCallNode callNode;
+    @Child protected IndirectCallNode callNode;
 
     public GeneralDispatchNode(RubyContext context, SourceSection sourceSection, String name) {
         super(context, sourceSection);

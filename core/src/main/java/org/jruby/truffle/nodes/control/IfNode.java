@@ -43,8 +43,7 @@ public class IfNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-
-        if (CompilerDirectives.injectBranchProbability((double) thenCount / (double) (thenCount + elseCount), condition.executeBoolean(frame))) {
+        if (CompilerDirectives.injectBranchProbability(getBranchProbability(), condition.executeBoolean(frame))) {
             if (CompilerDirectives.inInterpreter()) {
                 thenCount++;
             }
@@ -56,6 +55,16 @@ public class IfNode extends RubyNode {
             }
             elseProfile.enter();
             return elseBody.execute(frame);
+        }
+    }
+
+    private double getBranchProbability() {
+        final int totalCount = thenCount + elseCount;
+
+        if (totalCount == 0) {
+            return 0;
+        } else {
+            return (double) thenCount / (double) (thenCount + elseCount);
         }
     }
 
