@@ -4,6 +4,7 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.Ptr;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
@@ -20,8 +21,10 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyConverter;
 import org.jruby.RubyEncoding;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
+import org.jruby.RubyInteger;
 import org.jruby.RubyMethod;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
@@ -160,14 +163,13 @@ public class EncodingUtils {
                     fmode_p[0] = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
                 } else {
                     String p = vmodeAndVperm_p[VMODE].convertToString().asJavaString();
-                    int colonSplit = p.indexOf(":");
-                    String mode = colonSplit == -1 ? p : p.substring(0, colonSplit);
                     try {
-                        fmode_p[0] = OpenFile.getFModeFromString(mode);
+                        fmode_p[0] = OpenFile.getFModeFromString(p);
                         oflags_p[0] = OpenFile.getModeFlagsAsIntFrom(fmode_p[0]);
                     } catch (InvalidValueException e) {
                         throw context.runtime.newArgumentError("illegal access mode " + vmodeAndVperm_p[VMODE]);
                     }
+                    int colonSplit = p.indexOf(":");
 
                     if (colonSplit != -1) {
                         hasEnc = true;
@@ -360,7 +362,7 @@ public class EncodingUtils {
                 ioEncodable.setBOM(true);
                 estr = estr.substring(4);
             }
-            idx = context.runtime.getEncodingService().getEncodingFromString(estr);
+            idx = service.getEncodingFromString(estr);
         } else {
             estr = option;
             if (estr.toLowerCase().startsWith("bom|utf-")) {
@@ -368,7 +370,7 @@ public class EncodingUtils {
                 ioEncodable.setBOM(true);
                 estr = estr.substring(4);
             }
-            idx = context.runtime.getEncodingService().getEncodingFromString(estr);
+            idx = service.getEncodingFromString(estr);
         }
 
         extEnc = idx;
@@ -378,8 +380,8 @@ public class EncodingUtils {
             if (encs[1].equals("-")) {
                 intEnc = null;
             } else {
-                idx2 = context.runtime.getEncodingService().getEncodingFromString(encs[1]);
-                if (idx2 == idx) {
+                idx2 = service.getEncodingFromString(encs[1]);
+                if (idx2 == null) {
                     context.runtime.getWarnings().warn("ignoring internal encoding " + idx2 + ": it is identical to external encoding " + idx);
                     intEnc = null;
                 } else {
@@ -1286,63 +1288,64 @@ public class EncodingUtils {
     }
     
     // mri: io_strip_bom
+    @Deprecated
     public static Encoding ioStripBOM(RubyIO io) {
-        int b1, b2, b3, b4;
+        return ioStripBOM(io.getRuntime().getCurrentContext(), io);
+    }
+    public static Encoding ioStripBOM(ThreadContext context, RubyIO io) {
+        IRubyObject b1, b2, b3, b4;
 
-        switch (b1 = io.getcCommon()) {
+        if ((b1 = io.getByte(context)).isNil()) return null;
+        switch ((int)((RubyFixnum)b1).getLongValue()) {
             case 0xEF:
-                b2 = io.getcCommon();
-                if (b2 == 0xBB) {
-                    b3 = io.getcCommon();
-                    if (b3 == 0xBF) {
+                if ((b2 = io.getByte(context)).isNil()) break;
+                if (((RubyFixnum)b2).getLongValue() == 0xBB && !(b3 = io.getByte(context)).isNil()) {
+                    if (((RubyFixnum)b3).getLongValue() == 0xBF) {
                         return UTF8Encoding.INSTANCE;
                     }
-                    io.ungetcCommon(b3);
+                    io.ungetbyte(context, b3);
                 }
-                io.ungetcCommon(b2);
+                io.ungetbyte(context, b2);
                 break;
             case 0xFE:
-                b2 = io.getcCommon();
-                if (b2 == 0xFF) {
+                if ((b2 = io.getByte(context)).isNil()) break;
+                if (((RubyFixnum)b2).getLongValue() == 0xFF) {
                     return UTF16BEEncoding.INSTANCE;
                 }
-                io.ungetcCommon(b2);
+                io.ungetbyte(context, b2);
                 break;
             case 0xFF:
-                b2 = io.getcCommon();
-                if (b2 == 0xFE) {
-                    b3 = io.getcCommon();
-                    if (b3 == 0) {
-                        b4 = io.getcCommon();
-                        if (b4 == 0) {
+                if ((b2 = io.getByte(context)).isNil()) break;
+                if (((RubyFixnum)b2).getLongValue() == 0xFE) {
+                    b3 = io.getByte(context);
+                    if (((RubyFixnum)b3).getLongValue() == 0 && !(b4 = io.getByte(context)).isNil()) {
+                        if (((RubyFixnum)b4).getLongValue() == 0) {
                             return UTF32LEEncoding.INSTANCE;
                         }
-                        io.ungetcCommon(b4);
+                        io.ungetbyte(context, b4);
                     } else {
-                        io.ungetcCommon(b3);
+                        io.ungetbyte(context, b3);
                         return UTF16LEEncoding.INSTANCE;
                     }
-                    io.ungetcCommon(b3);
+                    io.ungetbyte(context, b3);
                 }
-                io.ungetcCommon(b2);
+                io.ungetbyte(context, b2);
                 break;
             case 0:
-                b2 = io.getcCommon();
-                if (b2 == 0) {
-                    b3 = io.getcCommon();
-                    if (b3 == 0xFE) {
-                        b4 = io.getcCommon();
-                        if (b4 == 0xFF) {
+                if ((b2 = io.getByte(context)).isNil()) break;
+                if (((RubyFixnum)b2).getLongValue() == 0 && !(b3 = io.getByte(context)).isNil()) {
+                    if (((RubyFixnum)b3).getLongValue() == 0xFE && !(b4 = io.getByte(context)).isNil()) {
+                        if (((RubyFixnum)b4).getLongValue() == 0xFF) {
                             return UTF32BEEncoding.INSTANCE;
                         }
-                        io.ungetcCommon(b4);
+                        io.ungetbyte(context, b4);
                     }
-                    io.ungetcCommon(b3);
+                    io.ungetbyte(context, b3);
                 }
-                io.ungetcCommon(b2);
+                io.ungetbyte(context, b2);
                 break;
         }
-        io.ungetcCommon(b1);
+        io.ungetbyte(context, b1);
         return null;
     }
     
@@ -1719,4 +1722,22 @@ public class EncodingUtils {
         return str;
     }
 
+    // rb_enc_uint_chr
+    public static IRubyObject encUintChr(ThreadContext context, int code, Encoding enc) {
+        Ruby runtime = context.runtime;
+
+        if (!Character.isValidCodePoint(code)) {
+            // inefficient to create a fixnum for this
+            return new RubyFixnum(runtime, code).chr19(context);
+        }
+
+        char[] chars = Character.toChars(code);
+        RubyString str = RubyString.newString(runtime, new String(chars), enc);
+//        ByteList strByteList = str.getByteList();
+//        if (StringSupport.preciseLength(enc, strByteList.unsafeBytes(), strByteList.getBegin(), strByteList.getBegin() + strByteList.getRealSize()) != n) {
+//            rb_raise(rb_eRangeError, "invalid codepoint 0x%X in %s", code, rb_enc_name(enc));
+//        }
+        return str;
+
+    }
 }

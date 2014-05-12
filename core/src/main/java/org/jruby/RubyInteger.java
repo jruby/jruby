@@ -48,6 +48,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
+import org.jruby.util.StringSupport;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.util.Numeric.checkInteger;

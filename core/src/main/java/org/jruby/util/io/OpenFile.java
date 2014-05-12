@@ -18,11 +18,13 @@ import org.jcodings.transcode.EConvFlags;
 import org.jcodings.transcode.EConvResult;
 import org.jruby.Ruby;
 import org.jruby.RubyArgsFile;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -49,6 +51,9 @@ public class OpenFile {
     
     public static final int SYNCWRITE = SYNC | WRITABLE;
 
+    public static final int PIPE_BUF = 512; // value of _POSIX_PIPE_BUF from Mac OS X 10.9
+    public static final int BUFSIZ = 1024; // value of BUFSIZ from Mac OS X 10.9 stdio.h
+
     public static interface Finalizer {
 
         public void finalize(Ruby runtime, boolean raise);
@@ -63,7 +68,7 @@ public class OpenFile {
     private int mode;
     private Process process;
     private int lineno = 0;
-    private String path;
+    private String pathv;
     private Finalizer finalizer;
     private boolean stdio;
 
@@ -108,8 +113,6 @@ public class OpenFile {
             checkClosed(context.runtime);
         }
     }
-
-    public static final int PIPE_BUF = 512; // value of _POSIX_PIPE_BUF from Mac OS X 10.9
 
     public Stream getMainStream() {
         return mainStream;
@@ -617,11 +620,11 @@ public class OpenFile {
     }
 
     public String getPath() {
-        return path;
+        return pathv;
     }
 
     public void setPath(String path) {
-        this.path = path;
+        this.pathv = path;
     }
 
     public boolean isAutoclose() {
@@ -768,30 +771,33 @@ public class OpenFile {
     }
 
     // MRI: make_readconv
-    // Missing flags and doubling readTranscoder as transcoder and whether transcoder has been initializer (ick).
-    public void makeReadConversion(ThreadContext context) {
-        if (readconv != null) return;
-
-        int ecflags;
-        IRubyObject ecopts;
-        byte[] sname, dname;
-        ecflags = encs.ecflags & ~EConvFlags.NEWLINE_DECORATOR_WRITE_MASK;
-        ecopts = encs.ecopts;
-
-        if (encs.enc2 != null) {
-            sname = encs.enc2.getName();
-            dname = encs.enc.getName();
-        } else {
-            sname = dname = EMPTY_BYTE_ARRAY;
-        }
-
-        readconv = EncodingUtils.econvOpenOpts(context, sname, dname, ecflags, ecopts);
-
+    public void makeReadConversion(ThreadContext context, int size) {
         if (readconv == null) {
-            throw EncodingUtils.econvOpenExc(context, sname, dname, ecflags);
+            int ecflags;
+            IRubyObject ecopts;
+            byte[] sname, dname;
+            ecflags = encs.ecflags & ~EConvFlags.NEWLINE_DECORATOR_MASK;
+            ecopts = encs.ecopts;
+            if (encs.enc2 != null) {
+                sname = encs.enc2.getName();
+                dname = encs.enc.getName();
+            }
+            else {
+                sname = dname = new byte[0];
+            }
+            readconv = EncodingUtils.econvOpenOpts(context, sname, dname, ecflags, ecopts);
+            if (readconv == null)
+                throw EncodingUtils.econvOpenExc(context, sname, dname, ecflags);
+            cbuf.off = 0;
+            cbuf.len = 0;
+            if (size < IO_CBUF_CAPA_MIN) size = IO_CBUF_CAPA_MIN;
+            cbuf.capa = size;
+            cbuf.ptr = new byte[cbuf.capa];
         }
+    }
 
-        // rest of MRI code sets up read/write buffers
+    public void makeReadConversion(ThreadContext context) {
+        makeReadConversion(context, IO_CBUF_CAPA_MIN);
     }
 
     // MRI: make_writeconv
@@ -1082,7 +1088,7 @@ public class OpenFile {
     }
 
     // io_fillbuf
-    int fillbuf(ThreadContext context) {
+    public int fillbuf(ThreadContext context) {
         int r;
 
         if (rbuf.ptr == null) {
@@ -1103,7 +1109,7 @@ public class OpenFile {
                         continue retry;
                     }
                     // This should be errno
-                    throw context.runtime.newSystemCallError("channel: " + fd + (path != null ? " " + path : ""));
+                    throw context.runtime.newSystemCallError("channel: " + fd + (pathv != null ? " " + pathv : ""));
                 }
                 break;
             }
@@ -1134,8 +1140,8 @@ public class OpenFile {
         public Integer run(ThreadContext context, InternalReadStruct iis) throws InterruptedException {
             // TODO: make nonblocking (when possible? MRI doesn't seem to...)
             // FIXME: inefficient to recreate ByteBuffer every time
-            ByteBuffer buffer = ByteBuffer.wrap(iis.bufBytes, iis.buf, iis.capa - iis.buf);
             try {
+                ByteBuffer buffer = ByteBuffer.wrap(iis.bufBytes, iis.buf, iis.capa);
                 int read = iis.fd.read(buffer);
 
                 // FileChannel returns -1 upon reading to EOF rather than blocking, so we call that 0 like read(2)
@@ -1374,5 +1380,186 @@ public class OpenFile {
         lineno++;
         runtime.setCurrentLine(lineno);
         RubyArgsFile.setCurrentLineNumber(runtime.getArgsFile(), lineno);
+    }
+
+    public IRubyObject readAll(ThreadContext context, int siz, IRubyObject str) {
+        Ruby runtime = context.runtime;
+        int bytes;
+        int n;
+        int pos;
+        Encoding enc;
+        int cr;
+
+        if (needsReadConversion()) {
+            setBinmode();
+            str = setStrBuf(runtime, str, 0);
+            makeReadConversion(context);
+            while (true) {
+                Object v;
+                if (cbuf.len != 0) {
+                    shiftCbuf(context, cbuf.len, str);
+                }
+                v = fillCbuf(context, 0);
+                if (!v.equals(MORE_CHAR_SUSPENDED) && !v.equals(MORE_CHAR_FINISHED)) {
+                    if (cbuf.len != 0) {
+                        shiftCbuf(context, cbuf.len, str);
+                    }
+                    throw (RaiseException)v;
+                }
+                if (v.equals(MORE_CHAR_FINISHED)) {
+                    clearReadConversion();
+                    return EncodingUtils.ioEncStr(runtime, str, this);
+                }
+            }
+        }
+
+        NEED_NEWLINE_DECORATOR_ON_READ_CHECK();
+        bytes = 0;
+        pos = 0;
+
+        enc = readEncoding(runtime);
+        cr = 0;
+
+        if (siz == 0) siz = BUFSIZ;
+        str = setStrBuf(runtime, str, siz);
+        for (;;) {
+            READ_CHECK(context);
+            n = fread(context, str, bytes, siz - bytes);
+            if (n == 0 && bytes == 0) {
+                ((RubyString)str).resize(0);
+                break;
+            }
+            bytes += n;
+            ByteList strByteList = ((RubyString)str).getByteList();
+            strByteList.setRealSize(bytes);
+            if (cr != StringSupport.CR_BROKEN)
+                pos += StringSupport.codeRangeScanRestartable(enc, strByteList.unsafeBytes(), strByteList.begin() + pos, strByteList.begin() + bytes, cr);
+            if (bytes < siz) break;
+            siz += BUFSIZ;
+            ((RubyString)str).modify(BUFSIZ);
+        }
+        str = EncodingUtils.ioEncStr(runtime, str, this);
+        ((RubyString)str).setCodeRange(cr);
+        return str;
+    }
+
+    private IRubyObject setStrBuf(Ruby runtime, IRubyObject str, int len) {
+        if (str == null || str.isNil()) {
+            str = runtime.newString();
+        } else {
+            RubyString s = str.convertToString();
+            int clen = s.size();
+            if (clen >= len) {
+                if (clen != len) {
+                    s.modify();
+                    s.resize(len);
+                }
+                return s;
+            }
+            str = s;
+            len -= clen;
+        }
+        ((RubyString)str).modify(len);
+        return str;
+    }
+
+    // io_bufread
+    private int ioBufread(ThreadContext context, byte[] ptrBytes, int ptr, int len) {
+        int offset = 0;
+        int n = len;
+        int c;
+
+        if (!READ_DATA_PENDING()) {
+            while (n > 0) {
+                c = readInternal(context, fdRead, ptrBytes, ptr + offset, n);
+                if (c == 0) break;
+                if (c < 0) {
+                    if (waitReadable(context, fd))
+                        continue;
+                    return -1;
+                }
+                offset += c;
+                if ((n -= c) <= 0) break;
+            }
+            return len - n;
+        }
+
+        Ruby runtime = context.runtime;
+
+        while (n > 0) {
+            c = readBufferedData(ptrBytes, ptr+offset, n);
+            if (c > 0) {
+                offset += c;
+                if ((n -= c) <= 0) break;
+            }
+            checkClosed(runtime);
+            if (fillbuf(context) < 0) {
+                break;
+            }
+        }
+        return len - n;
+    }
+
+    private static class BufreadArg {
+        byte[] strPtrBytes;
+        int strPtr;
+        int len;
+        OpenFile fptr;
+    };
+
+    static IRubyObject bufreadCall(ThreadContext context, BufreadArg p) {
+        p.len = p.fptr.ioBufread(context, p.strPtrBytes, p.strPtr, p.len);
+        return RubyBasicObject.UNDEF;
+    }
+
+    // io_fread
+    public int fread(ThreadContext context, IRubyObject str, int offset, int size) {
+        int len;
+        BufreadArg arg = new BufreadArg();
+
+        str = setStrBuf(context.runtime, str, offset + size);
+        ByteList strByteList = ((RubyString)str).getByteList();
+        arg.strPtrBytes = strByteList.unsafeBytes();
+        arg.strPtr = strByteList.begin() + offset;
+        arg.len = size;
+        arg.fptr = this;
+        // we don't support string locking
+//        rb_str_locktmp_ensure(str, bufread_call, (VALUE)&arg);
+        bufreadCall(context, arg);
+        len = arg.len;
+        // should be errno
+        if (len < 0) throw context.runtime.newSystemCallError(pathv);
+        return len;
+    }
+
+    public void ungetbyte(ThreadContext context, IRubyObject str)
+    {
+        int len = ((RubyString)str).size();
+
+        if (rbuf.ptr == null) {
+            int min_capa = IO_RBUF_CAPA_FOR();
+            rbuf.off = 0;
+            rbuf.len = 0;
+//            #if SIZEOF_LONG > SIZEOF_INT
+//            if (len > INT_MAX)
+//                rb_raise(rb_eIOError, "ungetbyte failed");
+//            #endif
+            if (len > min_capa)
+                rbuf.capa = (int)len;
+            else
+                rbuf.capa = min_capa;
+            rbuf.ptr = new byte[rbuf.capa];
+        }
+        if (rbuf.capa < len + rbuf.len) {
+            throw context.runtime.newIOError("ungetbyte failed");
+        }
+        if (rbuf.off < len) {
+            System.arraycopy(rbuf.ptr, rbuf.off, rbuf.ptr, rbuf.capa - rbuf.len, rbuf.len);
+            rbuf.off = rbuf.capa-rbuf.len;
+        }
+        rbuf.off-=(int)len;
+        rbuf.len+=(int)len;
+        ByteList strByteList = ((RubyString)str).getByteList();
+        System.arraycopy(strByteList.unsafeBytes(), strByteList.begin(), rbuf.ptr, rbuf.off, len);
     }
 }

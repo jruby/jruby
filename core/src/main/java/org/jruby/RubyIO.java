@@ -2723,6 +2723,30 @@ public class RubyIO extends RubyObject implements IOEncodable {
             throw getRuntime().newIOErrorFromException(e);
         }
     }
+
+    // rb_io_getbyte
+    public IRubyObject getByte(ThreadContext context) {
+        int c;
+
+        OpenFile fptr = getOpenFileChecked();
+        fptr.checkByteReadable(context.runtime);
+        fptr.READ_CHECK(context);
+        // TODO: tty flushing
+//        if (fptr->fd == 0 && (fptr->mode & FMODE_TTY) && RB_TYPE_P(rb_stdout, T_FILE)) {
+//            rb_io_t *ofp;
+//            GetOpenFile(rb_stdout, ofp);
+//            if (ofp->mode & FMODE_TTY) {
+//                rb_io_flush(rb_stdout);
+//            }
+//        }
+        if (fptr.fillbuf(context) < 0) {
+            return context.nil;
+        }
+        fptr.rbuf.off++;
+        fptr.rbuf.len--;
+        c = fptr.rbuf.ptr[fptr.rbuf.off-1];
+        return RubyNumeric.int2fix(context.runtime, c & 0xff);
+    }
     
     // MRI: READ_CHECK
     private void readCheck(Stream stream) {
@@ -2731,50 +2755,65 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
     }
 
-    public IRubyObject ungetc(IRubyObject number) {
-        return ungetc19(number);
+    @JRubyMethod
+    public IRubyObject ungetbyte(ThreadContext context, IRubyObject b) {
+        OpenFile fptr = getOpenFileChecked();
+        fptr.checkByteReadable(context.runtime);
+        if (b.isNil()) return context.nil;
+        if (b instanceof RubyFixnum) {
+            byte cc = (byte)RubyNumeric.fix2int(b);
+            b = RubyString.newStringNoCopy(context.runtime, new byte[]{cc});
+        }
+        else {
+            b = b.convertToString();
+        }
+        fptr.ungetbyte(context, b);
+        return context.nil;
     }
 
-    @JRubyMethod(name = {"ungetc", "ungetbyte"})
-    public IRubyObject ungetc19(IRubyObject character) {
-        Ruby runtime = getRuntime();
+    @JRubyMethod
+    public IRubyObject ungetc(ThreadContext context, IRubyObject c)
+    {
+        Ruby runtime = context.runtime;
+        OpenFile fptr;
+        int len;
 
-        if(character.isNil()) {
-            return runtime.getNil();
+        fptr = getOpenFileChecked();
+        fptr.checkCharReadable(runtime);
+        if (c.isNil()) return c;
+        if (c instanceof RubyFixnum) {
+            c = EncodingUtils.encUintChr(context, (int)((RubyFixnum)c).getLongValue(), fptr.readEncoding(runtime));
         }
-
-        if (character instanceof RubyFixnum) {
-            int c = (int)character.convertToInteger().getLongValue();
-            ungetcCommon(c);
-        } else if (character instanceof RubyString || character.respondsTo("to_str")) {
-            RubyString str = (RubyString) character.callMethod(runtime.getCurrentContext(), "to_str");
-            if (str.isEmpty()) return runtime.getNil();
-
-            byte[] bytes = str.getBytes();
-            for(int i = bytes.length - 1; i >= 0; i-- ) {
-                int c =  bytes[i];
-                ungetcCommon(c);
+        else if (c instanceof RubyBignum) {
+            c = EncodingUtils.encUintChr(context, (int)((RubyFixnum)c).getLongValue(), fptr.readEncoding(runtime));
+        }
+        else {
+            c = c.convertToString();
+        }
+        if (fptr.needsReadConversion()) {
+            fptr.setBinmode();
+            len = ((RubyString)c).size();
+//            #if SIZEOF_LONG > SIZEOF_INT
+//            if (len > INT_MAX)
+//                rb_raise(rb_eIOError, "ungetc failed");
+//            #endif
+            fptr.makeReadConversion(context, (int)len);
+            if (fptr.cbuf.capa - fptr.cbuf.len < len)
+                throw runtime.newIOError("ungetc failed");
+            if (fptr.cbuf.off < len) {
+                System.arraycopy(fptr.cbuf.ptr, fptr.cbuf.off, fptr.cbuf.ptr, fptr.cbuf.capa - fptr.cbuf.len, fptr.cbuf.len);
+                fptr.cbuf.off = fptr.cbuf.capa-fptr.cbuf.len;
             }
-
-        } else {
-            throw runtime.newTypeError(character, runtime.getFixnum());
+            fptr.cbuf.off -= (int)len;
+            fptr.cbuf.len += (int)len;
+            ByteList cByteList = ((RubyString)c).getByteList();
+            System.arraycopy(cByteList.unsafeBytes(), cByteList.begin(), fptr.cbuf.ptr, fptr.cbuf.off, len);
         }
-
-        return runtime.getNil();
-    }
-
-    public void ungetcCommon(int ch) {
-        try {
-            OpenFile myOpenFile = getOpenFileChecked();
-            myOpenFile.checkReadable(getRuntime());
-            myOpenFile.setReadBuffered();
-
-            if (myOpenFile.getMainStreamSafe().ungetc(ch) == -1 && ch != -1) {
-                throw getRuntime().newIOError("ungetc failed");
-            }
-        } catch (BadDescriptorException e) {
-            throw getRuntime().newErrnoEBADFError();
+        else {
+            fptr.NEED_NEWLINE_DECORATOR_ON_READ_CHECK();
+            fptr.ungetbyte(context, c);
         }
+        return context.nil;
     }
 
     @JRubyMethod(name = "read_nonblock", required = 1, optional = 1)
@@ -2975,17 +3014,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
         OpenFile myOpenFile = getOpenFileChecked();
         
-        try {
-            myOpenFile.checkReadable(runtime);
-            myOpenFile.setReadBuffered();
-            return readAll(context);
-        } catch (EOFException ex) {
-            throw getRuntime().newEOFError();
-        } catch (IOException ex) {
-            throw getRuntime().newIOErrorFromException(ex);
-        } catch (BadDescriptorException ex) {
-            throw getRuntime().newErrnoEBADFError();
-        }
+        myOpenFile.checkCharReadable(runtime);
+        return myOpenFile.readAll(context, 1024, context.nil);
     }
     
     @JRubyMethod(name = "read")
@@ -2993,7 +3023,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (arg0.isNil()) {
             return read(context);
         }
-        
+
         OpenFile myOpenFile = getOpenFileChecked();
         
         int length = RubyNumeric.num2int(arg0);
@@ -3002,7 +3032,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             throw getRuntime().newArgumentError("negative length " + length + " given");
         }
         
-        RubyString str = RubyString.newEmptyString(getRuntime());
+        RubyString str = RubyString.newStringLight(getRuntime(), length);
 
         return readNotAll(context, myOpenFile, length, str);
     }
@@ -3045,77 +3075,36 @@ public class RubyIO extends RubyObject implements IOEncodable {
     
     // implements latter part of io_read in io.c
     private IRubyObject readNotAll(ThreadContext context, OpenFile myOpenFile, int length, RubyString str) {
-        Ruby runtime = context.runtime;
-        str.empty();
+        str.resize(length);
 
-        try {
-            ByteList newBuffer = readNotAllCommon(context, myOpenFile, length);
-
-            if (emptyBufferOrEOF(newBuffer, myOpenFile)) {
-                return runtime.getNil();
-            }
-
-            str.setValue(newBuffer);
-            str.setTaint(true);
-
-            return str;
-        } catch (EOFException ex) {
-            throw runtime.newEOFError();
-        } catch (IOException ex) {
-            throw runtime.newIOErrorFromException(ex);
-        } catch (BadDescriptorException ex) {
-            throw runtime.newErrnoEBADFError();
-        }
+        return readNotAllCommon(context, myOpenFile, str, length);
     }
 
     // implements latter part of io_read in io.c
     private IRubyObject readNotAll(ThreadContext context, OpenFile myOpenFile, int length) {
         Ruby runtime = context.runtime;
 
-        try {
-            ByteList newBuffer = readNotAllCommon(context, myOpenFile, length);
-
-            if (emptyBufferOrEOF(newBuffer, myOpenFile)) {
-                return runtime.getNil();
-            }
-
-            RubyString str = RubyString.newString(runtime, newBuffer);
-            str.setTaint(true);
-
-            return str;
-        } catch (EOFException ex) {
-            throw runtime.newEOFError();
-        } catch (IOException ex) {
-            throw runtime.newIOErrorFromException(ex);
-        } catch (BadDescriptorException ex) {
-            throw runtime.newErrnoEBADFError();
-        }
+        return readNotAllCommon(context, myOpenFile, context.nil, length);
     }
 
-    private ByteList readNotAllCommon(ThreadContext context, OpenFile myOpenFile, int length) {
+    private IRubyObject readNotAllCommon(ThreadContext context, OpenFile myOpenFile, IRubyObject str, int len) {
         Ruby runtime = context.runtime;
+        int n;
 
-        try {
-            myOpenFile.checkReadable(runtime);
-            myOpenFile.setReadBuffered();
+        myOpenFile.checkReadable(runtime);
 
-            if (myOpenFile.getMainStreamSafe().feof()) {
-                return null;
-            }
+        if (len == 0) return str;
 
-            // READ_CHECK from MRI io.c
-            readCheck(myOpenFile.getMainStreamSafe());
+        // READ_CHECK from MRI io.c
+        myOpenFile.READ_CHECK(context);
 
-            ByteList newBuffer = fread(context.getThread(), length);
+        n = myOpenFile.fread(context, str, 0, len);
+        ((RubyString)str).resize(n);
 
-            return newBuffer;
-        } catch (EOFException ex) {
-            throw runtime.newEOFError();
-        } catch (IOException ex) {
-            throw runtime.newIOErrorFromException(ex);
-        } catch (BadDescriptorException ex) {
-            throw runtime.newErrnoEBADFError();
-        }
+        if (n == 0) return context.nil;
+        str.setTaint(true);
+
+        return str;
     }
 
     protected static boolean emptyBufferOrEOF(ByteList buffer, OpenFile myOpenFile) throws BadDescriptorException, IOException {

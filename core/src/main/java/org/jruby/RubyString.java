@@ -391,20 +391,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
-        super(runtime, rubyClass);
-        assert value != null;
-
-        Encoding defaultEncoding = runtime.getEncodingService().getLocaleEncoding();
-        if (defaultEncoding == null) defaultEncoding = UTF8;
-
-        this.value = encodeBytelist(value, defaultEncoding);
+        this(runtime, rubyClass, value, null);
     }
 
-    public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value, Encoding defaultEncoding) {
+    public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value, Encoding enc) {
         super(runtime, rubyClass);
         assert value != null;
+        if (enc == null) enc = UTF8;
 
-        this.value = encodeBytelist(value, defaultEncoding);
+        this.value = encodeBytelist(value, enc);
     }
 
     public RubyString(Ruby runtime, RubyClass rubyClass, byte[] value) {
@@ -492,6 +487,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     public static RubyString newString(Ruby runtime, String str) {
         return new RubyString(runtime, runtime.getString(), str);
+    }
+
+    public static RubyString newString(Ruby runtime, String str, Encoding encoding) {
+        return new RubyString(runtime, runtime.getString(), str, encoding);
     }
 
     public static RubyString newUSASCIIString(Ruby runtime, String str) {
