@@ -1711,4 +1711,12 @@ public class EncodingUtils {
         return 0;
     }
 
+    // io_enc_str
+    public static IRubyObject ioEncStr(Ruby runtime, IRubyObject str, OpenFile fptr)
+    {
+        str.setTaint(true);
+        ((RubyString)str).setEncoding(fptr.readEncoding(runtime));
+        return str;
+    }
+
 }

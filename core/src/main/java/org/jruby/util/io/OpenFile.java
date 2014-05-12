@@ -8,7 +8,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -18,6 +17,8 @@ import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvFlags;
 import org.jcodings.transcode.EConvResult;
 import org.jruby.Ruby;
+import org.jruby.RubyArgsFile;
+import org.jruby.RubyIO;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
@@ -26,6 +27,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ShellLauncher;
+import org.jruby.util.StringSupport;
 
 public class OpenFile {
 
@@ -60,7 +62,7 @@ public class OpenFile {
     private Stream pipeStream;
     private int mode;
     private Process process;
-    private int lineNumber = 0;
+    private int lineno = 0;
     private String path;
     private Finalizer finalizer;
     private boolean stdio;
@@ -607,11 +609,11 @@ public class OpenFile {
     }
 
     public int getLineNumber() {
-        return lineNumber;
+        return lineno;
     }
 
     public void setLineNumber(int lineNumber) {
-        this.lineNumber = lineNumber;
+        this.lineno = lineNumber;
     }
 
     public String getPath() {
@@ -1130,11 +1132,16 @@ public class OpenFile {
     final RubyThread.Task<InternalReadStruct, Integer> readTask = new RubyThread.Task<InternalReadStruct, Integer>() {
         @Override
         public Integer run(ThreadContext context, InternalReadStruct iis) throws InterruptedException {
-            // TODO: make nonblocking (when possible?)
+            // TODO: make nonblocking (when possible? MRI doesn't seem to...)
             // FIXME: inefficient to recreate ByteBuffer every time
             ByteBuffer buffer = ByteBuffer.wrap(iis.bufBytes, iis.buf, iis.capa - iis.buf);
             try {
-                return iis.fd.read(buffer);
+                int read = iis.fd.read(buffer);
+
+                // FileChannel returns -1 upon reading to EOF rather than blocking, so we call that 0 like read(2)
+                if (read == -1 && iis.fd instanceof FileChannel) read = 0;
+
+                return read;
             } catch (IOException ioe) {
                 throw context.runtime.newIOErrorFromException(ioe);
             }
@@ -1197,8 +1204,8 @@ public class OpenFile {
             }
         }
 
-        // have to assume it is readable since we can't select
-        return true;
+        // we can't determine if it is readable
+        return false;
 
         /*
         switch (errno) {
@@ -1316,4 +1323,56 @@ public class OpenFile {
         return str;
     }
 
+    // rb_io_getline_fast
+    public IRubyObject getlineFast(ThreadContext context, Encoding enc, RubyIO io) {
+        Ruby runtime = context.runtime;
+        IRubyObject str = null;
+        ByteList strByteList;
+        int len = 0;
+        int pos = 0;
+        int cr = 0;
+
+        do {
+            int pending = READ_DATA_PENDING_COUNT();
+
+            if (pending > 0) {
+                byte[] pBytes = READ_DATA_PENDING_PTR();
+                int p = READ_DATA_PENDING_OFF();
+                int e;
+
+                e = memchr(pBytes, p, '\n', pending);
+                if (e != -1) {
+                    pending = (int)(e - p + 1);
+                }
+                if (str == null) {
+                    str = RubyString.newString(runtime, pBytes, p, pending);
+                    strByteList = ((RubyString)str).getByteList();
+                    rbuf.off += pending;
+                    rbuf.len -= pending;
+                }
+                else {
+                    ((RubyString)str).resize(len + pending);
+                    strByteList = ((RubyString)str).getByteList();
+                    readBufferedData(strByteList.unsafeBytes(), strByteList.begin() + len, pending);
+                }
+                len += pending;
+                if (cr != StringSupport.CR_BROKEN)
+                    pos += StringSupport.codeRangeScanRestartable(enc, strByteList.unsafeBytes(), strByteList.begin() + pos, strByteList.begin() + len, cr);
+                if (e != -1) break;
+            }
+            READ_CHECK(context);
+        } while (fillbuf(context) >= 0);
+        if (str == null) return context.nil;
+        str = EncodingUtils.ioEncStr(runtime, str, this);
+        ((RubyString)str).setCodeRange(cr);
+        incrementLineno(runtime);
+
+        return str;
+    }
+
+    public void incrementLineno(Ruby runtime) {
+        lineno++;
+        runtime.setCurrentLine(lineno);
+        RubyArgsFile.setCurrentLineNumber(runtime.getArgsFile(), lineno);
+    }
 }

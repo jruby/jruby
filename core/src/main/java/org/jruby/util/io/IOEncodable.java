@@ -25,6 +25,14 @@ public interface IOEncodable {
         public IRubyObject ecopts;
         public boolean bom;
 
+        public void copy(IOEncodable that) {
+            this.enc = that.getEnc();
+            this.enc2 = that.getEnc2();
+            this.ecflags = that.getEcflags();
+            this.ecopts = that.getEcopts();
+            this.bom = that.getBOM();
+        }
+
         public Encoding getEnc() {
             return enc;
         }
