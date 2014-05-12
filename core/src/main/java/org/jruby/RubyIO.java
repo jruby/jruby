@@ -611,11 +611,19 @@ public class RubyIO extends RubyObject implements IOEncodable {
             
             if (rs == null && _limit < 0) {
                 return getlineAll(runtime.getCurrentContext(), fptr);
-            } else if (_limit == 0) {
+            }
+
+            if (_limit == 0) {
                 return RubyString.newEmptyString(runtime, fptr.readEncoding(runtime));
-            } else if (rs.equals(((RubyString)runtime.getGlobalVariables().getDefaultSeparator()).getByteList()) && _limit < 0 && !fptr.needsReadConversion() &&
-                    fptr.readEncoding(runtime).isAsciiCompatible()) {
-                // TODO: NEED_NEWLINE_DECORATOR_ON_READ_CHECK(fptr);
+            }
+
+            IRubyObject defaultRs = runtime.getGlobalVariables().getDefaultSeparator();
+            if (defaultRs instanceof RubyString
+                    && rs != null
+                    && rs.equals(((RubyString)defaultRs).getByteList())
+                    && _limit < 0 && !fptr.needsReadConversion()
+                    && fptr.readEncoding(runtime).isAsciiCompatible()) {
+                fptr.NEED_NEWLINE_DECORATOR_ON_READ_CHECK();
                 return getlineFast(runtime, rs.get(0) & 0xFF, cache);
             } else {
                 int c, newline = -1;
@@ -654,11 +662,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
                 ByteList buf = cache != null ? cache.allocate(0) : new ByteList(0);
                 try {
-                    ByteList[] strPtr = {
-                            str instanceof RubyString ?
-                            ((RubyString)str).getByteList() :
-                            null
-                    };
+                    boolean bufferString = str instanceof RubyString;
+                    ByteList[] strPtr = {bufferString ? ((RubyString)str).getByteList() : null};
 
                     int[] limit_p = {_limit};
                     while ((c = fptr.appendline(context, newline, strPtr, limit_p)) != OpenFile.EOF) {
@@ -688,6 +693,18 @@ public class RubyIO extends RubyObject implements IOEncodable {
                         }
                     }
                     _limit = limit_p[0];
+                    if (strPtr[0] != null) {
+                        if (bufferString) {
+                            if (strPtr[0] != ((RubyString)str).getByteList()) {
+                                ((RubyString)str).setValue(strPtr[0]);
+                            } else {
+                                // same BL as before
+                            }
+                        } else {
+                            // create string
+                            str = runtime.newString(strPtr[0]);
+                        }
+                    }
 
                     if (rspara && c != OpenFile.EOF) {
                         // FIXME: if we can check for more newlines to scrub without blocking, do it

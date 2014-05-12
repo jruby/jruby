@@ -968,7 +968,7 @@ public class OpenFile {
         return -1;
     }
 
-    private void NEED_NEWLINE_DECORATOR_ON_READ_CHECK() {
+    public void NEED_NEWLINE_DECORATOR_ON_READ_CHECK() {
         if (NEED_NEWLINE_DECORATOR_ON_READ()) {
             if ((getMode() & OpenFile.READABLE) != 0 &&
                     (encs.ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) == 0) {
@@ -1183,7 +1183,22 @@ public class OpenFile {
             return context.getThread().select(fd, null, SelectionKey.OP_READ);
         }
 
-        return false;
+        // kinda-hacky way to see if there's more data to read from a seekable channel
+        if (fd instanceof SeekableByteChannel) {
+            SeekableByteChannel fdSeek = (SeekableByteChannel)fd;
+            try {
+                // not a real file, can't get size...we'll have to just read and block
+                if (fdSeek.size() < 0) return true;
+
+                // if current position is less than file size, read should not block
+                return fdSeek.position() < fdSeek.size();
+            } catch (IOException ioe) {
+                throw context.runtime.newIOErrorFromException(ioe);
+            }
+        }
+
+        // have to assume it is readable since we can't select
+        return true;
 
         /*
         switch (errno) {
