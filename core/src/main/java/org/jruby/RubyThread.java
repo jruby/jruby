@@ -161,7 +161,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private Unblocker unblockFunc;
 
     /** Argument to pass to the unblocker */
-    private IRubyObject unblockArg;
+    private Object unblockArg;
 
     /** The list of locks this thread currently holds, so they can be released on exit */
     private final List<Lock> heldLocks = new Vector<Lock>();
@@ -1190,13 +1190,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         public void wakeup();
     }
 
-    public interface Unblocker {
-        public void wakeup(RubyThread thread, IRubyObject self);
+    public interface Unblocker<Data> {
+        public void wakeup(RubyThread thread, Data self);
     }
 
-    public interface Task<Data, Return> extends Unblocker {
+    public interface Task<Data, Return> extends Unblocker<Data> {
         public Return run(ThreadContext context, Data data) throws InterruptedException;
-        public void wakeup(RubyThread thread, IRubyObject self);
+        public void wakeup(RubyThread thread, Data self);
     }
 
     public static final class SleepTask implements BlockingTask {
@@ -1239,7 +1239,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    public <Data extends IRubyObject, Return> Return executeTask(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
+    public <Data, Return> Return executeTask(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
         enterSleep();
         try {
             this.unblockFunc = task;
@@ -1528,7 +1528,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         Unblocker task = this.unblockFunc;
         if (task != null) {
-            task.wakeup(this, unblockArg);
+            task.wakeup(this, (IRubyObject)unblockArg);
         }
 
         // deprecated

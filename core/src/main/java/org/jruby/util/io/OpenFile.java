@@ -19,6 +19,7 @@ import org.jcodings.transcode.EConvFlags;
 import org.jcodings.transcode.EConvResult;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
+import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
@@ -1092,12 +1093,17 @@ public class OpenFile {
             }
         }
         if (rbuf.len == 0) {
-            // FIXME: inefficient to recreate every time
-            ByteBuffer tmp = ByteBuffer.wrap(rbuf.ptr, 0, rbuf.capa);
-            try {
-                r = fdRead.read(tmp);
-            } catch (IOException ioe) {
-                throw context.runtime.newIOErrorFromException(ioe);
+            retry: while (true) {
+                r = readInternal(context, fdRead, rbuf.ptr, 0, rbuf.capa);
+
+                if (r < 0) {
+                    if (waitReadable(context, fdRead)) {
+                        continue retry;
+                    }
+                    // This should be errno
+                    throw context.runtime.newSystemCallError("channel: " + fd + (path != null ? " " + path : ""));
+                }
+                break;
             }
             rbuf.off = 0;
             rbuf.len = (int)r; /* r should be <= rbuf_capa */
@@ -1106,6 +1112,110 @@ public class OpenFile {
         }
         return 0;
     }
+
+    public static class InternalReadStruct {
+        InternalReadStruct(ReadableByteChannel fd, byte[] bufBytes, int buf, int count) {
+            this.fd = fd;
+            this.bufBytes = bufBytes;
+            this.buf = buf;
+            this.capa = count;
+        }
+
+        public ReadableByteChannel fd;
+        public byte[] bufBytes;
+        public int buf;
+        public int capa;
+    }
+
+    final RubyThread.Task<InternalReadStruct, Integer> readTask = new RubyThread.Task<InternalReadStruct, Integer>() {
+        @Override
+        public Integer run(ThreadContext context, InternalReadStruct iis) throws InterruptedException {
+            // TODO: make nonblocking (when possible?)
+            // FIXME: inefficient to recreate ByteBuffer every time
+            ByteBuffer buffer = ByteBuffer.wrap(iis.bufBytes, iis.buf, iis.capa - iis.buf);
+            try {
+                return iis.fd.read(buffer);
+            } catch (IOException ioe) {
+                throw context.runtime.newIOErrorFromException(ioe);
+            }
+        }
+
+        @Override
+        public void wakeup(RubyThread thread, InternalReadStruct self) {
+            // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
+            thread.getNativeThread().interrupt();
+        }
+    };
+
+//    final RubyThread.Task<IRubyObject, IRubyObject> putTask = new RubyThread.Task<IRubyObject, IRubyObject>() {
+//        @Override
+//        public IRubyObject run(ThreadContext context, IRubyObject data) throws InterruptedException {
+//            final BlockingQueue<IRubyObject> queue = getQueueSafe();
+//            queue.put(data);
+//            return context.nil;
+//        }
+//
+//        @Override
+//        public void wakeup(RubyThread thread, IRubyObject data) {
+//            thread.getNativeThread().interrupt();
+//        }
+//    };
+
+    // rb_read_internal
+    public int readInternal(ThreadContext context, ReadableByteChannel fd, byte[] bufBytes, int buf, int count) {
+        InternalReadStruct iis = new InternalReadStruct(fd, bufBytes, buf, count);
+
+        try {
+            return context.getThread().executeTask(context, iis, readTask);
+        } catch (InterruptedException ie) {
+            throw context.runtime.newConcurrencyError("IO operation interrupted");
+        }
+    }
+
+    // rb_io_wait_readable
+    boolean waitReadable(ThreadContext context, Channel fd)
+    {
+        if (!fd.isOpen()) {
+            throw context.runtime.newIOError("closed stream");
+        }
+
+        if (fd instanceof SelectableChannel) {
+            return context.getThread().select(fd, null, SelectionKey.OP_READ);
+        }
+
+        return false;
+
+        /*
+        switch (errno) {
+            case EINTR:
+                #if defined(ERESTART)
+            case ERESTART:
+                #endif
+                rb_thread_check_ints();
+                return TRUE;
+
+            case EAGAIN:
+                #if defined(EWOULDBLOCK) && EWOULDBLOCK != EAGAIN
+            case EWOULDBLOCK:
+                #endif
+                rb_thread_wait_fd(f);
+                return TRUE;
+
+            default:
+                return FALSE;
+        }*/
+    }
+
+//    static ssize_t
+//    rb_write_internal(int fd, const void *buf, size_t count)
+//    {
+//        struct io_internal_write_struct iis;
+//        iis.fd = fd;
+//        iis.buf = buf;
+//        iis.capa = count;
+//
+//        return (ssize_t)rb_thread_io_blocking_region(internal_write_func, &iis, fd);
+//    }
 
     // io_read_encoding
     public Encoding readEncoding(Ruby runtime) {
