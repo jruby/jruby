@@ -1483,11 +1483,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
      */
     @JRubyMethod
     public RubyBoolean sync(ThreadContext context) {
-        try {
-            return context.runtime.newBoolean(getOpenFileChecked().getMainStreamSafe().isSync());
-        } catch (BadDescriptorException e) {
-            throw context.runtime.newErrnoEBADFError();
-        }
+        Ruby runtime = context.runtime;
+        OpenFile fptr;
+
+        RubyIO io = GetWriteIO();
+        fptr = io.getOpenFileChecked();
+        return (fptr.getMode() & OpenFile.SYNC) != 0 ? runtime.getTrue() : runtime.getFalse();
     }
     
     /**
@@ -1716,69 +1717,58 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod
     public RubyFixnum rewind(ThreadContext context) {
-        OpenFile myOpenfile = getOpenFileChecked();
-        
-        try {
-            myOpenfile.getMainStreamSafe().lseek(0L, Stream.SEEK_SET);
-            myOpenfile.getMainStreamSafe().clearerr();
-            
-            // TODO: This is some goofy global file value from MRI..what to do?
-//            if (io == current_file) {
-//                gets_lineno -= fptr->lineno;
-//            }
-        } catch (BadDescriptorException e) {
-            throw context.runtime.newErrnoEBADFError();
-        } catch (InvalidValueException e) {
-            throw context.runtime.newErrnoEINVALError();
-        } catch (PipeException e) {
-            throw context.runtime.newErrnoESPIPEError();
-        } catch (IOException e) {
-            throw context.runtime.newIOErrorFromException(e);
+        Ruby runtime = context.runtime;
+        OpenFile fptr;
+
+        fptr = getOpenFileChecked();
+        // TODO: need errno
+        if (fptr.seek(context, 0L, 0) < 0/* && errno*/) throw runtime.newSystemCallError(fptr.getPath());
+        // TODO: ARGF
+//        if (this == ARGF.current_file) {
+//            ARGF.lineno -= fptr->lineno;
+//        }
+        fptr.setLineNumber(0);
+        if (fptr.readconv != null) {
+            fptr.clearReadConversion();
         }
 
-        // Must be back on first line on rewind.
-        myOpenfile.setLineNumber(0);
-
-        return RubyFixnum.zero(context.runtime);
+        return RubyFixnum.zero(runtime);
     }
     
     @JRubyMethod
     public RubyFixnum fsync(ThreadContext context) {
         Ruby runtime = context.runtime;
-        
-        try {
-            OpenFile myOpenFile = getOpenFileChecked();
-            
-            myOpenFile.checkWritable(context);
-        
-            Stream writeStream = myOpenFile.getWriteStream();
+        OpenFile fptr;
 
-            writeStream.fflush();
-            writeStream.sync();
+        RubyIO io = GetWriteIO();
+        fptr = io.getOpenFileChecked();
 
-        } catch (IOException e) {
-            throw runtime.newIOErrorFromException(e);
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
-        }
+        if (fptr.fflush(runtime) < 0)
+            throw runtime.newSystemCallError("");
 
+//        # ifndef _WIN32	/* already called in io_fflush() */
+//        if ((int)rb_thread_io_blocking_region(nogvl_fsync, fptr, fptr->fd) < 0)
+//            rb_sys_fail_path(fptr->pathv);
+//        # endif
         return RubyFixnum.zero(runtime);
     }
 
     /** Sets the current sync mode.
      * 
-     * @param newSync The new sync mode.
+     * @param sync The new sync mode.
      */
     @JRubyMethod(name = "sync=", required = 1)
-    public IRubyObject sync_set(IRubyObject newSync) {
-        try {
-            getOpenFileChecked().setSync(newSync.isTrue());
-            getOpenFileChecked().getMainStreamSafe().setSync(newSync.isTrue());
-        } catch (BadDescriptorException e) {
-            throw getRuntime().newErrnoEBADFError();
-        }
+    public IRubyObject sync_set(IRubyObject sync) {
+        OpenFile fptr;
 
-        return this;
+        RubyIO io = GetWriteIO();
+        fptr = io.getOpenFileChecked();
+        if (sync.isTrue()) {
+            fptr.setMode(fptr.getMode() | OpenFile.SYNC);
+        } else {
+            fptr.setMode(fptr.getMode() & ~OpenFile.SYNC);
+        }
+        return sync;
     }
 
     @JRubyMethod(name = {"eof?", "eof"})
@@ -1936,6 +1926,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * it from our magical all open file descriptor pool.</p>
      * 
      * @return The IO.
+     *
+     * MRI: rb_io_close_m
      */
     @JRubyMethod
     public IRubyObject close() {
@@ -1947,35 +1939,41 @@ public class RubyIO extends RubyObject implements IOEncodable {
     
     // rb_io_close  
     protected IRubyObject ioClose(Ruby runtime) {
-        if (openFile == null) return runtime.getNil();
-        
-        interruptBlockingThreads();
+        OpenFile fptr;
+        Channel fd;
+        RubyIO write_io;
+        OpenFile write_fptr;
 
-        /* FIXME: Why did we go to this trouble and not use these descriptors?
-        ChannelDescriptor main, pipe;
-        if (openFile.getPipeStream() != null) {
-            pipe = openFile.getPipeStream().getDescriptor();
-        } else {
-            if (openFile.getMainStream() == null) {
-                return runtime.getNil();
+        write_io = GetWriteIO();
+        if (this != write_io) {
+            write_fptr = write_io.openFile;
+            if (write_fptr != null) {// && 0 <= write_fptr.fd) {
+                write_fptr.cleanup(runtime, true);
             }
-            pipe = null;
         }
-        
-        main = openFile.getMainStream().getDescriptor(); */
-        
-        // cleanup, raising errors if any
-        openFile.cleanup(runtime, true);
-        
-        // TODO: notify threads waiting on descriptors/IO? probably not...
 
-        // If this is not a popen3/popen4 stream and it has a process, attempt to shut down that process
-        if (!popenSpecial && openFile.getProcess() != null) {
-            obliterateProcess(openFile.getProcess());
-            IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, openFile.getProcess().exitValue(), openFile.getPid());
-            runtime.getCurrentContext().setLastExitStatus(processResult);
+        fptr = openFile;
+        if (fptr == null) return runtime.getNil();
+//        if (fptr.fd < 0) return Qnil;
+
+        fd = fptr.getFd();
+        // TODO: mark this closed for all threads waiting for it
+        // see interruptBlockingThreads()
+//        rb_thread_fd_close(fd);
+        fptr.cleanup(runtime, false);
+
+        if (fptr.getProcess() != null) {
+            runtime.getCurrentContext().setLastExitStatus(runtime.getNil());
+
+            // If this is not a popen3/popen4 stream and it has a process, attempt to shut down that process
+            if (!popenSpecial) {
+                obliterateProcess(openFile.getProcess());
+                IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, openFile.getProcess().exitValue(), openFile.getPid());
+                runtime.getCurrentContext().setLastExitStatus(processResult);
+            }
+            fptr.setProcess(null);
         }
-        
+
         return runtime.getNil();
     }
 

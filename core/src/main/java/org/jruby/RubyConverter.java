@@ -370,7 +370,7 @@ public class RubyConverter extends RubyObject {
             if (retStr.equals(EConvResult.InvalidByteSequence.symbolicName()) ||
                     retStr.equals(EConvResult.UndefinedConversion.symbolicName()) ||
                     retStr.equals(EConvResult.IncompleteInput.symbolicName())) {
-                throw EncodingUtils.makeEconvException(context, ec);
+                throw EncodingUtils.makeEconvException(runtime, ec);
             }
 
             if (retStr.equals(EConvResult.Finished.symbolicName())) {
@@ -407,7 +407,7 @@ public class RubyConverter extends RubyObject {
             if (retStr.equals(EConvResult.InvalidByteSequence.symbolicName()) ||
                     retStr.equals(EConvResult.UndefinedConversion.symbolicName()) ||
                     retStr.equals(EConvResult.IncompleteInput.symbolicName())) {
-                throw EncodingUtils.makeEconvException(context, ec);
+                throw EncodingUtils.makeEconvException(runtime, ec);
             }
 
             if (!retStr.equals(EConvResult.Finished.symbolicName())) {
@@ -474,7 +474,7 @@ public class RubyConverter extends RubyObject {
     
     @JRubyMethod
     public IRubyObject last_error(ThreadContext context) {
-        RaiseException re = EncodingUtils.makeEconvException(context, ec);
+        RaiseException re = EncodingUtils.makeEconvException(context.runtime, ec);
 
         if (re != null) return re.getException();
         

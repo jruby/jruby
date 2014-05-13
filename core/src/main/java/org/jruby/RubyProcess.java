@@ -1211,6 +1211,12 @@ public class RubyProcess {
     public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
         return RubyKernel.exit(recv, args);
     }
+
+    // This isn't quite right, and should probably work with a new Process + pid aggregate object
+    public static void syswait(Ruby runtime, int pid) {
+        int[] status = {0};
+        runtime.getPosix().waitpid(pid, status, 0);
+    }
     
     private static final NonNativeErrno IGNORE = new NonNativeErrno() {
         @Override

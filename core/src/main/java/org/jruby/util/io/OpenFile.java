@@ -19,11 +19,12 @@ import org.jcodings.transcode.EConvResult;
 import org.jruby.Ruby;
 import org.jruby.RubyArgsFile;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyException;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.thread.Mutex;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -48,6 +49,7 @@ public class OpenFile {
     public static final int TRUNC              = 0x00000800;
     public static final int TEXTMODE           = 0x00001000;
     public static final int SETENC_BY_BOM      = 0x00100000;
+    public static final int PREP         = (1<<16);
 
     public static final int SEEK_SET = 0;
     public static final int SEEK_CUR = 1;
@@ -63,6 +65,7 @@ public class OpenFile {
         public void finalize(Ruby runtime, boolean raise);
     }
     private Channel fd;
+
     private ReadableByteChannel fdRead;
     private WritableByteChannel fdWrite;
     private SeekableByteChannel fdSeek;
@@ -118,6 +121,10 @@ public class OpenFile {
         if (!READ_DATA_PENDING()) {
             checkClosed(context.runtime);
         }
+    }
+
+    boolean IS_PREP_STDIO() {
+        return (mode & PREP) == PREP;
     }
 
     public Stream getMainStream() {
@@ -667,103 +674,80 @@ public class OpenFile {
         this.finalizer = finalizer;
     }
 
-    public void cleanup(Ruby runtime, boolean raise) {
+    public void cleanup(Ruby runtime, boolean noraise) {
         if (finalizer != null) {
-            finalizer.finalize(runtime, raise);
+            finalizer.finalize(runtime, noraise);
         } else {
-            finalize(runtime, raise);
+            finalize(runtime, noraise);
         }
     }
 
-    public void finalize(Ruby runtime, boolean raise) {
-        try {
-            ChannelDescriptor pipe = null;
-            
-            // TODO: writeconv the remaining bytes in the stream?
-            
-//            if (isStdio()) return;
-            
-            // Recent JDKs shut down streams in the parent when child
-            // terminates, so we can't trust that they'll be open for our
-            // close. Check for that.
-            
-            boolean isProcess = process != null;
+    public void finalize(Ruby runtime, boolean noraise) {
+        IRubyObject err = runtime.getNil();
 
-            synchronized (this) {
-                Stream ps = pipeStream;
-                if (ps != null) {
-                    pipe = ps.getDescriptor();
+        // TODO: ???
+//        FILE *stdio_file = fptr->stdio_file;
 
-                    try {
-                        // Newer JDKs actively close the process streams when
-                        // the child exits, so we have to confirm it's still
-                        // open to avoid raising an error here when we try to
-                        // flush and close the stream.
-                        if (isProcess && ps.getChannel().isOpen()
-                                || !isProcess) {
-                            ps.fflush();
-                            ps.fclose();
-                        }
-                    } finally {
-                        // make sure the pipe stream is set to null
-                        pipeStream = null;
-                    }
-                }
-                Stream ms = mainStream;
-                if (ms != null) {
-                    // TODO: Ruby logic is somewhat more complicated here, see comments after
-                    ChannelDescriptor main = ms.getDescriptor();
-                    runtime.removeFilenoIntMap(main.getFileno());
-                    try {
-                        // Newer JDKs actively close the process streams when
-                        // the child exits, so we have to confirm it's still
-                        // open to avoid raising an error here when we try to
-                        // flush and close the stream.
-                        if (isProcess) {
-                            if (ms.getChannel().isOpen()) {
-                                if (pipe == null && isWriteBuffered()) {
-                                    ms.fflush();
-                                }
-                                try {
-                                    ms.fclose();
-                                } catch (IOException ioe) {
-                                    // OpenJDK 7 seems to leave the FileChannel in a state where
-                                    // the fd is no longer valid, but the channel is not marked
-                                    // as open, so we get IOException: Bad file descriptor here.
-
-                                    if (!ioe.getMessage().equals("Bad file descriptor")) throw ioe;
-
-                                    // If the process is still alive, allow the error to propagate
-
-                                    boolean isAlive = false;
-                                    try { process.exitValue(); } catch (IllegalThreadStateException itse) { isAlive = true; }
-                                    if (isAlive) throw ioe;
-                                }
-                            }
-                        } else {
-                            if (pipe == null && isWriteBuffered()) {
-                                ms.fflush();
-                            }
-                            ms.fclose();
-                        }
-                    } catch (BadDescriptorException bde) {
-                        if (main != pipe) throw bde;
-                    } finally {
-                        // make sure the main stream is set to null
-                        mainStream = null;
-                    }
+        if (writeconv != null) {
+            if (write_lock != null && !noraise) {
+//                struct finish_writeconv_arg arg;
+//                arg.fptr = fptr;
+//                arg.noalloc = noraise;
+//                err = rb_mutex_synchronize(fptr->write_lock, finish_writeconv_sync, (VALUE)&arg);
+                // TODO: interruptible version
+                finishWriteconv(runtime, noraise);
+            }
+            else {
+                err = finishWriteconv(runtime, noraise);
+            }
+        }
+        if (wbuf.len != 0) {
+            if (noraise) {
+                if ((int)flushBufferSync(runtime) < 0 && err.isNil())
+                    err = runtime.getTrue();
+            }
+            else {
+                if (fflush(runtime) < 0 && err.isNil()) {
+                    // TODO: need errno
+//                    err = RubyFixnum.newFixnum(runtime, errno);
                 }
             }
-        } catch (IOException ex) {
-            if (raise) {
-                throw runtime.newIOErrorFromException(ex);
+        }
+
+        fd = null;
+//        stdio_file = 0;
+        mode &= ~(READABLE|WRITABLE);
+
+        if (IS_PREP_STDIO() || mainStream.getDescriptor().getFileno() <= 2) {
+	/* need to keep FILE objects of stdin, stdout and stderr */
+        }
+        // TODO: ???
+//        else if (stdio_file) {
+//	/* stdio_file is deallocated anyway
+//         * even if fclose failed.  */
+//
+//            if ((maygvl_fclose(stdio_file, noraise) < 0) && NIL_P(err))
+//                err = noraise ? Qtrue : INT2NUM(errno);
+//        }
+//        else if (0 <= fd) {
+//	/* fptr->fd may be closed even if close fails.
+//         * POSIX doesn't specify it.
+//         * We assumes it is closed.  */
+//            if ((maygvl_close(fd, noraise) < 0) && NIL_P(err))
+//                err = noraise ? Qtrue : INT2NUM(errno);
+//        }
+
+        if (!err.isNil() && !noraise) {
+            switch (err.getMetaClass().getNativeClassIndex()) {
+                case FIXNUM:
+                case BIGNUM:
+                    // need errno
+//                    errno = NUM2INT(err);
+                    throw runtime.newSystemCallError(pathv);
+
+                default:
+                    throw new RaiseException((RubyException)err);
             }
-        } catch (BadDescriptorException ex) {
-            if (raise) {
-                throw runtime.newErrnoEBADFError();
-            }
-        } catch (Throwable t) {
-            t.printStackTrace();
         }
     }
 
@@ -1051,7 +1035,7 @@ public class OpenFile {
                 rbuf.len += putbackable;
             }
 
-            exc = EncodingUtils.makeEconvException(context, readconv);
+            exc = EncodingUtils.makeEconvException(context.runtime, readconv);
             if (exc != null)
                 return exc;
 
@@ -1173,16 +1157,7 @@ public class OpenFile {
     final RubyThread.Task<InternalWriteStruct, Integer> writeTask = new RubyThread.Task<InternalWriteStruct, Integer>() {
         @Override
         public Integer run(ThreadContext context, InternalWriteStruct iis) throws InterruptedException {
-            // TODO: make nonblocking (when possible? MRI doesn't seem to...)
-            // FIXME: inefficient to recreate ByteBuffer every time
-            try {
-                ByteBuffer buffer = ByteBuffer.wrap(iis.bufBytes, iis.buf, iis.capa);
-                int written = iis.fd.write(buffer);
-
-                return written;
-            } catch (IOException ioe) {
-                throw context.runtime.newIOErrorFromException(ioe);
-            }
+            return writeTaskBody(context.runtime, iis);
         }
 
         @Override
@@ -1938,7 +1913,7 @@ public class OpenFile {
     static int binwriteString(ThreadContext context, BinwriteArg arg) {
         BinwriteArg p = arg;
         int l = p.fptr.writableLength(p.length);
-        return p.fptr.writeInternal2(context, p.fptr.fdWrite, p.ptrBytes, p.ptr, l);
+        return p.fptr.writeInternal2(context.runtime, p.fptr.fdWrite, p.ptrBytes, p.ptr, l);
     }
 
     public static class InternalWriteStruct {
@@ -1956,8 +1931,7 @@ public class OpenFile {
     }
 
     // rb_write_internal
-    int writeInternal(ThreadContext context, WritableByteChannel fd, byte[] bufBytes, int buf, int count)
-    {
+    int writeInternal(ThreadContext context, WritableByteChannel fd, byte[] bufBytes, int buf, int count) {
         InternalWriteStruct iis = new InternalWriteStruct(fd, bufBytes, buf, count);
 
         try {
@@ -1968,14 +1942,112 @@ public class OpenFile {
     }
 
     // rb_write_internal2 (no GVL version...we just don't use executeTask as above.
-    int writeInternal2(ThreadContext context, WritableByteChannel fd, byte[] bufBytes, int buf, int count)
-    {
+    int writeInternal2(Ruby runtime, WritableByteChannel fd, byte[] bufBytes, int buf, int count) {
         InternalWriteStruct iis = new InternalWriteStruct(fd, bufBytes, buf, count);
 
+        return writeTaskBody(runtime, iis);
+    }
+
+    public Channel getFd() {
+        return fd;
+    }
+
+    public ReadableByteChannel getFdRead() {
+        return fdRead;
+    }
+
+    public WritableByteChannel getFdWrite() {
+        return fdWrite;
+    }
+
+    public SeekableByteChannel getFdSeek() {
+        return fdSeek;
+    }
+
+    public SelectableChannel getFdSelect() {
+        return fdSelect;
+    }
+
+    IRubyObject finishWriteconv(Ruby runtime, boolean noalloc) {
+        byte[] dsBytes;
+        int ds, de;
+        Ptr dpPtr = new Ptr();
+        EConvResult res;
+
+        if (wbuf.ptr == null) {
+            byte[] buf = new byte[1024];
+            long r;
+
+            res = EConvResult.DestinationBufferFull;
+            while (res == EConvResult.DestinationBufferFull) {
+                dsBytes = buf;
+                ds = dpPtr.p = 0;
+                de = buf.length;
+                dpPtr.p = 0;
+                res = writeconv.convert(null, null, 0, dsBytes, dpPtr, de, 0);
+                outer: while ((dpPtr.p-ds) != 0) {
+                    retry: while (true) {
+                        if (write_lock != null && write_lock.isWriteLockedByCurrentThread())
+                            r = writeInternal2(runtime, fdWrite, dsBytes, ds, dpPtr.p-ds);
+                        else
+                            r = writeInternal(runtime.getCurrentContext(), fdWrite, dsBytes, ds, dpPtr.p - ds);
+                        if (r == dpPtr.p-ds)
+                            break outer;
+                        if (0 <= r) {
+                            ds += r;
+                        }
+                        if (waitWritable(runtime)) {
+                            if (fd == null)
+                                return noalloc ? runtime.getTrue() : runtime.newIOError("closed stream").getException();
+                            continue retry;
+                        }
+                        break retry;
+                    }
+                    // need errno
+                    return noalloc ? runtime.getTrue() : RubyFixnum.newFixnum(runtime, 0);//errno);
+                }
+                if (res == EConvResult.InvalidByteSequence ||
+                        res == EConvResult.IncompleteInput ||
+                        res == EConvResult.UndefinedConversion) {
+                    return noalloc ? runtime.getTrue() : EncodingUtils.makeEconvException(runtime, writeconv).getException();
+                }
+            }
+
+            return runtime.getNil();
+        }
+
+        res = EConvResult.DestinationBufferFull;
+        while (res == EConvResult.DestinationBufferFull) {
+            if (wbuf.len == wbuf.capa) {
+                if (fflush(runtime) < 0)
+                    // TODO: need errno
+                    return noalloc ? runtime.getTrue() : runtime.newFixnum(0); //errno);
+            }
+
+            dsBytes = wbuf.ptr;
+            ds = dpPtr.p = wbuf.off + wbuf.len;
+            de = wbuf.capa;
+            res = writeconv.convert(null, null, 0, dsBytes, dpPtr, de, 0);
+            wbuf.len += (int)(dpPtr.p - ds);
+            if (res == EConvResult.InvalidByteSequence ||
+                    res == EConvResult.IncompleteInput ||
+                    res == EConvResult.UndefinedConversion) {
+                return noalloc ? runtime.getTrue() : EncodingUtils.makeEconvException(runtime, writeconv).getException();
+            }
+        }
+        return runtime.getNil();
+    }
+
+    private int writeTaskBody(Ruby runtime, InternalWriteStruct iis) {
+        // TODO: make nonblocking (when possible? MRI doesn't seem to...)
+        // FIXME: inefficient to recreate ByteBuffer every time
         try {
-            return writeTask.run(context, iis);
-        } catch (InterruptedException ie) {
-            throw context.runtime.newConcurrencyError("IO operation interrupted");
+            ByteBuffer buffer = ByteBuffer.wrap(iis.bufBytes, iis.buf, iis.capa);
+            int written = iis.fd.write(buffer);
+
+            return written;
+        } catch (IOException ioe) {
+            throw runtime.newIOErrorFromException(ioe);
         }
     }
 }
