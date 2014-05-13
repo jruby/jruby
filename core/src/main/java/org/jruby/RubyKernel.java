@@ -470,7 +470,7 @@ public class RubyKernel {
         }
 
         if (defout instanceof RubyFile) {
-            ((RubyFile)defout).flush();
+            ((RubyFile)defout).flush(context);
         }
 
         return result;

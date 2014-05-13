@@ -23,6 +23,7 @@ import org.jruby.RubyIO;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.thread.Mutex;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -92,9 +93,11 @@ public class OpenFile {
     public IRubyObject writeconvPreEcopts;
     public boolean writeconvInitialized;
 
-    public final ReentrantReadWriteLock write_lock = new ReentrantReadWriteLock();
+    public volatile ReentrantReadWriteLock write_lock;
 
     public final Buffer wbuf = new Buffer(), rbuf = new Buffer(), cbuf = new Buffer();
+
+    public RubyIO tiedIOForWriting;
 
     public boolean READ_DATA_PENDING() {return rbuf.len != 0;}
     public int READ_DATA_PENDING_COUNT() {return rbuf.len;}
@@ -1167,19 +1170,27 @@ public class OpenFile {
         }
     };
 
-//    final RubyThread.Task<IRubyObject, IRubyObject> putTask = new RubyThread.Task<IRubyObject, IRubyObject>() {
-//        @Override
-//        public IRubyObject run(ThreadContext context, IRubyObject data) throws InterruptedException {
-//            final BlockingQueue<IRubyObject> queue = getQueueSafe();
-//            queue.put(data);
-//            return context.nil;
-//        }
-//
-//        @Override
-//        public void wakeup(RubyThread thread, IRubyObject data) {
-//            thread.getNativeThread().interrupt();
-//        }
-//    };
+    final RubyThread.Task<InternalWriteStruct, Integer> writeTask = new RubyThread.Task<InternalWriteStruct, Integer>() {
+        @Override
+        public Integer run(ThreadContext context, InternalWriteStruct iis) throws InterruptedException {
+            // TODO: make nonblocking (when possible? MRI doesn't seem to...)
+            // FIXME: inefficient to recreate ByteBuffer every time
+            try {
+                ByteBuffer buffer = ByteBuffer.wrap(iis.bufBytes, iis.buf, iis.capa);
+                int written = iis.fd.write(buffer);
+
+                return written;
+            } catch (IOException ioe) {
+                throw context.runtime.newIOErrorFromException(ioe);
+            }
+        }
+
+        @Override
+        public void wakeup(RubyThread thread, InternalWriteStruct self) {
+            // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
+            thread.getNativeThread().interrupt();
+        }
+    };
 
     // rb_read_internal
     public int readInternal(ThreadContext context, ReadableByteChannel fd, byte[] bufBytes, int buf, int count) {
@@ -1678,7 +1689,7 @@ public class OpenFile {
         return -1;
     }
 
-    void unread(ThreadContext context)
+    public void unread(ThreadContext context)
     {
         Ruby runtime = context.runtime;
         long r, pos;
@@ -1760,4 +1771,211 @@ public class OpenFile {
         return;
     }
 
+    // io_fwrite
+    public long fwrite(ThreadContext context, IRubyObject str, boolean nosync) {
+//        #ifdef _WIN32
+//        if (fptr->mode & FMODE_TTY) {
+//            long len = rb_w32_write_console(str, fptr->fd);
+//            if (len > 0) return len;
+//        }
+//        #endif
+        str = doWriteconv(context, str);
+        ByteList strByteList = ((RubyString)str).getByteList();
+        return binwrite(context, str, strByteList.unsafeBytes(), strByteList.begin(), strByteList.length(), nosync);
+    }
+
+    // do_writeconv
+    public IRubyObject doWriteconv(ThreadContext context, IRubyObject str)
+    {
+        if (needsWriteConversion(context)) {
+            IRubyObject common_encoding = context.nil;
+            setBinmode();
+
+            makeWriteConversion(context);
+
+            if (writeconv != null) {
+                int fmode = mode;
+                if (!writeconvAsciicompat.isNil())
+                    common_encoding = writeconvAsciicompat;
+                else if (EncodingUtils.MODE_BTMODE(fmode, EncodingUtils.DEFAULT_TEXTMODE,0,1) != 0 && !((RubyString)str).getEncoding().isAsciiCompatible()) {
+                    throw context.runtime.newArgumentError("ASCII incompatible string written for text mode IO without encoding conversion: %s" + ((RubyString)str).getEncoding().toString());
+                }
+            }
+            else {
+                if (encs.enc2 != null)
+                    common_encoding = context.runtime.getEncodingService().convertEncodingToRubyEncoding(encs.enc2);
+                else if (encs.enc != EncodingUtils.ascii8bitEncoding(context.runtime))
+                    common_encoding = context.runtime.getEncodingService().convertEncodingToRubyEncoding(encs.enc);
+            }
+
+            if (!common_encoding.isNil()) {
+                str = EncodingUtils.rbStrEncode(context, str, common_encoding, writeconvPreEcflags, writeconvPreEcopts);
+            }
+
+            if (writeconv != null) {
+                ((RubyString)str).setValue(
+                        EncodingUtils.econvStrConvert(context, writeconv, ((RubyString)str).getByteList(), EConvFlags.PARTIAL_INPUT));
+            }
+        }
+//        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
+//        #define fmode (fptr->mode)
+//        else if (MODE_BTMODE(DEFAULT_TEXTMODE,0,1)) {
+//        if ((fptr->mode & FMODE_READABLE) &&
+//                !(fptr->encs.ecflags & ECONV_NEWLINE_DECORATOR_MASK)) {
+//            setmode(fptr->fd, O_BINARY);
+//        }
+//        else {
+//            setmode(fptr->fd, O_TEXT);
+//        }
+//        if (!rb_enc_asciicompat(rb_enc_get(str))) {
+//            rb_raise(rb_eArgError, "ASCII incompatible string written for text mode IO without encoding conversion: %s",
+//                    rb_enc_name(rb_enc_get(str)));
+//        }
+//    }
+//        #undef fmode
+//        #endif
+        return str;
+    }
+
+    private static class BinwriteArg {
+        OpenFile fptr;
+        IRubyObject str;
+        byte[] ptrBytes;
+        int ptr;
+        int length;
+    }
+
+    // io_binwrite
+    public long binwrite(ThreadContext context, IRubyObject str, byte[] ptrBytes, int ptr, int len, boolean nosync)
+    {
+        int n, r, offset = 0;
+
+    /* don't write anything if current thread has a pending interrupt. */
+        context.pollThreadEvents();
+
+        if ((n = len) <= 0) return n;
+        if (wbuf.ptr == null && !(!nosync && (mode & SYNC) != 0)) {
+            wbuf.off = 0;
+            wbuf.len = 0;
+            wbuf.capa = IO_WBUF_CAPA_MIN;
+            wbuf.ptr = new byte[wbuf.capa];
+//            write_lock = new ReentrantReadWriteLock();
+            // ???
+//            rb_mutex_allow_trap(fptr->write_lock, 1);
+        }
+        if ((!nosync && (mode & (SYNC|TTY)) != 0) ||
+                (wbuf.ptr != null && wbuf.capa <= wbuf.len + len)) {
+            BinwriteArg arg = new BinwriteArg();
+
+	/*
+	 * xxx: use writev to avoid double write if available
+	 * writev may help avoid context switch between "a" and "\n" in
+	 * STDERR.puts "a" [ruby-dev:25080] (rebroken since native threads
+	 * introduced in 1.9)
+	 */
+            if (wbuf.len != 0 && wbuf.len+len <= wbuf.capa) {
+                if (wbuf.capa < wbuf.off+wbuf.len+len) {
+                    System.arraycopy(wbuf.ptr, wbuf.off, wbuf.ptr, 0, wbuf.len);
+                    wbuf.off = 0;
+                }
+                System.arraycopy(ptrBytes, ptr + offset, wbuf.ptr, wbuf.off + wbuf.len, len);
+                wbuf.len += (int)len;
+                n = 0;
+            }
+            if (fflush(context.runtime) < 0)
+                return -1L;
+            if (n == 0)
+                return len;
+
+            checkClosed(context.runtime);
+            arg.fptr = this;
+            arg.str = str;
+            retry: while (true) {
+                arg.ptrBytes = ptrBytes;
+                arg.ptr = ptr + offset;
+                arg.length = n;
+                if (write_lock != null) {
+                    // FIXME: not interruptible by Ruby
+    //                r = rb_mutex_synchronize(fptr->write_lock, io_binwrite_string, (VALUE)&arg);
+                    write_lock.writeLock().lock();
+                    try {
+                        r = binwriteString(context, arg);
+                    } finally {
+                        write_lock.writeLock().unlock();
+                    }
+                }
+                else {
+                    int l = writableLength(n);
+                    r = writeInternal(context, fdWrite, ptrBytes, ptr + offset, l);
+                }
+        /* xxx: other threads may modify given string. */
+                if (r == n) return len;
+                if (0 <= r) {
+                    offset += r;
+                    n -= r;
+    //                errno = EAGAIN;
+                }
+                if (waitWritable(context.runtime)) {
+                    checkClosed(context.runtime);
+                    if (offset < len)
+                    continue retry;
+                }
+                return -1L;
+            }
+        }
+
+        if (wbuf.off != 0) {
+            if (wbuf.len != 0)
+                System.arraycopy(wbuf.ptr, wbuf.off, wbuf.ptr, 0, wbuf.len);
+            wbuf.off = 0;
+        }
+        System.arraycopy(ptrBytes, ptr + offset, wbuf.ptr, wbuf.off + wbuf.len, len);
+        wbuf.len += (int)len;
+        return len;
+    }
+
+    // io_binwrite_string
+    static int binwriteString(ThreadContext context, BinwriteArg arg) {
+        BinwriteArg p = arg;
+        int l = p.fptr.writableLength(p.length);
+        return p.fptr.writeInternal2(context, p.fptr.fdWrite, p.ptrBytes, p.ptr, l);
+    }
+
+    public static class InternalWriteStruct {
+        InternalWriteStruct(WritableByteChannel fd, byte[] bufBytes, int buf, int count) {
+            this.fd = fd;
+            this.bufBytes = bufBytes;
+            this.buf = buf;
+            this.capa = count;
+        }
+
+        public WritableByteChannel fd;
+        public final byte[] bufBytes;
+        public final int buf;
+        public int capa;
+    }
+
+    // rb_write_internal
+    int writeInternal(ThreadContext context, WritableByteChannel fd, byte[] bufBytes, int buf, int count)
+    {
+        InternalWriteStruct iis = new InternalWriteStruct(fd, bufBytes, buf, count);
+
+        try {
+            return context.getThread().executeTask(context, iis, writeTask);
+        } catch (InterruptedException ie) {
+            throw context.runtime.newConcurrencyError("IO operation interrupted");
+        }
+    }
+
+    // rb_write_internal2 (no GVL version...we just don't use executeTask as above.
+    int writeInternal2(ThreadContext context, WritableByteChannel fd, byte[] bufBytes, int buf, int count)
+    {
+        InternalWriteStruct iis = new InternalWriteStruct(fd, bufBytes, buf, count);
+
+        try {
+            return writeTask.run(context, iis);
+        } catch (InterruptedException ie) {
+            throw context.runtime.newConcurrencyError("IO operation interrupted");
+        }
+    }
 }

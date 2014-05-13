@@ -1260,43 +1260,53 @@ public class RubyIO extends RubyObject implements IOEncodable {
             throw context.runtime.newErrnoEBADFError();
         }
     }
+
+    private RubyIO GetWriteIO() {
+        RubyIO writeIO;
+//        rb_io_check_initialized(RFILE(io)->fptr);
+        writeIO = openFile.tiedIOForWriting;
+        if (writeIO != null) {
+            return writeIO;
+        }
+        return this;
+    }
     
-    /** io_write
+    /** io_write_m
      * 
      */
     @JRubyMethod(name = "write", required = 1)
-    public IRubyObject write(ThreadContext context, IRubyObject obj) {
+    public IRubyObject write(ThreadContext context, IRubyObject str) {
+        return write(context, str, false);
+    }
+
+    // io_write
+    public IRubyObject write(ThreadContext context, IRubyObject str, boolean nosync) {
         Ruby runtime = context.runtime;
-        
-        RubyString str = obj.asString();
+        OpenFile fptr;
+        long n;
+        IRubyObject tmp;
 
-        // TODO: Ruby reuses this logic for other "write" behavior by checking if it's an IO and calling write again
-        
-        if (str.getByteList().length() == 0) {
-            return runtime.newFixnum(0);
-        }
+        RubyIO io = GetWriteIO();
 
-        try {
-            OpenFile myOpenFile = getOpenFileChecked();
-            
-            myOpenFile.checkWritable(context);
+        str = str.asString();
+        // TODO: tied_io_for_writing stuff
+//        tmp = rb_io_check_io(io);
+//        if (tmp.isNil()) {
+//	/* port is not IO, call write method for it. */
+//            return io.callMethod(context, "write", str);
+//        }
+//        io = tmp;
+        if (((RubyString)str).size() == 0) return RubyFixnum.zero(runtime);
 
-            context.getThread().beforeBlockingCall();
-            int written = fwrite(str);
+        str = ((RubyString)str).dupFrozen();
 
-            if (written == -1) {
-                // TODO: sys fail
-            }
+        fptr = getOpenFileChecked();
+        fptr.checkWritable(context);
 
-            // if not sync, we switch to write buffered mode
-            if (!myOpenFile.isSync()) {
-                myOpenFile.setWriteBuffered();
-            }
+        n = fptr.fwrite(context, str, nosync);
+        if (n == -1L) throw runtime.newSystemCallError(fptr.getPath());
 
-            return runtime.newFixnum(written);
-        } finally {
-            context.getThread().afterBlockingCall();
-        }
+        return RubyFixnum.newFixnum(runtime, n);
     }
     
     private boolean waitWritable(Stream stream) {
@@ -2032,16 +2042,35 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * @return The IO.
      */
     @JRubyMethod
-    public RubyIO flush() {
-        try { 
-            getOpenFileChecked().getWriteStream().fflush();
-        } catch (BadDescriptorException e) {
-            throw getRuntime().newErrnoEBADFError();
-        } catch (IOException e) {
-            throw getRuntime().newIOErrorFromException(e);
+    public RubyIO flush(ThreadContext context) {
+        return flushRaw(context, true);
+    }
+
+    private RubyIO flushRaw(ThreadContext context, boolean sync) {
+        OpenFile fptr;
+
+        // not possible here
+//        if (!RB_TYPE_P(io, T_FILE)) {
+//            return rb_funcall(io, id_flush, 0);
+//        }
+
+        RubyIO io = GetWriteIO();
+        fptr = getOpenFileChecked();
+
+        if ((fptr.getMode() & OpenFile.WRITABLE) != 0) {
+            if (fptr.fflush(context.runtime) < 0)
+                throw context.runtime.newSystemCallError("");
+//            #ifdef _WIN32
+//            if (sync && GetFileType((HANDLE)rb_w32_get_osfhandle(fptr->fd)) == FILE_TYPE_DISK) {
+//                rb_thread_io_blocking_region(nogvl_fsync, fptr, fptr->fd);
+//            }
+//            #endif
+        }
+        if ((fptr.getMode() & OpenFile.READABLE) != 0) {
+            fptr.unread(context);
         }
 
-        return this;
+        return io;
     }
 
     /** Read a line.
@@ -3836,7 +3865,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
             if (io1 == null) {
                 IRubyObject size = io2.write(context, read);
-                io2.flush();
+                io2.flush(context);
                 return size;
             }
 

@@ -265,17 +265,7 @@ public class RubyTCPServer extends RubyTCPSocket {
     }
 
     @Override
-    public IRubyObject gets19(ThreadContext context) {
-        throw context.runtime.newErrnoENOTCONNError();
-    }
-
-    @Override
-    public IRubyObject gets19(ThreadContext context, IRubyObject sep) {
-        throw context.runtime.newErrnoENOTCONNError();
-    }
-
-    @Override
-    public IRubyObject gets19(ThreadContext context, IRubyObject sep, IRubyObject limit) {
+    public IRubyObject gets(ThreadContext context, IRubyObject sep, IRubyObject limit) {
         throw context.runtime.newErrnoENOTCONNError();
     }
 

@@ -786,6 +786,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return strDup(mc.getClassRuntime(), mc.getRealClass());
     }
 
+    // rb_str_new_frozen or rb_str_dup_frozen
+    public IRubyObject dupFrozen() {
+        RubyString dup = (RubyString)dup();
+        dup.setFrozen(true);
+        return dup;
+    }
+
     /** rb_str_dup
      * 
      */

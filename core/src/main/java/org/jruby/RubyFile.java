@@ -1122,7 +1122,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public IRubyObject size(ThreadContext context) {
         Ruby runtime = context.runtime;
         
-        if ((openFile.getMode() & OpenFile.WRITABLE) != 0) flush();
+        if ((openFile.getMode() & OpenFile.WRITABLE) != 0) flush(context);
 
         // FIXME: jnr-posix is calling _osf_close + throwing random native exceptions with weird paths.
         // Once these are fixed remove this full file stat path and go back to faster one.

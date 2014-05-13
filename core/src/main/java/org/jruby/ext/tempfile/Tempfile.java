@@ -234,7 +234,7 @@ public class Tempfile extends org.jruby.RubyFile {
     @JRubyMethod(name = {"size", "length"})
     public IRubyObject size19(ThreadContext context) {
         if (!isClosed()) {
-            flush();
+            flush(context);
         }
         return context.runtime.newFileStat(path, false).size();
     }
