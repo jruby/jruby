@@ -2745,6 +2745,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
         
         len = RubyNumeric.num2int(length);
+        if (len < 0) {
+            throw runtime.newArgumentError("negative length " + len + " given");
+        }
 
         str = EncodingUtils.setStrBuf(runtime, str, len);
 
@@ -2946,12 +2949,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public RubyArray readlines(ThreadContext context, IRubyObject[] args) {
         return readlines19(context, args);
     }
-    
+
     @JRubyMethod(name = "readlines", optional = 2)
     public RubyArray readlines19(ThreadContext context, IRubyObject[] args) {
         return readlinesCommon(context, args);
     }
-    
+
     private RubyArray readlinesCommon(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         
@@ -3191,8 +3194,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyIO file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, runtime.newString("rb:ASCII-8BIT"));
 
         try {
-            if (!offset.isNil()) file.seek(context, offset);
-            return !length.isNil() ? file.read(context, length) : file.read(context);
+            if (!offset.isNil()) {
+                file.seek(context, offset);
+            }
+            return file.read(context, length);
         } finally  {
             file.close();
         }
