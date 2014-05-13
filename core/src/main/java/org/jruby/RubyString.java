@@ -502,9 +502,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public static RubyString newString(Ruby runtime, byte[] bytes, int start, int length) {
+        return newString(runtime, bytes, start, length, ASCIIEncoding.INSTANCE);
+    }
+
+    // rb_enc_str_new
+    public static RubyString newString(Ruby runtime, byte[] bytes, int start, int length, Encoding encoding) {
         byte[] copy = new byte[length];
         System.arraycopy(bytes, start, copy, 0, length);
-        return new RubyString(runtime, runtime.getString(), new ByteList(copy, false));
+        return new RubyString(runtime, runtime.getString(), new ByteList(copy, encoding, false));
     }
 
     public static RubyString newString(Ruby runtime, ByteList bytes) {

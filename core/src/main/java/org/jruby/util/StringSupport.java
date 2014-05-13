@@ -94,7 +94,7 @@ public final class StringSupport {
         return r < -1;
     }
 
-    // ONIGENC_MBCLEN_NEEDMORE
+    // MBCLEN_NEEDMORE, ONIGENC_MBCLEN_NEEDMORE
     public static int MBCLEN_NEEDMORE(int n) {
         return -1 - n;
     }
@@ -104,9 +104,14 @@ public final class StringSupport {
         return r == -1;
     }
     
-    // MBCLEN_CHARFOUND_LEN, ONIGENC_CHARFOUND_LEN
+    // MBCLEN_CHARFOUND_LEN, ONIGENC_MBCLEN_CHARFOUND_LEN
     public static int MBCLEN_CHARFOUND_LEN(int r) {
         return r;
+    }
+
+    // MBCLEN_CHARFOUND_P, ONIGENC_MBCLEN_CHARFOUND_P
+    public static boolean MBCLEN_CHARFOUND_P(int r) {
+        return 0 < r;
     }
     
     public static int searchNonAscii(byte[]bytes, int p, int end) {

@@ -39,8 +39,8 @@ public class OpenFile {
     public static final int READWRITE          = READABLE | WRITABLE;
     public static final int BINMODE            = 0x00000004;
     public static final int SYNC               = 0x00000008;
-    public static final int WBUF               = 0x00000010; // TTY
-    public static final int RBUF               = 0x00000020; // DUPLEX
+    public static final int TTY                = 0x00000010;
+    public static final int DUPLEX             = 0x00000020;
     public static final int APPEND             = 0x00000040;
     public static final int CREATE             = 0x00000080;
     public static final int WSPLIT             = 0x00000200;
@@ -48,6 +48,10 @@ public class OpenFile {
     public static final int TRUNC              = 0x00000800;
     public static final int TEXTMODE           = 0x00001000;
     public static final int SETENC_BY_BOM      = 0x00100000;
+
+    public static final int SEEK_SET = 0;
+    public static final int SEEK_CUR = 1;
+    public static final int SEEK_END = 2;
     
     public static final int SYNCWRITE = SYNC | WRITABLE;
 
@@ -468,52 +472,58 @@ public class OpenFile {
         return (mode & WSPLIT) != 0;
     }
 
-    public void seek(long offset, int whence) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
-        Stream stream = getWriteStreamSafe();
-
-        seekInternal(stream, offset, whence);
+    // io_seek
+    public long seek(ThreadContext context, long offset, int whence) {
+        flushBeforeSeek(context);
+        return lseek(context, offset, whence);
     }
 
-    private void seekInternal(Stream stream, long offset, int whence) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
-        flushBeforeSeek(stream);
-
-        stream.lseek(offset, whence);
+    // flush_before_seek
+    void flushBeforeSeek(ThreadContext context)
+    {
+        if (fflush(context.runtime) < 0)
+            throw context.runtime.newSystemCallError("");
+        unread(context);
+//        errno = 0;
     }
 
-    private void flushBeforeSeek(Stream stream) throws BadDescriptorException, IOException {
-        if ((mode & WBUF) != 0) {
-            fflush(stream);
-        }
-    }
-
-    public void fflush(Stream stream) throws IOException, BadDescriptorException {
-        while (true) {
-            int n = stream.fflush();
-            if (n != -1) {
-                break;
-            }
-        }
-        mode &= ~WBUF;
-    }
-
-    public void checkWritable(Ruby runtime) throws IOException, BadDescriptorException, InvalidValueException {
-        checkClosed(runtime);
-        if ((mode & WRITABLE) == 0) {
-            throw runtime.newIOError("not opened for writing");
-        }
-        if ((mode & RBUF) != 0 && !mainStream.feof() && pipeStream == null) {
+    // pseudo lseek(2)
+    private long lseek(ThreadContext context, long offset, int type) {
+        if (fdSeek != null) {
+            int adj = 0;
             try {
-                // seek to force read buffer to invalidate
-                seek(0, Stream.SEEK_CUR);
-            } catch (PipeException p) {
-                // ignore unseekable streams for purposes of checking readability
+                switch (type) {
+                    case SEEK_SET:
+                        return fdSeek.position(offset).position();
+                    case SEEK_CUR:
+                        return fdSeek.position(fdSeek.position() - adj + offset).position();
+                    case SEEK_END:
+                        return fdSeek.position(fdSeek.size() + offset).position();
+                    default:
+                        throw context.runtime.newArgumentError("invalid seek whence: " + type);
+                }
+            } catch (IllegalArgumentException e) {
+                throw context.runtime.newErrnoEINVALError();
             } catch (IOException ioe) {
-                // MRI ignores seek errors, presumably for unseekable files like
-                // serial ports (JRUBY-2979), so we shall too.
+                throw context.runtime.newIOErrorFromException(ioe);
             }
+        } else if (fdSelect != null) {
+            // TODO: It's perhaps just a coincidence that all the channels for
+            // which we should raise are instanceof SelectableChannel, since
+            // stdio is not...so this bothers me slightly. -CON
+            throw context.runtime.newErrnoEPIPEError();
+        } else {
+            return -1;
         }
-        if (pipeStream == null) {
-            mode &= ~RBUF;
+    }
+
+    public void checkWritable(ThreadContext context) {
+        checkClosed(context.runtime);
+        if ((mode & WRITABLE) == 0) {
+            throw context.runtime.newIOError("not opened for writing");
+        }
+        if (rbuf.len != 0) {
+            unread(context);
         }
     }
 
@@ -564,19 +574,17 @@ public class OpenFile {
     }
 
     public boolean isReadBuffered() {
-        return (mode & RBUF) != 0;
+        return READ_DATA_BUFFERED();
     }
 
     public void setReadBuffered() {
-        mode |= RBUF;
     }
 
     public boolean isWriteBuffered() {
-        return (mode & WBUF) != 0;
+        return false;
     }
 
     public void setWriteBuffered() {
-        mode |= WBUF;
     }
 
     public void setSync(boolean sync) {
@@ -1250,6 +1258,11 @@ public class OpenFile {
         return encs.enc != null ? encs.enc : EncodingUtils.defaultExternalEncoding(runtime);
     }
 
+    // io_input_encoding
+    public Encoding inputEncoding(Ruby runtime) {
+        return encs.enc2 != null ? encs.enc2 : readEncoding(runtime);
+    }
+
     // swallow
     public boolean swallow(ThreadContext context, int term) {
         Ruby runtime = context.runtime;
@@ -1304,7 +1317,7 @@ public class OpenFile {
     }
 
     // io_shift_cbuf
-    public Object shiftCbuf(ThreadContext context, int len, IRubyObject strp) {
+    public IRubyObject shiftCbuf(ThreadContext context, int len, IRubyObject strp) {
         IRubyObject str = null;
         if (strp != null) {
             str = strp;
@@ -1562,4 +1575,206 @@ public class OpenFile {
         ByteList strByteList = ((RubyString)str).getByteList();
         System.arraycopy(strByteList.unsafeBytes(), strByteList.begin(), rbuf.ptr, rbuf.off, len);
     }
+
+    // io_getc
+    public IRubyObject getc(ThreadContext context, Encoding enc) {
+        Ruby runtime = context.runtime;
+        int r, n, cr = 0;
+        IRubyObject str;
+
+        if (needsReadConversion()) {
+            str = context.nil;
+            Encoding read_enc = readEncoding(runtime);
+
+            setBinmode();
+            makeReadConversion(context, 0);
+
+            while (true) {
+                if (cbuf.len != 0) {
+                    r = StringSupport.preciseLength(read_enc, cbuf.ptr, cbuf.off, cbuf.off + cbuf.len);
+                    if (!StringSupport.MBCLEN_NEEDMORE_P(r))
+                        break;
+                    if (cbuf.len == cbuf.capa) {
+                        throw runtime.newIOError("too long character");
+                    }
+                }
+
+                if (moreChar(context) == MORE_CHAR_FINISHED) {
+                    if (cbuf.len == 0) {
+                        clearReadConversion();
+                        return context.nil;
+                    }
+                /* return an unit of an incomplete character just before EOF */
+                    str = RubyString.newString(runtime, cbuf.ptr, cbuf.off, 1, read_enc);
+                    cbuf.off += 1;
+                    cbuf.len -= 1;
+                    if (cbuf.len == 0) clearReadConversion();
+                    ((RubyString)str).setCodeRange(StringSupport.CR_BROKEN);
+                    return str;
+                }
+            }
+            if (StringSupport.MBCLEN_INVALID_P(r)) {
+                r = read_enc.length(cbuf.ptr, cbuf.off, cbuf.off + cbuf.len);
+                str = shiftCbuf(context, r, str);
+                cr = StringSupport.CR_BROKEN;
+            }
+            else {
+                str = shiftCbuf(context, StringSupport.MBCLEN_CHARFOUND_LEN(r), str);
+                cr = StringSupport.CR_VALID;
+                if (StringSupport.MBCLEN_CHARFOUND_LEN(r) == 1 && read_enc.isAsciiCompatible() &&
+                        Encoding.isAscii(((RubyString)str).getByteList().get(0))) {
+                    cr = StringSupport.CR_7BIT;
+                }
+            }
+            str = EncodingUtils.ioEncStr(runtime, str, this);
+            ((RubyString)str).setCodeRange(cr);
+            return str;
+        }
+
+        NEED_NEWLINE_DECORATOR_ON_READ_CHECK();
+        if (fillbuf(context) < 0) {
+            return context.nil;
+        }
+        if (enc.isAsciiCompatible() && Encoding.isAscii(rbuf.ptr[rbuf.off])) {
+            str = RubyString.newString(runtime, rbuf.ptr, rbuf.off, 1);
+            rbuf.off += 1;
+            rbuf.len -= 1;
+            cr = StringSupport.CR_7BIT;
+        }
+        else {
+            r = StringSupport.preciseLength(enc, rbuf.ptr, rbuf.off, rbuf.off + rbuf.len);
+            if (StringSupport.MBCLEN_CHARFOUND_P(r) &&
+                    (n = StringSupport.MBCLEN_CHARFOUND_LEN(r)) <= rbuf.len) {
+                str = RubyString.newString(runtime, rbuf.ptr, rbuf.off, n);
+                rbuf.off += n;
+                rbuf.len -= n;
+                cr = StringSupport.CR_VALID;
+            }
+            else if (StringSupport.MBCLEN_NEEDMORE_P(r)) {
+                str = RubyString.newString(runtime, rbuf.ptr, rbuf.off, rbuf.len);
+                rbuf.len = 0;
+                getc_needmore: while (true) {
+                    if (fillbuf(context) != -1) {
+                        ((RubyString)str).cat(rbuf.ptr[rbuf.off]);
+                        rbuf.off++;
+                        rbuf.len--;
+                        ByteList strByteList = ((RubyString)str).getByteList();
+                        r = StringSupport.preciseLength(enc, strByteList.unsafeBytes(), strByteList.getBegin(), strByteList.getBegin() + strByteList.length());
+                        if (StringSupport.MBCLEN_NEEDMORE_P(r)) {
+                            continue getc_needmore;
+                        }
+                        else if (StringSupport.MBCLEN_CHARFOUND_P(r)) {
+                            cr = StringSupport.CR_VALID;
+                        }
+                    }
+                    break;
+                }
+            }
+            else {
+                str = RubyString.newString(runtime, rbuf.ptr, rbuf.off, 1);
+                rbuf.off++;
+                rbuf.len--;
+            }
+        }
+        if (cr == 0) cr = StringSupport.CR_BROKEN;
+        str = EncodingUtils.ioEncStr(runtime, str, this);
+        ((RubyString)str).setCodeRange(cr);
+        return str;
+    }
+
+    // io_tell
+    public long tell(ThreadContext context) {
+        if (fdSeek != null) {
+            try {
+                return fdSeek.position();
+            } catch (IOException ioe) {
+                throw context.runtime.newIOErrorFromException(ioe);
+            }
+        }
+
+        return -1;
+    }
+
+    void unread(ThreadContext context)
+    {
+        Ruby runtime = context.runtime;
+        long r, pos;
+        int read_size;
+        long i;
+        int newlines = 0;
+        long extra_max;
+        byte[] pBytes;
+        int p;
+        byte[] bufBytes;
+        int buf = 0;
+
+        checkClosed(runtime);
+        if (rbuf.len == 0 || (mode & DUPLEX) != 0) {
+            return;
+        }
+
+//        errno = 0;
+        // TODO...only for win32?
+//        if (!rb_w32_fd_is_text(fptr->fd)) {
+//            r = lseek(fptr->fd, -fptr->rbuf.len, SEEK_CUR);
+//            if (r < 0 && errno) {
+//                if (errno == ESPIPE)
+//                    fptr->mode |= FMODE_DUPLEX;
+//                return;
+//            }
+//
+//            fptr->rbuf.off = 0;
+//            fptr->rbuf.len = 0;
+//            return;
+//        }
+
+        pos = lseek(context, 0, SEEK_CUR);
+        // TODO: ???
+//        if (pos < 0 && errno) {
+//            if (errno == ESPIPE)
+//                fptr->mode |= FMODE_DUPLEX;
+//            return;
+//        }
+
+    /* add extra offset for removed '\r' in rbuf */
+        extra_max = (long)(pos - rbuf.len);
+        pBytes = rbuf.ptr;
+        p = rbuf.off;
+
+    /* if the end of rbuf is '\r', rbuf doesn't have '\r' within rbuf.len */
+        if (rbuf.ptr[rbuf.capa - 1] == '\r') {
+        newlines++;
+    }
+
+        for (i = 0; i < rbuf.len; i++) {
+            if (pBytes[p] == '\n') newlines++;
+            if (extra_max == newlines) break;
+            p++;
+        }
+
+        bufBytes = new byte[rbuf.len + newlines];
+        while (newlines >= 0) {
+            r = lseek(context, pos - rbuf.len - newlines, SEEK_SET);
+            if (newlines == 0) break;
+            if (r < 0) {
+                newlines--;
+                continue;
+            }
+            read_size = readInternal(context, fdRead, bufBytes, buf, rbuf.len + newlines);
+            if (read_size < 0) {
+                throw runtime.newSystemCallError(pathv);
+            }
+            if (read_size == rbuf.len) {
+                lseek(context, r, SEEK_SET);
+                break;
+            }
+            else {
+                newlines--;
+            }
+        }
+        rbuf.off = 0;
+        rbuf.len = 0;
+        return;
+    }
+
 }
