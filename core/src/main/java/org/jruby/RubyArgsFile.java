@@ -615,7 +615,7 @@ public class RubyArgsFile {
             if (!(data.currentFile instanceof RubyFile)) {
                 bt = data.currentFile.callMethod(context, "getbyte");
             } else {
-                bt = ((RubyIO)data.currentFile).getbyte19(context);
+                bt = ((RubyIO)data.currentFile).getbyte(context);
             }
 
             if (!bt.isNil()) return bt;

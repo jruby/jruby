@@ -35,10 +35,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jcodings.Ptr;
-import org.jcodings.transcode.EConv;
-import org.jcodings.transcode.EConvFlags;
-import org.jcodings.transcode.EConvResult;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.ResourceException;
 import org.jruby.util.StringSupport;
@@ -58,7 +54,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
-import java.nio.channels.NonReadableChannelException;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectableChannel;
@@ -99,17 +94,14 @@ import org.jruby.util.io.STDIO;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
 
-import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.runtime.Arity;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.internal.runtime.ThreadedRunnable;
-import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ShellLauncher.POpenProcess;
 import org.jruby.util.io.IOEncodable;
-import static org.jruby.util.StringSupport.isIncompleteChar;
 
 /**
  * 
@@ -583,10 +575,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return getlineInner(context, separator, (int)limit, cache);
     }
     
-    private IRubyObject getlineEmptyString(Ruby runtime) {
-        return RubyString.newEmptyString(runtime, getReadEncoding());
-    }
-    
     /**
      * getline using logic of gets.  If limit is -1 then read unlimited amount.
      * mri: rb_io_getline_1 (mostly)
@@ -598,130 +586,122 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Encoding enc;
         IRubyObject defaultRs;
         
-        try {
-            OpenFile fptr = getOpenFileChecked();
+        OpenFile fptr = getOpenFileChecked();
 
-            fptr.checkCharReadable(runtime);
-            
-            if (rs == null && _limit < 0) {
-                str = readAll(context);
-                if (((RubyString)str).size() == 0) return context.nil;
-            } else if (_limit == 0) {
-                return RubyString.newEmptyString(runtime, fptr.readEncoding(runtime));
-            } else if (
-                (defaultRs = runtime.getGlobalVariables().getDefaultSeparator()) instanceof RubyString
-                    && rs != null
-                    && rs.equals(((RubyString)defaultRs).getByteList())
-                    && _limit < 0 && !fptr.needsReadConversion()
-                    && (enc = fptr.readEncoding(runtime)).isAsciiCompatible()) {
-                fptr.NEED_NEWLINE_DECORATOR_ON_READ_CHECK();
-                return fptr.getlineFast(context, enc, this);
+        fptr.checkCharReadable(runtime);
+
+        if (rs == null && _limit < 0) {
+            str = fptr.readAll(context, 0, context.nil);
+            if (((RubyString)str).size() == 0) return context.nil;
+        } else if (_limit == 0) {
+            return RubyString.newEmptyString(runtime, fptr.readEncoding(runtime));
+        } else if (
+            (defaultRs = runtime.getGlobalVariables().getDefaultSeparator()) instanceof RubyString
+                && rs != null
+                && rs.equals(((RubyString)defaultRs).getByteList())
+                && _limit < 0 && !fptr.needsReadConversion()
+                && (enc = fptr.readEncoding(runtime)).isAsciiCompatible()) {
+            fptr.NEED_NEWLINE_DECORATOR_ON_READ_CHECK();
+            return fptr.getlineFast(context, enc, this);
+        }
+
+        // slow path logic
+        int c, newline = -1;
+        byte[] rsptrBytes = null;
+        int rsptr = 0;
+        int rslen = 0;
+        boolean rspara = false;
+        int extraLimit = 16;
+
+        fptr.setBinmode();
+        enc = getReadEncoding();
+
+        if (rs != null) {
+            rslen = rs.getRealSize();
+            if (rslen == 0) {
+                rsptrBytes = Stream.PARAGRAPH_SEPARATOR.unsafeBytes();
+                rsptr = Stream.PARAGRAPH_SEPARATOR.getBegin();
+                rslen = 2;
+                rspara = true;
+                fptr.swallow(context, '\n');
+                rs = null;
+                if (!enc.isAsciiCompatible()) {
+                    RubyString tmprs = RubyString.newUsAsciiStringShared(runtime, rsptrBytes, rsptr, rslen);
+                    tmprs = (RubyString)EncodingUtils.rbStrEncode(context, tmprs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
+                    rs = tmprs.getByteList();
+                    rsptrBytes = rs.getUnsafeBytes();
+                    rsptr = rs.getBegin();
+                    rslen = rs.getRealSize();
+                }
+            } else {
+                rsptrBytes = rs.unsafeBytes();
+                rsptr = rs.getBegin();
             }
+            newline = rsptrBytes[rsptr + rslen - 1] & 0xFF;
+        }
 
-            // slow path logic
-            int c, newline = -1;
-            byte[] rsptrBytes = null;
-            int rsptr = 0;
-            int rslen = 0;
-            boolean rspara = false;
-            int extraLimit = 16;
+        ByteList buf = cache != null ? cache.allocate(0) : new ByteList(0);
+        try {
+            boolean bufferString = str instanceof RubyString;
+            ByteList[] strPtr = {bufferString ? ((RubyString)str).getByteList() : null};
 
-            fptr.setBinmode();
-            enc = getReadEncoding();
+            int[] limit_p = {_limit};
+            while ((c = fptr.appendline(context, newline, strPtr, limit_p)) != OpenFile.EOF) {
+                int s, p, pp, e;
 
-            if (rs != null) {
-                rslen = rs.getRealSize();
-                if (rslen == 0) {
-                    rsptrBytes = Stream.PARAGRAPH_SEPARATOR.unsafeBytes();
-                    rsptr = Stream.PARAGRAPH_SEPARATOR.getBegin();
-                    rslen = 2;
-                    rspara = true;
-                    fptr.swallow(context, '\n');
-                    rs = null;
-                    if (!enc.isAsciiCompatible()) {
-                        RubyString tmprs = RubyString.newUsAsciiStringShared(runtime, rsptrBytes, rsptr, rslen);
-                        tmprs = (RubyString)EncodingUtils.rbStrEncode(context, tmprs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
-                        rs = tmprs.getByteList();
-                        rsptrBytes = rs.getUnsafeBytes();
-                        rsptr = rs.getBegin();
-                        rslen = rs.getRealSize();
+                if (c == newline) {
+                    if (strPtr[0].getRealSize() < rslen) continue;
+                    s = strPtr[0].getBegin();
+                    e = s + strPtr[0].getRealSize();
+                    p = e - rslen;
+                    pp = enc.leftAdjustCharHead(strPtr[0].getUnsafeBytes(), s, p, e);
+                    if (pp != p) continue;
+                    if (ByteList.memcmp(strPtr[0].getUnsafeBytes(), p, rsptrBytes, rsptr, rslen) == 0) break;
+                }
+                if (limit_p[0] == 0) {
+                    s = strPtr[0].getBegin();
+                    p = s + strPtr[0].getRealSize();
+                    pp = enc.leftAdjustCharHead(strPtr[0].getUnsafeBytes(), s, p - 1, p);
+                    if (extraLimit != 0 &&
+                            StringSupport.MBCLEN_NEEDMORE_P(StringSupport.preciseLength(enc, strPtr[0].getUnsafeBytes(), pp, p))) {
+                        limit_p[0] = 1;
+                        extraLimit--;
+                    } else {
+                        noLimit = true;
+                        break;
+                    }
+                }
+            }
+            _limit = limit_p[0];
+            if (strPtr[0] != null) {
+                if (bufferString) {
+                    if (strPtr[0] != ((RubyString)str).getByteList()) {
+                        ((RubyString)str).setValue(strPtr[0]);
+                    } else {
+                        // same BL as before
                     }
                 } else {
-                    rsptrBytes = rs.unsafeBytes();
-                    rsptr = rs.getBegin();
+                    // create string
+                    str = runtime.newString(strPtr[0]);
                 }
-                newline = rsptrBytes[rsptr + rslen - 1] & 0xFF;
             }
 
-            ByteList buf = cache != null ? cache.allocate(0) : new ByteList(0);
-            try {
-                boolean bufferString = str instanceof RubyString;
-                ByteList[] strPtr = {bufferString ? ((RubyString)str).getByteList() : null};
-
-                int[] limit_p = {_limit};
-                while ((c = fptr.appendline(context, newline, strPtr, limit_p)) != OpenFile.EOF) {
-                    int s, p, pp, e;
-
-                    if (c == newline) {
-                        if (strPtr[0].getRealSize() < rslen) continue;
-                        s = strPtr[0].getBegin();
-                        e = s + strPtr[0].getRealSize();
-                        p = e - rslen;
-                        pp = enc.leftAdjustCharHead(strPtr[0].getUnsafeBytes(), s, p, e);
-                        if (pp != p) continue;
-                        if (ByteList.memcmp(strPtr[0].getUnsafeBytes(), p, rsptrBytes, rsptr, rslen) == 0) break;
-                    }
-                    if (limit_p[0] == 0) {
-                        s = strPtr[0].getBegin();
-                        p = s + strPtr[0].getRealSize();
-                        pp = enc.leftAdjustCharHead(strPtr[0].getUnsafeBytes(), s, p - 1, p);
-                        if (extraLimit != 0 &&
-                                StringSupport.MBCLEN_NEEDMORE_P(StringSupport.preciseLength(enc, strPtr[0].getUnsafeBytes(), pp, p))) {
-                            limit_p[0] = 1;
-                            extraLimit--;
-                        } else {
-                            noLimit = true;
-                            break;
-                        }
-                    }
-                }
-                _limit = limit_p[0];
-                if (strPtr[0] != null) {
-                    if (bufferString) {
-                        if (strPtr[0] != ((RubyString)str).getByteList()) {
-                            ((RubyString)str).setValue(strPtr[0]);
-                        } else {
-                            // same BL as before
-                        }
-                    } else {
-                        // create string
-                        str = runtime.newString(strPtr[0]);
-                    }
-                }
-
-                if (rspara && c != OpenFile.EOF) {
-                    // FIXME: This may block more often than it should, to clean up extraneous newlines
-                    fptr.swallow(context, '\n');
-                }
-                if (!str.isNil()) {
-                    str = EncodingUtils.ioEncStr(runtime, str, fptr);
-                }
-            } finally {
-                if (cache != null) cache.release(buf);
+            if (rspara && c != OpenFile.EOF) {
+                // FIXME: This may block more often than it should, to clean up extraneous newlines
+                fptr.swallow(context, '\n');
             }
-
-            if (!str.isNil() && !noLimit) {
-                fptr.incrementLineno(runtime);
+            if (!str.isNil()) {
+                str = EncodingUtils.ioEncStr(runtime, str, fptr);
             }
-
-            return str;
-        } catch (EOFException e) {
-            return runtime.getNil();
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
-        } catch (IOException e) {
-            throw runtime.newIOErrorFromException(e);
+        } finally {
+            if (cache != null) cache.release(buf);
         }
+
+        if (!str.isNil() && !noLimit) {
+            fptr.incrementLineno(runtime);
+        }
+
+        return str;
     }
 
     // fptr->enc and codeconv->enc
@@ -2403,7 +2383,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public IRubyObject getc() {
         return getbyte(getRuntime().getCurrentContext());
     }
-    
+
+    // rb_io_readchar
     @JRubyMethod
     public IRubyObject readchar(ThreadContext context) {
         IRubyObject c = getc19(context);
@@ -2449,7 +2430,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
         return c;
     }
-    
+
+    // rb_io_getc
     @JRubyMethod(name = "getc")
     public IRubyObject getc19(ThreadContext context) {
         Ruby runtime = context.runtime;
@@ -2714,7 +2696,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         throw getRuntime().newSystemCallError(e.getMessage());
     }
-    
+
+    // io_read
     public IRubyObject read(IRubyObject[] args) {
         ThreadContext context = getRuntime().getCurrentContext();
         
@@ -2725,247 +2708,55 @@ public class RubyIO extends RubyObject implements IOEncodable {
         default: throw getRuntime().newArgumentError(args.length, 2);
         }
     }
-    
+
+    // io_read
     @JRubyMethod(name = "read")
     public IRubyObject read(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        OpenFile myOpenFile = getOpenFileChecked();
-        
-        myOpenFile.checkCharReadable(runtime);
-        return myOpenFile.readAll(context, 1024, context.nil);
+        return read(context, context.nil, context.nil);
     }
-    
+
+    // io_read
     @JRubyMethod(name = "read")
     public IRubyObject read(ThreadContext context, IRubyObject arg0) {
-        if (arg0.isNil()) {
-            return read(context);
-        }
-
-        OpenFile myOpenFile = getOpenFileChecked();
-        
-        int length = RubyNumeric.num2int(arg0);
-        
-        if (length < 0) {
-            throw getRuntime().newArgumentError("negative length " + length + " given");
-        }
-        
-        RubyString str = RubyString.newStringLight(getRuntime(), length);
-
-        return readNotAll(context, myOpenFile, length, str);
+        return read(context, arg0, context.nil);
     }
-    
+
+    // io_read
     @JRubyMethod(name = "read")
-    public IRubyObject read(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        OpenFile myOpenFile = getOpenFileChecked();
-        
-        if (arg0.isNil()) {
-            try {
-                myOpenFile.checkReadable(getRuntime());
-                myOpenFile.setReadBuffered();
-                if (arg1.isNil()) {
-                    return readAll(context);
-                } else {
-                    return readAll(arg1.convertToString());
-                }
-            } catch (EOFException ex) {
-                throw getRuntime().newEOFError();
-            } catch (IOException ex) {
-                throw getRuntime().newIOErrorFromException(ex);
-            } catch (BadDescriptorException ex) {
-                throw getRuntime().newErrnoEBADFError();
-            }
-        }
-        
-        int length = RubyNumeric.num2int(arg0);
-        
-        if (length < 0) {
-            throw getRuntime().newArgumentError("negative length " + length + " given");
-        }
-
-        if (arg1.isNil()) {
-            return readNotAll(context, myOpenFile, length);
-        } else {
-            // this readNotAll empties the string for us
-            return readNotAll(context, myOpenFile, length, arg1.convertToString());
-        }
-    }
-    
-    // implements latter part of io_read in io.c
-    private IRubyObject readNotAll(ThreadContext context, OpenFile myOpenFile, int length, RubyString str) {
-        str.resize(length);
-
-        return readNotAllCommon(context, myOpenFile, str, length);
-    }
-
-    // implements latter part of io_read in io.c
-    private IRubyObject readNotAll(ThreadContext context, OpenFile myOpenFile, int length) {
+    public IRubyObject read(ThreadContext context, IRubyObject length, IRubyObject str) {
         Ruby runtime = context.runtime;
+        OpenFile fptr;
+        int n, len;
+        
+        if (length.isNil()) {
+            fptr = getOpenFileChecked();
+            fptr.checkReadable(context.runtime);
+            return fptr.readAll(context, 0, str);
+        }
+        
+        len = RubyNumeric.num2int(length);
 
-        return readNotAllCommon(context, myOpenFile, context.nil, length);
-    }
+        str = EncodingUtils.setStrBuf(runtime, str, len);
 
-    private IRubyObject readNotAllCommon(ThreadContext context, OpenFile myOpenFile, IRubyObject str, int len) {
-        Ruby runtime = context.runtime;
-        int n;
-
-        myOpenFile.checkReadable(runtime);
-
+        fptr = getOpenFileChecked();
+        fptr.checkByteReadable(runtime);
         if (len == 0) return str;
 
-        // READ_CHECK from MRI io.c
-        myOpenFile.READ_CHECK(context);
-
-        n = myOpenFile.fread(context, str, 0, len);
-        ((RubyString)str).resize(n);
-
+        fptr.READ_CHECK(context);
+//        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
+//        previous_mode = set_binary_mode_with_seek_cur(fptr);
+//        #endif
+        n = fptr.fread(context, str, 0, len);
+        ((RubyString)str).setReadLength(n);
+//        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
+//        if (previous_mode == O_TEXT) {
+//            setmode(fptr->fd, O_TEXT);
+//        }
+//        #endif
         if (n == 0) return context.nil;
         str.setTaint(true);
 
         return str;
-    }
-
-    protected static boolean emptyBufferOrEOF(ByteList buffer, OpenFile myOpenFile) throws BadDescriptorException, IOException {
-        if (buffer == null) {
-            return true;
-        } else if (buffer.length() == 0) {
-            if (myOpenFile.getMainStreamSafe() == null) {
-                return true;
-            }
-
-            if (myOpenFile.getMainStreamSafe().feof()) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    // implements read_all() in io.c
-    protected RubyString readAll(RubyString str) throws BadDescriptorException, EOFException, IOException {
-        Ruby runtime = getRuntime();
-
-        // TODO: handle writing into original buffer better
-        ByteList buf = readAllCommon(runtime);
-        
-        if (buf == null) {
-            str.empty();
-        } else {
-            str.setValue(buf);
-        }
-        str.setTaint(true);
-        return str;
-    }
-
-    protected IRubyObject readAll(ThreadContext context) throws BadDescriptorException, EOFException, IOException {
-        Ruby runtime = getRuntime();
-        
-        if (openFile.needsReadConversion()) {
-            openFile.setBinmode();
-
-            openFile.makeReadConversion(context);
-
-            // TODO: handle writing into original buffer better
-            ByteList buf = readAllCommon(runtime);
-
-            if (openFile.readconv != null) buf = EncodingUtils.econvStrConvert(runtime.getCurrentContext(), openFile.readconv, buf, 0);
-
-            openFile.clearReadConversion();
-            return EncodingUtils.ioEncStr(runtime, runtime.newString(buf), openFile);
-        }
-
-        // TODO: handle writing into original buffer better
-        
-        ByteList buf = readAllCommon(runtime);
-
-        RubyString str;
-        if (buf == null) {
-            str = RubyString.newEmptyString(runtime);
-        } else {
-            str = makeString(runtime, buf, false);
-        }
-        str.setTaint(true);
-        return str;
-    }
-
-    // mri: read_all
-    protected ByteList readAllCommon(Ruby runtime) throws BadDescriptorException, EOFException, IOException {
-        ByteList buf = null;
-        ChannelDescriptor descriptor = openFile.getMainStreamSafe().getDescriptor();
-        try {
-            // ChannelStream#readall knows what size should be allocated at first. Just use it.
-            if (descriptor.isSeekable() && descriptor.getChannel() instanceof FileChannel) {
-                buf = openFile.getMainStreamSafe().readall();
-            } else {
-                RubyThread thread = runtime.getCurrentContext().getThread();
-                while (true) {
-                    // TODO: ruby locks the string here
-                    Stream stream = openFile.getMainStreamSafe();
-                    readCheck(stream);
-                    openFile.checkReadable(runtime);
-                    ByteList read = fread(thread, ChannelStream.BUFSIZE);
-
-                    // TODO: Ruby unlocks the string here
-                    if (read.length() == 0) {
-                        break;
-                    }
-                    if (buf == null) {
-                        buf = read;
-                    } else {
-                        buf.append(read);
-                    }
-                }
-            }
-        } catch (NonReadableChannelException ex) {
-            throw runtime.newIOError("not opened for reading");
-        }
-
-        return buf;
-    }
-
-    // implements io_fread in io.c
-    private ByteList fread(RubyThread thread, int length) throws IOException, BadDescriptorException {
-        Stream stream = openFile.getMainStreamSafe();
-        int rest = length;
-        waitReadable(stream);
-        ByteList buf = blockingFRead(stream, thread, length);
-        if (buf != null) {
-            rest -= buf.length();
-        }
-        while (rest > 0) {
-            waitReadable(stream);
-            openFile.checkClosed(getRuntime());
-            stream.clearerr();
-            ByteList newBuffer = blockingFRead(stream, thread, rest);
-            if (newBuffer == null) {
-                // means EOF
-                break;
-            }
-            int len = newBuffer.length();
-            if (len == 0) {
-                // TODO: warn?
-                // rb_warning("nonblocking IO#read is obsolete; use IO#readpartial or IO#sysread")
-                continue;
-            }
-            if (buf == null) {
-                buf = newBuffer;
-            } else {
-                buf.append(newBuffer);
-            }
-            rest -= len;
-        }
-        if (buf == null) {
-            return ByteList.EMPTY_BYTELIST.dup();
-        } else {
-            return buf;
-        }
-    }
-
-    private ByteList blockingFRead(Stream stream, RubyThread thread, int length) throws IOException, BadDescriptorException {
-        try {
-            thread.beforeBlockingCall();
-            return stream.fread(length);
-        } finally {
-            thread.afterBlockingCall();
-        }
     }
     
     /** Read a byte. On EOF throw EOFError.
@@ -3265,23 +3056,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
     }
 
-    /**
-     *  options is a hash which can contain:
-     *    encoding: string or encoding
-     *    mode: string
-     *    open_args: array of string
-     */
-    private static IRubyObject read19(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject length, IRubyObject offset, IRubyObject options) {
-        RubyIO file = (RubyIO)openKeyArgs(context, recv, new IRubyObject[]{path, length, offset}, options);
-
-        try {
-            if (!offset.isNil()) file.seek(context, offset);
-            return !length.isNil() ? file.read(context, length) : file.read(context);
-        } finally  {
-            file.close();
-        }
-    }
-    
     // open_key_args
     private static IRubyObject openKeyArgs(ThreadContext context, IRubyObject recv, IRubyObject[] argv, IRubyObject opt) {
         Ruby runtime = context.runtime;
@@ -3430,30 +3204,43 @@ public class RubyIO extends RubyObject implements IOEncodable {
         IRubyObject length = nil;
         IRubyObject offset = nil;
         IRubyObject options = nil;
-        if (args.length > 3) {
-            if (!(args[3] instanceof RubyHash)) throw runtime.newTypeError("Must be a hash");
-            options = (RubyHash) args[3];
-            offset = args[2];
-            length = args[1];
-        } else if (args.length > 2) {
-            if (args[2] instanceof RubyHash) {
-                options = (RubyHash) args[2];
-            } else {
+
+        { // rb_scan_args logic, basically
+            if (args.length > 3) {
+                if (!(args[3] instanceof RubyHash)) throw runtime.newTypeError("Must be a hash");
+                options = (RubyHash) args[3];
                 offset = args[2];
-            }
-            length = args[1];
-        } else if (args.length > 1) {
-            if (args[1] instanceof RubyHash) {
-                options = (RubyHash) args[1];
-            } else {
                 length = args[1];
+            } else if (args.length > 2) {
+                if (args[2] instanceof RubyHash) {
+                    options = (RubyHash) args[2];
+                } else {
+                    offset = args[2];
+                }
+                length = args[1];
+            } else if (args.length > 1) {
+                if (args[1] instanceof RubyHash) {
+                    options = (RubyHash) args[1];
+                } else {
+                    length = args[1];
+                }
             }
-        }
-        if (options == null) {
-            options = RubyHash.newHash(runtime);
+            if (options == null) {
+                options = RubyHash.newHash(runtime);
+            }
         }
 
-        return read19(context, recv, path, length, offset, options);
+        RubyIO file = (RubyIO)openKeyArgs(context, recv, new IRubyObject[]{path, length, offset}, options);
+
+        try {
+            if (!offset.isNil()) {
+                // protect logic around here in MRI?
+                file.seek(context, offset);
+            }
+            return file.read(context, length);
+        } finally  {
+            file.close();
+        }
     }
 
     @JRubyMethod(meta = true, required = 2, optional = 2)

@@ -34,15 +34,7 @@ public class IOJavaAddons {
         RubyIO io = (RubyIO)self;
         Ruby runtime = context.runtime;
 
-        try {
-            io.getOpenFile().checkWritable(context.runtime);
-        } catch (IOException ex) {
-            throw runtime.newIOErrorFromException(ex);
-        } catch (BadDescriptorException ex) {
-            throw runtime.newErrnoEBADFError();
-        } catch (InvalidValueException e) {
-            throw runtime.newErrnoEINVALError();
-        }
+        io.getOpenFile().checkWritable(context);
 
         return JavaUtil.convertJavaToUsableRubyObject(context.runtime, io.getOutStream());
     }

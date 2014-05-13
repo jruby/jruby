@@ -24,7 +24,6 @@ import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -1395,6 +1394,7 @@ public class OpenFile {
         RubyArgsFile.setCurrentLineNumber(runtime.getArgsFile(), lineno);
     }
 
+    // read_all, 2014-5-13
     public IRubyObject readAll(ThreadContext context, int siz, IRubyObject str) {
         Ruby runtime = context.runtime;
         int bytes;
@@ -1405,17 +1405,17 @@ public class OpenFile {
 
         if (needsReadConversion()) {
             setBinmode();
-            str = setStrBuf(runtime, str, 0);
+            str = EncodingUtils.setStrBuf(runtime, str, 0);
             makeReadConversion(context);
             while (true) {
                 Object v;
                 if (cbuf.len != 0) {
-                    shiftCbuf(context, cbuf.len, str);
+                    str = shiftCbuf(context, cbuf.len, str);
                 }
                 v = fillCbuf(context, 0);
                 if (!v.equals(MORE_CHAR_SUSPENDED) && !v.equals(MORE_CHAR_FINISHED)) {
                     if (cbuf.len != 0) {
-                        shiftCbuf(context, cbuf.len, str);
+                        str = shiftCbuf(context, cbuf.len, str);
                     }
                     throw (RaiseException)v;
                 }
@@ -1434,7 +1434,7 @@ public class OpenFile {
         cr = 0;
 
         if (siz == 0) siz = BUFSIZ;
-        str = setStrBuf(runtime, str, siz);
+        str = EncodingUtils.setStrBuf(runtime, str, siz);
         for (;;) {
             READ_CHECK(context);
             n = fread(context, str, bytes, siz - bytes);
@@ -1456,26 +1456,6 @@ public class OpenFile {
         return str;
     }
 
-    private IRubyObject setStrBuf(Ruby runtime, IRubyObject str, int len) {
-        if (str == null || str.isNil()) {
-            str = runtime.newString();
-        } else {
-            RubyString s = str.convertToString();
-            int clen = s.size();
-            if (clen >= len) {
-                if (clen != len) {
-                    s.modify();
-                    s.resize(len);
-                }
-                return s;
-            }
-            str = s;
-            len -= clen;
-        }
-        ((RubyString)str).modify(len);
-        return str;
-    }
-
     // io_bufread
     private int ioBufread(ThreadContext context, byte[] ptrBytes, int ptr, int len) {
         int offset = 0;
@@ -1483,16 +1463,19 @@ public class OpenFile {
         int c;
 
         if (!READ_DATA_PENDING()) {
-            while (n > 0) {
-                c = readInternal(context, fdRead, ptrBytes, ptr + offset, n);
-                if (c == 0) break;
-                if (c < 0) {
-                    if (waitReadable(context, fd))
-                        continue;
-                    return -1;
+            outer: while (n > 0) {
+                again: while (true) {
+                    c = readInternal(context, fdRead, ptrBytes, ptr + offset, n);
+                    if (c == 0) break outer;
+                    if (c < 0) {
+                        if (waitReadable(context, fd))
+                            continue again;
+                        return -1;
+                    }
+                    break;
                 }
                 offset += c;
-                if ((n -= c) <= 0) break;
+                if ((n -= c) <= 0) break outer;
             }
             return len - n;
         }
@@ -1530,7 +1513,7 @@ public class OpenFile {
         int len;
         BufreadArg arg = new BufreadArg();
 
-        str = setStrBuf(context.runtime, str, offset + size);
+        str = EncodingUtils.setStrBuf(context.runtime, str, offset + size);
         ByteList strByteList = ((RubyString)str).getByteList();
         arg.strPtrBytes = strByteList.unsafeBytes();
         arg.strPtr = strByteList.begin() + offset;

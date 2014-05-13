@@ -462,7 +462,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             throw context.runtime.newErrnoEINVALError(path);
         }
         try {
-            openFile.checkWritable(context.runtime);
+            openFile.checkWritable(context);
             openFile.getMainStreamSafe().ftruncate(newLength.getLongValue());
         } catch (BadDescriptorException e) {
             throw context.runtime.newErrnoEBADFError();

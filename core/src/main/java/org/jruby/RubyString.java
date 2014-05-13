@@ -962,6 +962,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         clearCodeRange();
     }
 
+    // io_set_read_length
+    public void setReadLength(int length) {
+        if (size() != length) {
+            modify();
+            value.setRealSize(length);
+        }
+    }
+
     /** rb_str_resize
      */
     public final void resize(int length) {

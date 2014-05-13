@@ -1044,6 +1044,26 @@ public class EncodingUtils {
         return strConvEncOpts(context, value, fromEncoding, toEncoding, 0, context.nil);
     }
 
+    public static IRubyObject setStrBuf(Ruby runtime, IRubyObject str, int len) {
+        if (str == null || str.isNil()) {
+            str = runtime.newString();
+        } else {
+            RubyString s = str.convertToString();
+            int clen = s.size();
+            if (clen >= len) {
+                if (clen != len) {
+                    s.modify();
+                    s.getByteList().setRealSize(len);
+                }
+                return s;
+            }
+            str = s;
+            len -= clen;
+        }
+        ((RubyString)str).modify(((RubyString)str).size() + len);
+        return str;
+    }
+
     public interface ResizeFunction {
         /**
          * Resize the destination, returning the new begin offset.
@@ -1295,11 +1315,11 @@ public class EncodingUtils {
     public static Encoding ioStripBOM(ThreadContext context, RubyIO io) {
         IRubyObject b1, b2, b3, b4;
 
-        if ((b1 = io.getByte(context)).isNil()) return null;
+        if ((b1 = io.getbyte(context)).isNil()) return null;
         switch ((int)((RubyFixnum)b1).getLongValue()) {
             case 0xEF:
-                if ((b2 = io.getByte(context)).isNil()) break;
-                if (((RubyFixnum)b2).getLongValue() == 0xBB && !(b3 = io.getByte(context)).isNil()) {
+                if ((b2 = io.getbyte(context)).isNil()) break;
+                if (((RubyFixnum)b2).getLongValue() == 0xBB && !(b3 = io.getbyte(context)).isNil()) {
                     if (((RubyFixnum)b3).getLongValue() == 0xBF) {
                         return UTF8Encoding.INSTANCE;
                     }
@@ -1308,17 +1328,17 @@ public class EncodingUtils {
                 io.ungetbyte(context, b2);
                 break;
             case 0xFE:
-                if ((b2 = io.getByte(context)).isNil()) break;
+                if ((b2 = io.getbyte(context)).isNil()) break;
                 if (((RubyFixnum)b2).getLongValue() == 0xFF) {
                     return UTF16BEEncoding.INSTANCE;
                 }
                 io.ungetbyte(context, b2);
                 break;
             case 0xFF:
-                if ((b2 = io.getByte(context)).isNil()) break;
+                if ((b2 = io.getbyte(context)).isNil()) break;
                 if (((RubyFixnum)b2).getLongValue() == 0xFE) {
-                    b3 = io.getByte(context);
-                    if (((RubyFixnum)b3).getLongValue() == 0 && !(b4 = io.getByte(context)).isNil()) {
+                    b3 = io.getbyte(context);
+                    if (((RubyFixnum)b3).getLongValue() == 0 && !(b4 = io.getbyte(context)).isNil()) {
                         if (((RubyFixnum)b4).getLongValue() == 0) {
                             return UTF32LEEncoding.INSTANCE;
                         }
@@ -1332,9 +1352,9 @@ public class EncodingUtils {
                 io.ungetbyte(context, b2);
                 break;
             case 0:
-                if ((b2 = io.getByte(context)).isNil()) break;
-                if (((RubyFixnum)b2).getLongValue() == 0 && !(b3 = io.getByte(context)).isNil()) {
-                    if (((RubyFixnum)b3).getLongValue() == 0xFE && !(b4 = io.getByte(context)).isNil()) {
+                if ((b2 = io.getbyte(context)).isNil()) break;
+                if (((RubyFixnum)b2).getLongValue() == 0 && !(b3 = io.getbyte(context)).isNil()) {
+                    if (((RubyFixnum)b3).getLongValue() == 0xFE && !(b4 = io.getbyte(context)).isNil()) {
                         if (((RubyFixnum)b4).getLongValue() == 0xFF) {
                             return UTF32BEEncoding.INSTANCE;
                         }
