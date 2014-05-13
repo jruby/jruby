@@ -2047,16 +2047,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
     /** Read a line.
      * 
      */
-    public IRubyObject gets(ThreadContext context) {
-        return gets19(context);
-    }
 
-    public IRubyObject gets(ThreadContext context, IRubyObject separatorArg) {
-        return gets19(context, separatorArg);
-    }
-
+    // rb_io_gets_m
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
-    public IRubyObject gets19(ThreadContext context) {
+    public IRubyObject gets(ThreadContext context) {
         Ruby runtime = context.runtime;
         IRubyObject result = getline(context, separator(runtime));
 
@@ -2065,8 +2059,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return result;
     }
 
+    // rb_io_gets_m
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
-    public IRubyObject gets19(ThreadContext context, IRubyObject arg) {
+    public IRubyObject gets(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         ByteList separator;
         long limit = -1;
@@ -2085,8 +2080,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return result;
     }
 
+    // rb_io_gets_m
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
-    public IRubyObject gets19(ThreadContext context, IRubyObject separator, IRubyObject limit_arg) {
+    public IRubyObject gets(ThreadContext context, IRubyObject separator, IRubyObject limit_arg) {
         Ruby runtime = context.runtime;
         long limit = limit_arg.isNil() ? -1 : RubyNumeric.fix2long(TypeConverter.checkIntegerType(runtime, limit_arg, "to_int"));
         IRubyObject result = getline(context, separator(runtime, separator), limit);
@@ -2094,6 +2090,20 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (!result.isNil()) context.setLastLine(result);
 
         return result;
+    }
+
+    private IRubyObject gets(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return gets(context);
+            case 1:
+                return gets(context, args[0]);
+            case 2:
+                return gets(context, args[0], args[1]);
+            default:
+                Arity.raiseArgumentError(context, args.length, 0, 2);
+                return null; // not reached
+        }
     }
 
     public boolean getBlocking() {
@@ -2984,48 +2994,41 @@ public class RubyIO extends RubyObject implements IOEncodable {
     
     /* class methods for IO */
 
-    /** rb_io_s_foreach
-    *
-    */
+    // rb_io_s_foreach
     private static IRubyObject foreachInternal19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
        
         IRubyObject opt = ArgsUtil.getOptionsArg(context.runtime, args);
         IRubyObject io = openKeyArgs(context, recv, args, opt);
         if (io.isNil()) return io;
-        
+
+        // io_s_foreach
+
         IRubyObject[] methodArguments = processReadlinesMethodArguments(args);
 
-        ByteListCache cache = new ByteListCache();
-        if (!io.isNil()) {
-            try {
-
-                long limit = ((RubyIO)io).getLimitFromArgs(methodArguments);
-                ByteList separator = ((RubyIO)io).getSeparatorFromArgs(runtime, methodArguments, 0);
-                
-                IRubyObject str = ((RubyIO)io).getline(context, separator, limit ,cache);
-                while (!str.isNil()) {
-                    block.yield(context, str);
-                    str = ((RubyIO)io).getline(context, separator, limit ,cache);
-                }
-            } finally {
-                ((RubyIO)io).close();
-                runtime.getGlobalVariables().clear("$_");
+        try {
+            IRubyObject str;
+            while (!(str = ((RubyIO)io).gets(context, methodArguments)).isNil()) {
+                block.yield(context, str);
             }
+        } finally {
+            ((RubyIO)io).close();
+            runtime.getGlobalVariables().clear("$_");
         }
 
-        return runtime.getNil();
-    }
-    
-    public static IRubyObject foreach(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
-        return foreach19(context, recv, args, block);
+        return context.nil;
     }
 
     @JRubyMethod(name = "foreach", required = 1, optional = 3, meta = true)
-    public static IRubyObject foreach19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+    public static IRubyObject foreach(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, recv, "foreach", args);
 
         return foreachInternal19(context, recv, args, block);
+    }
+
+    @Deprecated
+    public static IRubyObject foreach19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+        return foreach(context, recv, args, block);
     }
 
     public static RubyIO convertToIO(ThreadContext context, IRubyObject obj) {
@@ -4259,33 +4262,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     public boolean writeDataBuffered() {
         return openFile.getMainStream().writeDataBuffered();
-    }
-
-    @Deprecated
-    public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {
-    }
-
-    @Deprecated
-    public void registerDescriptor(ChannelDescriptor descriptor) {
-    }
-
-    @Deprecated
-    public void unregisterDescriptor(int aFileno) {
-    }
-
-    @Deprecated
-    public ChannelDescriptor getDescriptorByFileno(int aFileno) {
-        return ChannelDescriptor.getDescriptorByFileno(aFileno);
-    }
-
-    @Deprecated
-    public static int getNewFileno() {
-        return ChannelDescriptor.getNewFileno();
-    }
-
-    @Deprecated
-    public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
-        return args.length == 0 ? gets(context) : gets(context, args[0]);
     }
 
     @Deprecated
