@@ -3812,20 +3812,36 @@ public final class Ruby {
         return newRaiseException(getStandardError(), message);
     }
 
-    public RaiseException newIOErrorFromException(IOException ioe) {
-        if (ioe instanceof ClosedChannelException) {
-            throw newErrnoEBADFError();
+    /**
+     * Java does not give us enough information for specific error conditions
+     * so we are reduced to divining them through string matches...
+     *
+     * TODO: Should ECONNABORTED get thrown earlier in the descriptor itself or is it ok to handle this late?
+     * TODO: Should we include this into Errno code somewhere do we can use this from other places as well?
+     */
+    public RaiseException newIOErrorFromException(IOException e) {
+        if (e instanceof ClosedChannelException) {
+            return newErrnoEBADFError();
         }
 
         // TODO: this is kinda gross
-        if(ioe.getMessage() != null) {
-            if (ioe.getMessage().equals("Broken pipe")) {
-                throw newErrnoEPIPEError();
-            } else if (ioe.getMessage().equals("Connection reset by peer") ||
-                    (Platform.IS_WINDOWS && ioe.getMessage().contains("connection was aborted"))) {
-                throw newErrnoECONNRESETError();
+        if(e.getMessage() != null) {
+            String errorMessage = e.getMessage();
+            // All errors to sysread should be SystemCallErrors, but on a closed stream
+            // Ruby returns an IOError.  Java throws same exception for all errors so
+            // we resort to this hack...
+            if ("File not open".equals(errorMessage)) {
+                return newIOError(e.getMessage());
+            } else if ("An established connection was aborted by the software in your host machine".equals(errorMessage)) {
+                throw newErrnoECONNABORTEDError();
+            } else if (e.getMessage().equals("Broken pipe")) {
+                return newErrnoEPIPEError();
+            } else if ("Connection reset by peer".equals(e.getMessage())
+                    || "An existing connection was forcibly closed by the remote host".equals(e.getMessage()) ||
+                    (Platform.IS_WINDOWS && e.getMessage().contains("connection was aborted"))) {
+                return newErrnoECONNRESETError();
             }
-            return newRaiseException(getIOError(), ioe.getMessage());
+            return newRaiseException(getIOError(), e.getMessage());
         } else {
             return newRaiseException(getIOError(), "IO Error");
         }

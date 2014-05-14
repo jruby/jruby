@@ -1129,7 +1129,7 @@ public class OpenFile {
         public int capa;
     }
 
-    final RubyThread.Task<InternalReadStruct, Integer> readTask = new RubyThread.Task<InternalReadStruct, Integer>() {
+    final static RubyThread.Task<InternalReadStruct, Integer> readTask = new RubyThread.Task<InternalReadStruct, Integer>() {
         @Override
         public Integer run(ThreadContext context, InternalReadStruct iis) throws InterruptedException {
             // TODO: make nonblocking (when possible? MRI doesn't seem to...)
@@ -1154,7 +1154,7 @@ public class OpenFile {
         }
     };
 
-    final RubyThread.Task<InternalWriteStruct, Integer> writeTask = new RubyThread.Task<InternalWriteStruct, Integer>() {
+    final static RubyThread.Task<InternalWriteStruct, Integer> writeTask = new RubyThread.Task<InternalWriteStruct, Integer>() {
         @Override
         public Integer run(ThreadContext context, InternalWriteStruct iis) throws InterruptedException {
             return writeTaskBody(context.runtime, iis);
@@ -1168,7 +1168,7 @@ public class OpenFile {
     };
 
     // rb_read_internal
-    public int readInternal(ThreadContext context, ReadableByteChannel fd, byte[] bufBytes, int buf, int count) {
+    public static int readInternal(ThreadContext context, ReadableByteChannel fd, byte[] bufBytes, int buf, int count) {
         InternalReadStruct iis = new InternalReadStruct(fd, bufBytes, buf, count);
 
         try {
@@ -1931,7 +1931,7 @@ public class OpenFile {
     }
 
     // rb_write_internal
-    int writeInternal(ThreadContext context, WritableByteChannel fd, byte[] bufBytes, int buf, int count) {
+    public static int writeInternal(ThreadContext context, WritableByteChannel fd, byte[] bufBytes, int buf, int count) {
         InternalWriteStruct iis = new InternalWriteStruct(fd, bufBytes, buf, count);
 
         try {
@@ -2038,7 +2038,7 @@ public class OpenFile {
         return runtime.getNil();
     }
 
-    private int writeTaskBody(Ruby runtime, InternalWriteStruct iis) {
+    private static int writeTaskBody(Ruby runtime, InternalWriteStruct iis) {
         // TODO: make nonblocking (when possible? MRI doesn't seem to...)
         // FIXME: inefficient to recreate ByteBuffer every time
         try {

@@ -1144,48 +1144,33 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return RubyBoolean.newBoolean(context.runtime, openFile.isBinmode());
     }
 
+    // rb_io_syswrite
     @JRubyMethod(name = "syswrite", required = 1)
-    public IRubyObject syswrite(ThreadContext context, IRubyObject obj) {
+    public IRubyObject syswrite(ThreadContext context, IRubyObject str) {
        Ruby runtime = context.runtime;
-        
-        try {
-            RubyString string = obj.asString();
-            OpenFile myOpenFile = getOpenFileChecked();
-            
-            myOpenFile.checkWritable(context);
-            
-            Stream writeStream = myOpenFile.getWriteStream();
-            
-            if (myOpenFile.isWriteBuffered()) {
-                runtime.getWarnings().warn(ID.SYSWRITE_BUFFERED_IO, "syswrite for buffered IO");
-            }
-            
-            if (!writeStream.getDescriptor().isWritable()) {
-                myOpenFile.checkClosed(runtime);
-            }
-            
-            context.getThread().beforeBlockingCall();
-            int read = writeStream.getDescriptor().write(string.getByteList());
-            
-            if (read == -1) {
-                // TODO? I think this ends up propagating from normal Java exceptions
-                // sys_fail(openFile.getPath())
-            }
-            
-            return runtime.newFixnum(read);
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
-        } catch (IOException e) {
-            if (e.getMessage().equals("Broken pipe")) {
-                throw runtime.newErrnoEPIPEError();
-            }
-            if (e.getMessage().equals("Connection reset by peer")) {
-                throw runtime.newErrnoEPIPEError();
-            }
-            throw runtime.newSystemCallError(e.getMessage());
-        } finally {
-            context.getThread().afterBlockingCall();
+        OpenFile fptr;
+        long n;
+
+        if (!(str instanceof RubyString))
+            str = str.asString();
+
+        RubyIO io = GetWriteIO();
+        fptr = io.getOpenFileChecked();
+        fptr.checkWritable(context);
+
+        str.setFrozen(true);
+
+        if (fptr.wbuf.len != 0) {
+            runtime.getWarnings().warn("syswrite for buffered IO");
         }
+
+        ByteList strByteList = ((RubyString)str).getByteList();
+        n = OpenFile.writeInternal(context, fptr.getFdWrite(), strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize());
+//        RB_GC_GUARD(str);
+
+        if (n == -1) throw runtime.newSystemCallError(fptr.getPath());
+
+        return runtime.newFixnum(n);
     }
 
     @JRubyMethod(name = "write_nonblock", required = 1)
@@ -2484,89 +2469,60 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "sysread", required = 1, optional = 1)
     public IRubyObject sysread(ThreadContext context, IRubyObject[] args) {
-        int len = (int)RubyNumeric.num2long(args[0]);
-        if (len < 0) throw getRuntime().newArgumentError("Negative size");
+        Ruby runtime = context.runtime;
+        IRubyObject len, str;
+        OpenFile fptr;
+        int ilen, n;
+//        struct read_internal_arg arg;
 
-        try {
-            RubyString str;
-            ByteList buffer;
-            if (args.length == 1 || args[1].isNil()) {
-                if (len == 0) {
-                    return RubyString.newEmptyString(getRuntime());
-                }
-                
-                buffer = new ByteList(len);
-                str = RubyString.newString(getRuntime(), buffer);
-            } else {
-                str = args[1].convertToString();
-                str.modify(len);
-                
-                if (len == 0) {
-                    return str;
-                }
-                
-                buffer = str.getByteList();
-                buffer.length(0);
-            }
-            
-            OpenFile myOpenFile = getOpenFileChecked();
-            
-            myOpenFile.checkReadable(getRuntime());
-            
-            if (myOpenFile.getMainStreamSafe().readDataBuffered()) {
-                throw getRuntime().newIOError("sysread for buffered IO");
-            }
-            
-            // TODO: Ruby locks the string here
-            
-            waitReadable(myOpenFile.getMainStreamSafe());
-            myOpenFile.checkClosed(getRuntime());
+        len = args.length >= 1 ? args[0] : context.nil;
+        str = args.length >= 2 ? args[1] : context.nil;
+        ilen = RubyNumeric.num2int(len);
 
-            // We don't check RubyString modification since JRuby doesn't have
-            // GIL. Other threads are free to change anytime.
+        str = EncodingUtils.setStrBuf(runtime, str, (int)ilen);
+        if (ilen == 0) return str;
 
-            int bytesRead = myOpenFile.getMainStreamSafe().getDescriptor().read(len, str.getByteList());
-            
-            // TODO: Ruby unlocks the string here
+        fptr = getOpenFileChecked();
+        fptr.checkByteReadable(runtime);
 
-            if (bytesRead == -1 || (bytesRead == 0 && len > 0)) {
-                throw getRuntime().newEOFError();
-            }
-            
-            str.setTaint(true);
-            
-            return str;
-        } catch (BadDescriptorException e) {
-            throw getRuntime().newErrnoEBADFError();
-        } catch (EOFException e) {
-            throw getRuntime().newEOFError();
-    	} catch (IOException e) {
-            synthesizeSystemCallError(e);
-            return null;
+        if (fptr.READ_DATA_BUFFERED()) {
+            throw runtime.newIOError("sysread for buffered IO");
         }
-    }
 
-    /**
-     * Java does not give us enough information for specific error conditions
-     * so we are reduced to divining them through string matches...
+//        n = fptr->fd;
+
+        // TODO: (JRuby) see if this is needed
+    /*
+     * FIXME: removing rb_thread_wait_fd() here changes sysread semantics
+     * on non-blocking IOs.  However, it's still currently possible
+     * for sysread to raise Errno::EAGAIN if another thread read()s
+     * the IO after we return from rb_thread_wait_fd() but before
+     * we call read()
      */
-    // TODO: Should ECONNABORTED get thrown earlier in the descriptor itself or is it ok to handle this late?
-    // TODO: Should we include this into Errno code somewhere do we can use this from other places as well?
-    private void synthesizeSystemCallError(IOException e) {
-        String errorMessage = e.getMessage();
-        // All errors to sysread should be SystemCallErrors, but on a closed stream
-        // Ruby returns an IOError.  Java throws same exception for all errors so
-        // we resort to this hack...
-        if ("File not open".equals(errorMessage)) {
-            throw getRuntime().newIOError(e.getMessage());
-        } else if ("An established connection was aborted by the software in your host machine".equals(errorMessage)) {
-            throw getRuntime().newErrnoECONNABORTEDError();
-        } else if ("Connection reset by peer".equals(e.getMessage())
-                || "An existing connection was forcibly closed by the remote host".equals(e.getMessage())) {
-            throw getRuntime().newErrnoECONNRESETError();
-        }
+//        rb_thread_wait_fd(fptr->fd);
 
-        throw getRuntime().newSystemCallError(e.getMessage());
+        fptr.checkClosed(runtime);
+
+        str = EncodingUtils.setStrBuf(runtime, str, ilen);
+//        rb_str_locktmp(str);
+//        arg.fd = fptr->fd;
+//        arg.str_ptr = RSTRING_PTR(str);
+//        arg.len = ilen;
+//        rb_ensure(read_internal_call, (VALUE)&arg, rb_str_unlocktmp, str);
+//        n = arg.len;
+        ByteList strByteList = ((RubyString)str).getByteList();
+        n = OpenFile.readInternal(context, fptr.getFdRead(), strByteList.unsafeBytes(), strByteList.begin(), ilen);
+
+        if (n == -1) {
+            throw runtime.newSystemCallError(fptr.getPath());
+        }
+        ((RubyString)str).setReadLength(n);
+        if (n == 0 && ilen > 0) {
+            throw runtime.newEOFError();
+        }
+        str.setTaint(true);
+
+        return str;
     }
 
     // io_read
