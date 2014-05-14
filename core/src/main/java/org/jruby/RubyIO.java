@@ -64,6 +64,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import org.jcodings.Encoding;
 import org.jruby.anno.FrameField;
@@ -1330,6 +1331,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     /** Returns the current sync mode.
+     *
+     * MRI: rb_io_sync
      * 
      * @return the current sync mode.
      */
@@ -1364,7 +1367,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         return context.runtime.newFixnum(pid);
     }
-    
+
+    // rb_io_pos
     @JRubyMethod(name = {"pos", "tell"})
     public RubyFixnum pos(ThreadContext context) {
         OpenFile fptr = getOpenFileChecked();
@@ -1375,7 +1379,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         pos -= fptr.rbuf.len;
         return context.runtime.newFixnum(pos);
     }
-    
+
+    // rb_io_set_pos
     @JRubyMethod(name = "pos=", required = 1)
     public RubyFixnum pos_set(ThreadContext context, IRubyObject offset) {
         OpenFile fptr;
@@ -1395,58 +1400,36 @@ public class RubyIO extends RubyObject implements IOEncodable {
      */
     @JRubyMethod(rest = true, reads = FrameField.LASTLINE)
     public IRubyObject print(ThreadContext context, IRubyObject[] args) {
-        return print19(context, this, args);
+        return print(context, this, args);
     }
 
-    /** Print some objects to the stream.
+    /**
+     * Print some objects to the stream.
      *
+     * MRI: rb_io_print
      */
-    public static IRubyObject print(ThreadContext context, IRubyObject maybeIO, IRubyObject[] args) {
-        if (args.length == 0) {
-            args = new IRubyObject[] { context.getLastLine() };
-        }
-
+    public static IRubyObject print(ThreadContext context, IRubyObject out, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        IRubyObject fs = runtime.getGlobalVariables().get("$,");
-        IRubyObject rs = runtime.getGlobalVariables().get("$\\");
+        int i;
+        IRubyObject line;
+        int argc = args.length;
 
-        for (int i = 0; i < args.length; i++) {
-            if (i > 0 && !fs.isNil()) {
-                write(context, maybeIO, fs);
+        /* if no argument given, print `$_' */
+        if (argc == 0) {
+            argc = 1;
+            line = context.getLastLine();
+            args = new IRubyObject[]{line};
+        }
+        for (i=0; i<argc; i++) {
+            IRubyObject outputFS = runtime.getGlobalVariables().get("$,");
+            if (!outputFS.isNil() && i>0) {
+                write(context, out, outputFS);
             }
-            if (args[i].isNil()) {
-                write(context, maybeIO, runtime.newString("nil"));
-            } else {
-                write(context, maybeIO, args[i]);
-            }
+            write(context, out, args[i]);
         }
-        if (args.length > 0 && !rs.isNil()) {
-            write(context, maybeIO, rs);
-        }
-
-        return context.nil;
-    }
-
-    /** Print some objects to the stream.
-     *
-     */
-    public static IRubyObject print19(ThreadContext context, IRubyObject maybeIO, IRubyObject[] args) {
-        if (args.length == 0) {
-            args = new IRubyObject[] { context.getLastLine() };
-        }
-
-        Ruby runtime = context.runtime;
-        IRubyObject fs = runtime.getGlobalVariables().get("$,");
-        IRubyObject rs = runtime.getGlobalVariables().get("$\\");
-
-        for (int i = 0; i < args.length; i++) {
-            if (!fs.isNil() && i > 0) {
-                write(context, maybeIO, fs);
-            }
-            write(context, maybeIO, args[i]);
-        }
-        if (args.length > 0 && !rs.isNil()) {
-            write(context, maybeIO, rs);
+        IRubyObject outputRS = runtime.getGlobalVariables().get("$\\");
+        if (argc > 0 && !outputRS.isNil()) {
+            write(context, out, outputRS);
         }
 
         return context.nil;
@@ -1454,8 +1437,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(required = 1, rest = true)
     public IRubyObject printf(ThreadContext context, IRubyObject[] args) {
-        callMethod(context, "write", RubyKernel.sprintf(context, this, args));
-        return context.runtime.getNil();
+        write(context, this, RubyKernel.sprintf(context, this, args));
+        return context.nil;
     }
 
     @JRubyMethod(required = 1)
@@ -1564,6 +1547,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return context.runtime.newFixnum(pos);
     }
 
+    // rb_io_rewind
     @JRubyMethod
     public RubyFixnum rewind(ThreadContext context) {
         Ruby runtime = context.runtime;
@@ -1583,7 +1567,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         return RubyFixnum.zero(runtime);
     }
-    
+
+    // rb_io_fsync
     @JRubyMethod
     public RubyFixnum fsync(ThreadContext context) {
         Ruby runtime = context.runtime;
@@ -1603,6 +1588,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     /** Sets the current sync mode.
+     *
+     * MRI: rb_io_set_sync
      * 
      * @param sync The new sync mode.
      */
@@ -1620,6 +1607,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return sync;
     }
 
+    // rb_io_eof
     @JRubyMethod(name = {"eof?", "eof"})
     public RubyBoolean eof_p(ThreadContext context) {
         Ruby runtime = context.runtime;
@@ -2083,91 +2071,118 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return puts(context, this, args);
     }
 
-    public static IRubyObject puts0(ThreadContext context, IRubyObject maybeIO) {
-        return writeSeparator(context, maybeIO);
+    // rb_io_puts, arity-split
+    public static IRubyObject puts0(ThreadContext context, IRubyObject out) {
+        IRubyObject defaultRS = context.runtime.getGlobalVariables().getDefaultSeparator();
+        write(context, out, defaultRS);
+        return context.nil;
     }
 
-    public static IRubyObject puts1(ThreadContext context, IRubyObject maybeIO, IRubyObject arg0) {
+    // rb_io_puts, arity-split
+    public static IRubyObject puts1(ThreadContext context, IRubyObject out, IRubyObject arg0) {
         Ruby runtime = context.runtime;
-        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
-        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
+        IRubyObject separator = runtime.getGlobalVariables().getDefaultSeparator();
 
-        putsSingle(context, runtime, maybeIO, arg0, separator);
+        putsSingle(context, runtime, out, arg0, separator);
 
         return context.nil;
     }
 
-    public static IRubyObject puts2(ThreadContext context, IRubyObject maybeIO, IRubyObject arg0, IRubyObject arg1) {
+    // rb_io_puts, arity-split
+    public static IRubyObject puts2(ThreadContext context, IRubyObject out, IRubyObject arg0, IRubyObject arg1) {
         Ruby runtime = context.runtime;
-        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
-        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
+        IRubyObject separator = runtime.getGlobalVariables().getDefaultSeparator();
         
-        putsSingle(context, runtime, maybeIO, arg0, separator);
-        putsSingle(context, runtime, maybeIO, arg1, separator);
+        putsSingle(context, runtime, out, arg0, separator);
+        putsSingle(context, runtime, out, arg1, separator);
         
         return context.nil;
     }
 
-    public static IRubyObject puts3(ThreadContext context, IRubyObject maybeIO, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+    // rb_io_puts, arity-split
+    public static IRubyObject puts3(ThreadContext context, IRubyObject out, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.runtime;
-        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
-        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
+        IRubyObject separator = runtime.getGlobalVariables().getDefaultSeparator();
         
-        putsSingle(context, runtime, maybeIO, arg0, separator);
-        putsSingle(context, runtime, maybeIO, arg1, separator);
-        putsSingle(context, runtime, maybeIO, arg2, separator);
+        putsSingle(context, runtime, out, arg0, separator);
+        putsSingle(context, runtime, out, arg1, separator);
+        putsSingle(context, runtime, out, arg2, separator);
         
         return context.nil;
     }
 
-    public static IRubyObject puts(ThreadContext context, IRubyObject maybeIO, IRubyObject... args) {
-        if (args.length == 0) {
-            return writeSeparator(context, maybeIO);
+    // rb_io_puts
+    public static IRubyObject puts(final ThreadContext context, final IRubyObject out, final IRubyObject... args) {
+        final Ruby runtime = context.runtime;
+        final IRubyObject defaultRS = runtime.getGlobalVariables().getDefaultSeparator();
+        final int argc = 0;
+        int i;
+
+        /* if no argument given, print newline. */
+        if (argc == 0) {
+            write(context, out, defaultRS);
+            return context.nil;
         }
-
-        return putsArray(context, maybeIO, args);
-    }
-
-    private static IRubyObject writeSeparator(ThreadContext context, IRubyObject maybeIO) {
-        Ruby runtime = context.runtime;
-        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
-        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
-
-        write(context, maybeIO, separator);
-        return runtime.getNil();
-    }
-
-    private static IRubyObject putsArray(ThreadContext context, IRubyObject maybeIO, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
-        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
-
-        for (int i = 0; i < args.length; i++) {
-            putsSingle(context, runtime, maybeIO, args[i], separator);
+        for (i=0; i<argc; i++) {
+            putsSingle(context, runtime, out, args[i], defaultRS);
         }
-        
-        return runtime.getNil();
+        return context.nil;
     }
-    
-    private static void putsSingle(ThreadContext context, Ruby runtime, IRubyObject maybeIO, IRubyObject arg, RubyString separator) {
-        ByteList line;
 
-        if (arg.isNil()) {
-            line = getNilByteList(runtime);
-        } else if (runtime.isInspecting(arg)) {
-            line = RECURSIVE_BYTELIST;
-        } else if (arg instanceof RubyArray) {
-            inspectPuts(context, maybeIO, (RubyArray) arg);
-            return;
+    /**
+     * MRI: loop body from rb_io_puts
+     *
+     * Must not be called unless within runtime.recursiveListOperation.
+     */
+    private static void putsSingle(final ThreadContext context, final Ruby runtime, final IRubyObject out, final IRubyObject arg, IRubyObject defaultRS) {
+        IRubyObject line;
+        if (arg instanceof RubyString) {
+            line = arg;
         } else {
-            line = arg.asString().getByteList();
+            IRubyObject result = runtime.recursiveListOperation(new Callable<IRubyObject>() {
+                @Override
+                public IRubyObject call() throws Exception {
+                    return putsAry(context, runtime, out, arg, false);
+                }
+            });
+            if (result.isTrue()) {
+                return;
+            }
+            line = arg.asString();
+        }
+        write(context, out, line);
+        RubyString lineStr = (RubyString)line;
+        ByteList lineByteList = lineStr.getByteList();
+        if (lineByteList.getRealSize() == 0 ||
+                lineByteList.get(lineByteList.getRealSize() - 1) != '\n') {
+            write(context, out, defaultRS);
+        }
+    }
+
+    // io_puts_ary
+    private static IRubyObject putsAry(final ThreadContext context, final Ruby runtime, final IRubyObject out, IRubyObject ary, boolean recur) {
+        if (recur) {
+            IRubyObject tmp = RubyString.newString(runtime, "[...]");
+            puts(context, out, new IRubyObject[]{tmp});
+            return runtime.getTrue();
         }
 
-        write(context, maybeIO, line);
+        ary = TypeConverter.checkArrayType(runtime, ary);
+        if (ary.isNil()) return runtime.getFalse();
 
-        if (line.length() == 0 || !line.endsWith(separator.getByteList())) {
-            write(context, maybeIO, separator.getByteList());
-        }
+        return runtime.execRecursive(new Ruby.RecursiveFunction() {
+            @Override
+            public IRubyObject call(IRubyObject ary, boolean recur) {
+                RubyArray aryCast = (RubyArray)ary;
+                IRubyObject tmp;
+                int i;
+                for (i=0; i<aryCast.size(); i++) {
+                    tmp = aryCast.eltOk(i);
+                    putsAry(context, runtime, out, tmp, recur);
+                }
+                return runtime.getTrue();
+            }
+        }, ary);
     }
 
     protected IRubyObject write(ThreadContext context, ByteList byteList) {
@@ -2180,15 +2195,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     public static IRubyObject write(ThreadContext context, IRubyObject maybeIO, IRubyObject str) {
         return maybeIO.callMethod(context, "write", str);
-    }
-
-    private static IRubyObject inspectPuts(ThreadContext context, IRubyObject maybeIO, RubyArray array) {
-        try {
-            context.runtime.registerInspecting(array);
-            return putsArray(context, maybeIO, array.toJavaArray());
-        } finally {
-            context.runtime.unregisterInspecting(array);
-        }
     }
     
     @Override

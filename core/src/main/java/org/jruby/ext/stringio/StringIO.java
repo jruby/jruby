@@ -676,7 +676,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "print", rest = true)
     public IRubyObject print(ThreadContext context, IRubyObject[] args) {
-        return RubyIO.print19(context, this, args);
+        return RubyIO.print(context, this, args);
     }
 
     @JRubyMethod(name = "printf", required = 1, rest = true)

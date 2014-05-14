@@ -271,7 +271,7 @@ public class TypeConverter {
         return conv instanceof RubyInteger ? conv : runtime.getNil();
     }
 
-    // 1.9 rb_check_to_float
+    // rb_check_to_float
     public static IRubyObject checkFloatType(Ruby runtime, IRubyObject obj) {
         if (obj instanceof RubyFloat) return obj;
         if (!(obj instanceof RubyNumeric)) return runtime.getNil();
@@ -279,14 +279,19 @@ public class TypeConverter {
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getFloat(), "to_f");
     }
 
-    // 1.9 rb_check_hash_type
+    // rb_check_hash_type
     public static IRubyObject checkHashType(Ruby runtime, IRubyObject obj) {
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_hash");
     }
 
     // rb_check_string_type
     public static IRubyObject checkStringType(Ruby runtime, IRubyObject obj) {
-        return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_str");
+        return TypeConverter.convertToTypeWithCheck(obj, runtime.getString(), "to_str");
+    }
+
+    // rb_check_array_type
+    public static IRubyObject checkArrayType(Ruby runtime, IRubyObject obj) {
+        return TypeConverter.convertToTypeWithCheck(obj, runtime.getArray(), "to_ary");
     }
 
     public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) throws RaiseException {

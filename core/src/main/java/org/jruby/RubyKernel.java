@@ -486,68 +486,93 @@ public class RubyKernel {
     @JRubyMethod(required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject putc(ThreadContext context, IRubyObject recv, IRubyObject ch) {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
-        
-        return RubyIO.putc(context, defout, ch);
+        if (recv == defout) {
+            return RubyIO.putc(context, recv, ch);
+        }
+        return defout.callMethod(context, "putc", ch);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv) {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
-        return RubyIO.puts0(context, defout);
+        if (recv == defout) {
+            return RubyIO.puts0(context, defout);
+        }
+
+        return defout.callMethod(context, "puts");
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
-        return RubyIO.puts1(context, defout, arg0);
+        if (recv == defout) {
+            return RubyIO.puts1(context, defout, arg0);
+        }
+
+        return defout.callMethod(context, "puts", arg0);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
-        return RubyIO.puts2(context, defout, arg0, arg1);
+        if (recv == defout) {
+            return RubyIO.puts2(context, defout, arg0, arg1);
+        }
+
+        return defout.callMethod(context, "puts", new IRubyObject[]{arg0, arg1});
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
-        return RubyIO.puts3(context, defout, arg0, arg1, arg2);
+        if (recv == defout) {
+            return RubyIO.puts3(context, defout, arg0, arg1, arg2);
+        }
+
+        return defout.callMethod(context, "puts", new IRubyObject[]{arg0, arg1, arg2});
     }
 
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
-        return RubyIO.puts(context, defout, args);
-    }
-
-    @JRubyMethod(rest = true, module = true, visibility = PRIVATE, reads = LASTLINE)
-    public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        if (args.length == 0) return context.runtime.getNil();
-        
-        IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
-
-        return RubyIO.print(context, defout, args);
-    }
-
-    @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
-    public static IRubyObject printf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        if (args.length != 0) {
-            IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
-
-            if (!(args[0] instanceof RubyString)) {
-                defout = args[0];
-                args = ArgsUtil.popArray(args);
-            }
-
-            defout.callMethod(context, "write", RubyKernel.sprintf(context, recv, args));
+        if (recv == defout) {
+            return RubyIO.puts(context, defout, args);
         }
 
-        return context.runtime.getNil();
+        return defout.callMethod(context, "puts", args);
+    }
+
+    // rb_f_print
+    @JRubyMethod(rest = true, module = true, visibility = PRIVATE, reads = LASTLINE)
+    public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        RubyIO.print(context, context.runtime.getGlobalVariables().get("$>"), args);
+        return context.nil;
+    }
+
+    // rb_f_printf
+    @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
+    public static IRubyObject printf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        IRubyObject out;
+        int argc = args.length;
+
+        if (argc == 0) return context.nil;
+        if (args[0] instanceof RubyString) {
+            out = runtime.getGlobalVariables().get("$>");
+        }
+        else {
+            out = args[0];
+            args = Arrays.copyOfRange(args, 1, args.length);
+            argc--;
+        }
+        RubyIO.write(context, out, sprintf(context, recv, args));
+
+        return context.nil;
     }
 
     @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
