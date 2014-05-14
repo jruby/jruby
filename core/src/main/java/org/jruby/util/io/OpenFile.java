@@ -862,8 +862,8 @@ public class OpenFile {
         writeconv = null;
     }
 
-    private static final int MORE_CHAR_SUSPENDED = 0;
-    private static final int MORE_CHAR_FINISHED = 1;
+    public static final int MORE_CHAR_SUSPENDED = 0;
+    public static final int MORE_CHAR_FINISHED = 1;
     public static final int EOF = -1;
 
     public static final int IO_RBUF_CAPA_MIN = 8192;
@@ -985,7 +985,7 @@ public class OpenFile {
         return isTextMode();
     }
 
-    private int moreChar(ThreadContext context) {
+    public int moreChar(ThreadContext context) {
         Object v;
         v = fillCbuf(context, EConvFlags.AFTER_OUTPUT);
         if (!(v instanceof Integer) ||

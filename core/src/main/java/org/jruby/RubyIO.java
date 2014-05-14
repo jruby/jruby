@@ -2653,139 +2653,163 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     /** 
      * <p>Invoke a block for each byte.</p>
+     *
+     * MRI: rb_io_each_byte
      */
     public IRubyObject each_byteInternal(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
-        
-    	try {
-            OpenFile myOpenFile = getOpenFileChecked();
-            
-            while (true) {
-                myOpenFile.checkReadable(runtime);
-                myOpenFile.setReadBuffered();
-                waitReadable(myOpenFile.getMainStream());
-                
-                int c = myOpenFile.getMainStreamSafe().fgetc();
-                
-                // CRuby checks ferror(f) and retry getc for
-                // non-blocking IO.
-                if (c == -1) {
-                    break;
-                }
-                
-                assert c < 256;
-                block.yield(context, getRuntime().newFixnum(c));
-            }
+        OpenFile fptr;
 
-            return this;
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
-        } catch (EOFException e) {
-            return runtime.getNil();
-    	} catch (IOException e) {
-    	    throw runtime.newIOErrorFromException(e);
-        }
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_byte");
+        fptr = getOpenFileChecked();
+
+        do {
+            while (fptr.rbuf.len > 0) {
+                byte[] pBytes = fptr.rbuf.ptr;
+                int p = fptr.rbuf.off++;
+                fptr.rbuf.len--;
+                block.yield(context, runtime.newFixnum(pBytes[p] & 0xFF));
+                // TODO: need errno
+//                errno = 0;
+            }
+            fptr.checkByteReadable(runtime);
+            fptr.READ_CHECK(context);
+        } while (fptr.fillbuf(context) >= 0);
+        return this;
     }
 
     @JRubyMethod
-    public IRubyObject each_byte(final ThreadContext context, final Block block) {
+    public IRubyObject each_byte(ThreadContext context, Block block) {
         return block.isGiven() ? each_byteInternal(context, block) : enumeratorize(context.runtime, this, "each_byte");
     }
 
+    // rb_io_bytes
     @JRubyMethod(name = "bytes")
-    public IRubyObject bytes(final ThreadContext context) {
-        return enumeratorize(context.runtime, this, "each_byte");
+    public IRubyObject bytes(ThreadContext context, Block block) {
+        context.runtime.getWarnings().warn("IO#bytes is deprecated; use #each_byte instead");
+        return each_byte(context, block);
     }
 
-    public IRubyObject lines(final ThreadContext context, Block block) {
-        return lines19(context, block);
-    }
-
-    @JRubyMethod(name = "lines")
-    public IRubyObject lines19(final ThreadContext context, Block block) {
-        if (!block.isGiven()) {
-            return enumeratorize(context.runtime, this, "each_line");
-        }
-        return each_lineInternal(context, NULL_ARRAY, block);
-    }
-
-    public IRubyObject each_charInternal(final ThreadContext context, final Block block) {
+    // rb_io_each_char
+    public IRubyObject each_charInternal(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
-        IRubyObject ch;
+        OpenFile fptr;
+        Encoding enc;
+        IRubyObject c;
 
-        while(!(ch = getc()).isNil()) {
-            byte c = (byte)RubyNumeric.fix2int(ch);
-            int n = runtime.getKCode().getEncoding().length(c);
-            RubyString str = runtime.newString();
-            str.setEncoding(getReadEncoding());
-            str.setTaint(true);
-            str.cat(c);
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_char");
+        fptr = getOpenFileChecked();
+        fptr.checkCharReadable(runtime);
 
-            while(--n > 0) {
-                if((ch = getc()).isNil()) {
-                    block.yield(context, str);
-                    return this;
-                }
-                c = (byte)RubyNumeric.fix2int(ch);
-                str.cat(c);
-            }
-            block.yield(context, str);
+        enc = fptr.inputEncoding(runtime);
+        fptr.READ_CHECK(context);
+        while (!(c = fptr.getc(context, enc)).isNil()) {
+            block.yield(context, c);
         }
         return this;
-    }
-
-    public IRubyObject each_charInternal19(final ThreadContext context, final Block block) {
-        IRubyObject ch;
-
-        while(!(ch = getc19(context)).isNil()) {
-            block.yield(context, ch);
-        }
-        return this;
-    }
-
-    public IRubyObject each_char(final ThreadContext context, final Block block) {
-        return each_char19(context, block);
     }
 
     @JRubyMethod(name = "each_char")
-    public IRubyObject each_char19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_charInternal19(context, block) : enumeratorize(context.runtime, this, "each_char");
-    }
-
-    public IRubyObject chars(final ThreadContext context, final Block block) {
-        return chars19(context, block);
+    public IRubyObject each_char(ThreadContext context, Block block) {
+        return each_charInternal(context, block);
     }
 
     @JRubyMethod(name = "chars")
-    public IRubyObject chars19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_charInternal19(context, block) : enumeratorize(context.runtime, this, "chars");
+    public IRubyObject chars(ThreadContext context, Block block) {
+        context.runtime.getWarnings().warn("IO#chars is deprecated; use #each_char instead");
+        return each_charInternal(context, block);
     }
 
     @JRubyMethod
-    public IRubyObject codepoints(final ThreadContext context, final Block block) {
-        return eachCodePointCommon(context, block, "codepoints");
-    }
-
-    @JRubyMethod
-    public IRubyObject each_codepoint(final ThreadContext context, final Block block) {
+    public IRubyObject codepoints(ThreadContext context, Block block) {
+        context.runtime.getWarnings().warn("IO#codepoints is deprecated; use #each_codepoint instead");
         return eachCodePointCommon(context, block, "each_codepoint");
     }
 
-    private IRubyObject eachCodePointCommon(final ThreadContext context, final Block block, final String methodName) {
-        Ruby runtime = context.runtime;
-        if (!block.isGiven()) return enumeratorize(runtime, this, methodName);
-        IRubyObject ch;
+    @JRubyMethod
+    public IRubyObject each_codepoint(ThreadContext context, Block block) {
+        return eachCodePointCommon(context, block, "each_codepoint");
+    }
 
-        while(!(ch = getc()).isNil()) {
-            block.yield(context, ch);
+    // rb_io_each_codepoint
+    private IRubyObject eachCodePointCommon(ThreadContext context, Block block, String methodName) {
+        Ruby runtime = context.runtime;
+        OpenFile fptr;
+        Encoding enc;
+        int c;
+        int r, n;
+
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, methodName);
+        fptr = getOpenFileChecked();
+        fptr.checkCharReadable(runtime);
+
+        fptr.READ_CHECK(context);
+        if (fptr.needsReadConversion()) {
+            fptr.setBinmode();
+            for (;;) {
+                fptr.makeReadConversion(context);
+                for (;;) {
+                    if (fptr.cbuf.len != 0) {
+                        if (fptr.encs.enc != null)
+                            r = StringSupport.preciseLength(fptr.encs.enc, fptr.cbuf.ptr, fptr.cbuf.off, fptr.cbuf.off + fptr.cbuf.len);
+                        else
+                            r = StringSupport.CONSTRUCT_MBCLEN_CHARFOUND(1);
+                        if (!StringSupport.MBCLEN_NEEDMORE_P(r))
+                            break;
+                        if (fptr.cbuf.len == fptr.cbuf.capa) {
+                            throw runtime.newIOError("too long character");
+                        }
+                    }
+                    if (fptr.moreChar(context) == OpenFile.MORE_CHAR_FINISHED) {
+                        fptr.clearReadConversion();
+		                /* ignore an incomplete character before EOF */
+                        return this;
+                    }
+                }
+                if (StringSupport.MBCLEN_INVALID_P(r)) {
+                    throw runtime.newArgumentError("invalid byte sequence in " + fptr.encs.enc.toString());
+                }
+                n = StringSupport.MBCLEN_CHARFOUND_LEN(r);
+                if (fptr.encs.enc != null) {
+                    c = StringSupport.codePoint(runtime, fptr.encs.enc, fptr.cbuf.ptr, fptr.cbuf.off, fptr.cbuf.off + fptr.cbuf.len);
+                }
+                else {
+                    c = fptr.cbuf.ptr[fptr.cbuf.off] & 0xFF;
+                }
+                fptr.cbuf.off += n;
+                fptr.cbuf.len -= n;
+                block.yield(context, runtime.newFixnum(c & 0xFFFFFFFF));
+            }
+        }
+        fptr.NEED_NEWLINE_DECORATOR_ON_READ_CHECK();
+        enc = fptr.inputEncoding(runtime);
+        while (fptr.fillbuf(context) >= 0) {
+            r = StringSupport.preciseLength(enc, fptr.rbuf.ptr, fptr.rbuf.off, fptr.rbuf.off + fptr.rbuf.len);
+            if (StringSupport.MBCLEN_CHARFOUND_P(r) &&
+                    (n = StringSupport.MBCLEN_CHARFOUND_LEN(r)) <= fptr.rbuf.len) {
+                c = StringSupport.codePoint(runtime, fptr.encs.enc, fptr.rbuf.ptr, fptr.rbuf.off, fptr.rbuf.off + fptr.rbuf.len);
+                fptr.rbuf.off += n;
+                fptr.rbuf.len -= n;
+                block.yield(context, runtime.newFixnum(c & 0xFFFFFFFF));
+            }
+            else if (StringSupport.MBCLEN_INVALID_P(r)) {
+                throw runtime.newArgumentError("invalid byte sequence in " + enc.toString());
+            }
+            else {
+                continue;
+            }
         }
         return this;
     }
 
     /** 
      * <p>Invoke a block for each line.</p>
+     *
+     * MRI: rb_io_each_line
      */
-    public RubyIO each_lineInternal(ThreadContext context, IRubyObject[] args, Block block) {
+    private IRubyObject each_lineInternal(ThreadContext context, IRubyObject[] args, Block block, String name) {
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, name, args);
+
         Ruby runtime = context.runtime;
         ByteList separator = getSeparatorForGets(runtime, args);
 
@@ -2800,20 +2824,22 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(optional = 1)
     public IRubyObject each(final ThreadContext context, IRubyObject[]args, final Block block) {
-        return block.isGiven() ? each_lineInternal(context, args, block) : enumeratorize(context.runtime, this, "each", args);
+        return each_lineInternal(context, args, block, "each");
     }
 
     @JRubyMethod(optional = 1)
     public IRubyObject each_line(final ThreadContext context, IRubyObject[]args, final Block block) {
-        return block.isGiven() ? each_lineInternal(context, args, block) : enumeratorize(context.runtime, this, "each_line", args);
+        return each_lineInternal(context, args, block, "each_line");
     }
 
-    public RubyArray readlines(ThreadContext context, IRubyObject[] args) {
-        return readlines19(context, args);
+    @JRubyMethod(name = "lines")
+    public IRubyObject lines(final ThreadContext context, Block block) {
+        context.runtime.getWarnings().warn("IO#lines is deprecated; use #each_line instead");
+        return each_lineInternal(context, NULL_ARRAY, block, "each_line");
     }
 
     @JRubyMethod(name = "readlines", optional = 2)
-    public RubyArray readlines19(ThreadContext context, IRubyObject[] args) {
+    public RubyArray readlines(ThreadContext context, IRubyObject[] args) {
         return readlinesCommon(context, args);
     }
 
@@ -4203,6 +4229,26 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @Deprecated
     public IRubyObject getline(Ruby runtime, ByteList separator, long limit) {
         return getline(runtime.getCurrentContext(), separator, limit, null);
+    }
+
+    @Deprecated
+    public IRubyObject lines19(final ThreadContext context, Block block) {
+        return lines(context, block);
+    }
+
+    @Deprecated
+    public IRubyObject each_char19(final ThreadContext context, final Block block) {
+        return each_char(context, block);
+    }
+
+    @Deprecated
+    public IRubyObject chars19(final ThreadContext context, final Block block) {
+        return chars(context, block);
+    }
+
+    @Deprecated
+    public RubyArray readlines19(ThreadContext context, IRubyObject[] args) {
+        return readlines(context, args);
     }
     
     protected OpenFile openFile;

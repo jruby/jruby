@@ -113,6 +113,11 @@ public final class StringSupport {
     public static boolean MBCLEN_CHARFOUND_P(int r) {
         return 0 < r;
     }
+
+    // CONSTRUCT_MBCLEN_CHARFOUND, ONIGENC_CONSTRUCT_MBCLEN_CHARFOUND
+    public static int CONSTRUCT_MBCLEN_CHARFOUND(int n) {
+        return n;
+    }
     
     public static int searchNonAscii(byte[]bytes, int p, int end) {
         while (p < end) {
