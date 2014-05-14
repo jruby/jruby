@@ -724,40 +724,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return openFile.inputEncoding(getRuntime());
     }
 
-    private RubyString makeString(Ruby runtime, ByteList buffer, boolean isCached) {
-        ByteList newBuf = isCached ? new ByteList(buffer) : buffer;
-        newBuf.setEncoding(getReadEncoding());
-
-        RubyString str = RubyString.newString(runtime, newBuf);
-        str.setTaint(true);
-
-        return str;
-    }
-
-    protected boolean swallow(int term) throws IOException, BadDescriptorException {
-        Stream readStream = openFile.getMainStreamSafe();
-        int c;
-
-        // TODO: read conversion logic
-
-        do {
-            readCheck(readStream);
-            
-            try {
-                c = readStream.fgetc();
-            } catch (EOFException e) {
-                c = -1;
-            }
-            
-            if (c != term) {
-                readStream.ungetc(c);
-                return true;
-            }
-        } while (c != -1);
-        
-        return false;
-    }
-    
     private static String vendor;
     static { String v = SafePropertyAccessor.getProperty("java.vendor") ; vendor = (v == null) ? "" : v; };
     private static String msgEINTR = "Interrupted system call";
@@ -1308,15 +1274,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         return RubyFixnum.newFixnum(runtime, n);
     }
-    
-    private boolean waitWritable(Stream stream) {
-        Channel ch = stream.getChannel();
-        if (ch instanceof SelectableChannel) {
-            getRuntime().getCurrentContext().getThread().select(ch, this, SelectionKey.OP_WRITE);
-            return true;
-        }
-        return false;
-    }
 
     private boolean waitReadable(Stream stream) {
         if (stream.readDataBuffered()) {
@@ -1328,111 +1285,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
             return true;
         }
         return false;
-    }
-
-    protected int fwrite(RubyString buffer) {
-        int n, r, l, offset = 0;
-        boolean eagain = false;
-        Stream writeStream = openFile.getWriteStream();
-        
-        buffer = (RubyString)doWriteConversion(getRuntime().getCurrentContext(), buffer);
-
-        int len = buffer.size();
-
-        if ((n = len) <= 0) return n;
-
-        // console() can detect underlying windows codepage so we will just write to it
-        // and hope it is legible.
-        if (Platform.IS_WINDOWS && tty_p(getRuntime().getCurrentContext()).isTrue() && System.console() != null) {
-            System.console().printf("%s", buffer.asJavaString());
-            return len;
-        }
-
-        try {
-            if (openFile.isSync()) {
-                openFile.fflush(getRuntime());
-
-                // TODO: why is this guarded?
-    //            if (!rb_thread_fd_writable(fileno(f))) {
-    //                rb_io_check_closed(fptr);
-    //            }
-               
-                while(offset<len) {
-                    l = n;
-
-                    // TODO: Something about pipe buffer length here
-
-                    r = writeStream.getDescriptor().write(buffer.getByteList(),offset,l);
-
-                    if(r == len) {
-                        return len; //Everything written
-                    }
-
-                    if (0 <= r) {
-                        offset += r;
-                        n -= r;
-                        eagain = true;
-                    }
-
-                    if(eagain && waitWritable(writeStream)) {
-                        openFile.checkClosed(getRuntime());
-                        if(offset >= buffer.size()) {
-                            return -1;
-                        }
-                        eagain = false;
-                    } else {
-                        return -1;
-                    }
-                }
-
-
-                // TODO: all this stuff...some pipe logic, some async thread stuff
-    //          retry:
-    //            l = n;
-    //            if (PIPE_BUF < l &&
-    //                !rb_thread_critical &&
-    //                !rb_thread_alone() &&
-    //                wsplit_p(fptr)) {
-    //                l = PIPE_BUF;
-    //            }
-    //            TRAP_BEG;
-    //            r = write(fileno(f), RSTRING(str)->ptr+offset, l);
-    //            TRAP_END;
-    //            if (r == n) return len;
-    //            if (0 <= r) {
-    //                offset += r;
-    //                n -= r;
-    //                errno = EAGAIN;
-    //            }
-    //            if (rb_io_wait_writable(fileno(f))) {
-    //                rb_io_check_closed(fptr);
-    //                if (offset < RSTRING(str)->len)
-    //                    goto retry;
-    //            }
-    //            return -1L;
-            }
-
-            // TODO: handle errors in buffered write by retrying until finished or file is closed
-            return writeStream.fwrite(buffer.getByteList());
-    //        while (errno = 0, offset += (r = fwrite(RSTRING(str)->ptr+offset, 1, n, f)), (n -= r) > 0) {
-    //            if (ferror(f)
-    //            ) {
-    //                if (rb_io_wait_writable(fileno(f))) {
-    //                    rb_io_check_closed(fptr);
-    //                    clearerr(f);
-    //                    if (offset < RSTRING(str)->len)
-    //                        continue;
-    //                }
-    //                return -1L;
-    //            }
-    //        }
-
-//            return len - n;
-        } catch (IOException ex) {
-            throw getRuntime().newIOErrorFromException(ex);
-        } catch (BadDescriptorException ex) {
-            throw getRuntime().newErrnoEBADFError();
-        }
     }
 
     /** rb_io_addstr
@@ -1607,29 +1459,26 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     @JRubyMethod(required = 1)
-    public IRubyObject putc(ThreadContext context, IRubyObject object) {
-        return putc(context, this, object);
+    public IRubyObject putc(ThreadContext context, IRubyObject ch) {
+        Ruby runtime = context.runtime;
+        IRubyObject str;
+        if (ch instanceof RubyString) {
+            str = ((RubyString)ch).substr(runtime, 0, 1);
+        }
+        else {
+            str = RubyString.newStringShared(runtime, RubyFixnum.SINGLE_CHAR_BYTELISTS19[RubyNumeric.num2chr(ch) & 0xFF]);
+        }
+        write(context, str);
+        return ch;
     }
 
     public static IRubyObject putc(ThreadContext context, IRubyObject maybeIO, IRubyObject object) {
-        int c = RubyNumeric.num2chr(object);
         if (maybeIO instanceof RubyIO) {
-            // FIXME we should probably still be dyncalling 'write' here
-            RubyIO io = (RubyIO)maybeIO;
-            try {
-                OpenFile myOpenFile = io.getOpenFileChecked();
-                myOpenFile.checkWritable(context);
-                Stream writeStream = myOpenFile.getWriteStream();
-                writeStream.fputc(c);
-                if (myOpenFile.isSync()) myOpenFile.fflush(context.runtime);
-            } catch (IOException ex) {
-                throw context.runtime.newIOErrorFromException(ex);
-            } catch (BadDescriptorException e) {
-                throw context.runtime.newErrnoEBADFError();
-            }
+            ((RubyIO)maybeIO).putc(context, object);
         } else {
-            maybeIO.callMethod(context, "write",
-                    RubyString.newStringNoCopy(context.runtime, new byte[] {(byte)c}));
+            byte c = RubyNumeric.num2chr(object);
+            IRubyObject str = RubyString.newStringShared(context.runtime, RubyFixnum.SINGLE_CHAR_BYTELISTS19[c & 0xFF]);
+            maybeIO.callMethod(context, "write", str);
         }
 
         return object;
@@ -1774,43 +1623,23 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @JRubyMethod(name = {"eof?", "eof"})
     public RubyBoolean eof_p(ThreadContext context) {
         Ruby runtime = context.runtime;
-        
-        try {
-            OpenFile myOpenFile = getOpenFileChecked();
+        OpenFile fptr;
 
-            myOpenFile.checkReadable(runtime);
-            myOpenFile.setReadBuffered();
+        fptr = getOpenFileChecked();
+        fptr.checkCharReadable(runtime);
 
-            if (myOpenFile.getMainStreamSafe().feof()) {
-                return runtime.getTrue();
-            }
-            
-            if (myOpenFile.getMainStreamSafe().readDataBuffered()) {
-                return runtime.getFalse();
-            }
-            
-            readCheck(myOpenFile.getMainStreamSafe());
-            waitReadable(myOpenFile.getMainStreamSafe());
-            
-            myOpenFile.getMainStreamSafe().clearerr();
-            
-            int c = myOpenFile.getMainStreamSafe().fgetc();
-            
-            if (c != -1) {
-                myOpenFile.getMainStreamSafe().ungetc(c);
-                return runtime.getFalse();
-            }
-            
-            myOpenFile.checkClosed(runtime);
-            
-            myOpenFile.getMainStreamSafe().clearerr();
-            
+        if (fptr.READ_CHAR_PENDING()) return runtime.getFalse();
+        if (fptr.READ_DATA_PENDING()) return runtime.getFalse();
+        fptr.READ_CHECK(context);
+//        #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
+//        if (!NEED_READCONV(fptr) && NEED_NEWLINE_DECORATOR_ON_READ(fptr)) {
+//            return eof(fptr->fd) ? Qtrue : Qfalse;
+//        }
+//        #endif
+        if (fptr.fillbuf(context) < 0) {
             return runtime.getTrue();
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
-        } catch (IOException e) {
-            throw runtime.newIOErrorFromException(e);
         }
+        return runtime.getFalse();
     }
 
     @JRubyMethod(name = {"tty?", "isatty"})
@@ -3056,11 +2885,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return foreachInternal19(context, recv, args, block);
     }
 
-    @Deprecated
-    public static IRubyObject foreach19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
-        return foreach(context, recv, args, block);
-    }
-
     public static RubyIO convertToIO(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyIO) return (RubyIO)obj;
         return (RubyIO)TypeConverter.convertToType(obj, context.runtime.getIO(), "to_io");
@@ -4097,11 +3921,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return ioOptions;
     }
 
-    // mri: io_strip_bom
-    public Encoding encodingFromBOM() {
-        return EncodingUtils.ioStripBOM(this);
-    }
-
     private static final Set<String> UNSUPPORTED_SPAWN_OPTIONS = new HashSet<String>(Arrays.asList(new String[] {
             "unsetenv_others",
             "prgroup",
@@ -4300,43 +4119,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
         return args.length == 0 ? readline(context) : readline(context, args[0]);
     }
-    
-    // MRI: do_writeconv
-    private IRubyObject doWriteConversion(ThreadContext context, IRubyObject str) {
-        Ruby runtime = context.runtime;
-        if (!openFile.needsWriteConversion(context)) return str;
-        
-        IRubyObject commonEncoding = context.nil;
-        openFile.setBinmode(); // In MRI this does not affect flags like we do in OpenFile
-        openFile.makeWriteConversion(context);
-        
-        if (openFile.writeconv != null) {
-            if (!openFile.writeconvAsciicompat.isNil()) {
-                commonEncoding = openFile.writeconvAsciicompat;
-//            } else if (/*MODE_BTMODE(DEFAULT_TEXTMODE,0,1) && */ EncodingUtils.econvAsciicompatEncoding(enc) == null) {
-//                throw runtime.newArgumentError("ASCII incompatible string written for text mode IO without encoding conversion:" + str.getEncoding());
-            }
-        } else {
-            if (openFile.encs.enc2 != null) {
-                commonEncoding = runtime.getEncodingService().convertEncodingToRubyEncoding(openFile.encs.enc2);
-            } else if (openFile.encs.enc != runtime.getEncodingService().getAscii8bitEncoding()) {
-                commonEncoding = runtime.getEncodingService().convertEncodingToRubyEncoding(openFile.encs.enc);
-            }
-        }
-        
-        if (!commonEncoding.isNil()) {
-            str = EncodingUtils.rbStrEncode(context, str, commonEncoding, openFile.writeconvPreEcflags, openFile.writeconvPreEcopts);
-        }
-        
-        if (openFile.writeconv != null) {
-            str = runtime.newString(EncodingUtils.econvStrConvert(context, openFile.writeconv, ((RubyString)str).getByteList(), 0));
-        }
-        
-        // TODO: win32 logic
-        
-        return str;
-    }
-    
+
     @Override
     public void setEnc2(Encoding enc2) {
         openFile.encs.enc2 = enc2;
