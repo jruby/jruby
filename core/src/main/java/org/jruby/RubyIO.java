@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import jnr.constants.platform.Errno;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.ResourceException;
 import org.jruby.util.StringSupport;
@@ -1359,8 +1360,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         OpenFile fptr = getOpenFileChecked();
 
         long pos = fptr.tell(context);
-        // can't do this without knowing about OpenFile's last error
-//        if (pos < 0 && errno) rb_sys_fail_path(fptr->pathv);
+        if (pos < 0 && fptr.errno != null) throw context.runtime.newErrnoFromErrno(fptr.errno, fptr.getPath());
         pos -= fptr.rbuf.len;
         return context.runtime.newFixnum(pos);
     }
@@ -1374,8 +1374,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         pos = offset.convertToInteger().getLongValue();
         fptr = getOpenFileChecked();
         pos = fptr.seek(context, pos, OpenFile.SEEK_SET);
-        // can't do this without knowing about OpenFile's last error
-//        if (pos < 0 && errno) rb_sys_fail_path(fptr->pathv);
+        if (pos < 0 && fptr.errno != null) throw context.runtime.newErrnoFromErrno(fptr.errno, fptr.getPath());
 
         return context.runtime.newFixnum(pos);
     }
@@ -1539,8 +1538,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         OpenFile fptr;
 
         fptr = getOpenFileChecked();
-        // TODO: need errno
-        if (fptr.seek(context, 0L, 0) < 0/* && errno*/) throw runtime.newSystemCallError(fptr.getPath());
+        if (fptr.seek(context, 0L, 0) < 0 && fptr.errno != null) throw context.runtime.newErrnoFromErrno(fptr.errno, fptr.getPath());
         // TODO: ARGF
 //        if (this == ARGF.current_file) {
 //            ARGF.lineno -= fptr->lineno;
@@ -2378,31 +2376,30 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
     
     public IRubyObject doReadNonblock(ThreadContext context, IRubyObject[] args, boolean useException) {
-        IRubyObject value = getPartial(context, args, true);
+        Ruby runtime = context.runtime;
+        IRubyObject ret;
+        IRubyObject opts = context.nil;
+        boolean no_exception = false;
 
-        if (value.isNil()) {
-            throw context.runtime.newEOFError();
+        opts = ArgsUtil.getOptionsArg(runtime, args);
+
+        if (!opts.isNil() && runtime.getFalse() == ((RubyHash)opts).op_aref(context, runtime.newSymbol("exception")))
+            no_exception = true;
+
+        ret = getPartial(context, args, true, no_exception);
+
+        if (ret.isNil()) {
+            if (no_exception)
+                return ret;
+            else
+                throw runtime.newEOFError();
         }
-
-        if (value instanceof RubyString) {
-            RubyString str = (RubyString) value;
-            if (str.isEmpty()) {
-                Ruby ruby = context.runtime;
-
-                if (useException) {
-                    throw ruby.newErrnoEAGAINReadableError("");
-                } else {
-                    return ruby.fastNewSymbol("wait_readable");
-                }
-            }
-        }
-
-        return value;
+        return ret;
     }
 
     @JRubyMethod(name = "readpartial", required = 1, optional = 1)
     public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
-        IRubyObject value = getPartial(context, args, false);
+        IRubyObject value = getPartial(context, args, false, false);
 
         if (value.isNil()) {
             throw context.runtime.newEOFError();
@@ -2412,59 +2409,65 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     // implements io_getpartial in io.c
-    private IRubyObject getPartial(ThreadContext context, IRubyObject[] args, boolean isNonblocking) {
+    private IRubyObject getPartial(ThreadContext context, IRubyObject[] args, boolean nonblock, boolean noException) {
         Ruby runtime = context.runtime;
+        OpenFile fptr;
+        IRubyObject length, str;
+        int n, len;
+//        struct read_internal_arg arg;
 
-        // Length to read
-        int length = RubyNumeric.fix2int(args[0]);
-        if (length < 0) throw runtime.newArgumentError("negative length " + length + " given");
+        length = args.length >= 1 ? args[0] : context.nil;
+        str = args.length >= 2 ? args[1] : context.nil;
 
-        // String/Buffer to read it into
-        IRubyObject stringArg = args.length > 1 ? args[1] : runtime.getNil();
-        RubyString string = stringArg.isNil() ? RubyString.newEmptyString(runtime) : stringArg.convertToString();
-        string.empty();
-        string.setTaint(true);
-        
-        try {
-            OpenFile myOpenFile = getOpenFileChecked();
-            myOpenFile.checkReadable(runtime);
-            
-            if (length == 0) {
-                return string;
-            }
+        if ((len = RubyNumeric.num2int(length)) < 0) {
+            throw runtime.newArgumentError("negative length " + len + " given");
+        }
 
-            if (!(myOpenFile.getMainStreamSafe() instanceof ChannelStream)) { // cryptic for the uninitiated...
-                throw runtime.newNotImplementedError("readpartial only works with Nio based handlers");
-            }
-            ChannelStream stream = (ChannelStream) myOpenFile.getMainStreamSafe();
+        str = EncodingUtils.setStrBuf(runtime, str, len);
+        str.setTaint(true);
 
-            // We don't check RubyString modification since JRuby doesn't have
-            // GIL. Other threads are free to change anytime.
+        fptr = getOpenFileChecked();
+        fptr.checkByteReadable(runtime);
 
-            ByteList buf = null;
-            if (isNonblocking) {
-                buf = stream.readnonblock(length);
-            } else {
-                while ((buf == null || buf.length() == 0) && !stream.feof()) {
-                    waitReadable(stream);
-                    buf = stream.readpartial(length);
+        if (len == 0)
+            return str;
+
+        if (!nonblock)
+            fptr.READ_CHECK(context);
+        ByteList strByteList = ((RubyString)str).getByteList();
+        n = fptr.readBufferedData(strByteList.unsafeBytes(), strByteList.begin(), len);
+        if (n <= 0) {
+            again: while (true) {
+                if (nonblock) {
+                    fptr.setNonblock(runtime);
+                }
+                str = EncodingUtils.setStrBuf(runtime, str, len);
+                strByteList = ((RubyString)str).getByteList();
+//                arg.fd = fptr->fd;
+//                arg.str_ptr = RSTRING_PTR(str);
+//                arg.len = len;
+//                rb_str_locktmp_ensure(str, read_internal_call, (VALUE)&arg);
+//                n = arg.len;
+                n = OpenFile.readInternal(context, fptr, fptr.getFdRead(), strByteList.unsafeBytes(), strByteList.begin(), len);
+                if (n < 0) {
+                    if (!nonblock && fptr.waitWritable(runtime))
+                        continue again;
+                    if (nonblock && (fptr.errno == Errno.EWOULDBLOCK || fptr.errno == Errno.EAGAIN)) {
+                        if (noException)
+                            return runtime.newSymbol("wait_readable");
+                        else
+                            throw runtime.newErrnoEAGAINReadableError("read would block");
+                    }
+                    throw runtime.newSystemCallError(fptr.getPath());
                 }
             }
-            boolean empty = buf == null || buf.length() == 0;
-            ByteList newBuf = empty ? ByteList.EMPTY_BYTELIST.dup() : buf;
-            
-            string.view(newBuf);
-
-            if (stream.feof() && empty) return runtime.getNil();
-
-            return string;
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
-        } catch (EOFException e) {
-            throw runtime.newEOFError(e.getMessage());
-        } catch (IOException e) {
-            throw runtime.newIOErrorFromException(e);
         }
+        ((RubyString)str).setReadLength(n);
+
+        if (n == 0)
+            return context.nil;
+        else
+            return str;
     }
 
     @JRubyMethod(name = "sysread", required = 1, optional = 1)
@@ -2511,7 +2514,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //        rb_ensure(read_internal_call, (VALUE)&arg, rb_str_unlocktmp, str);
 //        n = arg.len;
         ByteList strByteList = ((RubyString)str).getByteList();
-        n = OpenFile.readInternal(context, fptr.getFdRead(), strByteList.unsafeBytes(), strByteList.begin(), ilen);
+        n = OpenFile.readInternal(context, fptr, fptr.getFdRead(), strByteList.unsafeBytes(), strByteList.begin(), ilen);
 
         if (n == -1) {
             throw runtime.newSystemCallError(fptr.getPath());
@@ -2625,8 +2628,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 int p = fptr.rbuf.off++;
                 fptr.rbuf.len--;
                 block.yield(context, runtime.newFixnum(pBytes[p] & 0xFF));
-                // TODO: need errno
-//                errno = 0;
+                fptr.errno = null;
             }
             fptr.checkByteReadable(runtime);
             fptr.READ_CHECK(context);

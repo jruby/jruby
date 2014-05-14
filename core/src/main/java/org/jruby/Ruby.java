@@ -3647,6 +3647,13 @@ public final class Ruby {
         }
     }
 
+    public RaiseException newErrnoFromErrno(Errno errno, String message) {
+        if (errno == null || errno == Errno.__UNKNOWN_CONSTANT__) {
+            return newSystemCallError(message);
+        }
+        return newErrnoFromInt(errno.intValue(), message);
+    }
+
     public RaiseException newErrnoFromInt(int errno) {
         Errno errnoObj = Errno.valueOf(errno);
         if (errnoObj == null) {
@@ -3833,7 +3840,7 @@ public final class Ruby {
             if ("File not open".equals(errorMessage)) {
                 return newIOError(e.getMessage());
             } else if ("An established connection was aborted by the software in your host machine".equals(errorMessage)) {
-                throw newErrnoECONNABORTEDError();
+                return newErrnoECONNABORTEDError();
             } else if (e.getMessage().equals("Broken pipe")) {
                 return newErrnoEPIPEError();
             } else if ("Connection reset by peer".equals(e.getMessage())
@@ -3845,6 +3852,32 @@ public final class Ruby {
         } else {
             return newRaiseException(getIOError(), "IO Error");
         }
+    }
+
+    public Errno errnoFromException(Throwable t) {
+        if (t instanceof ClosedChannelException) {
+            return Errno.EBADF;
+        }
+
+        // TODO: this is kinda gross
+        if(t.getMessage() != null) {
+            String errorMessage = t.getMessage();
+            // All errors to sysread should be SystemCallErrors, but on a closed stream
+            // Ruby returns an IOError.  Java throws same exception for all errors so
+            // we resort to this hack...
+            if ("File not open".equals(errorMessage)) {
+                return null;
+            } else if ("An established connection was aborted by the software in your host machine".equals(errorMessage)) {
+                return Errno.ECONNABORTED;
+            } else if (t.getMessage().equals("Broken pipe")) {
+                return Errno.EPIPE;
+            } else if ("Connection reset by peer".equals(t.getMessage())
+                    || "An existing connection was forcibly closed by the remote host".equals(t.getMessage()) ||
+                    (Platform.IS_WINDOWS && t.getMessage().contains("connection was aborted"))) {
+                return Errno.ECONNRESET;
+            }
+        }
+        return null;
     }
 
     public RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType) {

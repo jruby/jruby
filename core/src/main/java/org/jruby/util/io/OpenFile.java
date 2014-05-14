@@ -11,6 +11,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
@@ -22,6 +23,7 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
+import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
@@ -101,6 +103,9 @@ public class OpenFile {
     public final Buffer wbuf = new Buffer(), rbuf = new Buffer(), cbuf = new Buffer();
 
     public RubyIO tiedIOForWriting;
+
+    private boolean nonblock = false;
+    public Errno errno = null;
 
     public boolean READ_DATA_PENDING() {return rbuf.len != 0;}
     public int READ_DATA_PENDING_COUNT() {return rbuf.len;}
@@ -334,8 +339,44 @@ public class OpenFile {
 
     // rb_io_wait_writable
     public boolean waitWritable(Ruby runtime) {
-        // errno logic checking here
-        return ready(runtime, SelectionKey.OP_WRITE | SelectionKey.OP_ACCEPT);
+        // errno logic checking here appeared to be mostly to release
+        // gvl when a read would block or retry if it was interrupted
+
+        // TODO: evaluate whether errno checking here is useful
+
+        int ops = SelectionKey.OP_WRITE | SelectionKey.OP_ACCEPT;
+        try {
+            if (fdSelect != null) {
+                int ready_stat = 0;
+                java.nio.channels.Selector sel = SelectorFactory.openWithRetryFrom(null, fdSelect.provider());
+                synchronized (fdSelect.blockingLock()) {
+                    boolean is_block = fdSelect.isBlocking();
+                    try {
+                        fdSelect.configureBlocking(false);
+                        fdSelect.register(sel, ops);
+                        ready_stat = sel.selectNow();
+                        sel.close();
+                    } finally {
+                        if (sel != null) {
+                            try {
+                                sel.close();
+                            } catch (Exception e) {
+                            }
+                        }
+                        fdSelect.configureBlocking(is_block);
+                    }
+                }
+                return ready_stat == 1;
+            } else {
+                if (fdSeek != null) {
+                    return fdSeek.position() < fdSeek.size();
+                }
+                return false;
+            }
+        } catch (IOException ioe) {
+            throw runtime.newIOErrorFromException(ioe);
+        }
+
     }
 
     public boolean ready(Ruby runtime, int ops) {
@@ -401,7 +442,7 @@ public class OpenFile {
         if (ret == 0) {
             // TODO
 	/* pending async interrupt is there. */
-//            errno = EAGAIN;
+            errno = Errno.EAGAIN;
             return -1;
         } else if (ret == 1) {
             return 0;
@@ -437,7 +478,7 @@ public class OpenFile {
             if (0 <= r) {
                 wbuf.off += (int)r;
                 wbuf.len -= (int)r;
-//                errno = EAGAIN;
+                errno = Errno.EAGAIN;
             }
             return -1;
         } catch (IOException ioe) {
@@ -493,7 +534,7 @@ public class OpenFile {
         if (fflush(context.runtime) < 0)
             throw context.runtime.newSystemCallError("");
         unread(context);
-//        errno = 0;
+        errno = null;
     }
 
     // pseudo lseek(2)
@@ -512,16 +553,20 @@ public class OpenFile {
                         throw context.runtime.newArgumentError("invalid seek whence: " + type);
                 }
             } catch (IllegalArgumentException e) {
-                throw context.runtime.newErrnoEINVALError();
+                errno = Errno.EINVAL;
+                return -1;
             } catch (IOException ioe) {
-                throw context.runtime.newIOErrorFromException(ioe);
+                errno = context.runtime.errnoFromException(ioe);
+                return -1;
             }
         } else if (fdSelect != null) {
             // TODO: It's perhaps just a coincidence that all the channels for
             // which we should raise are instanceof SelectableChannel, since
             // stdio is not...so this bothers me slightly. -CON
-            throw context.runtime.newErrnoEPIPEError();
+            errno = Errno.EPIPE;
+            return -1;
         } else {
+            errno = Errno.EPIPE;
             return -1;
         }
     }
@@ -708,8 +753,7 @@ public class OpenFile {
             }
             else {
                 if (fflush(runtime) < 0 && err.isNil()) {
-                    // TODO: need errno
-//                    err = RubyFixnum.newFixnum(runtime, errno);
+                    err = RubyFixnum.newFixnum(runtime, errno == null ? 0 : errno.longValue());
                 }
             }
         }
@@ -741,9 +785,8 @@ public class OpenFile {
             switch (err.getMetaClass().getNativeClassIndex()) {
                 case FIXNUM:
                 case BIGNUM:
-                    // need errno
-//                    errno = NUM2INT(err);
-                    throw runtime.newSystemCallError(pathv);
+                    errno = Errno.valueOf(RubyNumeric.num2int(err));
+                    throw runtime.newErrnoFromErrno(errno, pathv);
 
                 default:
                     throw new RaiseException((RubyException)err);
@@ -1070,7 +1113,7 @@ public class OpenFile {
     }
 
     // read_buffered_data
-    private int readBufferedData(byte[] ptrBytes, int ptr, int len) {
+    public int readBufferedData(byte[] ptrBytes, int ptr, int len) {
         int n = rbuf.len;
 
         if (n <= 0) return n;
@@ -1096,14 +1139,14 @@ public class OpenFile {
         }
         if (rbuf.len == 0) {
             retry: while (true) {
-                r = readInternal(context, fdRead, rbuf.ptr, 0, rbuf.capa);
+                r = readInternal(context, this, fdRead, rbuf.ptr, 0, rbuf.capa);
 
                 if (r < 0) {
                     if (waitReadable(context, fdRead)) {
                         continue retry;
                     }
                     // This should be errno
-                    throw context.runtime.newSystemCallError("channel: " + fd + (pathv != null ? " " + pathv : ""));
+                    throw context.runtime.newErrnoFromErrno(errno, "channel: " + fd + (pathv != null ? " " + pathv : ""));
                 }
                 break;
             }
@@ -1116,13 +1159,15 @@ public class OpenFile {
     }
 
     public static class InternalReadStruct {
-        InternalReadStruct(ReadableByteChannel fd, byte[] bufBytes, int buf, int count) {
+        InternalReadStruct(OpenFile fptr, ReadableByteChannel fd, byte[] bufBytes, int buf, int count) {
+            this.fptr = fptr;
             this.fd = fd;
             this.bufBytes = bufBytes;
             this.buf = buf;
             this.capa = count;
         }
 
+        public OpenFile fptr;
         public ReadableByteChannel fd;
         public byte[] bufBytes;
         public int buf;
@@ -1135,6 +1180,28 @@ public class OpenFile {
             // TODO: make nonblocking (when possible? MRI doesn't seem to...)
             // FIXME: inefficient to recreate ByteBuffer every time
             try {
+                if (iis.fptr.nonblock) {
+                    // need to ensure channels that don't support nonblocking IO at least
+                    // appear to be nonblocking
+                    if (iis.fd instanceof SelectableChannel) {
+                        // ok...we should have set it nonblocking already in setNonblock
+                    } else {
+                        if (iis.fd instanceof FileChannel) {
+                            long position = ((FileChannel)iis.fd).position();
+                            long size = ((FileChannel)iis.fd).size();
+                            if (position != -1 && size != -1) {
+                                // there should be bytes available...proceed
+                            } else {
+                                iis.fptr.errno = Errno.EAGAIN;
+                                return -1;
+                            }
+                        } else {
+                            iis.fptr.errno = Errno.EAGAIN;
+                            return -1;
+                        }
+                    }
+                }
+
                 ByteBuffer buffer = ByteBuffer.wrap(iis.bufBytes, iis.buf, iis.capa);
                 int read = iis.fd.read(buffer);
 
@@ -1143,7 +1210,8 @@ public class OpenFile {
 
                 return read;
             } catch (IOException ioe) {
-                throw context.runtime.newIOErrorFromException(ioe);
+                iis.fptr.errno = context.runtime.errnoFromException(ioe);
+                return null;
             }
         }
 
@@ -1168,8 +1236,8 @@ public class OpenFile {
     };
 
     // rb_read_internal
-    public static int readInternal(ThreadContext context, ReadableByteChannel fd, byte[] bufBytes, int buf, int count) {
-        InternalReadStruct iis = new InternalReadStruct(fd, bufBytes, buf, count);
+    public static int readInternal(ThreadContext context, OpenFile fptr, ReadableByteChannel fd, byte[] bufBytes, int buf, int count) {
+        InternalReadStruct iis = new InternalReadStruct(fptr, fd, bufBytes, buf, count);
 
         try {
             return context.getThread().executeTask(context, iis, readTask);
@@ -1226,17 +1294,6 @@ public class OpenFile {
                 return FALSE;
         }*/
     }
-
-//    static ssize_t
-//    rb_write_internal(int fd, const void *buf, size_t count)
-//    {
-//        struct io_internal_write_struct iis;
-//        iis.fd = fd;
-//        iis.buf = buf;
-//        iis.capa = count;
-//
-//        return (ssize_t)rb_thread_io_blocking_region(internal_write_func, &iis, fd);
-//    }
 
     // io_read_encoding
     public Encoding readEncoding(Ruby runtime) {
@@ -1451,7 +1508,7 @@ public class OpenFile {
         if (!READ_DATA_PENDING()) {
             outer: while (n > 0) {
                 again: while (true) {
-                    c = readInternal(context, fdRead, ptrBytes, ptr + offset, n);
+                    c = readInternal(context, this, fdRead, ptrBytes, ptr + offset, n);
                     if (c == 0) break outer;
                     if (c < 0) {
                         if (waitReadable(context, fd))
@@ -1510,7 +1567,7 @@ public class OpenFile {
         bufreadCall(context, arg);
         len = arg.len;
         // should be errno
-        if (len < 0) throw context.runtime.newSystemCallError(pathv);
+        if (len < 0) throw context.runtime.newErrnoFromErrno(errno, pathv);
         return len;
     }
 
@@ -1682,7 +1739,7 @@ public class OpenFile {
             return;
         }
 
-//        errno = 0;
+        errno = null;
         // TODO...only for win32?
 //        if (!rb_w32_fd_is_text(fptr->fd)) {
 //            r = lseek(fptr->fd, -fptr->rbuf.len, SEEK_CUR);
@@ -1698,12 +1755,11 @@ public class OpenFile {
 //        }
 
         pos = lseek(context, 0, SEEK_CUR);
-        // TODO: ???
-//        if (pos < 0 && errno) {
-//            if (errno == ESPIPE)
-//                fptr->mode |= FMODE_DUPLEX;
-//            return;
-//        }
+        if (pos < 0 && errno != null) {
+            if (errno == Errno.ESPIPE)
+                mode |= DUPLEX;
+            return;
+        }
 
     /* add extra offset for removed '\r' in rbuf */
         extra_max = (long)(pos - rbuf.len);
@@ -1729,7 +1785,7 @@ public class OpenFile {
                 newlines--;
                 continue;
             }
-            read_size = readInternal(context, fdRead, bufBytes, buf, rbuf.len + newlines);
+            read_size = readInternal(context, this, fdRead, bufBytes, buf, rbuf.len + newlines);
             if (read_size < 0) {
                 throw runtime.newSystemCallError(pathv);
             }
@@ -1888,7 +1944,7 @@ public class OpenFile {
                 if (0 <= r) {
                     offset += r;
                     n -= r;
-    //                errno = EAGAIN;
+                    errno = Errno.EAGAIN;
                 }
                 if (waitWritable(context.runtime)) {
                     checkClosed(context.runtime);
@@ -2003,8 +2059,7 @@ public class OpenFile {
                         }
                         break retry;
                     }
-                    // need errno
-                    return noalloc ? runtime.getTrue() : RubyFixnum.newFixnum(runtime, 0);//errno);
+                    return noalloc ? runtime.getTrue() : RubyFixnum.newFixnum(runtime, (errno == null) ? 0 : errno.longValue());
                 }
                 if (res == EConvResult.InvalidByteSequence ||
                         res == EConvResult.IncompleteInput ||
@@ -2020,8 +2075,7 @@ public class OpenFile {
         while (res == EConvResult.DestinationBufferFull) {
             if (wbuf.len == wbuf.capa) {
                 if (fflush(runtime) < 0)
-                    // TODO: need errno
-                    return noalloc ? runtime.getTrue() : runtime.newFixnum(0); //errno);
+                    return noalloc ? runtime.getTrue() : runtime.newFixnum(errno == null ? 0 : errno.longValue());
             }
 
             dsBytes = wbuf.ptr;
@@ -2048,6 +2102,22 @@ public class OpenFile {
             return written;
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
+        }
+    }
+
+    // rb_io_set_nonblock
+    public void setNonblock(Ruby runtime) {
+        // Not all NIO channels are non-blocking, so we need to maintain this flag
+        // and make those channels act likenon-blocking
+        nonblock = false;
+
+        if (fdSelect != null) {
+            try {
+                fdSelect.configureBlocking(false);
+                return;
+            } catch (IOException ioe) {
+                throw runtime.newIOErrorFromException(ioe);
+            }
         }
     }
 }
