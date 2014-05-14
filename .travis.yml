@@ -7,6 +7,10 @@ jdk:
   - oraclejdk7
   - oraclejdk8
 
+os:
+  - linux
+  - osx
+
 env:
   matrix:
     - TARGET='-Ptest'
