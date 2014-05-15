@@ -139,7 +139,12 @@ class MethodTranslator extends BodyTranslator {
             body = new RedoableNode(context, sourceSection, body);
         }
 
-        body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID(), isBlock);
+        if (isBlock) {
+            body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
+        } else {
+            body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID());
+        }
+
         body = new CatchNextNode(context, sourceSection, body);
         body = new CatchRetryAsErrorNode(context, sourceSection, body);
 

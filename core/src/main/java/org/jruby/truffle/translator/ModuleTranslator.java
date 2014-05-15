@@ -58,7 +58,7 @@ class ModuleTranslator extends BodyTranslator {
             body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
         }
 
-        body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID(), false);
+        body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
 
         final RubyRootNode rootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
 

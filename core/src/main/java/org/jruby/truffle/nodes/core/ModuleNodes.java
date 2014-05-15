@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.CatchReturnNode;
+import org.jruby.truffle.nodes.methods.CatchReturnPlaceholderNode;
 import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
@@ -339,7 +340,7 @@ public abstract class ModuleNodes {
             return name;
         }
 
-        private static void defineMethod(RubyModule module, RubySymbol name, RubyProc proc) {
+        private void defineMethod(RubyModule module, RubySymbol name, RubyProc proc) {
             final RubyMethod method = proc.getMethod();
 
             if (!(method.getCallTarget() instanceof RootCallTarget)) {
@@ -347,13 +348,13 @@ public abstract class ModuleNodes {
             }
 
             final RubyRootNode modifiedRootNode = (RubyRootNode) ((RootCallTarget) method.getCallTarget()).getRootNode();
-            final CatchReturnNode modifiedCatchReturn = NodeUtil.findFirstNodeInstance(modifiedRootNode, CatchReturnNode.class);
+            final CatchReturnPlaceholderNode currentCatchReturn = NodeUtil.findFirstNodeInstance(modifiedRootNode, CatchReturnPlaceholderNode.class);
 
-            if (modifiedCatchReturn == null) {
-                throw new UnsupportedOperationException("Doesn't seem to have a " + CatchReturnNode.class.getName());
+            if (currentCatchReturn == null) {
+                throw new UnsupportedOperationException("Doesn't seem to have a " + CatchReturnPlaceholderNode.class.getName());
             }
 
-            modifiedCatchReturn.setIsProc(false);
+            currentCatchReturn.replace(new CatchReturnNode(getContext(), currentCatchReturn.getSourceSection(), currentCatchReturn.getBody(), currentCatchReturn.getReturnID()));
 
             final CallTarget modifiedCallTarget = Truffle.getRuntime().createCallTarget(modifiedRootNode);
             final RubyMethod modifiedMethod = new RubyMethod(method.getSharedMethodInfo(), name.toString(), method.getDeclaringModule(), method.getVisibility(), method.isUndefined(), modifiedCallTarget, method.getDeclarationFrame(), true);
