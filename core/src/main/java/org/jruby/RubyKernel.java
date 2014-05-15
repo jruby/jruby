@@ -451,29 +451,42 @@ public class RubyKernel {
         return TypeConverter.convertToType19(object, context.runtime.getString(), "to_s");
     }
 
+    // MRI: rb_f_p_internal
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject p(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
+        int argc = args.length;
+        int i;
+        IRubyObject ret = context.nil;
         IRubyObject defout = runtime.getGlobalVariables().get("$>");
-        for (IRubyObject arg: args) {
-            if (arg != null) {
-                defout.callMethod(context, "write", RubyObject.inspect(context, arg));
-                defout.callMethod(context, "write", runtime.newString("\n"));
+        IRubyObject defaultRS = context.runtime.getGlobalVariables().getDefaultSeparator();
+
+        for (i=0; i<argc; i++) {
+            // pulled out as rb_p in MRI
+//            rb_p(argv[i]);
+            IRubyObject obj = args[i];
+            IRubyObject str = obj.inspect().asString();
+            if (defout instanceof RubyIO &&
+                    defout.getMetaClass().searchMethod("write").isBuiltin()) {
+                ((RubyIO)defout).write(context, str, true);
+                ((RubyIO)defout).write(context, defaultRS, true);
+            }
+            else {
+                RubyIO.write(context, defout, str);
+                RubyIO.write(context, defout, defaultRS);
             }
         }
-
-        IRubyObject result = runtime.getNil();
-        if (args.length == 1) {
-            result = args[0];
-        } else if (args.length > 1) {
-            result = runtime.newArray(args);
+        if (argc == 1) {
+            ret = args[0];
+        }
+        else if (argc > 1) {
+            ret = RubyArray.newArray(runtime, args);
         }
 
-        if (defout instanceof RubyFile) {
-            ((RubyFile)defout).flush(context);
+        if (defout instanceof RubyIO) {
+            ((RubyIO)defout).flush(context);
         }
-
-        return result;
+        return ret;
     }
 
     @JRubyMethod(required = 1, module = true)

@@ -36,6 +36,7 @@
 package org.jruby;
 
 import jnr.constants.platform.Errno;
+import org.jcodings.transcode.EConvFlags;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.ResourceException;
 import org.jruby.util.StringSupport;
@@ -206,20 +207,21 @@ public class RubyIO extends RubyObject implements IOEncodable {
             runtime.putFilenoMap(0, descriptor.getFileno());
             mainStream = ChannelStream.open(runtime, descriptor);
             openFile.setMainStream(mainStream);
+//            prepStdio(runtime.getOut(), OpenFile.READABLE);
             break;
         case OUT:
             descriptor = new ChannelDescriptor(Channels.newChannel(runtime.getOut()), newModeFlags(runtime, ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.out);
             runtime.putFilenoMap(1, descriptor.getFileno());
             mainStream = ChannelStream.open(runtime, descriptor);
             openFile.setMainStream(mainStream);
-            openFile.getMainStream().setSync(true);
+//            prepStdio(runtime.getOut(), OpenFile.WRITABLE);
             break;
         case ERR:
             descriptor = new ChannelDescriptor(Channels.newChannel(runtime.getErr()), newModeFlags(runtime, ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.err);
             runtime.putFilenoMap(2, descriptor.getFileno());
             mainStream = ChannelStream.open(runtime, descriptor);
             openFile.setMainStream(mainStream);
-            openFile.getMainStream().setSync(true);
+//            prepStdio(runtime.getOut(), OpenFile.WRITABLE | OpenFile.SYNC);
             break;
         }
 
@@ -227,6 +229,24 @@ public class RubyIO extends RubyObject implements IOEncodable {
         // never autoclose stdio streams
         openFile.setAutoclose(false);
         openFile.setStdio(true);
+    }
+
+    // non-IO-opening part of prep_stdio
+    private void prepStdio(Object f, int fmode) {
+        OpenFile fptr;
+//        IRubyObject io = prep_io(fileno(f), fmode|FMODE_PREP|DEFAULT_TEXTMODE, klass, path);
+
+        fptr = getOpenFileChecked();
+        fptr.encs.ecflags |= EncodingUtils.ECONV_DEFAULT_NEWLINE_DECORATOR;
+        if (EncodingUtils.TEXTMODE_NEWLINE_DECORATOR_ON_WRITE != 0) {
+            fptr.encs.ecflags |= EncodingUtils.TEXTMODE_NEWLINE_DECORATOR_ON_WRITE;
+            if ((fmode & OpenFile.READABLE) != 0) {
+                fptr.encs.ecflags |= EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
+            }
+        }
+        fptr.stdioFile = f;
+
+//        return io;
     }
     
     public static RubyIO newIO(Ruby runtime, Channel channel) {
@@ -1237,9 +1257,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
         OpenFile fptr;
         long n;
-        IRubyObject tmp;
+//        IRubyObject tmp;
 
-        RubyIO io = GetWriteIO();
+//        RubyIO io = GetWriteIO();
 
         str = str.asString();
         // TODO: tied_io_for_writing stuff
@@ -1260,18 +1280,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (n == -1L) throw runtime.newSystemCallError(fptr.getPath());
 
         return RubyFixnum.newFixnum(runtime, n);
-    }
-
-    private boolean waitReadable(Stream stream) {
-        if (stream.readDataBuffered()) {
-            return true;
-        }
-        Channel ch = stream.getChannel();
-        if (ch instanceof SelectableChannel) {
-            getRuntime().getCurrentContext().getThread().select(ch, this, SelectionKey.OP_READ);
-            return true;
-        }
-        return false;
     }
 
     /** rb_io_addstr
@@ -2378,8 +2386,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public IRubyObject doReadNonblock(ThreadContext context, IRubyObject[] args, boolean useException) {
         Ruby runtime = context.runtime;
         IRubyObject ret;
-        IRubyObject opts = context.nil;
-        boolean no_exception = false;
+        IRubyObject opts;
+        boolean no_exception = !useException;
 
         opts = ArgsUtil.getOptionsArg(runtime, args);
 
@@ -2460,6 +2468,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     }
                     throw runtime.newSystemCallError(fptr.getPath());
                 }
+                break;
             }
         }
         ((RubyString)str).setReadLength(n);
@@ -3605,10 +3614,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
             source.setEncoding(context, modes, context.nil, options);
             RubyIO sink = new RubyIO(runtime, pipe.sink());
 
-            sink.openFile.getMainStreamSafe().setSync(true);
+            sink.openFile.setSync(true);
             return runtime.newArrayNoCopy(new IRubyObject[]{source, sink});
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         }

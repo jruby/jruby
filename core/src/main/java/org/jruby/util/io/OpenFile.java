@@ -1,6 +1,7 @@
 package org.jruby.util.io;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
@@ -80,6 +81,7 @@ public class OpenFile {
     private String pathv;
     private Finalizer finalizer;
     private boolean stdio;
+    public Object stdioFile;
 
     public static class Buffer {
         public byte[] ptr;
@@ -294,7 +296,7 @@ public class OpenFile {
 
         if (wbuf.len != 0) {
             if (fflush(runtime) < 0) {
-                throw runtime.newSystemCallError("error flushing");
+                throw runtime.newErrnoFromErrno(errno, "error flushing");
             }
         }
         // don't know what this is
@@ -532,7 +534,7 @@ public class OpenFile {
     void flushBeforeSeek(ThreadContext context)
     {
         if (fflush(context.runtime) < 0)
-            throw context.runtime.newSystemCallError("");
+            throw context.runtime.newErrnoFromErrno(errno, "");
         unread(context);
         errno = null;
     }
@@ -631,14 +633,8 @@ public class OpenFile {
         return READ_DATA_BUFFERED();
     }
 
-    public void setReadBuffered() {
-    }
-
     public boolean isWriteBuffered() {
         return false;
-    }
-
-    public void setWriteBuffered() {
     }
 
     public void setSync(boolean sync) {
@@ -709,6 +705,14 @@ public class OpenFile {
     
     public boolean isStdio() {
         return stdio;
+    }
+
+    public void setStdioFile(Object file) {
+        this.stdioFile = file;
+    }
+
+    public Object getStdioFile() {
+        return stdioFile;
     }
 
     public Finalizer getFinalizer() {
@@ -1180,6 +1184,7 @@ public class OpenFile {
             // TODO: make nonblocking (when possible? MRI doesn't seem to...)
             // FIXME: inefficient to recreate ByteBuffer every time
             try {
+                iis.fptr.errno = null;
                 if (iis.fptr.nonblock) {
                     // need to ensure channels that don't support nonblocking IO at least
                     // appear to be nonblocking
@@ -1205,13 +1210,24 @@ public class OpenFile {
                 ByteBuffer buffer = ByteBuffer.wrap(iis.bufBytes, iis.buf, iis.capa);
                 int read = iis.fd.read(buffer);
 
-                // FileChannel returns -1 upon reading to EOF rather than blocking, so we call that 0 like read(2)
-                if (read == -1 && iis.fd instanceof FileChannel) read = 0;
+                if (read <= 0 && iis.fd instanceof FileChannel) {
+                    // if it's a nonblocking read against a file and we've hit EOF, do EAGAIN
+                    if (iis.fptr.nonblock) {
+                        iis.fptr.errno = Errno.EAGAIN;
+                        return -1;
+                    }
+
+                    // FileChannel returns -1 upon reading to EOF rather than blocking, so we call that 0 like read(2)
+                    read = 0;
+                } else if (read <= 0 && iis.fptr.nonblock) {
+                    iis.fptr.errno = Errno.EAGAIN;
+                    return -1;
+                }
 
                 return read;
             } catch (IOException ioe) {
                 iis.fptr.errno = context.runtime.errnoFromException(ioe);
-                return null;
+                return -1;
             }
         }
 
@@ -1721,6 +1737,7 @@ public class OpenFile {
         return -1;
     }
 
+    // io_unread
     public void unread(ThreadContext context)
     {
         Ruby runtime = context.runtime;
@@ -1787,7 +1804,7 @@ public class OpenFile {
             }
             read_size = readInternal(context, this, fdRead, bufBytes, buf, rbuf.len + newlines);
             if (read_size < 0) {
-                throw runtime.newSystemCallError(pathv);
+                throw runtime.newErrnoFromErrno(errno, pathv);
             }
             if (read_size == rbuf.len) {
                 lseek(context, r, SEEK_SET);
@@ -1880,12 +1897,13 @@ public class OpenFile {
     public long binwrite(ThreadContext context, IRubyObject str, byte[] ptrBytes, int ptr, int len, boolean nosync)
     {
         int n, r, offset = 0;
+        boolean isSync = !nosync && (mode & (SYNC|TTY)) != 0;
 
     /* don't write anything if current thread has a pending interrupt. */
         context.pollThreadEvents();
 
         if ((n = len) <= 0) return n;
-        if (wbuf.ptr == null && !(!nosync && (mode & SYNC) != 0)) {
+        if (wbuf.ptr == null && !isSync) {
             wbuf.off = 0;
             wbuf.len = 0;
             wbuf.capa = IO_WBUF_CAPA_MIN;
@@ -1894,7 +1912,7 @@ public class OpenFile {
             // ???
 //            rb_mutex_allow_trap(fptr->write_lock, 1);
         }
-        if ((!nosync && (mode & (SYNC|TTY)) != 0) ||
+        if (isSync ||
                 (wbuf.ptr != null && wbuf.capa <= wbuf.len + len)) {
             BinwriteArg arg = new BinwriteArg();
 
@@ -1939,7 +1957,7 @@ public class OpenFile {
                     int l = writableLength(n);
                     r = writeInternal(context, fdWrite, ptrBytes, ptr + offset, l);
                 }
-        /* xxx: other threads may modify given string. */
+                /* xxx: other threads may modify given string. */
                 if (r == n) return len;
                 if (0 <= r) {
                     offset += r;
@@ -2109,7 +2127,7 @@ public class OpenFile {
     public void setNonblock(Ruby runtime) {
         // Not all NIO channels are non-blocking, so we need to maintain this flag
         // and make those channels act likenon-blocking
-        nonblock = false;
+        nonblock = true;
 
         if (fdSelect != null) {
             try {
