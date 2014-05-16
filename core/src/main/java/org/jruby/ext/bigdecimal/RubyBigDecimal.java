@@ -462,7 +462,7 @@ public class RubyBigDecimal extends RubyNumeric {
         long denominator = RubyNumeric.num2long(r.denominator(context));
             
         return new RubyBigDecimal(context.runtime, 
-                BigDecimal.valueOf(numerator).divide(BigDecimal.valueOf(denominator), getRoundingMode(context.runtime)));
+                BigDecimal.valueOf(numerator).divide(BigDecimal.valueOf(denominator), MathContext.UNLIMITED));
     }
     
     private static RubyBigDecimal getVpValueWithPrec19(ThreadContext context, IRubyObject value, long precision, boolean must) {
