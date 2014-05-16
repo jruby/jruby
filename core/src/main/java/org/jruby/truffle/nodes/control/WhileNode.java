@@ -39,8 +39,6 @@ public class WhileNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         int count = 0;
 
         try {

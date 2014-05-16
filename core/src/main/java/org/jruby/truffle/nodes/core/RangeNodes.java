@@ -36,7 +36,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public RubyArray collect(VirtualFrame frame, FixnumRange range, RubyProc block) {
+        public RubyArray collect(VirtualFrame frame, IntegerFixnumRange range, RubyProc block) {
             notDesignedForCompilation();
 
             final RubyContext context = getContext();
@@ -80,7 +80,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public Object each(VirtualFrame frame, FixnumRange range, RubyProc block) {
+        public Object each(VirtualFrame frame, IntegerFixnumRange range, RubyProc block) {
             notDesignedForCompilation();
 
             int count = 0;
@@ -148,7 +148,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public int each(FixnumRange range) {
+        public int each(IntegerFixnumRange range) {
             return range.getBegin();
         }
 
@@ -181,7 +181,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public boolean include(FixnumRange range, int value) {
+        public boolean include(IntegerFixnumRange range, int value) {
             return value >= range.getBegin() && value < range.getExclusiveEnd();
         }
 
@@ -219,7 +219,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public int last(FixnumRange range) {
+        public int last(IntegerFixnumRange range) {
             return range.getEnd();
         }
 
@@ -246,7 +246,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public Object step(VirtualFrame frame, FixnumRange range, int step, RubyProc block) {
+        public Object step(VirtualFrame frame, IntegerFixnumRange range, int step, RubyProc block) {
             notDesignedForCompilation();
 
             int count = 0;
@@ -296,10 +296,21 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public RubyArray toA(RubyRange range) {
-            notDesignedForCompilation();
+        public RubyArray toA(IntegerFixnumRange range) {
+            final int begin = range.getBegin();
+            final int length = range.getExclusiveEnd() - begin;
 
-            return range.toArray();
+            if (length < 0) {
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            } else {
+                final int[] values = new int[length];
+
+                for (int n = 0; n < length; n++) {
+                    values[n] = begin + n;
+                }
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), values, length);
+            }
         }
 
     }

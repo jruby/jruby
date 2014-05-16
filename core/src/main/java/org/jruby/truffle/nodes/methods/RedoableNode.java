@@ -29,8 +29,6 @@ public class RedoableNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         while (true) {
             try {
                 return body.execute(frame);

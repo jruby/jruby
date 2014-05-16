@@ -18,8 +18,6 @@ public abstract class RubyRange extends RubyObject {
         super(rangeClass);
     }
 
-    public abstract RubyArray toArray();
-
     public abstract boolean doesExcludeEnd();
 
 }

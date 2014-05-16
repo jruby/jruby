@@ -32,8 +32,6 @@ public class CatchNextNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         try {
             return body.execute(frame);
         } catch (NextException e) {

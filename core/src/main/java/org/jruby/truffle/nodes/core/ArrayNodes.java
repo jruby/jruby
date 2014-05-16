@@ -20,7 +20,7 @@ import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
-import org.jruby.truffle.runtime.core.range.FixnumRange;
+import org.jruby.truffle.runtime.core.range.IntegerFixnumRange;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -438,8 +438,6 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnum", rewriteOn=UnexpectedResultException.class, order = 2)
         public int getIntegerFixnumInBounds(RubyArray array, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
-            notDesignedForCompilation();
-
             int normalisedIndex = array.normaliseIndex(index);
 
             if (normalisedIndex < 0) {
@@ -562,8 +560,6 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnum", order = 1)
         public int setIntegerFixnum(RubyArray array, int index, int value) {
-            notDesignedForCompilation();
-
             final int normalisedIndex = array.normaliseIndex(index);
             int[] store = (int[]) array.store;
 
@@ -652,9 +648,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isIntegerFixnum", order = 5)
-        public RubyArray setIntegerFixnumRange(RubyArray array, FixnumRange range, RubyArray other) {
-            notDesignedForCompilation();
-
+        public RubyArray setIntegerFixnumRange(RubyArray array, IntegerFixnumRange range, RubyArray other) {
             // TODO(CS): why can't this be a guard?
             if (other.store instanceof int[]) {
                 if (range.doesExcludeEnd()) {
@@ -973,12 +967,32 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "delete_at", minArgs = 1, maxArgs = 1)
     public abstract static class DeleteAtNode extends ArrayCoreMethodNode {
 
+        private static final BranchProfile tooSmallBranch = new BranchProfile();
+        private static final BranchProfile beyondEndBranch = new BranchProfile();
+
         public DeleteAtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public DeleteAtNode(DeleteAtNode prev) {
             super(prev);
+        }
+
+        @Specialization(guards = "isIntegerFixnum", rewriteOn = UnexpectedResultException.class, order = 1)
+        public int deleteAtIntegerFixnumInBounds(RubyArray array, int index) throws UnexpectedResultException {
+            final int normalisedIndex = array.normaliseIndex(index);
+
+            if (normalisedIndex < 0) {
+                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+            } else if (normalisedIndex >= array.size) {
+                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+            } else {
+                final int[] store = (int[]) array.store;
+                final int value = store[normalisedIndex];
+                System.arraycopy(store, normalisedIndex + 1, store, normalisedIndex, array.size - normalisedIndex - 1);
+                array.size -= 1;
+                return value;
+            }
         }
 
         @Specialization(guards = "isIntegerFixnum", order = 2)
@@ -992,82 +1006,16 @@ public abstract class ArrayNodes {
             }
 
             if (normalisedIndex < 0) {
-                return NilPlaceholder.INSTANCE;
+                tooSmallBranch.enter();
+                CompilerDirectives.transferToInterpreter();
+                throw new UnsupportedOperationException();
             } else if (normalisedIndex >= array.size) {
-                return NilPlaceholder.INSTANCE;
+                beyondEndBranch.enter();
+                throw new UnsupportedOperationException();
             } else {
                 final int[] store = (int[]) array.store;
                 final int value = store[normalisedIndex];
                 System.arraycopy(store, normalisedIndex + 1, store, normalisedIndex, array.size - normalisedIndex - 1);
-                array.size -= 1;
-                return value;
-            }
-        }
-
-        @Specialization(guards = "isLongFixnum", order = 3)
-        public Object deleteAtLongFixnum(RubyArray array, int index) {
-            notDesignedForCompilation();
-
-            int normalisedIndex = index;
-
-            if (normalisedIndex < 0) {
-                normalisedIndex = array.size + index;
-            }
-
-            if (normalisedIndex < 0) {
-                return NilPlaceholder.INSTANCE;
-            } else if (normalisedIndex >= array.size) {
-                return NilPlaceholder.INSTANCE;
-            } else {
-                final long[] store = (long[]) array.store;
-                final long value = store[normalisedIndex];
-                System.arraycopy(store, normalisedIndex + 1, store, normalisedIndex, array.size - normalisedIndex);
-                array.size -= 1;
-                return value;
-            }
-        }
-
-        @Specialization(guards = "isFloat", order = 4)
-        public Object deleteAtFloat(RubyArray array, int index) {
-            notDesignedForCompilation();
-
-            int normalisedIndex = index;
-
-            if (normalisedIndex < 0) {
-                normalisedIndex = array.size + index;
-            }
-
-            if (normalisedIndex < 0) {
-                return NilPlaceholder.INSTANCE;
-            } else if (normalisedIndex >= array.size) {
-                return NilPlaceholder.INSTANCE;
-            } else {
-                final double[] store = (double[]) array.store;
-                final double value = store[normalisedIndex];
-                System.arraycopy(store, normalisedIndex + 1, store, normalisedIndex, array.size - normalisedIndex);
-                array.size -= 1;
-                return value;
-            }
-        }
-
-        @Specialization(guards = "isObject", order = 5)
-        public Object deleteAtObject(RubyArray array, int index) {
-            notDesignedForCompilation();
-
-            int normalisedIndex = index;
-
-            if (normalisedIndex < 0) {
-                normalisedIndex = array.size + index;
-            }
-
-            if (normalisedIndex < 0) {
-                return NilPlaceholder.INSTANCE;
-            } else if (normalisedIndex >= array.size) {
-                return NilPlaceholder.INSTANCE;
-            } else {
-                final Object[] store = (Object[]) array.store;
-                final Object value = store[normalisedIndex];
-                System.arraycopy(store, normalisedIndex + 1, store, normalisedIndex, array.size - normalisedIndex);
                 array.size -= 1;
                 return value;
             }
@@ -1093,8 +1041,6 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnum", order = 2)
         public Object dupIntegerFixnum(RubyArray array) {
-            notDesignedForCompilation();
-
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((int[]) array.store, array.size), array.size);
         }
 
@@ -1371,8 +1317,6 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnum")
         public Object insert(RubyArray array, int index, int value) {
-            notDesignedForCompilation();
-
             final int normalisedIndex = array.normaliseIndex(index);
             final int[] store = (int[]) array.store;
 

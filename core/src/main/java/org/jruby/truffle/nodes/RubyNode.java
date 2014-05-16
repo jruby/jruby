@@ -23,7 +23,7 @@ import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.hash.RubyHash;
-import org.jruby.truffle.runtime.core.range.FixnumRange;
+import org.jruby.truffle.runtime.core.range.IntegerFixnumRange;
 import org.jruby.truffle.runtime.core.range.ObjectRange;
 import org.jruby.truffle.runtime.core.range.RubyRange;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -85,8 +85,8 @@ public abstract class RubyNode extends Node {
         return RubyTypesGen.RUBYTYPES.expectLong(execute(frame));
     }
 
-    public FixnumRange executeFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectFixnumRange(execute(frame));
+    public IntegerFixnumRange executeFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectIntegerFixnumRange(execute(frame));
     }
 
     public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {

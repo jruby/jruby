@@ -46,8 +46,6 @@ public class DispatchHeadNode extends DispatchNode {
     }
 
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
-        RubyNode.notDesignedForCompilation();
-
         return dispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
     }
 

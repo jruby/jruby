@@ -81,8 +81,6 @@ public class RubyCallNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         final Object receiverObject = receiver.execute(frame);
         final Object[] argumentsObjects = executeArguments(frame);
         final RubyProc blockObject = executeBlock(frame);
@@ -108,6 +106,7 @@ public class RubyCallNode extends RubyNode {
         }
 
         if (isSplatted) {
+            notDesignedForCompilation();
             assert argumentsObjects[0] instanceof RubyArray;
             return ((RubyArray) argumentsObjects[0]).slowToArray();
         } else {

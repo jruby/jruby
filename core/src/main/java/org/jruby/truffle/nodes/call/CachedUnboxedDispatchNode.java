@@ -48,8 +48,6 @@ public class CachedUnboxedDispatchNode extends UnboxedDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
-        RubyNode.notDesignedForCompilation();
-
         // Check the class is what we expect
 
         if (receiverObject.getClass() != expectedClass) {

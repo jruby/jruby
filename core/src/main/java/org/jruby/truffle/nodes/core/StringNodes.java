@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.joni.Option;
 import org.jruby.truffle.runtime.NilPlaceholder;
@@ -20,7 +19,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
-import org.jruby.truffle.runtime.core.range.FixnumRange;
+import org.jruby.truffle.runtime.core.range.IntegerFixnumRange;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
@@ -233,7 +232,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(order = 2)
-        public Object getIndex(RubyString string, FixnumRange range, UndefinedPlaceholder undefined) {
+        public Object getIndex(RubyString string, IntegerFixnumRange range, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             final String javaString = string.toString();

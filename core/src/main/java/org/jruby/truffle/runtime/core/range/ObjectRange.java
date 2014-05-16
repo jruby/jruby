@@ -25,11 +25,6 @@ public class ObjectRange extends RubyRange {
         this.excludeEnd = excludeEnd;
     }
 
-    @Override
-    public RubyArray toArray() {
-        throw new UnsupportedOperationException();
-    }
-
     public Object getBegin() {
         return begin;
     }
@@ -82,8 +77,7 @@ public class ObjectRange extends RubyRange {
 
     @Override
     public boolean doesExcludeEnd() {
-        // TODO Auto-generated method stub
-        return false;
+        return excludeEnd;
     }
 
 }

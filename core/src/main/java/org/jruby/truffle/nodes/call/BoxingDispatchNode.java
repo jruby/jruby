@@ -35,8 +35,6 @@ public class BoxingDispatchNode extends UnboxedDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
-        RubyNode.notDesignedForCompilation();
-
         RubyBasicObject boxedReceiverObject;
 
         if (receiverObject instanceof RubyBasicObject) {
