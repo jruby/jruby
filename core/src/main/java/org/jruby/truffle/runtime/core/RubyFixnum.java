@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 
 import java.math.*;
@@ -33,9 +34,7 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
     }
 
     public static int toInt(Object value) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        // TODO(CS): stop using this in compilation - use a specialising node instead
+        RubyNode.notDesignedForCompilation();
 
         assert value != null;
 
@@ -84,7 +83,7 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
     }
 
     public static long toLong(Object value) {
-        CompilerAsserts.neverPartOfCompilation();
+        RubyNode.notDesignedForCompilation();
 
         // TODO(CS): stop using this in compilation - use a specialising node instead
 
@@ -133,17 +132,21 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
     }
 
     public static boolean fitsIntoInteger(long value) {
+        RubyNode.notDesignedForCompilation();
+
         return value >= Integer.MAX_VALUE && value <= Integer.MAX_VALUE;
     }
 
     public static int toUnsignedInt(byte x) {
+        RubyNode.notDesignedForCompilation();
+
         return ((int) x) & 0xff;
     }
 
     public static Object fixnumOrBignum(BigInteger value) {
-        assert value != null;
+        RubyNode.notDesignedForCompilation();
 
-        // TODO(CS): make this a node?
+        assert value != null;
 
         if (value.compareTo(MIN_VALUE_BIG) >= 0 && value.compareTo(MAX_VALUE_BIG) <= 0) {
             final long longValue = value.longValue();
@@ -159,7 +162,7 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
     }
 
     public static Object fixnumOrBignum(double value) {
-        // TODO(CS): make this a node?
+        RubyNode.notDesignedForCompilation();
 
         if (value >= MIN_VALUE && value <= MAX_VALUE) {
             final long longValue = (long) value;
@@ -175,6 +178,8 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
     }
 
     protected boolean equals(long value, Object other) {
+        RubyNode.notDesignedForCompilation();
+
         if (other instanceof Integer) {
             return value == (int) other;
         } else if (other instanceof Long) {
@@ -226,6 +231,8 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
 
         @Override
         public boolean equals(Object other) {
+            RubyNode.notDesignedForCompilation();
+
             return equals(value, other);
         }
 
@@ -256,6 +263,8 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
 
         @Override
         public boolean equals(Object other) {
+            RubyNode.notDesignedForCompilation();
+
             return equals(value, other);
         }
 

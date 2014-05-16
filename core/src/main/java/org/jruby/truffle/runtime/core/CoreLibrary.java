@@ -15,6 +15,7 @@ import org.jcodings.specific.SJISEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.array.RubyArray;
@@ -325,6 +326,8 @@ public class CoreLibrary {
     }
 
     public RubyBasicObject box(Object object) {
+        RubyNode.notDesignedForCompilation();
+
         assert RubyContext.shouldObjectBeVisible(object);
 
         // TODO(cs): pool common object instances like small Fixnums?

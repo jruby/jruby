@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 
 import java.math.BigInteger;
@@ -31,7 +32,7 @@ public class RubyFloat extends RubyObject implements Unboxable {
      * Convert a value to a {@code Float}, without doing any lookup.
      */
     public static double toDouble(Object value) {
-        CompilerAsserts.neverPartOfCompilation();
+        RubyNode.notDesignedForCompilation();
 
         assert value != null;
 
@@ -83,6 +84,8 @@ public class RubyFloat extends RubyObject implements Unboxable {
 
     @Override
     public boolean equals(Object other) {
+        RubyNode.notDesignedForCompilation();
+
         if (other instanceof Integer) {
             return value == (int) other;
         } else if (other instanceof RubyFixnum.IntegerFixnum) {

@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.jruby.truffle.nodes.RubyNode;
+
 import java.math.*;
 
 /**
@@ -41,6 +43,8 @@ public class RubyBignum extends RubyObject implements Unboxable {
 
     @Override
     public boolean equals(Object obj) {
+        RubyNode.notDesignedForCompilation();
+
         if (this == obj) {
             return true;
         }
