@@ -33,6 +33,7 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         super(fixnumClass);
     }
 
+    @Deprecated
     public static int toInt(Object value) {
         RubyNode.notDesignedForCompilation();
 
@@ -82,6 +83,7 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         throw new UnsupportedOperationException(value.getClass().toString());
     }
 
+    @Deprecated
     public static long toLong(Object value) {
         RubyNode.notDesignedForCompilation();
 
@@ -131,18 +133,21 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         throw new UnsupportedOperationException(value.getClass().toString());
     }
 
+    @Deprecated
     public static boolean fitsIntoInteger(long value) {
         RubyNode.notDesignedForCompilation();
 
         return value >= Integer.MAX_VALUE && value <= Integer.MAX_VALUE;
     }
 
+    @Deprecated
     public static int toUnsignedInt(byte x) {
         RubyNode.notDesignedForCompilation();
 
         return ((int) x) & 0xff;
     }
 
+    @Deprecated
     public static Object fixnumOrBignum(BigInteger value) {
         RubyNode.notDesignedForCompilation();
 
@@ -161,6 +166,7 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         }
     }
 
+    @Deprecated
     public static Object fixnumOrBignum(double value) {
         RubyNode.notDesignedForCompilation();
 
@@ -177,6 +183,7 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         }
     }
 
+    @Deprecated
     protected boolean equals(long value, Object other) {
         RubyNode.notDesignedForCompilation();
 

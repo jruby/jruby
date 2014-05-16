@@ -945,23 +945,36 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "<<", minArgs = 1, maxArgs = 1)
     public abstract static class LeftShiftNode extends CoreMethodNode {
 
+        @Child protected FixnumOrBignumNode fixnumOrBignum;
+
+        private final BranchProfile bAboveZeroProfile = new BranchProfile();
+        private final BranchProfile bNotAboveZeroProfile = new BranchProfile();
+        private final BranchProfile useBignumProfile = new BranchProfile();
+
         public LeftShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         public LeftShiftNode(LeftShiftNode prev) {
             super(prev);
+            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization
         public Object leftShift(int a, int b) {
             if (b > 0) {
+                bAboveZeroProfile.enter();
+
                 if (RubyFixnum.SIZE - Integer.numberOfLeadingZeros(a) + b > RubyFixnum.SIZE - 1) {
-                    return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).shiftLeft(b));
+                    useBignumProfile.enter();
+                    return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).shiftLeft(b));
                 } else {
                     return a << b;
                 }
             } else {
+                bNotAboveZeroProfile.enter();
+
                 if (-b >= Integer.SIZE) {
                     return 0;
                 } else {
@@ -972,9 +985,11 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object leftShift(long a, int b) {
+            notDesignedForCompilation();
+
             if (b > 0) {
                 if (RubyFixnum.SIZE - Long.numberOfLeadingZeros(a) + b > RubyFixnum.SIZE - 1) {
-                    return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).shiftLeft(b));
+                    return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).shiftLeft(b));
                 } else {
                     return a << b;
                 }

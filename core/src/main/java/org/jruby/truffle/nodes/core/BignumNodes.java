@@ -603,6 +603,8 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object leftShift(BigInteger a, int b) {
+            notDesignedForCompilation();
+
             if (b >= 0) {
                 return RubyFixnum.fixnumOrBignum(a.shiftLeft(b));
             } else {
@@ -625,6 +627,8 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object leftShift(BigInteger a, int b) {
+            notDesignedForCompilation();
+
             if (b >= 0) {
                 return RubyFixnum.fixnumOrBignum(a.shiftRight(b));
             } else {
