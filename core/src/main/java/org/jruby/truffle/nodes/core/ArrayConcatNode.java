@@ -14,7 +14,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 /**
  * Concatenate arrays.
@@ -30,24 +30,9 @@ public final class ArrayConcatNode extends RubyNode {
         this.children = children;
     }
 
-    @ExplodeLoop
     @Override
     public RubyArray execute(VirtualFrame frame) {
-        final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-
-        for (int n = 0; n < children.length; n++) {
-            final Object childObject = children[n].execute(frame);
-
-            if (childObject instanceof RubyArray) {
-                // setRangeArray has special cases for setting a zero-length range at the end
-                final int end = array.size();
-                array.setRangeArrayExclusive(end, end, (RubyArray) childObject);
-            } else {
-                array.push(childObject);
-            }
-        }
-
-        return array;
+        throw new UnsupportedOperationException();
     }
 
     @ExplodeLoop

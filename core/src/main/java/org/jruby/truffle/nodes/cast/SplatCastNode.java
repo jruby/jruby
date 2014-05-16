@@ -15,8 +15,8 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.array.*;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 /**
@@ -58,7 +58,7 @@ public abstract class SplatCastNode extends RubyNode {
                     return new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
                 case ARRAY_WITH_NIL:
-                    return RubyArray.specializedFromObject(getContext().getCoreLibrary().getArrayClass(), NilPlaceholder.INSTANCE);
+                    return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), NilPlaceholder.INSTANCE);
 
                 default: {
                     CompilerAsserts.neverPartOfCompilation();
@@ -82,7 +82,7 @@ public abstract class SplatCastNode extends RubyNode {
                 }
             }
 
-            return RubyArray.specializedFromObject(getContext().getCoreLibrary().getArrayClass(), object);
+            return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
         }
     }
 

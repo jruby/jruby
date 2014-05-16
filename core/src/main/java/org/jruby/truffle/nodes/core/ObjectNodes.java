@@ -361,7 +361,7 @@ public abstract class ObjectNodes {
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (String name : instanceVariableNames) {
-                array.push(RubyString.fromJavaString(getContext().getCoreLibrary().getStringClass(), name));
+                array.slowPush(RubyString.fromJavaString(getContext().getCoreLibrary().getStringClass(), name));
             }
 
             return array;
@@ -423,7 +423,7 @@ public abstract class ObjectNodes {
 
             for (RubyMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC || method.getVisibility() == Visibility.PROTECTED) {
-                    array.push(self.getRubyClass().getContext().newSymbol(method.getName()));
+                    array.slowPush(self.getRubyClass().getContext().newSymbol(method.getName()));
                 }
             }
 
@@ -497,7 +497,7 @@ public abstract class ObjectNodes {
 
             for (RubyMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC) {
-                    array.push(self.getRubyClass().getContext().newSymbol(method.getName()));
+                    array.slowPush(self.getRubyClass().getContext().newSymbol(method.getName()));
                 }
             }
 
@@ -619,7 +619,7 @@ public abstract class ObjectNodes {
             final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
 
             for (RubyMethod method : self.getSingletonClass().getDeclaredMethods()) {
-                array.push(RubySymbol.newSymbol(self.getRubyClass().getContext(), method.getName()));
+                array.slowPush(RubySymbol.newSymbol(self.getRubyClass().getContext(), method.getName()));
             }
 
             return array;

@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.runtime.NilPlaceholder;
 
@@ -29,7 +30,9 @@ public class RubyFloat extends RubyObject implements Unboxable {
     /**
      * Convert a value to a {@code Float}, without doing any lookup.
      */
-    public static double toFloat(Object value) {
+    public static double toDouble(Object value) {
+        CompilerAsserts.neverPartOfCompilation();
+
         assert value != null;
 
         if (value instanceof NilPlaceholder || value instanceof RubyNilClass) {

@@ -19,8 +19,6 @@ import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.ArrayUtilities;
-import org.jruby.truffle.runtime.core.array.IntegerArrayStore;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.range.FixnumRange;
 import org.jruby.util.ByteList;
@@ -187,7 +185,7 @@ public abstract class StringNodes {
 
             if (args.length == 1 && args[0] instanceof RubyArray) {
                 singleArrayProfile.enter();
-                return context.makeString(StringFormatter.format(format.toString(), ((RubyArray) args[0]).asList()));
+                return context.makeString(StringFormatter.format(format.toString(), Arrays.asList(((RubyArray) args[0]).slowToArray())));
             } else {
                 multipleArgumentsProfile.enter();
                 return context.makeString(StringFormatter.format(format.toString(), Arrays.asList(args)));
@@ -211,7 +209,7 @@ public abstract class StringNodes {
         @Specialization(order = 1)
         public Object getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
             final String javaString = string.toString();
-            final int normalisedIndex = ArrayUtilities.normaliseIndex(javaString.length(), index);
+            final int normalisedIndex = RubyArray.normaliseIndex(javaString.length(), index);
             return getContext().makeString(javaString.charAt(normalisedIndex));
         }
 
@@ -223,12 +221,12 @@ public abstract class StringNodes {
             final int stringLength = javaString.length();
 
             if (range.doesExcludeEnd()) {
-                final int begin = ArrayUtilities.normaliseIndex(stringLength, range.getBegin());
-                final int exclusiveEnd = ArrayUtilities.normaliseExclusiveIndex(stringLength, range.getExclusiveEnd());
+                final int begin = RubyArray.normaliseIndex(stringLength, range.getBegin());
+                final int exclusiveEnd = RubyArray.normaliseExclusiveIndex(stringLength, range.getExclusiveEnd());
                 return getContext().makeString(javaString.substring(begin, exclusiveEnd));
             } else {
-                final int begin = ArrayUtilities.normaliseIndex(stringLength, range.getBegin());
-                final int inclusiveEnd = ArrayUtilities.normaliseIndex(stringLength, range.getInclusiveEnd());
+                final int begin = RubyArray.normaliseIndex(stringLength, range.getBegin());
+                final int inclusiveEnd = RubyArray.normaliseIndex(stringLength, range.getInclusiveEnd());
                 return getContext().makeString(javaString.substring(begin, inclusiveEnd + 1));
             }
         }
@@ -288,7 +286,7 @@ public abstract class StringNodes {
                 ints[n] = RubyFixnum.toUnsignedInt(bytes[n]);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new IntegerArrayStore(ints));
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ints, bytes.length);
         }
     }
 
@@ -636,7 +634,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyArray scan(RubyString string, RubyRegexp regexp) {
-            return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), regexp.scan(string));
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), regexp.scan(string));
         }
 
     }
@@ -662,12 +660,12 @@ public abstract class StringNodes {
                 objects[n] = getContext().makeString(components[n]);
             }
 
-            return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), objects);
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), objects);
         }
 
         @Specialization
         public RubyArray split(RubyString string, RubyRegexp sep) {
-            return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), sep.split(string.toString()));
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), sep.split(string.toString()));
         }
     }
 
@@ -805,7 +803,7 @@ public abstract class StringNodes {
         @Specialization
         public RubyArray unpack(RubyString string, RubyString format) {
             final org.jruby.RubyArray jrubyArray = Pack.unpack(getContext().getRuntime(), string.getBytes(), format.getBytes());
-            return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), jrubyArray.toArray());
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), jrubyArray.toArray());
         }
 
     }

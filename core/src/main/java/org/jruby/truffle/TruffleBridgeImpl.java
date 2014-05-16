@@ -20,7 +20,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.TruffleBridge;
 import org.jruby.truffle.nodes.core.CoreMethodNodeManager;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyParserResult;
@@ -63,7 +62,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
         for (IRubyObject arg : ((org.jruby.RubyArray) runtime.getObject().getConstant("ARGV")).toJavaArray()) {
             assert arg != null;
 
-            truffleContext.getCoreLibrary().getArgv().push(truffleContext.makeString(arg.toString()));
+            truffleContext.getCoreLibrary().getArgv().slowPush(truffleContext.makeString(arg.toString()));
         }
 
         // Set the load path
@@ -71,7 +70,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
         final RubyArray loadPath = (RubyArray) truffleContext.getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$:");
 
         for (IRubyObject path : ((org.jruby.RubyArray) runtime.getLoadService().getLoadPath()).toJavaArray()) {
-            loadPath.push(truffleContext.makeString(path.toString()));
+            loadPath.slowPush(truffleContext.makeString(path.toString()));
         }
     }
 

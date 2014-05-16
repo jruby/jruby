@@ -17,7 +17,7 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 @NodeInfo(shortName = "array-cast")
 @NodeChild("child")
@@ -43,25 +43,24 @@ public abstract class ArrayCastNode extends RubyNode {
     }
 
     @Specialization
+    public NilPlaceholder doNil(NilPlaceholder nilPlaceholder) {
+        return nilPlaceholder;
+    }
+
+    @Specialization
     public Object doObject(VirtualFrame frame, Object object) {
-        if (object instanceof RubyArray) {
-            return object;
-        } else if (object instanceof NilPlaceholder) {
-            return object;
-        } else {
-            final Object result = toArrayNode.dispatch(frame, object, null, new Object[]{});
+        final Object result = toArrayNode.dispatch(frame, object, null, new Object[]{});
 
-            if (result == DispatchHeadNode.MISSING) {
-                return NilPlaceholder.INSTANCE;
-            }
-
-            if (!(result instanceof RubyArray)) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorShouldReturn(object.toString(), toArrayNode.getName(), "Array"));
-            }
-
-            return result;
+        if (result == DispatchHeadNode.MISSING) {
+            return NilPlaceholder.INSTANCE;
         }
+
+        if (!(result instanceof RubyArray)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorShouldReturn(object.toString(), toArrayNode.getName(), "Array"));
+        }
+
+        return result;
     }
 
     @Override

@@ -13,9 +13,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyFixnum;
-import org.jruby.truffle.runtime.core.array.ArrayStore;
-import org.jruby.truffle.runtime.core.array.FixnumImmutablePairArrayStore;
-import org.jruby.truffle.runtime.core.array.ObjectImmutablePairArrayStore;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 
 import java.math.BigInteger;
@@ -103,17 +100,13 @@ public class GeneralDivModNode extends Node {
             integerDiv = div;
         }
 
-        final ArrayStore store;
-
         if (integerDiv instanceof Long && ((long) integerDiv) >= Integer.MIN_VALUE && ((long) integerDiv) <= Integer.MAX_VALUE && mod >= Integer.MIN_VALUE && mod <= Integer.MAX_VALUE) {
             useFixnumPairProfile.enter();
-            store = new FixnumImmutablePairArrayStore((int) (long) integerDiv, (int) mod);
+            return new RubyArray(context.getCoreLibrary().getArrayClass(), new int[]{(int) (long) integerDiv, (int) mod}, 2);
         } else {
             useObjectPairProfile.enter();
-            store = new ObjectImmutablePairArrayStore(integerDiv, mod);
+            return new RubyArray(context.getCoreLibrary().getArrayClass(), new Object[]{integerDiv, mod}, 2);
         }
-
-        return new RubyArray(context.getCoreLibrary().getArrayClass(), store);
     }
 
     private RubyArray divMod(BigInteger a, BigInteger b) {
@@ -130,8 +123,7 @@ public class GeneralDivModNode extends Node {
             bigIntegerResults[1] = b.add(bigIntegerResults[1]);
         }
 
-        final ArrayStore store = new ObjectImmutablePairArrayStore(RubyFixnum.fixnumOrBignum(bigIntegerResults[0]), RubyFixnum.fixnumOrBignum(bigIntegerResults[1]));
-        return new RubyArray(context.getCoreLibrary().getArrayClass(), store);
+        return new RubyArray(context.getCoreLibrary().getArrayClass(), new Object[]{RubyFixnum.fixnumOrBignum(bigIntegerResults[0]), RubyFixnum.fixnumOrBignum(bigIntegerResults[1])}, 2);
     }
 
 }

@@ -17,7 +17,7 @@ import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.hash.RubyHash;
 
 @CoreClass(name = "Hash")
@@ -39,11 +39,11 @@ public abstract class HashNodes {
             final RubyHash hash = new RubyHash(getContext().getCoreLibrary().getHashClass());
 
             if (args.length == 1) {
-                final RubyArray array = (RubyArray) args[0];
+                final Object[] arrayValues = ((RubyArray) args[0]).slowToArray();
 
-                for (int n = 0; n < array.size(); n++) {
-                    final RubyArray keyValue = (RubyArray) array.get(n);
-                    hash.put(keyValue.get(0), keyValue.get(1));
+                for (int n = 0; n < arrayValues.length; n++) {
+                    final Object[] keyValue = ((RubyArray) arrayValues[n]).slowToArray();
+                    hash.put(keyValue[0], keyValue[1]);
                 }
             } else {
                 if (args.length % 2 != 0) {
@@ -155,7 +155,7 @@ public abstract class HashNodes {
                         count++;
                     }
 
-                    yield(frame, block, RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), entry.getKey(), entry.getValue()));
+                    yield(frame, block, RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), entry.getKey(), entry.getValue()));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -204,9 +204,9 @@ public abstract class HashNodes {
             for (Object key : hash.storage.keySet()) {
                 RubyArray subArray = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
-                subArray.push(key);
-                subArray.push(hash.storage.get(key));
-                array.push(subArray);
+                subArray.slowPush(key);
+                subArray.slowPush(hash.storage.get(key));
+                array.slowPush(subArray);
             }
             return array;
         }
@@ -261,7 +261,7 @@ public abstract class HashNodes {
                         count++;
                     }
 
-                    result.push(yield(frame, block, entry.getKey(), entry.getValue()));
+                    result.slowPush(yield(frame, block, entry.getKey(), entry.getValue()));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -330,7 +330,7 @@ public abstract class HashNodes {
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (Object key : hash.storage.keySet()) {
-                array.push(key);
+                array.slowPush(key);
             }
 
             return array;
@@ -372,7 +372,7 @@ public abstract class HashNodes {
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (Object value : hash.storage.values()) {
-                array.push(value);
+                array.slowPush(value);
             }
 
             return array;

@@ -14,7 +14,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 /**
  * Index an array, without using any method lookup. This isn't a call - it's an operation on a core
@@ -36,75 +36,157 @@ public abstract class ArrayIndexNode extends RubyNode {
         index = prev.index;
     }
 
-    @Specialization(guards = "isEmptyStore", order = 1)
-    public NilPlaceholder indexEmpty(@SuppressWarnings("unused") RubyArray array) {
-        return NilPlaceholder.INSTANCE;
-    }
+    @Specialization(guards = "isIntegerFixnum", rewriteOn=UnexpectedResultException.class, order = 2)
+    public int getIntegerFixnumInBounds(RubyArray array) throws UnexpectedResultException {
+        int normalisedIndex = array.normaliseIndex(index);
 
-    @Specialization(guards = "isFixnumStore", rewriteOn = UnexpectedResultException.class, order = 2)
-    public int indexFixnum(RubyArray array) throws UnexpectedResultException {
-        final IntegerArrayStore store = (IntegerArrayStore) array.getArrayStore();
-        return store.getFixnum(ArrayUtilities.normaliseIndex(store.size(), index));
-    }
-
-    @Specialization(guards = "isFixnumStore", order = 3)
-    public Object indexMaybeFixnum(RubyArray array) {
-        final IntegerArrayStore store = (IntegerArrayStore) array.getArrayStore();
-
-        try {
-            return store.getFixnum(ArrayUtilities.normaliseIndex(store.size(), index));
-        } catch (UnexpectedResultException e) {
-            return e.getResult();
+        if (normalisedIndex < 0) {
+            throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+        } else if (normalisedIndex >= array.size) {
+            throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+        } else {
+            return ((int[]) array.store)[normalisedIndex];
         }
     }
 
-    @Specialization(guards = "isFixnumImmutablePairStore", rewriteOn = UnexpectedResultException.class, order = 4)
-    public int indexFixnumImmutablePair(RubyArray array) throws UnexpectedResultException {
-        final FixnumImmutablePairArrayStore store = (FixnumImmutablePairArrayStore) array.getArrayStore();
-        return store.getFixnum(ArrayUtilities.normaliseIndex(store.size(), index));
-    }
+    @Specialization(guards = "isIntegerFixnum", order = 3)
+    public Object getIntegerFixnum(RubyArray array) {
+        int normalisedIndex = array.normaliseIndex(index);
 
-    @Specialization(guards = "isFixnumImmutablePairStore", order = 5)
-    public Object indexMaybeFixnumImmutablePair(RubyArray array) {
-        final FixnumImmutablePairArrayStore store = (FixnumImmutablePairArrayStore) array.getArrayStore();
-
-        try {
-            return store.getFixnum(ArrayUtilities.normaliseIndex(store.size(), index));
-        } catch (UnexpectedResultException e) {
-            return e.getResult();
+        if (normalisedIndex < 0) {
+            return NilPlaceholder.INSTANCE;
+        } else if (normalisedIndex >= array.size) {
+            return NilPlaceholder.INSTANCE;
+        } else {
+            return ((int[]) array.store)[normalisedIndex];
         }
     }
 
-    @Specialization(guards = "isObjectStore", order = 6)
-    public Object indexObject(RubyArray array) {
-        final ObjectArrayStore store = (ObjectArrayStore) array.getArrayStore();
-        return store.get(ArrayUtilities.normaliseIndex(store.size(), index));
+    @Specialization(guards = "isLongFixnum", rewriteOn=UnexpectedResultException.class, order = 4)
+    public long getLongFixnumInBounds(RubyArray array) throws UnexpectedResultException {
+        int normalisedIndex = array.normaliseIndex(index);
+
+        if (normalisedIndex < 0) {
+            throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+        } else if (normalisedIndex >= array.size) {
+            throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+        } else {
+            return ((long[]) array.store)[normalisedIndex];
+        }
     }
 
-    @Specialization(guards = "isObjectImmutablePairStore", order = 7)
-    public Object indexObjectImmutablePair(RubyArray array) {
-        final ObjectImmutablePairArrayStore store = (ObjectImmutablePairArrayStore) array.getArrayStore();
-        return store.get(ArrayUtilities.normaliseIndex(store.size(), index));
+    @Specialization(guards = "isLongFixnum", order = 5)
+    public Object getLongFixnum(RubyArray array) {
+        int normalisedIndex = array.normaliseIndex(index);
+
+        if (normalisedIndex < 0) {
+            return NilPlaceholder.INSTANCE;
+        } else if (normalisedIndex >= array.size) {
+            return NilPlaceholder.INSTANCE;
+        } else {
+            return ((long[]) array.store)[normalisedIndex];
+        }
     }
 
-    protected boolean isEmptyStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof EmptyArrayStore;
+    @Specialization(guards = "isFloat", rewriteOn=UnexpectedResultException.class, order = 6)
+    public double getFloatInBounds(RubyArray array) throws UnexpectedResultException {
+        int normalisedIndex = array.normaliseIndex(index);
+
+        if (normalisedIndex < 0) {
+            throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+        } else if (normalisedIndex >= array.size) {
+            throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+        } else {
+            return ((double[]) array.store)[normalisedIndex];
+        }
     }
 
-    protected boolean isFixnumStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof IntegerArrayStore;
+    @Specialization(guards = "isIntegerFixnum", order = 7)
+    public Object getFloat(RubyArray array) {
+        int normalisedIndex = array.normaliseIndex(index);
+
+        if (normalisedIndex < 0) {
+            return NilPlaceholder.INSTANCE;
+        } else if (normalisedIndex >= array.size) {
+            return NilPlaceholder.INSTANCE;
+        } else {
+            return ((double[]) array.store)[normalisedIndex];
+        }
     }
 
-    protected boolean isFixnumImmutablePairStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof FixnumImmutablePairArrayStore;
+    @Specialization(guards = "isObject", order = 8)
+    public Object getObject(RubyArray array) {
+        int normalisedIndex = array.normaliseIndex(index);
+
+        if (normalisedIndex < 0) {
+            return NilPlaceholder.INSTANCE;
+        } else if (normalisedIndex >= array.size) {
+            return NilPlaceholder.INSTANCE;
+        } else {
+            return ((Object[]) array.store)[normalisedIndex];
+        }
     }
 
-    protected boolean isObjectStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof ObjectArrayStore;
+    // TODO(CS): copied and pasted from ArrayCoreMethodNode - need a way to use statics from other classes in the DSL
+
+    protected boolean isNull(RubyArray array) {
+        return array.store == null;
     }
 
-    protected boolean isObjectImmutablePairStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof ObjectImmutablePairArrayStore;
+    protected boolean isIntegerFixnum(RubyArray array) {
+        return array.store instanceof int[];
+    }
+
+    protected boolean isLongFixnum(RubyArray array) {
+        return array.store instanceof long[];
+    }
+
+    protected boolean isFloat(RubyArray array) {
+        return array.store instanceof double[];
+    }
+
+    protected boolean isObject(RubyArray array) {
+        return array.store instanceof Object[];
+    }
+
+    protected boolean isOtherNull(RubyArray array, RubyArray other) {
+        return other.store == null;
+    }
+
+    protected boolean isOtherIntegerFixnum(RubyArray array, RubyArray other) {
+        return other.store instanceof int[];
+    }
+
+    protected boolean isOtherLongFixnum(RubyArray array, RubyArray other) {
+        return other.store instanceof long[];
+    }
+
+    protected boolean isOtherFloat(RubyArray array, RubyArray other) {
+        return other.store instanceof double[];
+    }
+
+    protected boolean isOtherObject(RubyArray array, RubyArray other) {
+        return other.store instanceof Object[];
+    }
+
+    protected boolean areBothNull(RubyArray a, RubyArray b) {
+        return a.store == null && b.store == null;
+    }
+
+    protected boolean areBothIntegerFixnum(RubyArray a, RubyArray b) {
+        return a.store instanceof int[] && b.store instanceof int[];
+    }
+
+    protected boolean areBothLongFixnum(RubyArray a, RubyArray b) {
+        return a.store instanceof long[] && b.store instanceof long[];
+    }
+
+    protected boolean areBothFloat(RubyArray a, RubyArray b) {
+        return a.store instanceof double[] && b.store instanceof double[];
+    }
+
+    protected boolean areBothObject(RubyArray a, RubyArray b) {
+        return a.store instanceof Object[] && b.store instanceof Object[];
     }
 
 }

@@ -113,7 +113,7 @@ public abstract class ClassNodes {
             final RubyArray array = new RubyArray(rubyClass.getContext().getCoreLibrary().getArrayClass());
 
             for (String variable : rubyClass.getClassVariables()) {
-                array.push(RubySymbol.newSymbol(rubyClass.getContext(), variable));
+                array.slowPush(RubySymbol.newSymbol(rubyClass.getContext(), variable));
             }
             return array;
         }

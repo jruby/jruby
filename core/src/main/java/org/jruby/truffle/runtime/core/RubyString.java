@@ -9,16 +9,9 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.*;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.runtime.NilPlaceholder;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.array.ArrayUtilities;
-import org.jruby.truffle.runtime.core.range.FixnumRange;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;

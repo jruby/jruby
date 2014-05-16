@@ -17,7 +17,7 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.range.*;
 import org.jruby.truffle.runtime.control.*;
 
@@ -49,7 +49,7 @@ public abstract class RangeNodes {
                         count++;
                     }
 
-                    array.push(yield(frame, block, n));
+                    array.slowPush(yield(frame, block, n));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {

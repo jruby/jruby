@@ -583,7 +583,7 @@ public abstract class ModuleNodes {
             for (RubyMethod method : methods) {
                 if (method.getVisibility() == Visibility.PRIVATE){
                     RubySymbol m = getContext().newSymbol(method.getName());
-                    array.push(m);
+                    array.slowPush(m);
                 }
             }
             return array;
@@ -620,7 +620,8 @@ public abstract class ModuleNodes {
             for (RubyMethod method : methods) {
                 if (method.getVisibility() != Visibility.PRIVATE){
                     RubySymbol m = getContext().newSymbol(method.getName());
-                    array.push(m);
+                    // TODO(CS): shoudln't be using this
+                    array.slowPush(m);
                 }
             }
             return array;

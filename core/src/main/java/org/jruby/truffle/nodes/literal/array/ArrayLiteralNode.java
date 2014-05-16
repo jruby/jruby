@@ -11,9 +11,10 @@ package org.jruby.truffle.nodes.literal.array;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 public abstract class ArrayLiteralNode extends RubyNode {
 
@@ -39,7 +40,23 @@ public abstract class ArrayLiteralNode extends RubyNode {
             }
         }
 
-        return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
+        return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
+    }
+
+    @Override
+    public abstract RubyArray executeArray(VirtualFrame frame);
+
+    @ExplodeLoop
+    @Override
+    public void executeVoid(VirtualFrame frame) {
+        for (int n = 0; n < values.length; n++) {
+            values[n].executeVoid(frame);
+        }
+    }
+
+    @Override
+    public Object execute(VirtualFrame frame) {
+        return executeArray(frame);
     }
 
     @Override

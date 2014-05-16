@@ -18,6 +18,8 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.array.*;
 
+import java.util.Arrays;
+
 @NodeInfo(shortName = "array-tail")
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
 public abstract class ArrayGetTailNode extends RubyNode {
@@ -34,29 +36,91 @@ public abstract class ArrayGetTailNode extends RubyNode {
         index = prev.index;
     }
 
-    @Specialization
-    public Object getTail(RubyArray array) {
-        return array.getRangeExclusive(index, array.size());
+    @Specialization(guards = "isNull", order = 1)
+    public RubyArray getTailNull(RubyArray array) {
+        return new RubyArray(getContext().getCoreLibrary().getArrayClass());
     }
 
-    protected boolean isEmptyStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof EmptyArrayStore;
+    @Specialization(guards = "isIntegerFixnum", order = 2)
+    public RubyArray getTailIntegerFixnum(RubyArray array) {
+        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((int[]) array.store, index, array.size - index), array.size - 1);
     }
 
-    protected boolean isFixnumStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof IntegerArrayStore;
+    @Specialization(guards = "isLongFixnum", order = 3)
+    public RubyArray getTailLongFixnum(RubyArray array) {
+        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((long[]) array.store, index, array.size - index), array.size - 1);
     }
 
-    protected boolean isFixnumImmutablePairStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof FixnumImmutablePairArrayStore;
+    @Specialization(guards = "isFloat", order = 4)
+    public RubyArray getTailFloat(RubyArray array) {
+        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((double[]) array.store, index, array.size - index), array.size - 1);
     }
 
-    protected boolean isObjectStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof ObjectArrayStore;
+    @Specialization(guards = "isObject", order = 5)
+    public RubyArray getTailObject(RubyArray array) {
+        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.store, index, array.size - index), array.size - 1);
     }
 
-    protected boolean isObjectImmutablePairStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof ObjectImmutablePairArrayStore;
+    // TODO(CS): copied and pasted from ArrayCoreMethodNode - need a way to use statics from other classes in the DSL
+
+    protected boolean isNull(RubyArray array) {
+        return array.store == null;
+    }
+
+    protected boolean isIntegerFixnum(RubyArray array) {
+        return array.store instanceof int[];
+    }
+
+    protected boolean isLongFixnum(RubyArray array) {
+        return array.store instanceof long[];
+    }
+
+    protected boolean isFloat(RubyArray array) {
+        return array.store instanceof double[];
+    }
+
+    protected boolean isObject(RubyArray array) {
+        return array.store instanceof Object[];
+    }
+
+    protected boolean isOtherNull(RubyArray array, RubyArray other) {
+        return other.store == null;
+    }
+
+    protected boolean isOtherIntegerFixnum(RubyArray array, RubyArray other) {
+        return other.store instanceof int[];
+    }
+
+    protected boolean isOtherLongFixnum(RubyArray array, RubyArray other) {
+        return other.store instanceof long[];
+    }
+
+    protected boolean isOtherFloat(RubyArray array, RubyArray other) {
+        return other.store instanceof double[];
+    }
+
+    protected boolean isOtherObject(RubyArray array, RubyArray other) {
+        return other.store instanceof Object[];
+    }
+
+    protected boolean areBothNull(RubyArray a, RubyArray b) {
+        return a.store == null && b.store == null;
+    }
+
+    protected boolean areBothIntegerFixnum(RubyArray a, RubyArray b) {
+        return a.store instanceof int[] && b.store instanceof int[];
+    }
+
+    protected boolean areBothLongFixnum(RubyArray a, RubyArray b) {
+        return a.store instanceof long[] && b.store instanceof long[];
+    }
+
+    protected boolean areBothFloat(RubyArray a, RubyArray b) {
+        return a.store instanceof double[] && b.store instanceof double[];
+    }
+
+    protected boolean areBothObject(RubyArray a, RubyArray b) {
+        return a.store instanceof Object[] && b.store instanceof Object[];
     }
 
 }

@@ -44,7 +44,7 @@ public class WhenSplatNode extends RubyNode {
             throw new UnsupportedOperationException(e);
         }
 
-        for (Object value : array.asList()) {
+        for (Object value : array.slowToArray()) {
             // TODO(CS): how to cast this to a boolean?
 
             if ((boolean) dispatchThreeEqual.dispatch(frame, caseExpression, null, value)) {

@@ -14,9 +14,8 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
-@NodeInfo(shortName = "object-array-literal")
 public class ObjectArrayLiteralNode extends ArrayLiteralNode {
 
     public ObjectArrayLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] values) {
@@ -32,20 +31,7 @@ public class ObjectArrayLiteralNode extends ArrayLiteralNode {
             executedValues[n] = values[n].execute(frame);
         }
 
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new ObjectArrayStore(executedValues));
-    }
-
-    @ExplodeLoop
-    @Override
-    public void executeVoid(VirtualFrame frame) {
-        for (int n = 0; n < values.length; n++) {
-            values[n].executeVoid(frame);
-        }
-    }
-
-    @Override
-    public Object execute(VirtualFrame frame) {
-        return executeArray(frame);
+        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
     }
 
 }

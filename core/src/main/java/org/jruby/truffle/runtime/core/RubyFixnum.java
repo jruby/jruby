@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.runtime.NilPlaceholder;
 
@@ -32,6 +33,8 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
     }
 
     public static int toInt(Object value) {
+        CompilerAsserts.neverPartOfCompilation();
+
         // TODO(CS): stop using this in compilation - use a specialising node instead
 
         assert value != null;
@@ -81,6 +84,8 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
     }
 
     public static long toLong(Object value) {
+        CompilerAsserts.neverPartOfCompilation();
+
         // TODO(CS): stop using this in compilation - use a specialising node instead
 
         assert value != null;

@@ -11,9 +11,6 @@ package org.jruby.truffle.runtime.core;
 
 import java.math.*;
 
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.*;
-
 /**
  * Represents the Ruby {@code Bignum} class.
  */

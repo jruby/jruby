@@ -13,7 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 public class ArrayPushNode extends RubyNode {
 
@@ -30,7 +30,7 @@ public class ArrayPushNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         RubyArray a = (RubyArray) array.execute(frame);
         a = (RubyArray) a.dup();
-        a.push(pushed.execute(frame));
+        a.slowPush(pushed.execute(frame));
         return a;
     }
 

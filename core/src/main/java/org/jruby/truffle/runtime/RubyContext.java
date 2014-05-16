@@ -95,7 +95,7 @@ public class RubyContext {
         if (code == null) {
             throw new RuntimeException("Can't read file " + fileName);
         }
-        coreLibrary.getLoadedFeatures().push(makeString(fileName));
+        coreLibrary.getLoadedFeatures().slowPush(makeString(fileName));
         execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
     }
 

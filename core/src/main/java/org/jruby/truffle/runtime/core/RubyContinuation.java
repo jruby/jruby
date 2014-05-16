@@ -11,7 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 /**
  * Represents the Ruby {@code Continuation} class. We only support continuations that just move up
@@ -68,7 +68,7 @@ public class RubyContinuation extends RubyObject {
         } else if (args.length == 1) {
             returnValue = args[0];
         } else {
-            returnValue = RubyArray.specializedFromObjects(getRubyClass().getContext().getCoreLibrary().getArrayClass(), args);
+            returnValue = RubyArray.fromObjects(getRubyClass().getContext().getCoreLibrary().getArrayClass(), args);
         }
 
         // Caught in enter

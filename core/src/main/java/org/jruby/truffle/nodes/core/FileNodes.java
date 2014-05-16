@@ -17,7 +17,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 @CoreClass(name = "File")
 public abstract class FileNodes {
@@ -244,7 +244,7 @@ public abstract class FileNodes {
                 }
 
                 if (parts[n] instanceof RubyArray) {
-                    join(builder, ((RubyArray) parts[n]).toObjectArray());
+                    join(builder, ((RubyArray) parts[n]).slowToArray());
                 } else {
                     builder.append(parts[n].toString());
                 }

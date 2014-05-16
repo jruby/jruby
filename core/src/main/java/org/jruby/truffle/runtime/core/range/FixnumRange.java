@@ -10,7 +10,7 @@
 package org.jruby.truffle.runtime.core.range;
 
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 /**
  * A range that has {@code Fixnum} begin and end.
@@ -50,7 +50,7 @@ public class FixnumRange extends RubyRange {
                 values[n] = begin + n;
             }
 
-            return new RubyArray(getRubyClass().getContext().getCoreLibrary().getArrayClass(), new IntegerArrayStore(values));
+            return new RubyArray(getRubyClass().getContext().getCoreLibrary().getArrayClass(), values, length);
         }
     }
 

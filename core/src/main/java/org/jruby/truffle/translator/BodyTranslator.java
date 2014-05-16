@@ -1342,7 +1342,7 @@ public class BodyTranslator extends Translator {
             }
 
             if (node.getRest() != null) {
-                final ArrayRestNode assignedValue = new ArrayRestNode(context, sourceSection, preArray.size(), environment.findLocalVarNode(tempName, sourceSection));
+                final ArrayGetTailNode assignedValue = ArrayGetTailNodeFactory.create(context, sourceSection, preArray.size(), environment.findLocalVarNode(tempName, sourceSection));
 
                 sequence.add(translateDummyAssignment(node.getRest(), assignedValue));
             }

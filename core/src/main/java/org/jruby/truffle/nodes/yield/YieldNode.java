@@ -55,7 +55,7 @@ public class YieldNode extends RubyNode {
             // TOOD(CS): what is the error behaviour here?
             assert argumentsObjects.length == 1;
             assert argumentsObjects[0] instanceof RubyArray;
-            argumentsObjects = ((RubyArray) argumentsObjects[0]).toObjectArray();
+            argumentsObjects = ((RubyArray) argumentsObjects[0]).slowToArray();
         }
 
         return dispatch.dispatch(frame, block, argumentsObjects);

@@ -28,7 +28,7 @@ import org.jruby.truffle.nodes.yield.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.hash.RubyHash;
 import org.jruby.truffle.runtime.subsystems.*;
 
@@ -52,7 +52,7 @@ public abstract class
             if (args.length == 1 && args[0] instanceof RubyArray) {
                 return (RubyArray) args[0];
             } else {
-                return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), args);
+                return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args);
             }
         }
 
@@ -629,8 +629,8 @@ public abstract class
             if (value instanceof RubyArray) {
                 final RubyArray array = (RubyArray) value;
 
-                for (int n = 0; n < array.size(); n++) {
-                    puts(context, standardOut, array.get(n));
+                for (Object object : array.slowToArray()) {
+                    puts(context, standardOut, object);
                 }
             } else {
                 // TODO(CS): slow path send

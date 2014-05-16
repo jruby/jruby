@@ -10,7 +10,7 @@
 package org.jruby.truffle.runtime.core.range;
 
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 public class ObjectRange extends RubyRange {
 

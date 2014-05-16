@@ -15,7 +15,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 /**
  * Rescue any of several classes, that we get from an expression that evaluates to an array of
@@ -39,7 +39,7 @@ public class RescueSplatNode extends RescueNode {
 
         final RubyClass exceptionRubyClass = exception.getRubyClass();
 
-        for (Object handlingClass : handlingClasses.asList()) {
+        for (Object handlingClass : handlingClasses.slowToArray()) {
             if (exceptionRubyClass.assignableTo((RubyClass) handlingClass)) {
                 return true;
             }

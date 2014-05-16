@@ -11,7 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 public abstract class ArrayCoreMethodNode extends CoreMethodNode {
 
@@ -23,28 +23,64 @@ public abstract class ArrayCoreMethodNode extends CoreMethodNode {
         super(prev);
     }
 
-    protected boolean isEmptyStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof EmptyArrayStore;
+    protected boolean isNull(RubyArray array) {
+        return array.store == null;
     }
 
-    protected boolean isFixnumStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof IntegerArrayStore;
+    protected boolean isIntegerFixnum(RubyArray array) {
+        return array.store instanceof int[];
     }
 
-    protected boolean isLongFixnumStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof LongArrayStore;
+    protected boolean isLongFixnum(RubyArray array) {
+        return array.store instanceof long[];
     }
 
-    protected boolean isFixnumImmutablePairStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof FixnumImmutablePairArrayStore;
+    protected boolean isFloat(RubyArray array) {
+        return array.store instanceof double[];
     }
 
-    protected boolean isObjectStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof ObjectArrayStore;
+    protected boolean isObject(RubyArray array) {
+        return array.store instanceof Object[];
     }
 
-    protected boolean isObjectImmutablePairStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof ObjectImmutablePairArrayStore;
+    protected boolean isOtherNull(RubyArray array, RubyArray other) {
+        return other.store == null;
+    }
+
+    protected boolean isOtherIntegerFixnum(RubyArray array, RubyArray other) {
+        return other.store instanceof int[];
+    }
+
+    protected boolean isOtherLongFixnum(RubyArray array, RubyArray other) {
+        return other.store instanceof long[];
+    }
+
+    protected boolean isOtherFloat(RubyArray array, RubyArray other) {
+        return other.store instanceof double[];
+    }
+
+    protected boolean isOtherObject(RubyArray array, RubyArray other) {
+        return other.store instanceof Object[];
+    }
+
+    protected boolean areBothNull(RubyArray a, RubyArray b) {
+        return a.store == null && b.store == null;
+    }
+
+    protected boolean areBothIntegerFixnum(RubyArray a, RubyArray b) {
+        return a.store instanceof int[] && b.store instanceof int[];
+    }
+
+    protected boolean areBothLongFixnum(RubyArray a, RubyArray b) {
+        return a.store instanceof long[] && b.store instanceof long[];
+    }
+
+    protected boolean areBothFloat(RubyArray a, RubyArray b) {
+        return a.store instanceof double[] && b.store instanceof double[];
+    }
+
+    protected boolean areBothObject(RubyArray a, RubyArray b) {
+        return a.store instanceof Object[] && b.store instanceof Object[];
     }
 
 }

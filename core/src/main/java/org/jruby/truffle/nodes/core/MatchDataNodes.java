@@ -13,7 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 @CoreClass(name = "MatchData")
 public abstract class MatchDataNodes {
@@ -53,7 +53,7 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public RubyArray toA(RubyMatchData matchData) {
-            return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getValues());
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getValues());
         }
 
     }
@@ -77,7 +77,7 @@ public abstract class MatchDataNodes {
                 indicies[n] = (int) args[n];
             }
 
-            return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.valuesAt(indicies));
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.valuesAt(indicies));
         }
 
     }

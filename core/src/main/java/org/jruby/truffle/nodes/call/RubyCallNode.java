@@ -15,7 +15,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.methods.*;
 
 /**
@@ -107,7 +107,7 @@ public class RubyCallNode extends RubyNode {
 
         if (isSplatted) {
             assert argumentsObjects[0] instanceof RubyArray;
-            return ((RubyArray) argumentsObjects[0]).toObjectArray();
+            return ((RubyArray) argumentsObjects[0]).slowToArray();
         } else {
             return argumentsObjects;
         }
