@@ -54,7 +54,6 @@
         <module>jruby-complete</module>
         <module>jruby-dist</module>
         <module>jruby-jars</module>
-        <module>jruby-rake-plugin</module>
         <module>jruby-noasm</module>
       </modules>
     </profile>
@@ -66,7 +65,6 @@
         <module>jruby-complete</module>
         <module>jruby-dist</module>
         <module>jruby-jars</module>
-        <module>jruby-rake-plugin</module>
         <module>jruby-noasm</module>
       </modules>
     </profile>
@@ -97,12 +95,6 @@
       <modules>
         <module>jruby-stdlib</module>
         <module>jruby-jars</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>jruby-rake-plugin</id>
-      <modules>
-        <module>jruby-rake-plugin</module>
       </modules>
     </profile>
   </profiles>

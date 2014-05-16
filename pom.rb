@@ -201,21 +201,13 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  # TODO get rid of it
-  profile 'rake-plugin' do
-
-    modules [ 'maven' ]
-
-    build do
-      default_goal 'install'
-    end
-  end
-
   all_modules = [ 'test', 'maven' ]
 
   profile 'all' do
 
     modules all_modules
+
+    snapshot_repository 'http://ci.jruby.org/snapshots/maven', :id => 'jruby-snapshots'
 
     build do
       default_goal 'install'

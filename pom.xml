@@ -580,15 +580,6 @@
       </modules>
     </profile>
     <profile>
-      <id>rake-plugin</id>
-      <build>
-        <defaultGoal>install</defaultGoal>
-      </build>
-      <modules>
-        <module>maven</module>
-      </modules>
-    </profile>
-    <profile>
       <id>all</id>
       <build>
         <defaultGoal>install</defaultGoal>
@@ -597,6 +588,18 @@
         <module>test</module>
         <module>maven</module>
       </modules>
+      <repositories>
+        <repository>
+          <releases>
+            <enabled>false</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+          <id>jruby-snapshots</id>
+          <url>http://ci.jruby.org/snapshots/maven</url>
+        </repository>
+      </repositories>
     </profile>
     <profile>
       <id>clean</id>
