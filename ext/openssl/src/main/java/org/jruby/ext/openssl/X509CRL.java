@@ -270,7 +270,7 @@ public class X509CRL extends RubyObject {
                 Extension ext = (Extension) extensions.entry(i);
                 ASN1ObjectIdentifier oiden = ext.getRealOid();
                 text.append(IND12).append( ASN1.o2a(runtime, oiden) ).append(": ");
-                if ( ext.getRealCritical() ) text.append("critical");
+                if ( ext.isRealCritical() ) text.append("critical");
                 text.append("\n");
                 text.append(IND16).append( ext.value(context) ).append("\n");
             }
@@ -421,7 +421,7 @@ public class X509CRL extends RubyObject {
         try {
             for ( int i = 0; i < extensions.size(); i++ ) {
                 Extension ext = (Extension) extensions.entry(i);
-                generator.addExtension(ext.getRealOid(), ext.getRealCritical(), ext.getRealValueBytes());
+                generator.addExtension(ext.getRealOid(), ext.isRealCritical(), ext.getRealValueBytes());
             }
         }
         catch (IOException e) { throw newCRLError(runtime, e); }

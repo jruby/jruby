@@ -117,23 +117,22 @@ public class OpenSSLImpl {
             return new BouncyCastlePEMHandler();
         }
         catch (Exception e) {
-            if ( isDebug() ) e.printStackTrace();
+            if ( isDebug() ) e.printStackTrace(System.out);
         }
         return new DefaultPEMHandler();
     }
 
     static KeyAndIv EVP_BytesToKey(int key_len, int iv_len, MessageDigest md, byte[] salt, byte[] data, int count) {
-        byte[] key = new byte[key_len];
-        byte[]  iv = new byte[iv_len];
+        final byte[] key = new byte[key_len]; final byte[] iv = new byte[iv_len];
+
+        if( data == null ) return new KeyAndIvImpl(key, iv);
+
         int key_ix = 0;
         int iv_ix = 0;
         byte[] md_buf = null;
         int nkey = key_len;
         int niv = iv_len;
-        int i = 0;
-        if(data == null) {
-            return new KeyAndIvImpl(key,iv);
-        }
+        int i;
         int addmd = 0;
         for(;;) {
             md.reset();
@@ -173,9 +172,9 @@ public class OpenSSLImpl {
                 break;
             }
         }
-        for(i=0;i<md_buf.length;i++) {
-            md_buf[i] = 0;
-        }
+        //for(i=0;i<md_buf.length;i++) {
+        //    md_buf[i] = 0;
+        //}
         return new KeyAndIvImpl(key,iv);
     }
 }// OpenSSLImpl

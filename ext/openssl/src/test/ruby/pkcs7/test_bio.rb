@@ -1,5 +1,7 @@
+require File.expand_path('../pkcs7_helper', File.dirname(__FILE__))
+
 module PKCS7Test
-  class TestJavaBIO < Test::Unit::TestCase
+  class TestBIO < Test::Unit::TestCase
     def test_string_bio_simple
       bio = BIO::from_string("abc")
       arr = Java::byte[20].new
@@ -26,7 +28,7 @@ module PKCS7Test
       read = bio.gets(arr, 10)
       assert_equal 4, read
       assert_equal "foo\n".to_java_bytes.to_a, arr.to_a[0...read]
-    
+
       read = bio.gets(arr, 10)
       assert_equal 1, read
       assert_equal "\n".to_java_bytes.to_a, arr.to_a[0...read]
