@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Helpers;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;
@@ -159,6 +160,10 @@ public class RubyString extends RubyObject {
     @Override
     public int hashCode() {
         return bytes.hashCode();
+    }
+
+    public int normaliseIndex(int index) {
+        return RubyArray.normaliseIndex(bytes.length(), index);
     }
 
 }

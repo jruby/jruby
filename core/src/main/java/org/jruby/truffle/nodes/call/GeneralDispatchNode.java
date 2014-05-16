@@ -43,8 +43,6 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
-        RubyNode.notDesignedForCompilation();
-
         MethodCacheEntry entry = lookupInCache(receiverObject.getLookupNode());
 
         if (entry == null) {

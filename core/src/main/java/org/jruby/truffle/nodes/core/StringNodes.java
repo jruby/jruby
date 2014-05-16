@@ -213,7 +213,6 @@ public abstract class StringNodes {
     @CoreMethod(names = "[]", minArgs = 1, maxArgs = 2)
     public abstract static class GetIndexNode extends CoreMethodNode {
 
-
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -224,47 +223,8 @@ public abstract class StringNodes {
 
         @Specialization(order = 1)
         public Object getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
-            final String javaString = string.toString();
-            final int normalisedIndex = RubyArray.normaliseIndex(javaString.length(), index);
-            return getContext().makeString(javaString.charAt(normalisedIndex));
-        }
-
-        @Specialization(order = 2)
-        public Object getIndex(RubyString string, IntegerFixnumRange range, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
-            final String javaString = string.toString();
-
-            final int stringLength = javaString.length();
-
-            if (range.doesExcludeEnd()) {
-                final int begin = RubyArray.normaliseIndex(stringLength, range.getBegin());
-                final int exclusiveEnd = RubyArray.normaliseExclusiveIndex(stringLength, range.getExclusiveEnd());
-                return getContext().makeString(javaString.substring(begin, exclusiveEnd));
-            } else {
-                final int begin = RubyArray.normaliseIndex(stringLength, range.getBegin());
-                final int inclusiveEnd = RubyArray.normaliseIndex(stringLength, range.getInclusiveEnd());
-                return getContext().makeString(javaString.substring(begin, inclusiveEnd + 1));
-            }
-        }
-
-        @Specialization(order = 3)
-        public Object getIndex(RubyString string, int start, int length) {
-            notDesignedForCompilation();
-
-            final String javaString = string.toString();
-
-            if (length > javaString.length() - start) {
-                length = javaString.length() - start;
-            }
-
-            if (start > javaString.length()) {
-                return NilPlaceholder.INSTANCE;
-            }
-
-            return getContext().makeString(javaString.substring(start, start + length));
+            // TODO(CS): not really right
+            return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(new byte[]{(byte) string.getBytes().charAt(string.normaliseIndex(index))}, string.getBytes().getEncoding()));
         }
     }
 

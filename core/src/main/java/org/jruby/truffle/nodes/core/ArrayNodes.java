@@ -569,18 +569,31 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isLongFixnum", order = 2)
         public long setLongFixnum(RubyArray array, int index, long value) {
-            notDesignedForCompilation();
-
-            int normalisedIndex = array.normaliseIndex(index);
+            final int normalisedIndex = array.normaliseIndex(index);
+            long[] store = (long[]) array.store;
 
             if (normalisedIndex < 0) {
                 tooSmallBranch.enter();
                 throw new UnsupportedOperationException();
             } else if (normalisedIndex >= array.size) {
                 pastEndBranch.enter();
-                throw new UnsupportedOperationException();
+
+                if (normalisedIndex == array.size) {
+                    appendBranch.enter();
+
+                    if (normalisedIndex >= store.length) {
+                        reallocateBranch.enter();
+                        array.store = store = Arrays.copyOf(store, ArrayUtils.capacity(store.length));
+                    }
+
+                    store[normalisedIndex] = value;
+                    array.size++;
+                } else if (normalisedIndex > array.size) {
+                    beyondBranch.enter();
+                    throw new UnsupportedOperationException();
+                }
             } else {
-                ((long[]) array.store)[normalisedIndex] = value;
+                store[normalisedIndex] = value;
             }
 
             return value;
@@ -588,18 +601,31 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isFloat", order = 3)
         public double setFloat(RubyArray array, int index, double value) {
-            notDesignedForCompilation();
-
-            int normalisedIndex = array.normaliseIndex(index);
+            final int normalisedIndex = array.normaliseIndex(index);
+            double[] store = (double[]) array.store;
 
             if (normalisedIndex < 0) {
                 tooSmallBranch.enter();
                 throw new UnsupportedOperationException();
             } else if (normalisedIndex >= array.size) {
                 pastEndBranch.enter();
-                throw new UnsupportedOperationException();
+
+                if (normalisedIndex == array.size) {
+                    appendBranch.enter();
+
+                    if (normalisedIndex >= store.length) {
+                        reallocateBranch.enter();
+                        array.store = store = Arrays.copyOf(store, ArrayUtils.capacity(store.length));
+                    }
+
+                    store[normalisedIndex] = value;
+                    array.size++;
+                } else if (normalisedIndex > array.size) {
+                    beyondBranch.enter();
+                    throw new UnsupportedOperationException();
+                }
             } else {
-                ((double[]) array.store)[normalisedIndex] = value;
+                store[normalisedIndex] = value;
             }
 
             return value;
@@ -607,18 +633,31 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isObject", order = 4)
         public Object setObject(RubyArray array, int index, Object value) {
-            notDesignedForCompilation();
-
-            int normalisedIndex = array.normaliseIndex(index);
+            final int normalisedIndex = array.normaliseIndex(index);
+            Object[] store = (Object[]) array.store;
 
             if (normalisedIndex < 0) {
                 tooSmallBranch.enter();
                 throw new UnsupportedOperationException();
             } else if (normalisedIndex >= array.size) {
                 pastEndBranch.enter();
-                throw new UnsupportedOperationException();
+
+                if (normalisedIndex == array.size) {
+                    appendBranch.enter();
+
+                    if (normalisedIndex >= store.length) {
+                        reallocateBranch.enter();
+                        array.store = store = Arrays.copyOf(store, ArrayUtils.capacity(store.length));
+                    }
+
+                    store[normalisedIndex] = value;
+                    array.size++;
+                } else if (normalisedIndex > array.size) {
+                    beyondBranch.enter();
+                    throw new UnsupportedOperationException();
+                }
             } else {
-                ((Object[]) array.store)[normalisedIndex] = value;
+                store[normalisedIndex] = value;
             }
 
             return value;
@@ -1308,8 +1347,6 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray initialize(RubyArray array, int size, int defaultValue) {
-            notDesignedForCompilation();
-
             final int[] store = new int[size];
             Arrays.fill(store, defaultValue);
             array.store = store;
@@ -1319,8 +1356,6 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray initialize(RubyArray array, int size, long defaultValue) {
-            notDesignedForCompilation();
-
             final long[] store = new long[size];
             Arrays.fill(store, defaultValue);
             array.store = store;
@@ -1330,8 +1365,6 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray initialize(RubyArray array, int size, double defaultValue) {
-            notDesignedForCompilation();
-
             final double[] store = new double[size];
             Arrays.fill(store, defaultValue);
             array.store = store;
@@ -1341,8 +1374,6 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray initialize(RubyArray array, int size, Object defaultValue) {
-            notDesignedForCompilation();
-
             final Object[] store = new Object[size];
             Arrays.fill(store, defaultValue);
             array.store = store;
@@ -1576,7 +1607,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = {"map!", "collect!"}, needsBlock = true, maxArgs = 0)
-    public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
+    public abstract static class MapInPlaceNode extends YieldingArrayCoreMethodNode {
 
         public MapInPlaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1586,9 +1617,57 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization
-        public RubyArray mapInPlace(VirtualFrame frame, RubyArray array, RubyProc block) {
-            throw new UnsupportedOperationException();
+        @Specialization(guards = "isIntegerFixnum", order = 1)
+        public RubyArray mapInPlaceFixnumInteger(VirtualFrame frame, RubyArray array, RubyProc block) {
+            // TODO(CS): what if we could map into a simple storage class?
+
+            final int[] store = (int[]) array.store;
+            final Object[] mappedStore = new Object[array.size];
+
+            int count = 0;
+
+            try {
+                for (int n = 0; n < array.size; n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    mappedStore[n] = yield(frame, block, store[n]);
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            array.store = mappedStore;
+
+            return array;
+        }
+
+        @Specialization(guards = "isObject", order = 2)
+        public RubyArray mapInPlaceObject(VirtualFrame frame, RubyArray array, RubyProc block) {
+            // TODO(CS): what if we could map into a simple storage class?
+
+            final Object[] store = (Object[]) array.store;
+
+            int count = 0;
+
+            try {
+                for (int n = 0; n < array.size; n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    store[n] = yield(frame, block, store[n]);
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            return array;
         }
     }
 
