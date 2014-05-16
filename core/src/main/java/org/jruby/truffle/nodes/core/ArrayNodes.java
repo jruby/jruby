@@ -963,19 +963,47 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "delete", minArgs = 1, maxArgs = 1)
-    public abstract static class DeleteNode extends CoreMethodNode {
+    public abstract static class DeleteNode extends ArrayCoreMethodNode {
+
+        @Child protected DispatchHeadNode threeEqual;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            threeEqual = new DispatchHeadNode(context, "===", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public DeleteNode(DeleteNode prev) {
             super(prev);
+            threeEqual = prev.threeEqual;
         }
 
-        @Specialization
-        public Object delete(RubyArray array, Object value) {
-            throw new UnsupportedOperationException();
+        @Specialization(guards = "isObject")
+        public Object delete(VirtualFrame frame, RubyArray array, Object value) {
+            final Object[] store = (Object[]) array.store;
+
+            Object found = NilPlaceholder.INSTANCE;
+
+            int i = 0;
+
+            for (int n = 0; n < array.size; n++) {
+                final Object stored = store[n];
+
+                // TODO(CS): need a cast node around the dispatch
+
+                if (stored == value || (boolean) threeEqual.dispatch(frame, store[n], null, value)) {
+                    found = store[n];
+                    continue;
+                }
+
+                if (i != n) {
+                    store[i] = store[n];
+                }
+
+                i++;
+            }
+
+            array.size = i;
+            return found;
         }
 
     }
@@ -1722,9 +1750,86 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization
-        public Object pop(RubyArray array) {
-            throw new UnsupportedOperationException();
+        @Specialization(guards = "isNull", order = 1)
+        public Object popNil(RubyArray array) {
+            return NilPlaceholder.INSTANCE;
+        }
+
+        @Specialization(guards = "isIntegerFixnum", rewriteOn = UnexpectedResultException.class, order = 2)
+        public int popIntegerFixnumInBounds(RubyArray array) throws UnexpectedResultException {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.size == 0)) {
+                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+            } else {
+                final int value = ((int[]) array.store)[array.size - 1];
+                array.size--;
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isIntegerFixnum", rewriteOn = UnexpectedResultException.class, order = 3)
+        public Object popIntegerFixnum(RubyArray array) throws UnexpectedResultException {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.size == 0)) {
+                return NilPlaceholder.INSTANCE;
+            } else {
+                final int value = ((int[]) array.store)[array.size - 1];
+                array.size--;
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isLongFixnum", rewriteOn = UnexpectedResultException.class, order = 4)
+        public long popLongFixnumInBounds(RubyArray array) throws UnexpectedResultException {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.size == 0)) {
+                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+            } else {
+                final long value = ((long[]) array.store)[array.size - 1];
+                array.size--;
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isLongFixnum", rewriteOn = UnexpectedResultException.class, order = 5)
+        public Object popLongFixnum(RubyArray array) throws UnexpectedResultException {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.size == 0)) {
+                return NilPlaceholder.INSTANCE;
+            } else {
+                final long value = ((long[]) array.store)[array.size - 1];
+                array.size--;
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isFloat", rewriteOn = UnexpectedResultException.class, order = 6)
+        public double popFloatInBounds(RubyArray array) throws UnexpectedResultException {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.size == 0)) {
+                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
+            } else {
+                final double value = ((double[]) array.store)[array.size - 1];
+                array.size--;
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isFloat", rewriteOn = UnexpectedResultException.class, order = 7)
+        public Object popFloat(RubyArray array) throws UnexpectedResultException {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.size == 0)) {
+                return NilPlaceholder.INSTANCE;
+            } else {
+                final double value = ((double[]) array.store)[array.size - 1];
+                array.size--;
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isObject", rewriteOn = UnexpectedResultException.class, order = 8)
+        public Object popObject(RubyArray array) throws UnexpectedResultException {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.size == 0)) {
+                return NilPlaceholder.INSTANCE;
+            } else {
+                final Object value = ((Object[]) array.store)[array.size - 1];
+                array.size--;
+                return value;
+            }
         }
 
     }

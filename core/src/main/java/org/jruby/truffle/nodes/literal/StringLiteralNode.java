@@ -31,8 +31,6 @@ public class StringLiteralNode extends RubyNode {
 
     @Override
     public RubyString execute(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         return getContext().makeString(string);
     }
 

@@ -11,6 +11,9 @@ package org.jruby.truffle.nodes.supercall;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
@@ -26,6 +29,8 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
     private final String name;
+
+    @Child protected DirectCallNode callNode;
 
     @CompilerDirectives.CompilationFinal protected Assumption unmodifiedAssumption;
     @CompilerDirectives.CompilationFinal protected RubyMethod method;
@@ -53,6 +58,15 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
         }
 
         getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getSourceSection().getSource().getName(), getSourceSection().getStartLine(), "lookup for super call is " + method.getSharedMethodInfo().getSourceSection());
+
+        final DirectCallNode newCallNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+
+        if (callNode == null) {
+            callNode = newCallNode;
+            adoptChildren();
+        } else {
+            callNode.replace(newCallNode);
+        }
 
         unmodifiedAssumption = declaringModule.getUnmodifiedAssumption();
     }

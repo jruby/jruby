@@ -64,8 +64,6 @@ public class BooleanDispatchNode extends UnboxedDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
-        RubyNode.notDesignedForCompilation();
-
         // Check it's a boolean
 
         if (!(receiverObject instanceof Boolean)) {

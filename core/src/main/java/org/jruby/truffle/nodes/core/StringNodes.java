@@ -191,8 +191,6 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString format(RubyString format, Object[] args) {
-            notDesignedForCompilation();
-
             return formatSlow(format, args);
         }
 
