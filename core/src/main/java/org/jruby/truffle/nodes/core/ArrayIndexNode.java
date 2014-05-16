@@ -38,13 +38,9 @@ public abstract class ArrayIndexNode extends RubyNode {
 
     @Specialization(guards = "isIntegerFixnum", rewriteOn=UnexpectedResultException.class, order = 2)
     public int getIntegerFixnumInBounds(RubyArray array) throws UnexpectedResultException {
-        notDesignedForCompilation();
-
         int normalisedIndex = array.normaliseIndex(index);
 
-        if (normalisedIndex < 0) {
-            throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
-        } else if (normalisedIndex >= array.size) {
+        if (normalisedIndex < 0 || normalisedIndex >= array.size) {
             throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
         } else {
             return ((int[]) array.store)[normalisedIndex];
@@ -53,13 +49,9 @@ public abstract class ArrayIndexNode extends RubyNode {
 
     @Specialization(guards = "isIntegerFixnum", order = 3)
     public Object getIntegerFixnum(RubyArray array) {
-        notDesignedForCompilation();
-
         int normalisedIndex = array.normaliseIndex(index);
 
-        if (normalisedIndex < 0) {
-            return NilPlaceholder.INSTANCE;
-        } else if (normalisedIndex >= array.size) {
+        if (normalisedIndex < 0 || normalisedIndex >= array.size) {
             return NilPlaceholder.INSTANCE;
         } else {
             return ((int[]) array.store)[normalisedIndex];
@@ -68,13 +60,9 @@ public abstract class ArrayIndexNode extends RubyNode {
 
     @Specialization(guards = "isLongFixnum", rewriteOn=UnexpectedResultException.class, order = 4)
     public long getLongFixnumInBounds(RubyArray array) throws UnexpectedResultException {
-        notDesignedForCompilation();
-
         int normalisedIndex = array.normaliseIndex(index);
 
-        if (normalisedIndex < 0) {
-            throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
-        } else if (normalisedIndex >= array.size) {
+        if (normalisedIndex < 0 || normalisedIndex >= array.size) {
             throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
         } else {
             return ((long[]) array.store)[normalisedIndex];
@@ -83,13 +71,9 @@ public abstract class ArrayIndexNode extends RubyNode {
 
     @Specialization(guards = "isLongFixnum", order = 5)
     public Object getLongFixnum(RubyArray array) {
-        notDesignedForCompilation();
-
         int normalisedIndex = array.normaliseIndex(index);
 
-        if (normalisedIndex < 0) {
-            return NilPlaceholder.INSTANCE;
-        } else if (normalisedIndex >= array.size) {
+        if (normalisedIndex < 0 || normalisedIndex >= array.size) {
             return NilPlaceholder.INSTANCE;
         } else {
             return ((long[]) array.store)[normalisedIndex];
@@ -98,13 +82,9 @@ public abstract class ArrayIndexNode extends RubyNode {
 
     @Specialization(guards = "isFloat", rewriteOn=UnexpectedResultException.class, order = 6)
     public double getFloatInBounds(RubyArray array) throws UnexpectedResultException {
-        notDesignedForCompilation();
-
         int normalisedIndex = array.normaliseIndex(index);
 
-        if (normalisedIndex < 0) {
-            throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
-        } else if (normalisedIndex >= array.size) {
+        if (normalisedIndex < 0 || normalisedIndex >= array.size) {
             throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
         } else {
             return ((double[]) array.store)[normalisedIndex];
@@ -113,13 +93,9 @@ public abstract class ArrayIndexNode extends RubyNode {
 
     @Specialization(guards = "isIntegerFixnum", order = 7)
     public Object getFloat(RubyArray array) {
-        notDesignedForCompilation();
-
         int normalisedIndex = array.normaliseIndex(index);
 
-        if (normalisedIndex < 0) {
-            return NilPlaceholder.INSTANCE;
-        } else if (normalisedIndex >= array.size) {
+        if (normalisedIndex < 0 || normalisedIndex >= array.size) {
             return NilPlaceholder.INSTANCE;
         } else {
             return ((double[]) array.store)[normalisedIndex];
@@ -128,13 +104,9 @@ public abstract class ArrayIndexNode extends RubyNode {
 
     @Specialization(guards = "isObject", order = 8)
     public Object getObject(RubyArray array) {
-        notDesignedForCompilation();
-
         int normalisedIndex = array.normaliseIndex(index);
 
-        if (normalisedIndex < 0) {
-            return NilPlaceholder.INSTANCE;
-        } else if (normalisedIndex >= array.size) {
+        if (normalisedIndex < 0 || normalisedIndex >= array.size) {
             return NilPlaceholder.INSTANCE;
         } else {
             return ((Object[]) array.store)[normalisedIndex];

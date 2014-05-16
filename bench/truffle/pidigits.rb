@@ -74,13 +74,13 @@ def pidigits(n_prime)
 end
 
 def warmup
-  1000000.times do
-    pidigits(10)
+  100.times do
+    pidigits(2000)
   end
 end
 
 def sample
-  pidigits(100) == 1420881
+  pidigits(2000) == 2380386
 end
 
 def name

@@ -21,6 +21,8 @@ public class GeneralDivModNode extends Node {
 
     private final RubyContext context;
 
+    @Child protected FixnumOrBignumNode fixnumOrBignum;
+
     private final BranchProfile bZeroProfile = new BranchProfile();
     private final BranchProfile bMinusOneProfile = new BranchProfile();
     private final BranchProfile bigIntegerFixnumProfile = new BranchProfile();
@@ -30,6 +32,7 @@ public class GeneralDivModNode extends Node {
     public GeneralDivModNode(RubyContext context) {
         assert context != null;
         this.context = context;
+        fixnumOrBignum = new FixnumOrBignumNode();
     }
 
     public RubyArray execute(int a, int b) {
@@ -123,7 +126,7 @@ public class GeneralDivModNode extends Node {
             bigIntegerResults[1] = b.add(bigIntegerResults[1]);
         }
 
-        return new RubyArray(context.getCoreLibrary().getArrayClass(), new Object[]{RubyFixnum.fixnumOrBignum(bigIntegerResults[0]), RubyFixnum.fixnumOrBignum(bigIntegerResults[1])}, 2);
+        return new RubyArray(context.getCoreLibrary().getArrayClass(), new Object[]{fixnumOrBignum.fixnumOrBignum(bigIntegerResults[0]), fixnumOrBignum.fixnumOrBignum(bigIntegerResults[1])}, 2);
     }
 
 }

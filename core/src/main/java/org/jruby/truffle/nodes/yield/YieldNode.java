@@ -38,8 +38,6 @@ public class YieldNode extends RubyNode {
     @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
-        RubyNode.notDesignedForCompilation();
-
         Object[] argumentsObjects = new Object[arguments.length];
 
         for (int i = 0; i < arguments.length; i++) {
@@ -54,6 +52,8 @@ public class YieldNode extends RubyNode {
         }
 
         if (unsplat) {
+            notDesignedForCompilation();
+
             // TOOD(CS): what is the error behaviour here?
             assert argumentsObjects.length == 1;
             assert argumentsObjects[0] instanceof RubyArray;
@@ -65,6 +65,8 @@ public class YieldNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
+        notDesignedForCompilation();
+        
         if (RubyArguments.getBlock(frame.getArguments()) == null) {
             return NilPlaceholder.INSTANCE;
         } else {
