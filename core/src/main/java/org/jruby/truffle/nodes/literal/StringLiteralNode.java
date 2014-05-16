@@ -31,11 +31,8 @@ public class StringLiteralNode extends RubyNode {
 
     @Override
     public RubyString execute(VirtualFrame frame) {
-        return makeString();
-    }
+        notDesignedForCompilation();
 
-    @CompilerDirectives.SlowPath
-    private RubyString makeString() {
         return getContext().makeString(string);
     }
 

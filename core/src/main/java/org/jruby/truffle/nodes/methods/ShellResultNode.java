@@ -28,6 +28,8 @@ public class ShellResultNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         return new ShellResult(body.execute(frame), frame.materialize());
     }
 

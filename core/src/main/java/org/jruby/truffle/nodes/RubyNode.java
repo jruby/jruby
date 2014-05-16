@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -197,6 +198,10 @@ public abstract class RubyNode extends Node {
 
     public RubyContext getContext() {
         return context;
+    }
+
+    public static void notDesignedForCompilation() {
+        CompilerAsserts.neverPartOfCompilation();
     }
 
 }

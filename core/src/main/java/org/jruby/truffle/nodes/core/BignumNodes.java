@@ -691,6 +691,8 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object times(VirtualFrame frame, BigInteger n, RubyProc block) {
+            notDesignedForCompilation();
+
             outer: for (BigInteger i = BigInteger.ZERO; i.compareTo(n) < 0; i = i.add(BigInteger.ONE)) {
                 while (true) {
                     try {

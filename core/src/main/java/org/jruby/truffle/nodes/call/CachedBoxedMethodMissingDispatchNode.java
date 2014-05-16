@@ -17,6 +17,7 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.RubyContext;
@@ -57,6 +58,8 @@ public class CachedBoxedMethodMissingDispatchNode extends BoxedDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+        RubyNode.notDesignedForCompilation();
+
         // Check the lookup node is what we expect
 
         if (receiverObject.getLookupNode() != expectedLookupNode) {

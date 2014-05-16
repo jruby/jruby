@@ -24,7 +24,6 @@ import org.jruby.truffle.nodes.call.RubyCallNode;
 import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.constants.EncodingPseudoVariableNode;
 import org.jruby.truffle.nodes.constants.ReadConstantNode;
-import org.jruby.truffle.nodes.constants.UninitializedReadConstantNode;
 import org.jruby.truffle.nodes.constants.WriteConstantNode;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.core.*;
@@ -748,9 +747,9 @@ public class BodyTranslator extends Translator {
         final RubyNode end = node.getEndNode().accept(this);
         SourceSection sourceSection = translate(node.getPosition());
 
-        if (begin instanceof FixnumLiteralNode && end instanceof FixnumLiteralNode) {
-            final int beginValue = ((FixnumLiteralNode) begin).getValue();
-            final int endValue = ((FixnumLiteralNode) end).getValue();
+        if (begin instanceof IntegerFixnumLiteralNode && end instanceof IntegerFixnumLiteralNode) {
+            final int beginValue = ((IntegerFixnumLiteralNode) begin).getValue();
+            final int endValue = ((IntegerFixnumLiteralNode) end).getValue();
 
             return new ObjectLiteralNode(context, sourceSection, new FixnumRange(context.getCoreLibrary().getRangeClass(), beginValue, endValue, node.isExclusive()));
         }
@@ -794,7 +793,7 @@ public class BodyTranslator extends Translator {
         final long value = node.getValue();
 
         if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
-            return new FixnumLiteralNode(context, translate(node.getPosition()), (int) value);
+            return new IntegerFixnumLiteralNode(context, translate(node.getPosition()), (int) value);
         } else {
             return new LongFixnumLiteralNode(context, translate(node.getPosition()), value);
         }

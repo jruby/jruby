@@ -109,6 +109,8 @@ public abstract class DirNodes {
 
         @Specialization
         public Object chdir(VirtualFrame frame, RubyString path, RubyProc block) {
+            notDesignedForCompilation();
+
             final RubyContext context = getContext();
 
             final String previous = context.getRuntime().getCurrentDirectory();
@@ -140,6 +142,8 @@ public abstract class DirNodes {
 
         @Specialization
         public boolean exists(RubyString path) {
+            notDesignedForCompilation();
+
             return new File(path.toString()).isDirectory();
         }
 
@@ -158,6 +162,8 @@ public abstract class DirNodes {
 
         @Specialization
         public RubyString pwd() {
+            notDesignedForCompilation();
+
             return getContext().makeString(getContext().getRuntime().getCurrentDirectory());
         }
 

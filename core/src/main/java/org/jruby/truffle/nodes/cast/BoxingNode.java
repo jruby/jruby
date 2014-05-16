@@ -29,6 +29,8 @@ public class BoxingNode extends RubyNode {
 
     @Override
     public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final Object object = child.execute(frame);
 
         RubyBasicObject boxedObject;

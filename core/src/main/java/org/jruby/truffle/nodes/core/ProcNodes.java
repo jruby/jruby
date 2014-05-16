@@ -31,6 +31,8 @@ public abstract class ProcNodes {
 
         @Specialization
         public Object call(VirtualFrame frame, RubyProc proc, Object[] args) {
+            notDesignedForCompilation();
+
             // TODO(CS): need to call with the caller frame the same as this method's caller frame, not this method's frame
 
             return proc.call(args);
@@ -51,6 +53,8 @@ public abstract class ProcNodes {
 
         @Specialization
         public NilPlaceholder initialize(VirtualFrame frame, RubyProc proc, RubyProc block) {
+            notDesignedForCompilation();
+
             proc.initialize(RubyProc.Type.PROC, block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), block.getMethod().withoutBlockDestructureSemantics());
             return NilPlaceholder.INSTANCE;
         }

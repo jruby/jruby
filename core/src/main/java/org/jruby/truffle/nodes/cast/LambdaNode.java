@@ -29,6 +29,8 @@ public class LambdaNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA, RubyArguments.getSelf(frame.getArguments()), null, (RubyMethod) definition.execute(frame));
     }
 

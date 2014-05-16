@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.call;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.lookup.*;
@@ -48,6 +49,8 @@ public class CachedBoxedDispatchNode extends BoxedDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+        RubyNode.notDesignedForCompilation();
+
         // Check the lookup node is what we expect
 
         if (receiverObject.getLookupNode() != expectedLookupNode) {

@@ -34,6 +34,8 @@ public abstract class RegexpNodes {
 
         @Specialization
         public Object match(RubyRegexp regexp, RubyString string) {
+            notDesignedForCompilation();
+
             return regexp.matchOperator(string.toString()) != NilPlaceholder.INSTANCE;
         }
 
@@ -56,12 +58,14 @@ public abstract class RegexpNodes {
 
         @Specialization
         public Object match(RubyRegexp regexp, RubyString string) {
+            notDesignedForCompilation();
+
             return regexp.matchOperator(string.toString());
         }
 
         @Specialization
         public Object match(VirtualFrame frame, RubyRegexp regexp, RubyBasicObject other) {
-            CompilerAsserts.neverPartOfCompilation();
+            notDesignedForCompilation();
 
             // TODO(CS) perhaps I shouldn't be converting match operators to simple calls - they seem to get switched around like this
 
@@ -85,6 +89,8 @@ public abstract class RegexpNodes {
 
         @Specialization
         public Object match(RubyRegexp regexp, RubyString string) {
+            notDesignedForCompilation();
+
             return regexp.matchOperator(string.toString()) == NilPlaceholder.INSTANCE;
         }
 
@@ -103,6 +109,8 @@ public abstract class RegexpNodes {
 
         @Specialization
         public RubyString sqrt(RubyString pattern) {
+            notDesignedForCompilation();
+
             return getContext().makeString(org.jruby.RubyRegexp.quote19(new ByteList(pattern.getBytes()), true).toString());
         }
 
@@ -121,6 +129,8 @@ public abstract class RegexpNodes {
 
         @Specialization
         public NilPlaceholder initialize(RubyRegexp regexp, RubyString string) {
+            notDesignedForCompilation();
+
             regexp.initialize(string.toString());
             return NilPlaceholder.INSTANCE;
         }
@@ -140,6 +150,8 @@ public abstract class RegexpNodes {
 
         @Specialization
         public Object match(RubyRegexp regexp, RubyString string) {
+            notDesignedForCompilation();
+
             return regexp.match(string.toString());
         }
 

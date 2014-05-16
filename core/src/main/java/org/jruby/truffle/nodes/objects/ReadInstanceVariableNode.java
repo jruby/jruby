@@ -79,6 +79,8 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         Object value = readNode.execute(receiver.executeRubyBasicObject(frame));
 
         if (value == null) {
@@ -91,6 +93,8 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         if (isGlobal) {
             if (readNode.getName().equals("$~") || readNode.isSet(receiver.executeRubyBasicObject(frame))) {
                 return getContext().makeString("global-variable");

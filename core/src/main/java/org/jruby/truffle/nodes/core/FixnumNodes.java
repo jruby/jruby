@@ -1041,6 +1041,8 @@ public abstract class FixnumNodes {
 
         @Specialization
         public int getIndex(int self, int index) {
+            notDesignedForCompilation();
+
             if ((self & (1 << index)) == 0) {
                 return 0;
             } else {
@@ -1086,6 +1088,8 @@ public abstract class FixnumNodes {
 
         @Specialization
         public RubyString chr(int n) {
+            notDesignedForCompilation();
+
             // TODO(CS): not sure about encoding here
             return getContext().makeString((char) n);
         }
@@ -1145,6 +1149,8 @@ public abstract class FixnumNodes {
 
         @Specialization
         public NilPlaceholder step(VirtualFrame frame, int from, int to, int step, RubyProc block) {
+            notDesignedForCompilation();
+
             for (int i = from; i <= to; i += step) {
                 yield(frame, block, i);
             }
@@ -1171,6 +1177,8 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object times(VirtualFrame frame, int n, RubyProc block) {
+            notDesignedForCompilation();
+
             int count = 0;
 
             try {
@@ -1286,6 +1294,8 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object upto(VirtualFrame frame, int from, int to, RubyProc block) {
+            notDesignedForCompilation();
+
             int count = 0;
 
             try {

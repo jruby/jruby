@@ -40,6 +40,8 @@ public class GeneralSuperReCallNode extends AbstractGeneralSuperCallNode {
     @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         // Check we have a method and the module is unmodified
 
         if (!guard()) {

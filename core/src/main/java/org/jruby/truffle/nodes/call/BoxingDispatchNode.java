@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.*;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -34,6 +35,8 @@ public class BoxingDispatchNode extends UnboxedDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+        RubyNode.notDesignedForCompilation();
+
         RubyBasicObject boxedReceiverObject;
 
         if (receiverObject instanceof RubyBasicObject) {

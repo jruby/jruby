@@ -28,6 +28,8 @@ public class CatchRetryAsErrorNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         try {
             return body.execute(frame);
         } catch (RetryException e) {

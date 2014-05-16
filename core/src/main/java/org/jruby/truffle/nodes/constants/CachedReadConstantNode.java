@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.constants;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.core.*;
 
 /**
@@ -123,6 +124,8 @@ public class CachedReadConstantNode extends ReadConstantChainNode {
 
     @Override
     public Object execute(RubyBasicObject receiver) {
+        RubyNode.notDesignedForCompilation();
+
         if (receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
             return value;
         } else {
@@ -132,6 +135,8 @@ public class CachedReadConstantNode extends ReadConstantChainNode {
 
     @Override
     public boolean executeBoolean(RubyBasicObject receiver) throws UnexpectedResultException {
+        RubyNode.notDesignedForCompilation();
+
         if (hasBoolean && receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
             return booleanValue;
         } else {
@@ -141,6 +146,8 @@ public class CachedReadConstantNode extends ReadConstantChainNode {
 
     @Override
     public int executeIntegerFixnum(RubyBasicObject receiver) throws UnexpectedResultException {
+        RubyNode.notDesignedForCompilation();
+
         if (hasIntegerFixnum && receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
             return integerFixnumValue;
         } else {
@@ -150,6 +157,8 @@ public class CachedReadConstantNode extends ReadConstantChainNode {
 
     @Override
     public long executeLongFixnum(RubyBasicObject receiver) throws UnexpectedResultException {
+        RubyNode.notDesignedForCompilation();
+
         if (hasLongFixnum && receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
             return longFixnumValue;
         } else {
@@ -159,6 +168,8 @@ public class CachedReadConstantNode extends ReadConstantChainNode {
 
     @Override
     public double executeFloat(RubyBasicObject receiver) throws UnexpectedResultException {
+        RubyNode.notDesignedForCompilation();
+
         if (hasFloat && receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
             return integerFixnumValue;
         } else {

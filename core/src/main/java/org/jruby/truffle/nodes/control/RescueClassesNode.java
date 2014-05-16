@@ -32,6 +32,8 @@ public class RescueClassesNode extends RescueNode {
     @ExplodeLoop
     @Override
     public boolean canHandle(VirtualFrame frame, RubyBasicObject exception) {
+        notDesignedForCompilation();
+
         final RubyClass exceptionRubyClass = exception.getRubyClass();
 
         for (RubyNode handlingClassNode : handlingClassNodes) {

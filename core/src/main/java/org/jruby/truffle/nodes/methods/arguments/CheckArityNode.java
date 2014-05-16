@@ -32,6 +32,8 @@ public class CheckArityNode extends RubyNode {
 
     @Override
     public void executeVoid(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final int given = RubyArguments.getUserArgumentsCount(frame.getArguments());
 
         if (!checkArity(given)) {

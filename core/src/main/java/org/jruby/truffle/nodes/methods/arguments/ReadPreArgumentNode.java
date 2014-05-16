@@ -33,6 +33,8 @@ public class ReadPreArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         if (index >= RubyArguments.getUserArgumentsCount(frame.getArguments())) {
             switch (missingArgumentBehaviour) {
                 case RUNTIME_ERROR:

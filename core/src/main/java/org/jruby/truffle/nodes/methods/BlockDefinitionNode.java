@@ -36,6 +36,8 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final RubyContext context = getContext();
 
         final MaterializedFrame declarationFrame;

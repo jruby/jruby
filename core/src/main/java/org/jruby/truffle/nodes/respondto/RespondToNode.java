@@ -29,9 +29,9 @@ public class RespondToNode extends RubyNode {
     }
 
     public boolean executeBoolean(VirtualFrame frame) {
-        // TODO(CS): need a fast path version of this using caching
+        notDesignedForCompilation();
 
-        CompilerAsserts.neverPartOfCompilation();
+        // TODO(CS): need a fast path version of this using caching
 
         getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getSourceSection().getSource().getName(), getSourceSection().getStartLine(), "using slow respond_to?");
 

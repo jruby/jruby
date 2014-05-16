@@ -30,6 +30,8 @@ public class ReadPostArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         int count = RubyArguments.getUserArgumentsCount(frame.getArguments());
         final int effectiveIndex = count - 1 - indexFromEnd;
         assert effectiveIndex < count;

@@ -45,6 +45,8 @@ public abstract class ProcOrNullNode extends RubyNode {
 
     @Override
     public RubyProc executeRubyProc(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final Object proc = execute(frame);
 
         // The standard asRubyProc test doesn't allow for null

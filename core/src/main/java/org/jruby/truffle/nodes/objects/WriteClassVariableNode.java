@@ -32,6 +32,8 @@ public class WriteClassVariableNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         // TODO(CS): can module ever not evaluate to a RubyModule?
 
         final RubyModule moduleObject = (RubyModule) module.execute(frame);

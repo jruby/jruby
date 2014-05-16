@@ -30,6 +30,8 @@ public class NextNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         if (child instanceof NilNode) {
             throw NextException.NIL;
         } else {

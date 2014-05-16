@@ -30,6 +30,8 @@ public abstract class ThreadNodes {
 
         @Specialization
         public NilPlaceholder initialize(RubyThread thread, RubyProc block) {
+            notDesignedForCompilation();
+
             thread.initialize(block);
             return NilPlaceholder.INSTANCE;
         }
@@ -49,6 +51,8 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyThread join(RubyThread self) {
+            notDesignedForCompilation();
+
             self.join();
             return self;
         }

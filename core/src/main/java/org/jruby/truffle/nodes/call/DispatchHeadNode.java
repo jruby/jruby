@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -45,6 +46,8 @@ public class DispatchHeadNode extends DispatchNode {
     }
 
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
+        RubyNode.notDesignedForCompilation();
+
         return dispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
     }
 

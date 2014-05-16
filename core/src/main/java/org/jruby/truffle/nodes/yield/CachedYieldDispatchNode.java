@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -31,6 +32,8 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, RubyProc block, Object[] argumentsObjects) {
+        RubyNode.notDesignedForCompilation();
+
         if (block.getMethod().getCallTarget() != callNode.getCallTarget()) {
             return next.dispatch(frame, block, argumentsObjects);
         }

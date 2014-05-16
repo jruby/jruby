@@ -36,6 +36,8 @@ public abstract class HashNodes {
 
         @Specialization
         public RubyHash construct(Object[] args) {
+            notDesignedForCompilation();
+
             final RubyHash hash = new RubyHash(getContext().getCoreLibrary().getHashClass());
 
             if (args.length == 1) {
@@ -74,6 +76,8 @@ public abstract class HashNodes {
 
         @Specialization
         public Object construct(VirtualFrame frame, RubyHash hash, Object index) {
+            notDesignedForCompilation();
+
             final Object value = hash.get(index);
 
             if (value == null) {
@@ -102,6 +106,8 @@ public abstract class HashNodes {
 
         @Specialization
         public Object construct(RubyHash hash, Object index, Object value) {
+            notDesignedForCompilation();
+
             hash.put(index, value);
             return value;
         }
@@ -121,6 +127,8 @@ public abstract class HashNodes {
 
         @Specialization
         public Object delete(RubyHash hash, Object index) {
+            notDesignedForCompilation();
+
             hash.checkFrozen();
 
             final Object value = hash.getMap().remove(index);
@@ -147,6 +155,8 @@ public abstract class HashNodes {
 
         @Specialization
         public RubyHash each(VirtualFrame frame, RubyHash hash, RubyProc block) {
+            notDesignedForCompilation();
+
             int count = 0;
 
             try {
@@ -181,6 +191,8 @@ public abstract class HashNodes {
 
         @Specialization
         public boolean empty(RubyHash hash) {
+            notDesignedForCompilation();
+
             return hash.storage.isEmpty();
         }
 
@@ -199,6 +211,8 @@ public abstract class HashNodes {
 
         @Specialization
         public RubyArray toArray(RubyHash hash) {
+            notDesignedForCompilation();
+
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (Object key : hash.storage.keySet()) {
@@ -226,12 +240,16 @@ public abstract class HashNodes {
 
         @Specialization
         public NilPlaceholder initialize(RubyHash hash, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
             hash.initialize(null);
             return NilPlaceholder.INSTANCE;
         }
 
         @Specialization
         public NilPlaceholder initialize(RubyHash hash, RubyProc block) {
+            notDesignedForCompilation();
+
             hash.initialize(block);
             return NilPlaceholder.INSTANCE;
         }
@@ -251,6 +269,8 @@ public abstract class HashNodes {
 
         @Specialization
         public RubyArray map(VirtualFrame frame, RubyHash hash, RubyProc block) {
+            notDesignedForCompilation();
+
             final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             int count = 0;
@@ -288,6 +308,8 @@ public abstract class HashNodes {
         @CompilerDirectives.SlowPath
         @Specialization
         public RubyHash merge(RubyHash hash, RubyHash other) {
+            notDesignedForCompilation();
+
             final RubyHash merged = new RubyHash(getContext().getCoreLibrary().getHashClass());
             merged.getMap().putAll(hash.getMap());
             merged.getMap().putAll(other.getMap());
@@ -327,6 +349,8 @@ public abstract class HashNodes {
 
         @Specialization
         public RubyArray keys(RubyHash hash) {
+            notDesignedForCompilation();
+
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (Object key : hash.storage.keySet()) {
@@ -369,6 +393,8 @@ public abstract class HashNodes {
 
         @Specialization
         public RubyArray values(RubyHash hash) {
+            notDesignedForCompilation();
+
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (Object value : hash.storage.values()) {

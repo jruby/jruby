@@ -23,6 +23,8 @@ public abstract class EncodingNodes {
 
         @Specialization
         public Object find(RubyString name) {
+            notDesignedForCompilation();
+
             return RubyEncoding.findEncodingByName(name);
         }
 
@@ -41,11 +43,15 @@ public abstract class EncodingNodes {
 
         @Specialization
         public boolean equal(@SuppressWarnings("unused") RubyString a, @SuppressWarnings("unused") NilPlaceholder b) {
+            notDesignedForCompilation();
+
             return false;
         }
 
         @Specialization
         public boolean equal(RubyEncoding a, RubyEncoding b) {
+            notDesignedForCompilation();
+
             return a.compareTo(b);
         }
 

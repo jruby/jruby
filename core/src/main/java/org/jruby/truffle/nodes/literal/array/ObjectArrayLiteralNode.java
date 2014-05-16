@@ -25,6 +25,8 @@ public class ObjectArrayLiteralNode extends ArrayLiteralNode {
     @ExplodeLoop
     @Override
     public RubyArray executeArray(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final Object[] executedValues = new Object[values.length];
 
         for (int n = 0; n < values.length; n++) {

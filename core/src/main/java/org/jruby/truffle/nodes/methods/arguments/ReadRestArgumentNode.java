@@ -34,6 +34,8 @@ public class ReadRestArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final RubyClass arrayClass = getContext().getCoreLibrary().getArrayClass();
 
         if (RubyArguments.getUserArgumentsCount(frame.getArguments()) <= index) {

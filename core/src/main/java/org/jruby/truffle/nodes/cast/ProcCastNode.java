@@ -49,6 +49,8 @@ public abstract class ProcCastNode extends RubyNode {
 
     @Specialization
     public RubyProc doObject(VirtualFrame frame, RubyBasicObject object) {
+        notDesignedForCompilation();
+
         return (RubyProc) toProc.dispatch(frame, object, null);
     }
 

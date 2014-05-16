@@ -37,6 +37,8 @@ public abstract class RangeNodes {
 
         @Specialization
         public RubyArray collect(VirtualFrame frame, FixnumRange range, RubyProc block) {
+            notDesignedForCompilation();
+
             final RubyContext context = getContext();
 
             final RubyArray array = new RubyArray(context.getCoreLibrary().getArrayClass());
@@ -79,6 +81,8 @@ public abstract class RangeNodes {
 
         @Specialization
         public Object each(VirtualFrame frame, FixnumRange range, RubyProc block) {
+            notDesignedForCompilation();
+
             int count = 0;
 
             try {
@@ -183,6 +187,8 @@ public abstract class RangeNodes {
 
         @Specialization
         public boolean include(VirtualFrame frame, ObjectRange range, Object value) {
+            notDesignedForCompilation();
+
             if ((boolean) callLess.dispatch(frame, value, null, range.getBegin())) {
                 return false;
             }
@@ -241,6 +247,8 @@ public abstract class RangeNodes {
 
         @Specialization
         public Object step(VirtualFrame frame, FixnumRange range, int step, RubyProc block) {
+            notDesignedForCompilation();
+
             int count = 0;
 
             try {
@@ -289,6 +297,8 @@ public abstract class RangeNodes {
 
         @Specialization
         public RubyArray toA(RubyRange range) {
+            notDesignedForCompilation();
+
             return range.toArray();
         }
 
@@ -307,6 +317,8 @@ public abstract class RangeNodes {
 
         @Specialization
         public RubyString toS(RubyRange range) {
+            notDesignedForCompilation();
+
             return getContext().makeString(range.toString());
         }
     }

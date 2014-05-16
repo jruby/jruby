@@ -34,6 +34,8 @@ public final class InterpolatedStringNode extends RubyNode {
     @ExplodeLoop
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final StringBuilder builder = new StringBuilder(expectedLength);
 
         for (int n = 0; n < children.length; n++) {

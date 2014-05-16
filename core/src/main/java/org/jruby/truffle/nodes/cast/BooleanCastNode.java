@@ -45,6 +45,8 @@ public abstract class BooleanCastNode extends RubyNode {
 
     @Generic
     public boolean doGeneric(Object object) {
+        notDesignedForCompilation();
+
         if (object instanceof Boolean) {
             return (boolean) object;
         } else if (object instanceof NilPlaceholder || object instanceof RubyNilClass) {

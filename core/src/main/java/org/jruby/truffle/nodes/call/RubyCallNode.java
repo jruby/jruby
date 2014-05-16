@@ -81,6 +81,8 @@ public class RubyCallNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final Object receiverObject = receiver.execute(frame);
         final Object[] argumentsObjects = executeArguments(frame);
         final RubyProc blockObject = executeBlock(frame);
@@ -115,6 +117,8 @@ public class RubyCallNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         if (receiver.isDefined(frame) == NilPlaceholder.INSTANCE) {
             return NilPlaceholder.INSTANCE;
         }

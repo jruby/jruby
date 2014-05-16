@@ -35,7 +35,7 @@ public class DefineOrGetClassNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        CompilerAsserts.neverPartOfCompilation();
+        notDesignedForCompilation();
 
         final RubyContext context = getContext();
 

@@ -59,6 +59,8 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final RubyContext context = getContext();
 
         try {

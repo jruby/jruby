@@ -34,6 +34,8 @@ public class WhenSplatNode extends RubyNode {
 
     @Override
     public boolean executeBoolean(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final Object caseExpression = readCaseExpression.execute(frame);
 
         final RubyArray array;

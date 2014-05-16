@@ -38,6 +38,8 @@ public class SystemNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final RubyContext context = getContext();
 
         final RubyHash env = (RubyHash) getContext().getCoreLibrary().getObjectClass().lookupConstant("ENV").value;

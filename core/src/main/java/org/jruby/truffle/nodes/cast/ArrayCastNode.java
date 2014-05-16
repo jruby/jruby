@@ -49,6 +49,8 @@ public abstract class ArrayCastNode extends RubyNode {
 
     @Specialization
     public Object doObject(VirtualFrame frame, Object object) {
+        notDesignedForCompilation();
+
         final Object result = toArrayNode.dispatch(frame, object, null, new Object[]{});
 
         if (result == DispatchHeadNode.MISSING) {

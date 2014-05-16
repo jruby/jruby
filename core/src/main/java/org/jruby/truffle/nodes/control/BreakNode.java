@@ -29,6 +29,8 @@ public class BreakNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         if (child instanceof NilNode) {
             throw BreakException.NIL;
         } else {

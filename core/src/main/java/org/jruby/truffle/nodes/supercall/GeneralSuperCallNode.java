@@ -45,6 +45,8 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
     @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final RubyBasicObject self = (RubyBasicObject) RubyArguments.getSelf(frame.getArguments());
 
         // Execute the arguments

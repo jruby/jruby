@@ -53,6 +53,8 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public boolean equal(Object a, Object b) {
+            notDesignedForCompilation();
+
             // TODO(CS) ideally all classes would do this in their own nodes
             return a.equals(b);
         }
@@ -72,6 +74,8 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public boolean notEqual(Object a, Object b) {
+            notDesignedForCompilation();
+
             // TODO(CS) ideally all classes would do this in their own nodes
             return !a.equals(b);
         }
@@ -151,6 +155,8 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object methodMissing(RubyBasicObject self, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
             CompilerDirectives.transferToInterpreter();
 
             final RubySymbol name = (RubySymbol) args[0];
@@ -160,6 +166,8 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object methodMissing(RubyBasicObject self, Object[] args, RubyProc block) {
+            notDesignedForCompilation();
+
             CompilerDirectives.transferToInterpreter();
 
             final RubySymbol name = (RubySymbol) args[0];
@@ -187,6 +195,8 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object send(RubyBasicObject self, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
             final String name = args[0].toString();
             final Object[] sendArgs = Arrays.copyOfRange(args, 1, args.length);
             return self.send(name, null, sendArgs);
@@ -194,6 +204,8 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object send(RubyBasicObject self, Object[] args, RubyProc block) {
+            notDesignedForCompilation();
+
             final String name = args[0].toString();
             final Object[] sendArgs = Arrays.copyOfRange(args, 1, args.length);
             return self.send(name, block, sendArgs);

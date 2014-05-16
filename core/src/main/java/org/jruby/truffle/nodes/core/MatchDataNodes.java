@@ -31,6 +31,8 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public Object getIndex(RubyMatchData matchData, int index) {
+            notDesignedForCompilation();
+
             if (index >= matchData.getValues().length) {
                 return NilPlaceholder.INSTANCE;
             } else {
@@ -53,6 +55,8 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public RubyArray toA(RubyMatchData matchData) {
+            notDesignedForCompilation();
+
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getValues());
         }
 
@@ -71,6 +75,8 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public RubyArray valuesAt(RubyMatchData matchData, Object[] args) {
+            notDesignedForCompilation();
+
             final int[] indicies = new int[args.length];
 
             for (int n = 0; n < args.length; n++) {

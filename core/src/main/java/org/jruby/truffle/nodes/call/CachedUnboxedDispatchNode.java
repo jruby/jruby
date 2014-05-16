@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.call;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
@@ -47,6 +48,8 @@ public class CachedUnboxedDispatchNode extends UnboxedDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+        RubyNode.notDesignedForCompilation();
+
         // Check the class is what we expect
 
         if (receiverObject.getClass() != expectedClass) {

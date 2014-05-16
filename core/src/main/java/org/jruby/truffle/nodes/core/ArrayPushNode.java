@@ -28,6 +28,8 @@ public class ArrayPushNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         RubyArray a = (RubyArray) array.execute(frame);
         a = (RubyArray) a.dup();
         a.slowPush(pushed.execute(frame));

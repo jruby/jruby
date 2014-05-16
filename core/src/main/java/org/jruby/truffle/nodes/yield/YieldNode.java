@@ -38,6 +38,8 @@ public class YieldNode extends RubyNode {
     @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
+        RubyNode.notDesignedForCompilation();
+
         Object[] argumentsObjects = new Object[arguments.length];
 
         for (int i = 0; i < arguments.length; i++) {

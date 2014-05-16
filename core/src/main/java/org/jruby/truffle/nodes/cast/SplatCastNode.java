@@ -52,6 +52,8 @@ public abstract class SplatCastNode extends RubyNode {
 
     @Specialization
     public RubyArray doObject(Object object) {
+        notDesignedForCompilation();
+
         if (object == NilPlaceholder.INSTANCE) {
             switch (nilBehavior) {
                 case EMPTY_ARRAY:

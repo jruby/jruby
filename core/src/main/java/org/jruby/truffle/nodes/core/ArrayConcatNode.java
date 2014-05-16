@@ -38,6 +38,8 @@ public final class ArrayConcatNode extends RubyNode {
     @ExplodeLoop
     @Override
     public void executeVoid(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         for (int n = 0; n < children.length; n++) {
             children[n].executeVoid(frame);
         }

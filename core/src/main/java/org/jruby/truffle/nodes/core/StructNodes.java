@@ -30,7 +30,7 @@ public abstract class StructNodes {
 
         @Specialization
         public NilPlaceholder initialize(RubyClass struct, Object[] args, Object block) {
-            CompilerDirectives.transferToInterpreter();
+            notDesignedForCompilation();
 
             final RubySymbol[] symbols = new RubySymbol[args.length];
 
