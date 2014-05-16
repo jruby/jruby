@@ -194,8 +194,6 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnum", order = 2)
         public RubyArray mulIntegerFixnum(RubyArray array, int count) {
-            notDesignedForCompilation();
-
             final int[] store = (int[]) array.store;
             final int storeLength = store.length;
             final int newStoreLength = storeLength * count;
@@ -503,7 +501,7 @@ public abstract class ArrayNodes {
             if (normalisedIndex < 0 || normalisedIndex >= array.size) {
                 return NilPlaceholder.INSTANCE;
             } else {
-                return ((double[]) array.store)[normalisedIndex];
+                return ((int[]) array.store)[normalisedIndex];
             }
         }
 

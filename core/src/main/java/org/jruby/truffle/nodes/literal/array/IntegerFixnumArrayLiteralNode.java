@@ -25,8 +25,6 @@ public class IntegerFixnumArrayLiteralNode extends ArrayLiteralNode {
     @ExplodeLoop
     @Override
     public RubyArray executeArray(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         final int[] executedValues = new int[values.length];
 
         for (int n = 0; n < values.length; n++) {

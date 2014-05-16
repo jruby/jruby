@@ -27,6 +27,12 @@ public abstract class RangeNodes {
     @CoreMethod(names = {"collect", "map"}, needsBlock = true, maxArgs = 0)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
 
+        private enum ArrayType {
+            UNKNOWN, DOUBLE, OBJECT
+        }
+
+        @CompilerDirectives.CompilationFinal private ArrayType arrayType = ArrayType.OBJECT;
+
         public CollectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -37,21 +43,63 @@ public abstract class RangeNodes {
 
         @Specialization
         public RubyArray collect(VirtualFrame frame, IntegerFixnumRange range, RubyProc block) {
-            notDesignedForCompilation();
+            final int begin = range.getBegin();
+            final int exclusiveEnd = range.getExclusiveEnd();
+            final int length = exclusiveEnd - begin;
 
-            final RubyContext context = getContext();
+            Object store = null;
 
-            final RubyArray array = new RubyArray(context.getCoreLibrary().getArrayClass());
+            switch (arrayType) {
+                case OBJECT:
+                    store = new Object[length];
+                    break;
+                case DOUBLE:
+                    store = new double[length];
+                    break;
+            }
 
             int count = 0;
 
             try {
-                for (int n = range.getBegin(); n < range.getExclusiveEnd(); n++) {
+                for (int n = 0; n < length; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
 
-                    array.slowPush(yield(frame, block, n));
+                    final Object value = yield(frame, block, n);
+
+                    switch (arrayType) {
+                        case UNKNOWN:
+                            if (value instanceof Double) {
+                                arrayType = ArrayType.DOUBLE;
+                                store = new double[length];
+                                ((double[]) store)[n] = (double) value;
+                            } else {
+                                arrayType = ArrayType.OBJECT;
+                                store = new Object[length];
+                                ((Object[]) store)[n] = value;
+                            }
+                            break;
+                        case OBJECT:
+                            ((Object[]) store)[n] = value;
+                            break;
+                        case DOUBLE:
+                            if (value instanceof Double) {
+                                ((double[]) store)[n] = (double) value;
+                            } else {
+                                CompilerDirectives.transferToInterpreterAndInvalidate();
+
+                                System.err.println("TRANSFER");
+
+                                arrayType = ArrayType.OBJECT;
+
+                                final Object[] objectStore = new Object[length];
+                                ArrayUtils.copy(store, objectStore, 0);
+                                objectStore[n] = value;
+                                store = objectStore;
+                            }
+                            break;
+                    }
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -59,7 +107,7 @@ public abstract class RangeNodes {
                 }
             }
 
-            return array;
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, length);
         }
 
     }

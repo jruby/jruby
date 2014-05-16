@@ -66,7 +66,7 @@ public class YieldNode extends RubyNode {
     @Override
     public Object isDefined(VirtualFrame frame) {
         notDesignedForCompilation();
-        
+
         if (RubyArguments.getBlock(frame.getArguments()) == null) {
             return NilPlaceholder.INSTANCE;
         } else {
