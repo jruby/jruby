@@ -284,17 +284,22 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "**", minArgs = 1, maxArgs = 1)
     public abstract static class PowNode extends CoreMethodNode {
 
+        @Child protected FixnumOrBignumNode fixnumOrBignum;
+
         public PowNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         public PowNode(PowNode prev) {
             super(prev);
+            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization
         public Object pow(int a, int b) {
-            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).pow(b));
+            // TODO(CS): I'd like to use CompilerDirectives.isConstant here - see if a is 2 or b is 2 for example (binary-trees.rb)
+            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).pow(b));
         }
 
         @Specialization
@@ -304,6 +309,8 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object pow(int a, BigInteger b) {
+            notDesignedForCompilation();
+
             final BigInteger bigA = BigInteger.valueOf(a);
 
             BigInteger result = BigInteger.ONE;
@@ -1164,8 +1171,6 @@ public abstract class FixnumNodes {
 
         @Specialization
         public NilPlaceholder step(VirtualFrame frame, int from, int to, int step, RubyProc block) {
-            notDesignedForCompilation();
-
             for (int i = from; i <= to; i += step) {
                 yield(frame, block, i);
             }

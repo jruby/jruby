@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core.array;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.ArrayUtils;
 import org.jruby.truffle.runtime.core.*;
 
@@ -55,7 +56,7 @@ public final class RubyArray extends RubyObject {
     }
 
     public static RubyArray fromObject(RubyClass arrayClass, Object object) {
-        CompilerAsserts.neverPartOfCompilation();
+        RubyNode.notDesignedForCompilation();
 
         final Object store;
 
@@ -79,7 +80,7 @@ public final class RubyArray extends RubyObject {
     }
 
     public static RubyArray fromObjects(RubyClass arrayClass, Object... objects) {
-        CompilerAsserts.neverPartOfCompilation();
+        RubyNode.notDesignedForCompilation();
 
         if (objects.length == 0) {
             return new RubyArray(arrayClass);
@@ -110,6 +111,10 @@ public final class RubyArray extends RubyObject {
             } else if (object instanceof RubyFloat) {
                 canUseInteger = false;
                 canUseLong = false;
+            } else {
+                canUseInteger = false;
+                canUseLong = false;
+                canUseDouble = false;
             }
         }
 

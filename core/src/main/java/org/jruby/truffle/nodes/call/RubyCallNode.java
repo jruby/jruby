@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.call;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -57,6 +58,9 @@ public class RubyCallNode extends RubyNode {
     private final boolean isSplatted;
 
     @Child protected DispatchHeadNode dispatchHead;
+
+    private final BranchProfile splatNotArrayProfile = new BranchProfile();
+    private final BranchProfile splatUnboxProfile = new BranchProfile();
 
     public RubyCallNode(RubyContext context, SourceSection section, String name, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
         super(context, section);
@@ -106,11 +110,30 @@ public class RubyCallNode extends RubyNode {
         }
 
         if (isSplatted) {
-            notDesignedForCompilation();
-            assert argumentsObjects[0] instanceof RubyArray;
-            return ((RubyArray) argumentsObjects[0]).slowToArray();
+            return splat(argumentsObjects[0]);
         } else {
             return argumentsObjects;
+        }
+    }
+
+    private Object[] splat(Object argument) {
+        // TODO(CS): what happens if isn't just one argument, or it isn't an Array?
+
+        if (!(argument instanceof RubyArray)) {
+            splatNotArrayProfile.enter();
+            notDesignedForCompilation();
+            throw new UnsupportedOperationException();
+        }
+
+        final RubyArray array = (RubyArray) argument;
+        final Object store = array.store;
+
+        if (store instanceof Object[]) {
+            return (Object[]) store;
+        } else {
+            splatUnboxProfile.enter();
+            notDesignedForCompilation();
+            return array.slowToArray();
         }
     }
 

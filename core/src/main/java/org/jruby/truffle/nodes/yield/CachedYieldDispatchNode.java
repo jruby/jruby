@@ -32,8 +32,6 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, RubyProc block, Object[] argumentsObjects) {
-        RubyNode.notDesignedForCompilation();
-
         if (block.getMethod().getCallTarget() != callNode.getCallTarget()) {
             return next.dispatch(frame, block, argumentsObjects);
         }

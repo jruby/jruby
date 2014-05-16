@@ -627,6 +627,18 @@ public class CoreLibrary {
         return mainObject;
     }
 
+    public RubyTrueClass getTrueObject() {
+        return trueObject;
+    }
+
+    public RubyFalseClass getFalseObject() {
+        return falseObject;
+    }
+
+    public RubyNilClass getNilObject() {
+        return nilObject;
+    }
+
     public RubyEncoding getDefaultEncoding() { return RubyEncoding.findEncodingByName(context.makeString("US-ASCII")); }
 
     public RubyHash getEnv() {

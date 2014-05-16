@@ -81,13 +81,13 @@ public abstract class RangeNodes {
 
         @Specialization
         public Object each(VirtualFrame frame, IntegerFixnumRange range, RubyProc block) {
-            notDesignedForCompilation();
+            final int exclusiveEnd = range.getExclusiveEnd();
 
             int count = 0;
 
             try {
                 outer:
-                for (int n = range.getBegin(); n < range.getExclusiveEnd(); n++) {
+                for (int n = range.getBegin(); n < exclusiveEnd; n++) {
                     while (true) {
                         if (CompilerDirectives.inInterpreter()) {
                             count++;
