@@ -1,19 +1,5 @@
 package org.jruby.util.io;
 
-import java.io.FileDescriptor;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channel;
-import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SeekableByteChannel;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.WritableByteChannel;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import com.sun.org.apache.bcel.internal.generic.DUP;
 import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
@@ -37,6 +23,18 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
+
+import java.io.FileDescriptor;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channel;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.WritableByteChannel;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class OpenFile {
 
@@ -649,7 +647,7 @@ public class OpenFile {
     }
 
     public boolean isSync() {
-        return (mode & SYNC) != 0;
+        return (mode & (SYNC | TTY)) != 0;
     }
 
     public boolean areBothEOF() throws IOException, BadDescriptorException {
