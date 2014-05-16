@@ -5,10 +5,6 @@ project 'JRuby Core' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-core'
 
-  source_control( 'http://github.com/jruby/jruby',
-                  :connection => 'scm:git:git://github.com/jruby/jruby.git',
-                  :developer_connection => 'scm:git:ssh://git@github.com/jruby/jruby.git' )
-
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
 

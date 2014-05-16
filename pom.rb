@@ -40,12 +40,12 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     snapshots 'false'
   end
 
-  source_control( 'https://github.com/jruby/jruby',
+  source_control( :url => 'https://github.com/jruby/jruby',
                   :connection => 'scm:git:git@jruby.org:jruby.git',
                   :developer_connection => 'scm:git:ssh://git@jruby.org/jruby.git' )
 
   distribution do
-    site( 'https://github.com/jruby/jruby',
+    site( :url => 'https://github.com/jruby/jruby',
           :id => 'gh-pages',
           :name => 'JRuby Site' )
   end

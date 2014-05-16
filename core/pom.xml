@@ -9,11 +9,6 @@
   </parent>
   <artifactId>jruby-core</artifactId>
   <name>JRuby Core</name>
-  <scm>
-    <connection>scm:git:git://github.com/jruby/jruby.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/jruby/jruby.git</developerConnection>
-    <url>http://github.com/jruby/jruby</url>
-  </scm>
   <properties>
     <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
     <jruby.basedir>${basedir}/..</jruby.basedir>
