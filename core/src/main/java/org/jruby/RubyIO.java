@@ -1611,13 +1611,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = {"tty?", "isatty"})
     public RubyBoolean tty_p(ThreadContext context) {
-        try {
-            return context.runtime.newBoolean(
-                    context.runtime.getPosix().isatty(
-                            getOpenFileChecked().getMainStreamSafe().getDescriptor().getFileDescriptor()));
-        } catch (BadDescriptorException e) {
-            throw context.runtime.newErrnoEBADFError();
-        }
+        Ruby runtime = context.runtime;
+        OpenFile fptr;
+
+        fptr = getOpenFileChecked();
+        if (fptr.isStdio()) return runtime.getTrue();
+        if (runtime.getPosix().isNative() && runtime.getPosix().libc().isatty(fptr.native_fd) != 0)
+            return runtime.getTrue();
+        return runtime.getFalse();
     }
     
     @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)

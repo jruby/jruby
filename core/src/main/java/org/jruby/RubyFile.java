@@ -1219,7 +1219,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         fptr.setPath(RubyFile.get_path(context, filename).asJavaString());
 
         sysopenInternal(fptr.getPath(), oflags, perm);
-        fptr.checkTTY(context.runtime);
+        fptr.checkTTY();
         if ((fmode & OpenFile.SETENC_BY_BOM) != 0) {
             EncodingUtils.ioSetEncodingByBOM(context, this);
         }

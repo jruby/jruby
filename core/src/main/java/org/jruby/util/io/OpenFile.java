@@ -65,6 +65,7 @@ public class OpenFile {
 
     public static final int PIPE_BUF = 512; // value of _POSIX_PIPE_BUF from Mac OS X 10.9
     public static final int BUFSIZ = 1024; // value of BUFSIZ from Mac OS X 10.9 stdio.h
+    public int native_fd;
 
     public static interface Finalizer {
 
@@ -2155,6 +2156,10 @@ public class OpenFile {
         } else {
             mode &= ~SETENC_BY_BOM;
         }
+    }
+
+    public boolean isStdio() {
+        return stdioIn != null || stdioOut != null;
     }
 
     @Deprecated
