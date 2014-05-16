@@ -76,12 +76,6 @@
       <version>${krypt.version}</version>
       <type>gem</type>
     </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>bouncy-castle-java</artifactId>
-      <version>${bc.version}</version>
-      <type>gem</type>
-    </dependency>
   </dependencies>
   <repositories>
     <repository>
@@ -190,14 +184,6 @@
                   <groupId>rubygems</groupId>
                   <artifactId>krypt-provider-jdk</artifactId>
                   <version>${krypt.version}</version>
-                  <type>gem</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>rubygems</groupId>
-                  <artifactId>bouncy-castle-java</artifactId>
-                  <version>${bc.version}</version>
                   <type>gem</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
