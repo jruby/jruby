@@ -9,14 +9,14 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import com.oracle.truffle.api.SourceSection;
-import com.oracle.truffle.api.dsl.Generic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
@@ -543,20 +543,33 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object each(VirtualFrame frame, RubyArray array, RubyProc block) {
-            outer: for (int n = 0; n < array.size(); n++) {
-                while (true) {
-                    try {
-                        yield(frame, block, array.get(n));
-                        continue outer;
-                    } catch (BreakException e) {
-                        breakProfile.enter();
-                        return e.getResult();
-                    } catch (NextException e) {
-                        nextProfile.enter();
-                        continue outer;
-                    } catch (RedoException e) {
-                        redoProfile.enter();
+            int count = 0;
+
+            try {
+                outer:
+                for (int n = 0; n < array.size(); n++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, array.get(n));
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
                     }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
                 }
             }
 
@@ -578,11 +591,23 @@ public abstract class ArrayNodes {
 
         @Specialization
         public NilPlaceholder eachWithIndex(VirtualFrame frame, RubyArray array, RubyProc block) {
-            for (int n = 0; n < array.size(); n++) {
-                try {
-                    yield(frame, block, array.get(n), n);
-                } catch (BreakException e) {
-                    break;
+            int count = 0;
+
+            try {
+                for (int n = 0; n < array.size(); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    try {
+                        yield(frame, block, array.get(n), n);
+                    } catch (BreakException e) {
+                        break;
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
                 }
             }
 
@@ -740,8 +765,20 @@ public abstract class ArrayNodes {
         public Object inject(VirtualFrame frame, RubyArray array, @SuppressWarnings("unused") UndefinedPlaceholder initial, RubyProc block) {
             Object accumulator = array.get(0);
 
-            for (int n = 1; n < array.size(); n++) {
-                accumulator = yield(frame, block, accumulator, array.get(n));
+            int count = 0;
+
+            try {
+                for (int n = 1; n < array.size(); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    accumulator = yield(frame, block, accumulator, array.get(n));
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
             }
 
             return accumulator;
@@ -755,8 +792,20 @@ public abstract class ArrayNodes {
 
             Object accumulator = initial;
 
-            for (int n = 0; n < array.size(); n++) {
-                accumulator = yield(frame, block, accumulator, array.get(n));
+            int count = 0;
+
+            try {
+                for (int n = 0; n < array.size(); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    accumulator = yield(frame, block, accumulator, array.get(n));
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
             }
 
             return accumulator;
@@ -866,10 +915,22 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray map(VirtualFrame frame, RubyArray array, RubyProc block) {
+            int count = 0;
+
             final RubyArray result = new RubyArray(array.getRubyClass().getContext().getCoreLibrary().getArrayClass());
 
-            for (int n = 0; n < array.size(); n++) {
-                result.push(yield(frame, block, array.get(n)));
+            try {
+                for (int n = 0; n < array.size(); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    result.push(yield(frame, block, array.get(n)));
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
             }
 
             return result;
@@ -889,8 +950,20 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray mapInPlace(VirtualFrame frame, RubyArray array, RubyProc block) {
-            for (int n = 0; n < array.size(); n++) {
-                array.set(n, yield(frame, block, array.get(n)));
+            int count = 0;
+
+            try {
+                for (int n = 0; n < array.size(); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    array.set(n, yield(frame, block, array.get(n)));
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
             }
 
             return array;
@@ -904,7 +977,7 @@ public abstract class ArrayNodes {
 
         public MinNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareDispatchNode = new DispatchHeadNode(context, sourceSection, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            compareDispatchNode = new DispatchHeadNode(context, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public MinNode(MinNode prev) {
@@ -1036,6 +1109,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
+        @SlowPath
         public Object product(RubyArray array, Object... args) {
             final RubyArray[] arrays = new RubyArray[1 + args.length];
             arrays[0] = array;
@@ -1056,6 +1130,7 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
+        @SlowPath
         @Specialization
         public RubyArray push(RubyArray array, Object... args) {
             for (int n = 0; n < args.length; n++) {
@@ -1135,11 +1210,23 @@ public abstract class ArrayNodes {
         public Object select(VirtualFrame frame, RubyArray array, RubyProc block) {
             final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
-            for (int n = 0; n < array.size(); n++) {
-                final Object value = array.get(n);
+            int count = 0;
 
-                if (yieldBoolean(frame, block, value)) {
-                    result.push(value);
+            try {
+                for (int n = 0; n < array.size(); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    final Object value = array.get(n);
+
+                    if (yieldBoolean(frame, block, value)) {
+                        result.push(value);
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
                 }
             }
 
@@ -1211,26 +1298,32 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "sort", maxArgs = 0)
     public abstract static class SortNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode compareDispatchNode;
+
         public SortNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            compareDispatchNode = new DispatchHeadNode(context, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public SortNode(SortNode prev) {
             super(prev);
+            compareDispatchNode = prev.compareDispatchNode;
         }
 
         @Specialization
-        public RubyArray sort(RubyArray array) {
+        public RubyArray sort(VirtualFrame frame, RubyArray array) {
             final RubyContext context = array.getRubyClass().getContext();
 
             final Object[] objects = array.asList().toArray();
+
+            final VirtualFrame finalFrame = frame;
 
             Arrays.sort(objects, new Comparator<Object>() {
 
                 @Override
                 public int compare(Object a, Object b) {
-                    final RubyBasicObject aBoxed = context.getCoreLibrary().box(a);
-                    return (int) aBoxed.getLookupNode().lookupMethod("<=>").call(null, aBoxed, null, b);
+                    // TODO(CS): node for this cast
+                    return (int) compareDispatchNode.dispatch(finalFrame, a, null, b);
                 }
 
             });
@@ -1291,6 +1384,7 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
+        @SlowPath
         @Specialization
         public RubyArray zip(RubyArray array, Object... args) {
             final RubyContext context = getContext();

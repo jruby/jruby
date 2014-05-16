@@ -63,6 +63,11 @@ public final class CoreSourceSection implements NullSourceSection {
     }
 
     @Override
+    public String getShortDescription() {
+        return toString();
+    }
+
+    @Override
     public String toString() {
         return name;
     }

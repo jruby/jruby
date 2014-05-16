@@ -12,10 +12,11 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.frame.PackedFrame;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.lookup.LookupFork;
@@ -127,7 +128,7 @@ public class RubyModule extends RubyObject implements LookupNode {
      * Set the value of a constant, possibly redefining it.
      */
     public void setConstant(String constantName, Object value) {
-        assert RubyContext.shouldObjectBeVisible(value);
+        assert RubyContext.shouldObjectBeVisible(value) : value.getClass();
         checkFrozen();
         getConstants().put(constantName, new RubyConstant(value, false));
         newVersion();
@@ -357,13 +358,21 @@ public class RubyModule extends RubyObject implements LookupNode {
         }
     }
 
-    public static void setCurrentVisibility(Frame frame, Visibility visibility) {
-        frame.setObject(frame.getFrameDescriptor().findFrameSlot(VISIBILITY_FRAME_SLOT_ID), visibility);
+    public static void setCurrentVisibility(Visibility visibility) {
+        final Frame callerFrame = RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+
+        assert callerFrame != null;
+        assert callerFrame.getFrameDescriptor() != null;
+
+        final FrameSlot visibilitySlot = callerFrame.getFrameDescriptor().findFrameSlot(VISIBILITY_FRAME_SLOT_ID);
+        assert visibilitySlot != null;
+
+        callerFrame.setObject(visibilitySlot, visibility);
     }
 
-    public void visibilityMethod(PackedFrame frame, Object[] arguments, Visibility visibility) {
+    public void visibilityMethod(Object[] arguments, Visibility visibility) {
         if (arguments.length == 0) {
-            setCurrentVisibility(frame.unpack(), visibility);
+            setCurrentVisibility(visibility);
         } else {
             for (Object arg : arguments) {
                 final RubyMethod method = lookupMethod(arg.toString());

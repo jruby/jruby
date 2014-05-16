@@ -30,6 +30,11 @@ public final class CoreSource implements Source {
     }
 
     @Override
+    public String getShortName() {
+        return name;
+    }
+
+    @Override
     public String getCode() {
         return name;
     }

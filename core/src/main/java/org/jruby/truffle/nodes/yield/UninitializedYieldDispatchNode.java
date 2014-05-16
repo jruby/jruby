@@ -11,36 +11,54 @@ package org.jruby.truffle.nodes.yield;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
-import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.call.*;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.NodeCost;
+import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.api.nodes.NodeUtil;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.methods.*;
 
-/**
- * An uninitialized node in the yield dispatch chain.
- */
+@NodeInfo(cost = NodeCost.UNINITIALIZED)
 public class UninitializedYieldDispatchNode extends YieldDispatchNode {
 
-    public UninitializedYieldDispatchNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    private static final int MAX_DISPATCHES = 4;
+    private static final int MAX_DEPTH = MAX_DISPATCHES + 1; // MAX_DISPATCHES + UninitializedDispatchNode
+
+    public UninitializedYieldDispatchNode(RubyContext context) {
+        super(context);
     }
 
     @Override
     public Object dispatch(VirtualFrame frame, RubyProc block, Object[] argumentsObjects) {
-        CompilerDirectives.transferToInterpreter();
+        CompilerDirectives.transferToInterpreterAndInvalidate();
 
-        final MethodImplementation implementation = block.getMethod().getImplementation();
+        int depth = getDepth();
+        final YieldDispatchHeadNode dispatchHead = (YieldDispatchHeadNode) NodeUtil.getNthParent(this, depth);
 
-        if (implementation instanceof InlinableMethodImplementation && InlineHeuristic.shouldInlineYield((InlinableMethodImplementation) implementation)) {
-            final InlinedYieldDispatchNode dispatch = new InlinedYieldDispatchNode(getContext(), getSourceSection(), (InlinableMethodImplementation) implementation);
-            replace(dispatch);
-            return dispatch.dispatch(frame, block, argumentsObjects);
-        } else {
-            final GeneralYieldDispatchNode dispatch = new GeneralYieldDispatchNode(getContext(), getSourceSection());
-            replace(dispatch);
-            return dispatch.dispatch(frame, block, argumentsObjects);
+        if (depth > MAX_DEPTH) {
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "resorting to a general yield node");
+
+            final GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext());
+            dispatchHead.getDispatch().replace(newGeneralYield);
+            return newGeneralYield.dispatch(frame, block, argumentsObjects);
         }
+
+        final CachedYieldDispatchNode dispatch = new CachedYieldDispatchNode(getContext(), block, this);
+        replace(dispatch);
+        return dispatch.dispatch(frame, block, argumentsObjects);
+    }
+
+    public int getDepth() {
+        int depth = 1;
+        Node parent = this.getParent();
+
+        while (!(parent instanceof YieldDispatchHeadNode)) {
+            parent = parent.getParent();
+            depth++;
+        }
+
+        return depth;
     }
 
 }

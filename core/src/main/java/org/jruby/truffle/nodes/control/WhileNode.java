@@ -64,7 +64,7 @@ public class WhileNode extends RubyNode {
             }
         } finally {
             if (CompilerDirectives.inInterpreter()) {
-                getRootNode().reportLoopCount(count);
+                ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
             }
         }
 

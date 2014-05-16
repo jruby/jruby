@@ -14,6 +14,7 @@ import java.util.*;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.*;
@@ -79,7 +80,7 @@ public abstract class HashNodes {
                 if (hash.defaultBlock == null) {
                     return NilPlaceholder.INSTANCE;
                 } else {
-                    return hash.defaultBlock.call(frame.pack(), hash, index);
+                    return hash.defaultBlock.call(hash, index);
                 }
             } else {
                 return value;
@@ -146,8 +147,20 @@ public abstract class HashNodes {
 
         @Specialization
         public RubyHash each(VirtualFrame frame, RubyHash hash, RubyProc block) {
-            for (Map.Entry<Object, Object> entry : hash.storage.entrySet()) {
-                yield(frame, block, RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), entry.getKey(), entry.getValue()));
+            int count = 0;
+
+            try {
+                for (Map.Entry<Object, Object> entry : hash.storage.entrySet()) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    yield(frame, block, RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), entry.getKey(), entry.getValue()));
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
             }
 
             return hash;
@@ -240,8 +253,20 @@ public abstract class HashNodes {
         public RubyArray map(VirtualFrame frame, RubyHash hash, RubyProc block) {
             final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
-            for (Map.Entry<Object, Object> entry : hash.storage.entrySet()) {
-                result.push(yield(frame, block, entry.getKey(), entry.getValue()));
+            int count = 0;
+
+            try {
+                for (Map.Entry<Object, Object> entry : hash.storage.entrySet()) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    result.push(yield(frame, block, entry.getKey(), entry.getValue()));
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
             }
 
             return result;

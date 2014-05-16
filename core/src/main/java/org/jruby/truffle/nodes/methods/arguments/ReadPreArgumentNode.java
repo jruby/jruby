@@ -33,9 +33,7 @@ public class ReadPreArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyArguments arguments = frame.getArguments(RubyArguments.class);
-
-        if (index >= arguments.getUserArgumentsCount()) {
+        if (index >= RubyArguments.getUserArgumentsCount(frame.getArguments())) {
             switch (missingArgumentBehaviour) {
                 case RUNTIME_ERROR:
                     break;
@@ -48,7 +46,7 @@ public class ReadPreArgumentNode extends RubyNode {
             }
         }
 
-        return arguments.getUserArgument(index);
+        return RubyArguments.getUserArgument(frame.getArguments(), index);
     }
 
 }

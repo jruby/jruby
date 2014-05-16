@@ -176,7 +176,7 @@ end
 
 def warmup
   100000.times do
-    run(1)
+    run(10)
   end
 end
 

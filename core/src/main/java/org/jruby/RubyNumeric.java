@@ -395,12 +395,15 @@ public class RubyNumeric extends RubyObject {
     protected IRubyObject[] getCoerced(ThreadContext context, IRubyObject other, boolean error) {
         IRubyObject result;
         
+        IRubyObject savedError = context.runtime.getGlobalVariables().get("$!");
         try {
             result = other.callMethod(context, "coerce", this);
         } catch (RaiseException e) {
             if (error) {
                 throw getRuntime().newTypeError(
                         other.getMetaClass().getName() + " can't be coerced into " + getMetaClass().getName());
+            } else {
+                context.runtime.getGlobalVariables().set("$!", savedError);
             }
              
             return null;
@@ -445,15 +448,14 @@ public class RubyNumeric extends RubyObject {
         IRubyObject result;
 
         IRubyObject savedError = context.runtime.getGlobalVariables().get("$!");
-
         try {
             result = coerceBody(context, other);
         } catch (RaiseException e) {
-            context.runtime.getGlobalVariables().set("$!", savedError);
-
             if (err) {
                 throw getRuntime().newTypeError(
                         other.getMetaClass().getName() + " can't be coerced into " + getMetaClass().getName());
+            } else {
+                context.runtime.getGlobalVariables().set("$!", savedError);
             }
             return null;
         }

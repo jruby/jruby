@@ -51,7 +51,7 @@ public abstract class SplatCastNode extends RubyNode {
     }
 
     @Specialization
-    public RubyArray doObject(VirtualFrame frame, Object object) {
+    public RubyArray doObject(Object object) {
         if (object == NilPlaceholder.INSTANCE) {
             switch (nilBehavior) {
                 case EMPTY_ARRAY:
@@ -75,7 +75,7 @@ public abstract class SplatCastNode extends RubyNode {
             final RubyMethod toA = boxedObject.getLookupNode().lookupMethod("to_a");
 
             if (toA != null) {
-                final Object toAResult = toA.call(frame.pack(), boxedObject, null);
+                final Object toAResult = toA.call(boxedObject, null);
 
                 if (toAResult instanceof RubyArray) {
                     return (RubyArray) toAResult;

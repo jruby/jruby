@@ -78,7 +78,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
     @Override
     public TruffleMethod truffelize(DynamicMethod originalMethod, ArgsNode argsNode, Node bodyNode) {
         final MethodDefinitionNode methodDefinitionNode = truffleContext.getTranslator().parse(truffleContext, null, argsNode, bodyNode);
-        return new TruffleMethod(originalMethod, methodDefinitionNode.getCallTarget());
+        return new TruffleMethod(originalMethod, Truffle.getRuntime().createCallTarget(methodDefinitionNode.getMethodRootNode()));
     }
 
     @Override
@@ -86,9 +86,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
         try {
             final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, truffleContext.getSourceManager().get(rootNode.getPosition().getFile()), parserContext, parentFrame, rootNode);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
-
-            final RubyArguments arguments = new RubyArguments(RubyArguments.create(parentFrame, self, null));
-            return callTarget.call(null, arguments);
+            return callTarget.call(RubyArguments.pack(parentFrame, self, null));
         } catch (ThrowException e) {
             throw new RaiseException(truffleContext.getCoreLibrary().nameErrorUncaughtThrow(e.getTag()));
         } catch (RaiseException | BreakShellException | QuitException e) {

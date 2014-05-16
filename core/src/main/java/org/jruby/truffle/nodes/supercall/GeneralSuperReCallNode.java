@@ -13,8 +13,10 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
@@ -26,62 +28,28 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
-public class GeneralSuperReCallNode extends RubyNode {
+public class GeneralSuperReCallNode extends AbstractGeneralSuperCallNode {
 
-    @CompilerDirectives.CompilationFinal private Assumption unmodifiedAssumption;
-    @CompilerDirectives.CompilationFinal private RubyMethod method;
+    @Child protected IndirectCallNode callNode;
 
-    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, String name) {
+        super(context, sourceSection, name);
+        callNode = Truffle.getRuntime().createIndirectCallNode();
     }
 
     @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
-        final RubyArguments arguments = frame.getArguments(RubyArguments.class);
-
         // Check we have a method and the module is unmodified
 
-        if (method == null || !unmodifiedAssumption.isValid()) {
+        if (!guard()) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-
-            // Lookup method
-
-            final RubyModule declaringModule = getMethod().getDeclaringModule();
-
-            method = ((RubyClass) declaringModule).getSuperclass().lookupMethod(getMethod().getName());
-
-            if (method == null || method.isUndefined()) {
-                method = null;
-                throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(getMethod().getName(), arguments.getSelf().toString()));
-            }
-
-            unmodifiedAssumption = declaringModule.getUnmodifiedAssumption();
+            lookup();
         }
 
         // Call the method
 
-        return method.call(frame.pack(), arguments.getSelf(), arguments.getBlock(), arguments.getArgumentsClone());
-    }
-
-    @Override
-    public Object isDefined(VirtualFrame frame) {
-        final RubyContext context = getContext();
-
-        try {
-            final RubyBasicObject self = context.getCoreLibrary().box(frame.getArguments(RubyArguments.class).getSelf());
-            final RubyBasicObject receiverRubyObject = context.getCoreLibrary().box(self);
-
-            final RubyMethod method = receiverRubyObject.getRubyClass().getSuperclass().lookupMethod(getMethod().getName());
-
-            if (method == null || method.isUndefined() || !method.isVisibleTo(self)) {
-                return NilPlaceholder.INSTANCE;
-            } else {
-                return context.makeString("super");
-            }
-        } catch (Exception e) {
-            return NilPlaceholder.INSTANCE;
-        }
+        return callNode.call(frame, method.getCallTarget(), frame.getArguments());
     }
 
 }

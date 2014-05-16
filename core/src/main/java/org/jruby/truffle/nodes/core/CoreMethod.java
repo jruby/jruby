@@ -30,8 +30,6 @@ public @interface CoreMethod {
 
     boolean needsBlock() default false;
 
-    boolean appendCallNode() default false;
-
     int minArgs() default Arity.NO_MINIMUM;
 
     int maxArgs() default Arity.NO_MAXIMUM;

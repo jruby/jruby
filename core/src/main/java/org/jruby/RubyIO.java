@@ -1121,13 +1121,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
             try {
                 return block.yield(context, io);
             } finally {
+                IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
                 try {
                     io.getMetaClass().finvoke(context, io, "close", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
                 } catch (RaiseException re) {
                     RubyException rubyEx = re.getException();
                     if (rubyEx.kind_of_p(context, runtime.getStandardError()).isTrue()) {
                         // MRI behavior: swallow StandardErorrs
-                        runtime.getGlobalVariables().clear("$!");
+                        runtime.getGlobalVariables().set("$!", oldExc);
                     } else {
                         throw re;
                     }

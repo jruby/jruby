@@ -19,7 +19,6 @@ import org.jruby.truffle.runtime.core.*;
  */
 public class DispatchHeadNode extends DispatchNode {
 
-    private final RubyContext context;
     private final String name;
     private final boolean isSplatted;
 
@@ -30,23 +29,19 @@ public class DispatchHeadNode extends DispatchNode {
 
     public static final Object MISSING = new Object();
 
-    private final MissingBehavior missingBehavior;
-
     @Child protected UnboxedDispatchNode dispatch;
 
-    public DispatchHeadNode(RubyContext context, SourceSection sourceSection, String name, boolean isSplatted, MissingBehavior missingBehavior) {
-        super(context, sourceSection);
+    public DispatchHeadNode(RubyContext context, String name, boolean isSplatted, MissingBehavior missingBehavior) {
+        super(context);
 
         assert context != null;
         assert name != null;
 
-        this.context = context;
         this.name = name;
         this.isSplatted = isSplatted;
-        this.missingBehavior = missingBehavior;
 
-        final UninitializedDispatchNode uninitializedDispatch = new UninitializedDispatchNode(context, sourceSection, name, missingBehavior);
-        dispatch = new UninitializedBoxingDispatchNode(context, sourceSection, uninitializedDispatch);
+        final UninitializedDispatchNode uninitializedDispatch = new UninitializedDispatchNode(context, name, missingBehavior);
+        dispatch = new UninitializedBoxingDispatchNode(context, uninitializedDispatch);
     }
 
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
@@ -61,7 +56,7 @@ public class DispatchHeadNode extends DispatchNode {
     public Object respecialize(VirtualFrame frame, String reason, Object receiverObject, RubyProc blockObject, Object... argumentObjects) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final DispatchHeadNode newHead = new DispatchHeadNode(context, getSourceSection(), name, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
+        final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), name, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
         replace(newHead, reason);
         return newHead.dispatch(frame, receiverObject, blockObject, argumentObjects);
     }

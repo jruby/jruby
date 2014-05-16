@@ -28,7 +28,7 @@ public class AtExitManager {
         final ListIterator<RubyProc> iterator = blocks.listIterator(blocks.size());
 
         while (iterator.hasPrevious()) {
-            iterator.previous().call(null);
+            iterator.previous().call();
         }
     }
 }

@@ -1195,6 +1195,7 @@ public class RubyKernel {
         }
         IRubyObject nil = runtime.getNil();
         RubyClass stopIteration = runtime.getStopIteration();
+        IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
         try {
             while (true) {
                 block.yieldSpecific(context);
@@ -1204,6 +1205,8 @@ public class RubyKernel {
         } catch (RaiseException ex) {
             if (!stopIteration.op_eqq(context, ex.getException()).isTrue()) {
                 throw ex;
+            } else {
+                runtime.getGlobalVariables().set("$!", oldExc);
             }
         }
         return nil;
@@ -1508,6 +1511,7 @@ public class RubyKernel {
         System.setProperty("user.dir", runtime.getCurrentDirectory());
 
         if (nativeExec) {
+            IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
             try {
                 ShellLauncher.LaunchConfig cfg = new ShellLauncher.LaunchConfig(runtime, args, true);
 
@@ -1535,13 +1539,14 @@ public class RubyKernel {
                         envStrings.add(envEntry.getKey() + "=" + envEntry.getValue());
                     }
                     envStrings.add(null);
-                    
+
                     runtime.getPosix().execve(progStr, argv, (String[]) envStrings.toArray(new String[0]));
                 }
 
                 // Only here because native exec could not exec (always -1)
                 nativeFailed = true;
             } catch (RaiseException e) {
+                runtime.getGlobalVariables().set("$!", oldExc);
             } catch (Exception e) {
                 throw runtime.newErrnoENOENTError("cannot execute: " + e.getLocalizedMessage());
             }

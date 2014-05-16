@@ -15,7 +15,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.call.DispatchNode;
-import org.jruby.truffle.nodes.debug.RubyProxyNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
@@ -97,10 +96,6 @@ public abstract class RubyNode extends Node {
 
     public NilPlaceholder executeNilPlaceholder(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectNilPlaceholder(execute(frame));
-    }
-
-    public Node executeNode(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectNode(execute(frame));
     }
 
     public Object[] executeObjectArray(VirtualFrame frame) throws UnexpectedResultException {
@@ -198,21 +193,12 @@ public abstract class RubyNode extends Node {
         execute(frame);
     }
 
-    /**
-     * If you aren't sure whether you have a normal {@link RubyNode} or a {@link RubyProxyNode},
-     * this method will return the real node, whether that is this node, or whether this node is a
-     * proxy and you actually need the child.
-     */
     public RubyNode getNonProxyNode() {
         return this;
     }
 
     public RubyContext getContext() {
         return context;
-    }
-
-    public RubyMethod getMethod() {
-        return ((RubyRootNode) getRootNode()).getMethod();
     }
 
 }

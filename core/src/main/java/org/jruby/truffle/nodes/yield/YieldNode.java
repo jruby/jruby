@@ -25,13 +25,13 @@ import org.jruby.truffle.runtime.core.array.RubyArray;
 public class YieldNode extends RubyNode {
 
     @Children protected final RubyNode[] arguments;
-    @Child protected YieldDispatchNode dispatch;
+    @Child protected YieldDispatchHeadNode dispatch;
     private final boolean unsplat;
 
     public YieldNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments, boolean unsplat) {
         super(context, sourceSection);
         this.arguments = arguments;
-        dispatch = new UninitializedYieldDispatchNode(getContext(), getSourceSection());
+        dispatch = new YieldDispatchHeadNode(getContext());
         this.unsplat = unsplat;
     }
 
@@ -44,7 +44,7 @@ public class YieldNode extends RubyNode {
             argumentsObjects[i] = arguments[i].execute(frame);
         }
 
-        final RubyProc block = frame.getArguments(RubyArguments.class).getBlock();
+        final RubyProc block = RubyArguments.getBlock(frame.getArguments());
 
         if (block == null) {
             CompilerDirectives.transferToInterpreter();
@@ -63,9 +63,7 @@ public class YieldNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        final RubyArguments args = frame.getArguments(RubyArguments.class);
-
-        if (args.getBlock() == null) {
+        if (RubyArguments.getBlock(frame.getArguments()) == null) {
             return NilPlaceholder.INSTANCE;
         } else {
             return getContext().makeString("yield");

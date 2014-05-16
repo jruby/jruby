@@ -89,7 +89,7 @@ public abstract class
 
         @Specialization
         public Object binding(VirtualFrame frame, Object self) {
-            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(), self, frame.getCaller().unpack().materialize());
+            return new RubyBinding(getContext().getCoreLibrary().getBindingClass(), self, RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize());
         }
     }
 
@@ -105,8 +105,8 @@ public abstract class
         }
 
         @Specialization
-        public boolean blockGiven(VirtualFrame frame) {
-            return frame.getCaller().unpack().getArguments(RubyArguments.class).getBlock() != null;
+        public boolean blockGiven() {
+            return RubyArguments.getBlock(RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
         }
     }
 
@@ -289,6 +289,8 @@ public abstract class
         public RubyString gets(VirtualFrame frame) {
             final RubyContext context = getContext();
 
+            final Frame caller = RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+
             final ThreadManager threadManager = context.getThreadManager();
 
             String line;
@@ -307,11 +309,10 @@ public abstract class
 
             // Set the local variable $_ in the caller
 
-            final Frame unpacked = frame.getCaller().unpack();
-            final FrameSlot slot = unpacked.getFrameDescriptor().findFrameSlot("$_");
+            final FrameSlot slot = caller.getFrameDescriptor().findFrameSlot("$_");
 
             if (slot != null) {
-                unpacked.setObject(slot, rubyLine);
+                caller.setObject(slot, rubyLine);
             }
 
             return rubyLine;
@@ -345,7 +346,7 @@ public abstract class
 
         public IntegerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toInt = new DispatchHeadNode(context, getSourceSection(), "to_int", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toInt = new DispatchHeadNode(context, "to_int", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public IntegerNode(IntegerNode prev) {
@@ -557,7 +558,7 @@ public abstract class
 
         public PrettyInspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context, getSourceSection(), "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public PrettyInspectNode(PrettyInspectNode prev) {
@@ -646,7 +647,7 @@ public abstract class
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = new DispatchHeadNode(context, getSourceSection(), "initialize", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initialize = new DispatchHeadNode(context, "initialize", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public RaiseNode(RaiseNode prev) {
@@ -730,7 +731,7 @@ public abstract class
 
         public StringNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context, getSourceSection(), "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public StringNode(StringNode prev) {

@@ -86,8 +86,8 @@ def binary_trees(max_depth)
 end
 
 def warmup
-  10000.times do
-    binary_trees(1)
+  1000.times do
+    binary_trees(10)
   end
 end
 

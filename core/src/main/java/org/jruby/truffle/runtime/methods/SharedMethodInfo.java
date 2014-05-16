@@ -19,11 +19,16 @@ public class SharedMethodInfo {
 
     private final SourceSection sourceSection;
     private final String name;
+    private final boolean isBlock;
     private final org.jruby.ast.Node parseTree;
 
-    public SharedMethodInfo(SourceSection sourceSection, String name, org.jruby.ast.Node parseTree) {
+    public SharedMethodInfo(SourceSection sourceSection, String name, boolean isBlock, org.jruby.ast.Node parseTree) {
+        assert sourceSection != null;
+        assert name != null;
+
         this.sourceSection = sourceSection;
         this.name = name;
+        this.isBlock = isBlock;
         this.parseTree = parseTree;
     }
 
@@ -35,8 +40,17 @@ public class SharedMethodInfo {
         return name;
     }
 
+    public boolean isBlock() {
+        return isBlock;
+    }
+
     public org.jruby.ast.Node getParseTree() {
         return parseTree;
+    }
+
+    @Override
+    public String toString() {
+        return name + ":" + sourceSection.getShortDescription();
     }
 
 }

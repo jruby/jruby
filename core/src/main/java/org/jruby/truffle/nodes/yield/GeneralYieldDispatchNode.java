@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -9,23 +9,30 @@
  */
 package org.jruby.truffle.nodes.yield;
 
-import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.frame.*;
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.*;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.NodeCost;
+import com.oracle.truffle.api.nodes.NodeInfo;
+import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 
-/**
- * A yield dispatch node that just calls {@link RubyProc#call} as normal.
- */
+@NodeInfo(cost = NodeCost.MEGAMORPHIC)
 public class GeneralYieldDispatchNode extends YieldDispatchNode {
 
-    public GeneralYieldDispatchNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    @Child protected IndirectCallNode callNode;
+
+    public GeneralYieldDispatchNode(RubyContext context) {
+        super(context);
+        callNode = Truffle.getRuntime().createIndirectCallNode();
     }
 
     @Override
     public Object dispatch(VirtualFrame frame, RubyProc block, Object[] argumentsObjects) {
-        return block.call(frame.pack(), argumentsObjects);
+        final RubyMethod method = block.getMethod();
+        return callNode.call(frame, method.getCallTarget(), RubyArguments.pack(method.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects));
     }
 
 }
