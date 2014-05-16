@@ -674,6 +674,27 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return newStringNoCopy(runtime, new ByteList(bytes, false));
     }
 
+    // str_independent
+    public boolean independent() {
+        return shareLevel == SHARE_LEVEL_NONE;
+    }
+
+    // str_make_independent, modified to create a new String rather than possibly modifying a frozen one
+    public RubyString makeIndependent() {
+        RubyClass klass = metaClass;
+        RubyString str = strDup(klass.getClassRuntime(), klass);
+        str.modify();
+        str.setFrozen(true);
+        str.infectBy(this);
+        return str;
+    }
+
+    // This should use the "default process encoding". We default to UTF-8 because MRI does on Windows.
+    // MRI: EXPORT_STR macro in process.c
+    public RubyString export(ThreadContext context) {
+        return EncodingUtils.strConvEncOpts(context, this, null, UTF8Encoding.INSTANCE, 0, context.nil);
+    }
+
     /** Encoding aware String construction routines for 1.9
      * 
      */
@@ -975,6 +996,20 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             modify();
             value.setRealSize(length);
         }
+    }
+
+    // rb_str_new_frozen, at least in spirit
+    public RubyString newFrozen() {
+        RubyClass klass;
+        RubyString str = this;
+
+        if (isFrozen()) return this;
+        klass = getMetaClass();
+        str = strDup(klass.getClassRuntime());
+        str.setCodeRange(getCodeRange());
+        str.modify();
+        str.setFrozen(true);
+        return str;
     }
 
     /** rb_str_resize

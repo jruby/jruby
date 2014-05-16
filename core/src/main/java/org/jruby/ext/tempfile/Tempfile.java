@@ -79,6 +79,7 @@ public class Tempfile extends org.jruby.RubyFile {
 
     private File tmpFile = null;
     protected IRubyObject opts;
+    protected int mode;
 
     // This should only be called by this and RubyFile.
     // It allows this object to be created without a IOHandler.
@@ -86,14 +87,9 @@ public class Tempfile extends org.jruby.RubyFile {
         super(runtime, type);
     }
 
-    @Override
-    public IRubyObject initialize(IRubyObject[] args, Block block) {
-        return initializeCommon(getRuntime().getCurrentContext(), args);
-    }
-
     @JRubyMethod(required = 1, optional = 2, visibility = PRIVATE)
     @Override
-    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block block) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         return initializeCommon(context, args);
     }
     
@@ -148,6 +144,7 @@ public class Tempfile extends org.jruby.RubyFile {
             } catch (IOException e) {
                 throw context.runtime.newIOErrorFromException(e);
             }
+            mode = ioOptions.getModeFlags().getFlags();
 
             return context.nil;
         }
@@ -160,14 +157,15 @@ public class Tempfile extends org.jruby.RubyFile {
         openFile.setMode(ioOptions.getModeFlags().getOpenFileFlags());
         openFile.setPath(path);
             
-        sysopenInternal19(path, ioOptions.getModeFlags().getOpenFileFlags(), 0600);
+        sysopenInternal(path, ioOptions.getModeFlags().getOpenFileFlags(), 0600);
     }
 
     @JRubyMethod(visibility = PUBLIC)
-    public IRubyObject open() {
-        if (!isClosed()) ioClose(getRuntime());
+    public IRubyObject open(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        if (!isClosed()) ioClose(runtime);
 
-        openInternal(path, openFile.getModeAsString(getRuntime()));
+        openFile(context, new IRubyObject[]{runtime.newString(path), runtime.newFixnum(mode), opts});
 
         return this;
     }
@@ -279,5 +277,10 @@ public class Tempfile extends org.jruby.RubyFile {
         } finally {
             tmpFile.delete();
         }
+    }
+
+    @Deprecated
+    public IRubyObject initialize19(IRubyObject[] args, Block block) {
+        return initialize(getRuntime().getCurrentContext(), args, block);
     }
 }

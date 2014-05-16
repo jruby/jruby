@@ -1867,13 +1867,19 @@ public class RubyClass extends RubyModule {
     protected ObjectMarshal marshal;
     private Set<RubyClass> subclasses;
     public static final int CS_IDX_INITIALIZE = 0;
-    public static final String[] CS_NAMES = {
-        "initialize"
+    public enum CS_NAMES {
+        INITIALIZE("initialize");
+
+        private CS_NAMES(String id) {
+            this.id = id;
+        }
+
+        public final String id;
     };
-    private final CallSite[] baseCallSites = new CallSite[CS_NAMES.length];
+    private final CallSite[] baseCallSites = new CallSite[CS_NAMES.values().length];
     {
-        for(int i = 0; i < CS_NAMES.length; i++) {
-            baseCallSites[i] = MethodIndex.getFunctionalCallSite(CS_NAMES[i]);
+        for(int i = 0; i < baseCallSites.length; i++) {
+            baseCallSites[i] = MethodIndex.getFunctionalCallSite(CS_NAMES.values()[i].id);
         }
     }
 

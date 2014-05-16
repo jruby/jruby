@@ -321,12 +321,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    public IRubyObject initialize(IRubyObject[] args, Block block) {
-        return initialize19(null, args, block);
-    }
-
+    // rb_file_initialize
     @JRubyMethod(name = "initialize", required = 1, optional = 2, visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block block) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         if (openFile != null) {
             throw context.runtime.newRuntimeError("reinitializing File");
         }
@@ -335,15 +332,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             IRubyObject fd = TypeConverter.convertToTypeWithCheck(args[0], context.runtime.getFixnum(), "to_int");
             if (!fd.isNil()) {
                 if (args.length == 1) {
-                    return super.initialize19(context, fd, block);
+                    return super.initialize(context, fd, block);
                 } else if (args.length == 2) {
-                    return super.initialize19(context, fd, args[1], block);
+                    return super.initialize(context, fd, args[1], block);
                 }
-                return super.initialize19(context, fd, args[1], args[2], block);
+                return super.initialize(context, fd, args[1], args[2], block);
             }
         }
 
-        return openFile19(context, args);
+        return openFile(context, args);
     }
 
     @JRubyMethod(required = 1)
@@ -1155,7 +1152,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     // mri: rb_open_file + rb_scan_open_args
-    private IRubyObject openFile19(ThreadContext context, IRubyObject args[]) {
+    protected IRubyObject openFile(ThreadContext context, IRubyObject args[]) {
         Ruby runtime = context.runtime;
         RubyString filename = get_path(context, args[0]);
 
@@ -1170,7 +1167,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             case 2: {
                 IRubyObject test = TypeConverter.checkHashType(runtime, args[1]);
                 if (test instanceof RubyHash) {
-                    options = (RubyHash) test;
+                    options = test;
                 } else {
                     pm[EncodingUtils.VMODE] = args[1];
                 }
@@ -1179,7 +1176,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             case 3: {
                 IRubyObject test = TypeConverter.checkHashType(runtime, args[2]);
                 if (test instanceof RubyHash) {
-                    options = (RubyHash) test;
+                    options = test;
                 } else {
                     pm[EncodingUtils.PERM] = args[2];
                 }
@@ -1215,14 +1212,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         
         EncodingUtils.validateEncodingBinmode(context, fmode_p, convConfig.getEcflags(), convConfig);
         
-        MakeOpenFile();
-        
-        openFile.setMode(fmode_p[0]);
-        openFile.encs.copy(convConfig);
-        openFile.setPath(RubyFile.get_path(context, filename).asJavaString());
+        OpenFile fptr = MakeOpenFile();
 
-        sysopenInternal19(openFile.getPath(), oflags, perm);
-//        io_check_tty(fptr);
+        fptr.setMode(fmode_p[0]);
+        fptr.encs.copy(convConfig);
+        fptr.setPath(RubyFile.get_path(context, filename).asJavaString());
+
+        sysopenInternal(fptr.getPath(), oflags, perm);
+        fptr.checkTTY(context.runtime);
         if ((fmode & OpenFile.SETENC_BY_BOM) != 0) {
             EncodingUtils.ioSetEncodingByBOM(context, this);
         }
@@ -1230,54 +1227,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return this;
     }
 
-    // 1.8
-    private IRubyObject openFile(IRubyObject args[]) {
-        Ruby runtime = getRuntime();
-        RubyString filename = get_path(runtime.getCurrentContext(), args[0]);
-
-        path = adjustRootPathOnWindows(runtime, filename.asJavaString(), runtime.getCurrentDirectory());
-
-        String modeString;
-        IOOptions modes;
-        int perm;
-
-        if ((args.length > 1 && args[1] instanceof RubyFixnum) || (args.length > 2 && !args[2].isNil())) {
-            modes = parseIOOptions(args[1]);
-            perm = getFilePermissions(args);
-            
-            MakeOpenFile();
-        
-            openFile.setMode(modes.getModeFlags().getOpenFileFlags());
-            openFile.setPath(path);
-
-            sysopenInternal(path, modes.getModeFlags(), perm);
-        } else {
-            modeString = "r";
-            if (args.length > 1 && !args[1].isNil()) {
-                modeString = args[1].convertToString().toString();
-            }
-
-            openInternal(path, modeString);
-        }
-
-        return this;
-    }
-
-    private int getFilePermissions(IRubyObject[] args) {
-        return (args.length > 2 && !args[2].isNil()) ? RubyNumeric.num2int(args[2]) : 438;
-    }
-    protected void sysopenInternal(String path, ModeFlags modes, int perm) {
-        if (path.startsWith("jar:")) path = path.substring(4);
-
-        int umask = getUmaskSafe( getRuntime() );
-        perm = perm - (perm & umask);
-
-        ChannelDescriptor descriptor = sysopen(path, modes, perm);
-        openFile.setMainStream(fdopen(descriptor, modes));
-    }
-
     // mri19: rb_sysopen and rb_sysopen_internal
-    protected void sysopenInternal19(String path, int oflags, int perm) {
+    protected void sysopenInternal(String path, int oflags, int perm) {
         if (path.startsWith("jar:")) path = path.substring(4);
 
         int umask = getUmaskSafe( getRuntime() );
@@ -2067,6 +2018,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         return lockFailedReturn(runtime, exclusive ? LOCK_EX : LOCK_SH);
+    }
+
+    @Deprecated
+    public IRubyObject initialize19(IRubyObject[] args, Block block) {
+        return initialize(null, args, block);
     }
 
     private static final long serialVersionUID = 1L;

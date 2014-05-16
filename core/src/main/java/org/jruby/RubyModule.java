@@ -2103,7 +2103,7 @@ public class RubyModule extends RubyObject {
             throw runtime.newTypeError(hash0, runtime.getHash());
         }
         
-        for (Map.Entry entry : (Set<Map.Entry<Object, Object>>)methodNames.directEntrySet()) {
+        for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)methodNames.directEntrySet()) {
             String name = entry.getValue().toString();
             if (methods.containsKey(entry.getValue().toString())) {
                 throw runtime.newArgumentError("constant would conflict - " + name);

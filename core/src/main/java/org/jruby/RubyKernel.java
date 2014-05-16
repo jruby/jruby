@@ -297,30 +297,37 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "open", required = 1, optional = 3, module = true, visibility = PRIVATE)
-    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-        if (args[0].respondsTo("to_open")) {
-            if (args.length > 1) {
-                IRubyObject[] toOpenArgs = Arrays.copyOfRange(args, 1, args.length);
-                args[0] = args[0].callMethod(context, "to_open", toOpenArgs);
+    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {Ruby runtime = context.runtime;
+        //        ID to_open = 0;
+        boolean redirect = false;
+        int argc = args.length;
+
+        if (argc >= 1) {
+            //            CONST_ID(to_open, "to_open");
+            if (args[0].respondsTo("to_open")) {
+                redirect = true;
             } else {
-                args[0] = args[0].callMethod(context, "to_open");
+                IRubyObject tmp = args[0];
+                tmp = RubyFile.get_path(context, tmp);
+                if (tmp.isNil()) {
+                    redirect = true;
+                } else {
+                    IRubyObject cmd = RubyIO.checkPipeCommand(context, tmp);
+                    if (!cmd.isNil()) {
+                        args[0] = cmd;
+                        // TODO: falling back on old version here. @see PopenExecutor
+                        return RubyIO.popen(context, recv, args, block);
+                    }
+                }
             }
-            if (block.isGiven()) {
-                return block.yield(context, args[0]);
-            } else {
-                return args[0];
-            }
-        } else {
-            args[0] = RubyFile.get_path(context, args[0]);
         }
+        if (redirect) {
+            IRubyObject io = args[0].callMethod(context, "to_open", Arrays.copyOfRange(args, 1, args.length));
 
-        String arg = args[0].convertToString().toString();
-
-        // exec process, create IO with process
-        if (arg.startsWith("|")) return RubyIO.popen19(context, runtime.getIO(), popenArgs(runtime, arg, args), block);
-        
-        return RubyFile.open(context, runtime.getFile(), args, block);
+            RubyIO.ensureYieldClose(context, io, block);
+            return io;
+        }
+        return RubyIO.open(context, runtime.getFile(), args, block);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)

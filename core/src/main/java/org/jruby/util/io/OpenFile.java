@@ -1,5 +1,6 @@
 package org.jruby.util.io;
 
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -12,6 +13,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.sun.org.apache.bcel.internal.generic.DUP;
 import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
@@ -21,6 +23,7 @@ import org.jcodings.transcode.EConvResult;
 import org.jruby.Ruby;
 import org.jruby.RubyArgsFile;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyBignum;
 import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
@@ -786,14 +789,11 @@ public class OpenFile {
 //        }
 
         if (!err.isNil() && !noraise) {
-            switch (err.getMetaClass().getNativeClassIndex()) {
-                case FIXNUM:
-                case BIGNUM:
-                    errno = Errno.valueOf(RubyNumeric.num2int(err));
-                    throw runtime.newErrnoFromErrno(errno, pathv);
-
-                default:
-                    throw new RaiseException((RubyException)err);
+            if (err instanceof RubyFixnum || err instanceof RubyBignum) {
+                errno = Errno.valueOf(RubyNumeric.num2int(err));
+                throw runtime.newErrnoFromErrno(errno, pathv);
+            } else {
+                throw new RaiseException((RubyException)err);
             }
         }
     }
@@ -2135,6 +2135,24 @@ public class OpenFile {
                 return;
             } catch (IOException ioe) {
                 throw runtime.newIOErrorFromException(ioe);
+            }
+        }
+    }
+
+    public static String oflagsModestr(int oflags) {
+        // TODO
+        return null;
+    }
+
+    // MRI: check_tty
+    public void checkTTY(Ruby runtime) {
+        if (runtime.getPosix().isNative()) {
+            if (runtime.getPosix().isatty(mainStream.getDescriptor().getFileDescriptor())) {
+                mode |= TTY | DUPLEX;
+            } else if (mainStream.getDescriptor().getFileDescriptor() == FileDescriptor.in
+                    || mainStream.getDescriptor().getFileDescriptor() == FileDescriptor.out
+                    || mainStream.getDescriptor().getFileDescriptor() == FileDescriptor.err) {
+                mode |= TTY | DUPLEX;
             }
         }
     }

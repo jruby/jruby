@@ -46,7 +46,7 @@ import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.SelectBlob;
 import jnr.constants.platform.Fcntl;
-import java.io.EOFException;
+
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.FileNotFoundException;
@@ -58,13 +58,12 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -770,7 +769,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return klass.newInstance(context, args, block);
     }
 
-    private IRubyObject initializeCommon19(ThreadContext context, int fileno, IRubyObject vmodeArg, IRubyObject opt) {
+    private IRubyObject initializeCommon(ThreadContext context, int fileno, IRubyObject vmodeArg, IRubyObject opt) {
         Ruby runtime = context.runtime;
         
         int ofmode;
@@ -838,15 +837,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, Block unused) {
-        return initializeCommon19(context, RubyNumeric.fix2int(fileNumber), null, context.nil);
+    public IRubyObject initialize(ThreadContext context, IRubyObject fileNumber, Block unused) {
+        return initializeCommon(context, RubyNumeric.fix2int(fileNumber), null, context.nil);
     }
     
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, IRubyObject second, Block unused) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject fileNumber, IRubyObject second, Block unused) {
         int fileno = RubyNumeric.fix2int(fileNumber);
         IRubyObject vmode = null;
-        IRubyObject options = null;
+        IRubyObject options;
         IRubyObject hashTest = TypeConverter.checkHashType(context.runtime, second);
         if (hashTest instanceof RubyHash) {
             options = hashTest;
@@ -855,27 +854,18 @@ public class RubyIO extends RubyObject implements IOEncodable {
             vmode = second;
         }
 
-        return initializeCommon19(context, fileno, vmode, options);
+        return initializeCommon(context, fileno, vmode, options);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, IRubyObject modeValue, IRubyObject options, Block unused) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject fileNumber, IRubyObject modeValue, IRubyObject options, Block unused) {
         int fileno = RubyNumeric.fix2int(fileNumber);
 
-        return initializeCommon19(context, fileno, modeValue, options);
-    }
-
-    // No encoding processing
-    protected IOOptions parseIOOptions(IRubyObject arg) {
-        Ruby runtime = getRuntime();
-
-        if (arg instanceof RubyFixnum) return newIOOptions(runtime, (int) RubyFixnum.fix2long(arg));
-
-        return newIOOptions(runtime, newModeFlags(runtime, arg.convertToString().toString()));
+        return initializeCommon(context, fileno, modeValue, options);
     }
 
     // Encoding processing
-    protected IOOptions parseIOOptions19(IRubyObject arg) {
+    protected IOOptions parseIOOptions(IRubyObject arg) {
         Ruby runtime = getRuntime();
 
         if (arg instanceof RubyFixnum) return newIOOptions(runtime, (int) RubyFixnum.fix2long(arg));
@@ -1043,32 +1033,24 @@ public class RubyIO extends RubyObject implements IOEncodable {
         openFile.clearCodeConversion();
     }
 
+    // rb_io_s_open, 2014/5/16
     @JRubyMethod(required = 1, rest = true, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-        RubyClass klass = (RubyClass)recv;
-        
-        RubyIO io = (RubyIO)klass.newInstance(context, args, block);
+        IRubyObject io = ((RubyClass)recv).newInstance(context, args, Block.NULL_BLOCK);
 
-        if (block.isGiven()) {
-            try {
-                return block.yield(context, io);
-            } finally {
-                try {
-                    io.getMetaClass().finvoke(context, io, "close", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-                } catch (RaiseException re) {
-                    RubyException rubyEx = re.getException();
-                    if (rubyEx.kind_of_p(context, runtime.getStandardError()).isTrue()) {
-                        // MRI behavior: swallow StandardErorrs
-                        runtime.getGlobalVariables().clear("$!");
-                    } else {
-                        throw re;
-                    }
-                }
-            }
-        }
+        ensureYieldClose(context, io, block);
 
         return io;
+    }
+
+    public static void ensureYieldClose(ThreadContext context, IRubyObject port, Block block) {
+        if (block.isGiven()) {
+            try {
+                block.yield(context, port);
+            } finally {
+                ((RubyIO)port).close();
+            }
+        }
     }
 
     public static IRubyObject sysopen(IRubyObject recv, IRubyObject[] args, Block block) {
@@ -2964,7 +2946,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
             return ((RubyFile)context.runtime.getFile().allocate()).fileOpenGeneric(context, filename, oflags_p[0], fmode_p[0], convconfig, perm);
         }
     }
-    
+
+    // MRI: check_pipe_command
     public static IRubyObject checkPipeCommand(ThreadContext context, IRubyObject filenameOrCommand) {
         RubyString filenameStr = filenameOrCommand.convertToString();
         ByteList filenameByteList = filenameStr.getByteList();
@@ -3862,7 +3845,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
 
         if (options.containsKey(runtime.newSymbol("mode"))) {
-            ioOptions = parseIOOptions19(options.fastARef(runtime.newSymbol("mode")));
+            ioOptions = parseIOOptions(options.fastARef(runtime.newSymbol("mode")));
         }
 
         // This duplicates the non-error behavior of MRI 1.9: the
@@ -4009,6 +3992,33 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
             throw runtime.newTypeError("wrong exec option: " + opt);
         }
+    }
+
+    // MRI: check_exec_env, w/ check_exec_env_i body in-line
+    public static RubyArray checkExecEnv(ThreadContext context, RubyHash hash) {
+        Ruby runtime = context.runtime;
+        RubyArray env = runtime.newArray();
+        for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)hash.directEntrySet()) {
+            IRubyObject key = entry.getKey();
+            IRubyObject val = entry.getValue();
+            ByteList k;
+
+            k = StringSupport.checkEmbeddedNulls(runtime, key).getByteList();
+            if (k.indexOf('=') != -1)
+                throw runtime.newArgumentError("environment name contains a equal : " + k);
+
+            if (!val.isNil())
+                StringSupport.checkEmbeddedNulls(runtime, val);
+
+            if (Platform.IS_WINDOWS) {
+                key = ((RubyString)key).export(context);
+            }
+            if (!val.isNil()) val = ((RubyString)val).export(context);
+
+            env.push(runtime.newArray(key, val));
+        }
+
+        return env;
     }
     
     /**
@@ -4176,14 +4186,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
         openFile.clearCodeConversion();
     }
     
-    protected void MakeOpenFile() {
+    protected OpenFile MakeOpenFile() {
         if (openFile != null) {
             Ruby runtime = getRuntime();
             ioClose(runtime);
             openFile.finalize(runtime, false);
             openFile = null;
         }
-        openFile = new OpenFile();
+        return openFile = new OpenFile();
     }
 
     @Deprecated

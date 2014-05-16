@@ -1878,7 +1878,7 @@ public class Helpers {
         }
         RubyArray arr = (RubyArray) tmp;
         
-        return arr.aryDup19();
+        return arr.aryDup();
     }
 
     public static RubyArray asArray18(ThreadContext context, IRubyObject value) {

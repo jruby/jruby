@@ -399,13 +399,6 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return RubyString.newStringShared(runtime, strBytes, strByteList.getBegin() + pos, len, enc);
     }
 
-    private static int memchr(byte[] ptr, int start, int find, int len) {
-        for (int i = start; i < start + len; i++) {
-            if (ptr[i] == find) return i;
-        }
-        return -1;
-    }
-    
     private static final int CHAR_BIT = 8;
     
     private static void bm_init_skip(int[] skip, byte[] pat, int patPtr, int m) {
@@ -598,7 +591,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
             }
             s = p;
             // find next \n or end; if followed by \n, include it too
-            p = memchr(dataBytes, p, '\n', e - p);
+            p = StringSupport.memchr(dataBytes, p, '\n', e - p);
             if (p != -1) {
                 if (++p < e && dataBytes[p] == '\n') {
                     e = p + 1;
@@ -610,7 +603,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         } else if (n == 1) {
             RubyString strStr = (RubyString)str;
             ByteList strByteList = strStr.getByteList();
-            if ((p = memchr(dataBytes, s, strByteList.get(0), e - s)) != -1) {
+            if ((p = StringSupport.memchr(dataBytes, s, strByteList.get(0), e - s)) != -1) {
                 e = p + 1;
             }
             str = strioSubstr(runtime, ptr.pos, e - s);

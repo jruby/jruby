@@ -962,15 +962,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      * 
      */
     public final RubyArray aryDup() {
-        RubyArray dup = new RubyArray(metaClass.getClassRuntime(), metaClass, values, begin, realLength);
-        dup.isShared = true;
-        isShared = true;
-        dup.flags |= flags & TAINTED_F; // from DUP_SETUP
-        // rb_copy_generic_ivar from DUP_SETUP here ...unlikely..
-        return dup;
-    }
-    
-    public final RubyArray aryDup19() {
         // In 1.9, rb_ary_dup logic changed so that on subclasses of Array,
         // dup returns an instance of Array, rather than an instance of the subclass
         // Also, taintedness and trustedness are not inherited to duplicates
@@ -1913,7 +1904,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     
     @JRubyMethod(name = "compact")
     public IRubyObject compact19() {
-        RubyArray ary = aryDup19();
+        RubyArray ary = aryDup();
         ary.compact_bang();
         return ary;
     }
@@ -3162,7 +3153,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     @JRubyMethod(name = "sort")
     public RubyArray sort19(ThreadContext context, Block block) {
-        RubyArray ary = aryDup19();
+        RubyArray ary = aryDup();
         ary.sort_bang19(context, block);
         return ary;
     }
@@ -3718,7 +3709,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     @JRubyMethod(name = "shuffle", optional = 1)
     public IRubyObject shuffle(ThreadContext context, IRubyObject[] args) {
-        RubyArray ary = aryDup19();
+        RubyArray ary = aryDup();
         ary.shuffle_bang(context, args);
         return ary;
     }
@@ -4399,5 +4390,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     @Deprecated
     public IRubyObject compatc19() {
         return compact19();
+    }
+
+    @Deprecated
+    public final RubyArray aryDup19() {
+        return aryDup();
     }
 }
