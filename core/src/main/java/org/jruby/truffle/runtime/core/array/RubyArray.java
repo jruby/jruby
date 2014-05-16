@@ -22,6 +22,10 @@ import java.util.Arrays;
  */
 public final class RubyArray extends RubyObject {
 
+    public enum ArrayType {
+        UNKNOWN, DOUBLE, OBJECT
+    }
+
     public static class RubyArrayClass extends RubyClass {
 
         public RubyArrayClass(RubyClass objectClass) {

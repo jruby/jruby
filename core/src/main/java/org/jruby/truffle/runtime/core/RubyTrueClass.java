@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 
 /**
@@ -23,7 +24,10 @@ public class RubyTrueClass extends RubyObject implements Unboxable {
     /**
      * Convert a value to a boolean, without doing any lookup.
      */
+    @Deprecated
     public static boolean toBoolean(Object value) {
+        RubyNode.notDesignedForCompilation();
+
         assert value != null;
 
         if (value instanceof NilPlaceholder) {

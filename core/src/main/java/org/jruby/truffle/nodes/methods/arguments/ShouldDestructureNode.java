@@ -38,8 +38,6 @@ public class ShouldDestructureNode extends RubyNode {
 
     @Override
     public boolean executeBoolean(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         // TODO(CS): express this using normal nodes?
 
         // If we don't accept any arguments, there's never any need to destructure

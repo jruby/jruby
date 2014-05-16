@@ -27,11 +27,7 @@ public abstract class RangeNodes {
     @CoreMethod(names = {"collect", "map"}, needsBlock = true, maxArgs = 0)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
 
-        private enum ArrayType {
-            UNKNOWN, DOUBLE, OBJECT
-        }
-
-        @CompilerDirectives.CompilationFinal private ArrayType arrayType = ArrayType.OBJECT;
+        @CompilerDirectives.CompilationFinal private RubyArray.ArrayType arrayType = RubyArray.ArrayType.UNKNOWN;
 
         public CollectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -71,11 +67,11 @@ public abstract class RangeNodes {
                     switch (arrayType) {
                         case UNKNOWN:
                             if (value instanceof Double) {
-                                arrayType = ArrayType.DOUBLE;
+                                arrayType = RubyArray.ArrayType.DOUBLE;
                                 store = new double[length];
                                 ((double[]) store)[n] = (double) value;
                             } else {
-                                arrayType = ArrayType.OBJECT;
+                                arrayType = RubyArray.ArrayType.OBJECT;
                                 store = new Object[length];
                                 ((Object[]) store)[n] = value;
                             }
@@ -91,7 +87,7 @@ public abstract class RangeNodes {
 
                                 System.err.println("TRANSFER");
 
-                                arrayType = ArrayType.OBJECT;
+                                arrayType = RubyArray.ArrayType.OBJECT;
 
                                 final Object[] objectStore = new Object[length];
                                 ArrayUtils.copy(store, objectStore, 0);

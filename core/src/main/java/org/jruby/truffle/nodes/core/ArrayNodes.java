@@ -1353,7 +1353,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = {"inject", "reduce"}, needsBlock = true, minArgs = 0, maxArgs = 1)
-    public abstract static class InjectNode extends YieldingCoreMethodNode {
+    public abstract static class InjectNode extends YieldingArrayCoreMethodNode {
 
         public InjectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1363,18 +1363,29 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization
-        public Object inject(VirtualFrame frame, RubyArray array, @SuppressWarnings("unused") UndefinedPlaceholder initial, RubyProc block) {
-            notDesignedForCompilation();
-
-            throw new UnsupportedOperationException();
-        }
-
-        @Specialization
+        @Specialization(guards = "isObject")
         public Object inject(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
-            notDesignedForCompilation();
+            int count = 0;
 
-            throw new UnsupportedOperationException();
+            final Object[] store = (Object[]) array.store;
+
+            Object accumulator = initial;
+
+            try {
+                for (int n = 0; n < array.size; n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    accumulator = yield(frame, block, accumulator, store[n]);
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            return accumulator;
         }
 
     }
@@ -1484,7 +1495,9 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = {"map", "collect"}, needsBlock = true, maxArgs = 0)
-    public abstract static class MapNode extends YieldingCoreMethodNode {
+    public abstract static class MapNode extends YieldingArrayCoreMethodNode {
+
+        @CompilerDirectives.CompilationFinal private RubyArray.ArrayType arrayType = RubyArray.ArrayType.UNKNOWN;
 
         public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1494,9 +1507,71 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(guards = "isObject")
         public RubyArray map(VirtualFrame frame, RubyArray array, RubyProc block) {
-            throw new UnsupportedOperationException();
+            final Object[] store = (Object[]) array.store;
+
+            Object mappedStore = null;
+
+            switch (arrayType) {
+                case OBJECT:
+                    mappedStore = new Object[array.size];
+                    break;
+                case DOUBLE:
+                    mappedStore = new double[array.size];
+                    break;
+            }
+
+            int count = 0;
+
+            try {
+                for (int n = 0; n < array.size; n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    final Object value = yield(frame, block, store[n]);
+
+                    switch (arrayType) {
+                        case UNKNOWN:
+                            if (value instanceof Double) {
+                                arrayType = RubyArray.ArrayType.DOUBLE;
+                                mappedStore = new double[array.size];
+                                ((double[]) mappedStore)[n] = (double) value;
+                            } else {
+                                arrayType = RubyArray.ArrayType.OBJECT;
+                                mappedStore = new Object[array.size];
+                                ((Object[]) mappedStore)[n] = value;
+                            }
+                            break;
+                        case OBJECT:
+                            ((Object[]) mappedStore)[n] = value;
+                            break;
+                        case DOUBLE:
+                            if (value instanceof Double) {
+                                ((double[]) mappedStore)[n] = (double) value;
+                            } else {
+                                CompilerDirectives.transferToInterpreterAndInvalidate();
+
+                                System.err.println("TRANSFER");
+
+                                arrayType = RubyArray.ArrayType.OBJECT;
+
+                                final Object[] objectStore = new Object[array.size];
+                                ArrayUtils.copy(mappedStore, objectStore, 0);
+                                objectStore[n] = value;
+                                mappedStore = objectStore;
+                            }
+                            break;
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), mappedStore, array.size);
         }
     }
 
@@ -1575,7 +1650,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "product", isSplatted = true)
+    @CoreMethod(names = "product", minArgs = 1, maxArgs = 1)
     public abstract static class ProductNode extends ArrayCoreMethodNode {
 
         public ProductNode(RubyContext context, SourceSection sourceSection) {
@@ -1586,16 +1661,31 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization
-        @SlowPath
-        public Object product(RubyArray array, Object... args) {
-            throw new UnsupportedOperationException();
+        @Specialization(guards = {"isObject", "isOtherObject"})
+        public Object product(RubyArray array, RubyArray other) {
+            final Object[] a = (Object[]) array.store;
+            final int aLength = array.size;
+
+            final Object[] b = (Object[]) other.store;
+            final int bLength = other.size;
+
+            final Object[] pairs = new Object[aLength * bLength];
+
+            for (int an = 0; an < aLength; an++) {
+                for (int bn = 0; bn < bLength; bn++) {
+                    pairs[an * bLength + bn] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[an], b[bn]}, 2);
+                }
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), pairs, pairs.length);
         }
 
     }
 
-    @CoreMethod(names = {"push", "<<"}, isSplatted = true)
-    public abstract static class PushNode extends CoreMethodNode {
+    @CoreMethod(names = {"push", "<<"}, minArgs = 1, maxArgs = 1)
+    public abstract static class PushNode extends ArrayCoreMethodNode {
+
+        private final BranchProfile extendBranch = new BranchProfile();
 
         public PushNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1605,10 +1695,25 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @SlowPath
-        @Specialization
-        public RubyArray push(RubyArray array, Object... args) {
-            throw new UnsupportedOperationException();
+        @Specialization(guards = "isNull", order = 1)
+        public RubyArray pushEmpty(RubyArray array, Object value) {
+            array.store = new Object[]{value};
+            array.size = 1;
+            return array;
+        }
+
+        @Specialization(guards = "isObject", order = 2)
+        public RubyArray pushObject(RubyArray array, Object value) {
+            Object[] store = (Object[]) array.store;
+
+            if (store.length == array.size) {
+                extendBranch.enter();
+                array.store = store = Arrays.copyOf(store, ArrayUtils.capacity(store.length));
+            }
+
+            store[array.size] = value;
+            array.size++;
+            return array;
         }
 
     }
@@ -1878,8 +1983,8 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "zip", isSplatted = true)
-    public abstract static class ZipNode extends CoreMethodNode {
+    @CoreMethod(names = "zip", minArgs = 1, maxArgs = 1)
+    public abstract static class ZipNode extends ArrayCoreMethodNode {
 
         public ZipNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1889,10 +1994,40 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @SlowPath
-        @Specialization
-        public RubyArray zip(RubyArray array, Object... args) {
-            throw new UnsupportedOperationException();
+        @Specialization(guards = {"isObject", "isOtherIntegerFixnum"}, order = 1)
+        public RubyArray zipObjectIntegerFixnum(RubyArray array, RubyArray other) {
+            final Object[] a = (Object[]) array.store;
+            final int aLength = array.size;
+
+            final int[] b = (int[]) other.store;
+            final int bLength = other.size;
+
+            final int zippedLength = Math.min(aLength, bLength);
+            final Object[] zipped = new Object[zippedLength];
+
+            for (int n = 0; n < zippedLength; n++) {
+                zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), zipped, zippedLength);
+        }
+
+        @Specialization(guards = {"isObject", "isOtherObject"}, order = 2)
+        public RubyArray zipObjectObject(RubyArray array, RubyArray other) {
+            final Object[] a = (Object[]) array.store;
+            final int aLength = array.size;
+
+            final Object[] b = (Object[]) other.store;
+            final int bLength = other.size;
+
+            final int zippedLength = Math.min(aLength, bLength);
+            final Object[] zipped = new Object[zippedLength];
+
+            for (int n = 0; n < zippedLength; n++) {
+                zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), zipped, zippedLength);
         }
 
     }

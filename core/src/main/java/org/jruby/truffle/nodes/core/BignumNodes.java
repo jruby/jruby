@@ -520,81 +520,93 @@ public abstract class BignumNodes {
     @CoreMethod(names = "&", minArgs = 1, maxArgs = 1)
     public abstract static class BitAndNode extends CoreMethodNode {
 
+        private final FixnumOrBignumNode fixnumOrBignumNode;
+
         public BitAndNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            fixnumOrBignumNode = new FixnumOrBignumNode();
         }
 
         public BitAndNode(BitAndNode prev) {
             super(prev);
+            fixnumOrBignumNode = prev.fixnumOrBignumNode;
         }
 
         @Specialization
         public Object bitAnd(BigInteger a, int b) {
-            return RubyFixnum.fixnumOrBignum(a.and(BigInteger.valueOf(b)));
+            return fixnumOrBignumNode.fixnumOrBignum(a.and(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitAnd(BigInteger a, long b) {
-            return RubyFixnum.fixnumOrBignum(a.and(BigInteger.valueOf(b)));
+            return fixnumOrBignumNode.fixnumOrBignum(a.and(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitAnd(BigInteger a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(a.and(b));
+            return fixnumOrBignumNode.fixnumOrBignum(a.and(b));
         }
     }
 
     @CoreMethod(names = "|", minArgs = 1, maxArgs = 1)
     public abstract static class BitOrNode extends CoreMethodNode {
 
+        private final FixnumOrBignumNode fixnumOrBignumNode;
+
         public BitOrNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            fixnumOrBignumNode = new FixnumOrBignumNode();
         }
 
         public BitOrNode(BitOrNode prev) {
             super(prev);
+            fixnumOrBignumNode = prev.fixnumOrBignumNode;
         }
 
         @Specialization
         public Object bitOr(BigInteger a, int b) {
-            return RubyFixnum.fixnumOrBignum(a.or(BigInteger.valueOf(b)));
+            return fixnumOrBignumNode.fixnumOrBignum(a.or(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitOr(BigInteger a, long b) {
-            return RubyFixnum.fixnumOrBignum(a.or(BigInteger.valueOf(b)));
+            return fixnumOrBignumNode.fixnumOrBignum(a.or(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitOr(BigInteger a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(a.or(b));
+            return fixnumOrBignumNode.fixnumOrBignum(a.or(b));
         }
     }
 
     @CoreMethod(names = "^", minArgs = 1, maxArgs = 1)
     public abstract static class BitXOrNode extends CoreMethodNode {
 
+        private final FixnumOrBignumNode fixnumOrBignumNode;
+
         public BitXOrNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            fixnumOrBignumNode = new FixnumOrBignumNode();
         }
 
         public BitXOrNode(BitXOrNode prev) {
             super(prev);
+            fixnumOrBignumNode = prev.fixnumOrBignumNode;
         }
 
         @Specialization
         public Object bitXOr(BigInteger a, int b) {
-            return RubyFixnum.fixnumOrBignum(a.xor(BigInteger.valueOf(b)));
+            return fixnumOrBignumNode.fixnumOrBignum(a.xor(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitXOr(BigInteger a, long b) {
-            return RubyFixnum.fixnumOrBignum(a.xor(BigInteger.valueOf(b)));
+            return fixnumOrBignumNode.fixnumOrBignum(a.xor(BigInteger.valueOf(b)));
         }
 
         @Specialization
         public Object bitXOr(BigInteger a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(a.xor(b));
+            return fixnumOrBignumNode.fixnumOrBignum(a.xor(b));
         }
     }
 
@@ -630,22 +642,27 @@ public abstract class BignumNodes {
     @CoreMethod(names = ">>", minArgs = 1, maxArgs = 1)
     public abstract static class RightShiftNode extends CoreMethodNode {
 
+        @Child protected FixnumOrBignumNode fixnumOrBignum;
+
+        private final BranchProfile bLessThanZero = new BranchProfile();
+
         public RightShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         public RightShiftNode(RightShiftNode prev) {
             super(prev);
+            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization
         public Object leftShift(BigInteger a, int b) {
-            notDesignedForCompilation();
-
             if (b >= 0) {
-                return RubyFixnum.fixnumOrBignum(a.shiftRight(b));
+                return fixnumOrBignum.fixnumOrBignum(a.shiftRight(b));
             } else {
-                return RubyFixnum.fixnumOrBignum(a.shiftLeft(-b));
+                bLessThanZero.enter();
+                return fixnumOrBignum.fixnumOrBignum(a.shiftLeft(-b));
             }
         }
 
