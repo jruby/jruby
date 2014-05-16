@@ -2,12 +2,9 @@ unless defined? JRUBY_VERSION
   warn 'Loading jruby-openssl in a non-JRuby interpreter'
 end
 
-# Load bouncy-castle gem if available
-begin
-  require 'bouncy-castle-java'
-rescue LoadError
-  # runs under restricted mode or uses builtin BC
-end
+require 'jopenssl/version'
+require "bcpkix-jdk15on-#{Jopenssl::Version::BOUNCY_CASTLE_VERSION}.jar"
+require "bcprov-jdk15on-#{Jopenssl::Version::BOUNCY_CASTLE_VERSION}.jar"
 
 # Load extension
 require 'jruby'
