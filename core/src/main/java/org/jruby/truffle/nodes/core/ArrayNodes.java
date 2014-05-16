@@ -16,8 +16,12 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.BreakException;
+import org.jruby.truffle.runtime.control.NextException;
+import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.range.IntegerFixnumRange;
@@ -440,9 +444,7 @@ public abstract class ArrayNodes {
         public int getIntegerFixnumInBounds(RubyArray array, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
             int normalisedIndex = array.normaliseIndex(index);
 
-            if (normalisedIndex < 0) {
-                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
-            } else if (normalisedIndex >= array.size) {
+            if (normalisedIndex < 0 || normalisedIndex >= array.size) {
                 throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
             } else {
                 return ((int[]) array.store)[normalisedIndex];
@@ -451,13 +453,9 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnum", order = 3)
         public Object getIntegerFixnum(RubyArray array, int index, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
             int normalisedIndex = array.normaliseIndex(index);
 
-            if (normalisedIndex < 0) {
-                return NilPlaceholder.INSTANCE;
-            } else if (normalisedIndex >= array.size) {
+            if (normalisedIndex < 0 || normalisedIndex >= array.size) {
                 return NilPlaceholder.INSTANCE;
             } else {
                 return ((int[]) array.store)[normalisedIndex];
@@ -466,13 +464,9 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isLongFixnum", rewriteOn=UnexpectedResultException.class, order = 4)
         public long getLongFixnumInBounds(RubyArray array, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
-            notDesignedForCompilation();
-
             int normalisedIndex = array.normaliseIndex(index);
 
-            if (normalisedIndex < 0) {
-                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
-            } else if (normalisedIndex >= array.size) {
+            if (normalisedIndex < 0 || normalisedIndex >= array.size) {
                 throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
             } else {
                 return ((long[]) array.store)[normalisedIndex];
@@ -481,13 +475,10 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isLongFixnum", order = 5)
         public Object getLongFixnum(RubyArray array, int index, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
 
             int normalisedIndex = array.normaliseIndex(index);
 
-            if (normalisedIndex < 0) {
-                return NilPlaceholder.INSTANCE;
-            } else if (normalisedIndex >= array.size) {
+            if (normalisedIndex < 0 || normalisedIndex >= array.size) {
                 return NilPlaceholder.INSTANCE;
             } else {
                 return ((long[]) array.store)[normalisedIndex];
@@ -496,13 +487,9 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isFloat", rewriteOn=UnexpectedResultException.class, order = 6)
         public double getFloatInBounds(RubyArray array, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
-            notDesignedForCompilation();
-
             int normalisedIndex = array.normaliseIndex(index);
 
-            if (normalisedIndex < 0) {
-                throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
-            } else if (normalisedIndex >= array.size) {
+            if (normalisedIndex < 0 || normalisedIndex >= array.size) {
                 throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
             } else {
                 return ((double[]) array.store)[normalisedIndex];
@@ -511,13 +498,9 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnum", order = 7)
         public Object getFloat(RubyArray array, int index, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
             int normalisedIndex = array.normaliseIndex(index);
 
-            if (normalisedIndex < 0) {
-                return NilPlaceholder.INSTANCE;
-            } else if (normalisedIndex >= array.size) {
+            if (normalisedIndex < 0 || normalisedIndex >= array.size) {
                 return NilPlaceholder.INSTANCE;
             } else {
                 return ((double[]) array.store)[normalisedIndex];
@@ -526,13 +509,9 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isObject", order = 8)
         public Object getObject(RubyArray array, int index, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
             int normalisedIndex = array.normaliseIndex(index);
 
-            if (normalisedIndex < 0) {
-                return NilPlaceholder.INSTANCE;
-            } else if (normalisedIndex >= array.size) {
+            if (normalisedIndex < 0 || normalisedIndex >= array.size) {
                 return NilPlaceholder.INSTANCE;
             } else {
                 return ((Object[]) array.store)[normalisedIndex];
@@ -1068,7 +1047,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "each", needsBlock = true, maxArgs = 0)
-    public abstract static class EachNode extends YieldingCoreMethodNode {
+    public abstract static class EachNode extends YieldingArrayCoreMethodNode {
 
         private final BranchProfile breakProfile = new BranchProfile();
         private final BranchProfile nextProfile = new BranchProfile();
@@ -1082,7 +1061,118 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(guards = "isIntegerFixnum", order = 1)
+        public Object eachIntegerFixnum(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final int[] store = (int[]) array.store;
+
+            int count = 0;
+
+            try {
+                outer:
+                for (int n = 0; n < array.size; n++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, store[n]);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            return array;
+        }
+
+        @Specialization(guards = "isLongFixnum", order = 2)
+        public Object eachLongFixnum(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final long[] store = (long[]) array.store;
+
+            int count = 0;
+
+            try {
+                outer:
+                for (int n = 0; n < array.size; n++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, store[n]);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            return array;
+        }
+
+        @Specialization(guards = "isObject", order = 3)
+        public Object eachObject(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final Object[] store = (Object[]) array.store;
+
+            int count = 0;
+
+            try {
+                outer:
+                for (int n = 0; n < array.size; n++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, store[n]);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            return array;
+        }
+
+        @Specialization(order = 4)
         public Object each(VirtualFrame frame, RubyArray array, RubyProc block) {
             notDesignedForCompilation();
 

@@ -79,8 +79,6 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         Object value = readNode.execute(receiver.executeRubyBasicObject(frame));
 
         if (value == null) {

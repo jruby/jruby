@@ -1197,8 +1197,6 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object times(VirtualFrame frame, int n, RubyProc block) {
-            notDesignedForCompilation();
-
             int count = 0;
 
             try {

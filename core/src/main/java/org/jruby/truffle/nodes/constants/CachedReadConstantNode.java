@@ -124,7 +124,7 @@ public class CachedReadConstantNode extends ReadConstantChainNode {
 
     @Override
     public Object execute(RubyBasicObject receiver) {
-        RubyNode.notDesignedForCompilation();
+        // TODO(CS): not sure trying next on invalid assumption is right...
 
         if (receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
             return value;
@@ -135,8 +135,6 @@ public class CachedReadConstantNode extends ReadConstantChainNode {
 
     @Override
     public boolean executeBoolean(RubyBasicObject receiver) throws UnexpectedResultException {
-        RubyNode.notDesignedForCompilation();
-
         if (hasBoolean && receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
             return booleanValue;
         } else {
@@ -146,8 +144,6 @@ public class CachedReadConstantNode extends ReadConstantChainNode {
 
     @Override
     public int executeIntegerFixnum(RubyBasicObject receiver) throws UnexpectedResultException {
-        RubyNode.notDesignedForCompilation();
-
         if (hasIntegerFixnum && receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
             return integerFixnumValue;
         } else {
@@ -157,8 +153,6 @@ public class CachedReadConstantNode extends ReadConstantChainNode {
 
     @Override
     public long executeLongFixnum(RubyBasicObject receiver) throws UnexpectedResultException {
-        RubyNode.notDesignedForCompilation();
-
         if (hasLongFixnum && receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
             return longFixnumValue;
         } else {
@@ -168,8 +162,6 @@ public class CachedReadConstantNode extends ReadConstantChainNode {
 
     @Override
     public double executeFloat(RubyBasicObject receiver) throws UnexpectedResultException {
-        RubyNode.notDesignedForCompilation();
-
         if (hasFloat && receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
             return integerFixnumValue;
         } else {

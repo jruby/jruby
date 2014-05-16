@@ -36,18 +36,11 @@ public class RubyTime extends RubyObject {
 
     }
 
-    private final long nanoseconds;
+    public final long nanoseconds;
 
     public RubyTime(RubyClass timeClass, long nanoseconds) {
         super(timeClass);
         this.nanoseconds = nanoseconds;
-    }
-
-    /**
-     * Subtract one time from another, producing duration in seconds.
-     */
-    public double subtract(RubyTime other) {
-        return nanosecondsToSecond(nanoseconds - other.nanoseconds);
     }
 
     @Override
@@ -76,7 +69,7 @@ public class RubyTime extends RubyObject {
         return nanoseconds / 1000000;
     }
 
-    private static double nanosecondsToSecond(long nanoseconds) {
+    public static double nanosecondsToSecond(long nanoseconds) {
         return nanoseconds / 1e9;
     }
 

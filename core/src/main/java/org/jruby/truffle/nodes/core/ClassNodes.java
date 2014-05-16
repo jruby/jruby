@@ -68,21 +68,15 @@ public abstract class ClassNodes {
 
         @Specialization
         public RubyBasicObject newInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
             return doNewInstance(frame, rubyClass, args, null);
         }
 
         @Specialization
         public RubyBasicObject newInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
-            notDesignedForCompilation();
-
             return doNewInstance(frame, rubyClass, args, block);
         }
 
         private RubyBasicObject doNewInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
-            notDesignedForCompilation();
-
             final RubyBasicObject instance = rubyClass.newInstance();
             initialize.dispatch(frame, instance, block, args);
             return instance;
