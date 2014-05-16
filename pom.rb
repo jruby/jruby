@@ -76,7 +76,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'json.version' => '1.8.0',
               'version.jruby' => '${project.version}',
               'bouncy-castle.version' => '1.47',
-              'bc.version' => '1.5.0147',
               'github.global.server' => 'github',
               'main.basedir' => '${project.basedir}',
               'jruby.home' => '${project.basedir}',
@@ -185,7 +184,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     profile name do
 
       modules [ 'test' ]
-      
+
     end
   end
 
@@ -194,7 +193,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     profile name do
 
       modules [ 'maven' ]
-      
+
       build do
         default_goal 'install'
       end
