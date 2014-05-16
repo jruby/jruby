@@ -1,5 +1,7 @@
+require File.expand_path('../pkcs7_helper', File.dirname(__FILE__))
+
 module PKCS7Test
-  class TestJavaSMIME < Test::Unit::TestCase
+  class TestSMIME < Test::Unit::TestCase
     def test_read_pkcs7_should_raise_error_when_parsing_headers_fails
       bio = BIO.new
       mime = Mime.new
@@ -9,8 +11,9 @@ module PKCS7Test
         SMIME.new(mime).readPKCS7(bio, nil)
         assert false
       rescue PKCS7Exception => e
-        assert_equal PKCS7::F_SMIME_READ_PKCS7, e.cause.get_method
-        assert_equal PKCS7::R_MIME_PARSE_ERROR, e.cause.get_reason
+        e = e.cause if e.is_a?(NativeException)
+        assert_equal PKCS7::F_SMIME_READ_PKCS7, e.get_method
+        assert_equal PKCS7::R_MIME_PARSE_ERROR, e.get_reason
       end
     end
 
@@ -26,13 +29,11 @@ module PKCS7Test
         SMIME.new(mime).readPKCS7(bio, nil)
         assert false
       rescue PKCS7Exception => e
-        assert_equal PKCS7::F_SMIME_READ_PKCS7, e.cause.get_method
-        assert_equal PKCS7::R_NO_CONTENT_TYPE, e.cause.get_reason
+        e = e.cause if e.is_a?(NativeException)
+        assert_equal PKCS7::F_SMIME_READ_PKCS7, e.get_method
+        assert_equal PKCS7::R_NO_CONTENT_TYPE, e.get_reason
       end
 
-
-      
-      
       mime = Mime.new
       mime.expects(:parseHeaders).with(bio).returns(headers)
       mime.expects(:findHeader).with(headers, "content-type").returns(MimeHeader.new("content-type", nil))
@@ -41,18 +42,19 @@ module PKCS7Test
         SMIME.new(mime).readPKCS7(bio, nil)
         assert false
       rescue PKCS7Exception => e
-        assert_equal PKCS7::F_SMIME_READ_PKCS7, e.cause.get_method
-        assert_equal PKCS7::R_NO_CONTENT_TYPE, e.cause.get_reason
+        e = e.cause if e.is_a?(NativeException)
+        assert_equal PKCS7::F_SMIME_READ_PKCS7, e.get_method
+        assert_equal PKCS7::R_NO_CONTENT_TYPE, e.get_reason
       end
     end
-    
+
     def test_read_pkcs7_should_set_the_second_arguments_contents_to_null_if_its_there
       mime = Mime.new
       mime.stubs(:parseHeaders).raises("getOutOfJailForFree")
-      
+
       bio2 = BIO.new
       arr = [bio2].to_java BIO
-      
+
       begin
         SMIME.new(mime).readPKCS7(nil, arr)
       rescue
@@ -70,7 +72,7 @@ module PKCS7Test
       assert_nil arr[0]
       assert_equal bio2, arr[1]
     end
-    
+
     def test_read_pkcs7_should_call_methods_on_mime
       bio = BIO.new
       mime = Mime.new
@@ -98,12 +100,13 @@ module PKCS7Test
         SMIME.new(mime).readPKCS7(bio, nil)
         assert false
       rescue PKCS7Exception => e
-        assert_equal PKCS7::F_SMIME_READ_PKCS7, e.cause.get_method
-        assert_equal PKCS7::R_INVALID_MIME_TYPE, e.cause.get_reason
-        assert_equal "type: foo", e.cause.error_data
+        e = e.cause if e.is_a?(NativeException)
+        assert_equal PKCS7::F_SMIME_READ_PKCS7, e.get_method
+        assert_equal PKCS7::R_INVALID_MIME_TYPE, e.get_reason
+        assert_equal "type: foo", e.error_data
       end
     end
-    
+
     def test_read_pkcs7_with_multipart_should_fail_if_no_boundary_found
       bio = BIO.new
       mime = Mime.new
@@ -114,16 +117,17 @@ module PKCS7Test
       mime.expects(:findHeader).with(headers, "content-type").returns(hdr)
 
       mime.expects(:findParam).with(hdr, "boundary").returns(nil)
-      
+
       begin
         SMIME.new(mime).readPKCS7(bio, nil)
         assert false
       rescue PKCS7Exception => e
-        assert_equal PKCS7::F_SMIME_READ_PKCS7, e.cause.get_method
-        assert_equal PKCS7::R_NO_MULTIPART_BOUNDARY, e.cause.get_reason
+        e = e.cause if e.is_a?(NativeException)
+        assert_equal PKCS7::F_SMIME_READ_PKCS7, e.get_method
+        assert_equal PKCS7::R_NO_MULTIPART_BOUNDARY, e.get_reason
       end
     end
-    
+
     def test_read_pkcs7_with_multipart_should_fail_if_null_boundary_value
       bio = BIO.new
       mime = Mime.new
@@ -134,13 +138,14 @@ module PKCS7Test
       mime.expects(:findHeader).with(headers, "content-type").returns(hdr)
 
       mime.expects(:findParam).with(hdr, "boundary").returns(MimeParam.new("boundary", nil))
-      
+
       begin
         SMIME.new(mime).readPKCS7(bio, nil)
         assert false
       rescue PKCS7Exception => e
-        assert_equal PKCS7::F_SMIME_READ_PKCS7, e.cause.get_method
-        assert_equal PKCS7::R_NO_MULTIPART_BOUNDARY, e.cause.get_reason
+        e = e.cause if e.is_a?(NativeException)
+        assert_equal PKCS7::F_SMIME_READ_PKCS7, e.get_method
+        assert_equal PKCS7::R_NO_MULTIPART_BOUNDARY, e.get_reason
       end
     end
 
@@ -155,7 +160,7 @@ module PKCS7Test
 
       SMIME.new(mime).readPKCS7(bio, nil)
     end
-    
+
     def test_read_pkcs7_happy_path_multipart
       bio = BIO::from_string(MultipartSignedString)
       mime = Mime::DEFAULT

@@ -171,7 +171,8 @@ public class SSLContext extends RubyObject {
     }
 
     public static RaiseException newSSLError(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::SSL::SSLError", message, false);
+        final RubyModule _SSL = (RubyModule) runtime.getModule("OpenSSL").getConstant("SSL");
+        return Utils.newError(runtime, _SSL.getClass("SSLError"), message, false);
     }
 
     private String ciphers = CipherStrings.SSL_DEFAULT_CIPHER_LIST;
@@ -483,20 +484,14 @@ public class SSLContext extends RubyObject {
     }
 
     private String sslVersionString(long bits) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(17);
         boolean first = true;
-        if ((bits & CipherStrings.SSL_SSLV3) != 0) {
-            if (!first) {
-                sb.append("/");
-            }
-            first = false;
+        if ( ( bits & CipherStrings.SSL_SSLV3 ) != 0 ) {
+            if ( ! first ) sb.append('/'); first = false;
             sb.append("TLSv1/SSLv3");
         }
-        if ((bits & CipherStrings.SSL_SSLV2) != 0) {
-            if (!first) {
-                sb.append("/");
-            }
-            first = false;
+        if ( ( bits & CipherStrings.SSL_SSLV2 ) != 0 ) {
+            if ( ! first ) sb.append('/'); // first = false;
             sb.append("SSLv2");
         }
         return sb.toString();

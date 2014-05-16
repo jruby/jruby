@@ -28,6 +28,7 @@
 package org.jruby.ext.openssl;
 
 import java.io.IOException;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -38,14 +39,17 @@ import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class Utils {
+
     private Utils() {}
 
+    /**
+     * @deprecated no longer used
+     */
     @Deprecated
     public static String toHex(byte[] val) {
         final StringBuilder out = new StringBuilder();
@@ -59,6 +63,9 @@ public class Utils {
         return out.toString();
     }
 
+    /**
+     * @deprecated no longer used
+     */
     @Deprecated
     public static String toHex(byte[] val, char sep) {
         final StringBuilder out = new StringBuilder();
@@ -76,42 +83,9 @@ public class Utils {
         return out.toString().toUpperCase();
     }
 
-    static ByteList hexBytes(final byte[] data) {
-        return hexBytes(data, 0);
-    }
-
-    static ByteList hexBytes(final byte[] data, final int off) {
-        final int len = data.length - off;
-        return hexBytes(data, off, len, new ByteList( len * 3 ));
-    }
-
-    static ByteList hexBytes(final byte[] data, final ByteList out) {
-        return hexBytes(data, 0, data.length, out);
-    }
-
-    @SuppressWarnings("deprecation")
-    static ByteList hexBytes(final ByteList data, final ByteList out) {
-        return hexBytes(data.bytes, data.begin, data.realSize, out);
-    }
-
-    private static final char[] digits = {
-        '0' , '1' , '2' , '3' , '4' , '5' , '6' , '7' ,
-        '8' , '9' , 'A' , 'B' , 'C' , 'D' , 'E' , 'F'
-    };
-
-    private static ByteList hexBytes(final byte[] data, final int off, final int len, final ByteList out) {
-        boolean notFist = false;
-        out.ensure( len * 3 - 1 );
-        for ( int i = off; i < (off + len); i++ ) {
-            if ( notFist ) out.append(':');
-            final byte b = data[i];
-            out.append( digits[ (b >> 4) & 0xF ] );
-            out.append( digits[ b & 0xF ] );
-            notFist = true;
-        }
-        return out;
-    }
-
+    /**
+     * @deprecated no longer used, please avoid
+     */
     @Deprecated
     public static void checkKind(Ruby rt, IRubyObject obj, String path) {
         if (((RubyObject) obj).kind_of_p(rt.getCurrentContext(), rt.getClassFromPath(path)).isFalse()) {
@@ -119,19 +93,12 @@ public class Utils {
         }
     }
 
+    /**
+     * @deprecated no longer used, please avoid
+     */
     @Deprecated
     public static RubyClass getClassFromPath(Ruby rt, String path) {
         return (RubyClass) rt.getClassFromPath(path);
-    }
-
-    @Deprecated
-    public static RaiseException newError(Ruby rt, String path, String message) {
-        return new RaiseException(rt, getClassFromPath(rt, path), message, true);
-    }
-
-    @Deprecated
-    public static RaiseException newError(Ruby rt, String path, String message, boolean nativeException) {
-        return new RaiseException(rt, getClassFromPath(rt, path), message, nativeException);
     }
 
     static RaiseException newIOError(Ruby runtime, IOException e) {
@@ -155,6 +122,16 @@ public class Utils {
     }
 
     @Deprecated
+    public static RaiseException newError(Ruby rt, String path, String message) {
+        return new RaiseException(rt, (RubyClass) rt.getClassFromPath(path), message, true);
+    }
+
+    @Deprecated
+    public static RaiseException newError(Ruby rt, String path, String message, boolean nativeException) {
+        return new RaiseException(rt, (RubyClass) rt.getClassFromPath(path), message, nativeException);
+    }
+
+    @Deprecated
     public static IRubyObject newRubyInstance(Ruby rt, String path) {
         return rt.getClassFromPath(path).callMethod(rt.getCurrentContext(), "new");
     }
@@ -169,16 +146,19 @@ public class Utils {
         return rt.getClassFromPath(path).callMethod(rt.getCurrentContext(), "new", args);
     }
 
+    @Deprecated
     static IRubyObject newRubyInstance(final ThreadContext context, final String path) {
         final RubyModule klass = context.runtime.getClassFromPath(path);
         return klass.callMethod(context, "new");
     }
 
+    @Deprecated
     static IRubyObject newRubyInstance(final ThreadContext context, final String path, IRubyObject arg) {
         final RubyModule klass = context.runtime.getClassFromPath(path);
         return klass.callMethod(context, "new", arg);
     }
 
+    @Deprecated
     static IRubyObject newRubyInstance(final ThreadContext context, final String path, IRubyObject... args) {
         final RubyModule klass = context.runtime.getClassFromPath(path);
         return klass.callMethod(context, "new", args);

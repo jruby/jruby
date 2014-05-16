@@ -71,11 +71,15 @@ public class Cipher extends RubyObject {
         }
     };
 
-    public static void createCipher(final Ruby runtime, final RubyModule mOSSL) {
-        RubyClass cCipher = mOSSL.defineClassUnder("Cipher", runtime.getObject(), CIPHER_ALLOCATOR);
-        cCipher.defineAnnotatedMethods(Cipher.class);
-        RubyClass openSSLError = mOSSL.getClass("OpenSSLError");
-        cCipher.defineClassUnder("CipherError", openSSLError, openSSLError.getAllocator());
+    public static void createCipher(final Ruby runtime, final RubyModule _OpenSSL) {
+        RubyClass _Cipher = _OpenSSL.defineClassUnder("Cipher", runtime.getObject(), CIPHER_ALLOCATOR);
+        _Cipher.defineAnnotatedMethods(Cipher.class);
+        RubyClass _OpenSSLError = _OpenSSL.getClass("OpenSSLError");
+        _Cipher.defineClassUnder("CipherError", _OpenSSLError, _OpenSSLError.getAllocator());
+    }
+
+    static RubyClass _Cipher(final Ruby runtime) {
+        return (RubyClass) runtime.getModule("OpenSSL").getConstant("Cipher");
     }
 
     public static boolean isSupportedCipher(final String name) {
@@ -815,6 +819,6 @@ public class Cipher extends RubyObject {
     }
 
     private static RaiseException newCipherError(Ruby runtime, String message) {
-        return Utils.newError(runtime, "OpenSSL::Cipher::CipherError", message);
+        return Utils.newError(runtime, _Cipher(runtime).getClass("CipherError"), message);
     }
 }

@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -50,6 +51,7 @@ import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERBoolean;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
@@ -440,11 +442,11 @@ public class ASN1 {
         return getOIDLookup(runtime).get(name);
     }
 
-    static Map<String, ASN1ObjectIdentifier> getOIDLookup(final Ruby runtime) {
+    private static Map<String, ASN1ObjectIdentifier> getOIDLookup(final Ruby runtime) {
         return symToOid(runtime);
     }
 
-    static Map<ASN1ObjectIdentifier, String> getSymLookup(final Ruby runtime) {
+    private static Map<ASN1ObjectIdentifier, String> getSymLookup(final Ruby runtime) {
         return oidToSym(runtime);
     }
 
@@ -481,8 +483,8 @@ public class ASN1 {
         {"CHARACTER_STRING",  null, null },
         {"BMPSTRING", org.bouncycastle.asn1.DERBMPString.class, "BMPString" }};
 
-    private final static Map<Class, Integer> CLASS_TO_ID = new HashMap<Class, Integer>();
-    private final static Map<String, Integer> RUBYNAME_TO_ID = new HashMap<String, Integer>();
+    private final static Map<Class<?>, Integer> CLASS_TO_ID = new HashMap<Class<?>, Integer>(24);
+    private final static Map<String, Integer> RUBYNAME_TO_ID = new HashMap<String, Integer>(24);
 
     static {
         for ( int i = 0; i < ASN1_INFO.length; i++ ) {
@@ -496,7 +498,7 @@ public class ASN1 {
         }
     }
 
-    static int idForClass(Class type) {
+    static int idForJava(Class<?> type) {
         Integer v = null;
         while ( type != Object.class && v == null ) {
             v = CLASS_TO_ID.get(type);
@@ -505,9 +507,17 @@ public class ASN1 {
         return v == null ? -1 : v.intValue();
     }
 
-    static int idForRubyName(String name) {
+    static int idForJava(final Object obj) {
+        return idForJava( obj.getClass() );
+    }
+
+    private static int idForRuby(final String name) {
         Integer v = RUBYNAME_TO_ID.get(name);
         return v == null ? -1 : v.intValue();
+    }
+
+    static int idForRuby(final RubyClass metaClass) {
+        return idForRuby( metaClass.getRealClass().getBaseName() );
     }
 
     static Class<? extends ASN1Encodable> classForId(int id) {
@@ -777,7 +787,7 @@ public class ASN1 {
     private static IRubyObject decodeObject(final ThreadContext context, final RubyModule _ASN1, final Object obj)
         throws IOException, IllegalArgumentException {
 
-        int ix = idForClass(obj.getClass());
+        int ix = idForJava(obj.getClass());
         final String className = ix == -1 ? null : (String) ( ASN1_INFO[ix][2] );
 
         if ( className != null ) {
@@ -985,7 +995,7 @@ public class ASN1 {
         }
 
         protected IRubyObject defaultTag() {
-            int i = idForRubyName(getMetaClass().getRealClass().getBaseName());
+            int i = idForRuby( getMetaClass() );
             if(i != -1) {
                 return getRuntime().newFixnum(i);
             } else {
@@ -1096,8 +1106,8 @@ public class ASN1 {
                 tag_class = runtime.newSymbol("UNIVERSAL");
             }
             if ( "ObjectId".equals( getMetaClass().getRealClass().getBaseName() ) ) {
-                String v = getSymLookup(runtime).get( getObjectIdentifier(runtime, value.toString()) );
-                if ( v != null ) value = runtime.newString(v);
+                String name = oid2Sym( runtime, getObjectIdentifier(runtime, value.toString()) );
+                if ( name != null ) value = runtime.newString(name);
             }
 
             this.callMethod(context, "tag=", tag);
@@ -1109,7 +1119,7 @@ public class ASN1 {
 
         @Override
         ASN1Encodable toASN1(final ThreadContext context) {
-            final int tag = idForRubyName(getMetaClass().getRealClass().getBaseName());
+            final int tag = idForRuby( getMetaClass() );
             @SuppressWarnings("unchecked")
             Class<? extends ASN1Encodable> impl = (Class<? extends ASN1Encodable>) ASN1_INFO[tag][1];
 
@@ -1117,11 +1127,11 @@ public class ASN1 {
             if ( impl == ASN1ObjectIdentifier.class ) {
                 return getObjectIdentifier(context.runtime, val.toString());
             }
-            else if ( impl == DERNull.class ) {
-                return new DERNull();
+            else if ( impl == DERNull.class || impl == ASN1Null.class ) {
+                return DERNull.INSTANCE;
             }
-            else if ( impl == DERBoolean.class ) {
-                return new DERBoolean(val.isTrue());
+            else if ( impl == DERBoolean.class || impl == ASN1Boolean.class ) {
+                return ASN1Boolean.getInstance(val.isTrue());
             }
             else if ( impl == DERUTCTime.class ) {
                 return new DERUTCTime(((RubyTime) val).getJavaDate());
@@ -1256,7 +1266,7 @@ public class ASN1 {
 
         @Override
         ASN1Encodable toASN1(final ThreadContext context) {
-            final int id = idForRubyName(getMetaClass().getRealClass().getBaseName());
+            final int id = idForRuby( getMetaClass() );
             if ( id != -1 ) {
                 final ASN1EncodableVector vec = new ASN1EncodableVector();
                 final RubyArray value = value(context);

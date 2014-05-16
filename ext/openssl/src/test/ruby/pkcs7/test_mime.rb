@@ -1,5 +1,7 @@
+require File.expand_path('../pkcs7_helper', File.dirname(__FILE__))
+
 module PKCS7Test
-  class TestJavaMime < Test::Unit::TestCase
+  class TestMIME < Test::Unit::TestCase
     def test_find_header_returns_null_on_nonexisting_header
       headers = []
       assert_nil Mime::DEFAULT.find_header(headers, "foo")
@@ -23,7 +25,7 @@ module PKCS7Test
       hdr = MimeHeader.new("one", "two", [par])
       assert_equal par, Mime::DEFAULT.find_param(hdr, "hox")
     end
-    
+
     def test_simple_parse_headers
       bio = BIO::from_string("Foo: bar")
       result = Mime::DEFAULT.parse_headers(bio)
@@ -106,7 +108,7 @@ module PKCS7Test
       header = result[0]
       assert_equal "content-type", header.name
       assert_equal "multipart/related", header.value
-      assert_equal [MimeParam.new("boundary","MIME_boundary"), 
+      assert_equal [MimeParam.new("boundary","MIME_boundary"),
                     MimeParam.new("type","text/xml")], header.params.to_a
     end
 
@@ -117,7 +119,7 @@ module PKCS7Test
       header = result[0]
       assert_equal "content-type", header.name
       assert_equal "multipart/related", header.value
-      assert_equal [MimeParam.new("boundary","MIME_boundary"), 
+      assert_equal [MimeParam.new("boundary","MIME_boundary"),
                     MimeParam.new("type","text/xml")], header.params.to_a
     end
 
@@ -128,17 +130,17 @@ module PKCS7Test
       header = result[0]
       assert_equal "content-type", header.name
       assert_equal "multipart/related", header.value
-      assert_equal [MimeParam.new("boundary","MIME_boundary"), 
+      assert_equal [MimeParam.new("boundary","MIME_boundary"),
                     MimeParam.new("type","text/xml")], header.params.to_a
     end
 
     def test_advanced_mime_message
       bio = BIO::from_string(MultipartSignedString)
       result = Mime::DEFAULT.parse_headers(bio)
-      
+
       assert_equal "mime-version", result[0].name
       assert_equal "1.0", result[0].value
-      
+
       assert_equal "to", result[1].name
       assert_equal "user2@examples.com", result[1].value
 
@@ -153,10 +155,10 @@ module PKCS7Test
 
       assert_equal "date", result[5].name
       assert_equal "fri, 06 sep 2002 00:25:21 -0300", result[5].value
-      
+
       assert_equal "content-type", result[6].name
       assert_equal "multipart/signed", result[6].value
-      
+
       assert_equal "micalg", result[6].params[0].param_name
       assert_equal "SHA1", result[6].params[0].param_value
 
@@ -165,7 +167,7 @@ module PKCS7Test
 
       assert_equal "protocol", result[6].params[2].param_name
       assert_equal "application/pkcs7-signature", result[6].params[2].param_value
-      
+
       assert_equal 3, result[6].params.length
       assert_equal 7, result.length
     end
