@@ -137,7 +137,10 @@ project 'JRuby Lib Setup' do
 
     # since the bouncy castle .jars are version-ed (e.g. bcprov-jdk15on-1.47)
     # make sure we cleanup before adding the ones from the jruby-openssl.gem:
-    FileUtils.rm_f Dir.glob( File.join( lib_dir, "bc{prov,pkix}*.jar" ) )
+    Dir.glob( File.join( lib_dir, "bc{prov,pkix}*.jar" ) ).each do |f|
+      # use this instead of FileUtils.rm_f - issue #1698
+      File.delete( f ) if File.exists?( f )
+    end
 
     # now we can require the rubygems staff
     require 'rubygems/installer'
@@ -185,7 +188,10 @@ project 'JRuby Lib Setup' do
     end
 
     # patch jruby-openssl - remove file which should be only inside gem
-    FileUtils.rm_f( File.join( ruby_dir, 'shared', 'jruby-openssl.rb' ) )
+    # use this instead of FileUtils.rm_f - issue #1698
+    f = File.join( ruby_dir, 'shared', 'jruby-openssl.rb' )
+    File.delete( f ) if File.exists?( f )
+
     # patch the bouncy-castle loading problems on certain classloaders
     File.open( File.join( ruby_dir, 'shared', 'bouncy-castle-java.rb' ), 'w' ) do |f|
       bc_version = ctx.project.properties.get( 'bouncy-castle.version' )
