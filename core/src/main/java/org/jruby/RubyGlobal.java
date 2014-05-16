@@ -57,10 +57,12 @@ import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.io.BadDescriptorException;
+import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
 
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 
+import java.nio.channels.Channels;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -183,10 +185,20 @@ public class RubyGlobal {
         runtime.defineVariable(new SafeGlobalVariable(runtime, "$SAFE"), THREAD);
 
         runtime.defineVariable(new BacktraceGlobalVariable(runtime, "$@"), THREAD);
-
-        IRubyObject stdin = new RubyIO(runtime, STDIO.IN);
-        IRubyObject stdout = new RubyIO(runtime, STDIO.OUT);
-        IRubyObject stderr = new RubyIO(runtime, STDIO.ERR);
+        IRubyObject stdin = null;
+        IRubyObject stdout = null;
+        IRubyObject stderr = null;
+        try {
+        stdin = RubyIO.prepStdio(
+                runtime, runtime.getIn(), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
+        stdout = RubyIO.prepStdio(
+                runtime, runtime.getOut(), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
+        stderr = RubyIO.prepStdio(
+                runtime, runtime.getErr(), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDOUT>");
+        } catch (Exception e) {
+            e.printStackTrace();
+            Helpers.throwException(e);
+        }
 
         runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin), GLOBAL);
 

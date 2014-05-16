@@ -3247,7 +3247,6 @@ public final class Ruby {
     /**
      * TDOD remove the synchronized. Synchronization should be a implementation detail of the ProfilingService.
      * @param profileData
-     * @param output
      */
     public synchronized void printProfileData( ProfileCollection profileData ) {
         getProfilingService().newProfileReporter(getCurrentContext()).report(profileData);

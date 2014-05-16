@@ -129,7 +129,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             throw runtime.newRuntimeError("Opening null stream");
         }
         
-        openFile = new OpenFile();
+        openFile = new OpenFile(runtime.getNil());
         
         try {
             openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(outputStream)), autoclose));
@@ -147,7 +147,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             throw runtime.newRuntimeError("Opening null stream");
         }
         
-        openFile = new OpenFile();
+        openFile = new OpenFile(runtime.getNil());
         
         try {
             openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(inputStream))));
@@ -166,7 +166,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             throw runtime.newRuntimeError("Opening null channel");
         }
         
-        openFile = new OpenFile();
+        openFile = new OpenFile(runtime.getNil());
         
         try {
             openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(channel)));
@@ -178,64 +178,49 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     public RubyIO(Ruby runtime, ShellLauncher.POpenProcess process, IOOptions ioOptions) {
-        this(runtime, runtime.getIO(), process, null, ioOptions);
-    }
-    
-    @Deprecated
-    public RubyIO(Ruby runtime, RubyClass cls, ShellLauncher.POpenProcess process, RubyHash options, IOOptions ioOptions) {
-        super(runtime, cls);
+        super(runtime, runtime.getIO());
 
-        ioOptions = updateIOOptionsFromOptions(runtime.getCurrentContext(), (RubyHash) options, ioOptions);
+        ioOptions = updateIOOptionsFromOptions(runtime.getCurrentContext(), null, ioOptions);
 
-        openFile = new OpenFile();
-        
+        openFile = new OpenFile(runtime.getNil());
+
         setupPopen(ioOptions.getModeFlags(), process);
     }
-    
-    public RubyIO(Ruby runtime, STDIO stdio) {
-        super(runtime, runtime.getIO());
-        
-        openFile = new OpenFile();
-        ChannelDescriptor descriptor;
-        Stream mainStream;
 
-        switch (stdio) {
-        case IN:
-            // special constructor that accepts stream, not channel
-            descriptor = new ChannelDescriptor(runtime.getIn(), newModeFlags(runtime, ModeFlags.RDONLY), FileDescriptor.in);
-            runtime.putFilenoMap(0, descriptor.getFileno());
-            mainStream = ChannelStream.open(runtime, descriptor);
-            openFile.setMainStream(mainStream);
-//            prepStdio(runtime.getOut(), OpenFile.READABLE);
-            break;
-        case OUT:
-            descriptor = new ChannelDescriptor(Channels.newChannel(runtime.getOut()), newModeFlags(runtime, ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.out);
-            runtime.putFilenoMap(1, descriptor.getFileno());
-            mainStream = ChannelStream.open(runtime, descriptor);
-            openFile.setMainStream(mainStream);
-//            prepStdio(runtime.getOut(), OpenFile.WRITABLE);
-            break;
-        case ERR:
-            descriptor = new ChannelDescriptor(Channels.newChannel(runtime.getErr()), newModeFlags(runtime, ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.err);
-            runtime.putFilenoMap(2, descriptor.getFileno());
-            mainStream = ChannelStream.open(runtime, descriptor);
-            openFile.setMainStream(mainStream);
-//            prepStdio(runtime.getOut(), OpenFile.WRITABLE | OpenFile.SYNC);
-            break;
-        }
+    // MRI: prep_stdio
+    public static RubyIO prepStdio(Ruby runtime, InputStream f, int fmode, RubyClass klass, String path) {
+        OpenFile fptr;
+        RubyIO io = prepIO(runtime, Channels.newChannel(f), fmode | OpenFile.PREP | EncodingUtils.DEFAULT_TEXTMODE, klass, path);
 
-        openFile.setMode(openFile.getMainStream().getModes().getOpenFileFlags());
-        // never autoclose stdio streams
-        openFile.setAutoclose(false);
-        openFile.setStdio(true);
+        fptr = io.getOpenFileChecked();
+        prepStdioEcflags(fptr, fmode);
+        fptr.stdioIn = f;
+
+        // We checkTTY again here because we're using stdioOut/stdioIn to indicate this is stdio
+        return recheckTTY(runtime, fptr, io);
     }
 
-    // non-IO-opening part of prep_stdio
-    private void prepStdio(Object f, int fmode) {
+    // MRI: prep_stdio
+    public static RubyIO prepStdio(Ruby runtime, OutputStream f, int fmode, RubyClass klass, String path) {
         OpenFile fptr;
-//        IRubyObject io = prep_io(fileno(f), fmode|FMODE_PREP|DEFAULT_TEXTMODE, klass, path);
+        RubyIO io = prepIO(runtime, Channels.newChannel(f), fmode | OpenFile.PREP | EncodingUtils.DEFAULT_TEXTMODE, klass, path);
 
-        fptr = getOpenFileChecked();
+        fptr = io.getOpenFileChecked();
+        prepStdioEcflags(fptr, fmode);
+        fptr.stdioOut = f;
+
+        return recheckTTY(runtime, fptr, io);
+    }
+
+    private static RubyIO recheckTTY(Ruby runtime, OpenFile fptr, RubyIO io) {
+        // We checkTTY again here because we're using stdioOut/stdioIn to indicate this is stdio
+        fptr.checkTTY();
+
+        return io;
+    }
+
+    // MRI: part of prep_stdio
+    private static void prepStdioEcflags(OpenFile fptr, int fmode) {
         fptr.encs.ecflags |= EncodingUtils.ECONV_DEFAULT_NEWLINE_DECORATOR;
         if (EncodingUtils.TEXTMODE_NEWLINE_DECORATOR_ON_WRITE != 0) {
             fptr.encs.ecflags |= EncodingUtils.TEXTMODE_NEWLINE_DECORATOR_ON_WRITE;
@@ -243,9 +228,29 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 fptr.encs.ecflags |= EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
             }
         }
-        fptr.stdioFile = f;
+    }
 
-//        return io;
+    // MRI: prep_io
+    private static RubyIO prepIO(Ruby runtime, Channel fd, int fmode, RubyClass klass, String path)
+    {
+        OpenFile fp;
+        RubyIO io = (RubyIO)klass.allocate();
+
+        fp = io.MakeOpenFile();
+        fp.setFD(fd);
+        // Can we determine this?
+//        if (Platform.IS_CYGWIN) {
+//            if (!runtime.getPosix().isatty(fd)) {
+//                fmode |= OpenFile.BINMODE;
+//                setmode(fd, OpenFlags.O_BINARY);
+//            }
+//        }
+        fp.setMode(fmode);
+        fp.checkTTY();
+        if (path != null) fp.setPath(path);
+//        rb_update_max_fd(fd);
+
+        return io;
     }
     
     public static RubyIO newIO(Ruby runtime, Channel channel) {
@@ -745,12 +750,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return openFile.inputEncoding(getRuntime());
     }
 
-    private static String vendor;
-    static { String v = SafePropertyAccessor.getProperty("java.vendor") ; vendor = (v == null) ? "" : v; };
-    private static String msgEINTR = "Interrupted system call";
+    private static final String VENDOR;
+    static { String v = SafePropertyAccessor.getProperty("java.VENDOR") ; VENDOR = (v == null) ? "" : v; };
+    private static final String msgEINTR = "Interrupted system call";
 
+    // FIXME: We needed to use this to raise an appropriate error somewhere...find where
     public static boolean restartSystemCall(Exception e) {
-        return vendor.startsWith("Apple") && e.getMessage().equals(msgEINTR);
+        return VENDOR.startsWith("Apple") && e.getMessage().equals(msgEINTR);
     }
 
     // IO class methods.
@@ -818,7 +824,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             openFile.setMainStream(fdopen(descriptor, modes));
             openFile.clearCodeConversion();
             
-//            io_check_tty(fp);
+            openFile.checkTTY();
 //            if (fileno(stdin) == fd)
 //                fp - > stdio_file = stdin;
 //            else if (fileno(stdout) == fd)
@@ -826,7 +832,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //            else if (fileno(stderr) == fd)
 //                fp - >stdio_file = stderr;
             
-            if (hasBom) {
+            if (openFile.isBOM()) {
                 EncodingUtils.ioSetEncodingByBOM(context, this);
             }
         } catch (BadDescriptorException ex) {
@@ -1722,7 +1728,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @JRubyMethod
     public IRubyObject close() {
         Ruby runtime = getRuntime();
-        
+
         openFile.checkClosed(runtime);
         return ioClose(runtime);
     }
@@ -4159,12 +4165,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
     
     @Override
     public void setBOM(boolean bom) {
-        this.hasBom = bom;
+        openFile.setBOM(bom);
     }
     
     @Override
     public boolean getBOM() {
-        return hasBom;
+        return openFile.isBOM();
     }
 
     // MRI: rb_io_ascii8bit_binmode
@@ -4187,13 +4193,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
     
     protected OpenFile MakeOpenFile() {
+        Ruby runtime = getRuntime();
         if (openFile != null) {
-            Ruby runtime = getRuntime();
             ioClose(runtime);
             openFile.finalize(runtime, false);
             openFile = null;
         }
-        return openFile = new OpenFile();
+        return openFile = new OpenFile(runtime.getNil());
     }
 
     @Deprecated
@@ -4225,6 +4231,38 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public RubyArray readlines19(ThreadContext context, IRubyObject[] args) {
         return readlines(context, args);
     }
+
+    @Deprecated
+    public RubyIO(Ruby runtime, STDIO stdio) {
+        super(runtime, runtime.getIO());
+
+        RubyIO tmp = null;
+        switch (stdio) {
+            case IN:
+                tmp = prepStdio(runtime, runtime.getIn(), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
+                break;
+            case OUT:
+                tmp = prepStdio(runtime, runtime.getOut(), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
+                break;
+            case ERR:
+                tmp = prepStdio(runtime, runtime.getIn(), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
+                break;
+        }
+
+        this.openFile = tmp.openFile;
+        tmp.openFile = null;
+    }
+
+    @Deprecated
+    public RubyIO(Ruby runtime, RubyClass cls, ShellLauncher.POpenProcess process, RubyHash options, IOOptions ioOptions) {
+        super(runtime, cls);
+
+        ioOptions = updateIOOptionsFromOptions(runtime.getCurrentContext(), (RubyHash) options, ioOptions);
+
+        openFile = new OpenFile(runtime.getNil());
+
+        setupPopen(ioOptions.getModeFlags(), process);
+    }
     
     protected OpenFile openFile;
     protected List<RubyThread> blockingThreads;
@@ -4234,5 +4272,4 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * when we close the stream.
      */
     protected boolean popenSpecial;
-    protected boolean hasBom = false;
 }

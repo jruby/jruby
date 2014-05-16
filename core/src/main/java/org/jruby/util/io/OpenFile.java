@@ -26,6 +26,8 @@ import org.jruby.util.StringSupport;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
@@ -68,21 +70,26 @@ public class OpenFile {
 
         public void finalize(Ruby runtime, boolean raise);
     }
+
+    // RB_IO_FPTR_NEW, minus fields that Java already initializes the same way
+    public OpenFile(IRubyObject nil) {
+        writeconvAsciicompat = nil;
+        writeconvPreEcopts = nil;
+        encs.ecopts = nil;
+    }
     private Channel fd;
 
     private ReadableByteChannel fdRead;
     private WritableByteChannel fdWrite;
     private SeekableByteChannel fdSeek;
     private SelectableChannel fdSelect;
-    private Stream mainStream;
-    private Stream pipeStream;
     private int mode;
     private Process process;
-    private int lineno = 0;
+    private int lineno;
     private String pathv;
     private Finalizer finalizer;
-    private boolean stdio;
-    public Object stdioFile;
+    public InputStream stdioIn;
+    public OutputStream stdioOut;
 
     public static class Buffer {
         public byte[] ptr;
@@ -147,7 +154,11 @@ public class OpenFile {
 
     public void setMainStream(Stream mainStream) {
         this.mainStream = mainStream;
-        this.fd = mainStream.getChannel();
+        setFD(mainStream.getChannel());
+    }
+
+    public void setFD(Channel fd) {
+        this.fd = fd;
         if (fd instanceof ReadableByteChannel) fdRead = (ReadableByteChannel)fd;
         if (fd instanceof WritableByteChannel) fdWrite = (WritableByteChannel)fd;
         if (fd instanceof SeekableByteChannel) fdSeek = (SeekableByteChannel)fd;
@@ -585,7 +596,7 @@ public class OpenFile {
     }
 
     public void checkClosed(Ruby runtime) {
-        if (mainStream == null && pipeStream == null) {
+        if (fd == null) {
             throw runtime.newIOError("closed stream");
         }
     }
@@ -698,22 +709,6 @@ public class OpenFile {
         Stream myMain, myPipe;
         if ((myMain = mainStream) != null) myMain.setAutoclose(autoclose);
         if ((myPipe = pipeStream) != null) myPipe.setAutoclose(autoclose);
-    }
-    
-    public void setStdio(boolean stdio) {
-        this.stdio = true;
-    }
-    
-    public boolean isStdio() {
-        return stdio;
-    }
-
-    public void setStdioFile(Object file) {
-        this.stdioFile = file;
-    }
-
-    public Object getStdioFile() {
-        return stdioFile;
     }
 
     public Finalizer getFinalizer() {
@@ -2143,15 +2138,27 @@ public class OpenFile {
     }
 
     // MRI: check_tty
-    public void checkTTY(Ruby runtime) {
-        if (runtime.getPosix().isNative()) {
-            if (runtime.getPosix().isatty(mainStream.getDescriptor().getFileDescriptor())) {
-                mode |= TTY | DUPLEX;
-            } else if (mainStream.getDescriptor().getFileDescriptor() == FileDescriptor.in
-                    || mainStream.getDescriptor().getFileDescriptor() == FileDescriptor.out
-                    || mainStream.getDescriptor().getFileDescriptor() == FileDescriptor.err) {
-                mode |= TTY | DUPLEX;
-            }
+    public void checkTTY() {
+        // TODO: native descriptors? Is this only used for stdio?
+        if (stdioIn != null || stdioOut != null) {
+            mode |= TTY | DUPLEX;
         }
     }
+
+    public boolean isBOM() {
+        return (mode & SETENC_BY_BOM) != 0;
+    }
+
+    public void setBOM(boolean bom) {
+        if (bom) {
+            mode |= SETENC_BY_BOM;
+        } else {
+            mode &= ~SETENC_BY_BOM;
+        }
+    }
+
+    @Deprecated
+    private Stream mainStream;
+    @Deprecated
+    private Stream pipeStream;
 }
