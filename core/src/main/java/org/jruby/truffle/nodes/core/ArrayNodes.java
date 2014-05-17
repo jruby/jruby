@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -1556,30 +1555,23 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"map", "collect"}, needsBlock = true, maxArgs = 0)
     public abstract static class MapNode extends YieldingArrayCoreMethodNode {
 
-        @CompilerDirectives.CompilationFinal private RubyArray.ArrayType arrayType = RubyArray.ArrayType.UNKNOWN;
+        @Child protected ArrayBuilderNode arrayBuilder;
 
         public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         public MapNode(MapNode prev) {
             super(prev);
+            arrayBuilder = prev.arrayBuilder;
         }
 
         @Specialization(guards = "isObject")
         public RubyArray map(VirtualFrame frame, RubyArray array, RubyProc block) {
             final Object[] store = (Object[]) array.store;
 
-            Object mappedStore = null;
-
-            switch (arrayType) {
-                case OBJECT:
-                    mappedStore = new Object[array.size];
-                    break;
-                case DOUBLE:
-                    mappedStore = new double[array.size];
-                    break;
-            }
+            Object mappedStore = arrayBuilder.startExactLength(array.size);
 
             int count = 0;
 
@@ -1589,46 +1581,15 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    final Object value = yield(frame, block, store[n]);
-
-                    switch (arrayType) {
-                        case UNKNOWN:
-                            if (value instanceof Double) {
-                                arrayType = RubyArray.ArrayType.DOUBLE;
-                                mappedStore = new double[array.size];
-                                ((double[]) mappedStore)[n] = (double) value;
-                            } else {
-                                arrayType = RubyArray.ArrayType.OBJECT;
-                                mappedStore = new Object[array.size];
-                                ((Object[]) mappedStore)[n] = value;
-                            }
-                            break;
-                        case OBJECT:
-                            ((Object[]) mappedStore)[n] = value;
-                            break;
-                        case DOUBLE:
-                            if (value instanceof Double) {
-                                ((double[]) mappedStore)[n] = (double) value;
-                            } else {
-                                CompilerDirectives.transferToInterpreterAndInvalidate();
-
-                                System.err.println("TRANSFER");
-
-                                arrayType = RubyArray.ArrayType.OBJECT;
-
-                                final Object[] objectStore = new Object[array.size];
-                                ArrayUtils.copy(mappedStore, objectStore, 0);
-                                objectStore[n] = value;
-                                mappedStore = objectStore;
-                            }
-                            break;
-                    }
+                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
                     ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
                 }
             }
+
+            arrayBuilder.finish();
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), mappedStore, array.size);
         }
@@ -1637,20 +1598,22 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"map!", "collect!"}, needsBlock = true, maxArgs = 0)
     public abstract static class MapInPlaceNode extends YieldingArrayCoreMethodNode {
 
+        @Child protected ArrayBuilderNode arrayBuilder;
+
         public MapInPlaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         public MapInPlaceNode(MapInPlaceNode prev) {
             super(prev);
+            arrayBuilder = prev.arrayBuilder;
         }
 
         @Specialization(guards = "isIntegerFixnum", order = 1)
         public RubyArray mapInPlaceFixnumInteger(VirtualFrame frame, RubyArray array, RubyProc block) {
-            // TODO(CS): what if we could map into a simple storage class?
-
             final int[] store = (int[]) array.store;
-            final Object[] mappedStore = new Object[array.size];
+            Object mappedStore = arrayBuilder.startExactLength(array.size);
 
             int count = 0;
 
@@ -1660,7 +1623,7 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    mappedStore[n] = yield(frame, block, store[n]);
+                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1668,6 +1631,7 @@ public abstract class ArrayNodes {
                 }
             }
 
+            arrayBuilder.finish();
             array.store = mappedStore;
 
             return array;
@@ -1675,9 +1639,8 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isObject", order = 2)
         public RubyArray mapInPlaceObject(VirtualFrame frame, RubyArray array, RubyProc block) {
-            // TODO(CS): what if we could map into a simple storage class?
-
             final Object[] store = (Object[]) array.store;
+            Object mappedStore = arrayBuilder.startExactLength(array.size);
 
             int count = 0;
 
@@ -1687,13 +1650,16 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    store[n] = yield(frame, block, store[n]);
+                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
                     ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
                 }
             }
+
+            arrayBuilder.finish();
+            array.store = mappedStore;
 
             return array;
         }

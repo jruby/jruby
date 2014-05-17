@@ -27,14 +27,16 @@ public abstract class RangeNodes {
     @CoreMethod(names = {"collect", "map"}, needsBlock = true, maxArgs = 0)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
 
-        @CompilerDirectives.CompilationFinal private RubyArray.ArrayType arrayType = RubyArray.ArrayType.UNKNOWN;
+        @Child protected ArrayBuilderNode arrayBuilder;
 
         public CollectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         public CollectNode(CollectNode prev) {
             super(prev);
+            arrayBuilder = prev.arrayBuilder;
         }
 
         @Specialization
@@ -43,16 +45,7 @@ public abstract class RangeNodes {
             final int exclusiveEnd = range.getExclusiveEnd();
             final int length = exclusiveEnd - begin;
 
-            Object store = null;
-
-            switch (arrayType) {
-                case OBJECT:
-                    store = new Object[length];
-                    break;
-                case DOUBLE:
-                    store = new double[length];
-                    break;
-            }
+            Object store = arrayBuilder.startExactLength(length);
 
             int count = 0;
 
@@ -62,46 +55,15 @@ public abstract class RangeNodes {
                         count++;
                     }
 
-                    final Object value = yield(frame, block, n);
-
-                    switch (arrayType) {
-                        case UNKNOWN:
-                            if (value instanceof Double) {
-                                arrayType = RubyArray.ArrayType.DOUBLE;
-                                store = new double[length];
-                                ((double[]) store)[n] = (double) value;
-                            } else {
-                                arrayType = RubyArray.ArrayType.OBJECT;
-                                store = new Object[length];
-                                ((Object[]) store)[n] = value;
-                            }
-                            break;
-                        case OBJECT:
-                            ((Object[]) store)[n] = value;
-                            break;
-                        case DOUBLE:
-                            if (value instanceof Double) {
-                                ((double[]) store)[n] = (double) value;
-                            } else {
-                                CompilerDirectives.transferToInterpreterAndInvalidate();
-
-                                System.err.println("TRANSFER");
-
-                                arrayType = RubyArray.ArrayType.OBJECT;
-
-                                final Object[] objectStore = new Object[length];
-                                ArrayUtils.copy(store, objectStore, 0);
-                                objectStore[n] = value;
-                                store = objectStore;
-                            }
-                            break;
-                    }
+                    store = arrayBuilder.append(store, n, yield(frame, block, n));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
                     ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
                 }
             }
+
+            arrayBuilder.finish();
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, length);
         }
