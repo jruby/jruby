@@ -92,8 +92,8 @@ public abstract class ArrayNodes {
 
             final int combinedSize = a.size + b.size;
             final Object[] combined = new Object[combinedSize];
-            ArrayUtils.copy(a.store, combined, 0);
-            ArrayUtils.copy(b.store, combined, a.size);
+            ArrayUtils.copy(a.store, combined, 0, a.size);
+            ArrayUtils.copy(b.store, combined, a.size, b.size);
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
         }
 
@@ -160,6 +160,27 @@ public abstract class ArrayNodes {
             final double[] bs = (double[]) b.store;
 
             final double[] sub = new double[a.size];
+
+            int i = 0;
+
+            for (int n = 0; n < a.size; n++) {
+                if (!ArrayUtils.contains(bs, as[n])) {
+                    sub[i] = as[n];
+                    i++;
+                }
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), sub, i);
+        }
+
+        @Specialization(guards = "areBothObject", order = 4)
+        public RubyArray subObject(RubyArray a, RubyArray b) {
+            notDesignedForCompilation();
+
+            final Object[] as = (Object[]) a.store;
+            final Object[] bs = (Object[]) b.store;
+
+            final Object[] sub = new Object[a.size];
 
             int i = 0;
 
@@ -512,6 +533,19 @@ public abstract class ArrayNodes {
                 return NilPlaceholder.INSTANCE;
             } else {
                 return ((Object[]) array.store)[normalisedIndex];
+            }
+        }
+
+        @Specialization(guards = "isObject", order = 9)
+        public Object getObject(RubyArray array, int index, int length) {
+            notDesignedForCompilation();
+
+            int normalisedIndex = array.normaliseIndex(index);
+
+            if (normalisedIndex < 0 || normalisedIndex >= array.size) {
+                return NilPlaceholder.INSTANCE;
+            } else {
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.store, normalisedIndex, normalisedIndex + length), length);
             }
         }
 
@@ -953,8 +987,8 @@ public abstract class ArrayNodes {
             // TODO(CS): is there already space in array?
             // TODO(CS): if array is Object[], use Arrays.copyOf
             final Object[] newStore = new Object[array.size + other.size];
-            ArrayUtils.copy(array.store, newStore, 0);
-            ArrayUtils.copy(other.store, newStore, array.size);
+            ArrayUtils.copy(array.store, newStore, 0, array.size);
+            ArrayUtils.copy(other.store, newStore, array.size, other.size);
             array.store = newStore;
             return array;
         }
@@ -1284,7 +1318,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "find", needsBlock = true, maxArgs = 0)
-    public abstract static class FindNode extends YieldingCoreMethodNode {
+    public abstract static class FindNode extends YieldingArrayCoreMethodNode {
 
         public FindNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1294,11 +1328,25 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(guards = "isObject")
         public Object find(VirtualFrame frame, RubyArray array, RubyProc block) {
             notDesignedForCompilation();
 
-            throw new UnsupportedOperationException();
+            final Object[] store = (Object[]) array.store;
+
+            for (int n = 0; n < array.size; n++) {
+                try {
+                    final Object value = store[n];
+
+                    if (yieldBoolean(frame, block, value)) {
+                        return value;
+                    }
+                } catch (BreakException e) {
+                    break;
+                }
+            }
+
+            return NilPlaceholder.INSTANCE;
         }
     }
 
@@ -1341,17 +1389,34 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "include?", minArgs = 1, maxArgs = 1)
     public abstract static class IncludeNode extends ArrayCoreMethodNode {
 
+        @Child protected DispatchHeadNode threeEqual;
+
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            threeEqual = new DispatchHeadNode(context, "===", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public IncludeNode(IncludeNode prev) {
             super(prev);
+            threeEqual = prev.threeEqual;
         }
 
-        @Specialization
-        public boolean include(RubyArray array, Object value) {
-            throw new UnsupportedOperationException();
+        @Specialization(guards = "isObject")
+        public boolean include(VirtualFrame frame, RubyArray array, Object value) {
+            final Object[] store = (Object[]) array.store;
+
+            for (int n = 0; n < array.size; n++) {
+                final Object stored = store[n];
+
+                // TODO(CS): cast node around the dispatch
+                notDesignedForCompilation();
+
+                if (stored == value || (boolean) threeEqual.dispatch(frame, store[n], null, value)) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
     }
@@ -1529,7 +1594,21 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyString join(RubyArray array, RubyString separator) {
-            throw new UnsupportedOperationException();
+            notDesignedForCompilation();
+
+            final StringBuilder builder = new StringBuilder();
+
+            final Object[] objects = array.slowToArray();
+
+            for (int n = 0; n < objects.length; n++) {
+                if (n > 0) {
+                    builder.append(separator);
+                }
+
+                builder.append(objects[n]);
+            }
+
+            return getContext().makeString(builder.toString());
         }
 
     }
@@ -1559,7 +1638,7 @@ public abstract class ArrayNodes {
 
         public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
+            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context, true);
         }
 
         public MapNode(MapNode prev) {
@@ -1571,7 +1650,7 @@ public abstract class ArrayNodes {
         public RubyArray map(VirtualFrame frame, RubyArray array, RubyProc block) {
             final Object[] store = (Object[]) array.store;
 
-            Object mappedStore = arrayBuilder.startExactLength(array.size);
+            Object mappedStore = arrayBuilder.length(array.size);
 
             int count = 0;
 
@@ -1602,7 +1681,7 @@ public abstract class ArrayNodes {
 
         public MapInPlaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
+            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context, true);
         }
 
         public MapInPlaceNode(MapInPlaceNode prev) {
@@ -1613,7 +1692,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isIntegerFixnum", order = 1)
         public RubyArray mapInPlaceFixnumInteger(VirtualFrame frame, RubyArray array, RubyProc block) {
             final int[] store = (int[]) array.store;
-            Object mappedStore = arrayBuilder.startExactLength(array.size);
+            Object mappedStore = arrayBuilder.length(array.size);
 
             int count = 0;
 
@@ -1640,7 +1719,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isObject", order = 2)
         public RubyArray mapInPlaceObject(VirtualFrame frame, RubyArray array, RubyProc block) {
             final Object[] store = (Object[]) array.store;
-            Object mappedStore = arrayBuilder.startExactLength(array.size);
+            Object mappedStore = arrayBuilder.length(array.size);
 
             int count = 0;
 
@@ -1944,19 +2023,54 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "select", needsBlock = true, maxArgs = 0)
-    public abstract static class SelectNode extends YieldingCoreMethodNode {
+    public abstract static class SelectNode extends YieldingArrayCoreMethodNode {
+
+        @Child protected ArrayBuilderNode arrayBuilder;
 
         public SelectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context, true);
         }
 
         public SelectNode(SelectNode prev) {
             super(prev);
+            arrayBuilder = prev.arrayBuilder;
         }
 
-        @Specialization
+        @Specialization(guards = "isObject")
         public Object select(VirtualFrame frame, RubyArray array, RubyProc block) {
-            throw new UnsupportedOperationException();
+            final Object[] store = (Object[]) array.store;
+
+            Object selectedStore = arrayBuilder.length(array.size);
+            int selectedSize = 0;
+
+            int count = 0;
+
+            try {
+                for (int n = 0; n < array.size; n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    final Object value = store[n];
+
+                    // TODO(CS): cast to boolean?
+                    notDesignedForCompilation();
+
+                    if ((boolean) yield(frame, block, value)) {
+                        selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
+                        selectedSize++;
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            arrayBuilder.finish();
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), selectedStore, selectedSize);
         }
 
     }

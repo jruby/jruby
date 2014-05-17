@@ -47,28 +47,45 @@ public abstract class ArrayGetTailNode extends RubyNode {
     public RubyArray getTailIntegerFixnum(RubyArray array) {
         notDesignedForCompilation();
 
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((int[]) array.store, index, array.size - index), array.size - 1);
+        if (array.size >= index) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+        } else {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((int[]) array.store, index, array.size - index), array.size - index);
+        }
     }
 
     @Specialization(guards = "isLongFixnum", order = 3)
     public RubyArray getTailLongFixnum(RubyArray array) {
         notDesignedForCompilation();
 
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((long[]) array.store, index, array.size - index), array.size - 1);
+        if (array.size >= index) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+        } else {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((long[]) array.store, index, array.size - index), array.size - index);
+        }
     }
 
     @Specialization(guards = "isFloat", order = 4)
     public RubyArray getTailFloat(RubyArray array) {
         notDesignedForCompilation();
 
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((double[]) array.store, index, array.size - index), array.size - 1);
+        if (array.size >= index) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+        } else {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((double[]) array.store, index, array.size - index), array.size - index);
+        }
     }
 
     @Specialization(guards = "isObject", order = 5)
     public RubyArray getTailObject(RubyArray array) {
         notDesignedForCompilation();
 
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.store, index, array.size - index), array.size - 1);
+        if (array.size >= index) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+        } else {
+            System.err.println(((Object[]) array.store).length + " " + index + " " + array.size + " " + index);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.store, index, array.size - index), array.size - index);
+        }
     }
 
     // TODO(CS): copied and pasted from ArrayCoreMethodNode - need a way to use statics from other classes in the DSL

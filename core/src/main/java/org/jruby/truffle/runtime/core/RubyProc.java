@@ -58,8 +58,8 @@ public class RubyProc extends RubyObject {
     }
 
     public void initialize(Type setType, Object selfCapturedInScope, RubyProc blockCapturedInScope, RubyMethod setMethod) {
-        assert selfCapturedInScope != null;
         assert RubyContext.shouldObjectBeVisible(selfCapturedInScope);
+
         type = setType;
         this.selfCapturedInScope = selfCapturedInScope;
         this.blockCapturedInScope = blockCapturedInScope;

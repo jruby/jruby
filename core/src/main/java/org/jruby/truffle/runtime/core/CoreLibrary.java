@@ -328,7 +328,7 @@ public class CoreLibrary {
     public RubyBasicObject box(Object object) {
         RubyNode.notDesignedForCompilation();
 
-        assert RubyContext.shouldObjectBeVisible(object);
+        assert RubyContext.shouldObjectBeVisible(object) : object.getClass();
 
         // TODO(cs): pool common object instances like small Fixnums?
 

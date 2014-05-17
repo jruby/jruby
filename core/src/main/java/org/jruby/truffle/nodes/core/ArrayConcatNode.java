@@ -32,7 +32,23 @@ public final class ArrayConcatNode extends RubyNode {
 
     @Override
     public RubyArray execute(VirtualFrame frame) {
-        throw new UnsupportedOperationException();
+        notDesignedForCompilation();
+
+        final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+
+        for (int n = 0; n < children.length; n++) {
+            final Object childObject = children[n].execute(frame);
+
+            if (childObject instanceof RubyArray) {
+                for (Object value : ((RubyArray) childObject).slowToArray()) {
+                    array.slowPush(value);
+                }
+            } else {
+                array.slowPush(childObject);
+            }
+        }
+
+        return array;
     }
 
     @ExplodeLoop

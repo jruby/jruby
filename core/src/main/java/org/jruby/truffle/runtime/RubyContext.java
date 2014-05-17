@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime;
 
 import java.io.*;
 import java.math.*;
+import java.util.Arrays;
 import java.util.concurrent.atomic.*;
 
 import org.jruby.Ruby;
@@ -308,9 +309,11 @@ public class RubyContext {
     }
 
     public static boolean shouldObjectsBeVisible(Object... objects) {
-        assert objects != null;
+        return shouldObjectsBeVisible(objects.length, objects);
+    }
 
-        for (Object object : objects) {
+    public static boolean shouldObjectsBeVisible(int length, Object... objects) {
+        for (Object object : Arrays.asList(objects).subList(0, length)) {
             if (!shouldObjectBeVisible(object)) {
                 return false;
             }

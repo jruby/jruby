@@ -220,10 +220,47 @@ public abstract class StringNodes {
         }
 
         @Specialization(order = 1)
-        public Object getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
+        public RubyString getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
             // TODO(CS): not really right
             return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(new byte[]{(byte) string.getBytes().charAt(string.normaliseIndex(index))}, string.getBytes().getEncoding()));
         }
+
+        @CompilerDirectives.SlowPath
+        @Specialization(order = 2)
+        public RubyString getIndex(RubyString string, IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+            notDesignedForCompilation();
+
+            final String javaString = string.toString();
+
+            if (range.doesExcludeEnd()) {
+                final int begin = string.normaliseIndex(range.getBegin());
+                final int exclusiveEnd = string.normaliseExclusiveIndex(range.getExclusiveEnd());
+                return getContext().makeString(javaString.substring(begin, exclusiveEnd));
+            } else {
+                final int begin = string.normaliseIndex(range.getBegin());
+                final int inclusiveEnd = string.normaliseIndex(range.getInclusiveEnd());
+                return getContext().makeString(javaString.substring(begin, inclusiveEnd + 1));
+            }
+        }
+
+        @CompilerDirectives.SlowPath
+        @Specialization(order = 3)
+        public Object getIndex(RubyString string, int start, int length) {
+            notDesignedForCompilation();
+
+            final String javaString = string.toString();
+
+            if (length > javaString.length() - start) {
+                length = javaString.length() - start;
+            }
+
+            if (start > javaString.length()) {
+                return NilPlaceholder.INSTANCE;
+            }
+
+            return getContext().makeString(javaString.substring(start, start + length));
+        }
+
     }
 
     @CoreMethod(names = "=~", minArgs = 1, maxArgs = 1)

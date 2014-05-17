@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -36,6 +37,7 @@ public abstract class YieldingArrayCoreMethodNode extends ArrayCoreMethodNode {
 
     public boolean yieldBoolean(VirtualFrame frame, RubyProc block, Object... arguments) {
         // TODO(CS): this should be a node!
+        RubyNode.notDesignedForCompilation();
         return RubyTrueClass.toBoolean(dispatchNode.dispatch(frame, block, arguments));
     }
 

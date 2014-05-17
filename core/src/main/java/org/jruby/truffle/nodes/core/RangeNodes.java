@@ -31,7 +31,7 @@ public abstract class RangeNodes {
 
         public CollectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
+            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context, true);
         }
 
         public CollectNode(CollectNode prev) {
@@ -45,7 +45,7 @@ public abstract class RangeNodes {
             final int exclusiveEnd = range.getExclusiveEnd();
             final int length = exclusiveEnd - begin;
 
-            Object store = arrayBuilder.startExactLength(length);
+            Object store = arrayBuilder.length(length);
 
             int count = 0;
 

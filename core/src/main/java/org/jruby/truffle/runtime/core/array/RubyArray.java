@@ -13,6 +13,8 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.ArrayUtils;
+import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
 
 import java.util.Arrays;
@@ -50,6 +52,12 @@ public final class RubyArray extends RubyObject {
                 || store instanceof int[]
                 || store instanceof long[]
                 || store instanceof double[];
+
+        assert !(store instanceof Object[]) || RubyContext.shouldObjectsBeVisible(size, (Object[]) store);
+        assert !(store instanceof Object[]) || size <= ((Object[]) store).length;
+        assert !(store instanceof int[]) || size <= ((int[]) store).length;
+        assert !(store instanceof long[]) || size <= ((long[]) store).length;
+        assert !(store instanceof double[]) || size <= ((double[]) store).length;
 
         this.store = store;
         this.size = size;
@@ -154,11 +162,16 @@ public final class RubyArray extends RubyObject {
 
     public Object slowShift() {
         CompilerAsserts.neverPartOfCompilation();
-        store = ArrayUtils.box(store);
-        final Object value = ((Object[]) store)[0];
-        System.arraycopy(store, 1, store, 0, size - 1);
-        size--;
-        return value;
+
+        if (size == 0) {
+            return NilPlaceholder.INSTANCE;
+        } else {
+            store = ArrayUtils.box(store);
+            final Object value = ((Object[]) store)[0];
+            System.arraycopy(store, 1, store, 0, size - 1);
+            size--;
+            return value;
+        }
     }
 
     public void slowUnshift(Object... values) {

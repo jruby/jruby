@@ -17,12 +17,18 @@ import org.jruby.truffle.runtime.RubyContext;
 public abstract class ArrayBuilderNode extends Node {
 
     private final RubyContext context;
+    private final boolean lengthKnown;
 
-    public ArrayBuilderNode(RubyContext context) {
+    public ArrayBuilderNode(RubyContext context, boolean maxLengthKnown) {
         this.context = context;
+        this.lengthKnown = maxLengthKnown;
+
+        if (!maxLengthKnown) {
+            throw new UnsupportedOperationException();
+        }
     }
 
-    public abstract Object startExactLength(int length);
+    public abstract Object length(int length);
 
     public abstract Object append(Object store, int index, Object value);
 
@@ -33,18 +39,22 @@ public abstract class ArrayBuilderNode extends Node {
         return context;
     }
 
+    protected boolean isMaxLengthKnown() {
+        return lengthKnown;
+    }
+
     public static class UninitializedArrayBuilderNode extends ArrayBuilderNode {
 
         private boolean couldUseInteger = true;
         private boolean couldUseLong = true;
         private boolean couldUseDouble = true;
 
-        public UninitializedArrayBuilderNode(RubyContext context) {
-            super(context);
+        public UninitializedArrayBuilderNode(RubyContext context, boolean maxLengthKnown) {
+            super(context, maxLengthKnown);
         }
 
         @Override
-        public Object startExactLength(int length) {
+        public Object length(int length) {
             CompilerDirectives.transferToInterpreter();
 
             return new Object[length];
@@ -75,13 +85,13 @@ public abstract class ArrayBuilderNode extends Node {
         @Override
         public void finish() {
             if (couldUseInteger) {
-                replace(new IntegerArrayBuilderNode(getContext()));
+                replace(new IntegerArrayBuilderNode(getContext(), isMaxLengthKnown()));
             } else if (couldUseLong) {
-                replace(new LongArrayBuilderNode(getContext()));
+                replace(new LongArrayBuilderNode(getContext(), isMaxLengthKnown()));
             } else if (couldUseDouble) {
-                replace(new DoubleArrayBuilderNode(getContext()));
+                replace(new DoubleArrayBuilderNode(getContext(), isMaxLengthKnown()));
             } else {
-                replace(new ObjectArrayBuilderNode(getContext()));
+                replace(new ObjectArrayBuilderNode(getContext(), isMaxLengthKnown()));
             }
         }
 
@@ -89,12 +99,12 @@ public abstract class ArrayBuilderNode extends Node {
 
     public static class IntegerArrayBuilderNode extends ArrayBuilderNode {
 
-        public IntegerArrayBuilderNode(RubyContext context) {
-            super(context);
+        public IntegerArrayBuilderNode(RubyContext context, boolean maxLengthKnown) {
+            super(context, maxLengthKnown);
         }
 
         @Override
-        public Object startExactLength(int length) {
+        public Object length(int length) {
             return new int[length];
         }
 
@@ -106,7 +116,7 @@ public abstract class ArrayBuilderNode extends Node {
             } else {
                 CompilerDirectives.transferToInterpreter();
 
-                replace(new ObjectArrayBuilderNode(getContext()));
+                replace(new ObjectArrayBuilderNode(getContext(), isMaxLengthKnown()));
 
                 final Object[] newStore = ArrayUtils.box((int[]) store);
                 newStore[index] = value;
@@ -118,12 +128,12 @@ public abstract class ArrayBuilderNode extends Node {
 
     public static class LongArrayBuilderNode extends ArrayBuilderNode {
 
-        public LongArrayBuilderNode(RubyContext context) {
-            super(context);
+        public LongArrayBuilderNode(RubyContext context, boolean maxLengthKnown) {
+            super(context, maxLengthKnown);
         }
 
         @Override
-        public Object startExactLength(int length) {
+        public Object length(int length) {
             return new long[length];
         }
 
@@ -138,7 +148,7 @@ public abstract class ArrayBuilderNode extends Node {
             } else {
                 CompilerDirectives.transferToInterpreter();
 
-                replace(new ObjectArrayBuilderNode(getContext()));
+                replace(new ObjectArrayBuilderNode(getContext(), isMaxLengthKnown()));
 
                 final Object[] newStore = ArrayUtils.box((long[]) store);
                 newStore[index] = value;
@@ -150,12 +160,12 @@ public abstract class ArrayBuilderNode extends Node {
 
     public static class DoubleArrayBuilderNode extends ArrayBuilderNode {
 
-        public DoubleArrayBuilderNode(RubyContext context) {
-            super(context);
+        public DoubleArrayBuilderNode(RubyContext context, boolean maxLengthKnown) {
+            super(context, maxLengthKnown);
         }
 
         @Override
-        public Object startExactLength(int length) {
+        public Object length(int length) {
             return new double[length];
         }
 
@@ -167,7 +177,7 @@ public abstract class ArrayBuilderNode extends Node {
             } else {
                 CompilerDirectives.transferToInterpreter();
 
-                replace(new ObjectArrayBuilderNode(getContext()));
+                replace(new ObjectArrayBuilderNode(getContext(), isMaxLengthKnown()));
 
                 final Object[] newStore = ArrayUtils.box((double[]) store);
                 newStore[index] = value;
@@ -179,12 +189,12 @@ public abstract class ArrayBuilderNode extends Node {
 
     public static class ObjectArrayBuilderNode extends ArrayBuilderNode {
 
-        public ObjectArrayBuilderNode(RubyContext context) {
-            super(context);
+        public ObjectArrayBuilderNode(RubyContext context, boolean maxLengthKnown) {
+            super(context, maxLengthKnown);
         }
 
         @Override
-        public Object startExactLength(int length) {
+        public Object length(int length) {
             return new Object[length];
         }
 

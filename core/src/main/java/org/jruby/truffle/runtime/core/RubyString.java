@@ -166,4 +166,8 @@ public class RubyString extends RubyObject {
         return RubyArray.normaliseIndex(bytes.length(), index);
     }
 
+    public int normaliseExclusiveIndex(int index) {
+        return RubyArray.normaliseExclusiveIndex(bytes.length(), index);
+    }
+
 }
