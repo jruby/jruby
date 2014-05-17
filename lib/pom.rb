@@ -53,6 +53,7 @@ default_gems =
    ImportedGem.new( 'krypt', 'krypt.version', true ),
    ImportedGem.new( 'krypt-core', 'krypt.version', true ),
    ImportedGem.new( 'krypt-provider-jdk', 'krypt.version', true ),
+   ImportedGem.new( 'ffi', '1.9.3', true ),
    # NOTE: BC is now getting embedded within jruby-openssl.gem
    # ImportedGem.new( 'bouncy-castle-java', 'bc.version', true )
   ]
