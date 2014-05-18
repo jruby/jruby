@@ -48,10 +48,6 @@ public final class RubyArray extends RubyObject {
     public RubyArray(RubyClass arrayClass, Object store, int size) {
         super(arrayClass);
 
-        if (size == 1 && store instanceof Object[] && ((Object[]) store)[0] instanceof  NilPlaceholder) {
-            RubyCallStack.dump();
-        }
-
         assert store == null
                 || store instanceof Object[]
                 || store instanceof int[]
