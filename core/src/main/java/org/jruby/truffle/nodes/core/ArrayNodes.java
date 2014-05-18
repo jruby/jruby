@@ -600,8 +600,16 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization(guards = "isIntegerFixnum", order = 1)
-        public int setIntegerFixnum(RubyArray array, int index, int value) {
+        @Specialization(guards = "isNull", order = 1)
+        public Object setNull(RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
+            notDesignedForCompilation();
+
+            array.slowPush(value);
+            return value;
+        }
+
+        @Specialization(guards = "isIntegerFixnum", order = 2)
+        public int setIntegerFixnum(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
             final int normalisedIndex = array.normaliseIndex(index);
             int[] store = (int[]) array.getStore();
 
@@ -632,8 +640,8 @@ public abstract class ArrayNodes {
             return value;
         }
 
-        @Specialization(guards = "isLongFixnum", order = 2)
-        public long setLongFixnum(RubyArray array, int index, long value) {
+        @Specialization(guards = "isLongFixnum", order = 3)
+        public long setLongFixnum(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
             final int normalisedIndex = array.normaliseIndex(index);
             long[] store = (long[]) array.getStore();
 
@@ -664,8 +672,8 @@ public abstract class ArrayNodes {
             return value;
         }
 
-        @Specialization(guards = "isFloat", order = 3)
-        public double setFloat(RubyArray array, int index, double value) {
+        @Specialization(guards = "isFloat", order = 4)
+        public double setFloat(RubyArray array, int index, double value, UndefinedPlaceholder unused) {
             final int normalisedIndex = array.normaliseIndex(index);
             double[] store = (double[]) array.getStore();
 
@@ -696,8 +704,8 @@ public abstract class ArrayNodes {
             return value;
         }
 
-        @Specialization(guards = "isObject", order = 4)
-        public Object setObject(RubyArray array, int index, Object value) {
+        @Specialization(guards = "isObject", order = 5)
+        public Object setObject(RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
             final int normalisedIndex = array.normaliseIndex(index);
             Object[] store = (Object[]) array.getStore();
 
@@ -728,8 +736,8 @@ public abstract class ArrayNodes {
             return value;
         }
 
-        @Specialization(guards = "isIntegerFixnum", order = 5)
-        public RubyArray setIntegerFixnumRange(RubyArray array, IntegerFixnumRange range, RubyArray other) {
+        @Specialization(guards = "isIntegerFixnum", order = 6)
+        public RubyArray setIntegerFixnumRange(RubyArray array, IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
             // TODO(CS): why can't this be a guard?
             if (other.getStore() instanceof int[]) {
                 if (range.doesExcludeEnd()) {

@@ -50,12 +50,17 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
         final RubyModule declaringModule = RubyCallStack.getCurrentDeclaringModule();
 
+        if (!(declaringModule instanceof RubyClass)) {
+            method = null;
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name, "wasn't a class"));
+        }
+
         assert declaringModule instanceof RubyClass;
         method = ((RubyClass) declaringModule).getSuperclass().lookupMethod(name);
 
         if (method == null || method.isUndefined()) {
             method = null;
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name, "todo"));
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name, "no such method"));
         }
 
         getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getSourceSection().getSource().getName(), getSourceSection().getStartLine(), "lookup for super call is " + method.getSharedMethodInfo().getSourceSection());

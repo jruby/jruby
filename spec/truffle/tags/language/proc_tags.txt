@@ -1,0 +1,2 @@
+fails:A Proc taking |(a, b)| arguments raises an TypeError if #to_ary does not return an Array
+fails:A Proc taking |(a, b)| arguments calls #to_ary to convert a single passed object to an Array

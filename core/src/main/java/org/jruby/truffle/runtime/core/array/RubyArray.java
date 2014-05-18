@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.ArrayUtils;
 import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
 
@@ -46,6 +47,10 @@ public final class RubyArray extends RubyObject {
 
     public RubyArray(RubyClass arrayClass, Object store, int size) {
         super(arrayClass);
+
+        if (size == 1 && store instanceof Object[] && ((Object[]) store)[0] instanceof  NilPlaceholder) {
+            RubyCallStack.dump();
+        }
 
         assert store == null
                 || store instanceof Object[]

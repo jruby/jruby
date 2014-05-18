@@ -25,3 +25,4 @@ fails:Multiple assignments with grouping A group on the lhs is considered one po
 fails:Multiple assignments with grouping supports multiple levels of nested groupings
 fails:Multiple assignment has the proper return value
 fails:Multiple assignment, array-style returns an array of all rhs values
+fails:Basic multiple assignment with a splatted single RHS value calls #to_a on an object if #to_ary is not defined

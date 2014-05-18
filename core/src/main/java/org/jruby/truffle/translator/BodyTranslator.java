@@ -1807,7 +1807,7 @@ public class BodyTranslator extends Translator {
             value = node.getValue().accept(this);
         }
 
-        return SplatCastNodeFactory.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, value);
+        return SplatCastNodeFactory.create(context, sourceSection, SplatCastNode.NilBehavior.EMPTY_ARRAY, value);
     }
 
     @Override
