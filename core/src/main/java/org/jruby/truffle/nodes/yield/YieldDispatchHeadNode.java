@@ -24,6 +24,8 @@ public class YieldDispatchHeadNode extends YieldDispatchNode {
     }
 
     public Object dispatch(VirtualFrame frame, RubyProc block, Object[] argumentsObjects) {
+        assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
+
         return dispatch.dispatch(frame, block, argumentsObjects);
     }
 

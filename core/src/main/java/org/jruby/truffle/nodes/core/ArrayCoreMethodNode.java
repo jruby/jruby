@@ -24,63 +24,63 @@ public abstract class ArrayCoreMethodNode extends CoreMethodNode {
     }
 
     protected boolean isNull(RubyArray array) {
-        return array.store == null;
+        return array.getStore() == null;
     }
 
     protected boolean isIntegerFixnum(RubyArray array) {
-        return array.store instanceof int[];
+        return array.getStore() instanceof int[];
     }
 
     protected boolean isLongFixnum(RubyArray array) {
-        return array.store instanceof long[];
+        return array.getStore() instanceof long[];
     }
 
     protected boolean isFloat(RubyArray array) {
-        return array.store instanceof double[];
+        return array.getStore() instanceof double[];
     }
 
     protected boolean isObject(RubyArray array) {
-        return array.store instanceof Object[];
+        return array.getStore() instanceof Object[];
     }
 
     protected boolean isOtherNull(RubyArray array, RubyArray other) {
-        return other.store == null;
+        return other.getStore() == null;
     }
 
     protected boolean isOtherIntegerFixnum(RubyArray array, RubyArray other) {
-        return other.store instanceof int[];
+        return other.getStore() instanceof int[];
     }
 
     protected boolean isOtherLongFixnum(RubyArray array, RubyArray other) {
-        return other.store instanceof long[];
+        return other.getStore() instanceof long[];
     }
 
     protected boolean isOtherFloat(RubyArray array, RubyArray other) {
-        return other.store instanceof double[];
+        return other.getStore() instanceof double[];
     }
 
     protected boolean isOtherObject(RubyArray array, RubyArray other) {
-        return other.store instanceof Object[];
+        return other.getStore() instanceof Object[];
     }
 
     protected boolean areBothNull(RubyArray a, RubyArray b) {
-        return a.store == null && b.store == null;
+        return a.getStore() == null && b.getStore() == null;
     }
 
     protected boolean areBothIntegerFixnum(RubyArray a, RubyArray b) {
-        return a.store instanceof int[] && b.store instanceof int[];
+        return a.getStore() instanceof int[] && b.getStore() instanceof int[];
     }
 
     protected boolean areBothLongFixnum(RubyArray a, RubyArray b) {
-        return a.store instanceof long[] && b.store instanceof long[];
+        return a.getStore() instanceof long[] && b.getStore() instanceof long[];
     }
 
     protected boolean areBothFloat(RubyArray a, RubyArray b) {
-        return a.store instanceof double[] && b.store instanceof double[];
+        return a.getStore() instanceof double[] && b.getStore() instanceof double[];
     }
 
     protected boolean areBothObject(RubyArray a, RubyArray b) {
-        return a.store instanceof Object[] && b.store instanceof Object[];
+        return a.getStore() instanceof Object[] && b.getStore() instanceof Object[];
     }
 
 }

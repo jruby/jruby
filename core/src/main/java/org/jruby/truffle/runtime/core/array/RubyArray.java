@@ -37,8 +37,8 @@ public final class RubyArray extends RubyObject {
 
     }
 
-    public Object store;
-    public int size;
+    private Object store;
+    private int size;
 
     public RubyArray(RubyClass arrayClass) {
         this(arrayClass, null, 0);
@@ -210,6 +210,47 @@ public final class RubyArray extends RubyObject {
         } else {
             return exclusiveIndex;
         }
+    }
+
+    public Object getStore() {
+        return store;
+    }
+
+    public void setStore(Object store, int size) {
+        this.store = store;
+        this.size = size;
+
+        assert store == null
+                || store instanceof Object[]
+                || store instanceof int[]
+                || store instanceof long[]
+                || store instanceof double[];
+
+        assert !(store instanceof Object[]) || RubyContext.shouldObjectsBeVisible(size, (Object[]) store);
+        assert !(store instanceof Object[]) || size <= ((Object[]) store).length;
+        assert !(store instanceof int[]) || size <= ((int[]) store).length;
+        assert !(store instanceof long[]) || size <= ((long[]) store).length;
+        assert !(store instanceof double[]) || size <= ((double[]) store).length;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+
+        assert store == null
+                || store instanceof Object[]
+                || store instanceof int[]
+                || store instanceof long[]
+                || store instanceof double[];
+
+        assert !(store instanceof Object[]) || RubyContext.shouldObjectsBeVisible(size, (Object[]) store);
+        assert !(store instanceof Object[]) || size <= ((Object[]) store).length;
+        assert !(store instanceof int[]) || size <= ((int[]) store).length;
+        assert !(store instanceof long[]) || size <= ((long[]) store).length;
+        assert !(store instanceof double[]) || size <= ((double[]) store).length;
     }
 
 

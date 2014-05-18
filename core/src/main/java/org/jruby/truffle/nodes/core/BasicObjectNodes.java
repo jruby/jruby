@@ -51,38 +51,8 @@ public abstract class BasicObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
-        public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
-            return true;
-        }
-
-        @Specialization(order = 2)
-        public boolean equal(boolean a, boolean b) {
-            return a == b;
-        }
-
-        @Specialization(order = 3)
-        public boolean equal(int a, int b) {
-            return a == b;
-        }
-
-        @Specialization(order = 4)
-        public boolean equal(long a, long b) {
-            return a == b;
-        }
-
-        @Specialization(order = 5)
-        public boolean equal(double a, double b) {
-            return a == b;
-        }
-
-        @Specialization(order = 6)
-        public boolean equal(BigInteger a, BigInteger b) {
-            return a.compareTo(b) == 0;
-        }
-
-        @Specialization(order = 7)
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
+        @Specialization
+        public boolean equal(Object a, Object b) {
             return a == b;
         }
 
@@ -99,42 +69,7 @@ public abstract class BasicObjectNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
-        public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
-            return true;
-        }
-
-        @Specialization(order = 2)
-        public boolean equal(boolean a, boolean b) {
-            return a == b;
-        }
-
-        @Specialization(order = 3)
-        public boolean equal(int a, int b) {
-            return a != b;
-        }
-
-        @Specialization(order = 4)
-        public boolean equal(long a, long b) {
-            return a != b;
-        }
-
-        @Specialization(order = 5)
-        public boolean equal(double a, double b) {
-            return a != b;
-        }
-
-        @Specialization(order = 6)
-        public boolean equal(BigInteger a, BigInteger b) {
-            return a.compareTo(b) != 0;
-        }
-
-        @Specialization(order = 7)
-        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
-            return a != b;
-        }
-
-        @Specialization(order = 8)
+        @Specialization
         public boolean equal(Object a, Object b) {
             return a != b;
         }

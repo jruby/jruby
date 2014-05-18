@@ -40,10 +40,10 @@ public abstract class ArrayIndexNode extends RubyNode {
     public int getIntegerFixnumInBounds(RubyArray array) throws UnexpectedResultException {
         int normalisedIndex = array.normaliseIndex(index);
 
-        if (normalisedIndex < 0 || normalisedIndex >= array.size) {
+        if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
             throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
         } else {
-            return ((int[]) array.store)[normalisedIndex];
+            return ((int[]) array.getStore())[normalisedIndex];
         }
     }
 
@@ -51,10 +51,10 @@ public abstract class ArrayIndexNode extends RubyNode {
     public Object getIntegerFixnum(RubyArray array) {
         int normalisedIndex = array.normaliseIndex(index);
 
-        if (normalisedIndex < 0 || normalisedIndex >= array.size) {
+        if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
             return NilPlaceholder.INSTANCE;
         } else {
-            return ((int[]) array.store)[normalisedIndex];
+            return ((int[]) array.getStore())[normalisedIndex];
         }
     }
 
@@ -62,10 +62,10 @@ public abstract class ArrayIndexNode extends RubyNode {
     public long getLongFixnumInBounds(RubyArray array) throws UnexpectedResultException {
         int normalisedIndex = array.normaliseIndex(index);
 
-        if (normalisedIndex < 0 || normalisedIndex >= array.size) {
+        if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
             throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
         } else {
-            return ((long[]) array.store)[normalisedIndex];
+            return ((long[]) array.getStore())[normalisedIndex];
         }
     }
 
@@ -73,10 +73,10 @@ public abstract class ArrayIndexNode extends RubyNode {
     public Object getLongFixnum(RubyArray array) {
         int normalisedIndex = array.normaliseIndex(index);
 
-        if (normalisedIndex < 0 || normalisedIndex >= array.size) {
+        if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
             return NilPlaceholder.INSTANCE;
         } else {
-            return ((long[]) array.store)[normalisedIndex];
+            return ((long[]) array.getStore())[normalisedIndex];
         }
     }
 
@@ -84,10 +84,10 @@ public abstract class ArrayIndexNode extends RubyNode {
     public double getFloatInBounds(RubyArray array) throws UnexpectedResultException {
         int normalisedIndex = array.normaliseIndex(index);
 
-        if (normalisedIndex < 0 || normalisedIndex >= array.size) {
+        if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
             throw new UnexpectedResultException(NilPlaceholder.INSTANCE);
         } else {
-            return ((double[]) array.store)[normalisedIndex];
+            return ((double[]) array.getStore())[normalisedIndex];
         }
     }
 
@@ -95,10 +95,10 @@ public abstract class ArrayIndexNode extends RubyNode {
     public Object getFloat(RubyArray array) {
         int normalisedIndex = array.normaliseIndex(index);
 
-        if (normalisedIndex < 0 || normalisedIndex >= array.size) {
+        if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
             return NilPlaceholder.INSTANCE;
         } else {
-            return ((double[]) array.store)[normalisedIndex];
+            return ((double[]) array.getStore())[normalisedIndex];
         }
     }
 
@@ -106,73 +106,73 @@ public abstract class ArrayIndexNode extends RubyNode {
     public Object getObject(RubyArray array) {
         int normalisedIndex = array.normaliseIndex(index);
 
-        if (normalisedIndex < 0 || normalisedIndex >= array.size) {
+        if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
             return NilPlaceholder.INSTANCE;
         } else {
-            return ((Object[]) array.store)[normalisedIndex];
+            return ((Object[]) array.getStore())[normalisedIndex];
         }
     }
 
     // TODO(CS): copied and pasted from ArrayCoreMethodNode - need a way to use statics from other classes in the DSL
 
     protected boolean isNull(RubyArray array) {
-        return array.store == null;
+        return array.getStore() == null;
     }
 
     protected boolean isIntegerFixnum(RubyArray array) {
-        return array.store instanceof int[];
+        return array.getStore() instanceof int[];
     }
 
     protected boolean isLongFixnum(RubyArray array) {
-        return array.store instanceof long[];
+        return array.getStore() instanceof long[];
     }
 
     protected boolean isFloat(RubyArray array) {
-        return array.store instanceof double[];
+        return array.getStore() instanceof double[];
     }
 
     protected boolean isObject(RubyArray array) {
-        return array.store instanceof Object[];
+        return array.getStore() instanceof Object[];
     }
 
     protected boolean isOtherNull(RubyArray array, RubyArray other) {
-        return other.store == null;
+        return other.getStore() == null;
     }
 
     protected boolean isOtherIntegerFixnum(RubyArray array, RubyArray other) {
-        return other.store instanceof int[];
+        return other.getStore() instanceof int[];
     }
 
     protected boolean isOtherLongFixnum(RubyArray array, RubyArray other) {
-        return other.store instanceof long[];
+        return other.getStore() instanceof long[];
     }
 
     protected boolean isOtherFloat(RubyArray array, RubyArray other) {
-        return other.store instanceof double[];
+        return other.getStore() instanceof double[];
     }
 
     protected boolean isOtherObject(RubyArray array, RubyArray other) {
-        return other.store instanceof Object[];
+        return other.getStore() instanceof Object[];
     }
 
     protected boolean areBothNull(RubyArray a, RubyArray b) {
-        return a.store == null && b.store == null;
+        return a.getStore() == null && b.getStore() == null;
     }
 
     protected boolean areBothIntegerFixnum(RubyArray a, RubyArray b) {
-        return a.store instanceof int[] && b.store instanceof int[];
+        return a.getStore() instanceof int[] && b.getStore() instanceof int[];
     }
 
     protected boolean areBothLongFixnum(RubyArray a, RubyArray b) {
-        return a.store instanceof long[] && b.store instanceof long[];
+        return a.getStore() instanceof long[] && b.getStore() instanceof long[];
     }
 
     protected boolean areBothFloat(RubyArray a, RubyArray b) {
-        return a.store instanceof double[] && b.store instanceof double[];
+        return a.getStore() instanceof double[] && b.getStore() instanceof double[];
     }
 
     protected boolean areBothObject(RubyArray a, RubyArray b) {
-        return a.store instanceof Object[] && b.store instanceof Object[];
+        return a.getStore() instanceof Object[] && b.getStore() instanceof Object[];
     }
 
 }

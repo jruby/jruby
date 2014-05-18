@@ -35,7 +35,7 @@ public class UninitialisedArrayLiteralNode extends ArrayLiteralNode {
         }
 
         final RubyArray array = RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
-        final Object store = array.store;
+        final Object store = array.getStore();
 
         if (store instanceof int[]) {
             replace(new IntegerFixnumArrayLiteralNode(getContext(), getSourceSection(), values));

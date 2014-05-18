@@ -30,10 +30,14 @@ public class ArrayPushNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        RubyArray a = (RubyArray) array.execute(frame);
-        a = (RubyArray) a.dup();
-        a.slowPush(pushed.execute(frame));
-        return a;
+        final Object arrayObject = array.execute(frame);
+        assert arrayObject instanceof RubyArray : getSourceSection();
+
+        final RubyArray originalArray = (RubyArray) arrayObject;
+
+        final RubyArray newArray = new RubyArray(getContext().getCoreLibrary().getArrayClass(), originalArray.slowToArray(), originalArray.getSize());
+        newArray.slowPush(pushed.execute(frame));
+        return newArray;
     }
 
 }

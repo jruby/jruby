@@ -32,13 +32,15 @@ public abstract class YieldingArrayCoreMethodNode extends ArrayCoreMethodNode {
     }
 
     public Object yield(VirtualFrame frame, RubyProc block, Object... arguments) {
+        assert RubyContext.shouldObjectsBeVisible(arguments);
+
         return dispatchNode.dispatch(frame, block, arguments);
     }
 
     public boolean yieldBoolean(VirtualFrame frame, RubyProc block, Object... arguments) {
         // TODO(CS): this should be a node!
         RubyNode.notDesignedForCompilation();
-        return RubyTrueClass.toBoolean(dispatchNode.dispatch(frame, block, arguments));
+        return RubyTrueClass.toBoolean(yield(frame, block, arguments));
     }
 
 }

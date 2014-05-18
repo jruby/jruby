@@ -19,6 +19,8 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.methods.*;
 
+import java.util.Arrays;
+
 /**
  * A call node that has a chain of dispatch nodes.
  * <p>
@@ -89,6 +91,9 @@ public class RubyCallNode extends RubyNode {
         final Object[] argumentsObjects = executeArguments(frame);
         final RubyProc blockObject = executeBlock(frame);
 
+        assert RubyContext.shouldObjectBeVisible(receiverObject);
+        assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
+
         return dispatchHead.dispatch(frame, receiverObject, blockObject, argumentsObjects);
     }
 
@@ -126,10 +131,17 @@ public class RubyCallNode extends RubyNode {
         }
 
         final RubyArray array = (RubyArray) argument;
-        final Object store = array.store;
+        final Object store = array.getStore();
 
         if (store instanceof Object[]) {
-            return (Object[]) store;
+            final Object[] objectStore = (Object[]) store;
+
+            // TODO(CS): specialize for this
+            if (objectStore.length == array.getSize()) {
+                return objectStore;
+            } else {
+                return Arrays.copyOf(objectStore, array.getSize());
+            }
         } else {
             splatUnboxProfile.enter();
             notDesignedForCompilation();

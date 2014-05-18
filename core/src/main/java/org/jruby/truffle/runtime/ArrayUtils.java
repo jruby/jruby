@@ -170,11 +170,17 @@ public abstract class ArrayUtils {
         }
     }
 
-    public static int capacity(int current) {
-        if (current < 16) {
+    public static int capacity(int current, int needed) {
+        if (needed < 16) {
             return 16;
         } else {
-            return 2 * current;
+            int capacity = current;
+
+            while (capacity < needed) {
+                capacity *= 2;
+            }
+
+            return capacity;
         }
     }
 

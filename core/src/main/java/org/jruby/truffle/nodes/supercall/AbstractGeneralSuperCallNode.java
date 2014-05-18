@@ -50,6 +50,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
         final RubyModule declaringModule = RubyCallStack.getCurrentDeclaringModule();
 
+        assert declaringModule instanceof RubyClass;
         method = ((RubyClass) declaringModule).getSuperclass().lookupMethod(name);
 
         if (method == null || method.isUndefined()) {

@@ -471,16 +471,20 @@ public abstract class
     @CoreMethod(names = "p", visibility = Visibility.PRIVATE, isModuleMethod = true, needsSelf = false, isSplatted = true)
     public abstract static class PNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode inspect;
+
         public PNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            inspect = new DispatchHeadNode(context, "inspect", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public PNode(PNode prev) {
             super(prev);
+            inspect = prev.inspect;
         }
 
         @Specialization
-        public NilPlaceholder p(Object[] args) {
+        public NilPlaceholder p(VirtualFrame frame, Object[] args) {
             notDesignedForCompilation();
 
             final ThreadManager threadManager = getContext().getThreadManager();
@@ -489,17 +493,7 @@ public abstract class
 
             try {
                 for (Object arg : args) {
-                    final String string;
-
-                    if (arg instanceof NilPlaceholder) {
-                        string = "nil";
-                    } else if (arg instanceof RubyBasicObject) {
-                        string = ((RubyBasicObject) arg).inspect();
-                    } else {
-                        string = arg.toString();
-                    }
-
-                    getContext().getRuntime().getInstanceConfig().getOutput().println(string);
+                    getContext().getRuntime().getInstanceConfig().getOutput().println(inspect.dispatch(frame, arg, null));
                 }
             } finally {
                 threadManager.enterGlobalLock(runningThread);
