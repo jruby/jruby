@@ -33,6 +33,7 @@ package org.jruby.util.cli;
  * in printing descriptions.
  */
 public enum Category {
+    PARSER("parser"),
     COMPILER("compiler"),
     INVOKEDYNAMIC("invokedynamic"),
     JIT("jit"),

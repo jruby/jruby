@@ -56,6 +56,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
+import org.jruby.util.cli.Options;
 
 /** 
  *
@@ -519,7 +520,9 @@ public class ParserSupport {
     }
 
     private void handleUselessWarn(Node node, String useless) {
-        warnings.warn(ID.USELESS_EXPRESSION, node.getPosition(), "Useless use of " + useless + " in void context.");
+        if (Options.WARN_USELESSS_USE_OF.load()) {
+            warnings.warn(ID.USELESS_EXPRESSION, node.getPosition(), "Useless use of " + useless + " in void context.");
+        }
     }
 
     /**
