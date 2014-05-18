@@ -23,6 +23,24 @@ import org.jruby.truffle.runtime.core.hash.RubyHash;
 @CoreClass(name = "Hash")
 public abstract class HashNodes {
 
+    @CoreMethod(names = "==", minArgs = 1, maxArgs = 1)
+    public abstract static class EqualNode extends CoreMethodNode {
+
+        public EqualNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EqualNode(EqualNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean equal(RubyHash a, Object b) {
+            return a.equals(b);
+        }
+
+    }
+
     @CoreMethod(names = "[]", isModuleMethod = true, needsSelf = false, isSplatted = true)
     public abstract static class ConstructNode extends CoreMethodNode {
 

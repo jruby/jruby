@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.joni.Option;
 import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
@@ -44,11 +45,7 @@ public abstract class StringNodes {
         public RubyString add(RubyString a, RubyString b) {
             notDesignedForCompilation();
 
-            // TODO(CS): which encoding do we get here?
-            final RubyString string = new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList());
-            string.getBytes().append(a.getBytes());
-            string.getBytes().append(b.getBytes());
-            return string;
+            return getContext().makeString(a.toString() + b.toString());
         }
     }
 
@@ -403,6 +400,25 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             return string.toString().isEmpty();
+        }
+    }
+
+    @CoreMethod(names = "encoding", maxArgs = 0)
+    public abstract static class EncodingNode extends CoreMethodNode {
+
+        public EncodingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EncodingNode(EncodingNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyEncoding encoding(RubyString string) {
+            notDesignedForCompilation();
+
+            return new RubyEncoding(getContext().getCoreLibrary().getEncodingClass(), string.getBytes().getEncoding());
         }
     }
 

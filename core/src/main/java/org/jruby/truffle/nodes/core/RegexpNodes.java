@@ -21,6 +21,26 @@ import org.jruby.util.ByteList;
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
 
+    @CoreMethod(names = "==", minArgs = 1, maxArgs = 1)
+    public abstract static class EqualNode extends CoreMethodNode {
+
+        public EqualNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EqualNode(EqualNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean equal(RubyRegexp a, RubyRegexp b) {
+            notDesignedForCompilation();
+
+            return a.equals(b);
+        }
+
+    }
+
     @CoreMethod(names = "===", minArgs = 1, maxArgs = 1)
     public abstract static class ThreeEqualNode extends CoreMethodNode {
 

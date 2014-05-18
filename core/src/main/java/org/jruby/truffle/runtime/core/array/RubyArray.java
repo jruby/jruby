@@ -175,10 +175,10 @@ public final class RubyArray extends RubyObject {
     }
 
     public void slowUnshift(Object... values) {
-        CompilerAsserts.neverPartOfCompilation();
-        store = Arrays.copyOf(ArrayUtils.box(store), size + values.length);
-        System.arraycopy(values, 0, store, size, values.length);
-        size += values.length;
+        final Object[] newStore = new Object[size + values.length];
+        System.arraycopy(values, 0, newStore, 0, values.length);
+        ArrayUtils.copy(store, newStore, values.length, size);
+        setStore(newStore, newStore.length);
     }
 
     public void slowPush(Object value) {
@@ -251,6 +251,11 @@ public final class RubyArray extends RubyObject {
         assert !(store instanceof int[]) || size <= ((int[]) store).length;
         assert !(store instanceof long[]) || size <= ((long[]) store).length;
         assert !(store instanceof double[]) || size <= ((double[]) store).length;
+    }
+
+    @Override
+    public Object dup() {
+        throw new UnsupportedOperationException();
     }
 
 

@@ -36,6 +36,11 @@ public abstract class ArrayIndexNode extends RubyNode {
         index = prev.index;
     }
 
+    @Specialization(guards = "isNull", order = 1)
+    public NilPlaceholder getNull(RubyArray array) {
+        return NilPlaceholder.INSTANCE;
+    }
+
     @Specialization(guards = "isIntegerFixnum", rewriteOn=UnexpectedResultException.class, order = 2)
     public int getIntegerFixnumInBounds(RubyArray array) throws UnexpectedResultException {
         int normalisedIndex = array.normaliseIndex(index);
@@ -91,7 +96,7 @@ public abstract class ArrayIndexNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = "isIntegerFixnum", order = 7)
+    @Specialization(guards = "isFloat", order = 7)
     public Object getFloat(RubyArray array) {
         int normalisedIndex = array.normaliseIndex(index);
 

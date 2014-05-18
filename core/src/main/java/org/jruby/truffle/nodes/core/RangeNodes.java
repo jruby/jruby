@@ -24,6 +24,26 @@ import org.jruby.truffle.runtime.control.*;
 @CoreClass(name = "Range")
 public abstract class RangeNodes {
 
+    @CoreMethod(names = "==", minArgs = 1, maxArgs = 1)
+    public abstract static class EqualNode extends CoreMethodNode {
+
+        public EqualNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EqualNode(EqualNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean equal(RubyRange a, RubyRange b) {
+            notDesignedForCompilation();
+
+            return a.equals(b);
+        }
+
+    }
+
     @CoreMethod(names = {"collect", "map"}, needsBlock = true, maxArgs = 0)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
 

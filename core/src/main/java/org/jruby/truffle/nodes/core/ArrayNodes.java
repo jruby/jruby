@@ -350,6 +350,27 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), or, i);
         }
 
+        @Specialization(guards = "areBothObject", order = 4)
+        public RubyArray orObject(RubyArray a, RubyArray b) {
+            notDesignedForCompilation();
+
+            final Object[] as = (Object[]) a.getStore();
+            final Object[] bs = (Object[]) b.getStore();
+
+            final Object[] or = Arrays.copyOf(as, a.getSize() + b.getSize());
+
+            int i = a.getSize();
+
+            for (int n = 0; n < b.getSize(); n++) {
+                if (!ArrayUtils.contains(as, bs[n])) {
+                    or[i] = bs[n];
+                    i++;
+                }
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), or, i);
+        }
+
     }
 
     @CoreMethod(names = "==", minArgs = 1, maxArgs = 1)
@@ -424,7 +445,7 @@ public abstract class ArrayNodes {
             if (a.getSize() != b.getSize()) {
                 return false;
             }
-            
+
             final Object[] as = a.slowToArray();
             final Object[] bs = b.slowToArray();
 
@@ -919,7 +940,7 @@ public abstract class ArrayNodes {
             final Object[] compacted = new Object[array.getSize()];
             int compactedSize = 0;
 
-            for (Object object : (Object[]) array.getStore()) {
+            for (Object object : array.slowToArray()) {
                 if (object != NilPlaceholder.INSTANCE) {
                     compacted[compactedSize] = object;
                     compactedSize++;
@@ -1023,8 +1044,37 @@ public abstract class ArrayNodes {
             threeEqual = prev.threeEqual;
         }
 
-        @Specialization(guards = "isObject")
-        public Object delete(VirtualFrame frame, RubyArray array, Object value) {
+        @Specialization(guards = "isIntegerFixnum", order = 1)
+        public Object deleteIntegerFixnum(VirtualFrame frame, RubyArray array, Object value) {
+            final int[] store = (int[]) array.getStore();
+
+            Object found = NilPlaceholder.INSTANCE;
+
+            int i = 0;
+
+            for (int n = 0; n < array.getSize(); n++) {
+                final Object stored = store[n];
+
+                // TODO(CS): need a cast node around the dispatch
+
+                if (stored == value || (boolean) threeEqual.dispatch(frame, store[n], null, value)) {
+                    found = store[n];
+                    continue;
+                }
+
+                if (i != n) {
+                    store[i] = store[n];
+                }
+
+                i++;
+            }
+
+            array.setSize(i);
+            return found;
+        }
+
+        @Specialization(guards = "isObject", order = 2)
+        public Object deleteObject(VirtualFrame frame, RubyArray array, Object value) {
             final Object[] store = (Object[]) array.getStore();
 
             Object found = NilPlaceholder.INSTANCE;
@@ -1113,7 +1163,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "dup", maxArgs = 0)
+    @CoreMethod(names = {"dup", "clone"}, maxArgs = 0)
     public abstract static class DupNode extends ArrayCoreMethodNode {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
@@ -1323,14 +1373,6 @@ public abstract class ArrayNodes {
             }
 
             return array;
-        }
-
-        @Specialization(order = 6)
-        public Object each(VirtualFrame frame, RubyArray array, RubyProc block) {
-            notDesignedForCompilation();
-
-            // TODO(CS): wtf? why doesn't this meet the guard above?
-            return eachObject(frame, array, block);
         }
 
     }
@@ -1554,7 +1596,25 @@ public abstract class ArrayNodes {
             return false;
         }
 
-        @Specialization(guards = "isObject", order = 2)
+        @Specialization(guards = "isIntegerFixnum", order = 2)
+        public boolean includeFixnum(VirtualFrame frame, RubyArray array, Object value) {
+            final int[] store = (int[]) array.getStore();
+
+            for (int n = 0; n < array.getSize(); n++) {
+                final Object stored = store[n];
+
+                // TODO(CS): cast node around the dispatch
+                notDesignedForCompilation();
+
+                if (stored == value || (boolean) threeEqual.dispatch(frame, store[n], null, value)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        @Specialization(guards = "isObject", order = 3)
         public boolean includeObject(VirtualFrame frame, RubyArray array, Object value) {
             final Object[] store = (Object[]) array.getStore();
 

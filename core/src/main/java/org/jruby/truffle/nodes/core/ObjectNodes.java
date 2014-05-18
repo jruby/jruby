@@ -230,6 +230,8 @@ public abstract class ObjectNodes {
 
         @Specialization
         public Object dup(RubyObject self) {
+            notDesignedForCompilation();
+
             return self.dup();
         }
 
