@@ -56,11 +56,11 @@ report_references = {
   "jruby" => "jruby-1.7.12-server-indy",
   "jruby-head" => "jruby-head-server-indy",
   "competition" => "jruby-1.7.12-server-indy",
-  "almost-all" => "2.1.1",
+  "almost-all" => "2.1.2",
   "all" => "1.8.7-p374",
-  "interpreters" => "2.1.1",
-  "summary" => "2.1.1",
-  "java-c" => "2.1.1",
+  "interpreters" => "2.1.2",
+  "summary" => "2.1.2",
+  "java-c" => "2.1.2",
   "head" => "jruby-head+truffle-server"
 }
 
@@ -74,17 +74,17 @@ rubies = []
 
 # "mruby-1.0.0"
 
-["1.8.7-p374", "1.9.3-p484", "2.0.0-p353", "2.1.1", "ree-1.8.7-2012.02", "rbx-2.2.6"].each do |name|
+["1.8.7-p374", "1.9.3-p484", "2.0.0-p353", "2.1.2", "ree-1.8.7-2012.02", "rbx-2.2.6"].each do |name|
   dir = "~/.rbenv/versions/" + name
 
   if Dir.exists? File.expand_path(dir)
     relevant_reports = ["all"]
 
-    if ["1.8.7-p374", "1.9.3-p484", "2.0.0-p353", "2.1.1", "ree-1.8.7-2012.02"].include? name
+    if ["1.8.7-p374", "1.9.3-p484", "2.0.0-p353", "2.1.2", "ree-1.8.7-2012.02"].include? name
       relevant_reports.push("interpreters")
     end
 
-    if ["2.0.0-p353", "2.1.1", "rbx-2.2.6"].include? name
+    if ["2.0.0-p353", "2.1.2", "rbx-2.2.6"].include? name
       relevant_reports.push("almost-all")
     end
 
@@ -94,7 +94,7 @@ rubies = []
       rubies.push Ruby.new(name + "-interpreter", dir + "/bin/ruby -Xint", ["interpreters"])
     end
 
-    if name == "2.1.1"
+    if name == "2.1.2"
       relevant_reports.push("summary")
       relevant_reports.push("java-c")
     end

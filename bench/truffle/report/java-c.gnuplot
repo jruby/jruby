@@ -4,9 +4,9 @@ set output 'java-c.pdf'
 set style data histogram
 set style histogram cluster gap 1
 
-set title "2.1.1 vs JRuby+Truffle, Java and C"
+set title "2.1.2 vs JRuby+Truffle, Java and C"
 set xlabel "Implementation" rotate by 270
-set ylabel "Speedup Relative to 2.1.1"
+set ylabel "Speedup Relative to 2.1.2"
 set key top left
 
 set style fill solid border rgb 'black'
