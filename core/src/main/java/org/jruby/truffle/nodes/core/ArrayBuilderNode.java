@@ -110,7 +110,8 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object append(Object store, int index, Object value) {
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.FASTPATH_PROBABILITY, value instanceof Integer)) {
+            // TODO(CS): inject probability
+            if (value instanceof Integer) {
                 ((int[]) store)[index] = (int) value;
                 return store;
             } else {
@@ -139,10 +140,11 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object append(Object store, int index, Object value) {
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.LIKELY_PROBABILITY, value instanceof Integer)) {
+            // TODO(CS): inject probability
+            if (value instanceof Long) {
                 ((long[]) store)[index] = (long) value;
                 return store;
-            } else if (CompilerDirectives.injectBranchProbability(CompilerDirectives.FASTPATH_PROBABILITY, value instanceof Integer)) {
+            } else if (value instanceof Integer) {
                 ((long[]) store)[index] = (int) value;
                 return store;
             } else {
@@ -171,7 +173,8 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object append(Object store, int index, Object value) {
-            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.FASTPATH_PROBABILITY, value instanceof Double)) {
+            // TODO(CS): inject probability
+            if (value instanceof Double) {
                 ((double[]) store)[index] = (double) value;
                 return store;
             } else {
