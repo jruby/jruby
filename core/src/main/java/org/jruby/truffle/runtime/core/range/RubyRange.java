@@ -10,15 +10,13 @@
 package org.jruby.truffle.runtime.core.range;
 
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 public abstract class RubyRange extends RubyObject {
 
     public RubyRange(RubyClass rangeClass) {
         super(rangeClass);
     }
-
-    public abstract RubyArray toArray();
 
     public abstract boolean doesExcludeEnd();
 

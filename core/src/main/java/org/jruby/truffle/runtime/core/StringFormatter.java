@@ -13,7 +13,6 @@ import java.io.*;
 import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import org.jruby.truffle.runtime.core.array.*;
 
 public class StringFormatter {
 
@@ -127,7 +126,7 @@ public class StringFormatter {
                         formatBuilder.append(".");
                         formatBuilder.append(precision);
                         formatBuilder.append("f");
-                        final double value = RubyFloat.toFloat(values.get(v));
+                        final double value = RubyFloat.toDouble(values.get(v));
                         stream.printf(formatBuilder.toString(), value);
                         break;
                     }

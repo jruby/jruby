@@ -19,28 +19,19 @@ import org.jruby.truffle.runtime.core.*;
 public class BoxingNode extends RubyNode {
 
     @Child protected RubyNode child;
+    @Child protected RawBoxingNode boxing;
 
     private final BranchProfile boxBranch = new BranchProfile();
 
     public BoxingNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
+        boxing = new RawBoxingNode(context);
     }
 
     @Override
     public RubyBasicObject executeRubyBasicObject(VirtualFrame frame) {
-        final Object object = child.execute(frame);
-
-        RubyBasicObject boxedObject;
-
-        if (object instanceof RubyBasicObject) {
-            boxedObject = (RubyBasicObject) object;
-        } else {
-            boxBranch.enter();
-            boxedObject = getContext().getCoreLibrary().box(object);
-        }
-
-        return boxedObject;
+        return boxing.box(child.execute(frame));
     }
 
     @Override

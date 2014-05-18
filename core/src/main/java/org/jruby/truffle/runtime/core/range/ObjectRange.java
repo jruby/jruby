@@ -10,7 +10,7 @@
 package org.jruby.truffle.runtime.core.range;
 
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 public class ObjectRange extends RubyRange {
 
@@ -23,11 +23,6 @@ public class ObjectRange extends RubyRange {
         this.begin = begin;
         this.end = end;
         this.excludeEnd = excludeEnd;
-    }
-
-    @Override
-    public RubyArray toArray() {
-        throw new UnsupportedOperationException();
     }
 
     public Object getBegin() {
@@ -82,8 +77,7 @@ public class ObjectRange extends RubyRange {
 
     @Override
     public boolean doesExcludeEnd() {
-        // TODO Auto-generated method stub
-        return false;
+        return excludeEnd;
     }
 
 }

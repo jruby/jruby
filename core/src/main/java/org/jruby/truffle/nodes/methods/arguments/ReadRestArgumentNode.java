@@ -17,7 +17,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 /**
  * Read the rest of arguments after a certain point into an array.
@@ -34,15 +34,18 @@ public class ReadRestArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final RubyClass arrayClass = getContext().getCoreLibrary().getArrayClass();
 
         if (RubyArguments.getUserArgumentsCount(frame.getArguments()) <= index) {
             return new RubyArray(arrayClass);
         } else if (index == 0) {
-            return new RubyArray(arrayClass, new ObjectArrayStore(RubyArguments.extractUserArguments(frame.getArguments())));
+            final Object[] arguments = RubyArguments.extractUserArguments(frame.getArguments());
+            return new RubyArray(arrayClass, arguments, arguments.length);
         } else {
             final Object[] arguments = RubyArguments.extractUserArguments(frame.getArguments());
-            return new RubyArray(arrayClass, new ObjectArrayStore(Arrays.copyOfRange(arguments, index, arguments.length)));
+            return new RubyArray(arrayClass, Arrays.copyOfRange(arguments, index, arguments.length), arguments.length - index);
         }
     }
 }

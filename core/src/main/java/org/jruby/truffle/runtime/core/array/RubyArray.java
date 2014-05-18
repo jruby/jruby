@@ -11,21 +11,18 @@ package org.jruby.truffle.runtime.core.array;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import com.oracle.truffle.api.CompilerDirectives.SlowPath;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyFixnum;
-import org.jruby.truffle.runtime.core.RubyObject;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.ArrayUtils;
+import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyCallStack;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.*;
 
-import java.util.AbstractList;
-import java.util.List;
+import java.util.Arrays;
 
 /**
  * Implements the Ruby {@code Array} class.
  */
-@SuppressWarnings("unused")
 public final class RubyArray extends RubyObject {
 
     public static class RubyArrayClass extends RubyClass {
@@ -41,481 +38,226 @@ public final class RubyArray extends RubyObject {
 
     }
 
-    @CompilationFinal private ArrayStore store;
+    private Object store;
+    private int size;
 
     public RubyArray(RubyClass arrayClass) {
-        this(arrayClass, EmptyArrayStore.INSTANCE);
+        this(arrayClass, null, 0);
     }
 
-    public RubyArray(RubyClass arrayClass, ArrayStore store) {
+    public RubyArray(RubyClass arrayClass, Object store, int size) {
         super(arrayClass);
+
+        assert store == null
+                || store instanceof Object[]
+                || store instanceof int[]
+                || store instanceof long[]
+                || store instanceof double[];
+
+        assert !(store instanceof Object[]) || RubyContext.shouldObjectsBeVisible(size, (Object[]) store);
+        assert !(store instanceof Object[]) || size <= ((Object[]) store).length;
+        assert !(store instanceof int[]) || size <= ((int[]) store).length;
+        assert !(store instanceof long[]) || size <= ((long[]) store).length;
+        assert !(store instanceof double[]) || size <= ((double[]) store).length;
+
         this.store = store;
+        this.size = size;
     }
 
-    private static RubyArray selfAsArray(Object self) {
-        if (self instanceof RubyArray) {
-            return (RubyArray) self;
-        } else {
-            throw new IllegalStateException();
-        }
-    }
+    public static RubyArray fromObject(RubyClass arrayClass, Object object) {
+        RubyNode.notDesignedForCompilation();
 
-    @CompilerDirectives.SlowPath
-    public static RubyArray specializedFromObject(RubyClass arrayClass, Object object) {
-        ArrayStore store;
+        final Object store;
 
         if (object instanceof Integer) {
-            store = new IntegerArrayStore(new int[]{(int) object});
+            store = new int[]{(int) object};
         } else if (object instanceof RubyFixnum.IntegerFixnum) {
-            store = new IntegerArrayStore(new int[]{((RubyFixnum.IntegerFixnum) object).getValue()});
+            store = new int[]{((RubyFixnum.IntegerFixnum) object).getValue()};
         } else if (object instanceof Long) {
-            store = new LongArrayStore(new long[]{(long) object});
+            store = new long[]{(long) object};
         } else if (object instanceof RubyFixnum.LongFixnum) {
-            store = new LongArrayStore(new long[]{((RubyFixnum.LongFixnum) object).getValue()});
+            store = new long[]{((RubyFixnum.LongFixnum) object).getValue()};
+        } else if (object instanceof Double) {
+            store = new double[]{(double) object};
+        } else if (object instanceof RubyFloat) {
+            store = new double[]{((RubyFloat) object).getValue()};
         } else {
-            store = new ObjectArrayStore(new Object[]{object});
+            store = new Object[]{object};
         }
 
-        return new RubyArray(arrayClass, store);
+        return new RubyArray(arrayClass, store, 1);
     }
 
-    /**
-     * Create a Ruby array from a Java array of objects, choosing the best store.
-     */
-    @CompilerDirectives.SlowPath
-    public static RubyArray specializedFromObjects(RubyClass arrayClass, Object... objects) {
+    public static RubyArray fromObjects(RubyClass arrayClass, Object... objects) {
+        RubyNode.notDesignedForCompilation();
+
         if (objects.length == 0) {
             return new RubyArray(arrayClass);
         }
 
-        boolean canUseFixnum = true;
-        boolean canUseLongFixnum = true;
+        if (objects.length == 1) {
+            return fromObject(arrayClass, objects[0]);
+        }
+
+        boolean canUseInteger = true;
+        boolean canUseLong = true;
+        boolean canUseDouble = true;
 
         for (Object object : objects) {
-            boolean canUseFixnumForThis = false;
-            boolean canUseLongFixnumForThis = false;
-
             if (object instanceof Integer) {
-                canUseFixnumForThis = true;
-                canUseLongFixnumForThis = true;
+                canUseDouble = false;
             } else if (object instanceof RubyFixnum.IntegerFixnum) {
-                canUseFixnumForThis = true;
-                canUseLongFixnumForThis = true;
+                canUseDouble = false;
             } else if (object instanceof Long) {
-                canUseFixnumForThis = RubyFixnum.fitsIntoInteger((long) object);
-                canUseLongFixnumForThis = true;
+                canUseInteger = canUseInteger && RubyFixnum.fitsIntoInteger((long) object);
+                canUseDouble = false;
             } else if (object instanceof RubyFixnum.LongFixnum) {
-                canUseFixnumForThis = RubyFixnum.fitsIntoInteger(((RubyFixnum.LongFixnum) object).getValue());
-                canUseLongFixnumForThis = true;
+                canUseInteger = canUseInteger && RubyFixnum.fitsIntoInteger(((RubyFixnum.LongFixnum) object).getValue());
+                canUseDouble = false;
+            } else if (object instanceof Double) {
+                canUseInteger = false;
+                canUseLong = false;
+            } else if (object instanceof RubyFloat) {
+                canUseInteger = false;
+                canUseLong = false;
+            } else {
+                canUseInteger = false;
+                canUseLong = false;
+                canUseDouble = false;
             }
-
-            canUseFixnum = canUseFixnum && canUseFixnumForThis;
-            canUseLongFixnum = canUseLongFixnum && canUseLongFixnumForThis;
         }
 
-        ArrayStore store;
-
-        if (canUseFixnum) {
-            final int[] values = new int[objects.length];
+        if (canUseInteger) {
+            final int[] store = new int[objects.length];
 
             for (int n = 0; n < objects.length; n++) {
-
-                values[n] = RubyFixnum.toInt(objects[n]);
+                store[n] = RubyFixnum.toInt(objects[n]);
             }
 
-            store = new IntegerArrayStore(values);
-        } else if (canUseLongFixnum) {
-            final long[] values = new long[objects.length];
+            return new RubyArray(arrayClass, store, objects.length);
+        } else if (canUseLong) {
+            final long[] store = new long[objects.length];
 
             for (int n = 0; n < objects.length; n++) {
-
-                values[n] = RubyFixnum.toLong(objects[n]);
+                store[n] = RubyFixnum.toLong(objects[n]);
             }
 
-            store = new LongArrayStore(values);
+            return new RubyArray(arrayClass, store, objects.length);
+        } else if (canUseDouble) {
+            final double[] store = new double[objects.length];
+
+            for (int n = 0; n < objects.length; n++) {
+                store[n] = RubyFloat.toDouble(objects[n]);
+            }
+
+            return new RubyArray(arrayClass, store, objects.length);
         } else {
-            store = new ObjectArrayStore(objects);
+            return new RubyArray(arrayClass, objects, objects.length);
         }
-
-        return new RubyArray(arrayClass, store);
     }
 
-    @SlowPath
-    public Object get(int index) {
-        return store.get(ArrayUtilities.normaliseIndex(store.size(), index));
+    public Object[] slowToArray() {
+        CompilerAsserts.neverPartOfCompilation();
+        return Arrays.copyOf(ArrayUtils.box(store), size);
     }
 
-    public RubyArray getRangeInclusive(int begin, int inclusiveEnd) {
-        final int l = store.size();
-        final int normalisedInclusiveEnd = ArrayUtilities.normaliseIndex(l, inclusiveEnd);
-        return getRangeExclusive(begin, normalisedInclusiveEnd + 1);
-    }
+    public Object slowShift() {
+        CompilerAsserts.neverPartOfCompilation();
 
-    public RubyArray getRangeExclusive(int begin, int exclusiveEnd) {
-        final int l = store.size();
-        final int normalisedBegin = ArrayUtilities.normaliseIndex(l, begin);
-        final int truncatedNormalisedExclusiveEnd = ArrayUtilities.truncateNormalisedExclusiveIndex(l, ArrayUtilities.normaliseExclusiveIndex(l, exclusiveEnd));
-
-        final Object range = store.getRange(normalisedBegin, truncatedNormalisedExclusiveEnd);
-
-        if (range == null) {
-            return new RubyArray(getRubyClass());
+        if (size == 0) {
+            return NilPlaceholder.INSTANCE;
         } else {
-            return new RubyArray(getRubyClass(), (ArrayStore) range);
+            store = ArrayUtils.box(store);
+            final Object value = ((Object[]) store)[0];
+            System.arraycopy(store, 1, store, 0, size - 1);
+            size--;
+            return value;
         }
     }
 
-    public void set(int index, Object value) {
-        checkFrozen();
+    public void slowUnshift(Object... values) {
+        final Object[] newStore = new Object[size + values.length];
+        System.arraycopy(values, 0, newStore, 0, values.length);
+        ArrayUtils.copy(store, newStore, values.length, size);
+        setStore(newStore, newStore.length);
+    }
 
-        final int l = store.size();
-        final int normalisedIndex = ArrayUtilities.normaliseIndex(l, index);
+    public void slowPush(Object value) {
+        CompilerAsserts.neverPartOfCompilation();
+        store = Arrays.copyOf(ArrayUtils.box(store), size + 1);
+        ((Object[]) store)[size] = value;
+        size++;
+    }
 
-        try {
-            store.set(normalisedIndex, value);
-        } catch (GeneraliseArrayStoreException e) {
-            store = store.generalizeFor(value);
+    public int normaliseIndex(int index) {
+        return normaliseIndex(size, index);
+    }
 
-            try {
-                store.set(normalisedIndex, value);
-            } catch (GeneraliseArrayStoreException ex) {
-                throwSecondGeneraliseException();
-            }
+    public int normaliseExclusiveIndex(int index) {
+        return normaliseExclusiveIndex(size, index);
+    }
+
+    public static int normaliseIndex(int length, int index) {
+        if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, index < 0)) {
+            return length + index;
+        } else {
+            return index;
         }
     }
 
-    public void setRangeSingleInclusive(int begin, int inclusiveEnd, Object value) {
-        final int l = store.size();
-        final int normalisedInclusiveEnd = ArrayUtilities.normaliseIndex(l, inclusiveEnd);
-        setRangeSingleExclusive(begin, normalisedInclusiveEnd + 1, value);
-    }
-
-    public void setRangeSingleExclusive(int begin, int exclusiveEnd, Object value) {
-        checkFrozen();
-
-        final int l = store.size();
-        final int normalisedBegin = ArrayUtilities.normaliseIndex(l, begin);
-        final int truncatedNormalisedExclusiveEnd = ArrayUtilities.truncateNormalisedExclusiveIndex(l, ArrayUtilities.normaliseExclusiveIndex(l, exclusiveEnd));
-
-        try {
-            store.setRangeSingle(normalisedBegin, truncatedNormalisedExclusiveEnd, value);
-        } catch (GeneraliseArrayStoreException e) {
-            store = store.generalizeFor(value);
-
-            try {
-                store.setRangeSingle(normalisedBegin, truncatedNormalisedExclusiveEnd, value);
-            } catch (GeneraliseArrayStoreException ex) {
-                throwSecondGeneraliseException();
-            }
+    public static int normaliseExclusiveIndex(int length, int exclusiveIndex) {
+        if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, exclusiveIndex < 0)) {
+            return length + exclusiveIndex + 1;
+        } else {
+            return exclusiveIndex;
         }
     }
 
-    public void setRangeArrayInclusive(int begin, int inclusiveEnd, RubyArray other) {
-        final int l = store.size();
-        final int normalisedInclusiveEnd = ArrayUtilities.normaliseIndex(l, inclusiveEnd);
-        setRangeArrayExclusive(begin, normalisedInclusiveEnd + 1, other);
-    }
-
-    public void setRangeArrayExclusive(int begin, int exclusiveEnd, RubyArray other) {
-        checkFrozen();
-
-        final int l = store.size();
-        final int normalisedBegin = ArrayUtilities.normaliseIndex(l, begin);
-        final int normalisedExclusiveEnd = ArrayUtilities.normaliseExclusiveIndex(l, exclusiveEnd);
-
-        try {
-            store.setRangeArray(normalisedBegin, normalisedExclusiveEnd, other.store);
-        } catch (GeneraliseArrayStoreException e) {
-            store = store.generalizeFor(other.store.getIndicativeValue());
-
-            try {
-                store.setRangeArray(normalisedBegin, normalisedExclusiveEnd, other.store);
-            } catch (GeneraliseArrayStoreException ex) {
-                throwSecondGeneraliseException();
-            }
-        }
-    }
-
-    @SlowPath
-    public void insert(int index, Object value) {
-        checkFrozen();
-
-        final int l = store.size();
-        final int normalisedIndex = ArrayUtilities.normaliseIndex(l, index);
-
-        try {
-            store.insert(normalisedIndex, value);
-        } catch (GeneraliseArrayStoreException e) {
-            store = store.generalizeFor(value);
-
-            try {
-                store.insert(normalisedIndex, value);
-            } catch (GeneraliseArrayStoreException ex) {
-                throwSecondGeneraliseException();
-            }
-        }
-    }
-
-    @SlowPath
-    public void push(Object value) {
-        checkFrozen();
-
-        if (store instanceof EmptyArrayStore) {
-            /*
-             * Normally we want to transfer to interpreter to generalize an array store, but the
-             * special case of an empty array is common, will never cause rewrites and has a simple
-             * implementation, so treat it as a special case.
-             */
-            store = store.generalizeFor(value);
-        }
-
-        try {
-            store.push(value);
-        } catch (GeneraliseArrayStoreException e) {
-            store = store.generalizeFor(value);
-
-            try {
-                store.push(value);
-            } catch (GeneraliseArrayStoreException ex) {
-                throw new IllegalStateException("Generalised to support a specific value, but value still rejected by store");
-            }
-        }
-    }
-
-    @SlowPath
-    public void unshift(Object value) {
-        insert(0, value);
-    }
-
-    public Object deleteAt(int index) {
-        checkFrozen();
-
-        final int l = store.size();
-        final int normalisedIndex = ArrayUtilities.normaliseIndex(l, index);
-
-        return store.deleteAt(normalisedIndex);
-    }
-
-    public void setSize(int size, Object defaultValue) {
-        final Object[] objects = new Object[size];
-
-        for (int n = 0; n < objects.length; n++) {
-            objects[n] = defaultValue;
-        }
-
-        store = new ObjectArrayStore(objects);
-    }
-
-    public void clear() {
-        store = EmptyArrayStore.INSTANCE;
-    }
-
-    public void replace(RubyArray other) {
-        store = other.store.dup();
-    }
-
-    @Override
-    @CompilerDirectives.SlowPath
-    public Object dup() {
-        return new RubyArray(getRubyClass(), store.dup());
-    }
-
-    public ArrayStore getArrayStore() {
+    public Object getStore() {
         return store;
     }
 
-    public List<Object> asList() {
-        final RubyArray array = this;
+    public void setStore(Object store, int size) {
+        this.store = store;
+        this.size = size;
 
-        return new AbstractList<Object>() {
+        assert store == null
+                || store instanceof Object[]
+                || store instanceof int[]
+                || store instanceof long[]
+                || store instanceof double[];
 
-            @Override
-            public Object get(int n) {
-                return array.get(n);
-            }
-
-            @Override
-            public int size() {
-                return array.size();
-            }
-
-        };
+        assert !(store instanceof Object[]) || RubyContext.shouldObjectsBeVisible(size, (Object[]) store);
+        assert !(store instanceof Object[]) || size <= ((Object[]) store).length;
+        assert !(store instanceof int[]) || size <= ((int[]) store).length;
+        assert !(store instanceof long[]) || size <= ((long[]) store).length;
+        assert !(store instanceof double[]) || size <= ((double[]) store).length;
     }
 
-    public Object[] toObjectArray() {
-        return store.toObjectArray();
+    public int getSize() {
+        return size;
     }
 
-    private static void throwSecondGeneraliseException() {
-        CompilerAsserts.neverPartOfCompilation();
-        throw new RuntimeException("Generalised based on a value, but the new store also rejected that value.");
-    }
+    public void setSize(int size) {
+        this.size = size;
 
-    public int size() {
-        return store.size();
-    }
+        assert store == null
+                || store instanceof Object[]
+                || store instanceof int[]
+                || store instanceof long[]
+                || store instanceof double[];
 
-    public boolean contains(Object value) {
-        return store.contains(value);
-    }
-
-    /**
-     * Recursive Cartesian product.
-     * <p>
-     * The Array#product method is supposed to be able to take a block, to which it yields tuples as
-     * they are produced, so it might be worth abstracting this method into sending tuples to some
-     * interface, which either adds them to an array, or yields them to the block.
-     */
-    @SlowPath
-    public static RubyArray product(RubyClass arrayClass, RubyArray[] arrays, int l) {
-        if (arrays.length - l == 1) {
-            final RubyArray firstArray = arrays[0];
-
-            final RubyArray tuples = new RubyArray(arrayClass);
-
-            for (int i = 0; i < firstArray.size(); i++) {
-                final RubyArray tuple = new RubyArray(arrayClass);
-                tuple.push(firstArray.get(i));
-                tuples.push(tuple);
-            }
-
-            return tuples;
-        } else {
-            final RubyArray intermediateTuples = product(arrayClass, arrays, l - 1);
-            final RubyArray lastArray = arrays[l - 1];
-
-            final RubyArray tuples = new RubyArray(arrayClass);
-
-            for (int n = 0; n < intermediateTuples.size(); n++) {
-                for (int i = 0; i < lastArray.size(); i++) {
-                    final RubyArray tuple = (RubyArray) ((RubyArray) intermediateTuples.get(n)).dup();
-                    tuple.push(lastArray.get(i));
-                    tuples.push(tuple);
-                }
-            }
-
-            return tuples;
-        }
-    }
-
-    public boolean equals(RubyArray other) {
-        if (other == null) {
-            return false;
-        } else if (other == this) {
-            return true;
-        } else {
-            return store.equals(other.store);
-        }
+        assert !(store instanceof Object[]) || RubyContext.shouldObjectsBeVisible(size, (Object[]) store);
+        assert !(store instanceof Object[]) || size <= ((Object[]) store).length;
+        assert !(store instanceof int[]) || size <= ((int[]) store).length;
+        assert !(store instanceof long[]) || size <= ((long[]) store).length;
+        assert !(store instanceof double[]) || size <= ((double[]) store).length;
     }
 
     @Override
-    public boolean equals(Object other) {
-        if (other instanceof RubyArray) {
-            return equals((RubyArray) other);
-        } else {
-            return false;
-        }
+    public Object dup() {
+        throw new UnsupportedOperationException();
     }
 
-    @Override
-    public int hashCode() {
-        int hash = 0;
-
-        for (Object value : asList()) {
-            hash ^= value.hashCode();
-        }
-
-        return hash;
-    }
-
-    public RubyArray relativeComplement(RubyArray other) {
-        // TODO(cs): specialize for different stores
-
-        final RubyArray result = new RubyArray(getRubyClass().getContext().getCoreLibrary().getArrayClass());
-
-        for (Object value : asList()) {
-            if (!other.contains(value)) {
-                result.push(value);
-            }
-        }
-
-        return result;
-    }
-
-    public String join(String separator) {
-        final StringBuilder builder = new StringBuilder();
-
-        for (int n = 0; n < size(); n++) {
-            if (n > 0) {
-                builder.append(separator);
-            }
-
-            builder.append(get(n).toString());
-        }
-
-        return builder.toString();
-    }
-
-    public static String join(Object[] parts, String separator) {
-        final StringBuilder builder = new StringBuilder();
-
-        for (int n = 0; n < parts.length; n++) {
-            if (n > 0) {
-                builder.append(separator);
-            }
-
-            builder.append(parts[n].toString());
-        }
-
-        return builder.toString();
-    }
-
-    public void flattenTo(RubyArray result) {
-        for (int n = 0; n < size(); n++) {
-            final Object value = get(n);
-
-            if (value instanceof RubyArray) {
-                ((RubyArray) value).flattenTo(result);
-            } else {
-                result.push(value);
-            }
-        }
-    }
-
-    public boolean isEmpty() {
-        return store.size() == 0;
-    }
-
-    public org.jruby.RubyArray toJRubyArray() {
-        final org.jruby.RubyArray jrubyArray = org.jruby.RubyArray.newArray(getRubyClass().getContext().getRuntime());
-
-        for (Object value : this.asList()) {
-            jrubyArray.add(getRubyClass().getContext().toJRuby(value));
-        }
-
-        return jrubyArray;
-    }
-
-    @SlowPath
-    @Override
-    public String inspect() {
-
-        final StringBuilder builder = new StringBuilder();
-
-        builder.append("[");
-
-        for (int n = 0; n < size(); n++) {
-            if (n > 0) {
-                builder.append(", ");
-            }
-
-            // TODO(CS): slow path send
-            builder.append(getRubyClass().getContext().getCoreLibrary().box(get(n)).send("inspect", null));
-        }
-
-        builder.append("]");
-
-        return builder.toString();
-    }
 
 }

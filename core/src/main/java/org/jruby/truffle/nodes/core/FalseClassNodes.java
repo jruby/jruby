@@ -53,6 +53,8 @@ public abstract class FalseClassNodes {
 
         @Specialization
         public boolean equal(Object other) {
+            notDesignedForCompilation();
+
             return other instanceof Boolean && !((boolean) other);
         }
 

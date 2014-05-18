@@ -45,7 +45,7 @@ public class MethodDefinitionNode extends RubyNode {
     }
 
     public RubyMethod executeMethod(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
+        notDesignedForCompilation();
 
         final MaterializedFrame declarationFrame;
 

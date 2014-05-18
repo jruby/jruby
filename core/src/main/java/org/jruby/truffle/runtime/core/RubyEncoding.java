@@ -35,6 +35,7 @@ public class RubyEncoding extends RubyObject{
 
     public RubyEncoding(RubyClass encodingClass, Encoding encoding) {
         super(encodingClass);
+        assert encoding != null;
         rubyEncoding = org.jruby.RubyEncoding.newEncoding(getJRubyRuntime(), encoding);
     }
 

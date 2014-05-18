@@ -12,11 +12,14 @@ package org.jruby.truffle.nodes.call;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.methods.*;
+
+import java.util.Arrays;
 
 /**
  * A call node that has a chain of dispatch nodes.
@@ -58,6 +61,9 @@ public class RubyCallNode extends RubyNode {
 
     @Child protected DispatchHeadNode dispatchHead;
 
+    private final BranchProfile splatNotArrayProfile = new BranchProfile();
+    private final BranchProfile splatUnboxProfile = new BranchProfile();
+
     public RubyCallNode(RubyContext context, SourceSection section, String name, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
         super(context, section);
 
@@ -85,6 +91,9 @@ public class RubyCallNode extends RubyNode {
         final Object[] argumentsObjects = executeArguments(frame);
         final RubyProc blockObject = executeBlock(frame);
 
+        assert RubyContext.shouldObjectBeVisible(receiverObject);
+        assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
+
         return dispatchHead.dispatch(frame, receiverObject, blockObject, argumentsObjects);
     }
 
@@ -106,15 +115,44 @@ public class RubyCallNode extends RubyNode {
         }
 
         if (isSplatted) {
-            assert argumentsObjects[0] instanceof RubyArray;
-            return ((RubyArray) argumentsObjects[0]).toObjectArray();
+            return splat(argumentsObjects[0]);
         } else {
             return argumentsObjects;
         }
     }
 
+    private Object[] splat(Object argument) {
+        // TODO(CS): what happens if isn't just one argument, or it isn't an Array?
+
+        if (!(argument instanceof RubyArray)) {
+            splatNotArrayProfile.enter();
+            notDesignedForCompilation();
+            throw new UnsupportedOperationException();
+        }
+
+        final RubyArray array = (RubyArray) argument;
+        final Object store = array.getStore();
+
+        if (store instanceof Object[]) {
+            final Object[] objectStore = (Object[]) store;
+
+            // TODO(CS): specialize for this
+            if (objectStore.length == array.getSize()) {
+                return objectStore;
+            } else {
+                return Arrays.copyOf(objectStore, array.getSize());
+            }
+        } else {
+            splatUnboxProfile.enter();
+            notDesignedForCompilation();
+            return array.slowToArray();
+        }
+    }
+
     @Override
     public Object isDefined(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         if (receiver.isDefined(frame) == NilPlaceholder.INSTANCE) {
             return NilPlaceholder.INSTANCE;
         }

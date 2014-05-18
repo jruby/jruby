@@ -36,8 +36,6 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyContext context = getContext();
-
         final MaterializedFrame declarationFrame;
 
         if (requiresDeclarationFrame) {
@@ -48,7 +46,7 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
 
         final RubyMethod method = new RubyMethod(sharedMethodInfo, name, null, Visibility.PUBLIC, false, callTarget, declarationFrame, false);
 
-        return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, RubyArguments.getSelf(frame.getArguments()), RubyArguments.getBlock(frame.getArguments()), method);
+        return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, RubyArguments.getSelf(frame.getArguments()), RubyArguments.getBlock(frame.getArguments()), method);
     }
 
 }

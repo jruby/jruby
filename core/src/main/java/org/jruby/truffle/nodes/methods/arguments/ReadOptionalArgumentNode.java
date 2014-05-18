@@ -41,7 +41,6 @@ public class ReadOptionalArgumentNode extends RubyNode {
             defaultValueProfile.enter();
             return defaultValue.execute(frame);
         } else {
-            assert index < RubyArguments.getUserArgumentsCount(frame.getArguments());
             return RubyArguments.getUserArgument(frame.getArguments(), index);
         }
     }

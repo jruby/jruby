@@ -53,6 +53,8 @@ public abstract class TrueClassNodes {
 
         @Specialization
         public boolean equal(Object other) {
+            notDesignedForCompilation();
+
             return other instanceof Boolean && ((boolean) other);
         }
 

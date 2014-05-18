@@ -32,6 +32,8 @@ public class SingletonClassNode extends RubyNode {
 
     @Override
     public RubyClass executeRubyClass(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         return child.executeRubyBasicObject(frame).getSingletonClass();
     }
 

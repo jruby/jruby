@@ -30,6 +30,8 @@ public abstract class FiberNodes {
 
         @Specialization
         public Object resume(RubyFiber fiberBeingResumed, Object[] args) {
+            notDesignedForCompilation();
+
             final RubyFiber sendingFiber = getContext().getFiberManager().getCurrentFiber();
 
             fiberBeingResumed.resume(sendingFiber, args);
@@ -52,6 +54,8 @@ public abstract class FiberNodes {
 
         @Specialization
         public NilPlaceholder initialize(RubyFiber fiber, RubyProc block) {
+            notDesignedForCompilation();
+
             fiber.initialize(block);
             return NilPlaceholder.INSTANCE;
         }
@@ -71,6 +75,8 @@ public abstract class FiberNodes {
 
         @Specialization
         public Object yield(Object[] args) {
+            notDesignedForCompilation();
+
             final RubyFiber yieldingFiber = getContext().getFiberManager().getCurrentFiber();
             final RubyFiber fiberYieldedTo = yieldingFiber.lastResumedByFiber;
 

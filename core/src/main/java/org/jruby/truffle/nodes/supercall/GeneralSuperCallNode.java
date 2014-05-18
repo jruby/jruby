@@ -12,13 +12,10 @@ package org.jruby.truffle.nodes.supercall;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
-import org.jruby.truffle.runtime.methods.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 /**
  * Represents a super call - that is a call with self as the receiver, but the superclass of self
@@ -31,7 +28,6 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
     private final boolean isSplatted;
     @Child protected RubyNode block;
     @Children protected final RubyNode[] arguments;
-    @Child protected IndirectCallNode callNode;
 
     public GeneralSuperCallNode(RubyContext context, SourceSection sourceSection, String name, RubyNode block, RubyNode[] arguments, boolean isSplatted) {
         super(context, sourceSection, name);
@@ -40,9 +36,6 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
         this.block = block;
         this.arguments = arguments;
         this.isSplatted = isSplatted;
-
-        // TODO(CS): We definitely don't want an indirect call...
-        callNode = Truffle.getRuntime().createIndirectCallNode();
     }
 
     @ExplodeLoop
@@ -86,11 +79,11 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
 
         if (isSplatted) {
             // TODO(CS): need something better to splat the arguments array
-            CompilerAsserts.neverPartOfCompilation();
+            notDesignedForCompilation();
             final RubyArray argumentsArray = (RubyArray) argumentsObjects[0];
-            return callNode.call(frame, method.getCallTarget(), RubyArguments.pack(method.getDeclarationFrame(), self, blockObject, argumentsArray.asList().toArray()));
+            return callNode.call(frame, RubyArguments.pack(method.getDeclarationFrame(), self, blockObject,argumentsArray.slowToArray()));
         } else {
-            return callNode.call(frame, method.getCallTarget(), RubyArguments.pack(method.getDeclarationFrame(), self, blockObject, argumentsObjects));
+            return callNode.call(frame, RubyArguments.pack(method.getDeclarationFrame(), self, blockObject, argumentsObjects));
         }
     }
 

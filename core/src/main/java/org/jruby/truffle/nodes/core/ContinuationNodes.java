@@ -30,6 +30,8 @@ public abstract class ContinuationNodes {
 
         @Specialization
         public Object call(RubyContinuation continuation, Object[] args) {
+            notDesignedForCompilation();
+
             continuation.call(args);
             return null;
         }

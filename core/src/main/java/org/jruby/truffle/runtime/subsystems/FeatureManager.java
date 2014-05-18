@@ -11,13 +11,13 @@ package org.jruby.truffle.runtime.subsystems;
 
 import java.io.*;
 import java.net.*;
-import java.util.*;
+import java.util.Arrays;
 
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.array.*;
 
 /**
  * Manages the features loaded into Ruby. This basically means which library files are loaded, but
@@ -79,7 +79,7 @@ public class FeatureManager {
 
             // Try each load path in turn
 
-            for (Object pathObject : context.getCoreLibrary().getLoadPath().asList()) {
+            for (Object pathObject : context.getCoreLibrary().getLoadPath().slowToArray()) {
                 final String path = pathObject.toString();
 
                 if (requireInPath(path, feature)) {
@@ -120,7 +120,7 @@ public class FeatureManager {
     }
 
     private boolean requireFile(String fileName) throws IOException {
-        if (context.getCoreLibrary().getLoadedFeatures().contains(fileName)) {
+        if (Arrays.asList(context.getCoreLibrary().getLoadedFeatures().slowToArray()).contains(fileName)) {
             return true;
         }
 
@@ -131,7 +131,7 @@ public class FeatureManager {
 
         if (new File(fileName).isFile()) {
             context.loadFile(fileName);
-            context.getCoreLibrary().getLoadedFeatures().push(context.makeString(fileName));
+            context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(fileName));
             return true;
         } else {
             URL url;
@@ -151,8 +151,8 @@ public class FeatureManager {
             }
 
             context.load(context.getSourceManager().get(url.toString(), inputStream));
-            context.getCoreLibrary().getLoadedFeatures().push(context.makeString(fileName));
-            ((RubyArray) context.getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$LOADED_FEATURES")).push(context.makeString(fileName));
+            context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(fileName));
+            ((RubyArray) context.getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$LOADED_FEATURES")).slowPush(context.makeString(fileName));
             return true;
         }
     }

@@ -21,6 +21,26 @@ import org.jruby.util.ByteList;
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
 
+    @CoreMethod(names = "==", minArgs = 1, maxArgs = 1)
+    public abstract static class EqualNode extends CoreMethodNode {
+
+        public EqualNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EqualNode(EqualNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean equal(RubyRegexp a, RubyRegexp b) {
+            notDesignedForCompilation();
+
+            return a.equals(b);
+        }
+
+    }
+
     @CoreMethod(names = "===", minArgs = 1, maxArgs = 1)
     public abstract static class ThreeEqualNode extends CoreMethodNode {
 
@@ -34,6 +54,8 @@ public abstract class RegexpNodes {
 
         @Specialization
         public Object match(RubyRegexp regexp, RubyString string) {
+            notDesignedForCompilation();
+
             return regexp.matchOperator(string.toString()) != NilPlaceholder.INSTANCE;
         }
 
@@ -56,12 +78,14 @@ public abstract class RegexpNodes {
 
         @Specialization
         public Object match(RubyRegexp regexp, RubyString string) {
+            notDesignedForCompilation();
+
             return regexp.matchOperator(string.toString());
         }
 
         @Specialization
         public Object match(VirtualFrame frame, RubyRegexp regexp, RubyBasicObject other) {
-            CompilerAsserts.neverPartOfCompilation();
+            notDesignedForCompilation();
 
             // TODO(CS) perhaps I shouldn't be converting match operators to simple calls - they seem to get switched around like this
 
@@ -85,6 +109,8 @@ public abstract class RegexpNodes {
 
         @Specialization
         public Object match(RubyRegexp regexp, RubyString string) {
+            notDesignedForCompilation();
+
             return regexp.matchOperator(string.toString()) == NilPlaceholder.INSTANCE;
         }
 
@@ -103,6 +129,8 @@ public abstract class RegexpNodes {
 
         @Specialization
         public RubyString sqrt(RubyString pattern) {
+            notDesignedForCompilation();
+
             return getContext().makeString(org.jruby.RubyRegexp.quote19(new ByteList(pattern.getBytes()), true).toString());
         }
 
@@ -121,6 +149,8 @@ public abstract class RegexpNodes {
 
         @Specialization
         public NilPlaceholder initialize(RubyRegexp regexp, RubyString string) {
+            notDesignedForCompilation();
+
             regexp.initialize(string.toString());
             return NilPlaceholder.INSTANCE;
         }
@@ -140,6 +170,8 @@ public abstract class RegexpNodes {
 
         @Specialization
         public Object match(RubyRegexp regexp, RubyString string) {
+            notDesignedForCompilation();
+
             return regexp.match(string.toString());
         }
 

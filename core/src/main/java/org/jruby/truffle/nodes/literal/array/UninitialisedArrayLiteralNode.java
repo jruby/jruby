@@ -14,7 +14,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 @NodeInfo(shortName = "uninit-array-literal")
 public class UninitialisedArrayLiteralNode extends ArrayLiteralNode {
@@ -25,7 +25,7 @@ public class UninitialisedArrayLiteralNode extends ArrayLiteralNode {
 
     @ExplodeLoop
     @Override
-    public Object execute(VirtualFrame frame) {
+    public RubyArray executeArray(VirtualFrame frame) {
         CompilerDirectives.transferToInterpreter();
 
         final Object[] executedValues = new Object[values.length];
@@ -34,11 +34,15 @@ public class UninitialisedArrayLiteralNode extends ArrayLiteralNode {
             executedValues[n] = values[n].execute(frame);
         }
 
-        final RubyArray array = RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
-        final ArrayStore store = array.getArrayStore();
+        final RubyArray array = RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
+        final Object store = array.getStore();
 
-        if (store instanceof IntegerArrayStore) {
-            replace(new FixnumArrayLiteralNode(getContext(), getSourceSection(), values));
+        if (store instanceof int[]) {
+            replace(new IntegerFixnumArrayLiteralNode(getContext(), getSourceSection(), values));
+        } else if (store instanceof long[]) {
+            replace(new LongFixnumArrayLiteralNode(getContext(), getSourceSection(), values));
+        } else if (store instanceof double[]) {
+            replace(new FloatArrayLiteralNode(getContext(), getSourceSection(), values));
         } else {
             replace(new ObjectArrayLiteralNode(getContext(), getSourceSection(), values));
         }

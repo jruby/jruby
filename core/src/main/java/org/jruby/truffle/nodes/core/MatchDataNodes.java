@@ -13,7 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 @CoreClass(name = "MatchData")
 public abstract class MatchDataNodes {
@@ -31,6 +31,8 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public Object getIndex(RubyMatchData matchData, int index) {
+            notDesignedForCompilation();
+
             if (index >= matchData.getValues().length) {
                 return NilPlaceholder.INSTANCE;
             } else {
@@ -53,7 +55,9 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public RubyArray toA(RubyMatchData matchData) {
-            return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getValues());
+            notDesignedForCompilation();
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.getValues());
         }
 
     }
@@ -71,13 +75,15 @@ public abstract class MatchDataNodes {
 
         @Specialization
         public RubyArray valuesAt(RubyMatchData matchData, Object[] args) {
+            notDesignedForCompilation();
+
             final int[] indicies = new int[args.length];
 
             for (int n = 0; n < args.length; n++) {
                 indicies[n] = (int) args[n];
             }
 
-            return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.valuesAt(indicies));
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.valuesAt(indicies));
         }
 
     }

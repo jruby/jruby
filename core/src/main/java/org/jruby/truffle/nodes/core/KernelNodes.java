@@ -28,7 +28,7 @@ import org.jruby.truffle.nodes.yield.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.hash.RubyHash;
 import org.jruby.truffle.runtime.subsystems.*;
 
@@ -49,10 +49,12 @@ public abstract class
 
         @Specialization
         public RubyArray array(Object[] args) {
+            notDesignedForCompilation();
+
             if (args.length == 1 && args[0] instanceof RubyArray) {
                 return (RubyArray) args[0];
             } else {
-                return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), args);
+                return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args);
             }
         }
 
@@ -71,6 +73,8 @@ public abstract class
 
         @Specialization
         public Object atExit(RubyProc block) {
+            notDesignedForCompilation();
+
             getContext().getAtExitManager().add(block);
             return NilPlaceholder.INSTANCE;
         }
@@ -89,6 +93,8 @@ public abstract class
 
         @Specialization
         public Object binding(VirtualFrame frame, Object self) {
+            notDesignedForCompilation();
+
             return new RubyBinding(getContext().getCoreLibrary().getBindingClass(), self, RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize());
         }
     }
@@ -106,6 +112,8 @@ public abstract class
 
         @Specialization
         public boolean blockGiven() {
+            notDesignedForCompilation();
+
             return RubyArguments.getBlock(RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
         }
     }
@@ -125,6 +133,8 @@ public abstract class
 
         @Specialization
         public Object callcc(RubyProc block) {
+            notDesignedForCompilation();
+
             final RubyContext context = getContext();
 
             if (block == null) {
@@ -150,6 +160,8 @@ public abstract class
 
         @Specialization
         public Object doCatch(VirtualFrame frame, Object tag, RubyProc block) {
+            notDesignedForCompilation();
+
             try {
                 return yield(frame, block);
             } catch (ThrowException e) {
@@ -177,11 +189,15 @@ public abstract class
 
         @Specialization
         public Object eval(RubyString source, @SuppressWarnings("unused") UndefinedPlaceholder binding) {
+            notDesignedForCompilation();
+
             return getContext().eval(source.toString());
         }
 
         @Specialization
         public Object eval(RubyString source, RubyBinding binding) {
+            notDesignedForCompilation();
+
             return getContext().eval(source.toString(), binding);
         }
 
@@ -200,6 +216,8 @@ public abstract class
 
         @Specialization
         public Object require(Object[] args) {
+            notDesignedForCompilation();
+
             final String[] commandLine = new String[args.length];
 
             for (int n = 0; n < args.length; n++) {
@@ -260,6 +278,8 @@ public abstract class
 
         @Specialization
         public Object exit(@SuppressWarnings("unused") UndefinedPlaceholder exitCode) {
+            notDesignedForCompilation();
+
             getContext().shutdown();
             System.exit(0);
             return null;
@@ -267,6 +287,8 @@ public abstract class
 
         @Specialization
         public Object exit(int exitCode) {
+            notDesignedForCompilation();
+
             getContext().shutdown();
             System.exit(exitCode);
             return null;
@@ -287,6 +309,8 @@ public abstract class
 
         @Specialization
         public RubyString gets(VirtualFrame frame) {
+            notDesignedForCompilation();
+
             final RubyContext context = getContext();
 
             final Frame caller = RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
@@ -394,8 +418,9 @@ public abstract class
 
         @Specialization
         public RubyProc proc(Object self, RubyProc block) {
-            return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA, self, block, block.getMethod().withoutBlockDestructureSemantics());
+            notDesignedForCompilation();
 
+            return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA, self, block, block.getMethod().withoutBlockDestructureSemantics());
         }
     }
 
@@ -412,6 +437,8 @@ public abstract class
 
         @Specialization
         public boolean load(RubyString file) {
+            notDesignedForCompilation();
+
             getContext().loadFile(file.toString());
             return true;
         }
@@ -444,33 +471,29 @@ public abstract class
     @CoreMethod(names = "p", visibility = Visibility.PRIVATE, isModuleMethod = true, needsSelf = false, isSplatted = true)
     public abstract static class PNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode inspect;
+
         public PNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            inspect = new DispatchHeadNode(context, "inspect", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public PNode(PNode prev) {
             super(prev);
+            inspect = prev.inspect;
         }
 
         @Specialization
-        public NilPlaceholder p(Object[] args) {
+        public NilPlaceholder p(VirtualFrame frame, Object[] args) {
+            notDesignedForCompilation();
+
             final ThreadManager threadManager = getContext().getThreadManager();
 
             final RubyThread runningThread = threadManager.leaveGlobalLock();
 
             try {
                 for (Object arg : args) {
-                    final String string;
-
-                    if (arg instanceof NilPlaceholder) {
-                        string = "nil";
-                    } else if (arg instanceof RubyBasicObject) {
-                        string = ((RubyBasicObject) arg).inspect();
-                    } else {
-                        string = arg.toString();
-                    }
-
-                    getContext().getRuntime().getInstanceConfig().getOutput().println(string);
+                    getContext().getRuntime().getInstanceConfig().getOutput().println(inspect.dispatch(frame, arg, null));
                 }
             } finally {
                 threadManager.enterGlobalLock(runningThread);
@@ -493,6 +516,8 @@ public abstract class
 
         @Specialization
         public NilPlaceholder print(Object[] args) {
+            notDesignedForCompilation();
+
             final ThreadManager threadManager = getContext().getThreadManager();
 
             final RubyThread runningThread = threadManager.leaveGlobalLock();
@@ -526,6 +551,8 @@ public abstract class
 
         @Specialization
         public NilPlaceholder printf(Object[] args) {
+            notDesignedForCompilation();
+
             final ThreadManager threadManager = getContext().getThreadManager();
 
             if (args.length > 0) {
@@ -569,7 +596,6 @@ public abstract class
         @Specialization
         public Object prettyInspect(VirtualFrame frame, Object self) {
             return toS.dispatch(frame, self, null);
-
         }
     }
 
@@ -586,8 +612,9 @@ public abstract class
 
         @Specialization
         public RubyProc proc(Object self, RubyProc block) {
-            return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, self, block, block.getMethod());
+            notDesignedForCompilation();
 
+            return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, self, block, block.getMethod());
         }
     }
 
@@ -604,6 +631,8 @@ public abstract class
 
         @Specialization
         public NilPlaceholder puts(Object[] args) {
+            notDesignedForCompilation();
+
             final ThreadManager threadManager = getContext().getThreadManager();
             final PrintStream standardOut = getContext().getRuntime().getInstanceConfig().getOutput();
 
@@ -629,8 +658,8 @@ public abstract class
             if (value instanceof RubyArray) {
                 final RubyArray array = (RubyArray) value;
 
-                for (int n = 0; n < array.size(); n++) {
-                    puts(context, standardOut, array.get(n));
+                for (Object object : array.slowToArray()) {
+                    puts(context, standardOut, object);
                 }
             } else {
                 // TODO(CS): slow path send
@@ -657,17 +686,21 @@ public abstract class
 
         @Specialization(order = 1)
         public Object raise(VirtualFrame frame, RubyString message, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
+            notDesignedForCompilation();
+
             return raise(frame, getContext().getCoreLibrary().getRuntimeErrorClass(), message);
         }
 
         @Specialization(order = 2)
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
+            notDesignedForCompilation();
+
             return raise(frame, exceptionClass, getContext().makeString(""));
         }
 
         @Specialization(order = 3)
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message) {
-            final RubyContext context = getContext();
+            notDesignedForCompilation();
 
             final RubyBasicObject exception = exceptionClass.newInstance();
             initialize.dispatch(frame, exception, null, message);
@@ -689,6 +722,8 @@ public abstract class
 
         @Specialization
         public boolean require(RubyString feature) {
+            notDesignedForCompilation();
+
             try {
                 getContext().getFeatureManager().require(feature.toString());
             } catch (IOException e) {
@@ -712,12 +747,16 @@ public abstract class
 
         @Specialization
         public NilPlaceholder setTraceFunc(NilPlaceholder proc) {
+            notDesignedForCompilation();
+
             getContext().getTraceManager().setTraceProc(null);
             return proc;
         }
 
         @Specialization
         public RubyProc setTraceFunc(RubyProc proc) {
+            notDesignedForCompilation();
+
             getContext().getTraceManager().setTraceProc(proc);
             return proc;
         }
@@ -779,6 +818,8 @@ public abstract class
 
         @Specialization
         public double sleep(double duration) {
+            notDesignedForCompilation();
+
             final RubyContext context = getContext();
 
             final RubyThread runningThread = context.getThreadManager().leaveGlobalLock();
@@ -825,6 +866,8 @@ public abstract class
 
         @Specialization
         public Object doThrow(Object tag, Object value) {
+            notDesignedForCompilation();
+
             if (value instanceof UndefinedPlaceholder) {
                 throw new ThrowException(tag, NilPlaceholder.INSTANCE);
             } else {

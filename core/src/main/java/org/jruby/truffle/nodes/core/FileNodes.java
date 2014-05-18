@@ -17,7 +17,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 @CoreClass(name = "File")
 public abstract class FileNodes {
@@ -35,6 +35,8 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyString absolutePath(RubyString path) {
+            notDesignedForCompilation();
+
             return getContext().makeString(new File(path.toString()).getAbsolutePath());
         }
 
@@ -53,6 +55,8 @@ public abstract class FileNodes {
 
         @Specialization
         public NilPlaceholder close(RubyFile file) {
+            notDesignedForCompilation();
+
             file.close();
             return NilPlaceholder.INSTANCE;
         }
@@ -72,6 +76,8 @@ public abstract class FileNodes {
 
         @Specialization
         public boolean directory(RubyString path) {
+            notDesignedForCompilation();
+
             return new File(path.toString()).isDirectory();
         }
 
@@ -90,6 +96,8 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyString dirname(RubyString path) {
+            notDesignedForCompilation();
+
             final String parent = new File(path.toString()).getParent();
 
             if (parent == null) {
@@ -114,6 +122,8 @@ public abstract class FileNodes {
 
         @Specialization
         public NilPlaceholder eachLine(VirtualFrame frame, RubyFile file, RubyProc block) {
+            notDesignedForCompilation();
+
             final RubyContext context = getContext();
 
             // TODO(cs): this buffered reader may consume too much
@@ -154,6 +164,8 @@ public abstract class FileNodes {
 
         @Specialization
         public boolean exists(RubyString path) {
+            notDesignedForCompilation();
+
             return new File(path.toString()).isFile();
         }
 
@@ -172,6 +184,8 @@ public abstract class FileNodes {
 
         @Specialization
         public boolean executable(RubyString path) {
+            notDesignedForCompilation();
+
             return new File(path.toString()).canExecute();
         }
 
@@ -195,6 +209,8 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyString expandPath(RubyString path, RubyString dir) {
+            notDesignedForCompilation();
+
             return getContext().makeString(RubyFile.expandPath(path.toString(), dir.toString()));
         }
 
@@ -213,6 +229,8 @@ public abstract class FileNodes {
 
         @Specialization
         public boolean file(RubyString path) {
+            notDesignedForCompilation();
+
             return new File(path.toString()).isFile();
         }
 
@@ -231,6 +249,8 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyString join(Object[] parts) {
+            notDesignedForCompilation();
+
             final StringBuilder builder = new StringBuilder();
             join(builder, parts);
             return getContext().makeString(builder.toString());
@@ -238,13 +258,15 @@ public abstract class FileNodes {
 
         @SlowPath
         public static void join(StringBuilder builder, Object[] parts) {
+            notDesignedForCompilation();
+
             for (int n = 0; n < parts.length; n++) {
                 if (n > 0) {
                     builder.append(File.separator);
                 }
 
                 if (parts[n] instanceof RubyArray) {
-                    join(builder, ((RubyArray) parts[n]).toObjectArray());
+                    join(builder, ((RubyArray) parts[n]).slowToArray());
                 } else {
                     builder.append(parts[n].toString());
                 }
@@ -265,6 +287,8 @@ public abstract class FileNodes {
 
         @Specialization
         public Object open(VirtualFrame frame, RubyString fileName, RubyString mode, RubyProc block) {
+            notDesignedForCompilation();
+
             final RubyFile file = RubyFile.open(getContext(), fileName.toString(), mode.toString());
 
             if (block != null) {
@@ -293,6 +317,8 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyString read(RubyFile file) {
+            notDesignedForCompilation();
+
             try {
                 final Reader reader = file.getReader();
 
@@ -329,6 +355,8 @@ public abstract class FileNodes {
 
         @Specialization
         public NilPlaceholder write(RubyFile file, RubyString string) {
+            notDesignedForCompilation();
+
             try {
                 final Writer writer = file.getWriter();
                 writer.write(string.toString());

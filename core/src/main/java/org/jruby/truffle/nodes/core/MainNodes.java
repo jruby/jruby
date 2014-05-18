@@ -38,6 +38,8 @@ public abstract class MainNodes {
 
         @Specialization
         public NilPlaceholder include(VirtualFrame frame, RubyObject main, Object[] args) {
+            notDesignedForCompilation();
+
             // TODO(cs): copied from Module - but where does this method really come from?
 
             // Note that we traverse the arguments backwards

@@ -43,7 +43,7 @@ public class UninitializedBoxingDispatchNode extends UnboxedDispatchNode {
          * specialized.
          */
 
-        if (next instanceof UninitializedDispatchNode) {
+        if (!(next instanceof UninitializedDispatchNode)) {
             this.replace(new BoxingDispatchNode(getContext(), next));
         }
 

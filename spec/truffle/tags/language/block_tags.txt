@@ -1,0 +1,20 @@
+fails:A block taking |a, b| arguments calls #to_ary to convert a single yielded object to an Array
+fails:A block taking |a, b| arguments calls #to_ary to convert a single yielded object to an Array
+fails:A block taking |a, b| arguments raises an TypeError if #to_ary does not return an Array
+fails:A block taking |a, b| arguments raises an TypeError if #to_ary does not return an Array
+fails:A block taking |a, *b| arguments calls #to_ary to convert a single yielded object to an Array
+fails:A block taking |a, *b| arguments calls #to_ary to convert a single yielded object to an Array
+fails:A block taking |a, *b| arguments raises an TypeError if #to_ary does not return an Array
+fails:A block taking |a, *b| arguments raises an TypeError if #to_ary does not return an Array
+fails:A block taking |a, | arguments calls #to_ary to convert a single yielded object to an Array
+fails:A block taking |a, | arguments calls #to_ary to convert a single yielded object to an Array
+fails:A block taking |a, | arguments raises an TypeError if #to_ary does not return an Array
+fails:A block taking |a, | arguments raises an TypeError if #to_ary does not return an Array
+fails:A block taking |(a, b)| arguments calls #to_ary to convert a single yielded object to an Array
+fails:A block taking |(a, b)| arguments calls #to_ary to convert a single yielded object to an Array
+fails:A block taking |(a, b)| arguments raises an TypeError if #to_ary does not return an Array
+fails:A block taking |(a, b)| arguments raises an TypeError if #to_ary does not return an Array
+fails:A block taking |(a, b), c| arguments calls #to_ary to convert a single yielded object to an Array
+fails:A block taking |(a, b), c| arguments calls #to_ary to convert a single yielded object to an Array
+fails:A block taking |(a, b), c| arguments raises an TypeError if #to_ary does not return an Array
+fails:A block taking |(a, b), c| arguments raises an TypeError if #to_ary does not return an Array

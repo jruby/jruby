@@ -16,11 +16,11 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 
 @NodeInfo(shortName = "fixnum(int)")
-public class FixnumLiteralNode extends RubyNode {
+public class IntegerFixnumLiteralNode extends RubyNode {
 
     private final int value;
 
-    public FixnumLiteralNode(RubyContext context, SourceSection sourceSection, int value) {
+    public IntegerFixnumLiteralNode(RubyContext context, SourceSection sourceSection, int value) {
         super(context, sourceSection);
         this.value = value;
     }

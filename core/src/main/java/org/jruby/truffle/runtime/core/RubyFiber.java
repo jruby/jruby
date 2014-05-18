@@ -13,7 +13,7 @@ import java.util.concurrent.*;
 
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.subsystems.*;
 
 /**
@@ -157,7 +157,7 @@ public class RubyFiber extends RubyObject {
         } else if (args.length == 1) {
             arg = args[0];
         } else {
-            arg = RubyArray.specializedFromObjects(getRubyClass().getContext().getCoreLibrary().getArrayClass(), args);
+            arg = RubyArray.fromObjects(getRubyClass().getContext().getCoreLibrary().getArrayClass(), args);
         }
 
         final RubyThread runningThread = threadManager.leaveGlobalLock();

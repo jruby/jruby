@@ -36,16 +36,22 @@ public abstract class SymbolNodes {
 
         @Specialization
         public boolean equal(RubySymbol a, RubySymbol b) {
+            notDesignedForCompilation();
+
             return a.toString().equals(b.toString());
         }
 
         @Specialization
         public boolean equal(RubySymbol a, RubyString b) {
+            notDesignedForCompilation();
+
             return a.toString().equals(b.toString());
         }
 
         @Specialization
         public boolean equal(RubySymbol a, int b) {
+            notDesignedForCompilation();
+
             return a.toString().equals(Integer.toString(b));
         }
 
@@ -64,6 +70,8 @@ public abstract class SymbolNodes {
 
         @Specialization
         public boolean empty(RubySymbol symbol) {
+            notDesignedForCompilation();
+
             return symbol.toString().isEmpty();
         }
 
@@ -82,6 +90,8 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubyProc toProc(RubySymbol symbol) {
+            notDesignedForCompilation();
+
             // TODO(CS): this should be doing all kinds of caching
             return symbol.toProc(RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection());
         }
@@ -118,10 +128,12 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubyArray allSymbols() {
+            notDesignedForCompilation();
+
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (RubySymbol s : getContext().getSymbolTable().getSymbolsTable().values()){
-                array.push(s);
+                array.slowPush(s);
             }
             return array;
         }

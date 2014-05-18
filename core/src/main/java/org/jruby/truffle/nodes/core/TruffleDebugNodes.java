@@ -31,6 +31,8 @@ public abstract class TruffleDebugNodes {
 
         @Specialization
         public RubyString tree() {
+            notDesignedForCompilation();
+
             return getContext().makeString(NodeUtil.printCompactTreeToString(RubyCallStack.getCallerFrame().getCallNode().getRootNode()));
         }
 
@@ -49,6 +51,8 @@ public abstract class TruffleDebugNodes {
 
         @Specialization
         public RubyString fullTree() {
+            notDesignedForCompilation();
+
             return getContext().makeString(NodeUtil.printTreeToString(RubyCallStack.getCallerFrame().getCallNode().getRootNode()));
         }
 
@@ -67,6 +71,8 @@ public abstract class TruffleDebugNodes {
 
         @Specialization
         public Object parseTree() {
+            notDesignedForCompilation();
+
             final org.jruby.ast.Node parseTree = RubyCallStack.getCurrentMethod().getSharedMethodInfo().getParseTree();
 
             if (parseTree == null) {

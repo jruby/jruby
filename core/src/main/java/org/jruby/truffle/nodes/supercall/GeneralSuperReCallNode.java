@@ -30,18 +30,13 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 
 public class GeneralSuperReCallNode extends AbstractGeneralSuperCallNode {
 
-    @Child protected IndirectCallNode callNode;
-
     public GeneralSuperReCallNode(RubyContext context, SourceSection sourceSection, String name) {
         super(context, sourceSection, name);
-        callNode = Truffle.getRuntime().createIndirectCallNode();
     }
 
     @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
-        // Check we have a method and the module is unmodified
-
         if (!guard()) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             lookup();
@@ -49,7 +44,7 @@ public class GeneralSuperReCallNode extends AbstractGeneralSuperCallNode {
 
         // Call the method
 
-        return callNode.call(frame, method.getCallTarget(), frame.getArguments());
+        return callNode.call(frame, frame.getArguments());
     }
 
 }

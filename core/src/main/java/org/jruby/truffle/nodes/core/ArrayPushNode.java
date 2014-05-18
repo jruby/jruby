@@ -13,7 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 public class ArrayPushNode extends RubyNode {
 
@@ -28,10 +28,16 @@ public class ArrayPushNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        RubyArray a = (RubyArray) array.execute(frame);
-        a = (RubyArray) a.dup();
-        a.push(pushed.execute(frame));
-        return a;
+        notDesignedForCompilation();
+
+        final Object arrayObject = array.execute(frame);
+        assert arrayObject instanceof RubyArray : getSourceSection();
+
+        final RubyArray originalArray = (RubyArray) arrayObject;
+
+        final RubyArray newArray = new RubyArray(getContext().getCoreLibrary().getArrayClass(), originalArray.slowToArray(), originalArray.getSize());
+        newArray.slowPush(pushed.execute(frame));
+        return newArray;
     }
 
 }

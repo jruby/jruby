@@ -31,6 +31,8 @@ public class AddMethodNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final Object receiverObject = receiver.execute(frame);
 
         final RubyMethod methodObject = (RubyMethod) method.execute(frame);

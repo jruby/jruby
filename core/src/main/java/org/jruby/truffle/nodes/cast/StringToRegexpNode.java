@@ -34,6 +34,8 @@ public abstract class StringToRegexpNode extends RubyNode {
 
     @Specialization
     public RubyRegexp doString(RubyString string) {
+        notDesignedForCompilation();
+
         return new RubyRegexp(getContext().getCoreLibrary().getRegexpClass(), string.toString(), Option.DEFAULT);
     }
 

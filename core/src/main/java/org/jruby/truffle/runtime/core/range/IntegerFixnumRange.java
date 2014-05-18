@@ -10,18 +10,17 @@
 package org.jruby.truffle.runtime.core.range;
 
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
 
 /**
  * A range that has {@code Fixnum} begin and end.
  */
-public class FixnumRange extends RubyRange {
+public class IntegerFixnumRange extends RubyRange {
 
     private final int begin;
     private final int end;
     private final boolean excludeEnd;
 
-    public FixnumRange(RubyClass rangeClass, int begin, int end, boolean excludeEnd) {
+    public IntegerFixnumRange(RubyClass rangeClass, int begin, int end, boolean excludeEnd) {
         super(rangeClass);
         this.begin = begin;
         this.end = end;
@@ -34,31 +33,6 @@ public class FixnumRange extends RubyRange {
             return begin + "..." + end;
         } else {
             return begin + ".." + end;
-        }
-    }
-
-    @Override
-    public RubyArray toArray() {
-        final int length = getLength();
-
-        if (length < 0) {
-            return new RubyArray(getRubyClass().getContext().getCoreLibrary().getArrayClass());
-        } else {
-            final int[] values = new int[length];
-
-            for (int n = 0; n < length; n++) {
-                values[n] = begin + n;
-            }
-
-            return new RubyArray(getRubyClass().getContext().getCoreLibrary().getArrayClass(), new IntegerArrayStore(values));
-        }
-    }
-
-    private int getLength() {
-        if (excludeEnd) {
-            return end - begin;
-        } else {
-            return end - begin + 1;
         }
     }
 
@@ -109,10 +83,10 @@ public class FixnumRange extends RubyRange {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof FixnumRange)) {
+        if (!(obj instanceof IntegerFixnumRange)) {
             return false;
         }
-        FixnumRange other = (FixnumRange) obj;
+        IntegerFixnumRange other = (IntegerFixnumRange) obj;
         if (begin != other.begin) {
             return false;
         }

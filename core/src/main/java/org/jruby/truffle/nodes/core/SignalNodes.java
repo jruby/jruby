@@ -30,6 +30,8 @@ public abstract class SignalNodes {
 
         @Specialization
         public NilPlaceholder trap(@SuppressWarnings("unused") Object signal) {
+            notDesignedForCompilation();
+
             getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Signal#trap doesn't do anything");
             return NilPlaceholder.INSTANCE;
         }

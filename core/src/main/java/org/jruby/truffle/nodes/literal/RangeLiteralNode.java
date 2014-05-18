@@ -32,8 +32,8 @@ public abstract class RangeLiteralNode extends RubyNode {
     }
 
     @Specialization
-    public FixnumRange doFixnum(int begin, int end) {
-        return new FixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
+    public IntegerFixnumRange doFixnum(int begin, int end) {
+        return new IntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
     }
 
     @Generic

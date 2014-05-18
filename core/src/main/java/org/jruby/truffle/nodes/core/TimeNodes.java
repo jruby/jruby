@@ -30,7 +30,7 @@ public abstract class TimeNodes {
 
         @Specialization
         public double sub(RubyTime a, RubyTime b) {
-            return a.subtract(b);
+            return RubyTime.nanosecondsToSecond(a.nanoseconds - b.nanoseconds);
         }
 
     }

@@ -35,7 +35,7 @@ public class WriteConstantNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
+        notDesignedForCompilation();
 
         // TODO(cs): can module ever not evaluate to a RubyModule?
 

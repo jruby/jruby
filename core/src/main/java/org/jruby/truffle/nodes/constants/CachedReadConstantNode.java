@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.constants;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.core.*;
 
 /**
@@ -123,6 +124,8 @@ public class CachedReadConstantNode extends ReadConstantChainNode {
 
     @Override
     public Object execute(RubyBasicObject receiver) {
+        // TODO(CS): not sure trying next on invalid assumption is right...
+
         if (receiver.getRubyClass() == expectedClass && unmodifiedAssumption.isValid()) {
             return value;
         } else {

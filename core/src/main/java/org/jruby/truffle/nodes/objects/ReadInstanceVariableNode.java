@@ -91,6 +91,8 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         if (isGlobal) {
             if (readNode.getName().equals("$~") || readNode.isSet(receiver.executeRubyBasicObject(frame))) {
                 return getContext().makeString("global-variable");

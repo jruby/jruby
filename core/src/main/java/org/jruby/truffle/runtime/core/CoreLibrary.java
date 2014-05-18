@@ -15,17 +15,15 @@ import org.jcodings.specific.SJISEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.array.ObjectArrayStore;
 import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.hash.RubyHash;
-import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
 import java.math.BigInteger;
-import java.util.HashMap;
 import java.util.Map;
 
 public class CoreLibrary {
@@ -182,7 +180,7 @@ public class CoreLibrary {
         objectClass.setConstant("RUBY_ENGINE", RubyString.fromJavaString(stringClass, "rubytruffle"));
         objectClass.setConstant("RUBY_PLATFORM", RubyString.fromJavaString(stringClass, "jvm"));
 
-        argv = new RubyArray(arrayClass, new ObjectArrayStore());
+        argv = new RubyArray(arrayClass);
         objectClass.setConstant("ARGV", argv);
         objectClass.setConstant("ENV", getEnv());
         objectClass.setConstant("TRUE", true);
@@ -286,8 +284,8 @@ public class CoreLibrary {
 
         globalVariablesObject = new RubyBasicObject(objectClass);
         globalVariablesObject.switchToPrivateLayout();
-        globalVariablesObject.setInstanceVariable("$LOAD_PATH", new RubyArray(arrayClass, new ObjectArrayStore()));
-        globalVariablesObject.setInstanceVariable("$LOADED_FEATURES", new RubyArray(arrayClass, new ObjectArrayStore()));
+        globalVariablesObject.setInstanceVariable("$LOAD_PATH", new RubyArray(arrayClass));
+        globalVariablesObject.setInstanceVariable("$LOADED_FEATURES", new RubyArray(arrayClass));
         globalVariablesObject.setInstanceVariable("$:", globalVariablesObject.getInstanceVariable("$LOAD_PATH"));
         globalVariablesObject.setInstanceVariable("$\"", globalVariablesObject.getInstanceVariable("$LOADED_FEATURES"));
 
@@ -328,7 +326,9 @@ public class CoreLibrary {
     }
 
     public RubyBasicObject box(Object object) {
-        assert RubyContext.shouldObjectBeVisible(object);
+        RubyNode.notDesignedForCompilation();
+
+        assert RubyContext.shouldObjectBeVisible(object) : object.getClass();
 
         // TODO(cs): pool common object instances like small Fixnums?
 
@@ -625,6 +625,18 @@ public class CoreLibrary {
 
     public RubyBasicObject getMainObject() {
         return mainObject;
+    }
+
+    public RubyTrueClass getTrueObject() {
+        return trueObject;
+    }
+
+    public RubyFalseClass getFalseObject() {
+        return falseObject;
+    }
+
+    public RubyNilClass getNilObject() {
+        return nilObject;
     }
 
     public RubyEncoding getDefaultEncoding() { return RubyEncoding.findEncodingByName(context.makeString("US-ASCII")); }

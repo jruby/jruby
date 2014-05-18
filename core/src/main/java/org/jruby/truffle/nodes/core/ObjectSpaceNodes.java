@@ -33,6 +33,8 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public Object id2Ref(int id) {
+            notDesignedForCompilation();
+
             final Object object = getContext().getObjectSpaceManager().lookupId(id);
 
             if (object == null) {
@@ -44,6 +46,8 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public Object id2Ref(BigInteger id) {
+            notDesignedForCompilation();
+
             final Object object = getContext().getObjectSpaceManager().lookupId(id.longValue());
 
             if (object == null) {
@@ -68,6 +72,8 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public NilPlaceholder eachObject(VirtualFrame frame, @SuppressWarnings("unused") UndefinedPlaceholder ofClass, RubyProc block) {
+            notDesignedForCompilation();
+
             for (RubyBasicObject object : getContext().getObjectSpaceManager().getObjects()) {
                 yield(frame, block, object);
             }
@@ -76,6 +82,8 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public NilPlaceholder eachObject(VirtualFrame frame, RubyClass ofClass, RubyProc block) {
+            notDesignedForCompilation();
+
             for (RubyBasicObject object : getContext().getObjectSpaceManager().getObjects()) {
                 if (object.getRubyClass().assignableTo(ofClass)) {
                     yield(frame, block, object);
@@ -99,6 +107,8 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public RubyProc defineFinalizer(Object object, RubyProc finalizer) {
+            notDesignedForCompilation();
+
             getContext().getObjectSpaceManager().defineFinalizer((RubyBasicObject) object, finalizer);
             return finalizer;
         }
@@ -117,6 +127,8 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public NilPlaceholder garbageCollect() {
+            notDesignedForCompilation();
+
             final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
             try {
@@ -142,6 +154,8 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public Object undefineFinalizer(Object object) {
+            notDesignedForCompilation();
+
             getContext().getObjectSpaceManager().undefineFinalizer((RubyBasicObject) object);
             return object;
         }

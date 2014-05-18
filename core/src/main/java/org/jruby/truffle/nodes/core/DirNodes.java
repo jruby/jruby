@@ -17,11 +17,9 @@ import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.Node;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
 @CoreClass(name = "Dir")
 public abstract class DirNodes {
@@ -82,7 +80,7 @@ public abstract class DirNodes {
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                         if (matcher.matches(file)) {
-                            array.push(context.makeString(file.toString()));
+                            array.slowPush(context.makeString(file.toString()));
                         }
 
                         return FileVisitResult.CONTINUE;
@@ -111,6 +109,8 @@ public abstract class DirNodes {
 
         @Specialization
         public Object chdir(VirtualFrame frame, RubyString path, RubyProc block) {
+            notDesignedForCompilation();
+
             final RubyContext context = getContext();
 
             final String previous = context.getRuntime().getCurrentDirectory();
@@ -142,6 +142,8 @@ public abstract class DirNodes {
 
         @Specialization
         public boolean exists(RubyString path) {
+            notDesignedForCompilation();
+
             return new File(path.toString()).isDirectory();
         }
 
@@ -160,6 +162,8 @@ public abstract class DirNodes {
 
         @Specialization
         public RubyString pwd() {
+            notDesignedForCompilation();
+
             return getContext().makeString(getContext().getRuntime().getCurrentDirectory());
         }
 

@@ -17,39 +17,65 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.core.range.*;
 import org.jruby.truffle.runtime.control.*;
 
 @CoreClass(name = "Range")
 public abstract class RangeNodes {
 
-    @CoreMethod(names = {"collect", "map"}, needsBlock = true, maxArgs = 0)
-    public abstract static class CollectNode extends YieldingCoreMethodNode {
+    @CoreMethod(names = "==", minArgs = 1, maxArgs = 1)
+    public abstract static class EqualNode extends CoreMethodNode {
 
-        public CollectNode(RubyContext context, SourceSection sourceSection) {
+        public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public CollectNode(CollectNode prev) {
+        public EqualNode(EqualNode prev) {
             super(prev);
         }
 
         @Specialization
-        public RubyArray collect(VirtualFrame frame, FixnumRange range, RubyProc block) {
-            final RubyContext context = getContext();
+        public boolean equal(RubyRange a, RubyRange b) {
+            notDesignedForCompilation();
 
-            final RubyArray array = new RubyArray(context.getCoreLibrary().getArrayClass());
+            return a.equals(b);
+        }
+
+    }
+
+    @CoreMethod(names = {"collect", "map"}, needsBlock = true, maxArgs = 0)
+    public abstract static class CollectNode extends YieldingCoreMethodNode {
+
+        @Child protected ArrayBuilderNode arrayBuilder;
+
+        public CollectNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context, true);
+        }
+
+        public CollectNode(CollectNode prev) {
+            super(prev);
+            arrayBuilder = prev.arrayBuilder;
+        }
+
+        @Specialization
+        public RubyArray collect(VirtualFrame frame, IntegerFixnumRange range, RubyProc block) {
+            final int begin = range.getBegin();
+            final int exclusiveEnd = range.getExclusiveEnd();
+            final int length = exclusiveEnd - begin;
+
+            Object store = arrayBuilder.length(length);
 
             int count = 0;
 
             try {
-                for (int n = range.getBegin(); n < range.getExclusiveEnd(); n++) {
+                for (int n = 0; n < length; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
 
-                    array.push(yield(frame, block, n));
+                    store = arrayBuilder.append(store, n, yield(frame, block, n));
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -57,7 +83,9 @@ public abstract class RangeNodes {
                 }
             }
 
-            return array;
+            arrayBuilder.finish();
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, length);
         }
 
     }
@@ -78,12 +106,14 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public Object each(VirtualFrame frame, FixnumRange range, RubyProc block) {
+        public Object each(VirtualFrame frame, IntegerFixnumRange range, RubyProc block) {
+            final int exclusiveEnd = range.getExclusiveEnd();
+
             int count = 0;
 
             try {
                 outer:
-                for (int n = range.getBegin(); n < range.getExclusiveEnd(); n++) {
+                for (int n = range.getBegin(); n < exclusiveEnd; n++) {
                     while (true) {
                         if (CompilerDirectives.inInterpreter()) {
                             count++;
@@ -144,7 +174,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public int each(FixnumRange range) {
+        public int each(IntegerFixnumRange range) {
             return range.getBegin();
         }
 
@@ -177,12 +207,14 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public boolean include(FixnumRange range, int value) {
+        public boolean include(IntegerFixnumRange range, int value) {
             return value >= range.getBegin() && value < range.getExclusiveEnd();
         }
 
         @Specialization
         public boolean include(VirtualFrame frame, ObjectRange range, Object value) {
+            notDesignedForCompilation();
+
             if ((boolean) callLess.dispatch(frame, value, null, range.getBegin())) {
                 return false;
             }
@@ -213,7 +245,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public int last(FixnumRange range) {
+        public int last(IntegerFixnumRange range) {
             return range.getEnd();
         }
 
@@ -240,7 +272,9 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public Object step(VirtualFrame frame, FixnumRange range, int step, RubyProc block) {
+        public Object step(VirtualFrame frame, IntegerFixnumRange range, int step, RubyProc block) {
+            notDesignedForCompilation();
+
             int count = 0;
 
             try {
@@ -288,8 +322,21 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public RubyArray toA(RubyRange range) {
-            return range.toArray();
+        public RubyArray toA(IntegerFixnumRange range) {
+            final int begin = range.getBegin();
+            final int length = range.getExclusiveEnd() - begin;
+
+            if (length < 0) {
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            } else {
+                final int[] values = new int[length];
+
+                for (int n = 0; n < length; n++) {
+                    values[n] = begin + n;
+                }
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), values, length);
+            }
         }
 
     }
@@ -307,6 +354,8 @@ public abstract class RangeNodes {
 
         @Specialization
         public RubyString toS(RubyRange range) {
+            notDesignedForCompilation();
+
             return getContext().makeString(range.toString());
         }
     }

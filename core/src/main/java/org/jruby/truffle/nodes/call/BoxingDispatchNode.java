@@ -11,6 +11,8 @@ package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.*;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.RawBoxingNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -23,27 +25,17 @@ import org.jruby.truffle.runtime.core.*;
 public class BoxingDispatchNode extends UnboxedDispatchNode {
 
     @Child protected BoxedDispatchNode next;
-
-    private final BranchProfile boxBranch = new BranchProfile();
+    @Child protected RawBoxingNode boxing;
 
     public BoxingDispatchNode(RubyContext context, BoxedDispatchNode next) {
         super(context);
-
         this.next = next;
+        boxing = new RawBoxingNode(context);
     }
 
     @Override
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
-        RubyBasicObject boxedReceiverObject;
-
-        if (receiverObject instanceof RubyBasicObject) {
-            boxedReceiverObject = (RubyBasicObject) receiverObject;
-        } else {
-            boxBranch.enter();
-            boxedReceiverObject = getContext().getCoreLibrary().box(receiverObject);
-        }
-
-        return next.dispatch(frame, boxedReceiverObject, blockObject, argumentsObjects);
+        return next.dispatch(frame, boxing.box(receiverObject), blockObject, argumentsObjects);
     }
 
 }

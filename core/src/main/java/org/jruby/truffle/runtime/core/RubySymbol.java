@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import com.oracle.truffle.api.*;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.util.ByteList;
@@ -39,11 +40,14 @@ public class RubySymbol extends RubyObject {
         final RubyContext context = getRubyClass().getContext();
 
         // TODO(CS): we need a proper method in here
+        RubyNode.notDesignedForCompilation();
 
         final CallTarget callTarget = new CallTarget() {
 
             @Override
             public Object call(Object... args) {
+                RubyNode.notDesignedForCompilation();
+
                 final Object receiver = RubyArguments.getUserArgument(args, 0);
                 final Object[] arguments = RubyArguments.extractUserArguments(args);
                 final Object[] sendArgs = Arrays.copyOfRange(arguments, 1, arguments.length);

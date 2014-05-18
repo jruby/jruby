@@ -36,6 +36,8 @@ public class FlipFlopNode extends RubyNode {
 
     @Override
     public boolean executeBoolean(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         if (exclusive) {
             if (stateNode.getState(frame)) {
                 if (end.executeBoolean(frame)) {

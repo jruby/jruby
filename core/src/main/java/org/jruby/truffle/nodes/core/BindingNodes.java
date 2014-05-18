@@ -31,6 +31,8 @@ public abstract class BindingNodes {
 
         @Specialization
         public Object localVariableGet(RubyBinding binding, RubySymbol symbol) {
+            notDesignedForCompilation();
+
             final MaterializedFrame frame = binding.getFrame();
             return frame.getValue(frame.getFrameDescriptor().findFrameSlot(symbol.toString()));
         }

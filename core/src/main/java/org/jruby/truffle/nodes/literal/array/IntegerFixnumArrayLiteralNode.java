@@ -14,12 +14,11 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 
-@NodeInfo(shortName = "fixnum-array-literal")
-public class FixnumArrayLiteralNode extends ArrayLiteralNode {
+public class IntegerFixnumArrayLiteralNode extends ArrayLiteralNode {
 
-    public FixnumArrayLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] values) {
+    public IntegerFixnumArrayLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] values) {
         super(context, sourceSection, values);
     }
 
@@ -42,20 +41,7 @@ public class FixnumArrayLiteralNode extends ArrayLiteralNode {
             }
         }
 
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new IntegerArrayStore(executedValues));
-    }
-
-    @ExplodeLoop
-    @Override
-    public void executeVoid(VirtualFrame frame) {
-        for (int n = 0; n < values.length; n++) {
-            values[n].executeVoid(frame);
-        }
-    }
-
-    @Override
-    public Object execute(VirtualFrame frame) {
-        return executeArray(frame);
+        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
     }
 
 }

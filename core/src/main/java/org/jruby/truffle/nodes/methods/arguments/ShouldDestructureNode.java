@@ -16,7 +16,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.respondto.RespondToNode;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.methods.Arity;
 
 /**

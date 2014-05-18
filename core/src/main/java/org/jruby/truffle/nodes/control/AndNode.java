@@ -32,13 +32,25 @@ public abstract class AndNode extends RubyNode {
     }
 
     @ShortCircuit("right")
-    public boolean needsRightNode(Object a) {
-        return RubyTrueClass.toBoolean(a);
+    public boolean needsRightNode(boolean a) {
+        return a;
     }
 
     @ShortCircuit("right")
-    public boolean needsRightNode(boolean a) {
-        return a;
+    public boolean needsRightNode(Object a) {
+        if (a instanceof Boolean) {
+            return (boolean) a;
+        }
+
+        if (a instanceof RubyFalseClass) {
+            return false;
+        }
+
+        if (a == NilPlaceholder.INSTANCE) {
+            return false;
+        }
+
+        return true;
     }
 
     @Specialization

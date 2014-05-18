@@ -40,10 +40,39 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization
-        public boolean equal(Object a, Object b) {
-            // TODO(CS): placeholder
-            return a.equals(b);
+        @Specialization(order = 1)
+        public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
+            return true;
+        }
+
+        @Specialization(order = 2)
+        public boolean equal(boolean a, boolean b) {
+            return a == b;
+        }
+
+        @Specialization(order = 3)
+        public boolean equal(int a, int b) {
+            return a == b;
+        }
+
+        @Specialization(order = 4)
+        public boolean equal(long a, long b) {
+            return a == b;
+        }
+
+        @Specialization(order = 5)
+        public boolean equal(double a, double b) {
+            return a == b;
+        }
+
+        @Specialization(order = 6)
+        public boolean equal(BigInteger a, BigInteger b) {
+            return a.compareTo(b) == 0;
+        }
+
+        @Specialization(order = 7)
+        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
+            return a == b;
         }
 
     }
@@ -59,10 +88,39 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization
-        public boolean equal(Object a, Object b) {
-            // TODO(CS): placeholder
-            return a.equals(b);
+        @Specialization(order = 1)
+        public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
+            return true;
+        }
+
+        @Specialization(order = 2)
+        public boolean equal(boolean a, boolean b) {
+            return a == b;
+        }
+
+        @Specialization(order = 3)
+        public boolean equal(int a, int b) {
+            return a == b;
+        }
+
+        @Specialization(order = 4)
+        public boolean equal(long a, long b) {
+            return a == b;
+        }
+
+        @Specialization(order = 5)
+        public boolean equal(double a, double b) {
+            return a == b;
+        }
+
+        @Specialization(order = 6)
+        public boolean equal(BigInteger a, BigInteger b) {
+            return a.compareTo(b) == 0;
+        }
+
+        @Specialization(order = 7)
+        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
+            return a == b;
         }
 
     }
@@ -78,10 +136,39 @@ public abstract class ObjectNodes {
             super(prev);
         }
 
-        @Specialization
-        public boolean equal(Object a, Object b) {
-            // TODO(CS): placeholder
-            return !a.equals(b);
+        @Specialization(order = 1)
+        public boolean equal(@SuppressWarnings("unused") NilPlaceholder a, @SuppressWarnings("unused") NilPlaceholder b) {
+            return true;
+        }
+
+        @Specialization(order = 2)
+        public boolean equal(boolean a, boolean b) {
+            return a != b;
+        }
+
+        @Specialization(order = 3)
+        public boolean equal(int a, int b) {
+            return a != b;
+        }
+
+        @Specialization(order = 4)
+        public boolean equal(long a, long b) {
+            return a != b;
+        }
+
+        @Specialization(order = 5)
+        public boolean equal(double a, double b) {
+            return a != b;
+        }
+
+        @Specialization(order = 6)
+        public boolean equal(BigInteger a, BigInteger b) {
+            return a.compareTo(b) != 0;
+        }
+
+        @Specialization(order = 7)
+        public boolean equal(RubyBasicObject a, RubyBasicObject b) {
+            return a != b;
         }
 
     }
@@ -99,6 +186,8 @@ public abstract class ObjectNodes {
 
         @Specialization
         public RubyClass getClass(boolean value) {
+            notDesignedForCompilation();
+
             if (value) {
                 return getContext().getCoreLibrary().getTrueClass();
             } else {
@@ -141,6 +230,8 @@ public abstract class ObjectNodes {
 
         @Specialization
         public Object dup(RubyObject self) {
+            notDesignedForCompilation();
+
             return self.dup();
         }
 
@@ -159,6 +250,8 @@ public abstract class ObjectNodes {
 
         @Specialization
         public RubyBasicObject extend(RubyBasicObject self, Object[] args) {
+            notDesignedForCompilation();
+
             for (int n = 0; n < args.length; n++) {
                 self.extend((RubyModule) args[n]);
             }
@@ -181,6 +274,8 @@ public abstract class ObjectNodes {
 
         @Specialization
         public RubyObject freeze(RubyObject self) {
+            notDesignedForCompilation();
+
             self.frozen = true;
             return self;
         }
@@ -200,10 +295,14 @@ public abstract class ObjectNodes {
 
         @Specialization
         public boolean isFrozen(RubyObject self) {
+            notDesignedForCompilation();
+
             return self.frozen;
         }
 
     }
+
+    // TODO(CS): clean up inspect! belongs in the subclasses!
 
     @CoreMethod(names = "inspect", maxArgs = 0)
     public abstract static class InspectNode extends CoreMethodNode {
@@ -256,6 +355,8 @@ public abstract class ObjectNodes {
 
         @Specialization
         public Object instanceEval(VirtualFrame frame, RubyBasicObject receiver, RubyProc block) {
+            notDesignedForCompilation();
+
             if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
                 throw new RaiseException(getContext().getCoreLibrary().typeError("no class to make alias"));
             }
@@ -265,6 +366,8 @@ public abstract class ObjectNodes {
 
         @Specialization
         public Object instanceEval(VirtualFrame frame, Object self, RubyProc block) {
+            notDesignedForCompilation();
+
             return instanceEval(frame, getContext().getCoreLibrary().box(self), block);
         }
 
@@ -283,11 +386,15 @@ public abstract class ObjectNodes {
 
         @Specialization
         public boolean isInstanceVariableDefined(RubyBasicObject object, RubyString name) {
+            notDesignedForCompilation();
+
             return object.isFieldDefined(RubyObject.checkInstanceVariableName(getContext(), name.toString()));
         }
 
         @Specialization
         public boolean isInstanceVariableDefined(RubyBasicObject object, RubySymbol name) {
+            notDesignedForCompilation();
+
             return object.isFieldDefined(RubyObject.checkInstanceVariableName(getContext(), name.toString()));
         }
 
@@ -306,11 +413,15 @@ public abstract class ObjectNodes {
 
         @Specialization
         public Object isInstanceVariableGet(RubyBasicObject object, RubyString name) {
+            notDesignedForCompilation();
+
             return object.getInstanceVariable(RubyObject.checkInstanceVariableName(getContext(), name.toString()));
         }
 
         @Specialization
         public Object isInstanceVariableGet(RubyBasicObject object, RubySymbol name) {
+            notDesignedForCompilation();
+
             return object.getInstanceVariable(RubyObject.checkInstanceVariableName(getContext(), name.toString()));
         }
 
@@ -329,12 +440,16 @@ public abstract class ObjectNodes {
 
         @Specialization
         public Object isInstanceVariableSet(RubyBasicObject object, RubyString name, Object value) {
+            notDesignedForCompilation();
+
             object.setInstanceVariable(RubyObject.checkInstanceVariableName(getContext(), name.toString()), value);
             return value;
         }
 
         @Specialization
         public Object isInstanceVariableSet(RubyBasicObject object, RubySymbol name, Object value) {
+            notDesignedForCompilation();
+
             object.setInstanceVariable(RubyObject.checkInstanceVariableName(getContext(), name.toString()), value);
             return value;
         }
@@ -354,6 +469,8 @@ public abstract class ObjectNodes {
 
         @Specialization
         public RubyArray instanceVariables(RubyObject self) {
+            notDesignedForCompilation();
+
             final String[] instanceVariableNames = self.getFieldNames();
 
             Arrays.sort(instanceVariableNames);
@@ -361,7 +478,7 @@ public abstract class ObjectNodes {
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             for (String name : instanceVariableNames) {
-                array.push(RubyString.fromJavaString(getContext().getCoreLibrary().getStringClass(), name));
+                array.slowPush(RubyString.fromJavaString(getContext().getCoreLibrary().getStringClass(), name));
             }
 
             return array;
@@ -387,6 +504,8 @@ public abstract class ObjectNodes {
 
         @Specialization
         public boolean isA(Object self, RubyClass rubyClass) {
+            notDesignedForCompilation();
+
             // TODO(CS): fast path
             return getContext().getCoreLibrary().box(self).getRubyClass().assignableTo(rubyClass);
         }
@@ -406,6 +525,8 @@ public abstract class ObjectNodes {
 
         @Specialization(order = 1)
         public RubyArray methods(RubyObject self, boolean includeInherited) {
+            notDesignedForCompilation();
+
             if (!includeInherited) {
                 getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Object#methods always returns inherited methods at the moment");
             }
@@ -415,6 +536,8 @@ public abstract class ObjectNodes {
 
         @Specialization(order = 2)
         public RubyArray methods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
+            notDesignedForCompilation();
+
             final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
 
             final Map<String, RubyMethod> methods = new HashMap<>();
@@ -423,7 +546,7 @@ public abstract class ObjectNodes {
 
             for (RubyMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC || method.getVisibility() == Visibility.PROTECTED) {
-                    array.push(self.getRubyClass().getContext().newSymbol(method.getName()));
+                    array.slowPush(self.getRubyClass().getContext().newSymbol(method.getName()));
                 }
             }
 
@@ -462,6 +585,8 @@ public abstract class ObjectNodes {
 
         @Specialization
         public long objectID(RubyBasicObject object) {
+            notDesignedForCompilation();
+
             return object.getObjectID();
         }
 
@@ -480,6 +605,8 @@ public abstract class ObjectNodes {
 
         @Specialization(order = 1)
         public RubyArray methods(RubyObject self, boolean includeInherited) {
+            notDesignedForCompilation();
+
             if (!includeInherited) {
                 getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Object#methods always returns inherited methods at the moment");
             }
@@ -489,6 +616,8 @@ public abstract class ObjectNodes {
 
         @Specialization(order = 2)
         public RubyArray methods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
+            notDesignedForCompilation();
+
             final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
 
             final Map<String, RubyMethod> methods = new HashMap<>();
@@ -497,7 +626,7 @@ public abstract class ObjectNodes {
 
             for (RubyMethod method : methods.values()) {
                 if (method.getVisibility() == Visibility.PUBLIC) {
-                    array.push(self.getRubyClass().getContext().newSymbol(method.getName()));
+                    array.slowPush(self.getRubyClass().getContext().newSymbol(method.getName()));
                 }
             }
 
@@ -519,21 +648,29 @@ public abstract class ObjectNodes {
 
         @Specialization(order = 1)
         public boolean doesRespondTo(Object object, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder checkVisibility) {
+            notDesignedForCompilation();
+
             return doesRespondTo(getContext().getCoreLibrary().box(object), name.toString(), false);
         }
 
         @Specialization(order = 2)
         public boolean doesRespondTo(Object object, RubyString name, boolean dontCheckVisibility) {
+            notDesignedForCompilation();
+
             return doesRespondTo(getContext().getCoreLibrary().box(object), name.toString(), dontCheckVisibility);
         }
 
         @Specialization(order = 3)
         public boolean doesRespondTo(Object object, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder checkVisibility) {
+            notDesignedForCompilation();
+
             return doesRespondTo(getContext().getCoreLibrary().box(object), name.toString(), false);
         }
 
         @Specialization(order = 4)
         public boolean doesRespondTo(Object object, RubySymbol name, boolean dontCheckVisibility) {
+            notDesignedForCompilation();
+
             return doesRespondTo(getContext().getCoreLibrary().box(object), name.toString(), dontCheckVisibility);
         }
 
@@ -589,6 +726,8 @@ public abstract class ObjectNodes {
 
         @Specialization
         public RubyClass singletonClass(Object self) {
+            notDesignedForCompilation();
+
             return getContext().getCoreLibrary().box(self).getSingletonClass();
         }
 
@@ -607,6 +746,8 @@ public abstract class ObjectNodes {
 
         @Specialization(order = 1)
         public RubyArray singletonMethods(RubyObject self, boolean includeInherited) {
+            notDesignedForCompilation();
+
             if (!includeInherited) {
                 getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Object#singleton_methods always returns inherited methods at the moment");
             }
@@ -616,16 +757,20 @@ public abstract class ObjectNodes {
 
         @Specialization(order = 2)
         public RubyArray singletonMethods(RubyObject self, @SuppressWarnings("unused") UndefinedPlaceholder includeInherited) {
+            notDesignedForCompilation();
+
             final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
 
             for (RubyMethod method : self.getSingletonClass().getDeclaredMethods()) {
-                array.push(RubySymbol.newSymbol(self.getRubyClass().getContext(), method.getName()));
+                array.slowPush(RubySymbol.newSymbol(self.getRubyClass().getContext(), method.getName()));
             }
 
             return array;
         }
 
     }
+
+    // TODO(CS): belongs in subclasses
 
     @CoreMethod(names = "to_s", maxArgs = 0)
     public abstract static class ToSNode extends CoreMethodNode {

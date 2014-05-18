@@ -27,8 +27,8 @@ public final class RubyArguments {
     public static final int RUNTIME_ARGUMENT_COUNT = 3;
 
     public static Object[] pack(MaterializedFrame declarationFrame, Object self, RubyProc block, Object... arguments) {
-        assert self != null;
-        assert arguments != null;
+        assert RubyContext.shouldObjectBeVisible(self);
+        assert RubyContext.shouldObjectsBeVisible(arguments);
 
         final Object[] packed = new Object[arguments.length + RUNTIME_ARGUMENT_COUNT];
         packed[DECLARATION_FRAME_INDEX] = declarationFrame;
