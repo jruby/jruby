@@ -38,7 +38,7 @@ import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyRegexp;
-import org.jruby.truffle.runtime.core.range.IntegerFixnumRange;
+import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 import java.util.*;
@@ -751,7 +751,7 @@ public class BodyTranslator extends Translator {
             final int beginValue = ((IntegerFixnumLiteralNode) begin).getValue();
             final int endValue = ((IntegerFixnumLiteralNode) end).getValue();
 
-            return new ObjectLiteralNode(context, sourceSection, new IntegerFixnumRange(context.getCoreLibrary().getRangeClass(), beginValue, endValue, node.isExclusive()));
+            return new ObjectLiteralNode(context, sourceSection, new RubyRange.IntegerFixnumRange(context.getCoreLibrary().getRangeClass(), beginValue, endValue, node.isExclusive()));
         }
         // See RangeNode for why there is a node specifically for creating this one type
         return RangeLiteralNodeFactory.create(context, sourceSection, node.isExclusive(), begin, end);

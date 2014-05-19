@@ -14,11 +14,9 @@ import com.oracle.truffle.api.dsl.TypeSystem;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
-import org.jruby.truffle.runtime.core.hash.RubyHash;
-import org.jruby.truffle.runtime.core.range.IntegerFixnumRange;
-import org.jruby.truffle.runtime.core.range.ObjectRange;
-import org.jruby.truffle.runtime.core.range.RubyRange;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.math.BigInteger;
@@ -34,8 +32,8 @@ import java.math.BigInteger;
                 long.class, //
                 double.class, //
                 BigInteger.class, //
-                IntegerFixnumRange.class, //
-                ObjectRange.class, //
+                RubyRange.IntegerFixnumRange.class, //
+                RubyRange.ObjectRange.class, //
                 RubyArray.class, //
                 RubyBignum.class, //
                 RubyBinding.class, //

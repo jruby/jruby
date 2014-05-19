@@ -13,7 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 public class ArrayPushNode extends RubyNode {
 

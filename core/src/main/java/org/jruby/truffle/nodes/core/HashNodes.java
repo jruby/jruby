@@ -17,8 +17,8 @@ import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
-import org.jruby.truffle.runtime.core.hash.RubyHash;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyHash;
 
 @CoreClass(name = "Hash")
 public abstract class HashNodes {

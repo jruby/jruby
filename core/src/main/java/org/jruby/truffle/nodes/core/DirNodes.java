@@ -19,7 +19,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 @CoreClass(name = "Dir")
 public abstract class DirNodes {

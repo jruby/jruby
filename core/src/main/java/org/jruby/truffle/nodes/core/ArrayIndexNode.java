@@ -14,7 +14,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 /**
  * Index an array, without using any method lookup. This isn't a call - it's an operation on a core

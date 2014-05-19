@@ -13,7 +13,6 @@ import java.util.concurrent.*;
 
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.truffle.runtime.subsystems.*;
 
 /**

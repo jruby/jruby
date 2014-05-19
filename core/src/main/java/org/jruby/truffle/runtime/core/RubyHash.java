@@ -7,13 +7,12 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.core.hash;
+package org.jruby.truffle.runtime.core;
 
 import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import org.jruby.truffle.runtime.core.*;
 
 /**
  * Represents the Ruby {@code Hash} class.

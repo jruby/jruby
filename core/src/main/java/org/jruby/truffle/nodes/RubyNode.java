@@ -21,11 +21,9 @@ import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
-import org.jruby.truffle.runtime.core.hash.RubyHash;
-import org.jruby.truffle.runtime.core.range.IntegerFixnumRange;
-import org.jruby.truffle.runtime.core.range.ObjectRange;
-import org.jruby.truffle.runtime.core.range.RubyRange;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 import java.math.BigInteger;
@@ -85,7 +83,7 @@ public abstract class RubyNode extends Node {
         return RubyTypesGen.RUBYTYPES.expectLong(execute(frame));
     }
 
-    public IntegerFixnumRange executeFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
+    public RubyRange.IntegerFixnumRange executeFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectIntegerFixnumRange(execute(frame));
     }
 
@@ -101,7 +99,7 @@ public abstract class RubyNode extends Node {
         return RubyTypesGen.RUBYTYPES.expectObjectArray(execute(frame));
     }
 
-    public ObjectRange executeObjectRange(VirtualFrame frame) throws UnexpectedResultException {
+    public RubyRange.ObjectRange executeObjectRange(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectObjectRange(execute(frame));
     }
 

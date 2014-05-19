@@ -18,8 +18,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.array.RubyArray;
-import org.jruby.truffle.runtime.core.hash.RubyHash;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;

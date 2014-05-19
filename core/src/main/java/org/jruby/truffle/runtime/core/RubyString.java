@@ -12,7 +12,6 @@ package org.jruby.truffle.runtime.core;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Helpers;
-import org.jruby.truffle.runtime.core.array.RubyArray;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;

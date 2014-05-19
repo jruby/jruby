@@ -12,8 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyFixnum;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 import java.math.BigInteger;
 

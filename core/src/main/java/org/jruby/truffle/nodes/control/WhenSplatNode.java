@@ -16,7 +16,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 @NodeInfo(shortName = "when*")
 public class WhenSplatNode extends RubyNode {

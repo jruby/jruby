@@ -13,7 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 @CoreClass(name = "Exception")
 public abstract class ExceptionNodes {

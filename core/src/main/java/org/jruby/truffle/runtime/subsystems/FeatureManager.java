@@ -16,7 +16,7 @@ import java.util.Arrays;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyModule;
 
 /**

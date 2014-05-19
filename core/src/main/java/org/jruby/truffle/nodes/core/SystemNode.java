@@ -11,7 +11,6 @@ package org.jruby.truffle.nodes.core;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +19,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.hash.RubyHash;
+import org.jruby.truffle.runtime.core.RubyHash;
 
 /**
  * Represents an expression that is evaluated by running it as a system command via forking and

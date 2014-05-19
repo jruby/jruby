@@ -7,16 +7,14 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.runtime.core.array;
+package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.ArrayUtils;
 import org.jruby.truffle.runtime.NilPlaceholder;
-import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.*;
 
 import java.util.Arrays;
 

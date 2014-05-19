@@ -24,7 +24,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyParserResult;
 import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
 

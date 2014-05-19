@@ -17,7 +17,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 /**
  * Read the rest of arguments after a certain point into an array.

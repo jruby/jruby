@@ -15,7 +15,7 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 public class LongFixnumArrayLiteralNode extends ArrayLiteralNode {
 

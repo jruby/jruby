@@ -16,7 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 import java.util.Arrays;
 

@@ -17,8 +17,7 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
-import org.jruby.truffle.runtime.core.range.*;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.control.*;
 
 @CoreClass(name = "Range")
@@ -60,7 +59,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public RubyArray collect(VirtualFrame frame, IntegerFixnumRange range, RubyProc block) {
+        public RubyArray collect(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyProc block) {
             final int begin = range.getBegin();
             final int exclusiveEnd = range.getExclusiveEnd();
             final int length = exclusiveEnd - begin;
@@ -106,7 +105,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public Object each(VirtualFrame frame, IntegerFixnumRange range, RubyProc block) {
+        public Object each(VirtualFrame frame, RubyRange.IntegerFixnumRange range, RubyProc block) {
             final int exclusiveEnd = range.getExclusiveEnd();
 
             int count = 0;
@@ -174,12 +173,12 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public int each(IntegerFixnumRange range) {
+        public int each(RubyRange.IntegerFixnumRange range) {
             return range.getBegin();
         }
 
         @Specialization
-        public Object each(ObjectRange range) {
+        public Object each(RubyRange.ObjectRange range) {
             return range.getBegin();
         }
 
@@ -207,12 +206,12 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public boolean include(IntegerFixnumRange range, int value) {
+        public boolean include(RubyRange.IntegerFixnumRange range, int value) {
             return value >= range.getBegin() && value < range.getExclusiveEnd();
         }
 
         @Specialization
-        public boolean include(VirtualFrame frame, ObjectRange range, Object value) {
+        public boolean include(VirtualFrame frame, RubyRange.ObjectRange range, Object value) {
             notDesignedForCompilation();
 
             if ((boolean) callLess.dispatch(frame, value, null, range.getBegin())) {
@@ -245,12 +244,12 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public int last(IntegerFixnumRange range) {
+        public int last(RubyRange.IntegerFixnumRange range) {
             return range.getEnd();
         }
 
         @Specialization
-        public Object last(ObjectRange range) {
+        public Object last(RubyRange.ObjectRange range) {
             return range.getEnd();
         }
 
@@ -272,7 +271,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public Object step(VirtualFrame frame, IntegerFixnumRange range, int step, RubyProc block) {
+        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, int step, RubyProc block) {
             notDesignedForCompilation();
 
             int count = 0;
@@ -322,7 +321,7 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public RubyArray toA(IntegerFixnumRange range) {
+        public RubyArray toA(RubyRange.IntegerFixnumRange range) {
             final int begin = range.getBegin();
             final int length = range.getExclusiveEnd() - begin;
 

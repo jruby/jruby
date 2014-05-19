@@ -15,7 +15,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 

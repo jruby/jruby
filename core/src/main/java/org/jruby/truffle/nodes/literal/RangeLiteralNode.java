@@ -14,7 +14,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.range.*;
+import org.jruby.truffle.runtime.core.RubyRange;
 
 @NodeInfo(shortName = "range")
 @NodeChildren({@NodeChild("begin"), @NodeChild("end")})
@@ -32,8 +32,8 @@ public abstract class RangeLiteralNode extends RubyNode {
     }
 
     @Specialization
-    public IntegerFixnumRange doFixnum(int begin, int end) {
-        return new IntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
+    public RubyRange.IntegerFixnumRange doFixnum(int begin, int end) {
+        return new RubyRange.IntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
     }
 
     @Generic
@@ -43,7 +43,7 @@ public abstract class RangeLiteralNode extends RubyNode {
         if ((begin instanceof Integer) && (end instanceof Integer)) {
             return doFixnum((int) begin, (int) end);
         } else {
-            return new ObjectRange(context.getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
+            return new RubyRange.ObjectRange(context.getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
         }
     }
 

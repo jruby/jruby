@@ -11,7 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 public abstract class ArrayCoreMethodNode extends CoreMethodNode {
 

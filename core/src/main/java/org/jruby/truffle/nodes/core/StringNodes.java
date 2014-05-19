@@ -15,13 +15,11 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.joni.Option;
 import org.jruby.truffle.runtime.NilPlaceholder;
-import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
-import org.jruby.truffle.runtime.core.hash.RubyHash;
-import org.jruby.truffle.runtime.core.range.IntegerFixnumRange;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
@@ -225,7 +223,7 @@ public abstract class StringNodes {
 
         @CompilerDirectives.SlowPath
         @Specialization(order = 2)
-        public RubyString getIndex(RubyString string, IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+        public RubyString getIndex(RubyString string, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             final String javaString = string.toString();

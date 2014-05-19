@@ -29,7 +29,7 @@ import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.translator.TranslatorDriver;
 

@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @CoreClass(name = "Class")

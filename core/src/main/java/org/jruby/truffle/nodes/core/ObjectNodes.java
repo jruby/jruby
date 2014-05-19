@@ -17,7 +17,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 

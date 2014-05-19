@@ -22,8 +22,8 @@ import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
-import org.jruby.truffle.runtime.core.range.IntegerFixnumRange;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyRange;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -568,7 +568,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isObject", order = 10)
-        public Object getObject(RubyArray array, IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+        public Object getObject(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             int normalisedIndex = array.normaliseIndex(range.getBegin());
@@ -737,7 +737,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isIntegerFixnum", order = 6)
-        public RubyArray setIntegerFixnumRange(RubyArray array, IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
+        public RubyArray setIntegerFixnumRange(RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
             // TODO(CS): why can't this be a guard?
             if (other.getStore() instanceof int[]) {
                 if (range.doesExcludeEnd()) {

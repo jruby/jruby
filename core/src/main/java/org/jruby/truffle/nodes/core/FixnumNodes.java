@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 @CoreClass(name = "Fixnum")
 public abstract class FixnumNodes {

@@ -11,7 +11,6 @@ package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
 
 /**
  * Represents the Ruby {@code Continuation} class. We only support continuations that just move up
