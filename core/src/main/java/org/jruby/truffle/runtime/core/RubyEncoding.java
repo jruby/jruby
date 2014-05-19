@@ -2,6 +2,7 @@ package org.jruby.truffle.runtime.core;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.truffle.nodes.RubyNode;
 
 /**
  * This is a bridge between JRuby encoding and Truffle encoding
@@ -40,12 +41,15 @@ public class RubyEncoding extends RubyObject{
     }
 
     public static RubyEncoding findEncodingByName(RubyString name) {
-        org.jruby.RubyEncoding enc = findJRubyEncoding(name);
+        RubyNode.notDesignedForCompilation();
 
+        org.jruby.RubyEncoding enc = findJRubyEncoding(name);
         return new RubyEncoding(name.getRubyClass().getContext().getCoreLibrary().getEncodingClass(), enc);
     }
 
     public static org.jruby.RubyEncoding findJRubyEncoding(RubyString name) {
+        RubyNode.notDesignedForCompilation();
+
         org.jruby.RubyString string = org.jruby.RubyString.newString(name.getJRubyRuntime(), name.toString());
         return (org.jruby.RubyEncoding) name.getJRubyRuntime().getEncodingService().rubyEncodingFromObject(string);
     }
@@ -58,11 +62,15 @@ public class RubyEncoding extends RubyObject{
     }
 
     public boolean compareTo(RubyEncoding other) {
+        RubyNode.notDesignedForCompilation();
+
         return getRubyEncoding().getEncoding().equals(other.getRubyEncoding().getEncoding());
     }
 
     @Override
     public boolean equals(Object o) {
+        RubyNode.notDesignedForCompilation();
+
         if (this == o) return true;
 
         if (o == null || getClass() != o.getClass()) return false;
@@ -76,6 +84,8 @@ public class RubyEncoding extends RubyObject{
 
     @Override
     public int hashCode() {
+        RubyNode.notDesignedForCompilation();
+
         return rubyEncoding.hashCode();
     }
 

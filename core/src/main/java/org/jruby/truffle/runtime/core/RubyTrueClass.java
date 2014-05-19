@@ -55,6 +55,8 @@ public class RubyTrueClass extends RubyObject implements Unboxable {
 
     @Override
     public boolean equals(Object other) {
+        RubyNode.notDesignedForCompilation();
+
         return other instanceof RubyTrueClass || (other instanceof Boolean && (boolean) other);
     }
 

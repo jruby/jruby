@@ -14,6 +14,7 @@ import java.util.Map.Entry;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.lookup.*;
@@ -60,7 +61,7 @@ public class RubyBasicObject extends ObjectStorage {
     }
 
     public void setInstanceVariable(String name, Object value) {
-        CompilerAsserts.neverPartOfCompilation();
+        RubyNode.notDesignedForCompilation();
 
         updateLayoutToMatchClass();
 
@@ -72,6 +73,8 @@ public class RubyBasicObject extends ObjectStorage {
     }
 
     public RubyClass getSingletonClass() {
+        RubyNode.notDesignedForCompilation();
+
         if (rubySingletonClass == null) {
             final CoreLibrary coreLibrary = getRubyClass().getContext().getCoreLibrary();
 
@@ -91,6 +94,8 @@ public class RubyBasicObject extends ObjectStorage {
     }
 
     public long getObjectID() {
+        RubyNode.notDesignedForCompilation();
+
         if (objectID == -1) {
             objectID = rubyClass.getContext().getNextObjectID();
         }
@@ -99,18 +104,24 @@ public class RubyBasicObject extends ObjectStorage {
     }
 
     public void setInstanceVariables(Map<String, Object> instanceVariables) {
+        RubyNode.notDesignedForCompilation();
+
         assert instanceVariables != null;
         updateLayoutToMatchClass();
         setFields(instanceVariables);
     }
 
     public void updateLayoutToMatchClass() {
+        RubyNode.notDesignedForCompilation();
+
         if (objectLayout != rubyClass.getObjectLayoutForInstances()) {
             changeLayout(rubyClass.getObjectLayoutForInstances());
         }
     }
 
     public void switchToPrivateLayout() {
+        RubyNode.notDesignedForCompilation();
+
         final Map<String, Object> instanceVariables = getFields();
 
         hasPrivateLayout = true;
@@ -124,10 +135,14 @@ public class RubyBasicObject extends ObjectStorage {
     }
 
     public void extend(RubyModule module) {
+        RubyNode.notDesignedForCompilation();
+
         getSingletonClass().include(module);
     }
 
     public Object send(String name, RubyProc block, Object... args) {
+        RubyNode.notDesignedForCompilation();
+
         final RubyMethod method = getLookupNode().lookupMethod(name);
 
         if (method == null || method.isUndefined()) {
@@ -145,10 +160,13 @@ public class RubyBasicObject extends ObjectStorage {
     }
 
     public Object getInstanceVariable(String name) {
+        RubyNode.notDesignedForCompilation();
+
         return RubyNilClass.instanceOrNil(getField(name));
     }
 
     public boolean hasPrivateLayout() {
         return hasPrivateLayout;
     }
+
 }

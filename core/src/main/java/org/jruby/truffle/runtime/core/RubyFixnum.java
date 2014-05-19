@@ -210,6 +210,8 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
 
     @Override
     public int hashCode() {
+        RubyNode.notDesignedForCompilation();
+
         throw new UnsupportedOperationException();
     }
 

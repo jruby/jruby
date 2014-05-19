@@ -35,8 +35,21 @@ public abstract class HashNodes {
         }
 
         @Specialization
+        public boolean equal(RubyHash a, RubyHash b) {
+            notDesignedForCompilation();
+
+            return a.storage.equals(b.storage);
+        }
+
+        @Specialization
         public boolean equal(RubyHash a, Object b) {
-            return a.equals(b);
+            notDesignedForCompilation();
+
+            if (b instanceof RubyHash) {
+                return equal(a, (RubyHash) b);
+            } else {
+                return false;
+            }
         }
 
     }
@@ -93,7 +106,7 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public Object construct(VirtualFrame frame, RubyHash hash, Object index) {
+        public Object construct(RubyHash hash, Object index) {
             notDesignedForCompilation();
 
             final Object value = hash.get(index);

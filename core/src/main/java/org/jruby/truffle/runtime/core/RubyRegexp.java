@@ -18,6 +18,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.joni.*;
 import org.joni.exception.ValueException;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -308,11 +309,15 @@ public class RubyRegexp extends RubyObject {
     }
 
     public static Regex compile(RubyContext context, String pattern, int options) {
+        RubyNode.notDesignedForCompilation();
+
         final byte[] bytes = pattern.getBytes(StandardCharsets.UTF_8);
         return compile(context, bytes, UTF8Encoding.INSTANCE, options);
     }
 
     public static Regex compile(RubyContext context, byte[] bytes, Encoding encoding, int options) {
+        RubyNode.notDesignedForCompilation();
+
         try {
             return new Regex(bytes, 0, bytes.length, options, encoding, Syntax.RUBY);
         } catch (ValueException e) {

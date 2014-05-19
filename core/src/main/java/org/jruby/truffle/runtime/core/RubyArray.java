@@ -155,7 +155,8 @@ public final class RubyArray extends RubyObject {
     }
 
     public Object[] slowToArray() {
-        CompilerAsserts.neverPartOfCompilation();
+        RubyNode.notDesignedForCompilation();
+
         return Arrays.copyOf(ArrayUtils.box(store), size);
     }
 
@@ -174,6 +175,8 @@ public final class RubyArray extends RubyObject {
     }
 
     public void slowUnshift(Object... values) {
+        RubyNode.notDesignedForCompilation();
+
         final Object[] newStore = new Object[size + values.length];
         System.arraycopy(values, 0, newStore, 0, values.length);
         ArrayUtils.copy(store, newStore, values.length, size);
@@ -181,7 +184,8 @@ public final class RubyArray extends RubyObject {
     }
 
     public void slowPush(Object value) {
-        CompilerAsserts.neverPartOfCompilation();
+        RubyNode.notDesignedForCompilation();
+
         store = Arrays.copyOf(ArrayUtils.box(store), size + 1);
         ((Object[]) store)[size] = value;
         size++;

@@ -98,6 +98,8 @@ public class RubyFloat extends RubyObject implements Unboxable {
 
     @Override
     public int hashCode() {
+        RubyNode.notDesignedForCompilation();
+
         throw new UnsupportedOperationException();
     }
 

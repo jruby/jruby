@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.jruby.truffle.nodes.RubyNode;
+
 /**
  * Represents the Ruby {@code FalseClass} class.
  */
@@ -24,6 +26,8 @@ public class RubyFalseClass extends RubyObject implements Unboxable {
 
     @Override
     public boolean equals(Object other) {
+        RubyNode.notDesignedForCompilation();
+
         return other instanceof RubyFalseClass || (other instanceof Boolean && !((boolean) other));
     }
 

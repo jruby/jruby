@@ -37,6 +37,8 @@ public class RubySymbol extends RubyObject {
     }
 
     public RubyProc toProc(SourceSection sourceSection) {
+        RubyNode.notDesignedForCompilation();
+
         final RubyContext context = getRubyClass().getContext();
 
         // TODO(CS): we need a proper method in here
@@ -63,6 +65,8 @@ public class RubySymbol extends RubyObject {
     }
 
     public org.jruby.RubySymbol getJRubySymbol() {
+        RubyNode.notDesignedForCompilation();
+
         return getRubyClass().getContext().getRuntime().newSymbol(symbolBytes);
     }
 

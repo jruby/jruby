@@ -22,9 +22,6 @@ public abstract class RubyRange extends RubyObject {
         return excludeEnd;
     }
 
-    /**
-     * A range that has {@code Fixnum} begin and end.
-     */
     public static class IntegerFixnumRange extends RubyRange {
 
         private final int begin;
@@ -34,15 +31,6 @@ public abstract class RubyRange extends RubyObject {
             super(rangeClass, excludeEnd);
             this.begin = begin;
             this.end = end;
-        }
-
-        @Override
-        public String toString() {
-            if (excludeEnd) {
-                return begin + "..." + end;
-            } else {
-                return begin + ".." + end;
-            }
         }
 
         public final int getBegin() {
@@ -74,44 +62,9 @@ public abstract class RubyRange extends RubyObject {
             return excludeEnd;
         }
 
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + begin;
-            result = prime * result + end;
-            result = prime * result + (excludeEnd ? 1231 : 1237);
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (!(obj instanceof IntegerFixnumRange)) {
-                return false;
-            }
-            IntegerFixnumRange other = (IntegerFixnumRange) obj;
-            if (begin != other.begin) {
-                return false;
-            }
-            if (end != other.end) {
-                return false;
-            }
-            if (excludeEnd != other.excludeEnd) {
-                return false;
-            }
-            return true;
-        }
-
     }
 
     public static class ObjectRange extends RubyRange {
-
         private final Object begin;
         private final Object end;
 
@@ -127,48 +80,6 @@ public abstract class RubyRange extends RubyObject {
 
         public Object getEnd() {
             return end;
-        }
-
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + ((begin == null) ? 0 : begin.hashCode());
-            result = prime * result + ((end == null) ? 0 : end.hashCode());
-            result = prime * result + (excludeEnd ? 1231 : 1237);
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (!(obj instanceof ObjectRange)) {
-                return false;
-            }
-            ObjectRange other = (ObjectRange) obj;
-            if (begin == null) {
-                if (other.begin != null) {
-                    return false;
-                }
-            } else if (!begin.equals(other.begin)) {
-                return false;
-            }
-            if (end == null) {
-                if (other.end != null) {
-                    return false;
-                }
-            } else if (!end.equals(other.end)) {
-                return false;
-            }
-            if (excludeEnd != other.excludeEnd) {
-                return false;
-            }
-            return true;
         }
 
         @Override

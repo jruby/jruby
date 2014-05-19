@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.*;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.methods.*;
@@ -73,6 +74,8 @@ public class RubyProc extends RubyObject {
 
     @Deprecated
     public Object callWithModifiedSelf(Object modifiedSelf, Object... args) {
+        RubyNode.notDesignedForCompilation();
+
         assert modifiedSelf != null;
         assert args != null;
 

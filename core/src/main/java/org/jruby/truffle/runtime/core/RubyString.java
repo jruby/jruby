@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.runtime.Helpers;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;
@@ -50,12 +51,8 @@ public class RubyString extends RubyObject {
         return new RubyString(stringClass, new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), UTF8Encoding.INSTANCE, false));
     }
 
-    public void set(String string) {
-        bytes = new ByteList(org.jruby.RubyEncoding.encodeUTF8(string), UTF8Encoding.INSTANCE, false);
-    }
-
-    public void set(RubyString string) {
-        bytes = string.getBytes().dup();
+    public void set(ByteList bytes) {
+        this.bytes = bytes;
     }
 
     public void forceEncoding(Encoding encoding) {
@@ -107,6 +104,8 @@ public class RubyString extends RubyObject {
     }
 
     public Object toInteger() {
+        RubyNode.notDesignedForCompilation();
+
         if (toString().length() == 0) {
             return 0;
         }
@@ -130,6 +129,8 @@ public class RubyString extends RubyObject {
 
     @Override
     public boolean equals(Object other) {
+        RubyNode.notDesignedForCompilation();
+
         if (other == this) {
             return true;
         }
@@ -143,11 +144,15 @@ public class RubyString extends RubyObject {
 
     @Override
     public String toString() {
+        RubyNode.notDesignedForCompilation();
+
         return Helpers.decodeByteList(getRubyClass().getContext().getRuntime(), bytes);
     }
 
     @Override
     public int hashCode() {
+        RubyNode.notDesignedForCompilation();
+
         return bytes.hashCode();
     }
 

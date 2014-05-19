@@ -35,10 +35,10 @@ public abstract class RangeNodes {
         }
 
         @Specialization
-        public boolean equal(RubyRange a, RubyRange b) {
+        public boolean equal(RubyRange.IntegerFixnumRange a, RubyRange.IntegerFixnumRange b) {
             notDesignedForCompilation();
 
-            return a.equals(b);
+            return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
         }
 
     }
@@ -343,19 +343,34 @@ public abstract class RangeNodes {
     @CoreMethod(names = "to_s", maxArgs = 0)
     public abstract static class ToSNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode toS;
+
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public ToSNode(ToSNode prev) {
             super(prev);
+            toS = prev.toS;
         }
 
         @Specialization
-        public RubyString toS(RubyRange range) {
+        public RubyString toS(RubyRange.IntegerFixnumRange range) {
             notDesignedForCompilation();
 
-            return getContext().makeString(range.toString());
+            return getContext().makeString(range.getBegin() + (range.doesExcludeEnd() ? "..." : "..") + range.getEnd());
+        }
+
+        @Specialization
+        public RubyString toS(VirtualFrame frame, RubyRange.ObjectRange range) {
+            notDesignedForCompilation();
+
+            // TODO(CS): cast?
+            final RubyString begin = (RubyString) toS.dispatch(frame, range.getBegin(), null);
+            final RubyString end = (RubyString) toS.dispatch(frame, range.getBegin(), null);
+
+            return getContext().makeString(begin + (range.doesExcludeEnd() ? "..." : "..") + end);
         }
     }
 

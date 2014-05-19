@@ -339,7 +339,7 @@ public abstract class StringNodes {
         public RubyString chompBang(RubyString string) {
             notDesignedForCompilation();
 
-            string.set(string.toString().trim());
+            string.set(ByteList.create(string.toString().trim()));
             return string;
         }
     }
@@ -378,7 +378,7 @@ public abstract class StringNodes {
         public RubyString downcase(RubyString string) {
             notDesignedForCompilation();
 
-            string.set(string.toString().toLowerCase());
+            string.set(ByteList.create(string.toString().toLowerCase()));
             return string;
         }
     }
@@ -568,7 +568,7 @@ public abstract class StringNodes {
         public RubyString initialize(RubyString self, RubyString from) {
             notDesignedForCompilation();
 
-            self.set(from);
+            self.set(from.getBytes());
             return self;
         }
     }
@@ -902,7 +902,7 @@ public abstract class StringNodes {
         public RubyString reverse(RubyString string) {
             notDesignedForCompilation();
 
-            string.set(new StringBuilder(string.toString()).reverse().toString());
+            string.set(ByteList.create(new StringBuilder(string.toString()).reverse().toString()));
             return string;
         }
     }

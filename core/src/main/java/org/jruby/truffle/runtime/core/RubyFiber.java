@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import java.util.concurrent.*;
 
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.subsystems.*;
 
@@ -88,6 +89,8 @@ public class RubyFiber extends RubyObject {
     }
 
     public void initialize(RubyProc block) {
+        RubyNode.notDesignedForCompilation();
+
         final RubyFiber finalFiber = this;
         final RubyProc finalBlock = block;
 
@@ -118,6 +121,8 @@ public class RubyFiber extends RubyObject {
      * message. On entry, assumes that the GIL is not held. On exit, holding the GIL.
      */
     public Object waitForResume() {
+        RubyNode.notDesignedForCompilation();
+
         FiberMessage message = null;
 
         do {
@@ -149,6 +154,8 @@ public class RubyFiber extends RubyObject {
      * received. On entry, assumes the the GIL is held. On exit, not holding the GIL.
      */
     public void resume(RubyFiber sendingFiber, Object... args) {
+        RubyNode.notDesignedForCompilation();
+
         Object arg;
 
         if (args.length == 0) {
@@ -165,6 +172,8 @@ public class RubyFiber extends RubyObject {
     }
 
     public void shutdown() {
+        RubyNode.notDesignedForCompilation();
+
         messageQueue.add(new FiberExitMessage());
     }
 
