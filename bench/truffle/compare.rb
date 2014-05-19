@@ -77,13 +77,24 @@ benchmarks = [
   "deltablue"
 ]
 
+disable_splitting = [
+  "spectral-norm",
+  "neural-net"
+]
+
 time_budget_per_run = time_budget / benchmarks.length
 puts time_budget_per_run.to_s + "s for each benchmark"
 
 scores = {}
 
 benchmarks.each do |benchmark|
-  output = `../../bin/jruby -J-server -J-d64 -J-Xmx1G -J-G:TruffleGraphMaxNodes=200000 -J-G:-TruffleBackgroundCompilation -X+T -Xtruffle.printRuntime=true harness.rb -s #{time_budget_per_run} #{benchmark}.rb`
+  if disable_splitting.include? benchmark
+    splitting = "-J-G:-TruffleSplittingEnabled"
+  else
+    splitting = ""
+  end
+
+  output = `../../bin/jruby -J-server -J-d64 -J-Xmx1G -J-G:TruffleGraphMaxNodes=200000 -J-G:-TruffleBackgroundCompilation #{splitting} -X+T -Xtruffle.printRuntime=true harness.rb -s #{time_budget_per_run} #{benchmark}.rb`
   score_match = /[a-z\-]+: (\d+\.\d+)/.match(output)
   if score_match.nil?
     score = 0

@@ -32,8 +32,6 @@ public class GeneralYieldDispatchNode extends YieldDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, RubyProc block, Object[] argumentsObjects) {
-        RubyNode.notDesignedForCompilation();
-
         final RubyMethod method = block.getMethod();
         return callNode.call(frame, method.getCallTarget(), RubyArguments.pack(method.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects));
     }
