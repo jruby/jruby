@@ -57,7 +57,7 @@ report_references = {
   "jruby-head" => "jruby-head-server-indy",
   "competition" => "jruby-1.7.12-server-indy",
   "almost-all" => "2.1.2",
-  "all" => "1.8.7-p374",
+  "all" => "1.8.7-p375",
   "interpreters" => "2.1.2",
   "summary" => "2.1.2",
   "java-c" => "2.1.2",
@@ -72,13 +72,13 @@ Ruby = Struct.new(
 
 rubies = []
 
-["1.8.7-p374", "1.9.3-p484", "2.0.0-p353", "2.1.2", "ree-1.8.7-2012.02", "rbx-2.2.6"].each do |name|
+["1.8.7-p375", "1.9.3-p547", "2.0.0-p481", "2.1.2", "ree-1.8.7-2012.02", "rbx-2.2.6"].each do |name|
   dir = "~/.rbenv/versions/" + name
 
   if Dir.exists? File.expand_path(dir)
     relevant_reports = ["all"]
 
-    if ["1.8.7-p374", "1.9.3-p484", "2.0.0-p353", "2.1.2", "ree-1.8.7-2012.02"].include? name
+    if ["1.8.7-p375", "1.9.3-p547", "2.0.0-p481", "2.1.2", "ree-1.8.7-2012.02"].include? name
       relevant_reports.push("interpreters")
     end
 

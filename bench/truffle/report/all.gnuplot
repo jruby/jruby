@@ -6,7 +6,7 @@ set style histogram cluster gap 1
 
 set title "JRuby+Truffle vs All Ruby Implementations"
 set xlabel "Implementation" rotate by 270
-set ylabel "Speedup Relative to 1.8.7-p374"
+set ylabel "Speedup Relative to 1.8.7-p375"
 set key top left
 
 set style fill solid border rgb 'black'
