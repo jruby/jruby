@@ -1,10 +1,10 @@
 set terminal pdf enhanced size 10,6
-set output 'java-c.pdf'
+set output 'other-vms.pdf'
 
 set style data histogram
 set style histogram cluster gap 1
 
-set title "2.1.2 vs JRuby+Truffle, Java and C"
+set title "JRuby+Truffle vs Other VMs"
 set xlabel "Implementation" rotate by 270
 set ylabel "Speedup Relative to 2.1.2"
 set key top left
@@ -14,7 +14,7 @@ set auto x
 set xtics nomirror rotate by -45
 set yrange [0:*]
 
-plot 'java-c.data' using 2:xtic(1) title col#, \
+plot 'other-vms.data' using 2:xtic(1) title col#, \
         #'' using 3:xtic(1) title col, \
         #'' using 4:xtic(1) title col, \
         #'' using 5:xtic(1) title col, \

@@ -29,7 +29,7 @@ while not args.empty?
       puts "  -m n  run for n minutes"
       puts "  -h n  run for n hours"
       puts
-      puts "  report: all almost-all competition interpreters jruby jruby-head summary topaz java-c"
+      puts "  report: all almost-all competition interpreters jruby jruby-master summary topaz other-vms"
       puts
       puts "  Runs gnuplot, but you can also copy and paste the data files into Excel"
       exit
@@ -38,7 +38,7 @@ while not args.empty?
       exit
     end
   else
-    if ["topaz", "jruby", "jruby-head", "competition", "almost-all", "all", "interpreters", "summary", "java-c", "head"].include? arg
+    if ["topaz", "jruby", "jruby-master", "competition", "almost-all", "all", "interpreters", "summary", "other-vms", "head"].include? arg
       reports.push(arg)
     else
       puts "unknown report " + arg
@@ -54,14 +54,14 @@ end
 report_references = {
   "topaz" => "topaz-dev",
   "jruby" => "jruby-1.7.12-server-indy",
-  "jruby-head" => "jruby-head-server-indy",
+  "jruby-master" => "jruby-master-server-indy",
   "competition" => "jruby-1.7.12-server-indy",
   "almost-all" => "2.1.2",
   "all" => "1.8.7-p375",
   "interpreters" => "2.1.2",
   "summary" => "2.1.2",
-  "java-c" => "2.1.2",
-  "head" => "jruby-head+truffle-server"
+  "other-vms" => "2.1.2",
+  "head" => "jruby-master+truffle-server"
 }
 
 Ruby = Struct.new(
@@ -89,13 +89,13 @@ rubies = []
     if name == "rbx-2.2.6"
       relevant_reports.push("summary")
       relevant_reports.push("competition")
-      relevant_reports.push("java-c")
+      relevant_reports.push("other-vms")
       rubies.push Ruby.new(name + "-interpreter", dir + "/bin/ruby -Xint", ["interpreters"])
     end
 
     if name == "2.1.2"
       relevant_reports.push("summary")
-      relevant_reports.push("java-c")
+      relevant_reports.push("other-vms")
     end
 
     rubies.push Ruby.new(name, dir + "/bin/ruby", relevant_reports)
@@ -110,32 +110,32 @@ end
   if Dir.exists? File.expand_path(dir)
     rubies.push Ruby.new(name + "-server-interpreter", dir + "/bin/jruby --server -Xcompile.mode=OFF", ["almost-all", "all", "jruby", "interpreters"])
     rubies.push Ruby.new(name + "-server", dir + "/bin/jruby --server", ["almost-all", "all", "jruby"])
-    rubies.push Ruby.new(name + "-server-indy", dir + "/bin/jruby --server -Xcompile.invokedynamic=true", ["almost-all", "all", "competition", "jruby", "summary"])
+    rubies.push Ruby.new(name + "-server-indy", dir + "/bin/jruby --server -Xcompile.invokedynamic=true", ["almost-all", "all", "competition", "jruby", "summary", "other-vms"])
   else
     puts "warning: couldn't find " + dir
   end
 end
 
 if Dir.exists? File.expand_path("~/.rbenv/versions/topaz-dev")
-  rubies.push Ruby.new("topaz-dev", "~/.rbenv/versions/topaz-dev/bin/ruby", ["almost-all", "all", "competition", "topaz", "summary"])
+  rubies.push Ruby.new("topaz-dev", "~/.rbenv/versions/topaz-dev/bin/ruby", ["almost-all", "all", "competition", "topaz", "summary", "other-vms"])
 else
   puts "warning: couldn't find ~/.rbenv/versions/topaz-dev"
 end
 
 if not ENV["JRUBY_DIR"].nil? and not ENV["GRAAL_RELEASE_DIR"].nil? and Dir.exists? File.expand_path(ENV["JRUBY_DIR"]) and Dir.exists? File.expand_path(ENV["GRAAL_RELEASE_DIR"])
-  rubies.push Ruby.new("jruby-head-server-interpreter", "$JRUBY_DIR/bin/jruby --server -Xcompile.mode=OFF", ["almost-all", "all", "jruby", "jruby-head", "interpreters"])
-  rubies.push Ruby.new("jruby-head-server", "$JRUBY_DIR/bin/jruby --server", ["almost-all", "all", "jruby", "jruby-head"])
-  rubies.push Ruby.new("jruby-head-server-indy", "$JRUBY_DIR/bin/jruby --server -Xcompile.invokedynamic=true", ["almost-all", "all", "competition", "jruby", "jruby-head", "summary", "java-c"])
-  rubies.push Ruby.new("jruby-head-server-ir-interpreter", "$JRUBY_DIR/bin/jruby --server -X-CIR", ["all", "jruby", "jruby-head", "interpreters"])
-  rubies.push Ruby.new("jruby-head-server-ir-compiler", "$JRUBY_DIR/bin/jruby --server -X+CIR", ["all", "jruby", "jruby-head"])
-  rubies.push Ruby.new("jruby-head+truffle-server-original", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-original -X+T -Xtruffle.printRuntime=true", ["interpreters", "jruby", "jruby-head"])
-  rubies.push Ruby.new("jruby-head+truffle-server", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-server -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-head", "topaz", "competition", "java-c", "head"])
+  rubies.push Ruby.new("jruby-master-server-interpreter", "$JRUBY_DIR/bin/jruby --server -Xcompile.mode=OFF", ["almost-all", "all", "jruby", "jruby-master", "interpreters"])
+  rubies.push Ruby.new("jruby-master-server", "$JRUBY_DIR/bin/jruby --server", ["almost-all", "all", "jruby", "jruby-master"])
+  rubies.push Ruby.new("jruby-master-server-indy", "$JRUBY_DIR/bin/jruby --server -Xcompile.invokedynamic=true", ["almost-all", "all", "competition", "jruby", "jruby-master", "summary"])
+  rubies.push Ruby.new("jruby-master-server-ir-interpreter", "$JRUBY_DIR/bin/jruby --server -X-CIR", ["all", "jruby", "jruby-master", "interpreters"])
+  rubies.push Ruby.new("jruby-master-server-ir-compiler", "$JRUBY_DIR/bin/jruby --server -X+CIR", ["all", "jruby", "jruby-master"])
+  rubies.push Ruby.new("jruby-master+truffle-server-original", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-original -X+T -Xtruffle.printRuntime=true", ["interpreters", "jruby", "jruby-master"])
+  rubies.push Ruby.new("jruby-master+truffle-server", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-server -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-master", "topaz", "competition", "other-vms", "head"])
 else
   puts "warning: couldn't find $JRUBY_DIR or $GRAAL_RELEASE_DIR"
 end
 
 if not ENV["JRUBY_TRUFFLE_HEAD_DIR"].nil? and not ENV["GRAAL_HEAD_DIR"].nil? and Dir.exists? File.expand_path(ENV["JRUBY_TRUFFLE_HEAD_DIR"]) and Dir.exists? File.expand_path(ENV["GRAAL_HEAD_DIR"])
-  rubies.push Ruby.new("jruby-truffle-head+truffle-server", "JAVACMD=$GRAAL_HEAD_DIR/jdk1.8.0/product/bin/java $JRUBY_TRUFFLE_HEAD_DIR/bin/jruby -J-server -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-head", "topaz", "competition", "java-c", "head"])
+  rubies.push Ruby.new("jruby-truffle-head+truffle-server", "JAVACMD=$GRAAL_HEAD_DIR/jdk1.8.0/product/bin/java $JRUBY_TRUFFLE_HEAD_DIR/bin/jruby -J-server -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-master", "topaz", "competition", "other-vms", "head"])
 else
   puts "warning: couldn't find $JRUBY_TRUFFLE_HEAD_DIR or $GRAAL_HEAD_DIR"
 end
@@ -157,7 +157,7 @@ disable_splitting = [
   "neural-net"
 ]
 
-if reports == ["java-c"]
+if reports == ["other-vms"]
   benchmarks = ["mandelbrot"]
 end
 
@@ -198,7 +198,20 @@ benchmarks.each do |benchmark|
   end
 end
 
-if reports.include? "java-c"
+if reports.include? "other-vms"
+  #`echo budget = #{time_budget_per_run} > $JRUBY_DIR/bench/truffle/js/budget.js`
+  #output = `v8 $JRUBY_DIR/bench/truffle/js/budget.js $JRUBY_DIR/bench/truffle/js/mandelbrot.js`
+  #score_match = /(\d+\.\d+)/.match(output)
+  #if score_match.nil?
+  #  score = 0
+  #  puts "mandelbrot v8 error"
+  #  puts output
+  #else
+  #  score = score_match[1].to_f
+  #  puts "mandelbrot v8 #{score}"
+  #end
+  #scores["mandelbrot"]["v8"] = score
+
   if not File.exist?(ENV["JRUBY_DIR"] + "/bench/truffle/java/Mandelbrot.class")
     puts "warning: you need to build $JRUBY_DIR/bench/truffle/java/Mandelbrot.class"
   end
@@ -274,7 +287,8 @@ def plot(rubies_to_run, report, reference, benchmarks, scores)
       end
     end
 
-    if report == "java-c"
+    if report == "other-vms"
+      file.write("v8 #{sores_relative_reference["mandelbrot"]["v8"]}\n")
       file.write("java #{sores_relative_reference["mandelbrot"]["java"]}\n")
       file.write("c #{sores_relative_reference["mandelbrot"]["c"]}\n")
     end

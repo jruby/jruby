@@ -1,5 +1,5 @@
 set terminal pdf enhanced size 10,6
-set output 'jruby-head.pdf'
+set output 'jruby-master.pdf'
 
 set style data histogram
 set style histogram cluster gap 1
@@ -14,7 +14,7 @@ set auto x
 set xtics nomirror rotate by -45
 set yrange [0:*]
 
-plot 'jruby-head.data' using 2:xtic(1) title col, \
+plot 'jruby-master.data' using 2:xtic(1) title col, \
         '' using 3:xtic(1) title col, \
         '' using 4:xtic(1) title col, \
         '' using 5:xtic(1) title col, \
