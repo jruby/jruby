@@ -11,3 +11,4 @@ fails:Ruby character strings Unicode escaping with US-ASCII source encoding prod
 fails:Ruby String interpolation creates a String having an Encoding compatible with all components
 fails:Ruby String interpolation creates a String having the Encoding of the components when all are the same Encoding
 fails:Ruby String interpolation raises an Encoding::CompatibilityError if the Encodings are not compatible
+fails:Ruby character strings uses an internal representation when #to_s doesn't return a String

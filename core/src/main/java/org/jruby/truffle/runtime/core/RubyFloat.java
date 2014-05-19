@@ -78,11 +78,6 @@ public class RubyFloat extends RubyObject implements Unboxable {
     }
 
     @Override
-    public String toString() {
-        return Double.toString(value);
-    }
-
-    @Override
     public boolean equals(Object other) {
         RubyNode.notDesignedForCompilation();
 
@@ -106,6 +101,7 @@ public class RubyFloat extends RubyObject implements Unboxable {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Object unbox() {
         return value;
     }

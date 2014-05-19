@@ -182,6 +182,9 @@ public class RubyModule extends RubyObject implements LookupNode {
     }
 
     public void addMethod(RubyMethod method) {
+        assert method != null;
+        assert getMethods() != null;
+
         checkFrozen();
         getMethods().put(method.getName(), method);
         newVersion();
@@ -327,11 +330,6 @@ public class RubyModule extends RubyObject implements LookupNode {
         return name.hashCode();
     }
 
-    @Override
-    public String toString() {
-        return name;
-    }
-
     public void newVersion() {
         unmodifiedAssumption.invalidate();
 
@@ -375,7 +373,15 @@ public class RubyModule extends RubyObject implements LookupNode {
             setCurrentVisibility(visibility);
         } else {
             for (Object arg : arguments) {
-                final RubyMethod method = lookupMethod(arg.toString());
+                final String methodName;
+
+                if (arg instanceof RubySymbol) {
+                    methodName = ((RubySymbol) arg).toString();
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+
+                final RubyMethod method = lookupMethod(methodName);
 
                 if (method == null) {
                     throw new RuntimeException("Couldn't find method " + arg.toString());

@@ -232,11 +232,6 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         }
 
         @Override
-        public String toString() {
-            return Integer.toString(value);
-        }
-
-        @Override
         public boolean equals(Object other) {
             RubyNode.notDesignedForCompilation();
 
@@ -261,11 +256,6 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         @Override
         public Object unbox() {
             return value;
-        }
-
-        @Override
-        public String toString() {
-            return Long.toString(value);
         }
 
         @Override

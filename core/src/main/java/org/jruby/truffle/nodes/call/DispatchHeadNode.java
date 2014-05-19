@@ -46,6 +46,9 @@ public class DispatchHeadNode extends DispatchNode {
     }
 
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
+        assert RubyContext.shouldObjectBeVisible(receiverObject);
+        assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
+
         return dispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
     }
 

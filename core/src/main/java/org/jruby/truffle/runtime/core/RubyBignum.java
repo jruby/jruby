@@ -32,6 +32,7 @@ public class RubyBignum extends RubyObject implements Unboxable {
         return value;
     }
 
+    @Override
     public Object unbox() {
         return value;
     }
@@ -63,11 +64,6 @@ public class RubyBignum extends RubyObject implements Unboxable {
             return false;
         }
         return true;
-    }
-
-    @Override
-    public String toString() {
-        return value.toString();
     }
 
 }

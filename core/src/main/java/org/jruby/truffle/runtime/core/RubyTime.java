@@ -43,17 +43,8 @@ public class RubyTime extends RubyObject {
         this.nanoseconds = nanoseconds;
     }
 
-    @Override
-    public String toString() {
-        /*
-         * I think this is ISO 8601 with a custom time part. Note that Ruby's time formatting syntax
-         * is different to Java's.
-         */
 
-        return new SimpleDateFormat("Y-MM-d H:m:ss Z").format(toDate());
-    }
-
-    private Date toDate() {
+    public Date toDate() {
         return new Date(nanosecondsToMiliseconds(nanoseconds));
     }
 

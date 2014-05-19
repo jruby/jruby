@@ -23,11 +23,6 @@ public class RubyFalseClass extends RubyObject implements Unboxable {
     }
 
     @Override
-    public String toString() {
-        return "false";
-    }
-
-    @Override
     public boolean equals(Object other) {
         return other instanceof RubyFalseClass || (other instanceof Boolean && !((boolean) other));
     }

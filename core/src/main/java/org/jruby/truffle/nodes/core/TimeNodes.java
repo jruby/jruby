@@ -14,6 +14,8 @@ import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
+import java.text.SimpleDateFormat;
+
 @CoreClass(name = "Time")
 public abstract class TimeNodes {
 
@@ -49,6 +51,24 @@ public abstract class TimeNodes {
         @Specialization
         public RubyTime now() {
             return RubyTime.fromDate(getContext().getCoreLibrary().getTimeClass(), System.currentTimeMillis());
+        }
+
+    }
+
+    @CoreMethod(names = {"to_s", "inspect"}, maxArgs = 0)
+    public abstract static class ToSNode extends CoreMethodNode {
+
+        public ToSNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToSNode(ToSNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString toS(RubyTime time) {
+            return getContext().makeString(new SimpleDateFormat("Y-MM-d H:m:ss Z").format(time.toDate()));
         }
 
     }

@@ -54,11 +54,6 @@ public class RubyTrueClass extends RubyObject implements Unboxable {
     }
 
     @Override
-    public String toString() {
-        return "true";
-    }
-
-    @Override
     public boolean equals(Object other) {
         return other instanceof RubyTrueClass || (other instanceof Boolean && (boolean) other);
     }

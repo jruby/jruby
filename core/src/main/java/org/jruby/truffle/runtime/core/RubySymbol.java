@@ -62,13 +62,6 @@ public class RubySymbol extends RubyObject {
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, NilPlaceholder.INSTANCE, null, method);
     }
 
-    @Override
-    public String toString() {
-        return org.jruby.RubyString.newStringShared(getRubyClass().getContext().getRuntime(),
-                symbolBytes).decodeString();
-    }
-
-
     public org.jruby.RubySymbol getJRubySymbol() {
         return getRubyClass().getContext().getRuntime().newSymbol(symbolBytes);
     }
@@ -89,6 +82,11 @@ public class RubySymbol extends RubyObject {
         } else {
             return super.equals(other);
         }
+    }
+
+    @Override
+    public String toString() {
+        return symbol;
     }
 
     public RubyString toRubyString() {

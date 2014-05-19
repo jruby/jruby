@@ -95,8 +95,16 @@ public abstract class ModuleNodes {
 
             final SourceSection sourceSection = RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
-            for (int n = 0; n < args.length; n++) {
-                attrReader(getContext(), sourceSection, module, args[n].toString());
+            for (Object arg : args) {
+                final String accessorName;
+
+                if (arg instanceof RubySymbol) {
+                    accessorName = ((RubySymbol) arg).toString();
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+
+                attrReader(getContext(), sourceSection, module, accessorName);
             }
 
             return NilPlaceholder.INSTANCE;
@@ -139,8 +147,16 @@ public abstract class ModuleNodes {
 
             final SourceSection sourceSection = RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
-            for (int n = 0; n < args.length; n++) {
-                attrWriter(getContext(), sourceSection, module, args[n].toString());
+            for (Object arg : args) {
+                final String accessorName;
+
+                if (arg instanceof RubySymbol) {
+                    accessorName = ((RubySymbol) arg).toString();
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+
+                attrWriter(getContext(), sourceSection, module, accessorName);
             }
 
             return NilPlaceholder.INSTANCE;
@@ -184,8 +200,16 @@ public abstract class ModuleNodes {
 
             final SourceSection sourceSection = RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
-            for (int n = 0; n < args.length; n++) {
-                attrAccessor(getContext(), sourceSection, module, args[n].toString());
+            for (Object arg : args) {
+                final String accessorName;
+
+                if (arg instanceof RubySymbol) {
+                    accessorName = ((RubySymbol) arg).toString();
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+
+                attrAccessor(getContext(), sourceSection, module, accessorName);
             }
 
             return NilPlaceholder.INSTANCE;
@@ -514,8 +538,23 @@ public abstract class ModuleNodes {
                 unpacked.setObject(slot, true);
             } else {
                 for (Object argument : args) {
-                    final String methodName = argument.toString();
-                    module.getSingletonClass().addMethod(module.lookupMethod(methodName));
+                    final String methodName;
+
+                    if (argument instanceof RubySymbol) {
+                        methodName = ((RubySymbol) argument).toString();
+                    } else if (argument instanceof RubyString) {
+                        methodName = ((RubyString) argument).toString();
+                    } else {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    final RubyMethod method = module.lookupMethod(methodName);
+
+                    if (method == null) {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    module.getSingletonClass().addMethod(method);
                 }
             }
 
@@ -581,7 +620,15 @@ public abstract class ModuleNodes {
             final RubyClass moduleSingleton = module.getSingletonClass();
 
             for (Object arg : args) {
-                final RubyMethod method = moduleSingleton.lookupMethod(arg.toString());
+                final String methodName;
+
+                if (arg instanceof RubySymbol) {
+                    methodName = ((RubySymbol) arg).toString();
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+
+                final RubyMethod method = moduleSingleton.lookupMethod(methodName);
 
                 if (method == null) {
                     throw new RuntimeException("Couldn't find method " + arg.toString());

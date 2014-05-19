@@ -127,11 +127,6 @@ public class RubyBasicObject extends ObjectStorage {
         getSingletonClass().include(module);
     }
 
-    @Override
-    public String toString() {
-        return "#<" + rubyClass.getName() + ":0x" + Long.toHexString(getObjectID()) + ">";
-    }
-
     public Object send(String name, RubyProc block, Object... args) {
         final RubyMethod method = getLookupNode().lookupMethod(name);
 

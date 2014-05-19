@@ -13,6 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.RubyCallStack;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 /**
@@ -40,7 +41,9 @@ public class RubyRootNode extends RootNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return body.execute(frame);
+        final Object result = body.execute(frame);
+        assert RubyContext.shouldObjectBeVisible(result) : getSourceSection();
+        return result;
     }
 
     @Override
