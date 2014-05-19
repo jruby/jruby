@@ -42,28 +42,28 @@
 // Transliterated into JS by Chris Seaton
 
 function mandelbrot(size) {
-  sum = 0
+  var sum = 0
 
-  byte_acc = 0
-  bit_num = 0
+  var byte_acc = 0
+  var bit_num = 0
 
-  y = 0
+  var y = 0
   while (y < size) {
-    ci = (2.0*y/size)-1.0
+    var ci = (2.0*y/size)-1.0
 
-    x = 0
+    var x = 0
     while (x < size) {
-      zrzr = zr = 0.0
-      zizi = zi = 0.0
-      cr = (2.0*x/size)-1.5
-      escape = 1
+      var zrzr = zr = 0.0
+      var zizi = zi = 0.0
+      var cr = (2.0*x/size)-1.5
+      var escape = 1
 
-      z = 0
+      var z = 0
       while (z < 50) {
-        tr = zrzr - zizi + cr
-        ti = 2.0*zr*zi + ci
-        zr = tr
-        zi = ti
+        var tr = zrzr - zizi + cr
+        var ti = 2.0*zr*zi + ci
+        var zr = tr
+        var zi = ti
         // preserve recalculation
         zrzr = zr*zr
         zizi = zi*zi

@@ -199,18 +199,18 @@ benchmarks.each do |benchmark|
 end
 
 if reports.include? "other-vms"
-  #`echo budget = #{time_budget_per_run} > $JRUBY_DIR/bench/truffle/js/budget.js`
-  #output = `v8 $JRUBY_DIR/bench/truffle/js/budget.js $JRUBY_DIR/bench/truffle/js/mandelbrot.js`
-  #score_match = /(\d+\.\d+)/.match(output)
-  #if score_match.nil?
-  #  score = 0
-  #  puts "mandelbrot v8 error"
-  #  puts output
-  #else
-  #  score = score_match[1].to_f
-  #  puts "mandelbrot v8 #{score}"
-  #end
-  #scores["mandelbrot"]["v8"] = score
+  `echo budget = #{time_budget_per_run} > $JRUBY_DIR/bench/truffle/js/budget.js`
+  output = `v8 $JRUBY_DIR/bench/truffle/js/budget.js $JRUBY_DIR/bench/truffle/js/mandelbrot.js`
+  score_match = /(\d+\.\d+)/.match(output)
+  if score_match.nil?
+    score = 0
+    puts "mandelbrot v8 error"
+    puts output
+  else
+    score = score_match[1].to_f
+    puts "mandelbrot v8 #{score}"
+  end
+  scores["mandelbrot"]["v8"] = score
 
   if not File.exist?(ENV["JRUBY_DIR"] + "/bench/truffle/java/Mandelbrot.class")
     puts "warning: you need to build $JRUBY_DIR/bench/truffle/java/Mandelbrot.class"
