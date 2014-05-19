@@ -114,6 +114,8 @@ class Mandelbrot {
    public static void main(String[] args) {
       int budget = Integer.parseInt(args[0]);
 
+      warmup();
+
       int iterations = 0;
 
       long start = System.nanoTime();
