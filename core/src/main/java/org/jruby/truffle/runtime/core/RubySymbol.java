@@ -74,11 +74,6 @@ public class RubySymbol extends RubyObject {
     }
 
     @Override
-    public String inspect() {
-        return getJRubySymbol().inspect(getRubyClass().getContext().getRuntime().getCurrentContext()).asString().decodeString();
-    }
-
-    @Override
     public int hashCode() {
         return symbol.hashCode();
     }

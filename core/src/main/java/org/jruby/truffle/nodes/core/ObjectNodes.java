@@ -302,46 +302,6 @@ public abstract class ObjectNodes {
 
     }
 
-    // TODO(CS): clean up inspect! belongs in the subclasses!
-
-    @CoreMethod(names = "inspect", maxArgs = 0)
-    public abstract static class InspectNode extends CoreMethodNode {
-
-        public InspectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public InspectNode(InspectNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString inspect(boolean value) {
-            return getContext().makeString(Boolean.toString(value));
-        }
-
-        @Specialization
-        public RubyString inspect(int value) {
-            return getContext().makeString(Integer.toString(value));
-        }
-
-        @Specialization
-        public RubyString inspect(BigInteger value) {
-            return getContext().makeString(value.toString());
-        }
-
-        @Specialization
-        public RubyString inspect(double value) {
-            return getContext().makeString(Double.toString(value));
-        }
-
-        @Specialization
-        public RubyString inspect(RubyObject self) {
-            return getContext().makeString(self.inspect());
-        }
-
-    }
-
     @CoreMethod(names = "instance_eval", needsBlock = true, maxArgs = 0)
     public abstract static class InstanceEvalNode extends CoreMethodNode {
 
@@ -770,9 +730,7 @@ public abstract class ObjectNodes {
 
     }
 
-    // TODO(CS): belongs in subclasses
-
-    @CoreMethod(names = "to_s", maxArgs = 0)
+    @CoreMethod(names = {"to_s", "inspect"}, maxArgs = 0)
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -784,8 +742,10 @@ public abstract class ObjectNodes {
         }
 
         @Specialization
-        public RubyString toS(Object self) {
-            return getContext().makeString(self.toString());
+        public RubyString toS(RubyBasicObject self) {
+            notDesignedForCompilation();
+
+            return getContext().makeString("#<" + self.getRubyClass().getName() + ":0x" + Long.toHexString(self.getObjectID()) + ">");
         }
 
     }

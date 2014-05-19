@@ -58,10 +58,6 @@ public class RubyEncoding extends RubyObject{
         return rubyEncoding.to_s(getJRubyRuntime().getCurrentContext()).asJavaString();
     }
 
-    public String inspect() {
-        return rubyEncoding.inspect(getJRubyRuntime().getCurrentContext()).asJavaString();
-    }
-
     public org.jruby.RubyEncoding getRubyEncoding() {
         return rubyEncoding;
     }

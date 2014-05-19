@@ -153,11 +153,6 @@ public class RubyString extends RubyObject {
     }
 
     @Override
-    public String inspect() {
-        return toJRubyString().inspect().toString();
-    }
-
-    @Override
     public int hashCode() {
         return bytes.hashCode();
     }

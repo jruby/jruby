@@ -57,6 +57,31 @@ public abstract class SymbolNodes {
 
     }
 
+    @CoreMethod(names = "all_symbols", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    public abstract static class AllSymbolsNode extends CoreMethodNode {
+
+        public AllSymbolsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AllSymbolsNode(AllSymbolsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray allSymbols() {
+            notDesignedForCompilation();
+
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+
+            for (RubySymbol s : getContext().getSymbolTable().getSymbolsTable().values()){
+                array.slowPush(s);
+            }
+            return array;
+        }
+
+    }
+
     @CoreMethod(names = "empty?", maxArgs = 0)
     public abstract static class EmptyNode extends CoreMethodNode {
 
@@ -115,27 +140,42 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = "all_symbols", isModuleMethod = true, needsSelf = false, maxArgs = 0)
-    public abstract static class AllSymbolsNode extends CoreMethodNode {
+    @CoreMethod(names = "to_s", maxArgs = 0)
+    public abstract static class ToSNode extends CoreMethodNode {
 
-        public AllSymbolsNode(RubyContext context, SourceSection sourceSection) {
+        public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public AllSymbolsNode(AllSymbolsNode prev) {
+        public ToSNode(ToSNode prev) {
             super(prev);
         }
 
         @Specialization
-        public RubyArray allSymbols() {
+        public RubyString toS(RubySymbol symbol) {
             notDesignedForCompilation();
 
-            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            return getContext().makeString(symbol.getJRubySymbol().to_s().asString().decodeString());
+        }
 
-            for (RubySymbol s : getContext().getSymbolTable().getSymbolsTable().values()){
-                array.slowPush(s);
-            }
-            return array;
+    }
+
+    @CoreMethod(names = "inspect", maxArgs = 0)
+    public abstract static class InspectNode extends CoreMethodNode {
+
+        public InspectNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InspectNode(InspectNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString toS(RubySymbol symbol) {
+            notDesignedForCompilation();
+
+            return getContext().makeString(symbol.getJRubySymbol().inspect(getContext().getRuntime().getCurrentContext()).asString().decodeString());
         }
 
     }
