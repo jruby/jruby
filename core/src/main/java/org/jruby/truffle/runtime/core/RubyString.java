@@ -143,11 +143,6 @@ public class RubyString extends RubyObject {
     }
 
     @Override
-    public Object dup() {
-        return new RubyString(getRubyClass(), bytes.dup());
-    }
-
-    @Override
     public String toString() {
         return Helpers.decodeByteList(getRubyClass().getContext().getRuntime(), bytes);
     }

@@ -232,7 +232,9 @@ public abstract class ObjectNodes {
         public Object dup(RubyObject self) {
             notDesignedForCompilation();
 
-            return self.dup();
+            final RubyObject newObject = new RubyObject(self.getRubyClass());
+            newObject.setInstanceVariables(self.getFields());
+            return newObject;
         }
 
     }

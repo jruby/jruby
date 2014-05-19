@@ -98,7 +98,7 @@ public class RubyBasicObject extends ObjectStorage {
         return objectID;
     }
 
-    protected void setInstanceVariables(Map<String, Object> instanceVariables) {
+    public void setInstanceVariables(Map<String, Object> instanceVariables) {
         assert instanceVariables != null;
         updateLayoutToMatchClass();
         setFields(instanceVariables);

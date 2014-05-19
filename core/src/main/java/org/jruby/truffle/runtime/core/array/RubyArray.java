@@ -254,10 +254,5 @@ public final class RubyArray extends RubyObject {
         assert !(store instanceof double[]) || size <= ((double[]) store).length;
     }
 
-    @Override
-    public Object dup() {
-        throw new UnsupportedOperationException();
-    }
-
 
 }

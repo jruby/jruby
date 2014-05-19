@@ -20,6 +20,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.hash.RubyHash;
 import org.jruby.truffle.runtime.core.range.IntegerFixnumRange;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
@@ -382,6 +383,26 @@ public abstract class StringNodes {
             string.set(string.toString().toLowerCase());
             return string;
         }
+    }
+
+    @CoreMethod(names = "dup", maxArgs = 0)
+    public abstract static class DupNode extends CoreMethodNode {
+
+        public DupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DupNode(DupNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object dup(RubyString string) {
+            notDesignedForCompilation();
+
+            return new RubyString(getContext().getCoreLibrary().getStringClass(), string.getBytes().dup());
+        }
+
     }
 
     @CoreMethod(names = "empty?", maxArgs = 0)

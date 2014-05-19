@@ -57,14 +57,6 @@ public class RubyHash extends RubyObject {
         defaultBlock = setDefaultBlock;
     }
 
-    @Override
-    public Object dup() {
-        final RubyHash newHash = new RubyHash(rubyClass);
-        newHash.setInstanceVariables(getFields());
-        newHash.storage.putAll(storage);
-        return newHash;
-    }
-
     @CompilerDirectives.SlowPath
     public void put(Object key, Object value) {
         checkFrozen();

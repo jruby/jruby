@@ -62,7 +62,7 @@ public class ObjectStorage {
         }
     }
 
-    protected Map<String, Object> getFields() {
+    public Map<String, Object> getFields() {
         CompilerAsserts.neverPartOfCompilation();
 
         if (getObjectLayout() == null) {

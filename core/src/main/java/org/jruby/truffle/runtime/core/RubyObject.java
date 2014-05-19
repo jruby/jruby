@@ -32,12 +32,6 @@ public class RubyObject extends RubyBasicObject {
         }
     }
 
-    public Object dup() {
-        final RubyObject newObject = new RubyObject(rubyClass);
-        newObject.setInstanceVariables(getFields());
-        return newObject;
-    }
-
     public static String checkInstanceVariableName(RubyContext context, String name) {
         if (!name.startsWith("@")) {
             throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name));

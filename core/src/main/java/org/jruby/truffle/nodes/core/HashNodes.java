@@ -160,6 +160,29 @@ public abstract class HashNodes {
 
     }
 
+    @CoreMethod(names = "dup", maxArgs = 0)
+    public abstract static class DupNode extends CoreMethodNode {
+
+        public DupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DupNode(DupNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object dup(RubyHash hash) {
+            notDesignedForCompilation();
+
+            final RubyHash newHash = new RubyHash(getContext().getCoreLibrary().getHashClass());
+            newHash.setInstanceVariables(hash.getFields());
+            newHash.storage.putAll(hash.storage);
+            return newHash;
+        }
+
+    }
+
     @CoreMethod(names = "each", needsBlock = true, maxArgs = 0)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
