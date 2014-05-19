@@ -108,9 +108,9 @@ end
   dir = "~/.rbenv/versions/" + name
 
   if Dir.exists? File.expand_path(dir)
-    rubies.push Ruby.new(name + "-server-interpreter", dir + "/bin/jruby -J-Xmx1G --server -Xcompile.mode=OFF", ["almost-all", "all", "jruby", "interpreters"])
-    rubies.push Ruby.new(name + "-server", dir + "/bin/jruby -J-Xmx1G --server", ["almost-all", "all", "jruby"])
-    rubies.push Ruby.new(name + "-server-indy", dir + "/bin/jruby -J-Xmx1G --server -Xcompile.invokedynamic=true", ["almost-all", "all", "competition", "jruby", "summary"])
+    rubies.push Ruby.new(name + "-server-interpreter", dir + "/bin/jruby --server -Xcompile.mode=OFF", ["almost-all", "all", "jruby", "interpreters"])
+    rubies.push Ruby.new(name + "-server", dir + "/bin/jruby --server", ["almost-all", "all", "jruby"])
+    rubies.push Ruby.new(name + "-server-indy", dir + "/bin/jruby --server -Xcompile.invokedynamic=true", ["almost-all", "all", "competition", "jruby", "summary"])
   else
     puts "warning: couldn't find " + dir
   end
@@ -123,19 +123,19 @@ else
 end
 
 if not ENV["JRUBY_DIR"].nil? and not ENV["GRAAL_RELEASE_DIR"].nil? and Dir.exists? File.expand_path(ENV["JRUBY_DIR"]) and Dir.exists? File.expand_path(ENV["GRAAL_RELEASE_DIR"])
-  rubies.push Ruby.new("jruby-head-server-interpreter", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server -Xcompile.mode=OFF", ["almost-all", "all", "jruby", "jruby-head", "interpreters"])
-  rubies.push Ruby.new("jruby-head-server", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server", ["almost-all", "all", "jruby", "jruby-head"])
-  rubies.push Ruby.new("jruby-head-server-indy", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server -Xcompile.invokedynamic=true", ["almost-all", "all", "competition", "jruby", "jruby-head", "summary", "java-c"])
-  rubies.push Ruby.new("jruby-head-server-ir-interpreter", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server -X-CIR", ["all", "jruby", "jruby-head", "interpreters"])
-  rubies.push Ruby.new("jruby-head-server-ir-compiler", "$JRUBY_DIR/bin/jruby -J-Xmx1G --server -X+CIR", ["all", "jruby", "jruby-head"])
-  rubies.push Ruby.new("jruby-head+truffle-server-original", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-original -J-d64 -X+T -Xtruffle.printRuntime=true", ["interpreters", "jruby", "jruby-head"])
-  rubies.push Ruby.new("jruby-head+truffle-server", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-server -J-d64 -J-G:TruffleGraphMaxNodes=200000 -J-G:-TruffleBackgroundCompilation -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-head", "topaz", "competition", "java-c", "head"])
+  rubies.push Ruby.new("jruby-head-server-interpreter", "$JRUBY_DIR/bin/jruby --server -Xcompile.mode=OFF", ["almost-all", "all", "jruby", "jruby-head", "interpreters"])
+  rubies.push Ruby.new("jruby-head-server", "$JRUBY_DIR/bin/jruby --server", ["almost-all", "all", "jruby", "jruby-head"])
+  rubies.push Ruby.new("jruby-head-server-indy", "$JRUBY_DIR/bin/jruby --server -Xcompile.invokedynamic=true", ["almost-all", "all", "competition", "jruby", "jruby-head", "summary", "java-c"])
+  rubies.push Ruby.new("jruby-head-server-ir-interpreter", "$JRUBY_DIR/bin/jruby --server -X-CIR", ["all", "jruby", "jruby-head", "interpreters"])
+  rubies.push Ruby.new("jruby-head-server-ir-compiler", "$JRUBY_DIR/bin/jruby --server -X+CIR", ["all", "jruby", "jruby-head"])
+  rubies.push Ruby.new("jruby-head+truffle-server-original", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-original -X+T -Xtruffle.printRuntime=true", ["interpreters", "jruby", "jruby-head"])
+  rubies.push Ruby.new("jruby-head+truffle-server", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-server -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-head", "topaz", "competition", "java-c", "head"])
 else
   puts "warning: couldn't find $JRUBY_DIR or $GRAAL_RELEASE_DIR"
 end
 
 if not ENV["JRUBY_TRUFFLE_HEAD_DIR"].nil? and not ENV["GRAAL_HEAD_DIR"].nil? and Dir.exists? File.expand_path(ENV["JRUBY_TRUFFLE_HEAD_DIR"]) and Dir.exists? File.expand_path(ENV["GRAAL_HEAD_DIR"])
-  rubies.push Ruby.new("jruby-truffle-head+truffle-server", "JAVACMD=$GRAAL_HEAD_DIR/jdk1.8.0/product/bin/java $JRUBY_TRUFFLE_HEAD_DIR/bin/jruby -J-server -J-d64 -J-G:TruffleGraphMaxNodes=200000 -J-G:-TruffleBackgroundCompilation -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-head", "topaz", "competition", "java-c", "head"])
+  rubies.push Ruby.new("jruby-truffle-head+truffle-server", "JAVACMD=$GRAAL_HEAD_DIR/jdk1.8.0/product/bin/java $JRUBY_TRUFFLE_HEAD_DIR/bin/jruby -J-server -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-head", "topaz", "competition", "java-c", "head"])
 else
   puts "warning: couldn't find $JRUBY_TRUFFLE_HEAD_DIR or $GRAAL_HEAD_DIR"
 end
