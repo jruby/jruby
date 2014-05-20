@@ -38,7 +38,7 @@ while not args.empty?
       exit
     end
   else
-    if ["topaz", "jruby", "jruby-master", "competition", "almost-all", "all", "interpreters", "summary", "other-vms", "head"].include? arg
+    if ["rbx", "topaz", "jruby", "jruby-master", "competition", "almost-all", "all", "interpreters", "summary", "other-vms", "head"].include? arg
       reports.push(arg)
     else
       puts "unknown report " + arg
@@ -53,6 +53,7 @@ end
 
 report_references = {
   "topaz" => "topaz-dev",
+  "rbx" => "rbx-2.2.6",
   "jruby" => "jruby-1.7.12-server-indy",
   "jruby-master" => "jruby-master-server-indy",
   "competition" => "jruby-1.7.12-server-indy",
@@ -90,7 +91,8 @@ rubies = []
       relevant_reports.push("summary")
       relevant_reports.push("competition")
       relevant_reports.push("other-vms")
-      rubies.push Ruby.new(name + "-interpreter", dir + "/bin/ruby -Xint", ["interpreters"])
+      relevant_reports.push("rbx")
+      rubies.push Ruby.new(name + "-interpreter", dir + "/bin/ruby -Xint", ["all", "interpreters"])
     end
 
     if name == "2.1.2"
@@ -125,11 +127,11 @@ end
 if not ENV["JRUBY_DIR"].nil? and not ENV["GRAAL_RELEASE_DIR"].nil? and Dir.exists? File.expand_path(ENV["JRUBY_DIR"]) and Dir.exists? File.expand_path(ENV["GRAAL_RELEASE_DIR"])
   rubies.push Ruby.new("jruby-master-server-interpreter", "$JRUBY_DIR/bin/jruby --server -Xcompile.mode=OFF", ["almost-all", "all", "jruby", "jruby-master", "interpreters"])
   rubies.push Ruby.new("jruby-master-server", "$JRUBY_DIR/bin/jruby --server", ["almost-all", "all", "jruby", "jruby-master"])
-  rubies.push Ruby.new("jruby-master-server-indy", "$JRUBY_DIR/bin/jruby --server -Xcompile.invokedynamic=true", ["almost-all", "all", "competition", "jruby", "jruby-master", "summary"])
+  rubies.push Ruby.new("jruby-master-server-indy", "$JRUBY_DIR/bin/jruby --server -Xcompile.invokedynamic=true", ["almost-all", "all", "jruby", "jruby-master", "summary"])
   rubies.push Ruby.new("jruby-master-server-ir-interpreter", "$JRUBY_DIR/bin/jruby --server -X-CIR", ["all", "jruby", "jruby-master", "interpreters"])
   rubies.push Ruby.new("jruby-master-server-ir-compiler", "$JRUBY_DIR/bin/jruby --server -X+CIR", ["all", "jruby", "jruby-master"])
-  rubies.push Ruby.new("jruby-master+truffle-server-original", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-original -X+T -Xtruffle.printRuntime=true", ["interpreters", "jruby", "jruby-master"])
-  rubies.push Ruby.new("jruby-master+truffle-server", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-server -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-master", "topaz", "competition", "other-vms", "head"])
+  rubies.push Ruby.new("jruby-master+truffle-server-original", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-original -X+T -Xtruffle.printRuntime=true", ["all", "interpreters", "jruby", "jruby-master"])
+  rubies.push Ruby.new("jruby-master+truffle-server", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-server -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-master", "topaz", "rbx", "competition", "summary", "other-vms", "head"])
 else
   puts "warning: couldn't find $JRUBY_DIR or $GRAAL_RELEASE_DIR"
 end
