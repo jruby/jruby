@@ -36,6 +36,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jruby.anno.JRubyMethod;
@@ -188,16 +189,21 @@ public class RubyGlobal {
         IRubyObject stdin = null;
         IRubyObject stdout = null;
         IRubyObject stderr = null;
-        try {
-        stdin = RubyIO.prepStdio(
-                runtime, runtime.getIn(), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
-        stdout = RubyIO.prepStdio(
-                runtime, runtime.getOut(), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
-        stderr = RubyIO.prepStdio(
-                runtime, runtime.getErr(), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDOUT>");
-        } catch (Exception e) {
-            e.printStackTrace();
-            Helpers.throwException(e);
+        if (runtime.getPosix().isNative()) {
+            // use real native channels for stdio
+            stdin = RubyIO.prepStdio(
+                    runtime, runtime.getIn(), new NativeDeviceChannel(0), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
+            stdout = RubyIO.prepStdio(
+                    runtime, runtime.getOut(), new NativeDeviceChannel(1), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
+            stderr = RubyIO.prepStdio(
+                    runtime, runtime.getErr(), new NativeDeviceChannel(2), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDOUT>");
+        } else {
+            stdin = RubyIO.prepStdio(
+                    runtime, runtime.getIn(), Channels.newChannel(runtime.getIn()), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
+            stdout = RubyIO.prepStdio(
+                    runtime, runtime.getOut(), Channels.newChannel(runtime.getOut()), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
+            stderr = RubyIO.prepStdio(
+                    runtime, runtime.getErr(), Channels.newChannel(runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDOUT>");
         }
 
         runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin), GLOBAL);

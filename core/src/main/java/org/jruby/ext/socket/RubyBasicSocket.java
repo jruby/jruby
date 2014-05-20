@@ -234,9 +234,6 @@ public class RubyBasicSocket extends RubyIO {
                 throw runtime.newErrnoENOPROTOOPTError();
             }
 
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
-
         } catch(IOException e) {
             throw runtime.newErrnoENOPROTOOPTError();
         }

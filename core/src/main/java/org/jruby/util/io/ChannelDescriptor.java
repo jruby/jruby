@@ -880,7 +880,7 @@ public class ChannelDescriptor {
     private static final Field FILE_DESCRIPTOR_FD;
     
     static {
-        Method getFD;
+        Method getFD, getFDVal;
         Class selChImpl;
         try {
             selChImpl = Class.forName("sun.nio.ch.SelChImpl");
@@ -896,7 +896,7 @@ public class ChannelDescriptor {
         }
         SEL_CH_IMPL = selChImpl;
         SEL_CH_IMPL_GET_FD = getFD;
-        
+
         Field fd;
         Class fileChannelImpl;
         try {
@@ -956,5 +956,19 @@ public class ChannelDescriptor {
                 }
         }
         return new FileDescriptor();
+    }
+
+    public static int getFilenoFromChannel(Channel channel) {
+        if (FILE_DESCRIPTOR_FD != null) {
+            FileDescriptor fd = getDescriptorFromChannel(channel);
+            if (fd.valid()) {
+                try {
+                    FILE_DESCRIPTOR_FD.get(fd);
+                } catch (Exception e) {
+                    // failed to get
+                }
+            }
+        }
+        return -1;
     }
 }

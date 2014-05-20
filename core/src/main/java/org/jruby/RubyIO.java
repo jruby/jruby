@@ -36,6 +36,7 @@
 package org.jruby;
 
 import jnr.constants.platform.Errno;
+import jnr.enxio.channels.NativeDeviceChannel;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.ResourceException;
@@ -188,7 +189,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     // MRI: prep_stdio
-    public static RubyIO prepStdio(Ruby runtime, InputStream f, int fmode, RubyClass klass, String path) {
+    public static RubyIO prepStdio(Ruby runtime, InputStream f, Channel c, int fmode, RubyClass klass, String path) {
         OpenFile fptr;
         RubyIO io = prepIO(runtime, Channels.newChannel(f), fmode | OpenFile.PREP | EncodingUtils.DEFAULT_TEXTMODE, klass, path);
 
@@ -201,7 +202,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     // MRI: prep_stdio
-    public static RubyIO prepStdio(Ruby runtime, OutputStream f, int fmode, RubyClass klass, String path) {
+    public static RubyIO prepStdio(Ruby runtime, OutputStream f, Channel c, int fmode, RubyClass klass, String path) {
         OpenFile fptr;
         RubyIO io = prepIO(runtime, Channels.newChannel(f), fmode | OpenFile.PREP | EncodingUtils.DEFAULT_TEXTMODE, klass, path);
 
@@ -808,7 +809,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private IRubyObject initializeCommon(ThreadContext context, int fileno, IRubyObject vmodeArg, IRubyObject opt) {
         Ruby runtime = context.runtime;
         
-        int ofmode;
+//        int ofmode;
         int[] oflags_p = {ModeFlags.RDONLY};
 
         if(opt != null && !opt.isNil() && !(opt instanceof RubyHash) && !(opt.respondsTo("to_hash"))) {
@@ -819,54 +820,60 @@ public class RubyIO extends RubyObject implements IOEncodable {
             opt = opt.convertToHash();
         }
         
-        try {
+        Channel ch;
+
+        if (fileno < 100_000) {
+            ch = new NativeDeviceChannel(fileno);
+        } else {
             ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(runtime.getFilenoExtMap(fileno));
 
             if (descriptor == null) throw runtime.newErrnoEBADFError();
 
-            descriptor.checkOpen();
-            
-            IRubyObject[] pm = new IRubyObject[] { runtime.newFixnum(0), vmodeArg };
-            int[] fmode_p = {0};
-            ConvConfig convconfig = new ConvConfig();
-            EncodingUtils.extractModeEncoding(context, convconfig, pm, opt, oflags_p, fmode_p);
-            
-            oflags_p[0] = descriptor.getOriginalModes().getFlags();
+            ch = descriptor.getChannel();
+        }
 
-            ofmode = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
-            if (pm[EncodingUtils.VMODE] == null || pm[EncodingUtils.VMODE].isNil()) {
-                fmode_p[0] = ofmode;
-            } else if (((~ofmode & fmode_p[0]) & OpenFile.READWRITE) != 0) {
-                throw runtime.newErrnoEINVALError();
-            }
-            
-            if (!opt.isNil() && ((RubyHash)opt).op_aref(context, runtime.newSymbol("autoclose")) == runtime.getFalse()) {
-                setAutoclose(false);
-            }
-            
-            // JRUBY-4650: Make sure we clean up the old data, if it's present.
-            MakeOpenFile();
+        if (!ch.isOpen()) {
+            throw runtime.newErrnoEBADFError();
+        }
 
-            ModeFlags modes = ModeFlags.createModeFlags(oflags_p[0]);
-            
-            openFile.setMode(fmode_p[0]);
-            openFile.encs = convconfig;
-            openFile.setMainStream(fdopen(descriptor, modes));
-            openFile.clearCodeConversion();
-            
-            openFile.checkTTY();
+        IRubyObject[] pm = new IRubyObject[] { runtime.newFixnum(0), vmodeArg };
+        int[] fmode_p = {0};
+        ConvConfig convconfig = new ConvConfig();
+        EncodingUtils.extractModeEncoding(context, convconfig, pm, opt, oflags_p, fmode_p);
+
+//            oflags_p[0] = descriptor.getOriginalModes().getFlags();
+//
+//            ofmode = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
+//            if (pm[EncodingUtils.VMODE] == null || pm[EncodingUtils.VMODE].isNil()) {
+//                fmode_p[0] = ofmode;
+//            } else if (((~ofmode & fmode_p[0]) & OpenFile.READWRITE) != 0) {
+//                throw runtime.newErrnoEINVALError();
+//            }
+
+        if (!opt.isNil() && ((RubyHash)opt).op_aref(context, runtime.newSymbol("autoclose")) == runtime.getFalse()) {
+            setAutoclose(false);
+        }
+
+        // JRUBY-4650: Make sure we clean up the old data, if it's present.
+        MakeOpenFile();
+
+//            ModeFlags modes = ModeFlags.createModeFlags(oflags_p[0]);
+
+        openFile.setFD(ch);
+        openFile.setMode(fmode_p[0]);
+        openFile.encs = convconfig;
+        openFile.clearCodeConversion();
+
+        openFile.checkTTY();
 //            if (fileno(stdin) == fd)
 //                fp - > stdio_file = stdin;
 //            else if (fileno(stdout) == fd)
 //                fp - > stdio_file = stdout;
 //            else if (fileno(stderr) == fd)
 //                fp - >stdio_file = stderr;
-            
-            if (openFile.isBOM()) {
-                EncodingUtils.ioSetEncodingByBOM(context, this);
-            }
-        } catch (BadDescriptorException ex) {
-            throw context.runtime.newErrnoEBADFError();
+
+        if (openFile.isBOM()) {
+            EncodingUtils.ioSetEncodingByBOM(context, this);
         }
 
         return this;
@@ -1424,13 +1431,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "fileno", alias = "to_i")
     public RubyFixnum fileno(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        // map to external fileno
-        try {
-            return runtime.newFixnum(runtime.getFileno(getOpenFileChecked().getMainStreamSafe().getDescriptor()));
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
-        }
+        return context.runtime.newFixnum(getOpenFileChecked().getRealFileno());
     }
     
     /** Returns the current line number.
@@ -1759,7 +1760,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fptr = getOpenFileChecked();
         if (fptr.isStdio()) return runtime.getTrue();
-        if (runtime.getPosix().isNative() && runtime.getPosix().libc().isatty(fptr.native_fd) != 0)
+        if (runtime.getPosix().isNative() && runtime.getPosix().libc().isatty(fptr.getRealFileno()) != 0)
             return runtime.getTrue();
         return runtime.getFalse();
     }
@@ -4361,13 +4362,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyIO tmp = null;
         switch (stdio) {
             case IN:
-                tmp = prepStdio(runtime, runtime.getIn(), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
+                tmp = prepStdio(runtime, runtime.getIn(), Channels.newChannel(runtime.getIn()), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
                 break;
             case OUT:
-                tmp = prepStdio(runtime, runtime.getOut(), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
+                tmp = prepStdio(runtime, runtime.getOut(), Channels.newChannel(runtime.getOut()), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
                 break;
             case ERR:
-                tmp = prepStdio(runtime, runtime.getIn(), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
+                tmp = prepStdio(runtime, runtime.getIn(), Channels.newChannel(runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
                 break;
         }
 
