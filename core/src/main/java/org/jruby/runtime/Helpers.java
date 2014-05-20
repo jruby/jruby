@@ -1,7 +1,10 @@
 package org.jruby.runtime;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
+
+import jnr.constants.platform.Errno;
 import org.jruby.*;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
@@ -29,6 +32,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ByteList;
@@ -473,6 +477,32 @@ public class Helpers {
 
     public static boolean subtractionOverflowed(long original, long other, long result) {
         return (~(original ^ ~other) & (original ^ result) & RubyFixnum.SIGN_BIT) != 0;
+    }
+
+    public static Errno errnoFromException(Throwable t) {
+        if (t instanceof ClosedChannelException) {
+            return Errno.EBADF;
+        }
+
+        // TODO: this is kinda gross
+        if(t.getMessage() != null) {
+            String errorMessage = t.getMessage();
+            // All errors to sysread should be SystemCallErrors, but on a closed stream
+            // Ruby returns an IOError.  Java throws same exception for all errors so
+            // we resort to this hack...
+            if ("File not open".equals(errorMessage)) {
+                return null;
+            } else if ("An established connection was aborted by the software in your host machine".equals(errorMessage)) {
+                return Errno.ECONNABORTED;
+            } else if (t.getMessage().equals("Broken pipe")) {
+                return Errno.EPIPE;
+            } else if ("Connection reset by peer".equals(t.getMessage())
+                    || "An existing connection was forcibly closed by the remote host".equals(t.getMessage()) ||
+                    (Platform.IS_WINDOWS && t.getMessage().contains("connection was aborted"))) {
+                return Errno.ECONNRESET;
+            }
+        }
+        return null;
     }
 
     private static class MethodMissingMethod extends DynamicMethod {

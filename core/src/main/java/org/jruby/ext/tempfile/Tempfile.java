@@ -157,7 +157,7 @@ public class Tempfile extends org.jruby.RubyFile {
         openFile.setMode(ioOptions.getModeFlags().getOpenFileFlags());
         openFile.setPath(path);
             
-        sysopenInternal(path, ioOptions.getModeFlags().getOpenFileFlags(), 0600);
+        sysopen(getRuntime(), path, ioOptions.getModeFlags().getOpenFileFlags(), 0600);
     }
 
     @JRubyMethod(visibility = PUBLIC)

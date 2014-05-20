@@ -1,6 +1,8 @@
 package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
+import jnr.posix.FileStat;
+import jnr.posix.JavaLibCHelper;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
@@ -18,6 +20,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -31,6 +34,8 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
@@ -57,6 +62,11 @@ public class OpenFile {
     public static final int SETENC_BY_BOM      = 0x00100000;
     public static final int PREP         = (1<<16);
 
+    public static final int LOCK_SH = 1;
+    public static final int LOCK_EX = 2;
+    public static final int LOCK_NB = 4;
+    public static final int LOCK_UN = 8;
+
     public static final int SEEK_SET = 0;
     public static final int SEEK_CUR = 1;
     public static final int SEEK_END = 2;
@@ -66,6 +76,177 @@ public class OpenFile {
     public static final int PIPE_BUF = 512; // value of _POSIX_PIPE_BUF from Mac OS X 10.9
     public static final int BUFSIZ = 1024; // value of BUFSIZ from Mac OS X 10.9 stdio.h
     public int native_fd;
+
+    // rb_thread_flock
+    public int threadFlock(ThreadContext context, int lockMode) {
+        Ruby runtime = context.runtime;
+
+        // null channel always succeeds for all locking operations
+//        if (descriptor.isNull()) return RubyFixnum.zero(runtime);
+
+        Channel channel = fd;
+        errno = null;
+
+        FileDescriptor fdObj = ChannelDescriptor.getDescriptorFromChannel(channel);
+        int real_fd = JavaLibCHelper.getfdFromDescriptor(fdObj);
+
+        if (real_fd != -1) {
+            // we have a real fd...try native flocking
+            try {
+                int result = runtime.getPosix().flock(real_fd, lockMode);
+                if (result < 0) {
+                    errno = Errno.valueOf(runtime.getPosix().errno());
+                    return -1;
+                }
+                return 0;
+            } catch (RaiseException re) {
+                if (re.getException().getMetaClass() == runtime.getNotImplementedError()) {
+                    // not implemented, probably pure Java; fall through
+                } else {
+                    throw re;
+                }
+            }
+        }
+
+        if (fd instanceof FileChannel) {
+            FileChannel fileChannel = (FileChannel)fd;
+
+            checkSharedExclusive(runtime, lockMode);
+
+            if (!lockStateChanges(currentLock, lockMode)) return 0;
+
+            try {
+                synchronized (fileChannel) {
+                    // check again, to avoid unnecessary overhead
+                    if (!lockStateChanges(currentLock, lockMode)) return 0;
+
+                    switch (lockMode) {
+                        case LOCK_UN:
+                        case LOCK_UN | LOCK_NB:
+                            return unlock(runtime);
+                        case LOCK_EX:
+                            return lock(runtime, fileChannel, true);
+                        case LOCK_EX | LOCK_NB:
+                            return tryLock(runtime, fileChannel, true);
+                        case LOCK_SH:
+                            return lock(runtime, fileChannel, false);
+                        case LOCK_SH | LOCK_NB:
+                            return tryLock(runtime, fileChannel, false);
+                    }
+                }
+            } catch (IOException ioe) {
+                if (runtime.getDebug().isTrue()) {
+                    ioe.printStackTrace(System.err);
+                }
+            } catch (OverlappingFileLockException ioe) {
+                if (runtime.getDebug().isTrue()) {
+                    ioe.printStackTrace(System.err);
+                }
+            }
+            return lockFailedReturn(runtime, lockMode);
+        } else {
+            // We're not actually a real file, so we can't flock
+            // FIXME: This needs to be ENOTSUP
+            errno = Errno.ENOENT;
+            return -1;
+        }
+    }
+
+    private void checkSharedExclusive(Ruby runtime, int lockMode) {
+        // This logic used to attempt a shared lock instead of an exclusive
+        // lock, because LOCK_EX on some systems (as reported in JRUBY-1214)
+        // allow exclusively locking a read-only file. However, the JDK
+        // APIs do not allow acquiring an exclusive lock on files that are
+        // not open for read, and there are other platforms (such as Solaris,
+        // see JRUBY-5627) that refuse at an *OS* level to exclusively lock
+        // files opened only for read. As a result, this behavior is platform-
+        // dependent, and so we will obey the JDK's policy of disallowing
+        // exclusive locks on files opened only for read.
+        if (!isWritable() && (lockMode & LOCK_EX) > 0) {
+            throw runtime.newErrnoEBADFError("cannot acquire exclusive lock on File not opened for write");
+        }
+
+        // Likewise, JDK does not allow acquiring a shared lock on files
+        // that have not been opened for read. We comply here.
+        if (!isReadable() && (lockMode & LOCK_SH) > 0) {
+            throw runtime.newErrnoEBADFError("cannot acquire shared lock on File not opened for read");
+        }
+    }
+
+    private static int lockFailedReturn(Ruby runtime, int lockMode) {
+        return (lockMode & LOCK_EX) == 0 ? 0 : -1;
+    }
+
+    private static boolean lockStateChanges(FileLock lock, int lockMode) {
+        if (lock == null) {
+            // no lock, only proceed if we are acquiring
+            switch (lockMode & 0xF) {
+                case LOCK_UN:
+                case LOCK_UN | LOCK_NB:
+                    return false;
+                default:
+                    return true;
+            }
+        } else {
+            // existing lock, only proceed if we are unlocking or changing
+            switch (lockMode & 0xF) {
+                case LOCK_UN:
+                case LOCK_UN | LOCK_NB:
+                    return true;
+                case LOCK_EX:
+                case LOCK_EX | LOCK_NB:
+                    return lock.isShared();
+                case LOCK_SH:
+                case LOCK_SH | LOCK_NB:
+                    return !lock.isShared();
+                default:
+                    return false;
+            }
+        }
+    }
+
+    private int unlock(Ruby runtime) throws IOException {
+        if (currentLock != null) {
+            currentLock.release();
+            currentLock = null;
+
+            return 0;
+        }
+        return -1;
+    }
+
+    private int lock(Ruby runtime, FileChannel fileChannel, boolean exclusive) throws IOException {
+        if (currentLock != null) currentLock.release();
+
+        currentLock = fileChannel.lock(0L, Long.MAX_VALUE, !exclusive);
+
+        if (currentLock != null) {
+            return 0;
+        }
+
+        return lockFailedReturn(runtime, exclusive ? LOCK_EX : LOCK_SH);
+    }
+
+    private int tryLock(Ruby runtime, FileChannel fileChannel, boolean exclusive) throws IOException {
+        if (currentLock != null) currentLock.release();
+
+        currentLock = fileChannel.tryLock(0L, Long.MAX_VALUE, !exclusive);
+
+        if (currentLock != null) {
+            return 0;
+        }
+
+        return lockFailedReturn(runtime, exclusive ? LOCK_EX : LOCK_SH);
+    }
+
+    public void clearStdio() {
+        stdioOut = null;
+        stdioIn = null;
+    }
+
+    public String PREP_STDIO_NAME() {
+        return pathv;
+    }
 
     public static interface Finalizer {
 
@@ -84,6 +265,7 @@ public class OpenFile {
     private WritableByteChannel fdWrite;
     private SeekableByteChannel fdSeek;
     private SelectableChannel fdSelect;
+    private FileChannel fdFile;
     private int mode;
     private Process process;
     private int lineno;
@@ -91,6 +273,7 @@ public class OpenFile {
     private Finalizer finalizer;
     public InputStream stdioIn;
     public OutputStream stdioOut;
+    public volatile FileLock currentLock;
 
     public static class Buffer {
         public byte[] ptr;
@@ -139,23 +322,8 @@ public class OpenFile {
         }
     }
 
-    boolean IS_PREP_STDIO() {
+    public boolean IS_PREP_STDIO() {
         return (mode & PREP) == PREP;
-    }
-
-    public Stream getMainStream() {
-        return mainStream;
-    }
-
-    public Stream getMainStreamSafe() throws BadDescriptorException {
-        Stream stream = mainStream;
-        if (stream == null) throw new BadDescriptorException();
-        return stream;
-    }
-
-    public void setMainStream(Stream mainStream) {
-        this.mainStream = mainStream;
-        setFD(mainStream.getChannel());
     }
 
     public void setFD(Channel fd) {
@@ -164,6 +332,7 @@ public class OpenFile {
         if (fd instanceof WritableByteChannel) fdWrite = (WritableByteChannel)fd;
         if (fd instanceof SeekableByteChannel) fdSeek = (SeekableByteChannel)fd;
         if (fd instanceof SelectableChannel) fdSelect = (SelectableChannel)fd;
+        if (fd instanceof FileChannel) fdFile = (FileChannel)fd;
     }
 
     public Stream getPipeStream() {
@@ -571,7 +740,7 @@ public class OpenFile {
                 errno = Errno.EINVAL;
                 return -1;
             } catch (IOException ioe) {
-                errno = context.runtime.errnoFromException(ioe);
+                errno = Helpers.errnoFromException(ioe);
                 return -1;
             }
         } else if (fdSelect != null) {
@@ -763,7 +932,7 @@ public class OpenFile {
 //        stdio_file = 0;
         mode &= ~(READABLE|WRITABLE);
 
-        if (IS_PREP_STDIO() || mainStream.getDescriptor().getFileno() <= 2) {
+        if (IS_PREP_STDIO() || isStdio()) {
 	/* need to keep FILE objects of stdin, stdout and stderr */
         }
         // TODO: ???
@@ -1220,7 +1389,7 @@ public class OpenFile {
 
                 return read;
             } catch (IOException ioe) {
-                iis.fptr.errno = context.runtime.errnoFromException(ioe);
+                iis.fptr.errno = Helpers.errnoFromException(ioe);
                 return -1;
             }
         }
@@ -2036,6 +2205,10 @@ public class OpenFile {
         return fdSelect;
     }
 
+    public FileChannel getFdFile() {
+        return fdFile;
+    }
+
     IRubyObject finishWriteconv(Ruby runtime, boolean noalloc) {
         byte[] dsBytes;
         int ds, de;
@@ -2160,6 +2333,24 @@ public class OpenFile {
 
     public boolean isStdio() {
         return stdioIn != null || stdioOut != null;
+    }
+
+    @Deprecated
+    public Stream getMainStream() {
+        return mainStream;
+    }
+
+    @Deprecated
+    public Stream getMainStreamSafe() throws BadDescriptorException {
+        Stream stream = mainStream;
+        if (stream == null) throw new BadDescriptorException();
+        return stream;
+    }
+
+    @Deprecated
+    public void setMainStream(Stream mainStream) {
+        this.mainStream = mainStream;
+        setFD(mainStream.getChannel());
     }
 
     @Deprecated

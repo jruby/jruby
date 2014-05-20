@@ -35,6 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import jnr.constants.platform.Errno;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.POSIX;
 import org.jcodings.Encoding;
@@ -229,9 +230,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @Override
     protected IRubyObject ioClose(Ruby runtime) {
         // Make sure any existing lock is released before we try and close the file
-        if (currentLock != null) {
+        if (openFile.currentLock != null) {
             try {
-                currentLock.release();
+                openFile.currentLock.release();
             } catch (IOException e) {
                 throw getRuntime().newIOError(e.getMessage());
             }
@@ -240,85 +241,47 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     @JRubyMethod(required = 1)
-    public IRubyObject flock(ThreadContext context, IRubyObject lockingConstant) {
+    public IRubyObject flock(ThreadContext context, IRubyObject operation) {
         Ruby runtime = context.runtime;
-        
-        // TODO: port exact behavior from MRI, and move most locking logic into ChannelDescriptor
-        // TODO: for all LOCK_NB cases, return false if they would block
-        ChannelDescriptor descriptor;
-        try {
-            descriptor = openFile.getMainStreamSafe().getDescriptor();
-        } catch (BadDescriptorException e) {
-            throw context.runtime.newErrnoEBADFError();
+        OpenFile fptr;
+//        int[] op = {0,0};
+        int op1;
+//        struct timeval time;
+
+//        rb_secure(2);
+        op1 = RubyNumeric.num2int(operation);
+        fptr = getOpenFileChecked();
+
+        if (fptr.isWritable()) {
+            flushRaw(context, false);
         }
 
-        // null channel always succeeds for all locking operations
-        if (descriptor.isNull()) return RubyFixnum.zero(runtime);
-        
-        int lockMode = RubyNumeric.num2int(lockingConstant);
-        
-        Channel channel = descriptor.getChannel();
-        
-        FileDescriptor fd = ChannelDescriptor.getDescriptorFromChannel(channel);
-        int real_fd = JavaLibCHelper.getfdFromDescriptor(fd);
-        
-        if (real_fd != -1) {
-            // we have a real fd...try native flocking
-            try {
-                int result = runtime.getPosix().flock(real_fd, lockMode);
-                if (result < 0) {
-                    return runtime.getFalse();
-                }
-                return RubyFixnum.zero(runtime);
-            } catch (RaiseException re) {
-                if (re.getException().getMetaClass() == runtime.getNotImplementedError()) {
-                    // not implemented, probably pure Java; fall through
-                } else {
-                    throw re;
-                }
-            }
-        }
+        // MRI's logic differs here. For a nonblocking flock that produces EAGAIN, EACCES, or EWOULBLOCK, MRI
+        // just returns false immediately. For the same errnos in blocking mode, MRI waits for 0.1s and then
+        // attempts the lock again, indefinitely.
+        while (fptr.threadFlock(context, op1) < 0) {
+            switch (fptr.errno) {
+                case EAGAIN:
+                case EACCES:
+                case EWOULDBLOCK:
+                    if ((op1 & LOCK_NB) != 0) return runtime.getFalse();
 
-        if (descriptor.getChannel() instanceof FileChannel) {
-            FileChannel fileChannel = (FileChannel)descriptor.getChannel();
-
-            checkSharedExclusive(runtime, openFile, lockMode);
-    
-            if (!lockStateChanges(currentLock, lockMode)) return RubyFixnum.zero(runtime);
-
-            try {
-                synchronized (fileChannel) {
-                    // check again, to avoid unnecessary overhead
-                    if (!lockStateChanges(currentLock, lockMode)) return RubyFixnum.zero(runtime);
-                    
-                    switch (lockMode) {
-                        case LOCK_UN:
-                        case LOCK_UN | LOCK_NB:
-                            return unlock(runtime);
-                        case LOCK_EX:
-                            return lock(runtime, fileChannel, true);
-                        case LOCK_EX | LOCK_NB:
-                            return tryLock(runtime, fileChannel, true);
-                        case LOCK_SH:
-                            return lock(runtime, fileChannel, false);
-                        case LOCK_SH | LOCK_NB:
-                            return tryLock(runtime, fileChannel, false);
+                    try {
+                        context.getThread().sleep(100);
+                    } catch (InterruptedException ie) {
+                        context.pollThreadEvents();
                     }
-                }
-            } catch (IOException ioe) {
-                if (runtime.getDebug().isTrue()) {
-                    ioe.printStackTrace(System.err);
-                }
-            } catch (OverlappingFileLockException ioe) {
-                if (runtime.getDebug().isTrue()) {
-                    ioe.printStackTrace(System.err);
-                }
+                    fptr.checkClosed(runtime);
+                    continue;
+
+                case EINTR:
+                    break;
+
+                default:
+                    throw runtime.newErrnoFromErrno(fptr.errno, fptr.getPath());
             }
-            return lockFailedReturn(runtime, lockMode);
-        } else {
-            // We're not actually a real file, so we can't flock
-            return runtime.getFalse();
         }
+        return RubyFixnum.zero(context.runtime);
     }
 
     // rb_file_initialize
@@ -454,24 +417,20 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(required = 1)
     public IRubyObject truncate(ThreadContext context, IRubyObject arg) {
-        RubyInteger newLength = arg.convertToInteger();
-        if (newLength.getLongValue() < 0) {
-            throw context.runtime.newErrnoEINVALError(path);
-        }
-        try {
-            openFile.checkWritable(context);
-            openFile.getMainStreamSafe().ftruncate(newLength.getLongValue());
-        } catch (BadDescriptorException e) {
-            throw context.runtime.newErrnoEBADFError();
-        } catch (PipeException e) {
-            throw context.runtime.newErrnoESPIPEError();
-        } catch (InvalidValueException ex) {
-            throw context.runtime.newErrnoEINVALError();
-        } catch (IOException e) {
-            // Should we do anything?
+        long newLength = arg.convertToInteger().getLongValue();
+        if (newLength < 0) {
+            throw context.runtime.newErrnoEINVALError(openFile.getPath());
         }
 
-        return RubyFixnum.zero(context.runtime);
+        if (openFile.getFdFile() != null) {
+            try {
+                openFile.getFdFile().truncate(newLength);
+            } catch (IOException ioe) {
+                throw context.runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), openFile.getPath());
+            }
+        } else {
+            throw context.runtime.newSystemCallError(openFile.getPath());
+        }
     }
 
     @JRubyMethod
@@ -1115,26 +1074,33 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return unlink(context, context.runtime.getFile(), args);
     }
 
+    // rb_file_size but not using stat
     @JRubyMethod
     public IRubyObject size(ThreadContext context) {
         Ruby runtime = context.runtime;
-        
-        if ((openFile.getMode() & OpenFile.WRITABLE) != 0) flush(context);
+        OpenFile fptr;
+        FileStat st;
+        long size;
 
-        // FIXME: jnr-posix is calling _osf_close + throwing random native exceptions with weird paths.
-        // Once these are fixed remove this full file stat path and go back to faster one.
-        if (Platform.IS_WINDOWS) return runtime.newFileStat(path, false).size();
-
-        try {
-            FileDescriptor fd = getOpenFileChecked().getMainStreamSafe().getDescriptor().getFileDescriptor();
-            FileStat stat = runtime.getPosix().fstat(fd);
-                    
-            if (stat == null) throw runtime.newErrnoEACCESError(path);
-
-            return runtime.newFixnum(stat.st_size());
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
+        fptr = getOpenFileChecked();
+        if ((fptr.getMode() & OpenFile.WRITABLE) != 0) {
+            flushRaw(context, false);
         }
+
+
+        // if it's a FileChannel, just get size directly
+        if (fptr.getFd() instanceof FileChannel) {
+            try {
+                size = ((FileChannel)fptr.getFd()).size();
+            } catch (IOException ioe) {
+                throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), fptr.getPath());
+            }
+        } else {
+            // otherwise just return -1 (should be rare, since size is only defined on File
+            size = -1;
+        }
+
+        return RubyFixnum.newFixnum(runtime, size);
     }
 
     public String getPath() {
@@ -1218,89 +1184,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         fptr.encs.copy(convConfig);
         fptr.setPath(RubyFile.get_path(context, filename).asJavaString());
 
-        sysopenInternal(fptr.getPath(), oflags, perm);
+        fptr.setFD(sysopen(context.runtime, fptr.getPath(), oflags, perm));
         fptr.checkTTY();
         if ((fmode & OpenFile.SETENC_BY_BOM) != 0) {
             EncodingUtils.ioSetEncodingByBOM(context, this);
         }
 
         return this;
-    }
-
-    // mri19: rb_sysopen and rb_sysopen_internal
-    protected void sysopenInternal(String path, int oflags, int perm) {
-        if (path.startsWith("jar:")) path = path.substring(4);
-
-        int umask = getUmaskSafe( getRuntime() );
-        perm = perm - (perm & umask);
-        
-        ModeFlags modes = ModeFlags.createModeFlags(oflags);
-
-        ChannelDescriptor descriptor = sysopen(path, modes, perm);
-        openFile.setMainStream(fdopen(descriptor, modes));
-    }
-
-    protected void openInternal(String path, String modeString) {
-        if (path.startsWith("jar:")) {
-            path = path.substring(4);
-        }
-        
-        MakeOpenFile();
-
-        IOOptions modes = newIOOptions(getRuntime(), modeString);
-        openFile.setMode(modes.getModeFlags().getOpenFileFlags());
-        if (modes.getModeFlags().isBinary()) openFile.encs.enc = ASCIIEncoding.INSTANCE;
-        openFile.setPath(path);
-        openFile.setMainStream(fopen(path, modes.getModeFlags()));
-    }
-
-    private ChannelDescriptor sysopen(String path, ModeFlags modes, int perm) {
-        try {
-            ChannelDescriptor descriptor = ChannelDescriptor.open(
-                    getRuntime().getCurrentDirectory(),
-                    path,
-                    modes,
-                    perm,
-                    getRuntime().getPosix(),
-                    getRuntime().getJRubyClassLoader());
-
-            // TODO: check if too many open files, GC and try again
-
-            return descriptor;
-        } catch (ResourceException resourceException) {
-            throw resourceException.newRaiseException(getRuntime());
-        } catch (FileNotFoundException ignored) {
-          throw new IllegalStateException("For compile compatibility only");
-        } catch (DirectoryAsFileException ignored) {
-          throw new IllegalStateException("For compile compatibility only");
-        } catch (FileExistsException ignored) {
-          throw new IllegalStateException("For compile compatibility only");
-        } catch (IOException ignored) {
-          throw new IllegalStateException("For compile compatibility only");
-        }
-    }
-
-    private Stream fopen(String path, ModeFlags flags) {
-        try {
-            return ChannelStream.fopen(
-                    getRuntime(),
-                    path,
-                    flags);
-        } catch (InvalidValueException ex) {
-            throw getRuntime().newErrnoEINVALError();
-        } catch (PipeException ex) {
-            throw new IllegalStateException("For compile compatibility only");
-        } catch (BadDescriptorException e) {
-            throw new IllegalStateException("For compile compatibility only");
-        } catch (FileNotFoundException ex) {
-            throw new IllegalStateException("For compile compatibility only");
-        } catch (FileExistsException ex) {
-            throw new IllegalStateException("For compile compatibility only");
-        } catch (IOException ex) {
-            throw new IllegalStateException("For compile compatibility only");
-        } catch (SecurityException ex) {
-            throw getRuntime().newErrnoEACCESError(path);
-        }
     }
 
     // mri: FilePathValue/rb_get_path/rb_get_patch_check
@@ -1375,11 +1265,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @Override
     public String toString() {
-        try {
-            return "RubyFile(" + path + ", " + openFile.getMode() + ", " + getRuntime().getFileno(openFile.getMainStreamSafe().getDescriptor()) + ")";
-        } catch (BadDescriptorException e) {
-            throw getRuntime().newErrnoEBADFError();
-        }
+        return "RubyFile(" + openFile.getPath() + ", " + openFile.getMode();
     }
 
     public static ZipEntry getFileEntry(ZipFile zf, String path) throws IOException {
@@ -1933,93 +1819,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return RubyFixnum.zero(runtime);
     }
 
-    private static void checkSharedExclusive(Ruby runtime, OpenFile openFile, int lockMode) {
-        // This logic used to attempt a shared lock instead of an exclusive
-        // lock, because LOCK_EX on some systems (as reported in JRUBY-1214)
-        // allow exclusively locking a read-only file. However, the JDK
-        // APIs do not allow acquiring an exclusive lock on files that are
-        // not open for read, and there are other platforms (such as Solaris,
-        // see JRUBY-5627) that refuse at an *OS* level to exclusively lock
-        // files opened only for read. As a result, this behavior is platform-
-        // dependent, and so we will obey the JDK's policy of disallowing
-        // exclusive locks on files opened only for read.
-        if (!openFile.isWritable() && (lockMode & LOCK_EX) > 0) {
-            throw runtime.newErrnoEBADFError("cannot acquire exclusive lock on File not opened for write");
-        }
-
-        // Likewise, JDK does not allow acquiring a shared lock on files
-        // that have not been opened for read. We comply here.
-        if (!openFile.isReadable() && (lockMode & LOCK_SH) > 0) {
-            throw runtime.newErrnoEBADFError("cannot acquire shared lock on File not opened for read");
-        }
-    }
-
-    private static IRubyObject lockFailedReturn(Ruby runtime, int lockMode) {
-        return (lockMode & LOCK_EX) == 0 ? RubyFixnum.zero(runtime) : runtime.getFalse();
-    }
-
-    private static boolean lockStateChanges(FileLock lock, int lockMode) {
-        if (lock == null) {
-            // no lock, only proceed if we are acquiring
-            switch (lockMode & 0xF) {
-                case LOCK_UN:
-                case LOCK_UN | LOCK_NB:
-                    return false;
-                default:
-                    return true;
-            }
-        } else {
-            // existing lock, only proceed if we are unlocking or changing
-            switch (lockMode & 0xF) {
-                case LOCK_UN:
-                case LOCK_UN | LOCK_NB:
-                    return true;
-                case LOCK_EX:
-                case LOCK_EX | LOCK_NB:
-                    return lock.isShared();
-                case LOCK_SH:
-                case LOCK_SH | LOCK_NB:
-                    return !lock.isShared();
-                default:
-                    return false;
-            }
-        }
-    }
-
-    private IRubyObject unlock(Ruby runtime) throws IOException {
-        if (currentLock != null) {
-            currentLock.release();
-            currentLock = null;
-
-            return RubyFixnum.zero(runtime);
-        }
-        return runtime.getFalse();
-    }
-
-    private IRubyObject lock(Ruby runtime, FileChannel fileChannel, boolean exclusive) throws IOException {
-        if (currentLock != null) currentLock.release();
-
-        currentLock = fileChannel.lock(0L, Long.MAX_VALUE, !exclusive);
-
-        if (currentLock != null) {
-            return RubyFixnum.zero(runtime);
-        }
-
-        return lockFailedReturn(runtime, exclusive ? LOCK_EX : LOCK_SH);
-    }
-
-    private IRubyObject tryLock(Ruby runtime, FileChannel fileChannel, boolean exclusive) throws IOException {
-        if (currentLock != null) currentLock.release();
-
-        currentLock = fileChannel.tryLock(0L, Long.MAX_VALUE, !exclusive);
-
-        if (currentLock != null) {
-            return RubyFixnum.zero(runtime);
-        }
-
-        return lockFailedReturn(runtime, exclusive ? LOCK_EX : LOCK_SH);
-    }
-
     @Deprecated
     public IRubyObject initialize19(IRubyObject[] args, Block block) {
         return initialize(null, args, block);
@@ -2044,5 +1843,4 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static Pattern URI_PREFIX = Pattern.compile("^(jar:)?[a-z]{2,}:(.*)");
 
     protected String path;
-    private volatile FileLock currentLock;
 }

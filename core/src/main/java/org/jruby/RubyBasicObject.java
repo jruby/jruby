@@ -846,6 +846,24 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         clone.callMethod(clone.getRuntime().getCurrentContext(), method, original);
     }
 
+    protected static boolean OBJ_INIT_COPY(IRubyObject obj, IRubyObject orig) {
+        if (obj == orig) return false;
+
+        objInitCopy(obj, orig);
+        return true;
+    }
+
+    protected static void objInitCopy(IRubyObject obj, IRubyObject orig) {
+        if (obj == orig) return;
+        // FIXME: booooo!
+        ((RubyBasicObject)obj).checkFrozen();
+        // Not implemented
+//        checkTrusted();
+        if (obj.getClass() != orig.getClass() || obj.getMetaClass().getRealClass() != orig.getMetaClass().getRealClass()) {
+            throw obj.getRuntime().newTypeError("initialize_copy should take same class object");
+        }
+    }
+
     /**
      * Lots of MRI objects keep their state in non-lookupable ivars
      * (e:g. Range, Struct, etc). This method is responsible for

@@ -236,6 +236,16 @@ public class TypeConverter {
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getArray(), "to_ary");
     }
 
+    // rb_io_check_io
+    public static IRubyObject ioCheckIO(Ruby runtime, IRubyObject obj) {
+        return TypeConverter.convertToTypeWithCheck(obj, runtime.getIO(), "to_io");
+    }
+
+    // rb_io_get_io
+    public static IRubyObject ioGetIO(Ruby runtime, IRubyObject obj) {
+        return convertToType(obj, runtime.getIO(), "to_io");
+    }
+
     public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) throws RaiseException {
         if (raise) throw obj.getRuntime().newTypeError("can't convert " + typeAsString(obj) + " into " + target);
 

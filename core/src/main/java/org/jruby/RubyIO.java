@@ -47,7 +47,6 @@ import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.SelectBlob;
 import jnr.constants.platform.Fcntl;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -58,6 +57,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -310,214 +310,244 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     public OutputStream getOutStream() {
-        try {
-            return getOpenFileChecked().getMainStreamSafe().newOutputStream();
-        } catch (BadDescriptorException e) {
-            throw getRuntime().newErrnoEBADFError();
-        }
+        return Channels.newOutputStream(openFile.getFdWrite());
     }
 
     public InputStream getInStream() {
-        try {
-            return getOpenFileChecked().getMainStreamSafe().newInputStream();
-        } catch (BadDescriptorException e) {
-            throw getRuntime().newErrnoEBADFError();
-        }
+        return Channels.newInputStream(openFile.getFdRead());
     }
 
     public Channel getChannel() {
-        try {
-            return getOpenFileChecked().getMainStreamSafe().getChannel();
-        } catch (BadDescriptorException e) {
-            throw getRuntime().newErrnoEBADFError();
-        }
+        return openFile.getFd();
     }
 
-    @Deprecated
-    public Stream getHandler() throws BadDescriptorException {
-        return getOpenFileChecked().getMainStreamSafe();
+    // io_reopen
+    protected RubyIO reopenIO(ThreadContext context, RubyIO nfile) {
+        Ruby runtime = context.runtime;
+        OpenFile fptr, orig;
+        Channel fd, fd2;
+        long pos = 0;
+
+        nfile = (RubyIO)TypeConverter.ioGetIO(runtime, nfile);
+        fptr = getOpenFileChecked();
+        orig = nfile.getOpenFileChecked();
+
+        if (fptr == orig) return this;
+        if (fptr.IS_PREP_STDIO()) {
+            if ((fptr.stdioIn == System.in && !orig.isReadable()) ||
+                    (fptr.stdioOut == System.out && !orig.isWritable()) ||
+                    (fptr.stdioOut == System.err && !orig.isWritable())) {
+                throw runtime.newArgumentError(fptr.PREP_STDIO_NAME() + " can't change access mode from \"" + fptr.getModeAsString(runtime) + "\" to \"" + orig.getModeAsString(runtime) + "\"");
+            }
+        }
+        if (fptr.isWritable()) {
+            if (fptr.fflush(runtime) < 0)
+                throw runtime.newErrnoFromErrno(fptr.errno, fptr.getPath());
+        }
+        else {
+            fptr.tell(context);
+        }
+        if (orig.isReadable()) {
+            pos = orig.tell(context);
+        }
+        if (orig.isWritable()) {
+            if (orig.fflush(runtime) < 0)
+                throw runtime.newErrnoFromErrno(orig.errno, fptr.getPath());
+        }
+
+        /* copy rb_io_t structure */
+        fptr.setMode(orig.getMode() | (fptr.getMode() & OpenFile.PREP));
+        fptr.setProcess(orig.getProcess());
+        fptr.setLineNumber(orig.getLineNumber());
+        if (orig.getPath() != null) fptr.setPath(orig.getPath());
+        else if (!fptr.IS_PREP_STDIO()) fptr.setPath(null);
+        fptr.setFinalizer(orig.getFinalizer());
+        // TODO: unsure what to do here
+//        #if defined (__CYGWIN__) || !defined(HAVE_FORK)
+//        if (fptr->finalize == pipe_finalize)
+//            pipe_add_fptr(fptr);
+//        #endif
+
+        fd = fptr.getFd();
+        fd2 = orig.getFd();
+        if (fd != fd2) {
+            if (fptr.IS_PREP_STDIO() /*|| fd <= 2*/ || !fptr.isStdio()) {
+	            /* need to keep FILE objects of stdin, stdout and stderr */
+                // TODO: need dup2(into) again
+                fd = fd2;
+//                if (rb_cloexec_dup2(fd2, fd) < 0)
+//                    rb_sys_fail_path(orig->pathv);
+//                rb_update_max_fd(fd);
+            }
+            else {
+                if (fptr.stdioIn != null) try {fptr.stdioIn.close();}catch(IOException ioe){}
+                if (fptr.stdioOut != null) try {fptr.stdioOut.close();}catch(IOException ioe){}
+                fptr.clearStdio();
+                fptr.setFD(null);
+                // TODO: need dup2(into) again
+                fd = fd2;
+//                if (rb_cloexec_dup2(fd2, fd) < 0)
+//                    rb_sys_fail_path(orig->pathv);
+//                rb_update_max_fd(fd);
+                fptr.setFD(fd);
+            }
+            // TODO: clear interrupts waiting on this IO?
+//            rb_thread_fd_close(fd);
+            if (orig.isReadable() && pos >= 0) {
+                if (fptr.seek(context, pos, OpenFile.SEEK_SET) < 0 && fptr.errno != null) {
+                    throw runtime.newErrnoFromErrno(fptr.errno, fptr.getPath());
+                }
+                if (orig.seek(context, pos, OpenFile.SEEK_SET) < 0 && orig.errno != null) {
+                    throw runtime.newErrnoFromErrno(orig.errno, orig.getPath());
+                }
+            }
+        }
+
+        if (fptr.isBinmode()) {
+            setBinmode();
+        }
+
+        // We simply can't do this and still have real concrete types under RubyIO
+//        setMetaClass(nfile.getMetaClass());
+        return this;
     }
 
-    protected void reopenPath(Ruby runtime, IRubyObject[] args) {
-        IRubyObject pathString;
-        
-        pathString = RubyFile.get_path(runtime.getCurrentContext(), args[0]);
+    // rb_io_binmode
+    private void setBinmode() {
+        OpenFile fptr;
 
-        // TODO: check safe, taint on incoming string
-
-        try {
-            IOOptions modes;
-            if (args.length > 1) {
-                IRubyObject modeString = args[1].convertToString();
-                modes = newIOOptions(runtime, modeString.toString());
-
-                openFile.setMode(modes.getModeFlags().getOpenFileFlags());
-            } else {
-                modes = newIOOptions(runtime, "r");
-            }
-
-            String path = pathString.toString();
-
-            // Ruby code frequently uses a platform check to choose "NUL:" on windows
-            // but since that check doesn't work well on JRuby, we help it out
-
-            openFile.setPath(path);
-
-            if (openFile.getMainStream() == null) {
-                openFile.setMainStream(ChannelStream.fopen(runtime, path, modes.getModeFlags()));
-
-                if (openFile.getPipeStream() != null) {
-                    openFile.getPipeStream().fclose();
-                    openFile.setPipeStream(null);
-                }
-            } else {
-                // TODO: This is an freopen in MRI, this is close, but not quite the same
-                openFile.getMainStreamSafe().freopen(runtime, path, newIOOptions(runtime, openFile.getModeAsString(runtime)).getModeFlags());
-                
-                if (openFile.getPipeStream() != null) {
-                    // TODO: pipe handler to be reopened with path and "w" mode
-                }
-            }
-        } catch (InvalidValueException e) {
-            throw runtime.newErrnoEINVALError();
-        } catch (PipeException pe) {
-            throw new IllegalStateException("For compile compatibility only");
-        } catch (IOException ex) {
-            throw new IllegalStateException("For compile compatibility only");
-        } catch (BadDescriptorException ex) {
-            throw new IllegalStateException("For compile compatibility only");
-        } catch (FileExistsException fee) {
-            throw new IllegalStateException("For compile compatibility only");
-        }
-    }
-
-    protected void reopenIO(Ruby runtime, RubyIO ios) {
-        try {
-            if (ios.openFile == this.openFile) return;
-
-            OpenFile origFile = ios.getOpenFileChecked();
-            OpenFile selfFile = getOpenFileChecked();
-
-            long pos = 0;
-            
-            Stream origStream = origFile.getMainStreamSafe();
-            ChannelDescriptor origDescriptor = origStream.getDescriptor();
-            boolean origIsSeekable = origDescriptor.isSeekable();
-
-            if (origFile.isReadable() && origIsSeekable) {
-                pos = origStream.fgetpos();
-            }
-
-            if (origFile.getPipeStream() != null) {
-                origFile.getPipeStream().fflush();
-            } else if (origFile.isWritable()) {
-                origStream.fflush();
-            }
-
-            if (selfFile.isWritable()) {
-                selfFile.getWriteStreamSafe().fflush();
-            }
-
-            selfFile.setMode(origFile.getMode());
-            selfFile.setProcess(origFile.getProcess());
-            selfFile.setLineNumber(origFile.getLineNumber());
-            selfFile.setPath(origFile.getPath());
-            selfFile.setFinalizer(origFile.getFinalizer());
-
-            Stream selfStream = selfFile.getMainStreamSafe();
-            ChannelDescriptor selfDescriptor = selfStream.getDescriptor();
-            boolean selfIsSeekable = selfDescriptor.isSeekable();
-
-            // check if we're a stdio IO, and ensure we're not badly mutilated
-            if (runtime.getFileno(selfDescriptor) >= 0 && runtime.getFileno(selfDescriptor) <= 2) {
-                selfStream.clearerr();
-
-                // dup2 new fd into self to preserve fileno and references to it
-                origDescriptor.dup2Into(selfDescriptor);
-                selfStream.setModes(origStream.getModes());
-            } else {
-                Stream pipeFile = selfFile.getPipeStream();
-                selfStream.fclose();
-                selfFile.setPipeStream(null);
-
-                // TODO: turn off readable? am I reading this right?
-                // This only seems to be used while duping below, since modes gets
-                // reset to actual modes afterward
-                //fptr->mode &= (m & FMODE_READABLE) ? ~FMODE_READABLE : ~FMODE_WRITABLE;
-
-                if (pipeFile != null) {
-                    selfFile.setMainStream(ChannelStream.fdopen(runtime, origDescriptor, origDescriptor.getOriginalModes()));
-                    selfFile.setPipeStream(pipeFile);
-                } else {
-                    // only use internal fileno here, stdio is handled above
-                    selfFile.setMainStream(
-                            ChannelStream.open(
-                            runtime,
-                            origDescriptor.dup2(selfDescriptor.getFileno())));
-
-                    // since we're not actually duping the incoming channel into our handler, we need to
-                    // copy the original sync behavior from the other handler
-                    selfFile.getMainStreamSafe().setSync(selfFile.getMainStreamSafe().isSync());
-                }
-            }
-
-            // TODO: anything threads attached to original fd are notified of the close...
-            // see rb_thread_fd_close
-
-//            if (origFile.isReadable() && pos >= 0) {
-//                if (selfIsSeekable) {
-//                    selfFile.seek(pos, Stream.SEEK_SET);
-//                }
-//
-//                if (origIsSeekable) {
-//                    origFile.seek(pos, Stream.SEEK_SET);
-//                }
-//            }
-
-            // only use internal fileno here, stdio is handled above
-            if (selfFile.getPipeStream() != null && selfDescriptor.getFileno() != selfFile.getPipeStream().getDescriptor().getFileno()) {
-                int fd = selfFile.getPipeStream().getDescriptor().getFileno();
-
-                if (origFile.getPipeStream() == null) {
-                    selfFile.getPipeStream().fclose();
-                    selfFile.setPipeStream(null);
-                } else if (fd != origFile.getPipeStream().getDescriptor().getFileno()) {
-                    selfFile.getPipeStream().fclose();
-                    ChannelDescriptor newFD2 = origFile.getPipeStream().getDescriptor().dup2(fd);
-                    selfFile.setPipeStream(ChannelStream.fdopen(runtime, newFD2, newIOOptions(runtime, "w").getModeFlags()));
-                }
-            }
-
-            if ((selfFile.getMode() & OpenFile.BINMODE) != 0) {
-                selfFile.setBinmode();
-            }
-
-            // TODO: set our metaclass to target's class (i.e. scary!)
-
-        } catch (IOException ex) { // TODO: better error handling
-            throw runtime.newIOErrorFromException(ex);
-        } catch (BadDescriptorException ex) {
-            throw runtime.newIOError("could not reopen: " + ex.getMessage());
-        } catch (PipeException ex) {
-            ex.printStackTrace();
-            throw runtime.newIOError("could not reopen: " + ex.getMessage());
-        } catch (InvalidValueException ive) {
-            throw runtime.newErrnoEINVALError();
-        }
+        fptr = getOpenFileChecked();
+        if (fptr.readconv != null)
+            fptr.readconv.binmode();
+        if (fptr.writeconv != null)
+            fptr.writeconv.binmode();
+        fptr.setBinmode();
+        fptr.clearTextMode();
+        fptr.writeconvPreEcflags &= ~EConvFlags.NEWLINE_DECORATOR_MASK;
+//        #ifdef O_BINARY
+//        if (!fptr->readconv) {
+//            SET_BINARY_MODE_WITH_SEEK_CUR(fptr);
+//        }
+//        else {
+//            setmode(fptr->fd, O_BINARY);
+//        }
+//        #endif
+        return;
     }
 
     @JRubyMethod(name = "reopen", required = 1, optional = 1)
     public IRubyObject reopen(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-    	IRubyObject tmp = TypeConverter.convertToTypeWithCheck(args[0], runtime.getIO(), "to_io");
-        
-    	if (!tmp.isNil()) {
-            reopenIO(runtime, (RubyIO) tmp);
-        } else {
-            reopenPath(runtime, args);
+        RubyIO file = this;
+        IRubyObject fname = context.nil, nmode = context.nil, opt = context.nil;
+        int[] oflags_p = {0};
+        OpenFile fptr;
+
+        switch (args.length) {
+            case 3:
+                opt = TypeConverter.checkHashType(runtime, args[2]);
+                if (opt.isNil()) throw getRuntime().newArgumentError(3, 2);
+            case 2:
+                if (opt.isNil()) {
+                    opt = TypeConverter.checkHashType(runtime, args[1]);
+                    if (opt.isNil()) {
+                        nmode = args[1];
+                        opt = context.nil;
+                    }
+                } else {
+                    nmode = args[1];
+                }
+            case 1:
+                fname = args[0];
         }
-        
-        return this;
+        if (args.length == 1) {
+            IRubyObject tmp = TypeConverter.ioCheckIO(runtime, fname);
+            if (!tmp.isNil()) {
+                return file.reopenIO(context, (RubyIO)tmp);
+            }
+        }
+
+        fname = RubyFile.get_path(context, fname);
+        // Not implemented
+//        fname.checkTaint();
+        fptr = file.openFile;
+        if (fptr == null) {
+            fptr = file.openFile = new OpenFile(context.nil);
+        }
+
+        if (!nmode.isNil() || !opt.isNil()) {
+            ConvConfig convconfig = new ConvConfig();
+            IRubyObject[] vmode_vperm = {null, null};
+            int[] fmode_p = {0};
+
+            EncodingUtils.extractModeEncoding(context, convconfig, vmode_vperm, opt, oflags_p, fmode_p);
+            if (fptr.IS_PREP_STDIO() &&
+                    ((fptr.getMode() & OpenFile.READWRITE) & (fmode_p[0] & OpenFile.READWRITE)) !=
+                            (fptr.getMode() & OpenFile.READWRITE)) {
+                throw runtime.newArgumentError(fptr.PREP_STDIO_NAME() + " can't change access mode from \"" + fptr.getModeAsString(runtime) + "\" to \"" + OpenFile.getStringFromMode(fmode_p[0]));
+            }
+            fptr.setMode(fmode_p[0]);
+            fptr.encs = convconfig;
+        }
+        else {
+            oflags_p[0] = OpenFile.getModeFlagsAsIntFrom(fptr.getMode());
+        }
+
+        fptr.setPath(fname.toString());
+        if (fptr.getFd() == null) {
+            fptr.setFD(sysopen(runtime, fptr.getPath(), oflags_p[0], 0666));
+            fptr.clearStdio();
+            return file;
+        }
+
+        if (fptr.isWritable()) {
+            if (fptr.fflush(runtime) < 0)
+                throw runtime.newErrnoFromErrno(fptr.errno, fptr.getPath());
+        }
+        fptr.rbuf.off = fptr.rbuf.len = 0;
+
+        if (fptr.isStdio()) {
+            // Logic here reopens the stdio FILE* with a new path and mode. For our purposes, we skip this
+            // since we do not want to damage the stdio streams
+//            if (freopen(RSTRING_PTR(fptr.pathv), rb_io_oflags_modestr(oflags), fptr.stdio_file) == 0) {
+//                rb_sys_fail_path(fptr.pathv);
+//            }
+            fptr.setFD(sysopen(runtime, fptr.getPath(), oflags_p[0], 0666));
+
+            // This logic fixes the original stdio file descriptor by clearing any CLOEXEC that might have
+            // come across with the newly opened file. Since we do not yet support CLOEXEC, we skip this.
+//            fptr.fd = fileno(fptr.stdio_file);
+//            rb_fd_fix_cloexec(fptr.fd);
+
+            // This logic configures buffering (none, line, full) and buffer size to match the original stdio
+            // stream associated with this IO. I don't believe we can do this.
+//                #ifdef USE_SETVBUF
+//                if (setvbuf(fptr.stdio_file, NULL, _IOFBF, 0) != 0)
+//                    rb_warn("setvbuf() can't be honoured for %"PRIsVALUE, fptr.pathv);
+//                #endif
+//                if (fptr.stdio_file == stderr) {
+//                    if (setvbuf(fptr.stdio_file, NULL, _IONBF, BUFSIZ) != 0)
+//                        rb_warn("setvbuf() can't be honoured for %"PRIsVALUE, fptr.pathv);
+//                }
+//                else if (fptr.stdio_file == stdout && isatty(fptr.fd)) {
+//                    if (setvbuf(fptr.stdio_file, NULL, _IOLBF, BUFSIZ) != 0)
+//                        rb_warn("setvbuf() can't be honoured for %"PRIsVALUE, fptr.pathv);
+//                }
+        }
+        else {
+            Channel tmpfd = sysopen(runtime, fptr.getPath(), oflags_p[0], 0666);
+            int err = 0;
+            // Need to reestablish a mechanism for dup2(into) form ChannelDescriptor
+//            if (rb_cloexec_dup2(tmpfd, fptr.fd) < 0)
+//                err = errno;
+//            (void)close(tmpfd);
+//            if (err) {
+//                rb_syserr_fail_path(err, fptr.pathv);
+//            }
+            fptr.setFD(tmpfd);
+        }
+
+        return file;
     }
 
     @Deprecated
@@ -1115,6 +1145,117 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return runtime.newFixnum(fileno);
     }
 
+    private static class Sysopen {
+        String fname;
+        int oflags;
+        int perm;
+        Errno errno;
+    }
+
+    protected static Channel sysopen(Ruby runtime, String fname, int oflags, int perm) {
+        Channel fd;
+        Sysopen data = new Sysopen();
+
+        data.fname = fname;
+        data.oflags = oflags;
+        data.perm = perm;
+
+        fd = sysopenInternal(runtime, data);
+        if (fd == null) {
+            if (data.errno == Errno.EMFILE || data.errno == Errno.ENFILE) {
+                System.gc();
+                data.errno = null;
+                fd = sysopenInternal(runtime, data);
+            }
+            if (fd == null) {
+                if (data.errno != null) {
+                    throw runtime.newErrnoFromErrno(data.errno, fname.toString());
+                } else {
+                    throw runtime.newSystemCallError(fname.toString());
+                }
+            }
+        }
+        return fd;
+    }
+
+    // rb_sysopen_internal
+    private static Channel sysopenInternal(Ruby runtime, Sysopen data) {
+        Channel fd;
+        // TODO: thread eventing as in MRI
+        fd = sysopenFunc(runtime, data);
+//        if (0 <= fd)
+//            rb_update_max_fd(fd);
+        return fd;
+    }
+
+    // sysopen_func
+    private static Channel sysopenFunc(Ruby runtime, Sysopen data) {
+        return cloexecOpen(runtime, data);
+    }
+
+    // rb_cloexec_open
+    private static Channel cloexecOpen(Ruby runtime, Sysopen data)
+    {
+        Channel ret = null;
+//        #ifdef O_CLOEXEC
+//            /* O_CLOEXEC is available since Linux 2.6.23.  Linux 2.6.18 silently ignore it. */
+//            flags |= O_CLOEXEC;
+//        #elif defined O_NOINHERIT
+//            flags |= O_NOINHERIT;
+//        #endif
+        try {
+            ret = ChannelDescriptor.open(runtime.getCurrentDirectory(), data.fname, new ModeFlags(data.oflags), data.perm, runtime.getPosix()).getChannel();
+        } catch (FileExistsException e) {
+            data.errno = Errno.ENOENT;
+        } catch (ResourceException.FileExists e) {
+            data.errno = Errno.EEXIST;
+        } catch (ResourceException.FileIsDirectory e) {
+            data.errno = Errno.EISDIR;
+        } catch (ResourceException.NotFound e) {
+            data.errno = Errno.ENOENT;
+        } catch (ResourceException.PermissionDenied e) {
+            data.errno = Errno.EPERM;
+        } catch (IOException e) {
+            if (runtime.isDebug()) {
+                System.err.println("Unhandled IOException: ");
+                e.printStackTrace();
+            }
+            data.errno = Helpers.errnoFromException(e);
+        } catch (InvalidValueException e) {
+            data.errno = Errno.EINVAL;
+        }
+        if (ret == null) return null;
+        // TODO, if we need it?
+//        rb_maygvl_fd_fix_cloexec(ret);
+        return ret;
+    }
+
+    private ChannelDescriptor sysopen(String path, ModeFlags modes, int perm) {
+        try {
+            ChannelDescriptor descriptor = ChannelDescriptor.open(
+                    getRuntime().getCurrentDirectory(),
+                    path,
+                    modes,
+                    perm,
+                    getRuntime().getPosix(),
+                    getRuntime().getJRubyClassLoader());
+
+            // TODO: check if too many open files, GC and try again
+
+            return descriptor;
+        } catch (ResourceException resourceException) {
+            throw resourceException.newRaiseException(getRuntime());
+        } catch (FileNotFoundException ignored) {
+            throw new IllegalStateException("For compile compatibility only");
+        } catch (DirectoryAsFileException ignored) {
+            throw new IllegalStateException("For compile compatibility only");
+        } catch (FileExistsException ignored) {
+            throw new IllegalStateException("For compile compatibility only");
+        } catch (IOException ignored) {
+            throw new IllegalStateException("For compile compatibility only");
+        }
+    }
+
     public boolean isAutoclose() {
         return openFile.isAutoclose();
     }
@@ -1448,14 +1589,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     public RubyFixnum seek(ThreadContext context, IRubyObject[] args) {
-        long offset = RubyNumeric.num2long(args[0]);
         int whence = Stream.SEEK_SET;
         
         if (args.length > 1) {
             whence = RubyNumeric.fix2int(args[1].convertToInteger());
         }
         
-        return doSeek(context, offset, whence);
+        return doSeek(context, args[0], whence);
     }
 
     @JRubyMethod
@@ -1463,27 +1603,25 @@ public class RubyIO extends RubyObject implements IOEncodable {
         long offset = RubyNumeric.num2long(arg0);
         int whence = Stream.SEEK_SET;
         
-        return doSeek(context, offset, whence);
+        return doSeek(context, arg0, whence);
     }
 
     @JRubyMethod
     public RubyFixnum seek(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        long offset = RubyNumeric.num2long(arg0);
         int whence = RubyNumeric.fix2int(arg1.convertToInteger());
         
-        return doSeek(context, offset, whence);
+        return doSeek(context, arg0, whence);
     }
-    
-    private RubyFixnum doSeek(ThreadContext context, long offset, int whence) {
-        OpenFile myOpenFile = getOpenFileChecked();
-        
-        try {
-            myOpenFile.seek(context, offset, whence);
-        
-            myOpenFile.getMainStreamSafe().clearerr();
-        } catch (BadDescriptorException ex) {
-            throw context.runtime.newErrnoEBADFError();
-        }
+
+    // rb_io_seek
+    private RubyFixnum doSeek(ThreadContext context, IRubyObject offset, int whence) {
+        OpenFile fptr;
+        long pos;
+
+        pos = RubyNumeric.num2long(offset);
+        fptr = getOpenFileChecked();
+        pos = fptr.seek(context, pos, whence);
+        if (pos < 0 && fptr.errno != null) throw getRuntime().newErrnoFromInt(fptr.errno.intValue(), fptr.getPath());
 
         return RubyFixnum.zero(context.runtime);
     }
@@ -1620,88 +1758,58 @@ public class RubyIO extends RubyObject implements IOEncodable {
             return runtime.getTrue();
         return runtime.getFalse();
     }
-    
+
+    // rb_io_init_copy
     @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
     @Override
-    public IRubyObject initialize_copy(IRubyObject original){
+    public IRubyObject initialize_copy(IRubyObject _io){
+        RubyIO dest = this;
         Ruby runtime = getRuntime();
-        
-        if (this == original) return this;
+        ThreadContext context = runtime.getCurrentContext();
 
-        RubyIO originalIO = (RubyIO) TypeConverter.convertToTypeWithCheck(original, runtime.getIO(), "to_io");
-        
-        OpenFile originalFile = originalIO.getOpenFileChecked();
-        
-        MakeOpenFile();
-        OpenFile newFile = openFile;
-        
-        try {
-            if (originalFile.getPipeStream() != null) {
-                originalFile.getPipeStream().fflush();
-                originalFile.getMainStreamSafe().lseek(0, Stream.SEEK_CUR);
-            } else if (originalFile.isWritable()) {
-                originalFile.getMainStreamSafe().fflush();
-            } else {
-                originalFile.getMainStreamSafe().lseek(0, Stream.SEEK_CUR);
-            }
+        OpenFile fptr, orig;
+        Channel fd;
+        RubyIO write_io;
+        long pos;
 
-            newFile.setMode(originalFile.getMode());
-            newFile.setProcess(originalFile.getProcess());
-            newFile.setLineNumber(originalFile.getLineNumber());
-            newFile.setPath(originalFile.getPath());
-            newFile.setFinalizer(originalFile.getFinalizer());
-            
-            IOOptions modes;
-            if (newFile.isReadable()) {
-                if (newFile.isWritable()) {
-                    if (newFile.getPipeStream() != null) {
-                        modes = newIOOptions(runtime, ModeFlags.RDONLY);
-                    } else {
-                        modes = newIOOptions(runtime, ModeFlags.RDWR);
-                    }
-                } else {
-                    modes = newIOOptions(runtime, ModeFlags.RDONLY);
-                }
-            } else {
-                if (newFile.isWritable()) {
-                    modes = newIOOptions(runtime, ModeFlags.WRONLY);
-                } else {
-                    modes = newIOOptions(runtime, originalFile.getMainStreamSafe().getModes());
-                }
-            }
-            
-            ChannelDescriptor descriptor = originalFile.getMainStreamSafe().getDescriptor().dup();
+        RubyIO io = (RubyIO)TypeConverter.ioCheckIO(runtime, _io);
+        if (!OBJ_INIT_COPY(dest, io)) return dest;
+        orig = io.getOpenFileChecked();
+        fptr = dest.MakeOpenFile();
 
-            newFile.setMainStream(ChannelStream.fdopen(runtime, descriptor, modes.getModeFlags()));
+        flush(context);
 
-            newFile.getMainStream().setSync(originalFile.getMainStreamSafe().isSync());
-            if (originalFile.getMainStreamSafe().isBinmode()) newFile.getMainStream().setBinmode();
-            
-            // TODO: the rest of this...seeking to same position is unnecessary since we share a channel
-            // but some of this may be needed?
-            
-//    fseeko(fptr->f, ftello(orig->f), SEEK_SET);
-//    if (orig->f2) {
-//	if (fileno(orig->f) != fileno(orig->f2)) {
-//	    fd = ruby_dup(fileno(orig->f2));
-//	}
-//	fptr->f2 = rb_fdopen(fd, "w");
-//	fseeko(fptr->f2, ftello(orig->f2), SEEK_SET);
-//    }
-//    if (fptr->mode & FMODE_BINMODE) {
-//	rb_io_binmode(dest);
-//    }
-        } catch (IOException ex) {
-            throw runtime.newIOErrorFromException(ex);
-        } catch (BadDescriptorException ex) {
-            throw runtime.newIOError("could not init copy: " + ex);
-        } catch (PipeException ex) {
-            throw runtime.newIOError("could not init copy: " + ex);
-        } catch (InvalidValueException ex) {
-            throw runtime.newIOError("could not init copy: " + ex);
+        /* copy rb_io_t structure */
+        fptr.setMode(orig.getMode() & ~OpenFile.PREP);
+        fptr.encs = orig.encs;
+        fptr.setProcess(orig.getProcess());
+        fptr.setLineNumber(orig.getLineNumber());
+        if (orig.getPath() != null) fptr.setPath(orig.getPath());
+        fptr.setFinalizer(orig.getFinalizer());
+        // TODO: unsure what to do with this
+//        #if defined (__CYGWIN__) || !defined(HAVE_FORK)
+//        if (fptr.finalize == pipe_finalize)
+//            pipe_add_fptr(fptr);
+//        #endif
+
+        // FIXME: This must do a dup of some kind
+        fd = orig.getFd();
+        fptr.setFD(fd);
+        pos = orig.tell(context);
+        if (0 <= pos)
+            fptr.seek(context, pos, OpenFile.SEEK_SET);
+        if (fptr.isBinmode()) {
+            dest.setBinmode();
         }
-        
-        return this;
+
+        write_io = io.GetWriteIO();
+        if (io != write_io) {
+            write_io = (RubyIO)write_io.dup();
+            fptr.tiedIOForWriting = write_io;
+            dest.getInstanceVariables().setInstanceVariable("@tied_io_for_writing", write_io);
+        }
+
+        return dest;
     }
     
     @JRubyMethod(name = "closed?")
@@ -1776,64 +1884,82 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod
     public IRubyObject close_write(ThreadContext context) {
-        try {
-            OpenFile myOpenFile = getOpenFileChecked();
-            
-            if (myOpenFile.getPipeStream() == null && myOpenFile.isReadable()) {
-                throw context.runtime.newIOError("closing non-duplex IO for writing");
+        Ruby runtime = context.runtime;
+        OpenFile fptr;
+        RubyIO write_io;
+
+        write_io = GetWriteIO();
+        fptr = write_io.getOpenFileChecked();
+        if (fptr.getFd() instanceof SocketChannel) {
+            try {
+                ((SocketChannel)fptr.getFd()).shutdownOutput();
+            } catch (IOException ioe) {
+                throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), fptr.getPath());
             }
-            
-            if (myOpenFile.getPipeStream() == null) {
-                close();
-            } else{
-                myOpenFile.getPipeStream().fclose();
-                myOpenFile.setPipeStream(null);
-                myOpenFile.setMode(myOpenFile.getMode() & ~OpenFile.WRITABLE);
-                // TODO
-                // n is result of fclose; but perhaps having a SysError below is enough?
-                // if (n != 0) rb_sys_fail(fptr->path);
-            }
-        } catch (BadDescriptorException bde) {
-            throw context.runtime.newErrnoEBADFError();
-        } catch (IOException ioe) {
-            // hmmmm
+            fptr.setMode(fptr.getMode() & ~OpenFile.WRITABLE);
+            if (!fptr.isReadable())
+                return ioClose(runtime);
+            return context.nil;
         }
-        return this;
+
+        if (fptr.isReadable()) {
+            throw runtime.newIOError("closing non-duplex IO for writing");
+        }
+
+        if (this != write_io) {
+            fptr = getOpenFileChecked();
+            fptr.tiedIOForWriting = null;
+            fptr.setMode(fptr.getMode() & ~OpenFile.DUPLEX);
+        }
+        ioClose(runtime);
+        return context.nil;
     }
 
     @JRubyMethod
     public IRubyObject close_read(ThreadContext context) {
         Ruby runtime = context.runtime;
-        
-        try {
-            OpenFile myOpenFile = getOpenFileChecked();
-            
-            if (myOpenFile.getPipeStream() == null && myOpenFile.isWritable()) {
-                throw runtime.newIOError("closing non-duplex IO for reading");
+        OpenFile fptr;
+        RubyIO write_io;
+
+        fptr = getOpenFileChecked();
+        if (fptr.getFd() instanceof SocketChannel) {
+            try {
+                ((SocketChannel)fptr.getFd()).socket().shutdownInput();
+            } catch (IOException ioe) {
+                throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), fptr.getPath());
             }
-            
-            if (myOpenFile.getPipeStream() == null) {
-                close();
-            } else{
-                myOpenFile.getMainStreamSafe().fclose();
-                myOpenFile.setMode(myOpenFile.getMode() & ~OpenFile.READABLE);
-                myOpenFile.setMainStream(myOpenFile.getPipeStream());
-                myOpenFile.setPipeStream(null);
-                // TODO
-                // n is result of fclose; but perhaps having a SysError below is enough?
-                // if (n != 0) rb_sys_fail(fptr->path);
-            }
-        } catch (BadDescriptorException bde) {
-            throw runtime.newErrnoEBADFError();
-        } catch (IOException ioe) {
-            // I believe Ruby bails out with a "bug" if closing fails
-            throw runtime.newIOErrorFromException(ioe);
+            fptr.setMode(fptr.getMode() & ~OpenFile.READABLE);
+            if (!fptr.isWritable())
+                return ioClose(runtime);
+            return context.nil;
         }
-        return this;
+
+        write_io = GetWriteIO();
+        if (this != write_io) {
+            OpenFile wfptr;
+            wfptr = getOpenFileChecked();
+            wfptr.setProcess(fptr.getProcess());
+            fptr.setProcess(null);
+            openFile = wfptr;
+	        /* bind to write_io temporarily to get rid of memory/fd leak */
+            fptr.tiedIOForWriting = null;
+            fptr.setMode(fptr.getMode() & ~OpenFile.DUPLEX);
+            write_io.openFile = fptr;
+            fptr.cleanup(runtime, false);
+	        /* should not finalize fptr because another thread may be reading it */
+            return context.nil;
+        }
+
+        if (fptr.isWritable()) {
+            throw runtime.newIOError("closing non-duplex IO for reading");
+        }
+        return ioClose(runtime);
     }
 
     /** Flushes the IO output stream.
-     * 
+     *
+     * MRI: rb_io_flush
+     *
      * @return The IO.
      */
     @JRubyMethod
@@ -1841,7 +1967,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return flushRaw(context, true);
     }
 
-    private RubyIO flushRaw(ThreadContext context, boolean sync) {
+    // rb_io_flush_raw
+    protected RubyIO flushRaw(ThreadContext context, boolean sync) {
         OpenFile fptr;
 
         // not possible here
@@ -1931,11 +2058,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     public boolean getBlocking() {
-        try {
-            return ((ChannelStream) openFile.getMainStreamSafe()).isBlocking();
-        } catch (BadDescriptorException e) {
-            throw getRuntime().newErrnoEBADFError();
+        if (openFile.getFdSelect() != null) {
+            return openFile.getFdSelect().isBlocking();
         }
+        return true;
     }
 
     @JRubyMethod(name = "fcntl")
@@ -3565,16 +3691,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
             error.popenSpecial = true;
             
             // process streams are not seekable
-            input.getOpenFile().getMainStreamSafe().getDescriptor().
-              setCanBeSeekable(false);
-            output.getOpenFile().getMainStreamSafe().getDescriptor().
-              setCanBeSeekable(false);
-            error.getOpenFile().getMainStreamSafe().getDescriptor().
-              setCanBeSeekable(false);
+//            input.getOpenFile().getMainStreamSafe().getDescriptor().
+//              setCanBeSeekable(false);
+//            output.getOpenFile().getMainStreamSafe().getDescriptor().
+//              setCanBeSeekable(false);
+//            error.getOpenFile().getMainStreamSafe().getDescriptor().
+//              setCanBeSeekable(false);
 
             return new POpenTuple(input, output, error, process);
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
+//        } catch (BadDescriptorException e) {
+//            throw runtime.newErrnoEBADFError();
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         }
@@ -3634,87 +3760,80 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
         }
 
-        try {
-            if (arg1 instanceof RubyString) {
-                io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg1}, Block.NULL_BLOCK);
-            } else if (arg1 instanceof RubyIO) {
-                io1 = (RubyIO) arg1;
-            } else if (arg1.respondsTo("to_path")) {
-                RubyString path = (RubyString) TypeConverter.convertToType19(arg1, runtime.getString(), "to_path");
-                io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {path}, Block.NULL_BLOCK);
-            } else if (arg1.respondsTo("read")) {
+        if (arg1 instanceof RubyString) {
+            io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg1}, Block.NULL_BLOCK);
+        } else if (arg1 instanceof RubyIO) {
+            io1 = (RubyIO) arg1;
+        } else if (arg1.respondsTo("to_path")) {
+            RubyString path = (RubyString) TypeConverter.convertToType19(arg1, runtime.getString(), "to_path");
+            io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {path}, Block.NULL_BLOCK);
+        } else if (arg1.respondsTo("read")) {
+            if (length == null) {
+                read = arg1.callMethod(context, "read", runtime.getNil()).convertToString();
+            } else {
+                read = arg1.callMethod(context, "read", length).convertToString();
+            }
+        } else {
+            throw runtime.newArgumentError("Should be String or IO");
+        }
+
+        if (arg2 instanceof RubyString) {
+            io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg2, runtime.newString("w")}, Block.NULL_BLOCK);
+        } else if (arg2 instanceof RubyIO) {
+            io2 = (RubyIO) arg2;
+        } else if (arg2.respondsTo("to_path")) {
+            RubyString path = (RubyString) TypeConverter.convertToType19(arg2, runtime.getString(), "to_path");
+            io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {path, runtime.newString("w")}, Block.NULL_BLOCK);
+        } else if (arg2.respondsTo("write")) {
+            if (read == null) {
                 if (length == null) {
-                    read = arg1.callMethod(context, "read", runtime.getNil()).convertToString();
+                    read = io1.read(context, runtime.getNil()).convertToString();
                 } else {
-                    read = arg1.callMethod(context, "read", length).convertToString();
+                    read = io1.read(context, length).convertToString();
+                }
+            }
+            return arg2.callMethod(context, "write", read);
+        } else {
+            throw runtime.newArgumentError("Should be String or IO");
+        }
+
+        if (io1 == null) {
+            IRubyObject size = io2.write(context, read);
+            io2.flush(context);
+            return size;
+        }
+
+        if (!io1.openFile.isReadable()) throw runtime.newIOError("from IO is not readable");
+        if (!io2.openFile.isWritable()) throw runtime.newIOError("to IO is not writable");
+
+        try {
+            long size = 0;
+            if (io1.openFile.getFdSeek() == null) {
+                if (io2.openFile.getFdSeek() == null) {
+                    ReadableByteChannel from = io1.openFile.getFdRead();
+                    WritableByteChannel to = io2.openFile.getFdWrite();
+
+                    size = transfer(context, from, to);
+                } else {
+                    ReadableByteChannel from = io1.openFile.getFdRead();
+                    FileChannel to = io2.openFile.getFdFile();
+
+                    size = transfer(from, to);
                 }
             } else {
-                throw runtime.newArgumentError("Should be String or IO");
+                FileChannel from = io1.openFile.getFdFile();
+                WritableByteChannel to = io2.openFile.getFdWrite();
+                long remaining = length == null ? from.size() : length.getLongValue();
+                long position = offset == null? from.position() : offset.getLongValue();
+
+                size = transfer(from, to, remaining, position);
+
+                if (offset == null) from.position(from.position() + size);
             }
 
-            if (arg2 instanceof RubyString) {
-                io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {arg2, runtime.newString("w")}, Block.NULL_BLOCK);
-            } else if (arg2 instanceof RubyIO) {
-                io2 = (RubyIO) arg2;
-            } else if (arg2.respondsTo("to_path")) {
-                RubyString path = (RubyString) TypeConverter.convertToType19(arg2, runtime.getString(), "to_path");
-                io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[] {path, runtime.newString("w")}, Block.NULL_BLOCK);
-            } else if (arg2.respondsTo("write")) {
-                if (read == null) {
-                    if (length == null) {
-                        read = io1.read(context, runtime.getNil()).convertToString();
-                    } else {
-                        read = io1.read(context, length).convertToString();
-                    }
-                }
-                return arg2.callMethod(context, "write", read);
-            } else {
-                throw runtime.newArgumentError("Should be String or IO");
-            }
-
-            if (io1 == null) {
-                IRubyObject size = io2.write(context, read);
-                io2.flush(context);
-                return size;
-            }
-
-            if (!io1.openFile.isReadable()) throw runtime.newIOError("from IO is not readable");
-            if (!io2.openFile.isWritable()) throw runtime.newIOError("to IO is not writable");
-
-            ChannelDescriptor d1 = io1.openFile.getMainStreamSafe().getDescriptor();
-            ChannelDescriptor d2 = io2.openFile.getWriteStreamSafe().getDescriptor();
-
-            try {
-                long size = 0;
-                if (!d1.isSeekable()) {
-                    if (!d2.isSeekable()) {
-                        ReadableByteChannel from = (ReadableByteChannel) d1.getChannel();
-                        WritableByteChannel to = (WritableByteChannel) d2.getChannel();
-
-                        size = transfer(context, from, to);
-                    } else {
-                        ReadableByteChannel from = (ReadableByteChannel) d1.getChannel();
-                        FileChannel to = (FileChannel) d2.getChannel();
-
-                        size = transfer(from, to);
-                    }
-                } else {
-                    FileChannel from = (FileChannel) d1.getChannel();
-                    WritableByteChannel to = (WritableByteChannel) d2.getChannel();
-                    long remaining = length == null ? from.size() : length.getLongValue();
-                    long position = offset == null? from.position() : offset.getLongValue();                    
-
-                    size = transfer(from, to, remaining, position);
-                    
-                    if (offset == null) from.position(from.position() + size);
-                }
-
-                return context.runtime.newFixnum(size);
-            } catch (IOException ioe) {
-                throw runtime.newIOErrorFromException(ioe);
-            }
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
+            return context.runtime.newFixnum(size);
+        } catch (IOException ioe) {
+            throw runtime.newIOErrorFromException(ioe);
         }
     }
 
@@ -4174,6 +4293,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return openFile.isBOM();
     }
 
+
     // MRI: rb_io_ascii8bit_binmode
     protected void setAscii8bitBinmode() {
         Encoding ascii8bit = getRuntime().getEncodingService().getAscii8bitEncoding();
@@ -4263,6 +4383,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
         openFile = new OpenFile(runtime.getNil());
 
         setupPopen(ioOptions.getModeFlags(), process);
+    }
+
+    @Deprecated
+    public Stream getHandler() throws BadDescriptorException {
+        return getOpenFileChecked().getMainStreamSafe();
     }
     
     protected OpenFile openFile;
