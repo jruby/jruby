@@ -155,6 +155,7 @@ import java.lang.ref.WeakReference;
 import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.channels.Channel;
 import java.nio.channels.ClosedChannelException;
 import java.security.AccessControlException;
 import java.security.SecureRandom;
@@ -4009,6 +4010,15 @@ public final class Ruby {
     public int getFileno(ChannelDescriptor descriptor) {
         return getFilenoIntMap(descriptor.getFileno());
     }
+
+    public int filenoForChannel(Channel channel) {
+        Integer val = channelFileno.get(channel);
+        if (val == null) {
+            ChannelDescriptor.getDescriptorFromChannel(channel);
+        }
+        return val;
+    }
+    private final Map<Channel, Integer> channelFileno = new ConcurrentHashMap<Channel, Integer>();
 
     @Deprecated
     public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {

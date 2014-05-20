@@ -477,14 +477,11 @@ public class RubyBasicSocket extends RubyIO {
         try {
             context.getThread().beforeBlockingCall();
 
-            int read = openFile.getMainStreamSafe().getDescriptor().read(buf);
+            int read = openFile.getFdRead().read(buf);
 
             if (read == 0) return null;
 
             return new ByteList(buf.array(), 0, buf.position());
-
-        } catch (BadDescriptorException e) {
-            throw runtime.newIOError("bad descriptor");
 
         } catch (IOException e) {
             // All errors to sysread should be SystemCallErrors, but on a closed stream
@@ -648,8 +645,8 @@ public class RubyBasicSocket extends RubyIO {
         setAscii8bitBinmode();
     }
     
-    private Channel getOpenChannel() throws BadDescriptorException {
-        return getOpenFileChecked().getMainStreamSafe().getDescriptor().getChannel();
+    private Channel getOpenChannel() {
+        return getOpenFileChecked().getFd();
     }
 
     private int asNumber(IRubyObject val) {

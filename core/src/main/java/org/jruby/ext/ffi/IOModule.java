@@ -70,7 +70,6 @@ public class IOModule {
             openFile.checkClosed(runtime);
             openFile.checkReadable(runtime);
 
-            ChannelStream stream = (ChannelStream) openFile.getMainStreamSafe();
 
             ByteBuffer buffer = ((AbstractMemory) dst).getMemoryIO().asByteBuffer();
             int count = RubyNumeric.num2int(rbLength);
@@ -83,12 +82,11 @@ public class IOModule {
                 buffer = buffer.duplicate();
                 buffer.limit(count);
             }
-            
-            return runtime.newFixnum(stream.read(buffer));
+
+            // TODO: This used to use ChannelStream and honor its buffers; it does not honor OpenFile buffers now
+            return runtime.newFixnum(openFile.getFdRead().read(buffer));
         } catch (EOFException e) {
             return runtime.newFixnum(-1);
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         }

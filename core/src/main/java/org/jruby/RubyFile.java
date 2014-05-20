@@ -417,20 +417,22 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(required = 1)
     public IRubyObject truncate(ThreadContext context, IRubyObject arg) {
+        Ruby runtime = context.runtime;
         long newLength = arg.convertToInteger().getLongValue();
         if (newLength < 0) {
-            throw context.runtime.newErrnoEINVALError(openFile.getPath());
+            throw runtime.newErrnoEINVALError(openFile.getPath());
         }
 
         if (openFile.getFdFile() != null) {
             try {
                 openFile.getFdFile().truncate(newLength);
             } catch (IOException ioe) {
-                throw context.runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), openFile.getPath());
+                throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), openFile.getPath());
             }
         } else {
-            throw context.runtime.newSystemCallError(openFile.getPath());
+            throw runtime.newSystemCallError(openFile.getPath());
         }
+        return RubyFixnum.zero(runtime);
     }
 
     @JRubyMethod

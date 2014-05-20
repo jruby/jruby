@@ -1,7 +1,6 @@
 package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
-import jnr.posix.FileStat;
 import jnr.posix.JavaLibCHelper;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
@@ -40,6 +39,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -260,7 +260,6 @@ public class OpenFile {
         encs.ecopts = nil;
     }
     private Channel fd;
-
     private ReadableByteChannel fdRead;
     private WritableByteChannel fdWrite;
     private SeekableByteChannel fdSeek;
@@ -333,30 +332,6 @@ public class OpenFile {
         if (fd instanceof SeekableByteChannel) fdSeek = (SeekableByteChannel)fd;
         if (fd instanceof SelectableChannel) fdSelect = (SelectableChannel)fd;
         if (fd instanceof FileChannel) fdFile = (FileChannel)fd;
-    }
-
-    public Stream getPipeStream() {
-        return pipeStream;
-    }
-
-    public Stream getPipeStreamSafe() throws BadDescriptorException {
-        Stream stream = pipeStream;
-        if (stream == null) throw new BadDescriptorException();
-        return stream;
-    }
-
-    public void setPipeStream(Stream pipeStream) {
-        this.pipeStream = pipeStream;
-    }
-
-    public Stream getWriteStream() {
-        return pipeStream == null ? mainStream : pipeStream;
-    }
-
-    public Stream getWriteStreamSafe() throws BadDescriptorException {
-        Stream stream = pipeStream == null ? mainStream : pipeStream;
-        if (stream == null) throw new BadDescriptorException();
-        return stream;
     }
 
     public int getMode() {
@@ -528,39 +503,17 @@ public class OpenFile {
 
         // TODO: evaluate whether errno checking here is useful
 
-        int ops = SelectionKey.OP_WRITE | SelectionKey.OP_ACCEPT;
-        try {
-            if (fdSelect != null) {
-                int ready_stat = 0;
-                java.nio.channels.Selector sel = SelectorFactory.openWithRetryFrom(null, fdSelect.provider());
-                synchronized (fdSelect.blockingLock()) {
-                    boolean is_block = fdSelect.isBlocking();
-                    try {
-                        fdSelect.configureBlocking(false);
-                        fdSelect.register(sel, ops);
-                        ready_stat = sel.selectNow();
-                        sel.close();
-                    } finally {
-                        if (sel != null) {
-                            try {
-                                sel.close();
-                            } catch (Exception e) {
-                            }
-                        }
-                        fdSelect.configureBlocking(is_block);
-                    }
-                }
-                return ready_stat == 1;
-            } else {
-                if (fdSeek != null) {
-                    return fdSeek.position() < fdSeek.size();
-                }
-                return false;
-            }
-        } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
-        }
+        return ready(runtime, SelectBlob.WRITE_CONNECT_OPS);
+    }
 
+    // rb_io_wait_readable
+    public boolean waitReadable(Ruby runtime) {
+        // errno logic checking here appeared to be mostly to release
+        // gvl when a read would block or retry if it was interrupted
+
+        // TODO: evaluate whether errno checking here is useful
+
+        return ready(runtime, SelectBlob.READ_ACCEPT_OPS);
     }
 
     public boolean ready(Ruby runtime, int ops) {
@@ -722,7 +675,7 @@ public class OpenFile {
     }
 
     // pseudo lseek(2)
-    private long lseek(ThreadContext context, long offset, int type) {
+    public long lseek(ThreadContext context, long offset, int type) {
         if (fdSeek != null) {
             int adj = 0;
             try {
@@ -791,16 +744,10 @@ public class OpenFile {
  
     public void setBinmode() {
         mode |= BINMODE;
-        if (mainStream != null) {
-            mainStream.setBinmode();
-        }
-        if (pipeStream != null) {
-            pipeStream.setBinmode();
-        }
     }
 
     public boolean isOpen() {
-        return mainStream != null || pipeStream != null;
+        return fd != null;
     }
 
     public boolean isReadable() {
@@ -1750,8 +1697,7 @@ public class OpenFile {
         return len;
     }
 
-    public void ungetbyte(ThreadContext context, IRubyObject str)
-    {
+    public void ungetbyte(ThreadContext context, IRubyObject str) {
         int len = ((RubyString)str).size();
 
         if (rbuf.ptr == null) {
@@ -2351,6 +2297,35 @@ public class OpenFile {
     public void setMainStream(Stream mainStream) {
         this.mainStream = mainStream;
         setFD(mainStream.getChannel());
+    }
+
+    @Deprecated
+    public Stream getPipeStream() {
+        return pipeStream;
+    }
+
+    @Deprecated
+    public Stream getPipeStreamSafe() throws BadDescriptorException {
+        Stream stream = pipeStream;
+        if (stream == null) throw new BadDescriptorException();
+        return stream;
+    }
+
+    @Deprecated
+    public void setPipeStream(Stream pipeStream) {
+        this.pipeStream = pipeStream;
+    }
+
+    @Deprecated
+    public Stream getWriteStream() {
+        return pipeStream == null ? mainStream : pipeStream;
+    }
+
+    @Deprecated
+    public Stream getWriteStreamSafe() throws BadDescriptorException {
+        Stream stream = pipeStream == null ? mainStream : pipeStream;
+        if (stream == null) throw new BadDescriptorException();
+        return stream;
     }
 
     @Deprecated

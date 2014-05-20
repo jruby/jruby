@@ -261,7 +261,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return openFile;
     }
     
-    protected OpenFile getOpenFileChecked() {
+    public OpenFile getOpenFileChecked() {
         openFile.checkClosed(getRuntime());
         return openFile;
     }
@@ -1592,7 +1592,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         int whence = Stream.SEEK_SET;
         
         if (args.length > 1) {
-            whence = RubyNumeric.fix2int(args[1].convertToInteger());
+            whence = interpretSeekWhence(args[1]);
         }
         
         return doSeek(context, args[0], whence);
@@ -1600,7 +1600,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod
     public RubyFixnum seek(ThreadContext context, IRubyObject arg0) {
-        long offset = RubyNumeric.num2long(arg0);
         int whence = Stream.SEEK_SET;
         
         return doSeek(context, arg0, whence);
@@ -1608,7 +1607,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod
     public RubyFixnum seek(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        int whence = RubyNumeric.fix2int(arg1.convertToInteger());
+        int whence = interpretSeekWhence(arg1);
         
         return doSeek(context, arg0, whence);
     }
@@ -1630,39 +1629,45 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // so I am parsing it for now.
     @JRubyMethod(required = 1, optional = 1)
     public RubyFixnum sysseek(ThreadContext context, IRubyObject[] args) {
-        long offset = RubyNumeric.num2long(args[0]);
+        Ruby runtime = context.runtime;
+        IRubyObject offset = context.nil, ptrname = context.nil;
+        int whence = OpenFile.SEEK_SET;
+        OpenFile fptr;
         long pos;
-        int whence = Stream.SEEK_SET;
-        
-        if (args.length > 1) {
-            whence = RubyNumeric.fix2int(args[1].convertToInteger());
-        }
-        
-        OpenFile myOpenFile = getOpenFileChecked();
-        
-        try {
-            
-            if (myOpenFile.isReadable() && myOpenFile.isReadBuffered()) {
-                throw context.runtime.newIOError("sysseek for buffered IO");
-            }
-            if (myOpenFile.isWritable() && myOpenFile.isWriteBuffered()) {
-                context.runtime.getWarnings().warn(ID.SYSSEEK_BUFFERED_IO, "sysseek for buffered IO");
-            }
-            
-            pos = myOpenFile.getMainStreamSafe().getDescriptor().lseek(offset, whence);
-        
-            myOpenFile.getMainStreamSafe().clearerr();
-        } catch (BadDescriptorException ex) {
-            throw context.runtime.newErrnoEBADFError();
-        } catch (InvalidValueException e) {
-            throw context.runtime.newErrnoEINVALError();
-        } catch (PipeException e) {
-            throw context.runtime.newErrnoESPIPEError();
-        } catch (IOException e) {
-            throw context.runtime.newIOErrorFromException(e);
-        }
 
-        return context.runtime.newFixnum(pos);
+        switch (args.length) {
+            case 2:
+                ptrname = args[1];
+                whence = interpretSeekWhence(ptrname);
+            case 1:
+                offset = args[0];
+        }
+        pos = offset.convertToInteger().getLongValue();
+        fptr = getOpenFileChecked();
+        if ((fptr.isReadable()) &&
+                (fptr.READ_DATA_BUFFERED() || fptr.READ_CHAR_PENDING())) {
+            throw runtime.newIOError("sysseek for buffered IO");
+        }
+        if (fptr.isWritable() && fptr.wbuf.len != 0) {
+            runtime.getWarnings().warn("sysseek for buffered IO");
+        }
+        fptr.errno = null;
+        pos = fptr.lseek(context, pos, whence);
+        if (pos == -1 && fptr.errno != null) throw runtime.newErrnoFromErrno(fptr.errno, fptr.getPath());
+
+        return RubyFixnum.newFixnum(runtime, pos);
+    }
+
+    private static int interpretSeekWhence(IRubyObject vwhence) {
+        if (vwhence instanceof RubySymbol) {
+            if (vwhence.toString() == "SET")
+                return OpenFile.SEEK_SET;
+            if (vwhence.toString() == "CUR")
+                return OpenFile.SEEK_CUR;
+            if (vwhence.toString() == "END")
+                return OpenFile.SEEK_END;
+        }
+        return (int)vwhence.convertToInteger().getLongValue();
     }
 
     // rb_io_rewind
@@ -2958,11 +2963,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @Override
     public String toString() {
-        try {
-            return "RubyIO(" + openFile.getMode() + ", " + getRuntime().getFileno(openFile.getMainStreamSafe().getDescriptor()) + ")";
-        } catch (BadDescriptorException e) {
-            throw getRuntime().newErrnoEBADFError();
-        }
+        return "RubyIO(" + openFile.getMode() + ", " + ChannelDescriptor.getDescriptorFromChannel(openFile.getFd()) + ")";
     }
     
     /* class methods for IO */

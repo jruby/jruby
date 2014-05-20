@@ -28,6 +28,7 @@
 
 package org.jruby.ext.ffi.io;
 
+import jnr.posix.FileStat;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
@@ -42,6 +43,8 @@ import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.ModeFlags;
+
+import java.nio.channels.ByteChannel;
 
 /**
  * An IO implementation that reads/writes to a native file descriptor.
@@ -64,28 +67,24 @@ public class FileDescriptorIO extends RubyIO {
     public FileDescriptorIO(Ruby runtime, IRubyObject fd) {
         super(runtime, runtime.getModule("FFI").getClass(CLASS_NAME));
         MakeOpenFile();
-        ModeFlags modes;
-        try {
-            modes = newModeFlags(runtime, ModeFlags.RDWR);
-            int fileno = RubyNumeric.fix2int(fd);
-            jnr.posix.FileStat stat = runtime.getPosix().fstat(fileno);
-            java.nio.channels.ByteChannel channel;
+        ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
+        int fileno = RubyNumeric.fix2int(fd);
+        FileStat stat = runtime.getPosix().fstat(fileno);
+        ByteChannel channel;
 
-            if (stat.isSocket()) {
-                channel = new jnr.enxio.channels.NativeSocketChannel(fileno);
-            } else if (stat.isBlockDev() || stat.isCharDev()) {
-                channel = new jnr.enxio.channels.NativeDeviceChannel(fileno);
-            } else {
-                channel = new FileDescriptorByteChannel(runtime, fileno);
-            }
-
-            openFile.setMainStream(ChannelStream.open(getRuntime(), new ChannelDescriptor(channel, modes, FileDescriptorHelper.wrap(fileno))));
-            openFile.setPipeStream(openFile.getMainStreamSafe());
-            openFile.setMode(modes.getOpenFileFlags());
-            openFile.getMainStreamSafe().setSync(true);
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
+        if (stat.isSocket()) {
+            channel = new jnr.enxio.channels.NativeSocketChannel(fileno);
+        } else if (stat.isBlockDev() || stat.isCharDev()) {
+            channel = new jnr.enxio.channels.NativeDeviceChannel(fileno);
+        } else {
+            channel = new FileDescriptorByteChannel(runtime, fileno);
         }
+
+//        openFile.setMainStream(ChannelStream.open(getRuntime(), new ChannelDescriptor(channel, modes, FileDescriptorHelper.wrap(fileno))));
+        openFile.setFD(channel);
+        openFile.setMode(modes.getOpenFileFlags());
+        openFile.setMode(modes.getOpenFileFlags());
+        openFile.setSync(true);
     }
 
     public static RubyClass createFileDescriptorIOClass(Ruby runtime, RubyModule module) {
