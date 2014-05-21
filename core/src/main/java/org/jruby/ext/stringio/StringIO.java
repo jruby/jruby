@@ -1156,7 +1156,10 @@ public class StringIO extends RubyObject implements EncodingCapable {
         } else {
             enc = EncodingUtils.rbToEncoding(context, ext_enc);
         }
-        ptr.string.setEncoding(enc);
+        if(ptr.string.getEncoding() != enc) {
+            ptr.string.modify();
+            ptr.string.setEncoding(enc);
+        }
         return this;
     }
     
