@@ -92,7 +92,6 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.InvalidValueException;
-import org.jruby.util.io.PipeException;
 import org.jruby.util.io.STDIO;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
@@ -204,7 +203,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // MRI: prep_stdio
     public static RubyIO prepStdio(Ruby runtime, OutputStream f, Channel c, int fmode, RubyClass klass, String path) {
         OpenFile fptr;
-        RubyIO io = prepIO(runtime, Channels.newChannel(f), fmode | OpenFile.PREP | EncodingUtils.DEFAULT_TEXTMODE, klass, path);
+        RubyIO io = prepIO(runtime, c, fmode | OpenFile.PREP | EncodingUtils.DEFAULT_TEXTMODE, klass, path);
 
         fptr = io.getOpenFileChecked();
         prepStdioEcflags(fptr, fmode);
@@ -1431,7 +1430,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "fileno", alias = "to_i")
     public RubyFixnum fileno(ThreadContext context) {
-        return context.runtime.newFixnum(getOpenFileChecked().getRealFileno());
+        return context.runtime.newFixnum(getOpenFileChecked().getFileno());
     }
     
     /** Returns the current line number.
@@ -1760,7 +1759,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fptr = getOpenFileChecked();
         if (fptr.isStdio()) return runtime.getTrue();
-        if (runtime.getPosix().isNative() && runtime.getPosix().libc().isatty(fptr.getRealFileno()) != 0)
+        if (runtime.getPosix().isNative() && runtime.getPosix().libc().isatty(fptr.getFileno()) != 0)
             return runtime.getTrue();
         return runtime.getFalse();
     }

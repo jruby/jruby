@@ -40,6 +40,7 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.WritableByteChannel;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class OpenFile {
@@ -91,6 +92,11 @@ public class OpenFile {
             else chFile = null;
 
             realFileno = ChannelDescriptor.getFilenoFromChannel(fd);
+            if (realFileno == -1) {
+                fakeFileno = ChannelDescriptor.getNewFileno();
+            } else {
+                fakeFileno = -1;
+            }
 
             refs = 1;
         }
@@ -102,8 +108,17 @@ public class OpenFile {
         public final SelectableChannel chSelect;
         public final FileChannel chFile;
         public final int realFileno;
+        public final int fakeFileno;
 //        private final int fakeFileno;
         private volatile int refs = 0;
+
+        // FIXME shouldn't use static; would interfere with other runtimes in the same JVM
+        public static int FIRST_FAKE_FD = 100000;
+        protected static final AtomicInteger internalFilenoIndex = new AtomicInteger(FIRST_FAKE_FD);
+
+        public static int getNewFileno() {
+            return internalFilenoIndex.getAndIncrement();
+        }
     }
 
     public static interface Finalizer {
@@ -153,8 +168,10 @@ public class OpenFile {
     private boolean nonblock = false;
     public Errno errno = null;
 
-    public int getRealFileno() {
-        return fd.realFileno;
+    public int getFileno() {
+        int fileno = fd.realFileno;
+        if (fileno != -1) return fileno;
+        return fd.fakeFileno;
     }
 
     // rb_thread_flock

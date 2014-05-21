@@ -853,10 +853,11 @@ public class ChannelDescriptor {
     }
 
     // FIXME shouldn't use static; would interfere with other runtimes in the same JVM
-    protected static final AtomicInteger internalFilenoIndex = new AtomicInteger(2);
+    public static int FIRST_FAKE_FD = 100000;
+    protected static final AtomicInteger internalFilenoIndex = new AtomicInteger(FIRST_FAKE_FD);
 
     public static int getNewFileno() {
-        return internalFilenoIndex.incrementAndGet();
+        return internalFilenoIndex.getAndIncrement();
     }
 
     private static void registerDescriptor(ChannelDescriptor descriptor) {
@@ -963,7 +964,7 @@ public class ChannelDescriptor {
             FileDescriptor fd = getDescriptorFromChannel(channel);
             if (fd.valid()) {
                 try {
-                    FILE_DESCRIPTOR_FD.get(fd);
+                    return (Integer)FILE_DESCRIPTOR_FD.get(fd);
                 } catch (Exception e) {
                     // failed to get
                 }
