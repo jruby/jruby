@@ -12,10 +12,12 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.frame.PackedFrame;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.lookup.LookupFork;
@@ -116,6 +118,8 @@ public class RubyModule extends RubyObject implements LookupNode {
     }
 
     public void include(RubyModule module) {
+        RubyNode.notDesignedForCompilation();
+
         checkFrozen();
 
         lookupParent = new LookupFork(module, lookupParent);
@@ -127,7 +131,9 @@ public class RubyModule extends RubyObject implements LookupNode {
      * Set the value of a constant, possibly redefining it.
      */
     public void setConstant(String constantName, Object value) {
-        assert RubyContext.shouldObjectBeVisible(value);
+        RubyNode.notDesignedForCompilation();
+
+        assert RubyContext.shouldObjectBeVisible(value) : value.getClass();
         checkFrozen();
         getConstants().put(constantName, new RubyConstant(value, false));
         newVersion();
@@ -135,12 +141,16 @@ public class RubyModule extends RubyObject implements LookupNode {
     }
 
     public void removeConstant(String data) {
+        RubyNode.notDesignedForCompilation();
+
         checkFrozen();
         getConstants().remove(data);
         newVersion();
     }
 
     public void setClassVariable(String variableName, Object value) {
+        RubyNode.notDesignedForCompilation();
+
         assert RubyContext.shouldObjectBeVisible(value);
 
         checkFrozen();
@@ -151,6 +161,8 @@ public class RubyModule extends RubyObject implements LookupNode {
     }
 
     public boolean setClassVariableIfAlreadySet(String variableName, Object value) {
+        RubyNode.notDesignedForCompilation();
+
         assert RubyContext.shouldObjectBeVisible(value);
 
         checkFrozen();
@@ -168,12 +180,16 @@ public class RubyModule extends RubyObject implements LookupNode {
     }
 
     public void removeClassVariable(String variableName) {
+        RubyNode.notDesignedForCompilation();
+
         checkFrozen();
 
         classVariables.remove(variableName);
     }
 
     public void setModuleConstant(String constantName, Object value) {
+        RubyNode.notDesignedForCompilation();
+
         checkFrozen();
 
         setConstant(constantName, value);
@@ -181,15 +197,19 @@ public class RubyModule extends RubyObject implements LookupNode {
     }
 
     public void addMethod(RubyMethod method) {
+        RubyNode.notDesignedForCompilation();
+
+        assert method != null;
+        assert getMethods() != null;
+
         checkFrozen();
         getMethods().put(method.getName(), method);
         newVersion();
     }
 
-    /**
-     * Remove a method from this module.
-     */
     public void removeMethod(String methodName) {
+        RubyNode.notDesignedForCompilation();
+
         checkFrozen();
 
         getMethods().remove(methodName);
@@ -197,17 +217,20 @@ public class RubyModule extends RubyObject implements LookupNode {
     }
 
     public void undefMethod(String methodName) {
+        RubyNode.notDesignedForCompilation();
+
         undefMethod(lookupMethod(methodName));
     }
 
     public void undefMethod(RubyMethod method) {
+        RubyNode.notDesignedForCompilation();
+
         addMethod(method.undefined());
     }
 
-    /**
-     * Alias a method.
-     */
     public void alias(String newName, String oldName) {
+        RubyNode.notDesignedForCompilation();
+
         final RubyMethod method = lookupMethod(oldName);
 
         if (method == null) {
@@ -220,6 +243,8 @@ public class RubyModule extends RubyObject implements LookupNode {
 
     @Override
     public RubyConstant lookupConstant(String constantName) {
+        RubyNode.notDesignedForCompilation();
+
         RubyConstant value;
 
         // Look in this module
@@ -246,6 +271,8 @@ public class RubyModule extends RubyObject implements LookupNode {
     }
 
     public void changeConstantVisibility(RubySymbol constant, boolean isPrivate) {
+        RubyNode.notDesignedForCompilation();
+
         RubyConstant rubyConstant = lookupConstant(constant.toString());
         checkFrozen();
 
@@ -260,6 +287,8 @@ public class RubyModule extends RubyObject implements LookupNode {
 
     @Override
     public Object lookupClassVariable(String variableName) {
+        RubyNode.notDesignedForCompilation();
+
         // Look in this module
 
         final Object value = classVariables.get(variableName);
@@ -274,6 +303,8 @@ public class RubyModule extends RubyObject implements LookupNode {
     }
 
     public Set<String> getClassVariables() {
+        RubyNode.notDesignedForCompilation();
+
         final Set<String> classVariablesSet = new HashSet<>();
 
         classVariablesSet.addAll(classVariables.keySet());
@@ -284,6 +315,8 @@ public class RubyModule extends RubyObject implements LookupNode {
 
     @Override
     public RubyMethod lookupMethod(String methodName) {
+        RubyNode.notDesignedForCompilation();
+
         // Look in this module
 
         final RubyMethod method = getMethods().get(methodName);
@@ -298,6 +331,8 @@ public class RubyModule extends RubyObject implements LookupNode {
     }
 
     public void appendFeatures(RubyModule other) {
+        RubyNode.notDesignedForCompilation();
+
         // TODO(CS): check only run once
 
         for (Map.Entry<String, RubyConstant> constantEntry : getConstants().entrySet()) {
@@ -326,12 +361,9 @@ public class RubyModule extends RubyObject implements LookupNode {
         return name.hashCode();
     }
 
-    @Override
-    public String toString() {
-        return name;
-    }
-
     public void newVersion() {
+        RubyNode.notDesignedForCompilation();
+
         unmodifiedAssumption.invalidate();
 
         // Make dependents new versions
@@ -342,14 +374,20 @@ public class RubyModule extends RubyObject implements LookupNode {
     }
 
     public void addDependent(RubyModule dependent) {
+        RubyNode.notDesignedForCompilation();
+
         dependents.add(dependent);
     }
 
     public Assumption getUnmodifiedAssumption() {
+        RubyNode.notDesignedForCompilation();
+
         return unmodifiedAssumption.getAssumption();
     }
 
     public void getMethods(Map<String, RubyMethod> foundMethods) {
+        RubyNode.notDesignedForCompilation();
+
         lookupParent.getMethods(foundMethods);
 
         for (RubyMethod method : methods.values()) {
@@ -357,16 +395,36 @@ public class RubyModule extends RubyObject implements LookupNode {
         }
     }
 
-    public static void setCurrentVisibility(Frame frame, Visibility visibility) {
-        frame.setObject(frame.getFrameDescriptor().findFrameSlot(VISIBILITY_FRAME_SLOT_ID), visibility);
+    public static void setCurrentVisibility(Visibility visibility) {
+        RubyNode.notDesignedForCompilation();
+
+        final Frame callerFrame = RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+
+        assert callerFrame != null;
+        assert callerFrame.getFrameDescriptor() != null;
+
+        final FrameSlot visibilitySlot = callerFrame.getFrameDescriptor().findFrameSlot(VISIBILITY_FRAME_SLOT_ID);
+        assert visibilitySlot != null;
+
+        callerFrame.setObject(visibilitySlot, visibility);
     }
 
-    public void visibilityMethod(PackedFrame frame, Object[] arguments, Visibility visibility) {
+    public void visibilityMethod(Object[] arguments, Visibility visibility) {
+        RubyNode.notDesignedForCompilation();
+
         if (arguments.length == 0) {
-            setCurrentVisibility(frame.unpack(), visibility);
+            setCurrentVisibility(visibility);
         } else {
             for (Object arg : arguments) {
-                final RubyMethod method = lookupMethod(arg.toString());
+                final String methodName;
+
+                if (arg instanceof RubySymbol) {
+                    methodName = ((RubySymbol) arg).toString();
+                } else {
+                    throw new UnsupportedOperationException();
+                }
+
+                final RubyMethod method = lookupMethod(methodName);
 
                 if (method == null) {
                     throw new RuntimeException("Couldn't find method " + arg.toString());
@@ -384,10 +442,14 @@ public class RubyModule extends RubyObject implements LookupNode {
     }
 
     public List<RubyMethod> getDeclaredMethods() {
+        RubyNode.notDesignedForCompilation();
+
         return new ArrayList<>(getMethods().values());
     }
 
     public void moduleEval(String source) {
+        RubyNode.notDesignedForCompilation();
+
         getRubyClass().getContext().eval(source, this);
     }
 

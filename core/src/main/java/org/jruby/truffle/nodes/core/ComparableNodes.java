@@ -25,7 +25,7 @@ public abstract class ComparableNodes {
 
         public ComparableCoreMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareNode = new DispatchHeadNode(context, getSourceSection(), "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            compareNode = new DispatchHeadNode(context, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public ComparableCoreMethodNode(ComparableCoreMethodNode prev) {
@@ -52,6 +52,8 @@ public abstract class ComparableNodes {
 
         @Specialization
         public boolean less(VirtualFrame frame, RubyBasicObject self, Object comparedTo) {
+            notDesignedForCompilation();
+
             return compare(frame, self, comparedTo) < 0;
         }
 
@@ -70,6 +72,8 @@ public abstract class ComparableNodes {
 
         @Specialization
         public boolean lessEqual(VirtualFrame frame, RubyBasicObject self, Object comparedTo) {
+            notDesignedForCompilation();
+
             return compare(frame, self, comparedTo) <= 0;
         }
 
@@ -88,6 +92,8 @@ public abstract class ComparableNodes {
 
         @Specialization
         public boolean equal(VirtualFrame frame, RubyBasicObject self, Object comparedTo) {
+            notDesignedForCompilation();
+
             if (self == comparedTo) {
                 return true;
             }
@@ -114,6 +120,8 @@ public abstract class ComparableNodes {
 
         @Specialization
         public boolean greaterEqual(VirtualFrame frame, RubyBasicObject self, Object comparedTo) {
+            notDesignedForCompilation();
+
             return compare(frame, self, comparedTo) >= 0;
         }
 
@@ -132,6 +140,8 @@ public abstract class ComparableNodes {
 
         @Specialization
         public boolean greater(VirtualFrame frame, RubyBasicObject self, Object comparedTo) {
+            notDesignedForCompilation();
+
             return compare(frame, self, comparedTo) > 0;
         }
 
@@ -150,6 +160,8 @@ public abstract class ComparableNodes {
 
         @Specialization
         public boolean between(VirtualFrame frame, RubyBasicObject self, Object min, Object max) {
+            notDesignedForCompilation();
+
             return !(compare(frame, self, min) < 0 || compare(frame, self, max) > 0);
         }
 

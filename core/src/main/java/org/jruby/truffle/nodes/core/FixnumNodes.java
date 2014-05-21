@@ -15,12 +15,13 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.*;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 @CoreClass(name = "Fixnum")
 public abstract class FixnumNodes {
@@ -69,12 +70,16 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "+", minArgs = 1, maxArgs = 1)
     public abstract static class AddNode extends CoreMethodNode {
 
+        @Child protected FixnumOrBignumNode fixnumOrBignum;
+
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         public AddNode(AddNode prev) {
             super(prev);
+            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization(order = 1, rewriteOn = ArithmeticException.class)
@@ -89,7 +94,7 @@ public abstract class FixnumNodes {
 
         @Specialization(order = 3)
         public Object addWithBigIntegerOverflow(int a, int b) {
-            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).add(BigInteger.valueOf(b)));
+            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).add(BigInteger.valueOf(b)));
         }
 
         @Specialization(order = 4)
@@ -104,7 +109,7 @@ public abstract class FixnumNodes {
 
         @Specialization(order = 6)
         public Object add(int a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).add(b));
+            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).add(b));
         }
 
         @Specialization(order = 7, rewriteOn = ArithmeticException.class)
@@ -119,7 +124,7 @@ public abstract class FixnumNodes {
 
         @Specialization(order = 9)
         public Object addWithBigIntegerOverflow(long a, long b) {
-            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).add(BigInteger.valueOf(b)));
+            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).add(BigInteger.valueOf(b)));
         }
 
         @Specialization(order = 10)
@@ -129,7 +134,7 @@ public abstract class FixnumNodes {
 
         @Specialization(order = 11)
         public Object add(long a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).add(b));
+            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).add(b));
         }
 
     }
@@ -137,12 +142,16 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "-", minArgs = 1, maxArgs = 1)
     public abstract static class SubNode extends CoreMethodNode {
 
+        @Child protected FixnumOrBignumNode fixnumOrBignum;
+
         public SubNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         public SubNode(SubNode prev) {
             super(prev);
+            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization(order = 1, rewriteOn = ArithmeticException.class)
@@ -157,7 +166,7 @@ public abstract class FixnumNodes {
 
         @Specialization(order = 3)
         public Object subWithBigIntegerOverflow(int a, int b) {
-            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).subtract(BigInteger.valueOf(b)));
+            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).subtract(BigInteger.valueOf(b)));
         }
 
         @Specialization(order = 4)
@@ -172,7 +181,7 @@ public abstract class FixnumNodes {
 
         @Specialization(order = 6)
         public Object sub(int a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).subtract(b));
+            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).subtract(b));
         }
 
         @Specialization(order = 7, rewriteOn = ArithmeticException.class)
@@ -187,7 +196,7 @@ public abstract class FixnumNodes {
 
         @Specialization(order = 9)
         public Object subWithBigIntegerOverflow(long a, long b) {
-            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).subtract(BigInteger.valueOf(b)));
+            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).subtract(BigInteger.valueOf(b)));
         }
 
         @Specialization(order = 10)
@@ -197,7 +206,7 @@ public abstract class FixnumNodes {
 
         @Specialization(order = 11)
         public Object sub(long a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).subtract(b));
+            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).subtract(b));
         }
 
     }
@@ -205,12 +214,16 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "*", minArgs = 1, maxArgs = 1)
     public abstract static class MulNode extends CoreMethodNode {
 
+        @Child protected FixnumOrBignumNode fixnumOrBignum;
+
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         public MulNode(MulNode prev) {
             super(prev);
+            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization(order = 1, rewriteOn = ArithmeticException.class)
@@ -225,7 +238,7 @@ public abstract class FixnumNodes {
 
         @Specialization(order = 3)
         public Object mulWithBigInteger(int a, int b) {
-            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
+            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
         }
 
         @Specialization(order = 4, rewriteOn = ArithmeticException.class)
@@ -235,7 +248,7 @@ public abstract class FixnumNodes {
 
         @Specialization(order = 5)
         public Object mulWithBigInteger(int a, long b) {
-            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
+            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
         }
 
         @Specialization(order = 6)
@@ -255,7 +268,7 @@ public abstract class FixnumNodes {
 
         @Specialization(order = 9)
         public Object mulWithBigInteger(long a, int b) {
-            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
+            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
         }
 
         @Specialization(order = 10, rewriteOn = ArithmeticException.class)
@@ -265,7 +278,7 @@ public abstract class FixnumNodes {
 
         @Specialization(order = 11)
         public Object mulWithBigInteger(long a, long b) {
-            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
+            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
         }
 
         @Specialization(order = 12)
@@ -275,7 +288,7 @@ public abstract class FixnumNodes {
 
         @Specialization(order = 13)
         public Object mul(long a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).multiply(b));
+            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).multiply(b));
         }
 
     }
@@ -283,17 +296,22 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "**", minArgs = 1, maxArgs = 1)
     public abstract static class PowNode extends CoreMethodNode {
 
+        @Child protected FixnumOrBignumNode fixnumOrBignum;
+
         public PowNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         public PowNode(PowNode prev) {
             super(prev);
+            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization
         public Object pow(int a, int b) {
-            return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).pow(b));
+            // TODO(CS): I'd like to use CompilerDirectives.isConstant here - see if a is 2 or b is 2 for example (binary-trees.rb)
+            return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).pow(b));
         }
 
         @Specialization
@@ -303,6 +321,8 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object pow(int a, BigInteger b) {
+            notDesignedForCompilation();
+
             final BigInteger bigA = BigInteger.valueOf(a);
 
             BigInteger result = BigInteger.ONE;
@@ -944,23 +964,36 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "<<", minArgs = 1, maxArgs = 1)
     public abstract static class LeftShiftNode extends CoreMethodNode {
 
+        @Child protected FixnumOrBignumNode fixnumOrBignum;
+
+        private final BranchProfile bAboveZeroProfile = new BranchProfile();
+        private final BranchProfile bNotAboveZeroProfile = new BranchProfile();
+        private final BranchProfile useBignumProfile = new BranchProfile();
+
         public LeftShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         public LeftShiftNode(LeftShiftNode prev) {
             super(prev);
+            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization
         public Object leftShift(int a, int b) {
             if (b > 0) {
+                bAboveZeroProfile.enter();
+
                 if (RubyFixnum.SIZE - Integer.numberOfLeadingZeros(a) + b > RubyFixnum.SIZE - 1) {
-                    return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).shiftLeft(b));
+                    useBignumProfile.enter();
+                    return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).shiftLeft(b));
                 } else {
                     return a << b;
                 }
             } else {
+                bNotAboveZeroProfile.enter();
+
                 if (-b >= Integer.SIZE) {
                     return 0;
                 } else {
@@ -972,12 +1005,17 @@ public abstract class FixnumNodes {
         @Specialization
         public Object leftShift(long a, int b) {
             if (b > 0) {
+                bAboveZeroProfile.enter();
+
                 if (RubyFixnum.SIZE - Long.numberOfLeadingZeros(a) + b > RubyFixnum.SIZE - 1) {
-                    return RubyFixnum.fixnumOrBignum(BigInteger.valueOf(a).shiftLeft(b));
+                    useBignumProfile.enter();
+                    return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).shiftLeft(b));
                 } else {
                     return a << b;
                 }
             } else {
+                bNotAboveZeroProfile.enter();
+
                 if (-b >= Integer.SIZE) {
                     return 0;
                 } else {
@@ -1040,6 +1078,8 @@ public abstract class FixnumNodes {
 
         @Specialization
         public int getIndex(int self, int index) {
+            notDesignedForCompilation();
+
             if ((self & (1 << index)) == 0) {
                 return 0;
             } else {
@@ -1085,6 +1125,8 @@ public abstract class FixnumNodes {
 
         @Specialization
         public RubyString chr(int n) {
+            notDesignedForCompilation();
+
             // TODO(CS): not sure about encoding here
             return getContext().makeString((char) n);
         }
@@ -1170,20 +1212,32 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object times(VirtualFrame frame, int n, RubyProc block) {
-            outer: for (int i = 0; i < n; i++) {
-                while (true) {
-                    try {
-                        yield(frame, block, i);
-                        continue outer;
-                    } catch (BreakException e) {
-                        breakProfile.enter();
-                        return e.getResult();
-                    } catch (NextException e) {
-                        nextProfile.enter();
-                        continue outer;
-                    } catch (RedoException e) {
-                        redoProfile.enter();
+            int count = 0;
+
+            try {
+                outer: for (int i = 0; i < n; i++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, i);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
                     }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
                 }
             }
 
@@ -1273,20 +1327,35 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object upto(VirtualFrame frame, int from, int to, RubyProc block) {
-            outer: for (int i = from; i <= to; i++) {
-                while (true) {
-                    try {
-                        yield(frame, block, i);
-                        continue outer;
-                    } catch (BreakException e) {
-                        breakProfile.enter();
-                        return e.getResult();
-                    } catch (NextException e) {
-                        nextProfile.enter();
-                        continue outer;
-                    } catch (RedoException e) {
-                        redoProfile.enter();
+            notDesignedForCompilation();
+
+            int count = 0;
+
+            try {
+                outer:
+                for (int i = from; i <= to; i++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, i);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
                     }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
                 }
             }
 

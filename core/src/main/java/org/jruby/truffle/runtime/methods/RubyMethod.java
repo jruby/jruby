@@ -12,12 +12,14 @@ package org.jruby.truffle.runtime.methods;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.InlinableMethodImplementation;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.methods.arguments.BehaveAsBlockNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Any kind of Ruby method - so normal methods in classes and modules, but also blocks, procs,
@@ -25,29 +27,55 @@ import org.jruby.truffle.runtime.core.*;
  */
 public class RubyMethod {
 
+    // TODO(CS): should be weak
+    private static final ConcurrentHashMap<SharedMethodInfo, RubyMethod> methodMap = new ConcurrentHashMap<>();
+
     private final SharedMethodInfo sharedMethodInfo;
-    private final RubyModule declaringModule;
     private final String name;
+
+    private final RubyModule declaringModule;
     private final Visibility visibility;
     private final boolean undefined;
 
-    private final MethodImplementation implementation;
+    private final CallTarget callTarget;
+    private final MaterializedFrame declarationFrame;
+    private final boolean mapCallTarget;
 
-    public RubyMethod(SharedMethodInfo sharedMethodInfo, RubyModule declaringModule, String name, Visibility visibility, boolean undefined,
-                    MethodImplementation implementation) {
+    public RubyMethod(SharedMethodInfo sharedMethodInfo, String name,
+                      RubyModule declaringModule, Visibility visibility, boolean undefined,
+                      CallTarget callTarget, MaterializedFrame declarationFrame, boolean mapCallTarget) {
         this.sharedMethodInfo = sharedMethodInfo;
         this.declaringModule = declaringModule;
         this.name = name;
         this.visibility = visibility;
         this.undefined = undefined;
-        this.implementation = implementation;
+        this.callTarget = callTarget;
+        this.declarationFrame = declarationFrame;
+        this.mapCallTarget = mapCallTarget;
+
+        CompilerAsserts.compilationConstant(mapCallTarget);
+
+        if (mapCallTarget) {
+            mapMethod(sharedMethodInfo, this);
+        }
     }
 
-    public Object call(PackedFrame caller, Object self, RubyProc block, Object... args) {
-        assert RubyContext.shouldObjectBeVisible(self);
+    @CompilerDirectives.SlowPath
+    private static void mapMethod(SharedMethodInfo sharedMethodInfo, RubyMethod method) {
+        methodMap.put(sharedMethodInfo, method);
+    }
+
+    @Deprecated
+    public Object call(Object self, RubyProc block, Object... args) {
+        assert self != null;
+        assert args != null;
+
+        CompilerAsserts.neverPartOfCompilation();
+
+        assert RubyContext.shouldObjectBeVisible(self) : self.getClass();
         assert RubyContext.shouldObjectsBeVisible(args);
 
-        final Object result = implementation.call(caller, self, block, args);
+        final Object result = callTarget.call(RubyArguments.pack(declarationFrame, self, block, args));
 
         assert RubyContext.shouldObjectBeVisible(result);
 
@@ -72,112 +100,42 @@ public class RubyMethod {
         return undefined;
     }
 
-    public MethodImplementation getImplementation() {
-        return implementation;
+    public MaterializedFrame getDeclarationFrame() {
+        return declarationFrame;
+    }
+
+    public CallTarget getCallTarget(){
+        return callTarget;
     }
 
     public RubyMethod withDeclaringModule(RubyModule newDeclaringModule) {
-        final InlinableMethodImplementation inlinableMethodImplementation = (InlinableMethodImplementation) implementation;
-
-        final RubyRootNode modifiedRootNode = inlinableMethodImplementation.getCloneOfPristineRootNode();
-
-        final InlinableMethodImplementation newImplementation = new InlinableMethodImplementation(
-                Truffle.getRuntime().createCallTarget(modifiedRootNode),
-                inlinableMethodImplementation.getDeclarationFrame(),
-                inlinableMethodImplementation.getFrameDescriptor(),
-                NodeUtil.cloneNode(modifiedRootNode),
-                inlinableMethodImplementation.alwaysInline(),
-                inlinableMethodImplementation.getShouldAppendCallNode());
-
-        final RubyMethod method = new RubyMethod(sharedMethodInfo, newDeclaringModule, name, visibility, undefined, newImplementation);
-
-        newImplementation.setMethod(method);
-
-        return method;
+        return new RubyMethod(sharedMethodInfo, name, newDeclaringModule, visibility, undefined, callTarget, declarationFrame, mapCallTarget);
     }
 
     public RubyMethod withNewName(String newName) {
-        final InlinableMethodImplementation inlinableMethodImplementation = (InlinableMethodImplementation) implementation;
-
-        final RubyRootNode modifiedRootNode = inlinableMethodImplementation.getCloneOfPristineRootNode();
-
-        final InlinableMethodImplementation newImplementation = new InlinableMethodImplementation(
-                Truffle.getRuntime().createCallTarget(modifiedRootNode),
-                inlinableMethodImplementation.getDeclarationFrame(),
-                inlinableMethodImplementation.getFrameDescriptor(),
-                NodeUtil.cloneNode(modifiedRootNode),
-                inlinableMethodImplementation.alwaysInline(),
-                inlinableMethodImplementation.getShouldAppendCallNode());
-
-        final RubyMethod method = new RubyMethod(sharedMethodInfo, declaringModule, newName, visibility, undefined, newImplementation);
-
-        newImplementation.setMethod(method);
-
-        return method;
+        return new RubyMethod(sharedMethodInfo, newName, declaringModule, visibility, undefined, callTarget, declarationFrame, mapCallTarget);
     }
 
     public RubyMethod withNewVisibility(Visibility newVisibility) {
-        final InlinableMethodImplementation inlinableMethodImplementation = (InlinableMethodImplementation) implementation;
-
-        final RubyRootNode modifiedRootNode = inlinableMethodImplementation.getCloneOfPristineRootNode();
-
-        final InlinableMethodImplementation newImplementation = new InlinableMethodImplementation(
-                Truffle.getRuntime().createCallTarget(modifiedRootNode),
-                inlinableMethodImplementation.getDeclarationFrame(),
-                inlinableMethodImplementation.getFrameDescriptor(),
-                NodeUtil.cloneNode(modifiedRootNode),
-                inlinableMethodImplementation.alwaysInline(),
-                inlinableMethodImplementation.getShouldAppendCallNode());
-
-        final RubyMethod method = new RubyMethod(sharedMethodInfo, declaringModule, name, newVisibility, undefined, newImplementation);
-
-        newImplementation.setMethod(method);
-
-        return method;
+        return new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame, mapCallTarget);
     }
 
     public RubyMethod withoutBlockDestructureSemantics() {
-        final InlinableMethodImplementation inlinableMethodImplementation = (InlinableMethodImplementation) implementation;
+        if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
+            final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
 
-        final RubyRootNode modifiedRootNode = inlinableMethodImplementation.getCloneOfPristineRootNode();
+            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNode, BehaveAsBlockNode.class)) {
+                behaveAsBlockNode.setBehaveAsBlock(false);
+            }
 
-        for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(modifiedRootNode, BehaveAsBlockNode.class)) {
-            behaveAsBlockNode.setBehaveAsBlock(false);
+            return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, undefined, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame, mapCallTarget);
+        } else {
+            throw new UnsupportedOperationException("Can't change the semantics of an opaque call target");
         }
-
-        final InlinableMethodImplementation newImplementation = new InlinableMethodImplementation(
-                Truffle.getRuntime().createCallTarget(modifiedRootNode),
-                inlinableMethodImplementation.getDeclarationFrame(),
-                inlinableMethodImplementation.getFrameDescriptor(),
-                modifiedRootNode,
-                inlinableMethodImplementation.alwaysInline(),
-                inlinableMethodImplementation.getShouldAppendCallNode());
-
-        final RubyMethod method = new RubyMethod(sharedMethodInfo, declaringModule, name, visibility, undefined, newImplementation);
-
-        newImplementation.setMethod(method);
-
-        return method;
     }
 
     public RubyMethod undefined() {
-        final InlinableMethodImplementation inlinableMethodImplementation = (InlinableMethodImplementation) implementation;
-
-        final RubyRootNode modifiedRootNode = inlinableMethodImplementation.getCloneOfPristineRootNode();
-
-        final InlinableMethodImplementation newImplementation = new InlinableMethodImplementation(
-                Truffle.getRuntime().createCallTarget(modifiedRootNode),
-                inlinableMethodImplementation.getDeclarationFrame(),
-                inlinableMethodImplementation.getFrameDescriptor(),
-                NodeUtil.cloneNode(modifiedRootNode),
-                inlinableMethodImplementation.alwaysInline(),
-                inlinableMethodImplementation.getShouldAppendCallNode());
-
-        final RubyMethod method = new RubyMethod(sharedMethodInfo, declaringModule, name, visibility, true, newImplementation);
-
-        newImplementation.setMethod(method);
-
-        return method;
+        return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame, mapCallTarget);
     }
 
     public boolean isVisibleTo(RubyBasicObject caller, RubyBasicObject receiver) {
@@ -247,6 +205,17 @@ public class RubyMethod {
             default:
                 return false;
         }
+    }
+
+    public static RubyMethod getMethod(SharedMethodInfo sharedMethodInfo) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        return methodMap.get(sharedMethodInfo);
+    }
+
+    @Override
+    public String toString() {
+        return sharedMethodInfo.toString();
     }
 
 }

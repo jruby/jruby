@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
@@ -43,6 +44,8 @@ public class DoWhileNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         int count = 0;
 
         try {
@@ -67,14 +70,16 @@ public class DoWhileNode extends RubyNode {
                 }
 
                 if (condition.executeBoolean(frame)) {
+                    nextProfile.enter();
                     continue outer;
                 } else {
+                    breakProfile.enter();
                     break outer;
                 }
             }
         } finally {
             if (CompilerDirectives.inInterpreter()) {
-                getRootNode().reportLoopCount(count);
+                ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
             }
         }
 

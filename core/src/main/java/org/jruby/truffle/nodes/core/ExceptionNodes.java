@@ -13,7 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 @CoreClass(name = "Exception")
 public abstract class ExceptionNodes {
@@ -31,12 +31,16 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public NilPlaceholder initialize(RubyException exception, @SuppressWarnings("unused") UndefinedPlaceholder message) {
+            notDesignedForCompilation();
+
             exception.initialize(getContext().makeString(" "));
             return NilPlaceholder.INSTANCE;
         }
 
         @Specialization
         public NilPlaceholder initialize(RubyException exception, RubyString message) {
+            notDesignedForCompilation();
+
             exception.initialize(message);
             return NilPlaceholder.INSTANCE;
         }
@@ -56,6 +60,8 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public RubyArray backtrace() {
+            notDesignedForCompilation();
+
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         }
 
@@ -74,6 +80,8 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public RubyString message(RubyException exception) {
+            notDesignedForCompilation();
+
             return exception.getMessage();
         }
 

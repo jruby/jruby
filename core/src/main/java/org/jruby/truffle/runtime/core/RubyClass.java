@@ -13,6 +13,7 @@ import java.util.*;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.*;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.lookup.*;
 import org.jruby.truffle.runtime.objectstorage.*;
@@ -87,6 +88,8 @@ public class RubyClass extends RubyModule {
 
     @Override
     public RubyClass getSingletonClass() {
+        RubyNode.notDesignedForCompilation();
+
         if (rubySingletonClass == null) {
             RubyClass singletonSuperclass;
 
@@ -109,6 +112,8 @@ public class RubyClass extends RubyModule {
      * used.
      */
     public void unsafeSetSuperclass(RubyClass newSuperclass) {
+        RubyNode.notDesignedForCompilation();
+
         assert superclass == null;
 
         superclass = newSuperclass;
@@ -129,6 +134,8 @@ public class RubyClass extends RubyModule {
      * Is an instance of this class assignable to some location expecting some other class?
      */
     public boolean assignableTo(RubyClass otherClass) {
+        RubyNode.notDesignedForCompilation();
+
         if (this == otherClass) {
             return true;
         }
@@ -153,7 +160,7 @@ public class RubyClass extends RubyModule {
      * Change the layout to be used for instances of this object.
      */
     public void setObjectLayoutForInstances(ObjectLayout newObjectLayoutForInstances) {
-        CompilerAsserts.neverPartOfCompilation();
+        RubyNode.notDesignedForCompilation();
 
         assert newObjectLayoutForInstances != objectLayoutForInstances;
 
@@ -165,7 +172,7 @@ public class RubyClass extends RubyModule {
     }
 
     private void renewObjectLayoutForInstances() {
-        CompilerAsserts.neverPartOfCompilation();
+        RubyNode.notDesignedForCompilation();
 
         objectLayoutForInstances = objectLayoutForInstances.withNewParent(superclass.objectLayoutForInstances);
 

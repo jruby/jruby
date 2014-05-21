@@ -40,12 +40,12 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     snapshots 'false'
   end
 
-  source_control( 'https://github.com/jruby/jruby',
+  source_control( :url => 'https://github.com/jruby/jruby',
                   :connection => 'scm:git:git@jruby.org:jruby.git',
                   :developer_connection => 'scm:git:ssh://git@jruby.org/jruby.git' )
 
   distribution do
-    site( 'https://github.com/jruby/jruby',
+    site( :url => 'https://github.com/jruby/jruby',
           :id => 'gh-pages',
           :name => 'JRuby Site' )
   end
@@ -76,7 +76,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'json.version' => '1.8.0',
               'version.jruby' => '${project.version}',
               'bouncy-castle.version' => '1.47',
-              'bc.version' => '1.5.0147',
               'github.global.server' => 'github',
               'main.basedir' => '${project.basedir}',
               'jruby.home' => '${project.basedir}',
@@ -185,7 +184,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     profile name do
 
       modules [ 'test' ]
-      
+
     end
   end
 
@@ -194,20 +193,10 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     profile name do
 
       modules [ 'maven' ]
-      
+
       build do
         default_goal 'install'
       end
-    end
-  end
-
-  # TODO get rid of it
-  profile 'rake-plugin' do
-
-    modules [ 'maven' ]
-
-    build do
-      default_goal 'install'
     end
   end
 
@@ -216,6 +205,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   profile 'all' do
 
     modules all_modules
+
+    snapshot_repository 'http://ci.jruby.org/snapshots/maven', :id => 'jruby-snapshots'
 
     build do
       default_goal 'install'

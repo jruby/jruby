@@ -24,7 +24,6 @@ import org.jruby.truffle.nodes.call.RubyCallNode;
 import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.constants.EncodingPseudoVariableNode;
 import org.jruby.truffle.nodes.constants.ReadConstantNode;
-import org.jruby.truffle.nodes.constants.UninitializedReadConstantNode;
 import org.jruby.truffle.nodes.constants.WriteConstantNode;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.core.*;
@@ -39,7 +38,7 @@ import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyRegexp;
-import org.jruby.truffle.runtime.core.range.FixnumRange;
+import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 import java.util.*;
@@ -53,11 +52,11 @@ public class BodyTranslator extends Translator {
     protected final BodyTranslator parent;
 
     protected final TranslatorEnvironment environment;
-    protected final RubyNodeInstrumenter instrumenter;
 
     public boolean translatingForStatement = false;
     public boolean useClassVariablesAsIfInClass = false;
     private boolean translatingNextExpression = false;
+    private String currentCallMethodName = null;
 
     private static final Map<Class, String> nodeDefinedNames = new HashMap<>();
 
@@ -112,7 +111,6 @@ public class BodyTranslator extends Translator {
         super(context, source);
         this.parent = parent;
         this.environment = environment;
-        this.instrumenter = environment.getNodeInstrumenter();
     }
 
     @Override
@@ -276,11 +274,12 @@ public class BodyTranslator extends Translator {
             block = temp;
         }
 
-        final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, block, args, extraArgument);
+        final ArgumentsAndBlockTranslation argumentsAndBlock = translateArgumentsAndBlock(sourceSection, block, args, extraArgument, node.getName());
 
         RubyNode translated = new RubyCallNode(context, sourceSection, node.getName(), receiverTranslated, argumentsAndBlock.getBlock(), argumentsAndBlock.isSplatted(), argumentsAndBlock.getArguments());
 
-        return instrumenter.instrumentAsCall(translated, node.getName());
+        // return instrumenter.instrumentAsCall(translated, node.getName());
+        return translated;
     }
 
     protected class ArgumentsAndBlockTranslation {
@@ -310,7 +309,7 @@ public class BodyTranslator extends Translator {
 
     }
 
-    protected ArgumentsAndBlockTranslation translateArgumentsAndBlock(SourceSection sourceSection, org.jruby.ast.Node iterNode, org.jruby.ast.Node argsNode, RubyNode extraArgument) {
+    protected ArgumentsAndBlockTranslation translateArgumentsAndBlock(SourceSection sourceSection, org.jruby.ast.Node iterNode, org.jruby.ast.Node argsNode, RubyNode extraArgument, String nameToSetWhenTranslatingBlock) {
         assert !(argsNode instanceof org.jruby.ast.IterNode);
 
         final List<org.jruby.ast.Node> arguments = new ArrayList<>();
@@ -348,6 +347,8 @@ public class BodyTranslator extends Translator {
         if (iterNode instanceof org.jruby.ast.BlockPassNode) {
             blockPassNode = ((org.jruby.ast.BlockPassNode) iterNode).getBodyNode();
         }
+
+        currentCallMethodName = nameToSetWhenTranslatingBlock;
 
         RubyNode blockTranslated;
 
@@ -520,10 +521,10 @@ public class BodyTranslator extends Translator {
     public RubyNode visitClassNode(org.jruby.ast.ClassNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, node.getCPath().getName(), node.getBodyNode());
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, node.getCPath().getName(), false, node.getBodyNode());
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true,
-                        sharedMethodInfo);
+                        sharedMethodInfo, sharedMethodInfo.getName());
         final ModuleTranslator classTranslator = new ModuleTranslator(context, this, newEnvironment, source);
 
         final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), sharedMethodInfo.getName(), node.getBodyNode());
@@ -718,10 +719,10 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, boolean ignoreLocalVisiblity) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, methodName, parseTree);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, methodName, false, parseTree);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo);
+                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, methodName);
 
         // ownScopeForAssignments is the same for the defined method as the current one.
 
@@ -746,11 +747,11 @@ public class BodyTranslator extends Translator {
         final RubyNode end = node.getEndNode().accept(this);
         SourceSection sourceSection = translate(node.getPosition());
 
-        if (begin instanceof FixnumLiteralNode && end instanceof FixnumLiteralNode) {
-            final int beginValue = ((FixnumLiteralNode) begin).getValue();
-            final int endValue = ((FixnumLiteralNode) end).getValue();
+        if (begin instanceof IntegerFixnumLiteralNode && end instanceof IntegerFixnumLiteralNode) {
+            final int beginValue = ((IntegerFixnumLiteralNode) begin).getValue();
+            final int endValue = ((IntegerFixnumLiteralNode) end).getValue();
 
-            return new ObjectLiteralNode(context, sourceSection, new FixnumRange(context.getCoreLibrary().getRangeClass(), beginValue, endValue, node.isExclusive()));
+            return new ObjectLiteralNode(context, sourceSection, new RubyRange.IntegerFixnumRange(context.getCoreLibrary().getRangeClass(), beginValue, endValue, node.isExclusive()));
         }
         // See RangeNode for why there is a node specifically for creating this one type
         return RangeLiteralNodeFactory.create(context, sourceSection, node.isExclusive(), begin, end);
@@ -792,7 +793,7 @@ public class BodyTranslator extends Translator {
         final long value = node.getValue();
 
         if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
-            return new FixnumLiteralNode(context, translate(node.getPosition()), (int) value);
+            return new IntegerFixnumLiteralNode(context, translate(node.getPosition()), (int) value);
         } else {
             return new LongFixnumLiteralNode(context, translate(node.getPosition()), value);
         }
@@ -1095,10 +1096,10 @@ public class BodyTranslator extends Translator {
 
         // Unset this flag for any for any blocks within the for statement's body
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(block)", node.getBodyNode());
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(" + currentCallMethodName + "-block)", true, node.getBodyNode());
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getReturnID(), hasOwnScope, false, sharedMethodInfo);
+                context, environment, environment.getParser(), environment.getReturnID(), hasOwnScope, false, sharedMethodInfo, environment.getNamedMethodName());
         final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, true, parent == null, source);
         methodCompiler.translatingForStatement = translatingForStatement;
 
@@ -1120,7 +1121,7 @@ public class BodyTranslator extends Translator {
             methodCompiler.useClassVariablesAsIfInClass = true;
         }
 
-        return methodCompiler.compileFunctionNode(translate(node.getPosition()), "(block)", argsNode, node.getBodyNode(), false);
+        return methodCompiler.compileFunctionNode(translate(node.getPosition()), sharedMethodInfo.getName(), argsNode, node.getBodyNode(), false);
     }
 
     @Override
@@ -1164,7 +1165,8 @@ public class BodyTranslator extends Translator {
 
         final SharedMethodInfo methodIdentifier = environment.findMethodForLocalVar(node.getName());
 
-        return instrumenter.instrumentAsLocalAssignment(translated, methodIdentifier, node.getName());
+        // return instrumenter.instrumentAsLocalAssignment(translated, methodIdentifier, node.getName());
+        return translated;
     }
 
     @Override
@@ -1205,10 +1207,10 @@ public class BodyTranslator extends Translator {
 
         final String name = node.getCPath().getName();
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name, node);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name, false, node);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo);
+                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, name);
         final ModuleTranslator classTranslator = new ModuleTranslator(context, this, newEnvironment, source);
 
         final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), name, node.getBodyNode());
@@ -1339,7 +1341,7 @@ public class BodyTranslator extends Translator {
             }
 
             if (node.getRest() != null) {
-                final ArrayRestNode assignedValue = new ArrayRestNode(context, sourceSection, preArray.size(), environment.findLocalVarNode(tempName, sourceSection));
+                final ArrayGetTailNode assignedValue = ArrayGetTailNodeFactory.create(context, sourceSection, preArray.size(), environment.findLocalVarNode(tempName, sourceSection));
 
                 sequence.add(translateDummyAssignment(node.getRest(), assignedValue));
             }
@@ -1465,7 +1467,8 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitNewlineNode(org.jruby.ast.NewlineNode node) {
         final RubyNode translated = node.getNextNode().accept(this);
-        return instrumenter.instrumentAsStatement(translated);
+        // return instrumenter.instrumentAsStatement(translated);
+        return translated;
     }
 
     @Override
@@ -1767,10 +1770,10 @@ public class BodyTranslator extends Translator {
     public RubyNode visitSClassNode(org.jruby.ast.SClassNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(singleton-def)", node);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(singleton-def)", false, node);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo);
+                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName());
         final ModuleTranslator classTranslator = new ModuleTranslator(context, this, newEnvironment, source);
 
         final MethodDefinitionNode definitionMethod = classTranslator.compileClassNode(node.getPosition(), sharedMethodInfo.getName(), node.getBodyNode());
@@ -1804,7 +1807,7 @@ public class BodyTranslator extends Translator {
             value = node.getValue().accept(this);
         }
 
-        return SplatCastNodeFactory.create(context, sourceSection, translatingNextExpression ? SplatCastNode.NilBehavior.EMPTY_ARRAY : SplatCastNode.NilBehavior.ARRAY_WITH_NIL, value);
+        return SplatCastNodeFactory.create(context, sourceSection, SplatCastNode.NilBehavior.EMPTY_ARRAY, value);
     }
 
     @Override
@@ -1943,10 +1946,10 @@ public class BodyTranslator extends Translator {
 
         // TODO(cs): code copied and modified from visitIterNode - extract common
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(lambda)", node);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(lambda)", true, node);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getReturnID(), false, false, sharedMethodInfo);
+                context, environment, environment.getParser(), environment.getReturnID(), false, false, sharedMethodInfo, sharedMethodInfo.getName());
         final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, parent == null, source);
 
         org.jruby.ast.ArgsNode argsNode;

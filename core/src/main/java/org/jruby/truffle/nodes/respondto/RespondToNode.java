@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.respondto;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -28,9 +29,11 @@ public class RespondToNode extends RubyNode {
     }
 
     public boolean executeBoolean(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         // TODO(CS): need a fast path version of this using caching
 
-        CompilerAsserts.neverPartOfCompilation();
+        getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getSourceSection().getSource().getName(), getSourceSection().getStartLine(), "using slow respond_to?");
 
         final Object receiver = child.execute(frame);
 

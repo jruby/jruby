@@ -12,8 +12,8 @@ package org.jruby.truffle.runtime.core;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.frame.*;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.util.ByteList;
@@ -37,44 +37,37 @@ public class RubySymbol extends RubyObject {
     }
 
     public RubyProc toProc(SourceSection sourceSection) {
+        RubyNode.notDesignedForCompilation();
+
         final RubyContext context = getRubyClass().getContext();
+
+        // TODO(CS): we need a proper method in here
+        RubyNode.notDesignedForCompilation();
 
         final CallTarget callTarget = new CallTarget() {
 
             @Override
-            public Object call(PackedFrame frame, Arguments args) {
-                final RubyArguments rubyArgs = (RubyArguments) args;
-                final Object receiver = rubyArgs.getUserArgument(0);
-                final Object[] arguments = rubyArgs.getArgumentsClone();
+            public Object call(Object... args) {
+                RubyNode.notDesignedForCompilation();
+
+                final Object receiver = RubyArguments.getUserArgument(args, 0);
+                final Object[] arguments = RubyArguments.extractUserArguments(args);
                 final Object[] sendArgs = Arrays.copyOfRange(arguments, 1, arguments.length);
                 final RubyBasicObject receiverObject = context.getCoreLibrary().box(receiver);
-                return receiverObject.send(symbol, rubyArgs.getBlock(), sendArgs);
+                return receiverObject.send(symbol, RubyArguments.getBlock(args), sendArgs);
             }
 
         };
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, symbol, null);
-
-        final CallTargetMethodImplementation methodImplementation = new CallTargetMethodImplementation(callTarget, null);
-        final RubyMethod method = new RubyMethod(sharedMethodInfo, null, symbol, Visibility.PUBLIC, false, methodImplementation);
-        methodImplementation.setMethod(method);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, symbol, true, null);
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, symbol, null, Visibility.PUBLIC, false, callTarget, null, true);
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, NilPlaceholder.INSTANCE, null, method);
     }
 
-    @Override
-    public String toString() {
-        return org.jruby.RubyString.newStringShared(getRubyClass().getContext().getRuntime(),
-                symbolBytes).decodeString();
-    }
-
-
     public org.jruby.RubySymbol getJRubySymbol() {
-        return getRubyClass().getContext().getRuntime().newSymbol(symbolBytes);
-    }
+        RubyNode.notDesignedForCompilation();
 
-    @Override
-    public String inspect() {
-        return getJRubySymbol().inspect(getRubyClass().getContext().getRuntime().getCurrentContext()).asString().decodeString();
+        return getRubyClass().getContext().getRuntime().newSymbol(symbolBytes);
     }
 
     @Override
@@ -93,6 +86,11 @@ public class RubySymbol extends RubyObject {
         } else {
             return super.equals(other);
         }
+    }
+
+    @Override
+    public String toString() {
+        return symbol;
     }
 
     public RubyString toRubyString() {

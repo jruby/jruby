@@ -11,11 +11,9 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
@@ -38,17 +36,48 @@ public abstract class SymbolNodes {
 
         @Specialization
         public boolean equal(RubySymbol a, RubySymbol b) {
+            notDesignedForCompilation();
+
             return a.toString().equals(b.toString());
         }
 
         @Specialization
         public boolean equal(RubySymbol a, RubyString b) {
+            notDesignedForCompilation();
+
             return a.toString().equals(b.toString());
         }
 
         @Specialization
         public boolean equal(RubySymbol a, int b) {
+            notDesignedForCompilation();
+
             return a.toString().equals(Integer.toString(b));
+        }
+
+    }
+
+    @CoreMethod(names = "all_symbols", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    public abstract static class AllSymbolsNode extends CoreMethodNode {
+
+        public AllSymbolsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AllSymbolsNode(AllSymbolsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray allSymbols() {
+            notDesignedForCompilation();
+
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+
+            for (RubySymbol s : getContext().getSymbolTable().getSymbolsTable().values()){
+                array.slowPush(s);
+            }
+            return array;
         }
 
     }
@@ -66,12 +95,14 @@ public abstract class SymbolNodes {
 
         @Specialization
         public boolean empty(RubySymbol symbol) {
+            notDesignedForCompilation();
+
             return symbol.toString().isEmpty();
         }
 
     }
 
-    @CoreMethod(names = "to_proc", maxArgs = 1, appendCallNode = true)
+    @CoreMethod(names = "to_proc", maxArgs = 0)
     public abstract static class ToProcNode extends CoreMethodNode {
 
         public ToProcNode(RubyContext context, SourceSection sourceSection) {
@@ -83,9 +114,11 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public RubyProc toProc(RubySymbol symbol, Node callNode) {
+        public RubyProc toProc(RubySymbol symbol) {
+            notDesignedForCompilation();
+
             // TODO(CS): this should be doing all kinds of caching
-            return symbol.toProc(callNode.getEncapsulatingSourceSection());
+            return symbol.toProc(RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection());
         }
     }
 
@@ -107,25 +140,42 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = "all_symbols", isModuleMethod = true, needsSelf = false, maxArgs = 0)
-    public abstract static class AllSymbolsNode extends CoreMethodNode {
+    @CoreMethod(names = "to_s", maxArgs = 0)
+    public abstract static class ToSNode extends CoreMethodNode {
 
-        public AllSymbolsNode(RubyContext context, SourceSection sourceSection) {
+        public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public AllSymbolsNode(AllSymbolsNode prev) {
+        public ToSNode(ToSNode prev) {
             super(prev);
         }
 
         @Specialization
-        public RubyArray allSymbols() {
-            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+        public RubyString toS(RubySymbol symbol) {
+            notDesignedForCompilation();
 
-            for (RubySymbol s : getContext().getSymbolTable().getSymbolsTable().values()){
-                array.push(s);
-            }
-            return array;
+            return getContext().makeString(symbol.getJRubySymbol().to_s().asString().decodeString());
+        }
+
+    }
+
+    @CoreMethod(names = "inspect", maxArgs = 0)
+    public abstract static class InspectNode extends CoreMethodNode {
+
+        public InspectNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InspectNode(InspectNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString toS(RubySymbol symbol) {
+            notDesignedForCompilation();
+
+            return getContext().makeString(symbol.getJRubySymbol().inspect(getContext().getRuntime().getCurrentContext()).asString().decodeString());
         }
 
     }

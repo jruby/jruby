@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.jruby.truffle.nodes.RubyNode;
+
 /**
  * Represents the Ruby {@code MatchData} class.
  */
@@ -22,6 +24,8 @@ public class RubyMatchData extends RubyObject {
     }
 
     public Object[] valuesAt(int... indices) {
+        RubyNode.notDesignedForCompilation();
+
         final Object[] result = new Object[indices.length];
 
         for (int n = 0; n < indices.length; n++) {

@@ -16,7 +16,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 @NodeInfo(shortName = "when*")
 public class WhenSplatNode extends RubyNode {
@@ -29,11 +29,13 @@ public class WhenSplatNode extends RubyNode {
         super(context, sourceSection);
         this.readCaseExpression = readCaseExpression;
         this.splat = splat;
-        dispatchThreeEqual = new DispatchHeadNode(context, sourceSection, "===", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        dispatchThreeEqual = new DispatchHeadNode(context, "===", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
     }
 
     @Override
     public boolean executeBoolean(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final Object caseExpression = readCaseExpression.execute(frame);
 
         final RubyArray array;
@@ -44,7 +46,7 @@ public class WhenSplatNode extends RubyNode {
             throw new UnsupportedOperationException(e);
         }
 
-        for (Object value : array.asList()) {
+        for (Object value : array.slowToArray()) {
             // TODO(CS): how to cast this to a boolean?
 
             if ((boolean) dispatchThreeEqual.dispatch(frame, caseExpression, null, value)) {

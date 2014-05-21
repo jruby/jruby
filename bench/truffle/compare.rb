@@ -1,3 +1,11 @@
+# Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+#
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 time_budget = nil
 reference = false
 verbose = false
@@ -77,13 +85,24 @@ benchmarks = [
   "deltablue"
 ]
 
+disable_splitting = [
+  "spectral-norm",
+  "neural-net"
+]
+
 time_budget_per_run = time_budget / benchmarks.length
 puts time_budget_per_run.to_s + "s for each benchmark"
 
 scores = {}
 
 benchmarks.each do |benchmark|
-  output = `../../bin/jruby -J-server -J-d64 -X+T -Xtruffle.printRuntime=true harness.rb -s #{time_budget_per_run} #{benchmark}.rb`
+  if disable_splitting.include? benchmark
+    splitting = "-J-G:-TruffleSplittingEnabled"
+  else
+    splitting = ""
+  end
+
+  output = `../../bin/jruby -J-server #{splitting} -X+T -Xtruffle.printRuntime=true harness.rb -s #{time_budget_per_run} #{benchmark}.rb`
   score_match = /[a-z\-]+: (\d+\.\d+)/.match(output)
   if score_match.nil?
     score = 0

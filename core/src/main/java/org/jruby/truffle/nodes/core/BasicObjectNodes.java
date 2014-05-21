@@ -14,6 +14,7 @@ import java.util.*;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
+import com.oracle.truffle.api.frame.FrameInstance;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -52,8 +53,7 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public boolean equal(Object a, Object b) {
-            // TODO(CS) ideally all classes would do this in their own nodes
-            return a.equals(b);
+            return a == b;
         }
 
     }
@@ -70,9 +70,8 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization
-        public boolean notEqual(Object a, Object b) {
-            // TODO(CS) ideally all classes would do this in their own nodes
-            return !a.equals(b);
+        public boolean equal(Object a, Object b) {
+            return a != b;
         }
 
     }
@@ -104,16 +103,21 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization(order = 4)
-        public boolean equal(double a, double b) {
+        public boolean equal(long a, long b) {
             return a == b;
         }
 
         @Specialization(order = 5)
+        public boolean equal(double a, double b) {
+            return a == b;
+        }
+
+        @Specialization(order = 6)
         public boolean equal(BigInteger a, BigInteger b) {
             return a.compareTo(b) == 0;
         }
 
-        @Specialization(order = 6)
+        @Specialization(order = 7)
         public boolean equal(RubyBasicObject a, RubyBasicObject b) {
             return a == b;
         }
@@ -150,6 +154,8 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object methodMissing(RubyBasicObject self, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
             CompilerDirectives.transferToInterpreter();
 
             final RubySymbol name = (RubySymbol) args[0];
@@ -159,6 +165,8 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object methodMissing(RubyBasicObject self, Object[] args, RubyProc block) {
+            notDesignedForCompilation();
+
             CompilerDirectives.transferToInterpreter();
 
             final RubySymbol name = (RubySymbol) args[0];
@@ -186,6 +194,8 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object send(RubyBasicObject self, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
             final String name = args[0].toString();
             final Object[] sendArgs = Arrays.copyOfRange(args, 1, args.length);
             return self.send(name, null, sendArgs);
@@ -193,6 +203,8 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object send(RubyBasicObject self, Object[] args, RubyProc block) {
+            notDesignedForCompilation();
+
             final String name = args[0].toString();
             final Object[] sendArgs = Arrays.copyOfRange(args, 1, args.length);
             return self.send(name, block, sendArgs);

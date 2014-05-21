@@ -14,7 +14,7 @@
     <jruby.home>${basedir}/..</jruby.home>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
-    <tesla.version>0.0.9</tesla.version>
+    <tesla.version>0.1.0</tesla.version>
   </properties>
   <dependencies>
     <dependency>
@@ -74,12 +74,6 @@
       <groupId>rubygems</groupId>
       <artifactId>krypt-provider-jdk</artifactId>
       <version>${krypt.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>bouncy-castle-java</artifactId>
-      <version>${bc.version}</version>
       <type>gem</type>
     </dependency>
   </dependencies>
@@ -190,14 +184,6 @@
                   <groupId>rubygems</groupId>
                   <artifactId>krypt-provider-jdk</artifactId>
                   <version>${krypt.version}</version>
-                  <type>gem</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>rubygems</groupId>
-                  <artifactId>bouncy-castle-java</artifactId>
-                  <version>${bc.version}</version>
                   <type>gem</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>

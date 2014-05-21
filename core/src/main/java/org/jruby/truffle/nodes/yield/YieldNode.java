@@ -16,7 +16,7 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 /**
  * Yield to the current block.
@@ -25,13 +25,13 @@ import org.jruby.truffle.runtime.core.array.RubyArray;
 public class YieldNode extends RubyNode {
 
     @Children protected final RubyNode[] arguments;
-    @Child protected YieldDispatchNode dispatch;
+    @Child protected YieldDispatchHeadNode dispatch;
     private final boolean unsplat;
 
     public YieldNode(RubyContext context, SourceSection sourceSection, RubyNode[] arguments, boolean unsplat) {
         super(context, sourceSection);
         this.arguments = arguments;
-        dispatch = new UninitializedYieldDispatchNode(getContext(), getSourceSection());
+        dispatch = new YieldDispatchHeadNode(getContext());
         this.unsplat = unsplat;
     }
 
@@ -44,7 +44,7 @@ public class YieldNode extends RubyNode {
             argumentsObjects[i] = arguments[i].execute(frame);
         }
 
-        final RubyProc block = frame.getArguments(RubyArguments.class).getBlock();
+        final RubyProc block = RubyArguments.getBlock(frame.getArguments());
 
         if (block == null) {
             CompilerDirectives.transferToInterpreter();
@@ -52,10 +52,12 @@ public class YieldNode extends RubyNode {
         }
 
         if (unsplat) {
+            notDesignedForCompilation();
+
             // TOOD(CS): what is the error behaviour here?
             assert argumentsObjects.length == 1;
             assert argumentsObjects[0] instanceof RubyArray;
-            argumentsObjects = ((RubyArray) argumentsObjects[0]).toObjectArray();
+            argumentsObjects = ((RubyArray) argumentsObjects[0]).slowToArray();
         }
 
         return dispatch.dispatch(frame, block, argumentsObjects);
@@ -63,9 +65,9 @@ public class YieldNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        final RubyArguments args = frame.getArguments(RubyArguments.class);
+        notDesignedForCompilation();
 
-        if (args.getBlock() == null) {
+        if (RubyArguments.getBlock(frame.getArguments()) == null) {
             return NilPlaceholder.INSTANCE;
         } else {
             return getContext().makeString("yield");

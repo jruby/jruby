@@ -24,12 +24,8 @@ public class DispatchNode extends Node {
 
     private final RubyContext context;
 
-    public DispatchNode(RubyContext context, SourceSection sourceSection) {
-        super(sourceSection);
-
+    public DispatchNode(RubyContext context) {
         assert context != null;
-        assert sourceSection != null;
-
         this.context = context;
     }
 
@@ -58,15 +54,10 @@ public class DispatchNode extends Node {
         return head.respecialize(frame, reason, receiverObject, blockObject, argumentsObjects);
     }
 
-    /**
-     * The central point for method lookup.
-     */
-    protected RubyMethod lookup(VirtualFrame frame, RubyBasicObject receiverBasicObject, String name) throws UseMethodMissingException {
-        // TODO(CS): why are we using an exception to convey method missing here?
-
+    protected RubyMethod lookup(RubyBasicObject boxedCallingSelf, RubyBasicObject receiverBasicObject, String name) throws UseMethodMissingException {
         CompilerAsserts.neverPartOfCompilation();
 
-        final RubyBasicObject boxedCallingSelf = context.getCoreLibrary().box(frame.getArguments(RubyArguments.class).getSelf());
+        // TODO(CS): why are we using an exception to convey method missing here?
 
         RubyMethod method = receiverBasicObject.getLookupNode().lookupMethod(name);
 

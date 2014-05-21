@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.x509store;
 
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,54 +37,58 @@ import java.util.List;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class Trust {
-    public static interface Checker extends Function3 {}
+
+    static interface Checker<T> extends Function3<T, X509AuxCertificate, Integer> {}
+
     public int trust;
     public int flags;
-    public Checker checkTrust;
-    public String name;
-    public String arg1;
-    public Object arg2;
+    private Checker<Trust> checkTrust;
+    private String name;
+    private String arg1;
+    private Object arg2;
 
-    public Trust() {}
+    private Trust() {}
 
-    public Trust(int t, int f, Checker ct, String n, String a1, Object a2) {
-        this.trust = t;
-        this.flags = f; this.checkTrust = ct;
-        this.name = n; this.arg1 = a1;
-        this.arg2 = a2;
+    Trust(int trust, int flags, Checker<Trust> checkTrust,
+        String n, String a1, Object a2) {
+        this.trust = trust;
+        this.flags = flags;
+        this.checkTrust = checkTrust;
+        this.name = n;
+        this.arg1 = a1; this.arg2 = a2;
     }
 
     /**
      * c: X509_TRUST_set_default
      */
-    public static Checker setDefault(Checker trust) {
+    /*
+    public static Checker setDefault(Checker<String> trust) {
         Checker old_trust = defaultTrust;
         defaultTrust = trust;
         return old_trust;
-    }
+    } */
 
-    private final static List<Trust> trtable = new ArrayList<Trust>();
+    private final static List<Trust> trustable = new ArrayList<Trust>();
 
     /**
      * c: X509_check_trust
      */
     public static int checkTrust(X509AuxCertificate x, int id, int flags) throws Exception {
-        if(id == -1) {
-            return 1;
-        }
+        if ( id == -1 ) return 1;
+
         int idx = getByID(id);
-        if(idx == -1) {
-            return defaultTrust.call(new Integer(id),x,new Integer(flags));
+        if (idx == -1) {
+            return defaultTrust.call(Integer.toString(id), x, Integer.valueOf(flags));
         }
         Trust pt = getFirst(idx);
-        return pt.checkTrust.call(pt,x,new Integer(flags));
+        return pt.checkTrust.call(pt, x, Integer.valueOf(flags));
     }
 
     /**
      * c: X509_TRUST_get_count
      */
     public static int getCount() {
-        return trtable.size() + trstandard.length;
+        return trustable.size() + trstandard.length;
     }
 
     /**
@@ -96,18 +101,18 @@ public class Trust {
         if(idx < trstandard.length) {
             return trstandard[idx];
         }
-        return trtable.get(idx - trstandard.length);
+        return trustable.get(idx - trstandard.length);
     }
 
     /**
      * c: X509_TRUST_get_by_id
      */
     public static int getByID(int id) {
-        if(id >= X509Utils.X509_TRUST_MIN && id <= X509Utils.X509_TRUST_MAX) {
+        if ( id >= X509Utils.X509_TRUST_MIN && id <= X509Utils.X509_TRUST_MAX ) {
             return id - X509Utils.X509_TRUST_MIN;
         }
         int i = 0;
-        for(Trust t : trtable) {
+        for ( Trust t : trustable ) {
             if(t.trust == id) {
                 return i + trstandard.length;
             }
@@ -130,7 +135,7 @@ public class Trust {
     /**
      * c: X509_TRUST_add
      */
-    public static int add(int id, int flags, Checker ck, String name, String arg1, Object arg2) {
+    static int add(int id, int flags, Checker<Trust> ck, String name, String arg1, Object arg2) {
         int idx;
         Trust trtmp;
         flags &= ~X509Utils.X509_TRUST_DYNAMIC;
@@ -150,7 +155,7 @@ public class Trust {
         trtmp.arg1 = arg1;
         trtmp.arg2 = arg2;
         if(idx == -1) {
-            trtable.add(trtmp);
+            trustable.add(trtmp);
         }
         return 1;
     }
@@ -159,121 +164,108 @@ public class Trust {
      * c: X509_TRUST_cleanup
      */
     public static void cleanup() {
-        trtable.clear();
+        trustable.clear();
     }
-    
+
     /**
      * c: X509_TRUST_get_flags
      */
     public int getFlags() {
-	return flags;
+        return flags;
     }
 
     /**
      * c: X509_TRUST_get0_name
      */
     public String getName() {
-	return name;
+        return name;
     }
 
     /**
      * c: X509_TRUST_get_trust
      */
     public int getTrust() {
-	return trust;
+        return trust;
     }
 
     /**
      * c: trust_compat
      */
-    public final static Checker trustCompatibe = new Checker() {
-            public int call(Object _trust, Object _x, Object _flags) throws Exception {
-                //X509_TRUST trust = (X509_TRUST)_trust;
-                X509AuxCertificate x = (X509AuxCertificate)_x;
-                //int flags = ((Integer)_flags).intValue();
-
-                Purpose.checkPurpose(x,-1,0);
-                if(x.getIssuerX500Principal().equals(x.getSubjectX500Principal())) { // self signed
-                    return X509Utils.X509_TRUST_TRUSTED;
-                } else {
-                    return X509Utils.X509_TRUST_UNTRUSTED;
-                }
+    final static Checker<Trust> trustCompatibe = new Checker<Trust>() {
+        public int call(final Trust trust,
+            final X509AuxCertificate x, final Integer flags) throws CertificateException {
+            Purpose.checkPurpose(x,-1,0);
+            if ( x.getIssuerX500Principal().equals( x.getSubjectX500Principal() ) ) { // self signed
+                return X509Utils.X509_TRUST_TRUSTED;
+            } else {
+                return X509Utils.X509_TRUST_UNTRUSTED;
             }
-        };
+        }
+    };
 
     /**
      * c: trust_1oidany
      */
-    public final static Checker trust1OIDAny = new Checker() {
-            public int call(Object _trust, Object _x, Object _flags) throws Exception {
-                Trust trust = (Trust)_trust;
-                X509AuxCertificate x = (X509AuxCertificate)_x;
-                int flags = ((Integer)_flags).intValue();
-
-                X509Aux ax = x.getAux();
-                if(ax != null && (ax.trust.size() > 0 || ax.reject.size() > 0)) {
-                    return objTrust.call(trust.arg1,x,new Integer(flags));
-                }
-                return trustCompatibe.call(trust,x,new Integer(flags));
+    final static Checker<Trust> trust1OIDAny = new Checker<Trust>() {
+        public int call(final Trust trust,
+            final X509AuxCertificate x, final Integer flags) throws Exception {
+            final X509Aux aux = x.getAux();
+            if ( aux != null && ( aux.trust.size() > 0 || aux.reject.size() > 0 ) ) {
+                return objTrust.call(trust.arg1, x, flags);
             }
-        };
+            return trustCompatibe.call(trust, x, flags);
+        }
+    };
 
     /**
      * c: trust_1oid
      */
-    public final static Checker trust1OID = new Checker() {
-            public int call(Object _trust, Object _x, Object _flags) throws Exception {
-                Trust trust = (Trust)_trust;
-                X509AuxCertificate x = (X509AuxCertificate)_x;
-                int flags = ((Integer)_flags).intValue();
-
-                if(x.getAux() != null) {
-                    return objTrust.call(trust.arg1,x,new Integer(flags));
-                }
-                return X509Utils.X509_TRUST_UNTRUSTED;
+    final static Checker<Trust> trust1OID = new Checker<Trust>() {
+        public int call(final Trust trust,
+            final X509AuxCertificate x, final Integer flags) throws Exception {
+            if ( x.getAux() != null ) {
+                return objTrust.call(trust.arg1, x, flags);
             }
-        };
+            return X509Utils.X509_TRUST_UNTRUSTED;
+        }
+    };
 
     /**
      * c: obj_trust
      */
-    public final static Checker objTrust = new Checker() {
-            public int call(Object _id, Object _x, Object _flags) {
-                String id = (String)_id;
-                X509AuxCertificate x = (X509AuxCertificate)_x;
-                //int flags = ((Integer)_flags).intValue();
-                
-                X509Aux ax = x.getAux();
-                if(null == ax) {
-                    return X509Utils.X509_TRUST_UNTRUSTED;
-                }
-                for(String rej : ax.reject) {
-                    if(rej.equals(id)) {
-                        return X509Utils.X509_TRUST_REJECTED;
-                    }
-                }
-                for(String t : ax.trust) {
-                    if(t.equals(id)) {
-                        return X509Utils.X509_TRUST_TRUSTED;
-                    }
-                }
+    final static Checker<String> objTrust = new Checker<String>() {
+        public int call(final String id,
+            final X509AuxCertificate x, final Integer flags) {
+            final X509Aux aux = x.getAux();
+            if ( aux == null ) {
                 return X509Utils.X509_TRUST_UNTRUSTED;
             }
-        };
+            for ( String rejectId : aux.reject ) {
+                if ( rejectId.equals(id) ) {
+                    return X509Utils.X509_TRUST_REJECTED;
+                }
+            }
+            for ( String trustId : aux.trust ) {
+                if ( trustId.equals(id) ) {
+                    return X509Utils.X509_TRUST_TRUSTED;
+                }
+            }
+            return X509Utils.X509_TRUST_UNTRUSTED;
+        }
+    };
 
     /**
      * c: default_trust
      */
-    public static Checker defaultTrust = objTrust;
+    static Checker<String> defaultTrust = objTrust;
 
-    public final static Trust[] trstandard = new Trust[] {
+    private final static Trust[] trstandard = new Trust[] {
         new Trust(X509Utils.X509_TRUST_COMPAT, 0, trustCompatibe, "compatible", null, null),
         new Trust(X509Utils.X509_TRUST_SSL_CLIENT, 0, trust1OIDAny, "SSL Client", "1.3.6.1.5.5.7.3.2", null),
         new Trust(X509Utils.X509_TRUST_SSL_SERVER, 0, trust1OIDAny, "SSL Server", "1.3.6.1.5.5.7.3.1", null),
         new Trust(X509Utils.X509_TRUST_EMAIL, 0, trust1OIDAny, "S/MIME email", "1.3.6.1.5.5.7.3.4", null),
         new Trust(X509Utils.X509_TRUST_OBJECT_SIGN, 0, trust1OIDAny, "Object Signer", "1.3.6.1.5.5.7.3.3", null),
         new Trust(X509Utils.X509_TRUST_OCSP_SIGN, 0, trust1OID, "OCSP responder", "1.3.6.1.5.5.7.3.9", null),
-        new Trust(X509Utils.X509_TRUST_OCSP_REQUEST, 0, trust1OID, "OCSP request", "1.3.6.1.5.5.7.48.1", null)
-    
+        new Trust(X509Utils.X509_TRUST_OCSP_REQUEST, 0, trust1OID, "OCSP request", "1.3.6.1.5.5.7.48.1", null),
     };
 }// X509_TRUST

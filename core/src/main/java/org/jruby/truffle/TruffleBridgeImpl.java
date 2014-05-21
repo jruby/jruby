@@ -20,12 +20,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.TruffleBridge;
 import org.jruby.truffle.nodes.core.CoreMethodNodeManager;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
-import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyParserResult;
 import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
 
@@ -63,7 +62,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
         for (IRubyObject arg : ((org.jruby.RubyArray) runtime.getObject().getConstant("ARGV")).toJavaArray()) {
             assert arg != null;
 
-            truffleContext.getCoreLibrary().getArgv().push(truffleContext.makeString(arg.toString()));
+            truffleContext.getCoreLibrary().getArgv().slowPush(truffleContext.makeString(arg.toString()));
         }
 
         // Set the load path
@@ -71,14 +70,14 @@ public class TruffleBridgeImpl implements TruffleBridge {
         final RubyArray loadPath = (RubyArray) truffleContext.getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$:");
 
         for (IRubyObject path : ((org.jruby.RubyArray) runtime.getLoadService().getLoadPath()).toJavaArray()) {
-            loadPath.push(truffleContext.makeString(path.toString()));
+            loadPath.slowPush(truffleContext.makeString(path.toString()));
         }
     }
 
     @Override
     public TruffleMethod truffelize(DynamicMethod originalMethod, ArgsNode argsNode, Node bodyNode) {
         final MethodDefinitionNode methodDefinitionNode = truffleContext.getTranslator().parse(truffleContext, null, argsNode, bodyNode);
-        return new TruffleMethod(originalMethod, methodDefinitionNode.getCallTarget());
+        return new TruffleMethod(originalMethod, Truffle.getRuntime().createCallTarget(methodDefinitionNode.getMethodRootNode()));
     }
 
     @Override
@@ -86,9 +85,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
         try {
             final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, truffleContext.getSourceManager().get(rootNode.getPosition().getFile()), parserContext, parentFrame, rootNode);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
-
-            final RubyArguments arguments = new RubyArguments(RubyArguments.create(parentFrame, self, null));
-            return callTarget.call(null, arguments);
+            return callTarget.call(RubyArguments.pack(parentFrame, self, null));
         } catch (ThrowException e) {
             throw new RaiseException(truffleContext.getCoreLibrary().nameErrorUncaughtThrow(e.getTag()));
         } catch (RaiseException | BreakShellException | QuitException e) {

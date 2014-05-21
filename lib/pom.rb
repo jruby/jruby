@@ -26,8 +26,8 @@ class ImportedGem
 end
 
 # the versions are declared in ../pom.xml
-default_gems = 
-  [ 
+default_gems =
+  [
    ImportedGem.new( 'jruby-openssl', '0.9.5.dev-SNAPSHOT', true ),
    ImportedGem.new( 'jruby-readline', '1.0.dev-SNAPSHOT', false ),
    ImportedGem.new( 'jruby-ripper', '2.1.0.dev-SNAPSHOT', false, '2.1' ),
@@ -37,10 +37,28 @@ default_gems =
    ImportedGem.new( 'krypt', 'krypt.version', true ),
    ImportedGem.new( 'krypt-core', 'krypt.version', true ),
    ImportedGem.new( 'krypt-provider-jdk', 'krypt.version', true ),
-   ImportedGem.new( 'bouncy-castle-java', 'bc.version', true )
+   # NOTE: BC is now getting embedded within jruby-openssl.gem
+   # ImportedGem.new( 'bouncy-castle-java', 'bc.version', true )
   ]
 
 project 'JRuby Lib Setup' do
+ 
+  # TODO move those to method to ruby-maven
+  class ::Java::JavaIo::File
+    def to_pathname
+      to_s.gsub( /\\/, '/' )
+    end
+  end
+  class ::Java::JavaLang::String
+    def to_pathname
+      to_s.gsub( /\\/, '/' )
+    end
+  end
+  class ::String
+    def to_pathname
+      self.gsub( /\\/, '/' )
+    end
+  end
 
   # TODO move those to method to ruby-maven
   class ::Java::JavaIo::File
@@ -91,7 +109,7 @@ project 'JRuby Lib Setup' do
   end
 
   # this is not an artifact for maven central
-  plugin :deploy, :skip => true 
+  plugin :deploy, :skip => true
 
   phase :package do
     plugin :dependency do
@@ -119,35 +137,42 @@ project 'JRuby Lib Setup' do
     gem_home = File.join( target, 'rubygems' )
     gems = File.join( gem_home, 'gems' )
     specs = File.join( gem_home, 'specifications' )
-    default_specs = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared', 
+    default_specs = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared',
                                'specifications', 'default' )
-    bin_stubs = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared', 
+    bin_stubs = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared',
                            'gems' )
     ruby_dir = File.join( ctx.project.basedir.to_pathname, 'ruby' )
     FileUtils.mkdir_p( default_specs )
 
     # have an empty openssl.rb so we do not run in trob=uble with not having
     # jopenssl which is part of the default gems
-    openssl_dir = File.join( target, 'lib' )
-    openssl = File.join( openssl_dir, 'openssl.rb' )
-    FileUtils.mkdir_p( openssl_dir )
+    lib_dir = File.join( target, 'lib' )
+    openssl = File.join( lib_dir, 'openssl.rb' )
+    FileUtils.mkdir_p( lib_dir )
     File.open( openssl, 'w' )
-    $LOAD_PATH.unshift openssl_dir
+    $LOAD_PATH.unshift lib_dir
+
+    # since the bouncy castle .jars are version-ed (e.g. bcprov-jdk15on-1.47)
+    # make sure we cleanup before adding the ones from the jruby-openssl.gem:
+    Dir.glob( File.join( lib_dir, "bc{prov,pkix}*.jar" ) ).each do |f|
+      # use this instead of FileUtils.rm_f - issue #1698
+      File.delete( f ) if File.exists?( f )
+    end
 
     # now we can require the rubygems staff
     require 'rubygems/installer'
-    
+
     default_gems.each do |g|
       pom_version = ctx.project.properties.get( g.pom_version_key ) || g.pom_version_key
       version = pom_version.sub( /-SNAPSHOT/, '' )
 
       # install the gem unless already installed
       if Dir[ File.join( specs, "#{g.name}-#{version}*.gemspec" ) ].empty?
-        installer = Gem::Installer.new( File.join( ctx.project.build.directory.to_pathname, 
+        installer = Gem::Installer.new( File.join( ctx.project.build.directory.to_pathname,
                                                    "#{g.name}-#{pom_version}.gem" ),
                                         :ignore_dependencies => true,
                                         :install_dir => gem_home )
-        installer.install 
+        installer.install
 
         puts
         puts "--- gem #{g.name}-#{version} ---"
@@ -159,7 +184,7 @@ project 'JRuby Lib Setup' do
         Dir[ File.join( gems, "#{g.name}-#{version}*", 'lib', '*' ) ].each do |f|
           FileUtils.cp_r( f, File.join( ruby_dir, dir ) )
         end
-        
+
         # copy bin files if the gem has any
         bin = File.join( gems, "#{g.name}-#{version}", 'bin' )
         if File.exists? bin
@@ -170,7 +195,7 @@ project 'JRuby Lib Setup' do
             FileUtils.cp_r( f, target )
           end
         end
-        
+
         if g.default_gem
           spec = Dir[ File.join( specs, "#{g.name}-#{version}*.gemspec" ) ].first
           puts "copy to specifications/default: #{File.basename( spec )}"
@@ -180,7 +205,10 @@ project 'JRuby Lib Setup' do
     end
 
     # patch jruby-openssl - remove file which should be only inside gem
-    FileUtils.rm_f( File.join( ruby_dir, 'shared', 'jruby-openssl.rb' ) )
+    # use this instead of FileUtils.rm_f - issue #1698
+    f = File.join( ruby_dir, 'shared', 'jruby-openssl.rb' )
+    File.delete( f ) if File.exists?( f )
+
     # patch the bouncy-castle loading problems on certain classloaders
     File.open( File.join( ruby_dir, 'shared', 'bouncy-castle-java.rb' ), 'w' ) do |f|
       bc_version = ctx.project.properties.get( 'bouncy-castle.version' )

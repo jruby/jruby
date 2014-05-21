@@ -36,31 +36,15 @@ public class RubyTime extends RubyObject {
 
     }
 
-    private final long nanoseconds;
+    public final long nanoseconds;
 
     public RubyTime(RubyClass timeClass, long nanoseconds) {
         super(timeClass);
         this.nanoseconds = nanoseconds;
     }
 
-    /**
-     * Subtract one time from another, producing duration in seconds.
-     */
-    public double subtract(RubyTime other) {
-        return nanosecondsToSecond(nanoseconds - other.nanoseconds);
-    }
 
-    @Override
-    public String toString() {
-        /*
-         * I think this is ISO 8601 with a custom time part. Note that Ruby's time formatting syntax
-         * is different to Java's.
-         */
-
-        return new SimpleDateFormat("Y-MM-d H:m:ss Z").format(toDate());
-    }
-
-    private Date toDate() {
+    public Date toDate() {
         return new Date(nanosecondsToMiliseconds(nanoseconds));
     }
 
@@ -76,7 +60,7 @@ public class RubyTime extends RubyObject {
         return nanoseconds / 1000000;
     }
 
-    private static double nanosecondsToSecond(long nanoseconds) {
+    public static double nanosecondsToSecond(long nanoseconds) {
         return nanoseconds / 1e9;
     }
 

@@ -147,7 +147,7 @@ public class RubyComparable {
             if (e.getException().kind_of_p(context, runtime.getStandardError()).isTrue()) {
                 // clear error info resulting from failure to compare (JRUBY-3292)
                 runtime.getGlobalVariables().set("$!", savedError);
-                context.setErrorInfo(runtime.getNil());
+                context.setErrorInfo(runtime.getNil()); // SSS FIXME: Is this correct?
                 return returnValueOnError;
             } else {
                 throw e;

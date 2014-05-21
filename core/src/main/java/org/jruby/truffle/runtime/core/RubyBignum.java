@@ -9,10 +9,9 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.math.*;
+import org.jruby.truffle.nodes.RubyNode;
 
-import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.array.*;
+import java.math.*;
 
 /**
  * Represents the Ruby {@code Bignum} class.
@@ -33,6 +32,7 @@ public class RubyBignum extends RubyObject implements Unboxable {
         return value;
     }
 
+    @Override
     public Object unbox() {
         return value;
     }
@@ -44,6 +44,8 @@ public class RubyBignum extends RubyObject implements Unboxable {
 
     @Override
     public boolean equals(Object obj) {
+        RubyNode.notDesignedForCompilation();
+
         if (this == obj) {
             return true;
         }
@@ -62,11 +64,6 @@ public class RubyBignum extends RubyObject implements Unboxable {
             return false;
         }
         return true;
-    }
-
-    @Override
-    public String toString() {
-        return value.toString();
     }
 
 }

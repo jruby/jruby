@@ -26,8 +26,7 @@ project 'JRuby Artifacts' do
     'jruby-stdlib' => [ :release, :main, :complete, :dist, 'jruby-jars' ],
     'jruby-complete' => [ :release, :complete ],
     'jruby-dist' => [ :release, :dist ],
-    'jruby-jars' => [ :release, 'jruby-jars' ],
-    'jruby-rake-plugin' => [ :release, 'jruby-rake-plugin' ] }
+    'jruby-jars' => [ :release, 'jruby-jars' ] }
   map[ 'jruby-noasm' ] = map[ 'jruby' ]
 
   profile :all do

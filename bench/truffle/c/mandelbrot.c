@@ -118,6 +118,8 @@ double secondtime();
 int main(int argc, char** argv) {
   int budget = atoi(argv[0]);
 
+  warmup();
+
   int iterations = 0;
 
   double start = secondtime();

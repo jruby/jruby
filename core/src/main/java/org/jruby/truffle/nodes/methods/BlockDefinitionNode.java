@@ -13,7 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
@@ -25,15 +25,17 @@ import org.jruby.truffle.runtime.methods.*;
 @NodeInfo(shortName = "block-def")
 public class BlockDefinitionNode extends MethodDefinitionNode {
 
-    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo uniqueIdentifier, FrameDescriptor frameDescriptor,
-                    boolean requiresDeclarationFrame, RubyRootNode pristineRootNode, CallTarget callTarget) {
-        super(context, sourceSection, name, uniqueIdentifier, frameDescriptor, requiresDeclarationFrame, pristineRootNode, callTarget, false);
+    private final CallTarget callTarget;
+
+    public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo methodInfo,
+                    boolean requiresDeclarationFrame, RubyRootNode rootNode) {
+        super(context, sourceSection, name, methodInfo, requiresDeclarationFrame, rootNode, false);
+        final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
+        callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyContext context = getContext();
-
         final MaterializedFrame declarationFrame;
 
         if (requiresDeclarationFrame) {
@@ -42,12 +44,9 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
             declarationFrame = null;
         }
 
-        final RubyArguments arguments = frame.getArguments(RubyArguments.class);
+        final RubyMethod method = new RubyMethod(sharedMethodInfo, name, null, Visibility.PUBLIC, false, callTarget, declarationFrame, false);
 
-        final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, declarationFrame, frameDescriptor, pristineRootNode, true, false);
-        final RubyMethod method = new RubyMethod(sharedMethodInfo, null, name, Visibility.PUBLIC, false, methodImplementation);
-        methodImplementation.setMethod(method);
-        return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, arguments.getSelf(), arguments.getBlock(), method);
+        return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, RubyArguments.getSelf(frame.getArguments()), RubyArguments.getBlock(frame.getArguments()), method);
     }
 
 }

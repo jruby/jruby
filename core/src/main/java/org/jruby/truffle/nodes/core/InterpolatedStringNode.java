@@ -14,7 +14,9 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.core.RubyString;
 
 /**
  * A list of expressions to build up into a string.
@@ -25,19 +27,25 @@ public final class InterpolatedStringNode extends RubyNode {
     @CompilationFinal private int expectedLength = 64;
 
     @Children protected final RubyNode[] children;
+    @Child protected DispatchHeadNode toS;
 
     public InterpolatedStringNode(RubyContext context, SourceSection sourceSection, RubyNode[] children) {
         super(context, sourceSection);
         this.children = children;
+        toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
     }
 
     @ExplodeLoop
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final StringBuilder builder = new StringBuilder(expectedLength);
 
         for (int n = 0; n < children.length; n++) {
-            builder.append(children[n].execute(frame).toString());
+            // TODO(CS): what about this cast?
+            final RubyString string = (RubyString) toS.dispatch(frame, children[n].execute(frame), null);
+            builder.append(string.toString());
         }
 
         if (builder.length() > expectedLength) {

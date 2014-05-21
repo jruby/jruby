@@ -19,7 +19,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.core.hash.RubyHash;
+import org.jruby.truffle.runtime.core.RubyHash;
 
 /**
  * Represents an expression that is evaluated by running it as a system command via forking and
@@ -37,6 +37,8 @@ public class SystemNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final RubyContext context = getContext();
 
         final RubyHash env = (RubyHash) getContext().getCoreLibrary().getObjectClass().lookupConstant("ENV").value;
@@ -49,7 +51,7 @@ public class SystemNode extends RubyNode {
 
         final String command = child.execute(frame).toString();
 
-        Process process;
+        final Process process;
 
         try {
             // We need to run via bash to get the variable and other expansion we expect

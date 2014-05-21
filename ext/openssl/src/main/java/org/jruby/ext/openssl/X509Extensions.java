@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 
+import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -43,6 +44,7 @@ import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERBoolean;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -69,6 +71,9 @@ import org.jruby.util.ByteList;
 import org.jruby.ext.openssl.impl.ASN1Registry;
 import static org.jruby.ext.openssl.ASN1._ASN1;
 import static org.jruby.ext.openssl.X509._X509;
+import static org.jruby.ext.openssl.OpenSSLReal.debug;
+import static org.jruby.ext.openssl.OpenSSLReal.debugStackTrace;
+import static org.jruby.ext.openssl.OpenSSLReal.isDebug;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -78,13 +83,6 @@ public class X509Extensions {
     public static void createX509Ext(final Ruby runtime, final RubyModule _X509) { // OpenSSL::X509
         final RubyClass _ExtensionFactory = _X509.defineClassUnder("ExtensionFactory",
                 runtime.getObject(), ExtensionFactory.ALLOCATOR);
-        _ExtensionFactory.attr_reader(runtime.getCurrentContext(), new IRubyObject[] {
-            runtime.newString("issuer_certificate"),
-            runtime.newString("subject_certificate"),
-            runtime.newString("subject_request"),
-            runtime.newString("crl"),
-            runtime.newString("config")
-        });
         _ExtensionFactory.defineAnnotatedMethods(ExtensionFactory.class);
 
         final RubyClass _OpenSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
@@ -126,10 +124,20 @@ public class X509Extensions {
             return this;
         }
 
+        @JRubyMethod(name="issuer_certificate")
+        public IRubyObject issuer_cert() {
+            return getInstanceVariable("@issuer_certificate");
+        }
+
         @JRubyMethod(name="issuer_certificate=")
         public IRubyObject set_issuer_cert(IRubyObject arg) {
             setInstanceVariable("@issuer_certificate", arg);
             return arg;
+        }
+
+        @JRubyMethod(name="subject_certificate")
+        public IRubyObject subject_cert() {
+            return getInstanceVariable("@subject_certificate");
         }
 
         @JRubyMethod(name="subject_certificate=")
@@ -138,16 +146,31 @@ public class X509Extensions {
             return arg;
         }
 
+        @JRubyMethod(name="subject_request")
+        public IRubyObject subject_req() {
+            return getInstanceVariable("@subject_request");
+        }
+
         @JRubyMethod(name="subject_request=")
         public IRubyObject set_subject_req(IRubyObject arg) {
             setInstanceVariable("@subject_request", arg);
             return arg;
         }
 
+        @JRubyMethod(name="crl")
+        public IRubyObject crl() {
+            return getInstanceVariable("@crl");
+        }
+
         @JRubyMethod(name="crl=")
         public IRubyObject set_crl(IRubyObject arg) {
             setInstanceVariable("@crl", arg);
             return arg;
+        }
+
+        @JRubyMethod(name="config")
+        public IRubyObject config() {
+            return getInstanceVariable("@config");
         }
 
         @JRubyMethod(name="config=")
@@ -177,7 +200,8 @@ public class X509Extensions {
                 objectId = ASN1.getObjectIdentifier(runtime, oid);
             }
             catch (IllegalArgumentException e) {
-                 throw newExtensionError(runtime, "unknown OID `" + oid + "'");
+                debug(runtime, "ASN1.getObjectIdentifier() at ExtensionFactory.create_ext", e);
+                throw newExtensionError(runtime, "unknown OID `" + oid + "'");
             }
 
             if ( valuex.startsWith("critical,") ) {
@@ -186,36 +210,39 @@ public class X509Extensions {
             }
 
             try {
-                if ( objectId.equals(new ASN1ObjectIdentifier("2.5.29.14")) ) { //subjectKeyIdentifier
+                final String id  = objectId.getId();
+                if ( id.equals("2.5.29.14") ) { //subjectKeyIdentifier
                     DEROctetString inp = parseSubjectKeyIdentifier(context, oid, valuex);
                     value = new String( ByteList.plain( inp.getEncoded(ASN1Encoding.DER) ) );
                 }
-                else if ( objectId.equals(new ASN1ObjectIdentifier("2.5.29.35")) ) { //authorityKeyIdentifier
+                else if ( id.equals("2.5.29.35") ) { //authorityKeyIdentifier
                     DLSequence inp = parseAuthorityKeyIdentifier(context, valuex);
                     value = new String( ByteList.plain( inp.getEncoded(ASN1Encoding.DER) ) );
                 }
-                else if ( objectId.equals(new ASN1ObjectIdentifier("2.5.29.18")) ) { //issuerAltName
+                else if ( id.equals("2.5.29.18") ) { //issuerAltName
                     value = parseIssuerAltName(context, valuex);
                 }
-                else if ( objectId.equals(new ASN1ObjectIdentifier("2.5.29.19")) ) { //basicConstraints
+                else if ( id.equals("2.5.29.19") ) { //basicConstraints
                     DLSequence inp = parseBasicConstrains(valuex);
                     value = new String( ByteList.plain( inp.getEncoded(ASN1Encoding.DER) ) );
                 }
-                else if ( objectId.equals(new ASN1ObjectIdentifier("2.5.29.15")) ) { //keyUsage
+                else if ( id.equals("2.5.29.15") ) { //keyUsage
                     DERBitString inp = parseKeyUsage(oid, valuex);
                     value = new String( ByteList.plain( inp.getEncoded(ASN1Encoding.DER) ) );
                 }
-                else if ( objectId.equals(new ASN1ObjectIdentifier("2.16.840.1.113730.1.1")) ) { //nsCertType
+                else if ( id.equals("2.16.840.1.113730.1.1") ) { //nsCertType
                     value = parseNsCertType(oid, valuex);
                 }
-                else if ( objectId.equals(new ASN1ObjectIdentifier("2.5.29.17")) ) { //subjectAltName
+                else if ( id.equals("2.5.29.17") ) { //subjectAltName
                     value = parseSubjectAltName(valuex);
                 }
-                else if ( objectId.equals(new ASN1ObjectIdentifier("2.5.29.37")) ) { //extendedKeyUsage
+                else if ( id.equals("2.5.29.37") ) { //extendedKeyUsage
                     value = parseExtendedKeyUsage(valuex);
                 }
                 else {
-                    value = new DEROctetString( new DEROctetString(ByteList.plain(valuex)).getEncoded(ASN1Encoding.DER) );
+                    value = new DEROctetString(
+                        new DEROctetString(ByteList.plain(valuex)).getEncoded(ASN1Encoding.DER)
+                    );
                 }
             }
             catch (IOException e) {
@@ -226,7 +253,7 @@ public class X509Extensions {
 
             ext.setRealOid(objectId);
             ext.setRealValue(value);
-            ext.setRealCritical(critical.isTrue());
+            ext.setRealCritical(critical.isNil() ? null : critical.isTrue());
 
             return ext;
         }
@@ -240,13 +267,11 @@ public class X509Extensions {
                     inp[i] = (byte) Integer.parseInt(val[i], 16);
                 }
             }
-            catch (RuntimeException e) {
+            catch (NumberFormatException e) {
                 inp = null;
             }
 
-            if ( inp == null && valuex.length() < 3 ) {
-                inp = ByteList.plain(valuex);
-            }
+            if ( inp == null && valuex.length() < 3 ) inp = ByteList.plain(valuex);
 
             if ( inp == null ) {
                 byte v1 = 0; byte v2 = 0;
@@ -341,33 +366,33 @@ public class X509Extensions {
 
         private static DLSequence parseBasicConstrains(final String valuex) {
             final String[] val = valuex.split(",");
-            final ASN1EncodableVector asnv = new ASN1EncodableVector();
+            final ASN1EncodableVector vec = new ASN1EncodableVector();
             for ( int i = 0; i < val.length; i++ ) {
                 final String value = ( val[i] = val[i].trim() );
                 if ( value.length() > 3 && value.substring(0, 3).equalsIgnoreCase("CA:") ) {
                     boolean isTrue = "true".equalsIgnoreCase( value.substring(3).trim() );
-                    asnv.add( new DERBoolean(isTrue) );
+                    vec.add( ASN1Boolean.getInstance(isTrue) );
                 }
             }
             for ( int i = 0; i < val.length; i++) {
                 final String value = val[i];
                 if ( value.length() > 8 && value.substring(0, 8).equalsIgnoreCase("pathlen:") ) {
                     int pathlen = Integer.parseInt( value.substring(8).trim() );
-                    asnv.add( new ASN1Integer( BigInteger.valueOf(pathlen) ) );
+                    vec.add( new ASN1Integer( BigInteger.valueOf(pathlen) ) );
                 }
             }
-            return new DLSequence(asnv);
+            return new DLSequence(vec);
         }
 
         private DLSequence parseAuthorityKeyIdentifier(final ThreadContext context, final String valuex) {
-            final ASN1EncodableVector asnv = new ASN1EncodableVector();
+            final ASN1EncodableVector vec = new ASN1EncodableVector();
             if ( valuex.startsWith("keyid:always") ) {
-                asnv.add( new DEROctetString( derDigest(context) ) );
+                vec.add( new DEROctetString( derDigest(context) ) );
             }
             else if ( valuex.startsWith("keyid") ) {
-                asnv.add( new DEROctetString( derDigest(context) ) );
+                vec.add( new DEROctetString( derDigest(context) ) );
             }
-            return new DLSequence(asnv);
+            return new DLSequence(vec);
         }
 
         private byte[] derDigest(final ThreadContext context) {
@@ -382,7 +407,7 @@ public class X509Extensions {
                          .callMethod(context, "[]", runtime.newFixnum(1))
                          .callMethod(context, "value");
             }
-            return getSHA1Digest( runtime, der.convertToString().getBytes() );
+            return getSHA1Digest( runtime, der.asString().getBytes() );
         }
 
         private Object parseIssuerAltName(final ThreadContext context, final String valuex) throws IOException {
@@ -400,32 +425,27 @@ public class X509Extensions {
 
         private String parseSubjectAltName(final String valuex) throws IOException {
             if ( valuex.startsWith("DNS:") ) {
-                GeneralNames gn = new GeneralNames(new GeneralName(GeneralName.dNSName,new DERIA5String(valuex.substring(4))));
-                return new String(ByteList.plain(gn.getEncoded(ASN1Encoding.DER)));
+                final String dns = valuex.substring(4);
+                return derEncoded( new GeneralName( GeneralName.dNSName, new DERIA5String(dns) ) );
             }
-            else if ( valuex.startsWith("IP:") ) {
-                String[] numbers = valuex.substring(3).split("\\.");
-                byte[] bs = new byte[4];
-                bs[0] = (byte) (Integer.parseInt(numbers[0]) & 0xff);
-                bs[1] = (byte) (Integer.parseInt(numbers[1]) & 0xff);
-                bs[2] = (byte) (Integer.parseInt(numbers[2]) & 0xff);
-                bs[3] = (byte) (Integer.parseInt(numbers[3]) & 0xff);
-                GeneralNames gn = new GeneralNames(new GeneralName(GeneralName.iPAddress,new DEROctetString(bs)));
-                return new String(ByteList.plain(gn.getEncoded(ASN1Encoding.DER)));
-            }
-            else if ( valuex.startsWith("IP Address:") ) {
-                String[] numbers = valuex.substring(11).split("\\.");
-                byte[] bs = new byte[4];
-                bs[0] = (byte) (Integer.parseInt(numbers[0]) & 0xff);
-                bs[1] = (byte) (Integer.parseInt(numbers[1]) & 0xff);
-                bs[2] = (byte) (Integer.parseInt(numbers[2]) & 0xff);
-                bs[3] = (byte) (Integer.parseInt(numbers[3]) & 0xff);
-                GeneralNames gn = new GeneralNames(new GeneralName(GeneralName.iPAddress,new DEROctetString(bs)));
-                return new String(ByteList.plain(gn.getEncoded(ASN1Encoding.DER)));
+            else if ( valuex.startsWith("IP:") || valuex.startsWith("IP Address:") ) {
+                final int idx = valuex.charAt(2) == ':' ? 3 : 11;
+                String[] numbers = valuex.substring(idx).split("\\.");
+                final byte[] ip = new byte[4];
+                ip[0] = (byte) (Integer.parseInt(numbers[0]) & 0xff);
+                ip[1] = (byte) (Integer.parseInt(numbers[1]) & 0xff);
+                ip[2] = (byte) (Integer.parseInt(numbers[2]) & 0xff);
+                ip[3] = (byte) (Integer.parseInt(numbers[3]) & 0xff);
+                return derEncoded( new GeneralName( GeneralName.iPAddress, new DEROctetString(ip) ) );
             }
             else {
                 return valuex;
             }
+        }
+
+        private static String derEncoded(final GeneralName name) throws IOException {
+            final GeneralNames names = new GeneralNames(name);
+            return new String( ByteList.plain( names.getEncoded(ASN1Encoding.DER) ) );
         }
 
         private DEROctetString parseSubjectKeyIdentifier(final ThreadContext context,
@@ -434,28 +454,27 @@ public class X509Extensions {
             if ( "hash".equalsIgnoreCase(valuex) ) {
                 return new DEROctetString( derDigest(context) );
             }
-            else if ( valuex.length() == 20 || ! isHexString(valuex) ) {
+            else if ( valuex.length() == 20 || ! isHex(valuex) ) {
                 return new DEROctetString( ByteList.plain(valuex) );
             }
             else {
-                final StringBuilder hex = new StringBuilder();
-                for ( int i = 0; i < valuex.length(); i += 2 ) {
-                    if ( i + 1 >= valuex.length() ) {
+                final int len = valuex.length();
+                final ByteList hex = new ByteList( len / 2 + 1 );
+                for ( int i = 0; i < len; i += 2 ) {
+                    if ( i + 1 >= len ) {
                         throw newExtensionError(context.runtime, oid + " = " + valuex + ": odd number of digits");
                     }
-                    char c1 = valuex.charAt(i); char c2 = valuex.charAt(i + 1);
-                    if ( isHexDigit(c1) && isHexDigit(c2) ) {
-                        hex.append( Character.toUpperCase(c1) ).append( Character.toUpperCase(c2) );
+                    final int c1 = upHex( valuex.charAt(i) );
+                    final int c2 = upHex( valuex.charAt(i + 1) );
+                    if ( c1 != -1 && c2 != -1 ) {
+                        hex.append( ( (c1 << 4) & 0xF0 ) | ( c2 & 0xF ) );
                     } else {
                         throw newExtensionError(context.runtime, oid + " = " + valuex + ": illegal hex digit");
                     }
-                    while ( (i + 2) < valuex.length() && valuex.charAt(i + 2) == ':' ) i++;
+                    while ( (i + 2) < len && valuex.charAt(i + 2) == ':' ) i++;
                 }
-                final String hexStr = hex.toString();
-                final byte[] hexBytes = new byte[ hexStr.length() / 2 ];
-                for ( int i = 0; i < hexStr.length(); i += 2 ) {
-                    hexBytes[i / 2] = (byte) Integer.parseInt( hexStr.substring(i, i + 2), 16 );
-                }
+                final byte[] hexBytes = new byte[ hex.length() ];
+                System.arraycopy(hex.getUnsafeBytes(), hex.getBegin(), hexBytes, 0, hexBytes.length);
                 return new DEROctetString( hexBytes );
             }
         }
@@ -468,36 +487,25 @@ public class X509Extensions {
             return new DLSequence(vector);
         }
 
-        private static boolean isHexDigit(char c) {
-            return ('0'<=c && c<='9') || ('A'<= c && c <= 'F') || ('a'<= c && c <= 'f');
-        }
-
-        private static boolean isHexString(final String str){
-        	for ( int i = 0; i < str.length(); i++ ) {
-        		if ( ! isHexDigit(str.charAt(i)) ) return false;
-        	}
-        	return true;
-        }
-
     }
 
     private static byte[] getSHA1Digest(Ruby runtime, byte[] bytes) {
         try {
             return SecurityHelper.getMessageDigest("SHA-1").digest(bytes);
         }
-        catch (GeneralSecurityException ex) {
-            throw newExtensionError(runtime, ex.getMessage());
+        catch (GeneralSecurityException e) {
+            throw newExtensionError(runtime, e.getMessage());
         }
     }
 
     public static class Extension extends RubyObject {
         private static final long serialVersionUID = -1160318458085651926L;
 
-        public static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-                public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-                    return new Extension(runtime, klass);
-                }
-            };
+        static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+            public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+                return new Extension(runtime, klass);
+            }
+        };
 
         public Extension(Ruby runtime, RubyClass type) {
             super(runtime,type);
@@ -505,31 +513,27 @@ public class X509Extensions {
 
         private ASN1ObjectIdentifier oid;
         private Object value;
-        private boolean critical;
-
-        void setRealOid(ASN1ObjectIdentifier oid) {
-            this.oid = oid;
-        }
-
-        void setRealValue(Object value) {
-            this.value = value;
-        }
-
-        void setRealCritical(boolean critical) {
-            this.critical = critical;
-        }
+        private Boolean critical;
 
         ASN1ObjectIdentifier getRealOid() {
             return oid;
+        }
+
+        void setRealOid(ASN1ObjectIdentifier oid) {
+            this.oid = oid;
         }
 
         Object getRealValue() {
             return value;
         }
 
+        void setRealValue(Object value) {
+            this.value = value;
+        }
+
         byte[] getRealValueBytes() throws IOException {
             if ( value instanceof RubyString ) {
-                return ((RubyString) value).convertToString().getBytes();
+                return ((RubyString) value).getBytes();
             } else if ( value instanceof String ) {
                 return ByteList.plain( (String) value );
             } else if ( value instanceof DEROctetString ) {
@@ -537,291 +541,391 @@ public class X509Extensions {
             } else if ( value instanceof ASN1Encodable ) {
                 return ((ASN1Encodable) value).toASN1Primitive().getEncoded(ASN1Encoding.DER);
             } else {
-                return ((ASN1.ASN1Data) value).toASN1().toASN1Primitive().getEncoded(ASN1Encoding.DER);
+                ASN1Encodable asn1Value = ((ASN1.ASN1Data) value).toASN1(getRuntime().getCurrentContext());
+                return asn1Value.toASN1Primitive().getEncoded(ASN1Encoding.DER);
             }
         }
 
-        boolean getRealCritical() {
-            return critical;
+        boolean isRealCritical() {
+            return critical == null ? Boolean.FALSE : critical.booleanValue();
         }
 
-        ASN1ObjectIdentifier getObjectIdentifier(String nameOrOid) {
-            Object val1 = ASN1.getOIDLookup(getRuntime()).get(nameOrOid.toLowerCase());
-            if(null != val1) {
-                return (ASN1ObjectIdentifier)val1;
-            }
-            ASN1ObjectIdentifier val2 = new ASN1ObjectIdentifier(nameOrOid);
-            return val2;
+        //Boolean getRealCritical() {
+        //    return critical;
+        //}
+
+        void setRealCritical(boolean critical) {
+            this.critical = Boolean.valueOf(critical);
+        }
+
+        private void setRealCritical(Boolean critical) {
+            this.critical = critical;
         }
 
         @JRubyMethod(name = "initialize", rest = true, visibility = Visibility.PRIVATE)
         public IRubyObject _initialize(final ThreadContext context, final IRubyObject[] args) {
             byte[] octets = null;
-            if (args.length == 1) {
+            if ( args.length == 1 ) {
                 try {
-                    ASN1InputStream is = new ASN1InputStream(
-                        OpenSSLImpl.to_der_if_possible(context, args[0]).convertToString().getBytes()
+                    ASN1InputStream asn1Stream = new ASN1InputStream(
+                        OpenSSLImpl.to_der_if_possible(context, args[0]).asString().getBytes()
                     );
-                    Object obj = is.readObject();
-                    ASN1Sequence seq = (ASN1Sequence) obj;
-                    setRealOid((ASN1ObjectIdentifier) (seq.getObjectAt(0)));
-                    setRealCritical(((DERBoolean) (seq.getObjectAt(1))).isTrue());
-                    octets = ((DEROctetString) (seq.getObjectAt(2))).getOctets();
-                } catch (IOException ioe) {
-                    throw newExtensionError(getRuntime(), ioe.getMessage());
+                    ASN1Sequence seq = (ASN1Sequence) asn1Stream.readObject();
+                    setRealOid( (ASN1ObjectIdentifier) seq.getObjectAt(0) );
+                    setRealCritical( ( (DERBoolean) seq.getObjectAt(1) ).isTrue() );
+                    octets = ( (DEROctetString) seq.getObjectAt(2) ).getOctets();
                 }
-            } else if (args.length > 1) {
-                setRealOid(getObjectIdentifier(args[0].toString()));
-                setRealValue(args[1]);
+                catch (IOException ioe) {
+                    throw newExtensionError(context.runtime, ioe.getMessage());
+                }
             }
-            if (args.length > 2) {
-                setRealCritical(args[2].isTrue());
+            else if (args.length > 1) {
+                setRealOid( ASN1.getObjectIdentifier( context.runtime, args[0].toString() ) );
+                setRealValue( args[1] );
             }
-            if (args.length > 0 && octets != null) {
-                setRealValue(new String(ByteList.plain(octets)));
+            if ( args.length > 2 ) {
+                setRealCritical( args[2].isTrue() );
+            }
+            if ( args.length > 0 && octets != null ) {
+                setRealValue( new String(ByteList.plain(octets)) );
             }
             return this;
         }
 
-        @JRubyMethod(name="oid=")
-        public IRubyObject set_oid(IRubyObject arg) {
-            System.err.println("WARNING: calling ext#oid=");
-            return getRuntime().getNil();
-        }
-
-        @JRubyMethod(name="value=")
-        public IRubyObject set_value(IRubyObject arg) {
-            System.err.println("WARNING: calling ext#value=");
-            return getRuntime().getNil();
-        }
-
-        @JRubyMethod(name="critical=")
-        public IRubyObject set_critical(IRubyObject arg) {
-            System.err.println("WARNING: calling ext#critical=");
-            return getRuntime().getNil();
-        }
-
         @JRubyMethod
-        public IRubyObject oid() {
-            Object val = ASN1.getSymLookup(getRuntime()).get(oid);
-            if(null == val) {
-                val = oid.toString();
-            }
-            return getRuntime().newString((String)(val));
+        public IRubyObject oid(final ThreadContext context) {
+            String name = ASN1.oid2Sym(context.runtime, oid);
+            if ( name == null ) name = oid.toString();
+            return context.runtime.newString(name);
         }
+
+        @JRubyMethod(name="oid=")
+        public IRubyObject set_oid(final ThreadContext context, IRubyObject arg) {
+            if ( arg instanceof RubyString ) {
+                setRealOid( ASN1.getObjectIdentifier( context.runtime, arg.toString() ) );
+                return arg;
+            }
+            throw context.runtime.newTypeError(arg, context.runtime.getString());
+        }
+
+        private static final byte[] CA_ = { 'C','A',':' };
+        private static final byte[] TRUE = { 'T','R','U','E' };
+        private static final byte[] FALSE = { 'F','A','L','S','E' };
+
+        private static final byte[] _ = {};
+        private static final byte[] SEP = { ',',' ' };
+
+        private static final byte[] Decipher_Only = { 'D','e','c','i','p','h','e','r',' ','O','n','l','y' };
+        private static final byte[] Digital_Signature = { 'D','i','g','i','t','a','l',' ','S','i','g','n','a','t','u','r','e' };
+        private static final byte[] Non_Repudiation = { 'N','o','n',' ','R','e','p','u','d','i','a','t','i','o','n' };
+        private static final byte[] Key_Encipherment = { 'K','e','y',' ','E','n','c','i','p','h','e','r','m','e','n','t' };
+        private static final byte[] Data_Encipherment = { 'D','a','t','a',' ','E','n','c','i','p','h','e','r','m','e','n','t' };
+        private static final byte[] Key_Agreement = { 'K','e','y',' ','A','g','r','e','e','m','e','n','t' };
+        private static final byte[] Certificate_Sign = { 'C','e','r','t','i','f','i','c','a','t','e',' ','S','i','g','n' };
+        private static final byte[] CRL_Sign = { 'C','R','L',' ','S','i','g','n' };
+        private static final byte[] Encipher_Only = { 'E','n','c','i','p','h','e','r',' ','O','n','l','y' };
+        private static final byte[] SSL_Client = { 'S','S','L',' ','C','l','i','e','n','t' };
+        private static final byte[] SSL_Server = { 'S','S','L',' ','S','e','r','v','e','r' };
+        private static final byte[] SSL_CA = { 'S','S','L',' ','C','A' };
+        private static final byte[] SMIME = { 'S','/','M','I','M','E' };
+        private static final byte[] SMIME_CA = { 'S','/','M','I','M','E',' ','C','A' };
+        private static final byte[] Object_Signing = { 'O','b','j','e','c','t',' ','S','i','g','n','i','n','g' };
+        private static final byte[] Object_Signing_CA = { 'O','b','j','e','c','t',' ','S','i','g','n','i','n','g',' ','C','A' };
+        private static final byte[] Unused = { 'U','n','u','s','e','d' };
+        private static final byte[] Unspecified = { 'U','n','s','p','e','c','i','f','i','e','d' };
+        //private static final byte[] Key_Compromise = { 'K','e','y',' ','C','o','m','p','r','o','m','i','s','e' };
+        //private static final byte[] CA_Compromise = { 'C','A',' ','C','o','m','p','r','o','m','i','s','e' };
+        //private static final byte[] Affiliation_Changed = { 'A','f','f','i','l','i','a','t','i','o','n',' ','C','h','a','n','g','e','d' };
+
+        private static final byte[] keyid_ = { 'k','e','y','i','d',':' };
 
         @JRubyMethod
         public IRubyObject value(final ThreadContext context) {
             final Ruby runtime = context.runtime;
             try {
-                if (getRealOid().equals(new ASN1ObjectIdentifier("2.5.29.19"))) { //basicConstraints
-                    ASN1Sequence seq2 = (ASN1Sequence) (new ASN1InputStream(getRealValueBytes()).readObject());
-                    String c = "";
-                    String path = "";
-                    if (seq2.size() > 0) {
-                        c = "CA:" + (((DERBoolean) (seq2.getObjectAt(0))).isTrue() ? "TRUE" : "FALSE");
+                final String realOid = getRealOid().getId();
+                if ( realOid.equals("2.5.29.19") ) { //basicConstraints
+                    ASN1Sequence seq2 = (ASN1Sequence) new ASN1InputStream(getRealValueBytes()).readObject();
+                    final ByteList val = new ByteList(32);
+                    if ( seq2.size() > 0 ) {
+                        val.append(CA_);
+                        val.append( ( (DERBoolean) seq2.getObjectAt(0) ).isTrue() ? TRUE : FALSE );
                     }
-                    if (seq2.size() > 1) {
-                        path = ", pathlen:" + seq2.getObjectAt(1).toString();
+                    if ( seq2.size() > 1 ) {
+                        val.append( ", pathlen:".getBytes() );
+                        val.append( seq2.getObjectAt(1).toString().getBytes() );
                     }
-                    return runtime.newString(c + path);
-                } else if (getRealOid().equals(new ASN1ObjectIdentifier("2.5.29.15"))) { //keyUsage
-                    byte[] bx = getRealValueBytes();
-                    byte[] bs = new byte[bx.length - 2];
-                    System.arraycopy(bx, 2, bs, 0, bs.length);
-                    byte b1 = 0;
-                    byte b2 = bs[0];
-                    if (bs.length > 1) {
-                        b1 = bs[1];
-                    }
-                    StringBuilder sbe = new StringBuilder();
-                    String sep = "";
+                    return runtime.newString(val);
+                }
+                else if ( realOid.equals("2.5.29.15") ) { //keyUsage
+                    final byte[] bytes = getRealValueBytes();
+                    byte b1 = 0; byte b2 = bytes[2];
+                    if ( bytes.length > 3 ) b1 = bytes[3];
+
+                    final ByteList val = new ByteList(64); byte[] sep = _;
+
                     if ((b2 & (byte) 128) != 0) {
-                        sbe.append(sep).append("Decipher Only");
-                        sep = ", ";
+                        val.append(sep); val.append(Decipher_Only); sep = SEP;
                     }
                     if ((b1 & (byte) 128) != 0) {
-                        sbe.append(sep).append("Digital Signature");
-                        sep = ", ";
+                        val.append(sep); val.append(Digital_Signature); sep = SEP;
                     }
                     if ((b1 & (byte) 64) != 0) {
-                        sbe.append(sep).append("Non Repudiation");
-                        sep = ", ";
+                        val.append(sep); val.append(Non_Repudiation); sep = SEP;
                     }
                     if ((b1 & (byte) 32) != 0) {
-                        sbe.append(sep).append("Key Encipherment");
-                        sep = ", ";
+                        val.append(sep); val.append(Key_Encipherment); sep = SEP;
                     }
                     if ((b1 & (byte) 16) != 0) {
-                        sbe.append(sep).append("Data Encipherment");
-                        sep = ", ";
+                        val.append(sep); val.append(Data_Encipherment); sep = SEP;
                     }
                     if ((b1 & (byte) 8) != 0) {
-                        sbe.append(sep).append("Key Agreement");
-                        sep = ", ";
+                        val.append(sep); val.append(Key_Agreement); sep = SEP;
                     }
                     if ((b1 & (byte) 4) != 0) {
-                        sbe.append(sep).append("Certificate Sign");
-                        sep = ", ";
+                        val.append(sep); val.append(Certificate_Sign); sep = SEP;
                     }
                     if ((b1 & (byte) 2) != 0) {
-                        sbe.append(sep).append("CRL Sign");
-                        sep = ", ";
+                        val.append(sep); val.append(CRL_Sign); sep = SEP;
                     }
                     if ((b1 & (byte) 1) != 0) {
-                        sbe.append(sep).append("Encipher Only");
+                        val.append(sep); val.append(Encipher_Only); // sep = SEP;
                     }
-                    return runtime.newString(sbe.toString());
-                } else if (getRealOid().equals(new ASN1ObjectIdentifier("2.16.840.1.113730.1.1"))) { //nsCertType
-                    byte[] bx = getRealValueBytes();
-                    byte b = bx[0];
-                    StringBuilder sbe = new StringBuilder();
-                    String sep = "";
+                    return runtime.newString( val );
+                }
+                else if ( realOid.equals("2.16.840.1.113730.1.1") ) { //nsCertType
+                    final byte b = getRealValueBytes()[0];
+
+                    final ByteList val = new ByteList(64); byte[] sep = _;
+
                     if ((b & (byte) 128) != 0) {
-                        sbe.append(sep).append("SSL Client");
-                        sep = ", ";
+                        val.append(sep); val.append(SSL_Client); sep = SEP;
                     }
                     if ((b & (byte) 64) != 0) {
-                        sbe.append(sep).append("SSL Servern");
-                        sep = ", ";
+                        val.append(sep); val.append(SSL_Server); sep = SEP;
                     }
                     if ((b & (byte) 32) != 0) {
-                        sbe.append(sep).append("S/MIME");
-                        sep = ", ";
+                        val.append(sep); val.append(SMIME); sep = SEP;
                     }
                     if ((b & (byte) 16) != 0) {
-                        sbe.append(sep).append("Object Signing");
-                        sep = ", ";
+                        val.append(sep); val.append(Object_Signing); sep = SEP;
                     }
                     if ((b & (byte) 8) != 0) {
-                        sbe.append(sep).append("Unused");
-                        sep = ", ";
+                        val.append(sep); val.append(Unused); sep = SEP;
                     }
                     if ((b & (byte) 4) != 0) {
-                        sbe.append(sep).append("SSL CA");
-                        sep = ", ";
+                        val.append(sep); val.append(SSL_CA); sep = SEP;
                     }
                     if ((b & (byte) 2) != 0) {
-                        sbe.append(sep).append("S/MIME CA");
-                        sep = ", ";
+                        val.append(sep); val.append(SMIME_CA); sep = SEP;
                     }
                     if ((b & (byte) 1) != 0) {
-                        sbe.append(sep).append("Object Signing CA");
+                        val.append(sep); val.append(Object_Signing_CA);
                     }
-                    return runtime.newString(sbe.toString());
-                } else if (getRealOid().equals(new ASN1ObjectIdentifier("2.5.29.14"))) { //subjectKeyIdentifier
-                    byte[] b1 = getRealValueBytes();
-                    byte[] b2 = new byte[b1.length - 2];
-                    System.arraycopy(b1, 2, b2, 0, b2.length);
-                    return runtime.newString(Utils.toHex(b2, ':'));
-                } else if (getRealOid().equals(new ASN1ObjectIdentifier("2.5.29.35"))) { // authorityKeyIdentifier
-                    ASN1Sequence seq = (ASN1Sequence) (new ASN1InputStream(getRealValueBytes()).readObject());
-                    StringBuilder out1 = new StringBuilder();
-                    if (seq.size() > 0) {
-                        out1.append("keyid:");
-                        ASN1Primitive keyid = seq.getObjectAt(0).toASN1Primitive();
-                        if (keyid instanceof DEROctetString) {
-                            out1.append(Utils.toHex(((DEROctetString) keyid).getOctets(), ':'));
-                        } else {
-                            out1.append(Utils.toHex(keyid.getEncoded(ASN1Encoding.DER), ':'));
-                        }
+                    return runtime.newString( val );
+                }
+                else if ( realOid.equals("2.5.29.14") ) { //subjectKeyIdentifier
+                    final byte[] bytes = getRealValueBytes();
+                    return runtime.newString( hexBytes(bytes, 2) );
+                }
+                else if ( realOid.equals("2.5.29.35") ) { // authorityKeyIdentifier
+                    ASN1Sequence seq = (ASN1Sequence) new ASN1InputStream(getRealValueBytes()).readObject();
+                    if ( seq.size() == 0 ) return runtime.newString();
+                    final ByteList val = new ByteList(32);
+                    val.append( keyid_ );
+                    ASN1Primitive keyid = seq.getObjectAt(0).toASN1Primitive();
+                    final byte[] bytes;
+                    if ( keyid instanceof DEROctetString ) {
+                        bytes = ((DEROctetString) keyid).getOctets();
+                    } else {
+                        bytes = keyid.getEncoded(ASN1Encoding.DER);
                     }
-                    return runtime.newString(out1.toString());
-                } else if (getRealOid().equals(new ASN1ObjectIdentifier("2.5.29.21"))) { // CRLReason
-                    switch (RubyNumeric.fix2int(((IRubyObject) value).callMethod(context, "value"))) {
-                        case 0:
-                            return runtime.newString("Unspecified");
-                        case 1:
-                            return runtime.newString("Key Compromise");
-                        case 2:
-                            return runtime.newString("CA Compromise");
-                        case 3:
-                            return runtime.newString("Affiliation Changed");
-                        case 4:
-                            return runtime.newString("Superseded");
-                        case 5:
-                            return runtime.newString("Cessation Of Operation");
-                        case 6:
-                            return runtime.newString("Certificate Hold");
-                        case 8:
-                            return runtime.newString("Remove From CRL");
-                        case 9:
-                            return runtime.newString("Privilege Withdrawn");
-                        default:
-                            return runtime.newString("Unspecified");
+                    return runtime.newString( hexBytes(bytes, val) );
+                }
+                else if ( realOid.equals("2.5.29.21") ) { // CRLReason
+                    IRubyObject val = ( (IRubyObject) value ).callMethod(context, "value");
+                    switch ( RubyNumeric.fix2int(val) ) {
+                        case 0: return runtime.newString(new ByteList(Unspecified));
+                        case 1: return runtime.newString("Key Compromise");
+                        case 2: return runtime.newString("CA Compromise");
+                        case 3: return runtime.newString("Affiliation Changed");
+                        case 4: return runtime.newString("Superseded");
+                        case 5: return runtime.newString("Cessation Of Operation");
+                        case 6: return runtime.newString("Certificate Hold");
+                        case 8: return runtime.newString("Remove From CRL");
+                        case 9: return runtime.newString("Privilege Withdrawn");
+                        default: return runtime.newString(new ByteList(Unspecified));
                     }
-                } else if (getRealOid().equals(new ASN1ObjectIdentifier("2.5.29.17"))) { //subjectAltName
+                }
+                else if ( realOid.equals("2.5.29.17") ) { //subjectAltName
                     try {
                         ASN1Primitive seq = new ASN1InputStream(getRealValueBytes()).readObject();
-                        GeneralName[] n1 = null;
-                        if (seq instanceof org.bouncycastle.asn1.ASN1TaggedObject) {
-                            n1 = new GeneralName[]{GeneralName.getInstance(seq)};
+                        final GeneralName[] names;
+                        if ( seq instanceof ASN1TaggedObject ) {
+                            names = new GeneralName[] { GeneralName.getInstance(seq) };
                         } else {
-                            n1 = GeneralNames.getInstance(seq).getNames();
+                            names = GeneralNames.getInstance(seq).getNames();
                         }
-                        StringBuilder sbe = new StringBuilder();
-                        String sep = "";
-                        for (int i = 0; i < n1.length; i++) {
-                            sbe.append(sep);
-                            if (n1[i].getTagNo() == GeneralName.dNSName) {
-                                sbe.append("DNS:");
-                                sbe.append(((ASN1String) n1[i].getName()).getString());
-                            } else if (n1[i].getTagNo() == GeneralName.iPAddress) {
-                                sbe.append("IP Address:");
-                                byte[] bs = ((DEROctetString) n1[i].getName()).getOctets();
+                        final StringBuilder val = new StringBuilder(48); String sep = "";
+                        for ( int i = 0; i < names.length; i++ ) {
+                            final GeneralName name = names[i];
+                            val.append(sep);
+                            if ( name.getTagNo() == GeneralName.dNSName ) {
+                                val.append("DNS:");
+                                val.append( ((ASN1String) name.getName()).getString() );
+                            }
+                            else if ( name.getTagNo() == GeneralName.iPAddress ) {
+                                val.append("IP Address:");
+                                byte[] bs = ((DEROctetString) name.getName()).getOctets();
                                 String sep2 = "";
-                                for (int j = 0; j < bs.length; j++) {
-                                    sbe.append(sep2);
-                                    sbe.append(((int) bs[j]) & 0xff);
+                                for ( int j = 0; j < bs.length; j++ ) {
+                                    val.append(sep2).append(((int) bs[j]) & 0xff);
                                     sep2 = ".";
                                 }
-                            } else {
-                                sbe.append(n1[i].toString());
+                            }
+                            else {
+                                val.append( name.toString() );
                             }
                             sep = ", ";
                         }
-                        return runtime.newString(sbe.toString());
-                    } catch (Exception e) {
-                        return runtime.newString(getRealValue().toString());
+                        return runtime.newString( val.toString() );
                     }
-                } else {
+                    catch (RuntimeException e) {
+                        debugStackTrace(runtime, e);
+                        return runtime.newString( getRealValue().toString() );
+                    }
+                }
+                else {
+                    IRubyObject decoded = RubyString.newString(runtime, getRealValueBytes());
                     try {
-                        return ASN1.decode(context,
-                            runtime.getClassFromPath("OpenSSL::ASN1"),
-                            RubyString.newString(runtime, getRealValueBytes())
-                        ).callMethod(context, "value").callMethod(context, "to_s");
+                        decoded = ASN1.decodeImpl(context, decoded);
+                        return decoded.callMethod(context, "value").asString();
                     }
-                    catch (Exception e) {
-                        return runtime.newString(getRealValue().toString());
+                    catch (IOException e) {
+                        if ( isDebug(runtime) ) e.printStackTrace(runtime.getOut());
+                        return runtime.newString( getRealValue().toString() ); // throw e;
+                    }
+                    catch (IllegalArgumentException e) {
+                        return runtime.newString( getRealValue().toString() );
                     }
                 }
             }
-            catch (IOException ioe) {
-                throw newExtensionError(runtime, ioe.getMessage());
+            catch (IOException e) {
+                throw newExtensionError(runtime, e.getMessage());
             }
+        }
+
+        @JRubyMethod(name="value=")
+        public IRubyObject set_value(final ThreadContext context, IRubyObject arg) {
+            if ( arg instanceof RubyString ) {
+                setRealValue(arg); return arg;
+            }
+            throw context.runtime.newTypeError(arg, context.runtime.getString());
         }
 
         @JRubyMethod(name="critical?")
         public IRubyObject critical_p() {
-            return critical ? getRuntime().getTrue() : getRuntime().getFalse();
+            return getRuntime().newBoolean( isRealCritical() );
+        }
+
+        @JRubyMethod(name="critical=")
+        public IRubyObject set_critical(final ThreadContext context, IRubyObject arg) {
+            setRealCritical( arg.isTrue() ); return arg;
         }
 
         @JRubyMethod
         public IRubyObject to_der() {
-            ASN1EncodableVector all = new ASN1EncodableVector();
+            final ASN1EncodableVector vec = new ASN1EncodableVector();
             try {
-                all.add(getRealOid());
-                all.add(getRealCritical() ? DERBoolean.TRUE : DERBoolean.FALSE);
-                all.add(new DEROctetString(getRealValueBytes()));
-                return RubyString.newString(getRuntime(), new DLSequence(all).getEncoded(ASN1Encoding.DER));
-            } catch (IOException ioe) {
-                throw newExtensionError(getRuntime(), ioe.getMessage());
+                vec.add( getRealOid() );
+                if ( critical != null && critical.booleanValue() ) {
+                    vec.add( DERBoolean.TRUE );
+                }
+                vec.add( new DEROctetString(getRealValueBytes()) );
+                return RubyString.newString(getRuntime(), new DLSequence(vec).getEncoded(ASN1Encoding.DER));
+            }
+            catch (IOException e) {
+                throw newExtensionError(getRuntime(), e.getMessage());
             }
         }
+
     }
 
     private static RaiseException newExtensionError(Ruby runtime, String message) {
         return Utils.newError(runtime, _X509(runtime).getClass("ExtensionError"), message);
     }
+
+    // our custom "internal" HEX helpers :
+
+    private static boolean isHex(final char c) {
+        return ('0' <= c && c <= '9') || ('A' <= c && c <= 'F') || ('a' <= c && c <= 'f');
+    }
+
+    private static boolean isHex(final String str) {
+        for ( int i = 0; i < str.length(); i++ ) {
+            if ( ! isHex(str.charAt(i)) ) return false;
+        }
+        return true;
+    }
+
+    private static int upHex(final char c) {
+        switch (c) {
+            case '0' : return '0';
+            case '1' : return '1';
+            case '2' : return '2';
+            case '3' : return '3';
+            case '4' : return '4';
+            case '5' : return '5';
+            case '6' : return '6';
+            case '7' : return '7';
+            case '8' : return '8';
+            case '9' : return '9';
+            case 'A' :
+            case 'a' : return 'A';
+            case 'B' :
+            case 'b' : return 'B';
+            case 'C' :
+            case 'c' : return 'C';
+            case 'D' :
+            case 'd' : return 'D';
+            case 'E' :
+            case 'e' : return 'E';
+            case 'F' :
+            case 'f' : return 'F';
+        }
+        return -1;
+    }
+
+    private static ByteList hexBytes(final byte[] data, final int off) {
+        final int len = data.length - off;
+        return hexBytes(data, off, len, new ByteList( len * 3 ));
+    }
+
+    private static ByteList hexBytes(final byte[] data, final ByteList out) {
+        return hexBytes(data, 0, data.length, out);
+    }
+
+    //@SuppressWarnings("deprecation")
+    //private static ByteList hexBytes(final ByteList data, final ByteList out) {
+    //    return hexBytes(data.bytes, data.begin, data.realSize, out);
+    //}
+
+    private static ByteList hexBytes(final byte[] data, final int off, final int len, final ByteList out) {
+        boolean notFist = false;
+        out.ensure( len * 3 - 1 );
+        for ( int i = off; i < (off + len); i++ ) {
+            if ( notFist ) out.append(':');
+            final byte b = data[i];
+            out.append( HEX[ (b >> 4) & 0xF ] );
+            out.append( HEX[ b & 0xF ] );
+            notFist = true;
+        }
+        return out;
+    }
+
+    private static final char[] HEX = {
+        '0' , '1' , '2' , '3' , '4' , '5' , '6' , '7' ,
+        '8' , '9' , 'A' , 'B' , 'C' , 'D' , 'E' , 'F'
+    };
 
 }// X509Extensions

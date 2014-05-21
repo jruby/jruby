@@ -14,50 +14,6 @@
   $Id: openssl.rb 12496 2007-06-08 15:02:04Z technorama $
 =end
 
-# TODO: remove this chunk after 1.4 support is dropped
-require 'digest'
-unless defined?(::Digest::Class)
-  # restricted support for jruby <= 1.4 (1.8.6 Digest compat)
-  module Digest
-    class Class
-      def self.hexdigest(name, data)
-        digest(name, data).unpack('H*')[0]
-      end
-
-      def self.digest(data, name)
-        digester = const_get(name).new
-        digester.update(data)
-        digester.finish
-      end
-
-      def hexdigest
-        digest.unpack('H*')[0]
-      end
-
-      def digest
-        dup.finish
-      end
-
-      def ==(oth)
-        digest == oth.digest
-      end
-
-      def to_s
-        hexdigest
-      end
-
-      def size
-        digest_length
-      end
-
-      def length
-        digest_length
-      end
-    end
-  end
-end
-# end of compat chunk.
-
 require 'openssl/bn'
 require 'openssl/cipher'
 require 'openssl/config'

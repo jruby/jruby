@@ -32,6 +32,8 @@ public class AliasNode extends RubyNode {
 
     @Override
     public void executeVoid(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final Object object = module.execute(frame);
 
         if (object instanceof RubyModule) {

@@ -9,22 +9,17 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
-import com.oracle.truffle.api.frame.FrameDescriptor;
-import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
-import org.jruby.truffle.nodes.InlinableMethodImplementation;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
-import org.jruby.truffle.nodes.debug.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -32,7 +27,6 @@ import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -90,12 +84,8 @@ public abstract class CoreMethodNodeManager {
         getMethods(methods, ThreadNodesFactory.getFactories());
         getMethods(methods, TimeNodesFactory.getFactories());
         getMethods(methods, TrueClassNodesFactory.getFactories());
+        getMethods(methods, TruffleDebugNodesFactory.getFactories());
         getMethods(methods, EncodingNodesFactory.getFactories());
-
-        if (Options.TRUFFLE_DEBUG_NODES.load()) {
-            getMethods(methods, DebugNodesFactory.getFactories());
-        }
-
         return methods;
     }
 
@@ -140,17 +130,10 @@ public abstract class CoreMethodNodeManager {
 
         final Visibility visibility = methodDetails.getMethodAnnotation().visibility();
 
-        final RubyRootNode pristineRootNode = makeGenericMethod(context, methodDetails);
-        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRootNode));
+        final RubyRootNode rootNode = makeGenericMethod(context, methodDetails);
 
-        final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, null, new FrameDescriptor(), pristineRootNode, true,
-                        methodDetails.getMethodAnnotation().appendCallNode());
-
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(pristineRootNode.getSourceSection(), methodDetails.getIndicativeName(), null);
-
-        final RubyMethod method = new RubyMethod(sharedMethodInfo, module, canonicalName, visibility, false, methodImplementation);
-
-        methodImplementation.setMethod(method);
+        final RubyMethod method = new RubyMethod(rootNode.getSharedMethodInfo(), canonicalName, module, visibility, false,
+                Truffle.getRuntime().createCallTarget(rootNode), null, true);
 
         module.addMethod(method);
 
@@ -170,7 +153,11 @@ public abstract class CoreMethodNodeManager {
     }
 
     private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails) {
-        final SourceSection sourceSection = new CoreSourceSection(methodDetails.getClassAnnotation().name() + "#" + methodDetails.getMethodAnnotation().names()[0]);
+        final String indicativeName = methodDetails.getClassAnnotation().name() + "#" + methodDetails.getMethodAnnotation().names()[0];
+
+        final SourceSection sourceSection = new CoreSourceSection(indicativeName);
+
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, methodDetails.getIndicativeName(), false, null);
 
         final Arity arity = new Arity(methodDetails.getMethodAnnotation().minArgs(), methodDetails.getMethodAnnotation().maxArgs());
 
@@ -198,7 +185,7 @@ public abstract class CoreMethodNodeManager {
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
 
-        return new RubyRootNode(sourceSection, null, block);
+        return new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
     }
 
     public static class MethodDetails {

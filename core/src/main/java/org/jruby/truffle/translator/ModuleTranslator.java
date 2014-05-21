@@ -58,14 +58,11 @@ class ModuleTranslator extends BodyTranslator {
             body = SequenceNode.sequence(context, sourceSection, initFlipFlopStates(sourceSection), body);
         }
 
-        body = new CatchReturnNode(context, sourceSection, body, environment.getReturnID(), false);
+        body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
 
-        final RubyRootNode pristineRootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), body);
+        final RubyRootNode rootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
 
-        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(NodeUtil.cloneNode(pristineRootNode));
-
-        return new MethodDefinitionNode(context, sourceSection, name, environment.getSharedMethodInfo(), environment.getFrameDescriptor(), environment.needsDeclarationFrame(),
-                        pristineRootNode, callTarget, false);
+        return new MethodDefinitionNode(context, sourceSection, environment.getSharedMethodInfo().getName(), environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), rootNode, false);
     }
 
     @Override
@@ -95,10 +92,10 @@ class ModuleTranslator extends BodyTranslator {
          * the class being defined.
          */
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, node.getName(), node.getBodyNode());
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, node.getName(), false, node.getBodyNode());
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo);
+                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName());
         final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, false, source);
         final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), node.getName(), node.getArgsNode(), node.getBodyNode(), false);
 

@@ -309,7 +309,7 @@ public class PKCS7 {
             throw e;
         } catch(Exception e) {
             System.err.println("Other exception");
-            e.printStackTrace();
+            e.printStackTrace(System.err);
             throw new NotVerifiedPKCS7Exception();
         }
     }
@@ -372,7 +372,7 @@ public class PKCS7 {
 
         BIO tmpin = indata;
         BIO p7bio = dataInit(tmpin);
-        BIO tmpout = null;
+        BIO tmpout;
         if((flags & TEXT) != 0) {
             tmpout = BIO.mem();
         } else {
@@ -627,7 +627,7 @@ public class PKCS7 {
     public static PKCS7 readPEM(BIO input) throws PKCS7Exception {
         try {
             byte[] buffer = new byte[SMIME.MAX_SMLEN];
-            int read = -1;
+            int read;
             read = input.gets(buffer, SMIME.MAX_SMLEN);
             if(read > PEM_STRING_PKCS7_START.length) {
                 byte[] tmp = new byte[PEM_STRING_PKCS7_START.length];
@@ -650,7 +650,7 @@ public class PKCS7 {
      */
     public BIO bioAddDigest(BIO pbio, AlgorithmIdentifier alg) throws PKCS7Exception {
         try {
-            MessageDigest md = EVP.getDigest(alg.getObjectId());
+            MessageDigest md = EVP.getDigest(alg.getAlgorithm());
             BIO btmp = BIO.mdFilter(md);
             if(pbio == null) {
                 return btmp;
@@ -667,10 +667,7 @@ public class PKCS7 {
      *
      */
     public BIO dataDecode(PrivateKey pkey, BIO inBio, X509AuxCertificate pcert) throws PKCS7Exception {
-        BIO out = null;
-        BIO btmp = null;
-        BIO etmp = null;
-        BIO bio = null;
+        BIO out = null; BIO btmp; BIO etmp; BIO bio;
         byte[] dataBody = null;
         Collection<AlgorithmIdentifier> mdSk = null;
         Collection<RecipInfo> rsk = null;
@@ -722,7 +719,6 @@ public class PKCS7 {
                     } else {
                         out.push(btmp);
                     }
-                    btmp = null;
                 } catch(Exception e) {
                     e.printStackTrace(System.err);
                     throw new PKCS7Exception(F_PKCS7_DATADECODE, R_UNKNOWN_DIGEST_TYPE, e);
@@ -810,7 +806,6 @@ public class PKCS7 {
             } else {
                 out.push(etmp);
             }
-            etmp = null;
         }
 
         if(isDetached() || inBio != null) {
@@ -823,7 +818,6 @@ public class PKCS7 {
             }
         }
         out.push(bio);
-        bio = null;
         return out;
     }
 
@@ -923,7 +917,6 @@ public class PKCS7 {
             } else {
                 out.push(btmp);
             }
-            btmp = null;
         }
 
         if (bio == null) {
@@ -943,7 +936,6 @@ public class PKCS7 {
         } else {
             out = bio;
         }
-        bio = null;
         return out;
     }
 

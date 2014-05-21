@@ -1699,10 +1699,12 @@ public class RubyEnumerable {
         if (arg.isNil()) {
             return context.nil;
         } else {
+            IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
             try {
                 return arg.callMethod(context, "next");
             } catch (RaiseException re) {
                 if (re.getException().getMetaClass() == runtime.getStopIteration()) {
+                    runtime.getGlobalVariables().set("$!", oldExc);
                     return context.nil;
                 } else {
                     throw re;

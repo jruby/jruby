@@ -11,14 +11,11 @@ package org.jruby.truffle.runtime;
 
 import java.io.*;
 import java.math.*;
+import java.util.Arrays;
 import java.util.concurrent.atomic.*;
 
-import com.oracle.truffle.api.debug.ASTPrinter;
-import com.oracle.truffle.api.debug.DebugContext;
-import com.oracle.truffle.api.debug.DebugManager;
-import com.oracle.truffle.api.debug.DefaultDebugManager;
+import org.jruby.Ruby;
 import org.jruby.*;
-
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
@@ -27,8 +24,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyBinding;
-import org.jruby.truffle.runtime.core.RubyFixnum;
-import org.jruby.truffle.runtime.core.RubyFloat;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -41,7 +36,7 @@ import org.jruby.util.ByteList;
 /**
  * The global state of a running Ruby system.
  */
-public class RubyContext implements ExecutionContext {
+public class RubyContext {
 
     private final Ruby runtime;
     private final TranslatorDriver translator;
@@ -52,24 +47,17 @@ public class RubyContext implements ExecutionContext {
     private final ThreadManager threadManager;
     private final FiberManager fiberManager;
     private final AtExitManager atExitManager;
-    private final DebugManager debugManager;
     private final RubyDebugManager rubyDebugManager;
-    private final ASTPrinter astPrinter;
     private final SourceManager sourceManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
 
     private AtomicLong nextObjectID = new AtomicLong(0);
 
     public RubyContext(Ruby runtime, TranslatorDriver translator) {
-        this(runtime, translator, null);
-    }
-
-    public RubyContext(Ruby runtime, TranslatorDriver translator, ASTPrinter astPrinter) {
         assert runtime != null;
 
         this.runtime = runtime;
         this.translator = translator;
-        this.astPrinter = astPrinter;
 
         objectSpaceManager = new ObjectSpaceManager(this);
         traceManager = new TraceManager(this);
@@ -82,21 +70,12 @@ public class RubyContext implements ExecutionContext {
         atExitManager = new AtExitManager();
         sourceManager = new SourceManager();
 
-        debugManager = new DefaultDebugManager(this);
         rubyDebugManager = new RubyDebugManager();
 
         // Must initialize threads before fibers
 
         threadManager = new ThreadManager(this);
         fiberManager = new FiberManager(this);
-    }
-
-    public String getLanguageShortName() {
-        return "ruby";
-    }
-
-    public DebugManager getDebugManager() {
-        return debugManager;
     }
 
     public void load(Source source) {
@@ -117,7 +96,7 @@ public class RubyContext implements ExecutionContext {
         if (code == null) {
             throw new RuntimeException("Can't read file " + fileName);
         }
-        coreLibrary.getLoadedFeatures().push(makeString(fileName));
+        coreLibrary.getLoadedFeatures().slowPush(makeString(fileName));
         execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
     }
 
@@ -189,10 +168,8 @@ public class RubyContext implements ExecutionContext {
     public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame) {
         try {
             final RubyParserResult parseResult = translator.parse(context, source, parserContext, parentFrame);
-            final RubyArguments arguments = new RubyArguments(RubyArguments.create(parentFrame, self, null));
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
-
-            return callTarget.call(null, arguments);
+            return callTarget.call(RubyArguments.pack(parentFrame, self, null));
         } catch (RaiseException e) {
             throw e;
         } catch (ThrowException e) {
@@ -324,6 +301,7 @@ public class RubyContext implements ExecutionContext {
         return object instanceof UndefinedPlaceholder || //
                         object instanceof Boolean || //
                         object instanceof Integer || //
+                        object instanceof Long || //
                         object instanceof BigInteger || //
                         object instanceof Double || //
                         object instanceof RubyBasicObject || //
@@ -331,7 +309,11 @@ public class RubyContext implements ExecutionContext {
     }
 
     public static boolean shouldObjectsBeVisible(Object... objects) {
-        for (Object object : objects) {
+        return shouldObjectsBeVisible(objects.length, objects);
+    }
+
+    public static boolean shouldObjectsBeVisible(int length, Object... objects) {
+        for (Object object : Arrays.asList(objects).subList(0, length)) {
             if (!shouldObjectBeVisible(object)) {
                 return false;
             }
@@ -346,15 +328,6 @@ public class RubyContext implements ExecutionContext {
 
     public SourceManager getSourceManager() {
         return sourceManager;
-    }
-
-    @Override
-    public DebugContext getDebugContext() {
-        throw new UnsupportedOperationException();
-    }
-
-    public RubyDebugManager getRubyDebugManager() {
-        return rubyDebugManager;
     }
 
 }

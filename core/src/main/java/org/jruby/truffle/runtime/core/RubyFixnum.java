@@ -9,7 +9,9 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 
 import java.math.*;
@@ -31,8 +33,9 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         super(fixnumClass);
     }
 
+    @Deprecated
     public static int toInt(Object value) {
-        // TODO(CS): stop using this in compilation - use a specialising node instead
+        RubyNode.notDesignedForCompilation();
 
         assert value != null;
 
@@ -80,7 +83,10 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         throw new UnsupportedOperationException(value.getClass().toString());
     }
 
+    @Deprecated
     public static long toLong(Object value) {
+        RubyNode.notDesignedForCompilation();
+
         // TODO(CS): stop using this in compilation - use a specialising node instead
 
         assert value != null;
@@ -127,18 +133,25 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         throw new UnsupportedOperationException(value.getClass().toString());
     }
 
+    @Deprecated
     public static boolean fitsIntoInteger(long value) {
+        RubyNode.notDesignedForCompilation();
+
         return value >= Integer.MAX_VALUE && value <= Integer.MAX_VALUE;
     }
 
+    @Deprecated
     public static int toUnsignedInt(byte x) {
+        RubyNode.notDesignedForCompilation();
+
         return ((int) x) & 0xff;
     }
 
+    @Deprecated
     public static Object fixnumOrBignum(BigInteger value) {
-        assert value != null;
+        RubyNode.notDesignedForCompilation();
 
-        // TODO(CS): make this a node?
+        assert value != null;
 
         if (value.compareTo(MIN_VALUE_BIG) >= 0 && value.compareTo(MAX_VALUE_BIG) <= 0) {
             final long longValue = value.longValue();
@@ -153,8 +166,9 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         }
     }
 
+    @Deprecated
     public static Object fixnumOrBignum(double value) {
-        // TODO(CS): make this a node?
+        RubyNode.notDesignedForCompilation();
 
         if (value >= MIN_VALUE && value <= MAX_VALUE) {
             final long longValue = (long) value;
@@ -169,7 +183,10 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         }
     }
 
+    @Deprecated
     protected boolean equals(long value, Object other) {
+        RubyNode.notDesignedForCompilation();
+
         if (other instanceof Integer) {
             return value == (int) other;
         } else if (other instanceof Long) {
@@ -193,6 +210,8 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
 
     @Override
     public int hashCode() {
+        RubyNode.notDesignedForCompilation();
+
         throw new UnsupportedOperationException();
     }
 
@@ -215,12 +234,9 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         }
 
         @Override
-        public String toString() {
-            return Integer.toString(value);
-        }
-
-        @Override
         public boolean equals(Object other) {
+            RubyNode.notDesignedForCompilation();
+
             return equals(value, other);
         }
 
@@ -245,12 +261,9 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         }
 
         @Override
-        public String toString() {
-            return Long.toString(value);
-        }
-
-        @Override
         public boolean equals(Object other) {
+            RubyNode.notDesignedForCompilation();
+
             return equals(value, other);
         }
 

@@ -182,8 +182,8 @@ public class Request extends RubyObject {
                 if ( tv.getValue() instanceof ASN1String ) {
                     val = ( (ASN1String) tv.getValue() ).getString();
                 }
-                RubyFixnum typef = runtime.newFixnum( ASN1.idForClass(tv.getValue().getClass()) ); //TODO correct?
-                newName.addEntry(oid, val, typef);
+                RubyFixnum type = runtime.newFixnum( ASN1.idForJava( tv.getValue() ) ); //TODO correct?
+                newName.addEntry(oid, val, type);
             }
         }
 

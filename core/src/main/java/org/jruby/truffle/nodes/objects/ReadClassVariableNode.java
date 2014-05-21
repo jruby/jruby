@@ -30,6 +30,8 @@ public class ReadClassVariableNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        notDesignedForCompilation();
+
         final RubyObject object = (RubyObject) module.execute(frame);
 
         RubyModule moduleObject;

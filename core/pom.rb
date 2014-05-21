@@ -5,10 +5,6 @@ project 'JRuby Core' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-core'
 
-  source_control( 'http://github.com/jruby/jruby',
-                  :connection => 'scm:git:git://github.com/jruby/jruby.git',
-                  :developer_connection => 'scm:git:ssh://git@github.com/jruby/jruby.git' )
-
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
 
@@ -59,7 +55,7 @@ project 'JRuby Core' do
   jar 'bsf:bsf:2.4.0', :scope => 'provided'
   jar 'com.jcraft:jzlib:1.1.2'
   jar 'com.martiansoftware:nailgun-server:0.9.1'
-  jar 'com.oracle:truffle:0.2'
+  jar 'com.oracle:truffle:0.3'
   jar 'junit:junit', :scope => 'test'
   jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
   jar 'org.osgi:org.osgi.core:5.0.0', :scope => 'provided'

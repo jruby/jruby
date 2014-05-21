@@ -177,7 +177,7 @@ public class X509Name extends RubyObject {
             } else {
                 values.add(null); //TODO really?
             }
-            types.add(getRuntime().newFixnum(ASN1.idForClass(tv.getValue().getClass())));
+            types.add(getRuntime().newFixnum( ASN1.idForJava(tv.getValue())) );
         }
     }
 
@@ -196,7 +196,7 @@ public class X509Name extends RubyObject {
         } else {
             values.add(null);
         }
-        types.add(getRuntime().newFixnum(ASN1.idForClass(typeAndValue.getObjectAt(1).getClass())));
+        types.add(getRuntime().newFixnum( ASN1.idForJava(typeAndValue.getObjectAt(1))) );
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
@@ -322,6 +322,7 @@ public class X509Name extends RubyObject {
 
     @JRubyMethod(name = "to_s", rest = true)
     public IRubyObject to_s(IRubyObject[] args) {
+        final Ruby runtime = getRuntime();
         /*
 Should follow parameters like this:
 if 0 (COMPAT):
@@ -357,23 +358,22 @@ else
             valuesIter = values.iterator();
         }
 
-        final Map<ASN1ObjectIdentifier, String> lookup = ASN1.getSymLookup(getRuntime());
         final StringBuilder str = new StringBuilder(); String sep = "";
         while( oidsIter.hasNext() ) {
             final ASN1ObjectIdentifier oid = oidsIter.next();
-            String outOid = lookup.get(oid);
-            if ( outOid == null ) outOid = oid.toString();
+            String name = ASN1.oid2Sym(runtime, oid);
+            if ( name == null ) name = oid.toString();
             final String value = valuesIter.next();
 
             if ( flag == RFC2253 ) {
-                str.append(sep).append(outOid).append('=').append(value);
+                str.append(sep).append(name).append('=').append(value);
                 sep = ",";
             } else {
-                str.append('/').append(outOid).append('=').append(value);
+                str.append('/').append(name).append('=').append(value);
             }
         }
 
-        return getRuntime().newString( str.toString() );
+        return runtime.newString( str.toString() );
     }
 
     @Override
@@ -381,18 +381,17 @@ else
     public RubyArray to_a() {
         final Ruby runtime = getRuntime();
         final RubyArray entries = runtime.newArray( oids.size() );
-        final Map<ASN1ObjectIdentifier, String> lookup = ASN1.getSymLookup(getRuntime());
         final Iterator<ASN1ObjectIdentifier> oidsIter = oids.iterator();
         final Iterator<String> valuesIter = values.iterator();
         final Iterator<RubyInteger> typesIter = types.iterator();
         while ( oidsIter.hasNext() ) {
             ASN1ObjectIdentifier oid = oidsIter.next();
-            String outOid = lookup.get(oid);
-            if ( outOid == null ) outOid = "UNDEF";
+            String name = ASN1.oid2Sym(runtime, oid);
+            if ( name == null ) name = "UNDEF";
             final String value = valuesIter.next();
             final IRubyObject type = typesIter.next();
             final IRubyObject[] entry = new IRubyObject[] {
-                runtime.newString(outOid), runtime.newString(value), type
+                runtime.newString(name), runtime.newString(value), type
             };
             entries.append( runtime.newArrayNoCopy(entry) );
         }

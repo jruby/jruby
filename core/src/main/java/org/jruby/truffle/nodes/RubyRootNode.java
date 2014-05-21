@@ -12,7 +12,9 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.RubyCallStack;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 /**
  * The root node in an AST for a method. Unlike {@link RubyNode}, this has a single entry point,
@@ -20,38 +22,63 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
  */
 public class RubyRootNode extends RootNode {
 
-    // The method refers to root node, and vice versa, so this field is only compilation final and is set ex post to close the loop
-
-    @CompilerDirectives.CompilationFinal private RubyMethod method;
-
+    private final SharedMethodInfo sharedMethodInfo;
     @Child protected RubyNode body;
+    private final RubyNode uninitializedBody;
 
-    public RubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, RubyNode body) {
+
+    public RubyRootNode(SourceSection sourceSection, FrameDescriptor frameDescriptor, SharedMethodInfo sharedMethodInfo, RubyNode body) {
         super(sourceSection, frameDescriptor);
         assert body != null;
         this.body = body;
+        this.sharedMethodInfo = sharedMethodInfo;
+        uninitializedBody = NodeUtil.cloneNode(body);
     }
 
-    public void setMethod(RubyMethod method) {
-        assert this.method != null;
-        this.method = method;
-    }
-
-    public RubyMethod getMethod() {
-        return method;
+    public RubyRootNode cloneRubyRootNode() {
+        return new RubyRootNode(getSourceSection(), getFrameDescriptor(), sharedMethodInfo, NodeUtil.cloneNode(uninitializedBody));
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return body.execute(frame);
+        final Object result = body.execute(frame);
+        assert RubyContext.shouldObjectBeVisible(result) : getSourceSection();
+        return result;
+    }
+
+    @Override
+    public RootNode split() {
+        return cloneRubyRootNode();
+    }
+
+    @Override
+    public boolean isSplittable() {
+        return true;
+    }
+
+    public void reportLoopCountThroughBlocks(int count) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
+            final RootNode rootNode = frame.getCallNode().getRootNode();
+
+            rootNode.reportLoopCount(count);
+
+            if (rootNode instanceof RubyRootNode && !((RubyRootNode) rootNode).getSharedMethodInfo().isBlock()) {
+                break;
+            }
+        }
+
+        reportLoopCount(count);
     }
 
     @Override
     public String toString() {
-        final SourceSection sourceSection = getSourceSection();
-        final String source = sourceSection == null ? "<unknown>" : sourceSection.toString();
-        final String methodName = method == null ? "<unknown>" : method.getName();
-        return "Method " + methodName + ":" + source + "@" + Integer.toHexString(hashCode());
+        return sharedMethodInfo.toString();
+    }
+
+    public SharedMethodInfo getSharedMethodInfo() {
+        return sharedMethodInfo;
     }
 
 }

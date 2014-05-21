@@ -90,11 +90,13 @@ public class Attribute extends RubyObject {
         ASN1EncodableVector v1 = new ASN1EncodableVector();
         v1.add(getObjectIdentifier(oid.toString()));
         if(value instanceof ASN1.ASN1Constructive) {
-            v1.add(((ASN1.ASN1Constructive)value).toASN1());
+            final ThreadContext context = getRuntime().getCurrentContext();
+            v1.add( ((ASN1.ASN1Constructive) value).toASN1(context) );
         } else {
+            final ThreadContext context = getRuntime().getCurrentContext();
             ASN1EncodableVector v2 = new ASN1EncodableVector();
-            v2.add(((ASN1.ASN1Data)value).toASN1());
-            v1.add(new DERSet(v2));
+            v2.add( ((ASN1.ASN1Data) value).toASN1(context) );
+            v1.add( new DERSet(v2) );
         }
         return new DLSequence(v1);
     }

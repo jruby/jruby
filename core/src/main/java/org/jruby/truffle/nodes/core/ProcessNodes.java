@@ -29,6 +29,8 @@ public abstract class ProcessNodes {
 
         @Specialization
         public int pid() {
+            notDesignedForCompilation();
+
             return getContext().getRuntime().getPosix().getpid();
         }
 

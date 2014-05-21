@@ -9,26 +9,22 @@
  */
 package org.jruby.truffle.nodes;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.call.DispatchNode;
-import org.jruby.truffle.nodes.debug.RubyProxyNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.RubyArray;
-import org.jruby.truffle.runtime.core.hash.RubyHash;
-import org.jruby.truffle.runtime.core.range.FixnumRange;
-import org.jruby.truffle.runtime.core.range.ObjectRange;
-import org.jruby.truffle.runtime.core.range.RubyRange;
-import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 import java.math.BigInteger;
 
@@ -87,8 +83,8 @@ public abstract class RubyNode extends Node {
         return RubyTypesGen.RUBYTYPES.expectLong(execute(frame));
     }
 
-    public FixnumRange executeFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectFixnumRange(execute(frame));
+    public RubyRange.IntegerFixnumRange executeFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectIntegerFixnumRange(execute(frame));
     }
 
     public double executeFloat(VirtualFrame frame) throws UnexpectedResultException {
@@ -99,15 +95,11 @@ public abstract class RubyNode extends Node {
         return RubyTypesGen.RUBYTYPES.expectNilPlaceholder(execute(frame));
     }
 
-    public Node executeNode(VirtualFrame frame) throws UnexpectedResultException {
-        return RubyTypesGen.RUBYTYPES.expectNode(execute(frame));
-    }
-
     public Object[] executeObjectArray(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectObjectArray(execute(frame));
     }
 
-    public ObjectRange executeObjectRange(VirtualFrame frame) throws UnexpectedResultException {
+    public RubyRange.ObjectRange executeObjectRange(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectObjectRange(execute(frame));
     }
 
@@ -198,11 +190,6 @@ public abstract class RubyNode extends Node {
         execute(frame);
     }
 
-    /**
-     * If you aren't sure whether you have a normal {@link RubyNode} or a {@link RubyProxyNode},
-     * this method will return the real node, whether that is this node, or whether this node is a
-     * proxy and you actually need the child.
-     */
     public RubyNode getNonProxyNode() {
         return this;
     }
@@ -211,8 +198,8 @@ public abstract class RubyNode extends Node {
         return context;
     }
 
-    public RubyMethod getMethod() {
-        return ((RubyRootNode) getRootNode()).getMethod();
+    public static void notDesignedForCompilation() {
+        CompilerAsserts.neverPartOfCompilation();
     }
 
 }

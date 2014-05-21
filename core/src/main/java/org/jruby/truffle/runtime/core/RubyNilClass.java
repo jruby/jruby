@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 
 /**
@@ -24,6 +25,8 @@ public class RubyNilClass extends RubyObject {
      * Given a reference, produce either {@code nil} or the object. .
      */
     public static Object instanceOrNil(Object object) {
+        RubyNode.notDesignedForCompilation();
+
         if (object == null) {
             return NilPlaceholder.INSTANCE;
         } else {
@@ -33,6 +36,8 @@ public class RubyNilClass extends RubyObject {
 
     @Override
     public boolean equals(Object other) {
+        RubyNode.notDesignedForCompilation();
+
         return other instanceof RubyNilClass || other instanceof NilPlaceholder;
     }
 
@@ -42,12 +47,9 @@ public class RubyNilClass extends RubyObject {
     }
 
     public static boolean isNil(Object block) {
-        return block instanceof NilPlaceholder || block instanceof RubyNilClass;
-    }
+        RubyNode.notDesignedForCompilation();
 
-    @Override
-    public String toString() {
-        return "";
+        return block instanceof NilPlaceholder || block instanceof RubyNilClass;
     }
 
 }

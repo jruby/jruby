@@ -28,29 +28,24 @@ public class MethodDefinitionNode extends RubyNode {
     protected final String name;
     protected final SharedMethodInfo sharedMethodInfo;
 
-    protected final FrameDescriptor frameDescriptor;
-    protected final RubyRootNode pristineRootNode;
-
-    protected final CallTarget callTarget;
+    protected final RubyRootNode rootNode;
 
     protected final boolean requiresDeclarationFrame;
 
     protected final boolean ignoreLocalVisibility;
 
-    public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo, FrameDescriptor frameDescriptor,
-            boolean requiresDeclarationFrame, RubyRootNode pristineRootNode, CallTarget callTarget, boolean ignoreLocalVisibility) {
+    public MethodDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo sharedMethodInfo,
+            boolean requiresDeclarationFrame, RubyRootNode rootNode, boolean ignoreLocalVisibility) {
         super(context, sourceSection);
         this.name = name;
         this.sharedMethodInfo = sharedMethodInfo;
-        this.frameDescriptor = frameDescriptor;
         this.requiresDeclarationFrame = requiresDeclarationFrame;
-        this.pristineRootNode = pristineRootNode;
-        this.callTarget = callTarget;
+        this.rootNode = rootNode;
         this.ignoreLocalVisibility = ignoreLocalVisibility;
     }
 
     public RubyMethod executeMethod(VirtualFrame frame) {
-        CompilerDirectives.transferToInterpreter();
+        notDesignedForCompilation();
 
         final MaterializedFrame declarationFrame;
 
@@ -88,15 +83,9 @@ public class MethodDefinitionNode extends RubyNode {
             }
         }
 
-        final InlinableMethodImplementation methodImplementation = new InlinableMethodImplementation(callTarget, declarationFrame, frameDescriptor, pristineRootNode, false, false);
-
-        // Define the method with no declaring module - this will be filled in by AddMethodNode in the typical case
-
-        final RubyMethod method = new RubyMethod(sharedMethodInfo, null, name, visibility, false, methodImplementation);
-
-        methodImplementation.setMethod(method);
-
-        return method;
+        final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
+        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
+        return new RubyMethod(sharedMethodInfo, name, null, visibility, false, callTarget, declarationFrame, true);
     }
 
     @Override
@@ -108,8 +97,8 @@ public class MethodDefinitionNode extends RubyNode {
         return name;
     }
 
-    public CallTarget getCallTarget() {
-        return callTarget;
+    public RubyRootNode getMethodRootNode() {
+        return rootNode;
     }
 
 }

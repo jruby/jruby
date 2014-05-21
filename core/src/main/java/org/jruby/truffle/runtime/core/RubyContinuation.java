@@ -9,9 +9,9 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
-import org.jruby.truffle.runtime.core.array.*;
 
 /**
  * Represents the Ruby {@code Continuation} class. We only support continuations that just move up
@@ -35,6 +35,8 @@ public class RubyContinuation extends RubyObject {
      * dead when this method resumes.
      */
     public Object enter(RubyProc block) {
+        RubyNode.notDesignedForCompilation();
+
         try {
             return block.call(null, this);
         } catch (ContinuationReturnException e) {
@@ -57,6 +59,8 @@ public class RubyContinuation extends RubyObject {
      * implementation we can only do this once, and only if that means jumping back up the stack.
      */
     public void call(Object... args) {
+        RubyNode.notDesignedForCompilation();
+
         if (dead) {
             throw new UnsupportedOperationException("Only continuations that just move up the stack and are one-shot are supported");
         }
@@ -68,7 +72,7 @@ public class RubyContinuation extends RubyObject {
         } else if (args.length == 1) {
             returnValue = args[0];
         } else {
-            returnValue = RubyArray.specializedFromObjects(getRubyClass().getContext().getCoreLibrary().getArrayClass(), args);
+            returnValue = RubyArray.fromObjects(getRubyClass().getContext().getCoreLibrary().getArrayClass(), args);
         }
 
         // Caught in enter

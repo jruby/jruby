@@ -418,6 +418,7 @@ public class SSLSocket extends RubyObject {
 
             switch (hsStatus) {
             case FINISHED:
+            case NOT_HANDSHAKING:
                 if ( initialHandshake ) finishInitialHandshake();
                 return;
             case NEED_TASK:
@@ -444,9 +445,6 @@ public class SSLSocket extends RubyObject {
                 netData.flip();
                 flushData(blocking);
                 break;
-            case NOT_HANDSHAKING:
-                // Opposite side could close while unwrapping. Handle this as same as FINISHED
-                return;
             default:
                 throw new IllegalStateException("Unknown handshaking status: " + hsStatus);
             }

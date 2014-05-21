@@ -11,18 +11,21 @@ package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.NodeCost;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
 /**
  * A node in the dispatch chain that transfers to interpreter and then boxes the receiver.
  */
+@NodeInfo(cost = NodeCost.UNINITIALIZED)
 public class UninitializedBoxingDispatchNode extends UnboxedDispatchNode {
 
     @Child protected BoxedDispatchNode next;
 
-    public UninitializedBoxingDispatchNode(RubyContext context, SourceSection sourceSection, BoxedDispatchNode next) {
-        super(context, sourceSection);
+    public UninitializedBoxingDispatchNode(RubyContext context, BoxedDispatchNode next) {
+        super(context);
 
         this.next = next;
     }
@@ -40,8 +43,8 @@ public class UninitializedBoxingDispatchNode extends UnboxedDispatchNode {
          * specialized.
          */
 
-        if (next instanceof UninitializedDispatchNode) {
-            this.replace(new BoxingDispatchNode(getContext(), getSourceSection(), next));
+        if (!(next instanceof UninitializedDispatchNode)) {
+            this.replace(new BoxingDispatchNode(getContext(), next));
         }
 
         return next.dispatch(frame, getContext().getCoreLibrary().box(receiverObject), blockObject, argumentsObjects);

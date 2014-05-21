@@ -9,12 +9,11 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import java.util.regex.*;
-
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
-import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.common.IRubyWarnings;
+import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
@@ -22,20 +21,77 @@ import org.jruby.util.ByteList;
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
 
-    @CoreMethod(names = {"=~", "==="}, minArgs = 1, maxArgs = 1)
-    public abstract static class MatchOperatorNode extends CoreMethodNode {
+    @CoreMethod(names = "==", minArgs = 1, maxArgs = 1)
+    public abstract static class EqualNode extends CoreMethodNode {
 
-        public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
+        public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public MatchOperatorNode(MatchOperatorNode prev) {
+        public EqualNode(EqualNode prev) {
             super(prev);
         }
 
         @Specialization
-        public Object match(VirtualFrame frame, RubyRegexp regexp, RubyString string) {
-            return regexp.matchOperator(frame.getCaller().unpack(), string.toString());
+        public boolean equal(RubyRegexp a, RubyRegexp b) {
+            notDesignedForCompilation();
+
+            return a.equals(b);
+        }
+
+    }
+
+    @CoreMethod(names = "===", minArgs = 1, maxArgs = 1)
+    public abstract static class ThreeEqualNode extends CoreMethodNode {
+
+        public ThreeEqualNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ThreeEqualNode(ThreeEqualNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object match(RubyRegexp regexp, RubyString string) {
+            notDesignedForCompilation();
+
+            return regexp.matchOperator(string.toString()) != NilPlaceholder.INSTANCE;
+        }
+
+    }
+
+    @CoreMethod(names = "=~", minArgs = 1, maxArgs = 1)
+    public abstract static class MatchOperatorNode extends CoreMethodNode {
+
+        @Child protected DispatchHeadNode matchNode;
+
+        public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            matchNode = new DispatchHeadNode(context, "=~", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        }
+
+        public MatchOperatorNode(MatchOperatorNode prev) {
+            super(prev);
+            matchNode = prev.matchNode;
+        }
+
+        @Specialization
+        public Object match(RubyRegexp regexp, RubyString string) {
+            notDesignedForCompilation();
+
+            return regexp.matchOperator(string.toString());
+        }
+
+        @Specialization
+        public Object match(VirtualFrame frame, RubyRegexp regexp, RubyBasicObject other) {
+            notDesignedForCompilation();
+
+            // TODO(CS) perhaps I shouldn't be converting match operators to simple calls - they seem to get switched around like this
+
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), getSourceSection().getStartLine(), "strange reversed match operator");
+
+            return matchNode.dispatch(frame, other, null, regexp);
         }
 
     }
@@ -52,8 +108,10 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public Object match(VirtualFrame frame, RubyRegexp regexp, RubyString string) {
-            return regexp.matchOperator(frame.getCaller().unpack(), string.toString()) == NilPlaceholder.INSTANCE;
+        public Object match(RubyRegexp regexp, RubyString string) {
+            notDesignedForCompilation();
+
+            return regexp.matchOperator(string.toString()) == NilPlaceholder.INSTANCE;
         }
 
     }
@@ -71,6 +129,8 @@ public abstract class RegexpNodes {
 
         @Specialization
         public RubyString sqrt(RubyString pattern) {
+            notDesignedForCompilation();
+
             return getContext().makeString(org.jruby.RubyRegexp.quote19(new ByteList(pattern.getBytes()), true).toString());
         }
 
@@ -89,6 +149,8 @@ public abstract class RegexpNodes {
 
         @Specialization
         public NilPlaceholder initialize(RubyRegexp regexp, RubyString string) {
+            notDesignedForCompilation();
+
             regexp.initialize(string.toString());
             return NilPlaceholder.INSTANCE;
         }
@@ -107,8 +169,10 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public Object match(VirtualFrame frame, RubyRegexp regexp, RubyString string) {
-            return regexp.match(frame.getCaller().unpack(), string.toString());
+        public Object match(RubyRegexp regexp, RubyString string) {
+            notDesignedForCompilation();
+
+            return regexp.match(string.toString());
         }
 
     }

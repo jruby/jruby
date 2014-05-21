@@ -1087,10 +1087,22 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     public static void ensureYieldClose(ThreadContext context, IRubyObject port, Block block) {
         if (block.isGiven()) {
+            Ruby runtime = context.runtime;
             try {
                 block.yield(context, port);
             } finally {
-                ((RubyIO)port).close();
+                IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
+                try {
+                    port.getMetaClass().finvoke(context, port, "close", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+                } catch (RaiseException re) {
+                    RubyException rubyEx = re.getException();
+                    if (rubyEx.kind_of_p(context, runtime.getStandardError()).isTrue()) {
+                        // MRI behavior: swallow StandardErorrs
+                        runtime.getGlobalVariables().set("$!", oldExc);
+                    } else {
+                        throw re;
+                    }
+                }
             }
         }
     }

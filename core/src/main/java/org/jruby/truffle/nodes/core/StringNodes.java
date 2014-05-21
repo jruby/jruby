@@ -12,17 +12,14 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.joni.Option;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.ArrayUtilities;
-import org.jruby.truffle.runtime.core.array.IntegerArrayStore;
-import org.jruby.truffle.runtime.core.array.RubyArray;
-import org.jruby.truffle.runtime.core.range.FixnumRange;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
@@ -45,11 +42,9 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString add(RubyString a, RubyString b) {
-            // TODO(CS): which encoding do we get here?
-            final RubyString string = new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList());
-            string.getBytes().append(a.getBytes());
-            string.getBytes().append(b.getBytes());
-            return string;
+            notDesignedForCompilation();
+
+            return getContext().makeString(a.toString() + b.toString());
         }
     }
 
@@ -67,6 +62,8 @@ public abstract class StringNodes {
         @CompilerDirectives.SlowPath
         @Specialization
         public RubyString add(RubyString string, int times) {
+            notDesignedForCompilation();
+
             final StringBuilder builder = new StringBuilder();
 
             for (int n = 0; n < times; n++) {
@@ -95,11 +92,15 @@ public abstract class StringNodes {
 
         @Specialization
         public boolean equal(RubyString a, RubyString b) {
+            notDesignedForCompilation();
+
             return a.equals(b.toString());
         }
 
         @Specialization
         public boolean equal(RubyString a, RubySymbol b) {
+            notDesignedForCompilation();
+
             return equal(a, b.toRubyString());
         }
     }
@@ -117,11 +118,15 @@ public abstract class StringNodes {
 
         @Specialization
         public boolean equal(@SuppressWarnings("unused") RubyString a, @SuppressWarnings("unused") NilPlaceholder b) {
+            notDesignedForCompilation();
+
             return true;
         }
 
         @Specialization
         public boolean notEqual(RubyString a, RubyString b) {
+            notDesignedForCompilation();
+
             return !a.toString().equals(b.toString());
         }
 
@@ -140,6 +145,8 @@ public abstract class StringNodes {
 
         @Specialization
         public int compare(RubyString a, RubyString b) {
+            notDesignedForCompilation();
+
             return a.toString().compareTo(b.toString());
         }
     }
@@ -157,6 +164,8 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString concat(RubyString string, RubyString other) {
+            notDesignedForCompilation();
+
             string.getBytes().append(other.getBytes());
             return string;
         }
@@ -187,7 +196,7 @@ public abstract class StringNodes {
 
             if (args.length == 1 && args[0] instanceof RubyArray) {
                 singleArrayProfile.enter();
-                return context.makeString(StringFormatter.format(format.toString(), ((RubyArray) args[0]).asList()));
+                return context.makeString(StringFormatter.format(format.toString(), Arrays.asList(((RubyArray) args[0]).slowToArray())));
             } else {
                 multipleArgumentsProfile.enter();
                 return context.makeString(StringFormatter.format(format.toString(), Arrays.asList(args)));
@@ -198,7 +207,6 @@ public abstract class StringNodes {
     @CoreMethod(names = "[]", minArgs = 1, maxArgs = 2)
     public abstract static class GetIndexNode extends CoreMethodNode {
 
-
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -207,28 +215,26 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
         @Specialization(order = 1)
-        public Object getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
-            final String javaString = string.toString();
-            final int normalisedIndex = ArrayUtilities.normaliseIndex(javaString.length(), index);
-            return getContext().makeString(javaString.charAt(normalisedIndex));
+        public RubyString getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
+            // TODO(CS): not really right
+            return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(new byte[]{(byte) string.getBytes().charAt(string.normaliseIndex(index))}, string.getBytes().getEncoding()));
         }
 
         @CompilerDirectives.SlowPath
         @Specialization(order = 2)
-        public Object getIndex(RubyString string, FixnumRange range, UndefinedPlaceholder undefined) {
+        public RubyString getIndex(RubyString string, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+            notDesignedForCompilation();
+
             final String javaString = string.toString();
 
-            final int stringLength = javaString.length();
-
             if (range.doesExcludeEnd()) {
-                final int begin = ArrayUtilities.normaliseIndex(stringLength, range.getBegin());
-                final int exclusiveEnd = ArrayUtilities.normaliseExclusiveIndex(stringLength, range.getExclusiveEnd());
+                final int begin = string.normaliseIndex(range.getBegin());
+                final int exclusiveEnd = string.normaliseExclusiveIndex(range.getExclusiveEnd());
                 return getContext().makeString(javaString.substring(begin, exclusiveEnd));
             } else {
-                final int begin = ArrayUtilities.normaliseIndex(stringLength, range.getBegin());
-                final int inclusiveEnd = ArrayUtilities.normaliseIndex(stringLength, range.getInclusiveEnd());
+                final int begin = string.normaliseIndex(range.getBegin());
+                final int inclusiveEnd = string.normaliseIndex(range.getInclusiveEnd());
                 return getContext().makeString(javaString.substring(begin, inclusiveEnd + 1));
             }
         }
@@ -236,6 +242,8 @@ public abstract class StringNodes {
         @CompilerDirectives.SlowPath
         @Specialization(order = 3)
         public Object getIndex(RubyString string, int start, int length) {
+            notDesignedForCompilation();
+
             final String javaString = string.toString();
 
             if (length > javaString.length() - start) {
@@ -248,6 +256,7 @@ public abstract class StringNodes {
 
             return getContext().makeString(javaString.substring(start, start + length));
         }
+
     }
 
     @CoreMethod(names = "=~", minArgs = 1, maxArgs = 1)
@@ -262,8 +271,10 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object match(VirtualFrame frame, RubyString string, RubyRegexp regexp) {
-            return regexp.matchOperator(frame, string.toString());
+        public Object match(RubyString string, RubyRegexp regexp) {
+            notDesignedForCompilation();
+
+            return regexp.matchOperator(string.toString());
         }
     }
 
@@ -280,6 +291,8 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyArray chomp(RubyString string) {
+            notDesignedForCompilation();
+
             final byte[] bytes = string.getBytes().bytes();
 
             final int[] ints = new int[bytes.length];
@@ -288,7 +301,7 @@ public abstract class StringNodes {
                 ints[n] = RubyFixnum.toUnsignedInt(bytes[n]);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new IntegerArrayStore(ints));
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ints, bytes.length);
         }
     }
 
@@ -305,6 +318,8 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString chomp(RubyString string) {
+            notDesignedForCompilation();
+
             return string.getRubyClass().getContext().makeString(string.toString().trim());
         }
     }
@@ -322,7 +337,9 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString chompBang(RubyString string) {
-            string.set(string.toString().trim());
+            notDesignedForCompilation();
+
+            string.set(ByteList.create(string.toString().trim()));
             return string;
         }
     }
@@ -340,6 +357,8 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString downcase(RubyString string) {
+            notDesignedForCompilation();
+
             return string.getRubyClass().getContext().makeString(string.toString().toLowerCase());
         }
     }
@@ -357,9 +376,31 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString downcase(RubyString string) {
-            string.set(string.toString().toLowerCase());
+            notDesignedForCompilation();
+
+            string.set(ByteList.create(string.toString().toLowerCase()));
             return string;
         }
+    }
+
+    @CoreMethod(names = "dup", maxArgs = 0)
+    public abstract static class DupNode extends CoreMethodNode {
+
+        public DupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DupNode(DupNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object dup(RubyString string) {
+            notDesignedForCompilation();
+
+            return new RubyString(getContext().getCoreLibrary().getStringClass(), string.getBytes().dup());
+        }
+
     }
 
     @CoreMethod(names = "empty?", maxArgs = 0)
@@ -375,7 +416,28 @@ public abstract class StringNodes {
 
         @Specialization
         public boolean empty(RubyString string) {
+            notDesignedForCompilation();
+
             return string.toString().isEmpty();
+        }
+    }
+
+    @CoreMethod(names = "encoding", maxArgs = 0)
+    public abstract static class EncodingNode extends CoreMethodNode {
+
+        public EncodingNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EncodingNode(EncodingNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyEncoding encoding(RubyString string) {
+            notDesignedForCompilation();
+
+            return new RubyEncoding(getContext().getCoreLibrary().getEncodingClass(), string.getBytes().getEncoding());
         }
     }
 
@@ -392,6 +454,8 @@ public abstract class StringNodes {
 
         @Specialization
         public boolean endWith(RubyString string, RubyString b) {
+            notDesignedForCompilation();
+
             return string.toString().endsWith(b.toString());
         }
     }
@@ -409,6 +473,8 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString forceEncoding(RubyString string, RubyString encodingName) {
+            notDesignedForCompilation();
+
             RubyEncoding encoding = RubyEncoding.findEncodingByName(encodingName);
             string.forceEncoding(encoding.getRubyEncoding().getEncoding());
 
@@ -430,12 +496,16 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString gsub(RubyString string, RubyString regexpString, RubyString replacement) {
+            notDesignedForCompilation();
+
             final RubyRegexp regexp = new RubyRegexp(getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
             return gsub(string, regexp, replacement);
         }
 
         @Specialization
         public RubyString gsub(RubyString string, RubyRegexp regexp, RubyString replacement) {
+            notDesignedForCompilation();
+
             return regexp.gsub(string.toString(), replacement.toString());
         }
     }
@@ -453,6 +523,8 @@ public abstract class StringNodes {
 
         @Specialization
         public int getByte(RubyString string, int index) {
+            notDesignedForCompilation();
+
             return string.getBytes().get(index);
         }
     }
@@ -470,6 +542,8 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString inspect(RubyString string) {
+            notDesignedForCompilation();
+
             return getContext().makeString("\"" + string.toString().replace("\\", "\\\\").replace("\"", "\\\"") + "\"");
         }
     }
@@ -492,7 +566,9 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString initialize(RubyString self, RubyString from) {
-            self.set(from);
+            notDesignedForCompilation();
+
+            self.set(from.getBytes());
             return self;
         }
     }
@@ -510,11 +586,15 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString ljust(RubyString string, int length, @SuppressWarnings("unused") UndefinedPlaceholder padding) {
+            notDesignedForCompilation();
+
             return getContext().makeString(RubyString.ljust(string.toString(), length, " "));
         }
 
         @Specialization
         public RubyString ljust(RubyString string, int length, RubyString padding) {
+            notDesignedForCompilation();
+
             return getContext().makeString(RubyString.ljust(string.toString(), length, padding.toString()));
         }
 
@@ -533,6 +613,8 @@ public abstract class StringNodes {
 
         @Specialization
         public Object setByte(RubyString string, int index, Object value) {
+            notDesignedForCompilation();
+
             throw new UnsupportedOperationException("getbyte not implemented");
         }
     }
@@ -550,6 +632,8 @@ public abstract class StringNodes {
 
         @Specialization
         public int size(RubyString string) {
+            notDesignedForCompilation();
+
             return string.toString().length();
         }
     }
@@ -567,6 +651,8 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString slice(RubyString string, int start, int length) {
+            notDesignedForCompilation();
+
             return getContext().makeString(string.toString().substring(start, start + length));
         }
     }
@@ -583,14 +669,18 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object match(VirtualFrame frame, RubyString string, RubyString regexpString) {
+        public Object match(RubyString string, RubyString regexpString) {
+            notDesignedForCompilation();
+
             final RubyRegexp regexp = new RubyRegexp(getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
-            return regexp.match(frame.getCaller().unpack(), string.toString());
+            return regexp.match(string.toString());
         }
 
         @Specialization
-        public Object match(VirtualFrame frame, RubyString string, RubyRegexp regexp) {
-            return regexp.match(frame.getCaller().unpack(), string.toString());
+        public Object match(RubyString string, RubyRegexp regexp) {
+            notDesignedForCompilation();
+
+            return regexp.match(string.toString());
         }
     }
 
@@ -607,11 +697,15 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString rjust(RubyString string, int length, @SuppressWarnings("unused") UndefinedPlaceholder padding) {
+            notDesignedForCompilation();
+
             return getContext().makeString(RubyString.rjust(string.toString(), length, " "));
         }
 
         @Specialization
         public RubyString rjust(RubyString string, int length, RubyString padding) {
+            notDesignedForCompilation();
+
             return getContext().makeString(RubyString.rjust(string.toString(), length, padding.toString()));
         }
 
@@ -630,13 +724,17 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyArray scan(RubyString string, RubyString regexpString) {
+            notDesignedForCompilation();
+
             final RubyRegexp regexp = new RubyRegexp(getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
             return scan(string, regexp);
         }
 
         @Specialization
         public RubyArray scan(RubyString string, RubyRegexp regexp) {
-            return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), regexp.scan(string));
+            notDesignedForCompilation();
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), regexp.scan(string));
         }
 
     }
@@ -654,6 +752,8 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyArray split(RubyString string, RubyString sep) {
+            notDesignedForCompilation();
+
             final String[] components = string.toString().split(Pattern.quote(sep.toString()));
 
             final Object[] objects = new Object[components.length];
@@ -662,12 +762,14 @@ public abstract class StringNodes {
                 objects[n] = getContext().makeString(components[n]);
             }
 
-            return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), objects);
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), objects);
         }
 
         @Specialization
         public RubyArray split(RubyString string, RubyRegexp sep) {
-            return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), sep.split(string.toString()));
+            notDesignedForCompilation();
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), sep.split(string.toString()));
         }
     }
 
@@ -684,6 +786,8 @@ public abstract class StringNodes {
 
         @Specialization
         public boolean endWith(RubyString string, RubyString b) {
+            notDesignedForCompilation();
+
             return string.toString().startsWith(b.toString());
         }
     }
@@ -701,6 +805,8 @@ public abstract class StringNodes {
 
         @Specialization
         public double toF(RubyString string) {
+            notDesignedForCompilation();
+
             return Double.parseDouble(string.toString());
         }
     }
@@ -718,6 +824,8 @@ public abstract class StringNodes {
 
         @Specialization
         public Object toI(RubyString string) {
+            notDesignedForCompilation();
+
             return string.toInteger();
         }
     }
@@ -735,6 +843,8 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString toF(RubyString string) {
+            notDesignedForCompilation();
+
             return string;
         }
     }
@@ -752,6 +862,8 @@ public abstract class StringNodes {
 
         @Specialization
         public RubySymbol toSym(RubyString string) {
+            notDesignedForCompilation();
+
             return getContext().newSymbol(string.toString());
         }
     }
@@ -769,6 +881,8 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString reverse(RubyString string) {
+            notDesignedForCompilation();
+
             return RubyString.fromJavaString(string.getRubyClass(), new StringBuilder(string.toString()).reverse().toString());
         }
     }
@@ -786,7 +900,9 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString reverse(RubyString string) {
-            string.set(new StringBuilder(string.toString()).reverse().toString());
+            notDesignedForCompilation();
+
+            string.set(ByteList.create(new StringBuilder(string.toString()).reverse().toString()));
             return string;
         }
     }
@@ -804,8 +920,10 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyArray unpack(RubyString string, RubyString format) {
+            notDesignedForCompilation();
+
             final org.jruby.RubyArray jrubyArray = Pack.unpack(getContext().getRuntime(), string.getBytes(), format.getBytes());
-            return RubyArray.specializedFromObjects(getContext().getCoreLibrary().getArrayClass(), jrubyArray.toArray());
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), jrubyArray.toArray());
         }
 
     }

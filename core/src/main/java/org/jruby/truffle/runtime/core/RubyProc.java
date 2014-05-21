@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.*;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.methods.*;
@@ -58,24 +59,28 @@ public class RubyProc extends RubyObject {
     }
 
     public void initialize(Type setType, Object selfCapturedInScope, RubyProc blockCapturedInScope, RubyMethod setMethod) {
-        assert selfCapturedInScope != null;
         assert RubyContext.shouldObjectBeVisible(selfCapturedInScope);
+
         type = setType;
         this.selfCapturedInScope = selfCapturedInScope;
         this.blockCapturedInScope = blockCapturedInScope;
         method = setMethod;
     }
 
-    @CompilerDirectives.SlowPath
-    public Object call(PackedFrame caller, Object... args) {
-        return callWithModifiedSelf(caller, selfCapturedInScope, args);
+    @Deprecated
+    public Object call(Object... args) {
+        return callWithModifiedSelf(selfCapturedInScope, args);
     }
 
-    public Object callWithModifiedSelf(PackedFrame caller, Object modifiedSelf, Object... args) {
+    @Deprecated
+    public Object callWithModifiedSelf(Object modifiedSelf, Object... args) {
+        RubyNode.notDesignedForCompilation();
+
         assert modifiedSelf != null;
+        assert args != null;
 
         try {
-            return method.call(caller, modifiedSelf, blockCapturedInScope, args);
+            return method.call(modifiedSelf, blockCapturedInScope, args);
         } catch (ReturnException e) {
             switch (type) {
                 case PROC:

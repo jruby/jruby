@@ -9,9 +9,12 @@
  */
 package org.jruby.truffle.nodes.objectstorage;
 
+import com.oracle.truffle.api.nodes.NodeCost;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.runtime.objectstorage.ObjectLayout;
 import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 
+@NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class ReadMissingObjectFieldNode extends ReadObjectFieldChainNode {
 
     private final ObjectLayout objectLayout;

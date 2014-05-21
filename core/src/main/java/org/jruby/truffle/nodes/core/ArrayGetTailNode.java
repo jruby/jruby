@@ -16,7 +16,9 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.RubyArray;
+
+import java.util.Arrays;
 
 @NodeInfo(shortName = "array-tail")
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
@@ -34,29 +36,117 @@ public abstract class ArrayGetTailNode extends RubyNode {
         index = prev.index;
     }
 
-    @Specialization
-    public Object getTail(RubyArray array) {
-        return array.getRangeExclusive(index, array.size());
+    @Specialization(guards = "isNull", order = 1)
+    public RubyArray getTailNull(RubyArray array) {
+        notDesignedForCompilation();
+
+        return new RubyArray(getContext().getCoreLibrary().getArrayClass());
     }
 
-    protected boolean isEmptyStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof EmptyArrayStore;
+    @Specialization(guards = "isIntegerFixnum", order = 2)
+    public RubyArray getTailIntegerFixnum(RubyArray array) {
+        notDesignedForCompilation();
+
+        if (index >= array.getSize()) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+        } else {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((int[]) array.getStore(), index, array.getSize()), array.getSize() - index);
+        }
     }
 
-    protected boolean isFixnumStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof IntegerArrayStore;
+    @Specialization(guards = "isLongFixnum", order = 3)
+    public RubyArray getTailLongFixnum(RubyArray array) {
+        notDesignedForCompilation();
+
+        if (index >= array.getSize()) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+        } else {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((long[]) array.getStore(), index, array.getSize()), array.getSize() - index);
+        }
     }
 
-    protected boolean isFixnumImmutablePairStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof FixnumImmutablePairArrayStore;
+    @Specialization(guards = "isFloat", order = 4)
+    public RubyArray getTailFloat(RubyArray array) {
+        notDesignedForCompilation();
+
+        if (index >= array.getSize()) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+        } else {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((double[]) array.getStore(), index, array.getSize()), array.getSize() - index);
+        }
     }
 
-    protected boolean isObjectStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof ObjectArrayStore;
+    @Specialization(guards = "isObject", order = 5)
+    public RubyArray getTailObject(RubyArray array) {
+        notDesignedForCompilation();
+
+        if (index >= array.getSize()) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+        } else {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange((Object[]) array.getStore(), index, array.getSize()), array.getSize() - index);
+        }
     }
 
-    protected boolean isObjectImmutablePairStore(RubyArray receiver) {
-        return receiver.getArrayStore() instanceof ObjectImmutablePairArrayStore;
+    // TODO(CS): copied and pasted from ArrayCoreMethodNode - need a way to use statics from other classes in the DSL
+
+    protected boolean isNull(RubyArray array) {
+        return array.getStore() == null;
+    }
+
+    protected boolean isIntegerFixnum(RubyArray array) {
+        return array.getStore() instanceof int[];
+    }
+
+    protected boolean isLongFixnum(RubyArray array) {
+        return array.getStore() instanceof long[];
+    }
+
+    protected boolean isFloat(RubyArray array) {
+        return array.getStore() instanceof double[];
+    }
+
+    protected boolean isObject(RubyArray array) {
+        return array.getStore() instanceof Object[];
+    }
+
+    protected boolean isOtherNull(RubyArray array, RubyArray other) {
+        return other.getStore() == null;
+    }
+
+    protected boolean isOtherIntegerFixnum(RubyArray array, RubyArray other) {
+        return other.getStore() instanceof int[];
+    }
+
+    protected boolean isOtherLongFixnum(RubyArray array, RubyArray other) {
+        return other.getStore() instanceof long[];
+    }
+
+    protected boolean isOtherFloat(RubyArray array, RubyArray other) {
+        return other.getStore() instanceof double[];
+    }
+
+    protected boolean isOtherObject(RubyArray array, RubyArray other) {
+        return other.getStore() instanceof Object[];
+    }
+
+    protected boolean areBothNull(RubyArray a, RubyArray b) {
+        return a.getStore() == null && b.getStore() == null;
+    }
+
+    protected boolean areBothIntegerFixnum(RubyArray a, RubyArray b) {
+        return a.getStore() instanceof int[] && b.getStore() instanceof int[];
+    }
+
+    protected boolean areBothLongFixnum(RubyArray a, RubyArray b) {
+        return a.getStore() instanceof long[] && b.getStore() instanceof long[];
+    }
+
+    protected boolean areBothFloat(RubyArray a, RubyArray b) {
+        return a.getStore() instanceof double[] && b.getStore() instanceof double[];
+    }
+
+    protected boolean areBothObject(RubyArray a, RubyArray b) {
+        return a.getStore() instanceof Object[] && b.getStore() instanceof Object[];
     }
 
 }

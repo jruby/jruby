@@ -37,14 +37,11 @@ public class ReadOptionalArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyArguments arguments = frame.getArguments(RubyArguments.class);
-
-        if (arguments.getUserArgumentsCount() < minimum) {
+        if (RubyArguments.getUserArgumentsCount(frame.getArguments()) < minimum) {
             defaultValueProfile.enter();
             return defaultValue.execute(frame);
         } else {
-            assert index < arguments.getUserArgumentsCount();
-            return arguments.getUserArgument(index);
+            return RubyArguments.getUserArgument(frame.getArguments(), index);
         }
     }
 

@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.core.array.RubyArray;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 @CoreClass(name = "Class")
@@ -38,11 +38,15 @@ public abstract class ClassNodes {
 
         @Specialization
         public boolean containsInstance(RubyClass rubyClass, RubyBasicObject instance) {
+            notDesignedForCompilation();
+
             return instance.getRubyClass().assignableTo(rubyClass);
         }
 
         @Specialization
         public boolean containsInstance(RubyClass rubyClass, Object instance) {
+            notDesignedForCompilation();
+
             return getContext().getCoreLibrary().box(instance).getRubyClass().assignableTo(rubyClass);
         }
     }
@@ -54,7 +58,7 @@ public abstract class ClassNodes {
 
         public NewNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = new DispatchHeadNode(context, getSourceSection(), "initialize", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initialize = new DispatchHeadNode(context, "initialize", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public NewNode(NewNode prev) {
@@ -93,6 +97,8 @@ public abstract class ClassNodes {
 
         @Specialization
         public RubyString toS(RubyClass rubyClass) {
+            notDesignedForCompilation();
+
             return getContext().makeString(rubyClass.getName());
         }
     }
@@ -110,10 +116,12 @@ public abstract class ClassNodes {
 
         @Specialization
         public RubyArray getClassVariables(RubyClass rubyClass) {
+            notDesignedForCompilation();
+
             final RubyArray array = new RubyArray(rubyClass.getContext().getCoreLibrary().getArrayClass());
 
             for (String variable : rubyClass.getClassVariables()) {
-                array.push(RubySymbol.newSymbol(rubyClass.getContext(), variable));
+                array.slowPush(RubySymbol.newSymbol(rubyClass.getContext(), variable));
             }
             return array;
         }

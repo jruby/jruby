@@ -17,16 +17,14 @@ import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.Node;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.core.array.*;
+import org.jruby.truffle.runtime.core.RubyArray;
 
 @CoreClass(name = "Dir")
 public abstract class DirNodes {
 
-    @CoreMethod(names = "[]", isModuleMethod = true, needsSelf = false, appendCallNode = true, minArgs = 2, maxArgs = 2)
+    @CoreMethod(names = "[]", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
     public abstract static class GlobNode extends CoreMethodNode {
 
         public GlobNode(RubyContext context, SourceSection sourceSection) {
@@ -38,9 +36,7 @@ public abstract class DirNodes {
         }
 
         @Specialization
-        public RubyArray glob(RubyString glob, Node callNode) {
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, callNode.getSourceSection().getSource().getName(), callNode.getSourceSection().getStartLine(), "globbing");
-
+        public RubyArray glob(RubyString glob) {
             return glob(getContext(), glob.toString());
         }
 
@@ -84,7 +80,7 @@ public abstract class DirNodes {
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                         if (matcher.matches(file)) {
-                            array.push(context.makeString(file.toString()));
+                            array.slowPush(context.makeString(file.toString()));
                         }
 
                         return FileVisitResult.CONTINUE;
@@ -113,6 +109,8 @@ public abstract class DirNodes {
 
         @Specialization
         public Object chdir(VirtualFrame frame, RubyString path, RubyProc block) {
+            notDesignedForCompilation();
+
             final RubyContext context = getContext();
 
             final String previous = context.getRuntime().getCurrentDirectory();
@@ -144,6 +142,8 @@ public abstract class DirNodes {
 
         @Specialization
         public boolean exists(RubyString path) {
+            notDesignedForCompilation();
+
             return new File(path.toString()).isDirectory();
         }
 
@@ -162,6 +162,8 @@ public abstract class DirNodes {
 
         @Specialization
         public RubyString pwd() {
+            notDesignedForCompilation();
+
             return getContext().makeString(getContext().getRuntime().getCurrentDirectory());
         }
 

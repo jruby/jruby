@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import java.io.*;
 
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 
 /**
@@ -28,6 +29,8 @@ public class RubyFile extends RubyObject {
     }
 
     public void close() {
+        RubyNode.notDesignedForCompilation();
+
         if (reader != null) {
             try {
                 reader.close();
@@ -46,6 +49,8 @@ public class RubyFile extends RubyObject {
     }
 
     public static String expandPath(String fileName) {
+        RubyNode.notDesignedForCompilation();
+
         // TODO(cs): see the other expandPath
 
         try {
@@ -56,6 +61,8 @@ public class RubyFile extends RubyObject {
     }
 
     public static String expandPath(String fileName, String dir) {
+        RubyNode.notDesignedForCompilation();
+
         /*
          * TODO(cs): this isn't quite correct - I think we want to collapse .., but we don't want to
          * resolve symlinks etc. This might be where we want to start borrowing JRuby's
@@ -70,6 +77,8 @@ public class RubyFile extends RubyObject {
     }
 
     public static RubyFile open(RubyContext context, String fileName, String mode) {
+        RubyNode.notDesignedForCompilation();
+
         Reader reader;
         Writer writer;
 

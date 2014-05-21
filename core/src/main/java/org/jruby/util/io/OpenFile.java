@@ -189,6 +189,7 @@ public class OpenFile {
 
         if (real_fd != -1) {
             // we have a real fd...try native flocking
+            IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
             try {
                 int result = runtime.getPosix().flock(real_fd, lockMode);
                 if (result < 0) {
@@ -199,6 +200,7 @@ public class OpenFile {
             } catch (RaiseException re) {
                 if (re.getException().getMetaClass() == runtime.getNotImplementedError()) {
                     // not implemented, probably pure Java; fall through
+                    runtime.getGlobalVariables().set("$!", oldExc);
                 } else {
                     throw re;
                 }

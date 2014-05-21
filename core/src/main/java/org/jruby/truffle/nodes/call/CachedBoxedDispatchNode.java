@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.call;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.lookup.*;
@@ -22,16 +23,18 @@ import org.jruby.truffle.runtime.methods.*;
  * boxed Ruby BasicObject, matching it by looking at the lookup node and assuming it has not been
  * modified.
  */
+@NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class CachedBoxedDispatchNode extends BoxedDispatchNode {
 
     private final LookupNode expectedLookupNode;
     private final Assumption unmodifiedAssumption;
     private final RubyMethod method;
 
+    @Child protected DirectCallNode callNode;
     @Child protected BoxedDispatchNode next;
 
-    public CachedBoxedDispatchNode(RubyContext context, SourceSection sourceSection, LookupNode expectedLookupNode, RubyMethod method, BoxedDispatchNode next) {
-        super(context, sourceSection);
+    public CachedBoxedDispatchNode(RubyContext context, LookupNode expectedLookupNode, RubyMethod method, BoxedDispatchNode next) {
+        super(context);
 
         assert expectedLookupNode != null;
         assert method != null;
@@ -40,6 +43,8 @@ public class CachedBoxedDispatchNode extends BoxedDispatchNode {
         unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
         this.method = method;
         this.next = next;
+
+        callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
     }
 
     @Override
@@ -60,7 +65,7 @@ public class CachedBoxedDispatchNode extends BoxedDispatchNode {
 
         // Call the method
 
-        return method.call(frame.pack(), receiverObject, blockObject, argumentsObjects);
+        return callNode.call(frame, RubyArguments.pack(method.getDeclarationFrame(), receiverObject, blockObject, argumentsObjects));
     }
 
 }

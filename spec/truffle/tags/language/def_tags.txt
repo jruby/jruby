@@ -20,3 +20,5 @@ fails:A method definition in an eval creates a class method
 fails:A method definition in an eval creates a singleton method
 fails:a method definition that sets more than one default parameter all to the same value assigns them all the same object by default
 fails(inherited):The def keyword within a closure looks outside the closure for the visibility
+fails:An instance method with a default argument does not evaluate the default when passed a value and a * argument
+fails:An instance method with a default argument prefers to assign to a default argument when there are no required arguments

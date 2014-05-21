@@ -162,8 +162,8 @@ public class CFGInliner {
         }
 
         // Hook up entry edges
-        assert methodCFG.outDegree(cfg.getEntryBB()) == 2: "Entry BB of inlinee method does not have outdegree 2: " + methodCFG.toStringGraph();
-        for (BasicBlock destination : methodCFG.getOutgoingDestinations(cfg.getEntryBB())) {
+        assert methodCFG.outDegree(methodCFG.getEntryBB()) == 2: "Entry BB of inlinee method does not have outdegree 2: " + methodCFG.toStringGraph();
+        for (BasicBlock destination : methodCFG.getOutgoingDestinations(methodCFG.getEntryBB())) {
             if (destination.isExitBB()) continue;
 
             BasicBlock dstBB = ii.getRenamedBB(destination);
@@ -188,7 +188,7 @@ public class CFGInliner {
         }
 
         // Hook up exit edges
-        for (Edge<BasicBlock> e : methodCFG.getIncomingEdges(cfg.getExitBB())) {
+        for (Edge<BasicBlock> e : methodCFG.getIncomingEdges(methodCFG.getExitBB())) {
             BasicBlock source = e.getSource().getData();
             if (source.isEntryBB()) continue;
 
@@ -299,7 +299,7 @@ public class CFGInliner {
         }
 
         // Hook up entry edges
-        for (Edge<BasicBlock> e : closureCFG.getOutgoingEdges(cfg.getEntryBB())) {
+        for (Edge<BasicBlock> e : closureCFG.getOutgoingEdges(closureCFG.getEntryBB())) {
             BasicBlock destination = e.getDestination().getData();
             if (!destination.isExitBB()) {
                 cfg.addEdge(yieldBB, ii.getRenamedBB(destination), CFG.EdgeType.FALL_THROUGH);
@@ -307,7 +307,7 @@ public class CFGInliner {
         }
 
         // Hook up exit edges
-        for (Edge<BasicBlock> e : closureCFG.getIncomingEdges(cfg.getExitBB())) {
+        for (Edge<BasicBlock> e : closureCFG.getIncomingEdges(closureCFG.getExitBB())) {
             BasicBlock source = e.getSource().getData();
             if (source.isEntryBB()) continue;
                 BasicBlock clonedSource = ii.getRenamedBB(source);

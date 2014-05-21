@@ -23,8 +23,8 @@ import org.jruby.truffle.runtime.core.*;
  */
 public abstract class UnboxedDispatchNode extends DispatchNode {
 
-    public UnboxedDispatchNode(RubyContext context, SourceSection sourceSection) {
-        super(context, sourceSection);
+    public UnboxedDispatchNode(RubyContext context) {
+        super(context);
     }
 
     public abstract Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects);
