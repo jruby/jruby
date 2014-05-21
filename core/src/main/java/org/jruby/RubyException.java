@@ -186,7 +186,9 @@ public class RubyException extends RubyObject {
 
             Object object = ((ConcreteJavaProxy)other).getObject();
             if (object instanceof Throwable && !(object instanceof FlowControlException)) {
-                return context.runtime.getTrue();
+                if (recv == runtime.getException() || object instanceof Exception) {
+                    return context.runtime.getTrue();
+                }
             }
         }
         // fall back on default logic
