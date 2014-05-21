@@ -928,4 +928,10 @@ describe "ArrayJavaProxy" do
   it "descends from java.lang.Object" do
     ArrayJavaProxy.superclass.should == java.lang.Object
   end
+
+  it "to_a coerces nested Java arrays to Ruby arrays" do
+    rar = [[1],[2]].to_java(Java::byte[]).to_a
+    rar.first.should == [1]
+    rar.first.first.should be_kind_of(Fixnum)
+  end
 end
