@@ -29,14 +29,14 @@ fi
 SELF_PATH=$(builtin cd -P -- "$(dirname -- "$0")" >/dev/null && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$0")
 
 # resolve symlinks
-while [ -h $SELF_PATH ]; do
+while [ -h "$SELF_PATH" ]; do
     # 1) cd to directory of the symlink
     # 2) cd to the directory of where the symlink points
     # 3) get the pwd
     # 4) append the basename
     DIR=$(dirname -- "$SELF_PATH")
-    SYM=$(readlink $SELF_PATH)
-    SELF_PATH=$(cd $DIR && cd $(dirname -- "$SYM") && pwd)/$(basename -- "$SYM")
+    SYM=$(readlink "$SELF_PATH")
+    SELF_PATH=$(cd "$DIR" && cd $(dirname -- "$SYM") && pwd)/$(basename -- "$SYM")
 done
 
 PRG=$SELF_PATH
