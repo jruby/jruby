@@ -544,7 +544,7 @@ public abstract class StringNodes {
         public RubyString inspect(RubyString string) {
             notDesignedForCompilation();
 
-            return getContext().makeString("\"" + string.toString().replace("\\", "\\\\").replace("\"", "\\\"") + "\"");
+            return getContext().makeString(org.jruby.RubyString.inspect19(getContext().getRuntime(), string.getBytes()).toString());
         }
     }
 
