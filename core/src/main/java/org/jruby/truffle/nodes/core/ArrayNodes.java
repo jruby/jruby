@@ -1388,6 +1388,10 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "each_with_index", needsBlock = true, maxArgs = 0)
     public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
 
+        private final BranchProfile breakProfile = new BranchProfile();
+        private final BranchProfile nextProfile = new BranchProfile();
+        private final BranchProfile redoProfile = new BranchProfile();
+
         public EachWithIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1397,10 +1401,42 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public NilPlaceholder eachWithIndex(VirtualFrame frame, RubyArray array, RubyProc block) {
+        public Object eachWithIndex(VirtualFrame frame, RubyArray array, RubyProc block) {
             notDesignedForCompilation();
 
-            throw new UnsupportedOperationException();
+            final Object[] store = (Object[]) array.getStore();
+
+            int count = 0;
+
+            try {
+                outer:
+                for (int n = 0; n < array.getSize(); n++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, n, store[n]);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            return array;
         }
 
     }
