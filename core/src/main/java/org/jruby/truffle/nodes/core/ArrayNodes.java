@@ -9,12 +9,14 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
@@ -24,6 +26,8 @@ import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyRange;
+import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.util.Memo;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -2054,24 +2058,64 @@ public abstract class ArrayNodes {
         }
     }
 
+    // TODO: move into Enumerable?
+
     @CoreMethod(names = "min", maxArgs = 0)
     public abstract static class MinNode extends ArrayCoreMethodNode {
 
-        @Child protected DispatchHeadNode compareDispatchNode;
+        @Child protected DispatchHeadNode eachNode;
+        @Child protected DispatchHeadNode compareNode;
 
         public MinNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareDispatchNode = new DispatchHeadNode(context, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            eachNode = new DispatchHeadNode(context, "each", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            compareNode = new DispatchHeadNode(context, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public MinNode(MinNode prev) {
             super(prev);
-            compareDispatchNode = prev.compareDispatchNode;
+            eachNode = prev.eachNode;
         }
 
         @Specialization
-        public int minFixnum(VirtualFrame frame, RubyArray array) {
-            throw new UnsupportedOperationException();
+        public Object min(VirtualFrame frame, RubyArray array) {
+            notDesignedForCompilation();
+
+            // TODO(CS): will this be the right frame?
+            final VirtualFrame finalFrame = frame;
+
+            final Memo<Object> minimum = new Memo<>();
+
+            final CallTarget callTarget = new CallTarget() {
+
+                @Override
+                public Object call(Object... arguments) {
+                    final Object value = RubyArguments.getUserArgument(arguments, 0);
+
+                    if (minimum.get() == null) {
+                        minimum.set(value);
+                    } else {
+                        // TODO(CS): cast
+                        if ((int) compareNode.dispatch(finalFrame, value, null, minimum.get()) < 0) {
+                            minimum.set(value);
+                        }
+                    }
+
+                    return NilPlaceholder.INSTANCE;
+                }
+
+            };
+
+            final RubyProc compareProc = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, null, null,
+                    new RubyMethod(null, null, null, Visibility.PRIVATE, false, callTarget, null, false));
+
+            eachNode.dispatch(frame, array, compareProc);
+
+            if (minimum.get() == null) {
+                return NilPlaceholder.INSTANCE;
+            } else {
+                return minimum.get();
+            }
         }
 
     }
