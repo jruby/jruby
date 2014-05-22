@@ -2053,7 +2053,15 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyString pack(RubyArray array, RubyString format) {
-            throw new UnsupportedOperationException();
+            notDesignedForCompilation();
+
+            return new RubyString(
+                    getContext().getCoreLibrary().getStringClass(),
+                    org.jruby.util.Pack.pack(
+                            getContext().getRuntime(),
+                            getContext().toJRuby(array),
+                            format.toJRubyString().getByteList()).getByteList());
+
         }
 
     }

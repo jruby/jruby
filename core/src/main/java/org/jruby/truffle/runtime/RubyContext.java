@@ -21,8 +21,10 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.source.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -215,6 +217,8 @@ public class RubyContext {
     }
 
     public IRubyObject toJRuby(Object object) {
+        RubyNode.notDesignedForCompilation();
+
         if (object instanceof NilPlaceholder) {
             return runtime.getNil();
         } else if (object == getCoreLibrary().getKernelModule()) {
@@ -229,12 +233,29 @@ public class RubyContext {
             return runtime.newFloat((double) object);
         } else if (object instanceof RubyString) {
             return ((RubyString) object).toJRubyString();
+        } else if (object instanceof RubyArray) {
+            return toJRuby((RubyArray) object);
         } else {
             throw getRuntime().newRuntimeError("cannot pass " + object + " to JRuby");
         }
     }
 
+    public org.jruby.RubyArray toJRuby(RubyArray array) {
+        RubyNode.notDesignedForCompilation();
+
+        final Object[] objects = array.slowToArray();
+        final IRubyObject[] store = new IRubyObject[objects.length];
+
+        for (int n = 0; n < objects.length; n++) {
+            store[n] = toJRuby(objects[n]);
+        }
+
+        return org.jruby.RubyArray.newArray(runtime, store);
+    }
+
     public Object toTruffle(IRubyObject object) {
+        RubyNode.notDesignedForCompilation();
+
         if (object == runtime.getTopSelf()) {
             return getCoreLibrary().getMainObject();
         } else if (object == runtime.getKernel()) {
