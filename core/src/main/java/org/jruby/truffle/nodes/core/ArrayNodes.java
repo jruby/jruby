@@ -1417,7 +1417,7 @@ public abstract class ArrayNodes {
                         }
 
                         try {
-                            yield(frame, block, n, store[n]);
+                            yield(frame, block, store[n], n);
                             continue outer;
                         } catch (BreakException e) {
                             breakProfile.enter();
