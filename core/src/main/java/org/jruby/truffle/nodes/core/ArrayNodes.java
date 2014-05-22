@@ -766,6 +766,46 @@ public abstract class ArrayNodes {
             return other;
         }
 
+        @Specialization(order = 7)
+        public Object setUnexpected(RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
+            notDesignedForCompilation();
+
+            // Just convert to object for now
+
+            if (!(array.getStore() instanceof Object[])) {
+                array.setStore(array.slowToArray(), array.getSize());
+            }
+
+            final int normalisedIndex = array.normaliseIndex(index);
+            Object[] store = (Object[]) array.getStore();
+
+            if (normalisedIndex < 0) {
+                tooSmallBranch.enter();
+                throw new UnsupportedOperationException();
+            } else if (normalisedIndex >= array.getSize()) {
+                pastEndBranch.enter();
+
+                if (normalisedIndex == array.getSize()) {
+                    appendBranch.enter();
+
+                    if (normalisedIndex >= store.length) {
+                        reallocateBranch.enter();
+                        array.setStore(store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, normalisedIndex + 1)), array.getSize());
+                    }
+
+                    store[normalisedIndex] = value;
+                    array.setSize(array.getSize() + 1);
+                } else if (normalisedIndex > array.getSize()) {
+                    beyondBranch.enter();
+                    throw new UnsupportedOperationException();
+                }
+            } else {
+                store[normalisedIndex] = value;
+            }
+
+            return value;
+        }
+
     }
 
     @CoreMethod(names = "all?", needsBlock = true, maxArgs = 0)
@@ -2075,6 +2115,7 @@ public abstract class ArrayNodes {
         public MinNode(MinNode prev) {
             super(prev);
             eachNode = prev.eachNode;
+            compareNode = prev.compareNode;
         }
 
         @Specialization
@@ -2096,6 +2137,7 @@ public abstract class ArrayNodes {
                         minimum.set(value);
                     } else {
                         // TODO(CS): cast
+
                         if ((int) compareNode.dispatch(finalFrame, value, null, minimum.get()) < 0) {
                             minimum.set(value);
                         }
@@ -2589,9 +2631,9 @@ public abstract class ArrayNodes {
         public RubyArray sortIntegerFixnum(VirtualFrame frame, RubyArray array) {
             notDesignedForCompilation();
 
-            final Integer[] boxed = ArrayUtils.box((int[]) array.getStore());
+            final Object[] boxed = ArrayUtils.box((int[]) array.getStore());
             sort(frame, boxed);
-            final int[] unboxed = ArrayUtils.unbox(boxed);
+            final int[] unboxed = ArrayUtils.unboxInteger(boxed);
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), unboxed, array.getSize());
         }
 
@@ -2599,9 +2641,9 @@ public abstract class ArrayNodes {
         public RubyArray sortLongFixnum(VirtualFrame frame, RubyArray array) {
             notDesignedForCompilation();
 
-            final Long[] boxed = ArrayUtils.box((long[]) array.getStore());
+            final Object[] boxed = ArrayUtils.box((long[]) array.getStore());
             sort(frame, boxed);
-            final long[] unboxed = ArrayUtils.unbox(boxed);
+            final long[] unboxed = ArrayUtils.unboxLong(boxed);
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), unboxed, array.getSize());
         }
 
@@ -2609,9 +2651,9 @@ public abstract class ArrayNodes {
         public RubyArray sortDouble(VirtualFrame frame, RubyArray array) {
             notDesignedForCompilation();
 
-            final Double[] boxed = ArrayUtils.box((double[]) array.getStore());
+            final Object[] boxed = ArrayUtils.box((double[]) array.getStore());
             sort(frame, boxed);
-            final double[] unboxed = ArrayUtils.unbox(boxed);
+            final double[] unboxed = ArrayUtils.unboxDouble(boxed);
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), unboxed, array.getSize());
         }
 
