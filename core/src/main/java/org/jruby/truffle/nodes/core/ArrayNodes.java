@@ -2468,9 +2468,17 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(guards = "isIntegerFixnum")
         public RubyArray slice(RubyArray array, int start, int length) {
-            throw new UnsupportedOperationException();
+            notDesignedForCompilation();
+
+            final int[] store = (int[]) array.getStore();
+
+            final int normalisedStart = array.normaliseIndex(start);
+            final int normalisedEnd = Math.min(normalisedStart + length, array.getSize() + length);
+            final int sliceLength = normalisedEnd - normalisedStart;
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, normalisedStart, normalisedEnd), sliceLength);
         }
 
     }
