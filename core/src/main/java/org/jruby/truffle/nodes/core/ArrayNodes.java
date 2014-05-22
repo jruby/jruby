@@ -2060,7 +2060,7 @@ public abstract class ArrayNodes {
                     org.jruby.util.Pack.pack(
                             getContext().getRuntime(),
                             getContext().toJRuby(array),
-                            format.toJRubyString().getByteList()).getByteList());
+                            getContext().toJRuby(format).getByteList()).getByteList());
 
         }
 

@@ -232,7 +232,7 @@ public class RubyContext {
         } else if (object instanceof Double) {
             return runtime.newFloat((double) object);
         } else if (object instanceof RubyString) {
-            return ((RubyString) object).toJRubyString();
+            return toJRuby((RubyString) object);
         } else if (object instanceof RubyArray) {
             return toJRuby((RubyArray) object);
         } else {
@@ -250,7 +250,11 @@ public class RubyContext {
             store[n] = toJRuby(objects[n]);
         }
 
-        return org.jruby.RubyArray.newArray(runtime, store);
+        return runtime.newArray(store);
+    }
+
+    public org.jruby.RubyString toJRuby(RubyString string) {
+        return runtime.newString(string.getBytes());
     }
 
     public Object toTruffle(IRubyObject object) {

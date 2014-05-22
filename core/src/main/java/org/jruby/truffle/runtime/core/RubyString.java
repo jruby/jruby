@@ -123,10 +123,6 @@ public class RubyString extends RubyObject {
         }
     }
 
-    public org.jruby.RubyString toJRubyString() {
-        return getRubyClass().getContext().getRuntime().newString(bytes);
-    }
-
     @Override
     public boolean equals(Object other) {
         RubyNode.notDesignedForCompilation();
