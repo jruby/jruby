@@ -754,13 +754,13 @@ public abstract class ArrayNodes {
                     if (normalisedBegin == 0 && normalisedEnd == array.getSize() - 1) {
                         array.setStore(Arrays.copyOf((int[]) other.getStore(), other.getSize()), other.getSize());
                     } else {
-                        CompilerDirectives.transferToInterpreter();
-                        throw new UnsupportedOperationException();
+                        panic();
+                        throw new RuntimeException();
                     }
                 }
             } else {
-                CompilerDirectives.transferToInterpreter();
-                throw new UnsupportedOperationException();
+                panic(other.getStore());
+                throw new RuntimeException();
             }
 
             return other;
@@ -769,6 +769,10 @@ public abstract class ArrayNodes {
         @Specialization(order = 7)
         public Object setUnexpected(RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
             notDesignedForCompilation();
+
+            if (array.getStore() instanceof int[] && value instanceof Integer) {
+                return setIntegerFixnum(array, index, (int) value, unused);
+            }
 
             // Just convert to object for now
 
