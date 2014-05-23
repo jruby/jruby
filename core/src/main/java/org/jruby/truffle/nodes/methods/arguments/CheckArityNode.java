@@ -36,7 +36,6 @@ public class CheckArityNode extends RubyNode {
 
         if (!checkArity(given)) {
             CompilerDirectives.transferToInterpreter();
-            panic();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(given, arity.getMaximum()));
         }
     }
