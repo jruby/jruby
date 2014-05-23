@@ -3453,6 +3453,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public static IRubyObject popen19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
 
+        if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
+            // new native popen logic
+            return PopenExecutor.popen(context, args, runtime.getIO(), block);
+        }
+
+        // old JDK popen logic
         IRubyObject pmode = null;
         RubyHash options = null;
         
