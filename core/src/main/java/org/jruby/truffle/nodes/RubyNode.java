@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -18,6 +19,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.call.DispatchNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
@@ -200,6 +202,41 @@ public abstract class RubyNode extends Node {
 
     public static void notDesignedForCompilation() {
         CompilerAsserts.neverPartOfCompilation();
+    }
+
+    public void panic(Object... info) {
+        panic(this, info);
+    }
+
+    public static void panic2(Object... info) {
+        panic(null, info);
+    }
+
+    private static void panic(RubyNode node, Object... info) {
+        CompilerDirectives.transferToInterpreter();
+
+        System.err.println("panic -----------------------");
+
+        if (info.length > 0) {
+            System.err.println();
+
+            for (Object i : info) {
+                if (i == null) {
+                    System.err.println("null");
+                } else {
+                    System.err.println(i + " " + i.getClass().toString());
+                }
+            }
+        }
+
+        System.err.println();
+        RubyCallStack.dump(node);
+        System.err.println();
+        new Exception().printStackTrace(System.err);
+        System.err.println();
+        System.err.println("-----------------------------");
+
+        System.exit(1);
     }
 
 }
