@@ -46,3 +46,4 @@ exclude :test_thread_variable_strings_and_symbols_are_the_same_key, "needs inves
 exclude :test_thread_variables, "needs investigation"
 exclude :test_uninitialized, "needs investigation"
 exclude :test_vm_machine_stack_size, "needs investigation"
+exclude :test_mutex_synchronize_yields_no_block_params, "broken in IR"
