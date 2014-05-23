@@ -15,23 +15,22 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.util.ByteList;
 
 @NodeInfo(shortName = "string")
 public class StringLiteralNode extends RubyNode {
 
-    private final String string;
+    private final ByteList bytes;
 
-    public StringLiteralNode(RubyContext context, SourceSection sourceSection, String string) {
+    public StringLiteralNode(RubyContext context, SourceSection sourceSection, ByteList bytes) {
         super(context, sourceSection);
-
-        assert string != null;
-
-        this.string = string;
+        assert bytes != null;
+        this.bytes = bytes;
     }
 
     @Override
     public RubyString execute(VirtualFrame frame) {
-        return getContext().makeString(string);
+        return new RubyString(getContext().getCoreLibrary().getStringClass(), bytes.dup());
     }
 
 }

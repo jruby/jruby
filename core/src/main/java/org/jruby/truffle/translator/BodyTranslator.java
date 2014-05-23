@@ -40,6 +40,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.util.ByteList;
 
 import java.util.*;
 
@@ -693,7 +694,7 @@ public class BodyTranslator extends Translator {
         final String name = nodeDefinedNames.get(expressionNode.getClass());
 
         if (name != null) {
-            final StringLiteralNode literal = new StringLiteralNode(context, sourceSection, name);
+            final StringLiteralNode literal = new StringLiteralNode(context, sourceSection, ByteList.create(name));
             return literal;
         }
 
@@ -1812,7 +1813,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitStrNode(org.jruby.ast.StrNode node) {
-        return new StringLiteralNode(context, translate(node.getPosition()), node.getValue().toString());
+        return new StringLiteralNode(context, translate(node.getPosition()), node.getValue());
     }
 
     @Override
@@ -1893,7 +1894,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitXStrNode(org.jruby.ast.XStrNode node) {
         SourceSection sourceSection = translate(node.getPosition());
 
-        final StringLiteralNode literal = new StringLiteralNode(context, sourceSection, node.getValue().toString());
+        final StringLiteralNode literal = new StringLiteralNode(context, sourceSection, node.getValue());
 
         return new SystemNode(context, sourceSection, literal);
     }

@@ -280,9 +280,15 @@ public class RubyContext {
             return (int) value;
         } else if (object instanceof org.jruby.RubyFloat) {
             return ((org.jruby.RubyFloat) object).getDoubleValue();
+        } else if (object instanceof org.jruby.RubyString) {
+            return toTruffle((org.jruby.RubyString) object);
         } else {
             throw object.getRuntime().newRuntimeError("cannot pass " + object.inspect() + " to Truffle");
         }
+    }
+
+    public RubyString toTruffle(org.jruby.RubyString string) {
+        return new RubyString(getCoreLibrary().getStringClass(), string.getByteList());
     }
 
     public Ruby getRuntime() {

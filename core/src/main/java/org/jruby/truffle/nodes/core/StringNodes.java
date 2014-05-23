@@ -59,18 +59,18 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @CompilerDirectives.SlowPath
         @Specialization
         public RubyString add(RubyString string, int times) {
             notDesignedForCompilation();
 
-            final StringBuilder builder = new StringBuilder();
+            final ByteList inputBytes = string.getBytes();
+            final ByteList outputBytes = new ByteList(string.getBytes().length() * times);
 
             for (int n = 0; n < times; n++) {
-                builder.append(string.toString());
+                outputBytes.append(inputBytes);
             }
 
-            return getContext().makeString(builder.toString());
+            return new RubyString(getContext().getCoreLibrary().getStringClass(), outputBytes);
         }
     }
 
@@ -204,7 +204,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "[]", minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = {"[]", "slice"}, minArgs = 1, maxArgs = 2)
     public abstract static class GetIndexNode extends CoreMethodNode {
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
@@ -221,7 +221,6 @@ public abstract class StringNodes {
             return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(new byte[]{(byte) string.getBytes().charAt(string.normaliseIndex(index))}, string.getBytes().getEncoding()));
         }
 
-        @CompilerDirectives.SlowPath
         @Specialization(order = 2)
         public RubyString getIndex(RubyString string, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
@@ -239,22 +238,11 @@ public abstract class StringNodes {
             }
         }
 
-        @CompilerDirectives.SlowPath
         @Specialization(order = 3)
-        public Object getIndex(RubyString string, int start, int length) {
+        public RubyString getIndex(RubyString string, int start, int length) {
             notDesignedForCompilation();
 
-            final String javaString = string.toString();
-
-            if (length > javaString.length() - start) {
-                length = javaString.length() - start;
-            }
-
-            if (start > javaString.length()) {
-                return NilPlaceholder.INSTANCE;
-            }
-
-            return getContext().makeString(javaString.substring(start, start + length));
+            return (RubyString) getContext().toTruffle(getContext().toJRuby(string).substr(start, length));
         }
 
     }
@@ -635,25 +623,6 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             return string.toString().length();
-        }
-    }
-
-    @CoreMethod(names = "slice", minArgs = 2, maxArgs = 2)
-    public abstract static class SliceNode extends CoreMethodNode {
-
-        public SliceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SliceNode(SliceNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString slice(RubyString string, int start, int length) {
-            notDesignedForCompilation();
-
-            return getContext().makeString(string.toString().substring(start, start + length));
         }
     }
 
