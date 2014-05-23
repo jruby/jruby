@@ -34,7 +34,7 @@ public class InterpretedIRBlockBody extends IRBlockBody {
             // SSS FIXME: Maybe, we should allocate a NoVarsScope/DummyScope for for-loop bodies because the static-scope here
             // probably points to the parent scope? To be verified and fixed if necessary. There is no harm as it is now. It
             // is just wasteful allocation since the scope is not used at all.
-            DynamicScope newScope  = closure.isBeginEndBlock() ? prevScope : DynamicScope.newDynamicScope(getStaticScope(), prevScope);
+            DynamicScope newScope  = DynamicScope.newDynamicScope(getStaticScope(), prevScope);
             context.pushScope(newScope);
             return Interpreter.INTERPRET_BLOCK(context, self, closure, args, binding.getMethod(), block, type);
         }

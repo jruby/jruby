@@ -10,8 +10,12 @@ import org.jruby.runtime.Arity;
  * Represents a 'for' loop
  */
 public class IRFor extends IRClosure {
+    public IRFor(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, String labelPrefix) {
+        super(manager, lexicalParent, lineNumber, IRStaticScopeFactory.newIRBlockScope(staticScope), arity, argumentType, labelPrefix);
+    }
+
     public IRFor(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType) {
-        super(manager, lexicalParent, lineNumber, IRStaticScopeFactory.newIRBlockScope(staticScope), arity, argumentType, "_FOR_LOOP_");
+        this(manager, lexicalParent, lineNumber, IRStaticScopeFactory.newIRBlockScope(staticScope), arity, argumentType, "_FOR_LOOP_");
     }
 
     /** Used by cloning code */
