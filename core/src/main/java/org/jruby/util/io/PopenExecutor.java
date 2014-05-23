@@ -16,16 +16,15 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyProcess;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
-import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -67,6 +66,122 @@ public class PopenExecutor {
             return filenameStr.makeShared19(context.runtime, chlen[0], filenameByteList.length() - 1).infectBy(filenameOrCommand);
         }
         return context.nil;
+    }
+
+    public static RubyFixnum spawn(ThreadContext context, IRubyObject[] argv) {
+        Ruby runtime = context.runtime;
+        long pid = 0;
+        String[] errmsg = { null };
+        ExecArg eargp;
+        IRubyObject fail_str;
+
+        eargp = execargNew(context, argv, true);
+        execargFixup(context, runtime, eargp);
+        fail_str = eargp.use_shell ? eargp.shell_script : eargp.command_name;
+
+        PopenExecutor executor = new PopenExecutor();
+        pid = executor.spawnProcess(context, runtime, eargp, errmsg);
+
+        if (pid == -1) {
+            if (errmsg[0] == null) {
+                throw runtime.newSystemCallError(fail_str.toString());
+            }
+            throw runtime.newErrnoFromErrno(executor.errno, errmsg[0]);
+        }
+        return runtime.newFixnum(pid);
+    }
+
+    long spawnProcess(ThreadContext context, Ruby runtime, ExecArg eargp, String[] errmsg) {
+        long pid;
+        RubyString prog;
+        ExecArg sarg = new ExecArg();
+
+        prog = eargp.use_shell ? eargp.shell_script : eargp.command_name;
+
+        if (execargRunOptions(context, runtime, eargp, sarg, errmsg) < 0) {
+            return -1;
+        }
+
+        if (prog != null && !eargp.use_shell) {
+            String[] argv = ARGVSTR2ARGV(eargp.argv_str.argv);
+            argv[0] = prog.toString();
+        }
+        if (eargp.use_shell) {
+            pid = procSpawnSh(runtime, prog.toString());
+        }
+        else {
+            String[] argv = ARGVSTR2ARGV(eargp.argv_str.argv);
+            pid = procSpawnCmd(runtime, argv, prog.toString(), eargp);
+        }
+        if (pid == -1)
+            context.setLastExitStatus(new RubyProcess.RubyStatus(runtime, runtime.getProcStatus(), 0x7f << 8, 0));
+
+        execargRunOptions(context, runtime, sarg, null, errmsg);
+
+        return pid;
+    }
+
+    // TODO: win32
+//    #if defined(_WIN32)
+//    #define proc_spawn_cmd_internal(argv, prog) rb_w32_uaspawn(P_NOWAIT, (prog), (argv))
+//            #else
+    long procSpawnCmdInternal(Ruby runtime, String[] argv, String prog) {
+        long status;
+
+        if (prog == null)
+            prog = argv[0];
+//        security(prog);
+        prog = dlnFindExeR(runtime, prog, null);
+        if (prog == null)
+            return -1;
+
+        // TODO?
+//        beforeExec();
+        status = runtime.getPosix().posix_spawnp(prog, Collections.EMPTY_LIST, Collections.EMPTY_LIST, Arrays.asList(argv), Collections.EMPTY_LIST);
+        if (status == -1 && runtime.getPosix().errno() == Errno.ENOEXEC.intValue()) {
+            String[] newArgv = new String[argv.length + 1];
+            newArgv[1] = prog;
+            newArgv[0] = "sh";
+            status = runtime.getPosix().posix_spawnp("/bin/sh", Collections.EMPTY_LIST, Collections.EMPTY_LIST, Arrays.asList(argv), Collections.EMPTY_LIST);
+            // TODO?
+//            afterExec();
+            if (status == -1) errno = Errno.ENOEXEC;
+        }
+        return status;
+    }
+
+
+    long procSpawnCmd(Ruby runtime, String[] argv, String prog, ExecArg eargp) {
+        long pid = -1;
+
+        if (argv.length > 0 && argv[0] != null) {
+//            #if defined(_WIN32)
+//            DWORD flags = 0;
+//            if (eargp->new_pgroup_given && eargp->new_pgroup_flag) {
+//                flags = CREATE_NEW_PROCESS_GROUP;
+//            }
+//            pid = rb_w32_uaspawn_flags(P_NOWAIT, prog ? RSTRING_PTR(prog) : 0, argv, flags);
+//            #else
+            pid = procSpawnCmdInternal(runtime, argv, prog);
+        }
+        return pid;
+    }
+
+    // TODO: win32 version
+//    #if defined(_WIN32)
+//    #define proc_spawn_sh(str) rb_w32_uspawn(P_NOWAIT, (str), 0)
+//            #else
+    long procSpawnSh(Ruby runtime, String str) {
+        long status;
+
+        String shell = dlnFindExeR(runtime, "sh", null);
+        // TODO? Stops some threads and signals
+//        before_exec();
+        status = runtime.getPosix().posix_spawnp(shell != null ? shell : "/bin/sh", Collections.EMPTY_LIST, Collections.EMPTY_LIST, Arrays.asList("sh", "-c", str), Collections.EMPTY_LIST);
+        if (status == -1) errno = Errno.valueOf(runtime.getPosix().errno());
+        // TODO?
+//        after_exec();
+        return status;
     }
 
     // pipe_open_s
@@ -1648,7 +1763,7 @@ public class PopenExecutor {
 
         if (!eargp.use_shell) {
             RubyString abspath;
-            abspath = dlnFindExeR(runtime, eargp.command_name.getByteList(), null);
+            abspath = runtime.newString(dlnFindExeR(runtime, eargp.command_name.toString(), null));
             if (abspath == null)
                 eargp.command_abspath = StringSupport.checkEmbeddedNulls(runtime, abspath);
             else
@@ -1686,11 +1801,11 @@ public class PopenExecutor {
         }
     }
 
-    private static RubyString dlnFindExeR(Ruby runtime, ByteList fname, ByteList path) {
+    private static String dlnFindExeR(Ruby runtime, String fname, String path) {
         if (path != null) throw new RuntimeException("BUG: dln_find_exe_r with path is not supported yet");
         // FIXME: need to reencode path as same
-        File exePath = ShellLauncher.findPathExecutable(runtime, fname.toString());
-        return runtime.newString(exePath.getAbsolutePath());
+        File exePath = ShellLauncher.findPathExecutable(runtime, fname);
+        return exePath.getAbsolutePath();
     }
 
     private static class ArgvStr {

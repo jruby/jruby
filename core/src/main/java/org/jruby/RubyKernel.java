@@ -1447,6 +1447,10 @@ public class RubyKernel {
      */
     public static RubyFixnum spawn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
+
+        if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
+            return PopenExecutor.spawn(context, args);
+        }
         long pid = ShellLauncher.runExternalWithoutWait(runtime, args);
         return RubyFixnum.newFixnum(runtime, pid);
     }
