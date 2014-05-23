@@ -1300,10 +1300,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         setAscii8bitBinmode();
 
-        // missing logic:
-        // write_io = GetWriteIO(io);
-        // if (write_io != io)
-        //     rb_io_ascii8bit_binmode(write_io);
+        RubyIO write_io = GetWriteIO();
+        if (write_io != this)
+             write_io.setAscii8bitBinmode();
 
         return this;
     }
@@ -1382,7 +1381,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
     }
 
-    private RubyIO GetWriteIO() {
+    public RubyIO GetWriteIO() {
         RubyIO writeIO;
 //        rb_io_check_initialized(RFILE(io)->fptr);
         writeIO = openFile.tiedIOForWriting;
@@ -2440,13 +2439,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         fptr.READ_CHECK(context);
         return fptr.getc(context, enc);
     }
-    
-    // MRI: READ_CHECK
-    private void readCheck(Stream stream) {
-        if (!stream.readDataBuffered()) {
-            openFile.checkClosed(getRuntime());
-        }
-    }
 
     // rb_io_ungetbyte
     @JRubyMethod
@@ -2554,10 +2546,26 @@ public class RubyIO extends RubyObject implements IOEncodable {
         OpenFile fptr;
         IRubyObject length, str;
         int n, len;
-//        struct read_internal_arg arg;
 
-        length = args.length >= 1 ? args[0] : context.nil;
-        str = args.length >= 2 ? args[1] : context.nil;
+        switch (args.length) {
+            case 3:
+                length = args[0];
+                str = args[1];
+                args[2].convertToHash();
+                break;
+            case 2:
+                length = args[0];
+                str = TypeConverter.checkHashType(runtime, args[1]);
+                str = str.isNil() ? args[1] : context.nil;
+                break;
+            case 1:
+                length = args[0];
+                str = context.nil;
+                break;
+            default:
+                length = context.nil;
+                str = context.nil;
+        }
 
         if ((len = RubyNumeric.num2int(length)) < 0) {
             throw runtime.newArgumentError("negative length " + len + " given");
@@ -3013,8 +3021,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     public static RubyIO convertToIO(ThreadContext context, IRubyObject obj) {
-        if (obj instanceof RubyIO) return (RubyIO)obj;
-        return (RubyIO)TypeConverter.convertToType(obj, context.runtime.getIO(), "to_io");
+        return (RubyIO)TypeConverter.ioGetIO(context.runtime, obj);
     }
    
     @JRubyMethod(name = "select", required = 1, optional = 3, meta = true)
@@ -4242,6 +4249,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
     }
 
+    @Deprecated
     public boolean writeDataBuffered() {
         return openFile.getMainStream().writeDataBuffered();
     }

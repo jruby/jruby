@@ -130,7 +130,7 @@ public class SelectBlob {
                     saveBufferedRead(ioObj, i);                    
                     attachment.clear();
                     attachment.put('r', i);
-                    trySelectRead(context, attachment, ioObj);
+                    trySelectRead(context, attachment, ioObj.getOpenFileChecked());
                 }
             }
         }
@@ -157,15 +157,15 @@ public class SelectBlob {
         }
     }
 
-    private void trySelectRead(ThreadContext context, Map<Character,Integer> attachment, RubyIO ioObj) throws IOException {
-        if (ioObj.getChannel() instanceof SelectableChannel && registerSelect(context, getSelector(context, (SelectableChannel)ioObj.getChannel()), attachment, ioObj, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) {
+    private void trySelectRead(ThreadContext context, Map<Character,Integer> attachment, OpenFile fptr) throws IOException {
+        if (fptr.getFdSelect() != null && registerSelect(getSelector(context, fptr.getFdSelect()), attachment, fptr.getFdSelect(), SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) {
             selectedReads++;
-            if (ioObj.writeDataBuffered()) {
-                getPendingReads()[(Integer)attachment.get('r')] = true;
+            if (fptr.READ_CHAR_PENDING() || fptr.READ_DATA_PENDING()) {
+                getPendingReads()[attachment.get('r')] = true;
             }
         } else {
-            if ((ioObj.getOpenFile().getMode() & OpenFile.READABLE) != 0) {
-                getUnselectableReads()[(Integer)attachment.get('r')] = true;
+            if (fptr.isReadable()) {
+                getUnselectableReads()[attachment.get('r')] = true;
             }
         }
     }
@@ -187,7 +187,7 @@ public class SelectBlob {
                     saveWriteBlocking(ioObj, i);
                     attachment.clear();                    
                     attachment.put('w', i);
-                    trySelectWrite(context, attachment, ioObj);
+                    trySelectWrite(context, attachment, ioObj.getOpenFileChecked());
                 }
             }
         }
@@ -196,7 +196,7 @@ public class SelectBlob {
     private RubyIO saveWriteIO(int i, ThreadContext context) {
         IRubyObject obj = writeArray.eltOk(i);
         RubyIO ioObj = RubyIO.convertToIO(context, obj);
-        writeIOs[i] = ioObj;
+        writeIOs[i] = ioObj.GetWriteIO();
         return ioObj;
     }
 
@@ -217,12 +217,12 @@ public class SelectBlob {
         }
     }
 
-    private void trySelectWrite(ThreadContext context, Map<Character,Integer> attachment, RubyIO ioObj) throws IOException {
-        if (!(ioObj.getChannel() instanceof SelectableChannel)
-                || !registerSelect(context, getSelector(context, (SelectableChannel)ioObj.getChannel()), attachment, ioObj, SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT)) {
+    private void trySelectWrite(ThreadContext context, Map<Character,Integer> attachment, OpenFile fptr) throws IOException {
+        if (fptr.getFdSelect() == null
+                || false == registerSelect(getSelector(context, fptr.getFdSelect()), attachment, fptr.getFdSelect(), SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT)) {
             selectedReads++;
-            if ((ioObj.getOpenFile().getMode() & OpenFile.WRITABLE) != 0) {
-                getUnselectableWrites()[(Integer)attachment.get('w')] = true;
+            if (fptr.isWritable()) {
+                getUnselectableWrites()[attachment.get('w')] = true;
             }
         }
     }
@@ -532,20 +532,15 @@ public class SelectBlob {
     }
 
     @SuppressWarnings("unchecked")
-    private static boolean registerSelect(ThreadContext context, Selector selector, Map<Character,Integer> obj, RubyIO ioObj, int ops) throws IOException {
-        Channel channel = ioObj.getChannel();
-        if (channel == null || !(channel instanceof SelectableChannel)) {
-            return false;
-        }
-
-        ((SelectableChannel) channel).configureBlocking(false);
-        int real_ops = ((SelectableChannel) channel).validOps() & ops;
-        SelectionKey key = ((SelectableChannel) channel).keyFor(selector);
+    private static boolean registerSelect(Selector selector, Map<Character,Integer> obj, SelectableChannel channel, int ops) throws IOException {
+        channel.configureBlocking(false);
+        int real_ops = channel.validOps() & ops;
+        SelectionKey key = channel.keyFor(selector);
 
         if (key == null) {
             Map<Character,Integer>  attachment = new HashMap<Character,Integer> (1);
             attachment.putAll(obj);
-            ((SelectableChannel) channel).register(selector, real_ops, attachment );
+            channel.register(selector, real_ops, attachment );
         } else {
             key.interestOps(key.interestOps() | real_ops);
             Map<Character,Integer> att = (Map<Character,Integer>)key.attachment();
