@@ -45,6 +45,7 @@ import org.jruby.util.io.DirectoryAsFileException;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.ModeFlags;
+import org.jruby.util.io.PopenExecutor;
 import org.jruby.util.io.SelectBlob;
 import jnr.constants.platform.Fcntl;
 
@@ -1404,23 +1405,22 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
         OpenFile fptr;
         long n;
-//        IRubyObject tmp;
+        IRubyObject tmp;
 
-//        RubyIO io = GetWriteIO();
+        RubyIO io = GetWriteIO();
 
         str = str.asString();
-        // TODO: tied_io_for_writing stuff
-//        tmp = rb_io_check_io(io);
-//        if (tmp.isNil()) {
-//	/* port is not IO, call write method for it. */
-//            return io.callMethod(context, "write", str);
-//        }
-//        io = tmp;
+        tmp = TypeConverter.ioCheckIO(runtime, io);
+        if (tmp.isNil()) {
+	        /* port is not IO, call write method for it. */
+            return io.callMethod(context, "write", str);
+        }
+        io = (RubyIO)tmp;
         if (((RubyString)str).size() == 0) return RubyFixnum.zero(runtime);
 
         str = ((RubyString)str).dupFrozen();
 
-        fptr = getOpenFileChecked();
+        fptr = io.getOpenFileChecked();
         fptr.checkWritable(context);
 
         n = fptr.fwrite(context, str, nosync);
@@ -3073,6 +3073,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     
     // rb_io_open
     public static IRubyObject ioOpen(ThreadContext context, IRubyObject filename, IRubyObject vmode, IRubyObject vperm, IRubyObject opt) {
+        Ruby runtime = context.runtime;
         int[] oflags_p = {0}, fmode_p = {0};
         int perm;
         IRubyObject cmd;
@@ -3083,30 +3084,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
         EncodingUtils.extractModeEncoding(context, convconfig, pm, opt, oflags_p, fmode_p);
         perm = (pm[EncodingUtils.PERM] == null || pm[EncodingUtils.PERM].isNil()) ? 0666 : RubyNumeric.num2int(pm[EncodingUtils.PERM]);
     
-        if (!(cmd = checkPipeCommand(context, filename)).isNil()) {
+        if (!(cmd = PopenExecutor.checkPipeCommand(context, filename)).isNil()) {
             // FIXME: not passing convconfig for transcoding
-//            return pipe_open_s(cmd, rb_io_oflags_modestr(oflags), fmode, &convconfig);
-            return (RubyIO) RubyKernel.open19(context, context.runtime.getIO(), new IRubyObject[]{filename, vmode, opt}, Block.NULL_BLOCK);
+            return PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(runtime, oflags_p[0]), fmode_p[0], convconfig);
+//            return (RubyIO) RubyKernel.open19(context, context.runtime.getIO(), new IRubyObject[]{filename, vmode, opt}, Block.NULL_BLOCK);
             // TODO: lots of missing logic for pipe opening
         } else {
             return ((RubyFile)context.runtime.getFile().allocate()).fileOpenGeneric(context, filename, oflags_p[0], fmode_p[0], convconfig, perm);
         }
-    }
-
-    // MRI: check_pipe_command
-    public static IRubyObject checkPipeCommand(ThreadContext context, IRubyObject filenameOrCommand) {
-        RubyString filenameStr = filenameOrCommand.convertToString();
-        ByteList filenameByteList = filenameStr.getByteList();
-        
-        if (EncodingUtils.encAscget(
-                filenameByteList.getUnsafeBytes(),
-                filenameByteList.getBegin(),
-                filenameByteList.getBegin() + filenameByteList.getRealSize(),
-                null,
-                filenameByteList.getEncoding()) == '|') {
-            return filenameStr.makeShared19(context.runtime, 0, 1).infectBy(filenameOrCommand);
-        }
-        return context.nil;
     }
 
     /**
@@ -4326,7 +4311,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         openFile.clearCodeConversion();
     }
     
-    protected OpenFile MakeOpenFile() {
+    public OpenFile MakeOpenFile() {
         Ruby runtime = getRuntime();
         if (openFile != null) {
             ioClose(runtime);

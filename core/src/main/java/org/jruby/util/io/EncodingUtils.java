@@ -113,9 +113,9 @@ public class EncodingUtils {
     public static Encoding ascii8bitEncoding(Ruby runtime) {
         return runtime.getEncodingService().getAscii8bitEncoding();   
     }
-    
-    public static final int PERM = 0;
-    public static final int VMODE = 1;
+
+    public static final int VMODE = 0;
+    public static final int PERM = 1;
     
     public static final int MODE_BTMODE(int fmode, int a, int b, int c) {
         return (fmode & OpenFile.BINMODE) != 0 ? b :
@@ -139,13 +139,11 @@ public class EncodingUtils {
     // mri: rb_io_extract_modeenc
     public static void extractModeEncoding(ThreadContext context, 
             IOEncodable ioEncodable, IRubyObject[] vmodeAndVperm_p, IRubyObject options, int[] oflags_p, int[] fmode_p) {
-        IRubyObject vmode;
+        Ruby runtime = context.runtime;
         int ecflags;
         IRubyObject[] ecopts_p = {context.nil};
         boolean hasEnc = false, hasVmode = false;
         IRubyObject intmode;
-        
-        vmode = vmodeAndVperm_p[VMODE];
         
         // Give default encodings
         ioExtIntToEncs(context, ioEncodable, null, null, 0);
@@ -163,12 +161,8 @@ public class EncodingUtils {
                     fmode_p[0] = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
                 } else {
                     String p = vmodeAndVperm_p[VMODE].convertToString().asJavaString();
-                    try {
-                        fmode_p[0] = OpenFile.getFModeFromString(p);
-                        oflags_p[0] = OpenFile.getModeFlagsAsIntFrom(fmode_p[0]);
-                    } catch (InvalidValueException e) {
-                        throw context.runtime.newArgumentError("illegal access mode " + vmodeAndVperm_p[VMODE]);
-                    }
+                    fmode_p[0] = OpenFile.ioModestrFmode(runtime, p);
+                    oflags_p[0] = OpenFile.ioFmodeOflags(fmode_p[0]);
                     int colonSplit = p.indexOf(":");
 
                     if (colonSplit != -1) {
@@ -185,7 +179,7 @@ public class EncodingUtils {
                 ecflags = (fmode_p[0] & OpenFile.READABLE) != 0
                         ? MODE_BTMODE(fmode_p[0], ECONV_DEFAULT_NEWLINE_DECORATOR, 0, EConvFlags.UNIVERSAL_NEWLINE_DECORATOR)
                         : 0;
-                if (TEXTMODE_NEWLINE_DECORATOR_ON_WRITE != -1) {
+                if (TEXTMODE_NEWLINE_DECORATOR_ON_WRITE != 0) {
                     ecflags |= (fmode_p[0] & OpenFile.WRITABLE) != 0
                             ? MODE_BTMODE(fmode_p[0], TEXTMODE_NEWLINE_DECORATOR_ON_WRITE, 0, TEXTMODE_NEWLINE_DECORATOR_ON_WRITE)
                             : 0;
@@ -201,7 +195,7 @@ public class EncodingUtils {
                     if (!hasEnc) {
                         ioExtIntToEncs(context, ioEncodable, ascii8bitEncoding(context.runtime), null, fmode_p[0]);
                     }
-                } else if (DEFAULT_TEXTMODE != 0 && (vmode == null || vmode.isNil())) {
+                } else if (DEFAULT_TEXTMODE != 0 && (vmodeAndVperm_p[VMODE] == null || vmodeAndVperm_p[VMODE].isNil())) {
                     fmode_p[0] |= DEFAULT_TEXTMODE;
                 }
 

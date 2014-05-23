@@ -69,6 +69,7 @@ import org.jruby.util.IdUtil;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.PopenExecutor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -312,11 +313,10 @@ public class RubyKernel {
                 if (tmp.isNil()) {
                     redirect = true;
                 } else {
-                    IRubyObject cmd = RubyIO.checkPipeCommand(context, tmp);
+                    IRubyObject cmd = PopenExecutor.checkPipeCommand(context, tmp);
                     if (!cmd.isNil()) {
                         args[0] = cmd;
-                        // TODO: falling back on old version here. @see PopenExecutor
-                        return RubyIO.popen(context, recv, args, block);
+                        return PopenExecutor.popen(context, args, runtime.getIO(), block);
                     }
                 }
             }

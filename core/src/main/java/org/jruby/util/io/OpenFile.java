@@ -1,6 +1,7 @@
 package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
+import jnr.constants.platform.OpenFlags;
 import jnr.posix.JavaLibCHelper;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
@@ -134,7 +135,7 @@ public class OpenFile {
     }
     private ChannelFD fd;
     private int mode;
-    private Process process;
+    public Process process;
     private int lineno;
     private String pathv;
     private Finalizer finalizer;
@@ -409,14 +410,133 @@ public class OpenFile {
         
         return oflags;
     }
-    
-    // mri: rb_io_modestr_fmode
-    public static int ioModestrFmode(Ruby runtime, String modesString) {
-        try {
-            return getFModeFromString(modesString);
-        } catch (InvalidValueException ive) {
-            throw runtime.newErrnoEINVALError(modesString);
+
+    // MRI: rb_io_oflags_modestr
+    public static String ioOflagsModestr(Ruby runtime, int oflags) {
+        int accmode = oflags & (OpenFlags.O_RDONLY.intValue()|OpenFlags.O_WRONLY.intValue()|OpenFlags.O_RDWR.intValue());
+        if ((oflags & OpenFlags.O_APPEND.intValue()) != 0) {
+            if (accmode == OpenFlags.O_WRONLY.intValue()) {
+                return MODE_BINARY(oflags, "a", "ab");
+            }
+            if (accmode == OpenFlags.O_RDWR.intValue()) {
+                return MODE_BINARY(oflags, "a+", "ab+");
+            }
         }
+        switch (OpenFlags.valueOf(oflags & (OpenFlags.O_RDONLY.intValue()|OpenFlags.O_WRONLY.intValue()|OpenFlags.O_RDWR.intValue()))) {
+            default:
+                throw runtime.newArgumentError("invalid access oflags 0x" + Integer.toHexString(oflags));
+            case O_RDONLY:
+                return MODE_BINARY(oflags, "r", "rb");
+            case O_WRONLY:
+                return MODE_BINARY(oflags, "w", "wb");
+            case O_RDWR:
+                return MODE_BINARY(oflags, "r+", "rb+");
+        }
+    }
+
+    // MRI: rb_io_modestr_oflags
+    public static int ioModestrOflags(Ruby runtime, String modestr) {
+        return ioFmodeOflags(ioModestrFmode(runtime, modestr));
+    }
+
+    // MRI: rb_io_fmode_oflags
+    public static int ioFmodeOflags(int fmode) {
+        int oflags = 0;
+
+        switch (fmode & OpenFile.READWRITE) {
+            case OpenFile.READABLE:
+                oflags |= OpenFlags.O_RDONLY.intValue();
+                break;
+            case OpenFile.WRITABLE:
+                oflags |= OpenFlags.O_WRONLY.intValue();
+                break;
+            case OpenFile.READWRITE:
+                oflags |= OpenFlags.O_RDWR.intValue();
+                break;
+        }
+
+        if ((fmode & OpenFile.APPEND) != 0) {
+            oflags |= OpenFlags.O_APPEND.intValue();
+        }
+        if ((fmode & OpenFile.TRUNC) != 0) {
+            oflags |= OpenFlags.O_TRUNC.intValue();
+        }
+        if ((fmode & OpenFile.CREATE) != 0) {
+            oflags |= OpenFlags.O_CREAT.intValue();
+        }
+//        #ifdef OpenFlags.O_BINARY
+//        if (fmode & OpenFile.BINMODE) {
+//            oflags |= OpenFlags.O_BINARY.intValue();
+//        }
+//        #endif
+
+        return oflags;
+    }
+
+    public static int ioModestrFmode(Ruby runtime, String modestr) {
+        int fmode = 0;
+        char[] mChars = modestr.toCharArray(), pChars = null;
+        int m = 0, p = 0;
+
+        switch (mChars[m++]) {
+            case 'r':
+                fmode |= OpenFile.READABLE;
+                break;
+            case 'w':
+                fmode |= OpenFile.WRITABLE | OpenFile.TRUNC | OpenFile.CREATE;
+                break;
+            case 'a':
+                fmode |= OpenFile.WRITABLE | OpenFile.APPEND | OpenFile.CREATE;
+                break;
+            default:
+                throw runtime.newArgumentError("invalid access mode " + modestr);
+        }
+
+        loop: while (m < mChars.length) {
+            switch (mChars[m++]) {
+                case 'b':
+                    fmode |= OpenFile.BINMODE;
+                    break;
+                case 't':
+                    fmode |= OpenFile.TEXTMODE;
+                    break;
+                case '+':
+                    fmode |= OpenFile.READWRITE;
+                    break;
+                default:
+                    throw runtime.newArgumentError("invalid access mode " + modestr);
+                case ':':
+                    pChars = mChars;
+                    p = m;
+                    if ((fmode & OpenFile.BINMODE) != 0 && (fmode & OpenFile.TEXTMODE) != 0)
+                        throw runtime.newArgumentError("invalid access mode " + modestr);
+                    break loop;
+            }
+        }
+
+        if ((fmode & OpenFile.BINMODE) != 0 && (fmode & OpenFile.TEXTMODE) != 0)
+            throw runtime.newArgumentError("invalid access mode " + modestr);
+        if (p != 0 && ioEncnameBomP(new String(pChars, p, pChars.length - p), 0))
+            fmode |= OpenFile.SETENC_BY_BOM;
+
+        return fmode;
+    }
+
+    static boolean ioEncnameBomP(String name, long len) {
+        String bom_prefix = "bom|utf-";
+        int bom_prefix_len = bom_prefix.length();
+        if (len == 0) {
+            int p = name.indexOf(':');
+            len = p != -1 ? p : name.length();
+        }
+        return len > bom_prefix_len && name.compareToIgnoreCase(bom_prefix) == 0;
+    }
+
+    private static String MODE_BINARY(int oflags, String a, String b) {
+        if (OpenFlags.O_BINARY.intValue() != -1 && (oflags & OpenFlags.O_BINARY.intValue()) != 0) {
+            return b;
+        }
+        return a;
     }
 
     public static int getFModeFromString(String modesString) throws InvalidValueException {
@@ -496,13 +616,12 @@ public class OpenFile {
                 throw runtime.newErrnoFromErrno(errno, "error flushing");
             }
         }
-        // don't know what this is
-//        if (fptr->tied_io_for_writing) {
-//            rb_io_t *wfptr;
-//            GetOpenFile(fptr->tied_io_for_writing, wfptr);
-//            if (io_fflush(wfptr) < 0)
-//                rb_sys_fail(0);
-//        }
+        if (tiedIOForWriting != null) {
+            OpenFile wfptr;
+            wfptr = tiedIOForWriting.getOpenFileChecked();
+            if (wfptr.fflush(runtime) < 0)
+                throw runtime.newErrnoFromErrno(wfptr.errno, wfptr.getPath());
+        }
     }
 
     // rb_io_check_byte_readable
@@ -1178,7 +1297,11 @@ public class OpenFile {
         }
     }
 
-    private boolean NEED_NEWLINE_DECORATOR_ON_READ() {
+    public boolean NEED_NEWLINE_DECORATOR_ON_READ() {
+        return isTextMode();
+    }
+
+    public boolean NEED_NEWLINE_DECORATOR_ON_WRITE() {
         return isTextMode();
     }
 

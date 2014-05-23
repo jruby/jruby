@@ -128,6 +128,10 @@ public class RubyNumeric extends RubyObject {
         return 0;
     }
 
+    public int getIntValue() {
+        return (int)0;
+    }
+
     public BigInteger getBigIntegerValue() {
         return BigInteger.ZERO;
     }
