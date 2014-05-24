@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import jdk.nashorn.internal.runtime.Undefined;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
@@ -1807,6 +1808,25 @@ public abstract class ArrayNodes {
                 if (CompilerDirectives.inInterpreter()) {
                     ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
                 }
+            }
+
+            return accumulator;
+        }
+
+        @Specialization
+        public Object inject(RubyArray array, RubySymbol symbol, UndefinedPlaceholder unused) {
+            notDesignedForCompilation();
+
+            final Object[] store = array.slowToArray();
+
+            if (store.length < 2) {
+                throw new UnsupportedOperationException();
+            }
+
+            Object accumulator = getContext().getCoreLibrary().box(store[0]).send(symbol.toString(), null, store[1]);
+
+            for (int n = 2; n < array.getSize(); n++) {
+                accumulator = getContext().getCoreLibrary().box(accumulator).send(symbol.toString(), null, store[n]);
             }
 
             return accumulator;

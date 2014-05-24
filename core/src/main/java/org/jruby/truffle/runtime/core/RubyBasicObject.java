@@ -140,6 +140,7 @@ public class RubyBasicObject extends ObjectStorage {
         getSingletonClass().include(module);
     }
 
+    @Deprecated
     public Object send(String name, RubyProc block, Object... args) {
         RubyNode.notDesignedForCompilation();
 
