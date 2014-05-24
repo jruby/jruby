@@ -588,44 +588,6 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "setbyte", minArgs = 2, maxArgs = 2)
-    public abstract static class SetByteNode extends CoreMethodNode {
-
-        public SetByteNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SetByteNode(SetByteNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object setByte(RubyString string, int index, Object value) {
-            notDesignedForCompilation();
-
-            throw new UnsupportedOperationException("getbyte not implemented");
-        }
-    }
-
-    @CoreMethod(names = "size", maxArgs = 0)
-    public abstract static class SizeNode extends CoreMethodNode {
-
-        public SizeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SizeNode(SizeNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public int size(RubyString string) {
-            notDesignedForCompilation();
-
-            return string.toString().length();
-        }
-    }
-
     @CoreMethod(names = "match", minArgs = 1, maxArgs = 1)
     public abstract static class MatchNode extends CoreMethodNode {
 
@@ -708,6 +670,44 @@ public abstract class StringNodes {
 
     }
 
+    @CoreMethod(names = "setbyte", minArgs = 2, maxArgs = 2)
+    public abstract static class SetByteNode extends CoreMethodNode {
+
+        public SetByteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SetByteNode(SetByteNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object setByte(RubyString string, int index, Object value) {
+            notDesignedForCompilation();
+
+            throw new UnsupportedOperationException("getbyte not implemented");
+        }
+    }
+
+    @CoreMethod(names = "size", maxArgs = 0)
+    public abstract static class SizeNode extends CoreMethodNode {
+
+        public SizeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SizeNode(SizeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int size(RubyString string) {
+            notDesignedForCompilation();
+
+            return string.toString().length();
+        }
+    }
+
     @CoreMethod(names = "split", minArgs = 1, maxArgs = 1)
     public abstract static class SplitNode extends CoreMethodNode {
 
@@ -758,6 +758,25 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             return string.toString().startsWith(b.toString());
+        }
+    }
+
+    @CoreMethod(names = "sum", maxArgs = 0)
+    public abstract static class SumNode extends CoreMethodNode {
+
+        public SumNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SumNode(SumNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int sum(RubyString string) {
+            notDesignedForCompilation();
+
+            return (int) getContext().toTruffle(getContext().toJRuby(string).sum(getContext().getRuntime().getCurrentContext()));
         }
     }
 

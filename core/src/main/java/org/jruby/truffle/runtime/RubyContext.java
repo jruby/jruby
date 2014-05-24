@@ -266,9 +266,9 @@ public class RubyContext {
             return getCoreLibrary().getKernelModule();
         } else if (object instanceof RubyNil) {
             return NilPlaceholder.INSTANCE;
-        } else if (object instanceof RubyBoolean.True) {
+        } else if (object instanceof org.jruby.RubyBoolean.True) {
             return true;
-        } else if (object instanceof RubyBoolean.False) {
+        } else if (object instanceof org.jruby.RubyBoolean.False) {
             return false;
         } else if (object instanceof org.jruby.RubyFixnum) {
             final long value = ((org.jruby.RubyFixnum) object).getLongValue();
