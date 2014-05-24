@@ -55,6 +55,7 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -689,10 +690,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return str;
     }
 
-    // This should use the "default process encoding". We default to UTF-8 because MRI does on Windows.
     // MRI: EXPORT_STR macro in process.c
     public RubyString export(ThreadContext context) {
-        return EncodingUtils.strConvEncOpts(context, this, null, UTF8Encoding.INSTANCE, 0, context.nil);
+        if (Platform.IS_WINDOWS) {
+            return EncodingUtils.strConvEncOpts(context, this, null, UTF8Encoding.INSTANCE, 0, context.nil);
+        }
+        return this;
     }
 
     /** Encoding aware String construction routines for 1.9

@@ -214,15 +214,15 @@ public class ShellLauncher {
     }
 
     public static String[] getCurrentEnv(Ruby runtime) {
-        return getModifiedEnv(runtime, Collections.EMPTY_LIST, true);
+        return getModifiedEnv(runtime, Collections.EMPTY_LIST, false);
     }
 
     private static String[] getCurrentEnv(Ruby runtime, Map mergeEnv) {
         // TODO: ensure nobody passes null
-        return getModifiedEnv(runtime, mergeEnv == null ? Collections.EMPTY_LIST : mergeEnv.entrySet(), true);
+        return getModifiedEnv(runtime, mergeEnv == null ? Collections.EMPTY_LIST : mergeEnv.entrySet(), false);
     }
 
-    public static String[] getModifiedEnv(Ruby runtime, Collection mergeEnv, boolean useCurrent) {
+    public static String[] getModifiedEnv(Ruby runtime, Collection mergeEnv, boolean clearEnv) {
         ThreadContext context = runtime.getCurrentContext();
 
         // disable tracing for the dup call below
@@ -231,11 +231,9 @@ public class ShellLauncher {
 
         try {
             // dup for JRUBY-6603 (avoid concurrent modification while we walk it)
-            RubyHash hash;
-            if (useCurrent) {
+            RubyHash hash = null;
+            if (!clearEnv) {
                 hash = (RubyHash)runtime.getObject().getConstant("ENV").dup();
-            } else {
-                hash = null;
             }
             String[] ret, ary;
 

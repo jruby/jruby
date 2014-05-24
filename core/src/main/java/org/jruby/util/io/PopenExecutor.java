@@ -1,7 +1,6 @@
 package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
-import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.constants.platform.Signal;
 import jnr.posix.SpawnAttribute;
@@ -19,16 +18,14 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyProcess;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.BlockCallback;
-import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
@@ -41,7 +38,6 @@ import java.nio.channels.Channel;
 import java.nio.channels.Pipe;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -78,7 +74,7 @@ public class PopenExecutor {
 
         eargp = execargNew(context, argv, true);
         execargFixup(context, runtime, eargp);
-        fail_str = eargp.use_shell ? eargp.shell_script : eargp.command_name;
+        fail_str = eargp.use_shell ? eargp.command_name : eargp.command_name;
 
         PopenExecutor executor = new PopenExecutor();
         pid = executor.spawnProcess(context, runtime, eargp, errmsg);
@@ -97,7 +93,7 @@ public class PopenExecutor {
         RubyString prog;
         ExecArg sarg = new ExecArg();
 
-        prog = eargp.use_shell ? eargp.shell_script : eargp.command_name;
+        prog = eargp.use_shell ? eargp.command_name : eargp.command_name;
 
         if (execargRunOptions(context, runtime, eargp, sarg, errmsg) < 0) {
             return -1;
@@ -341,6 +337,8 @@ public class PopenExecutor {
 //        System.out.println("fd_close: " + eargp.fd_close);
 //        System.out.println("fd_dup2_child: " + eargp.fd_dup2_child);
 //        System.out.println("fd_open: " + eargp.fd_open);
+        if (envp != null) System.out.println(Arrays.asList(envp));
+        if (args != null) System.out.println(Arrays.asList(args));
         return runtime.getPosix().posix_spawnp(
                 cmd,
                 eargp.fileActions,
@@ -383,7 +381,7 @@ public class PopenExecutor {
     // MRI: pipe_open
     private IRubyObject pipeOpen(ThreadContext context, ExecArg eargp, String modestr, int fmode, IOEncodable convconfig) {
         final Ruby runtime = context.runtime;
-        IRubyObject prog = eargp != null ? (eargp.use_shell ? eargp.shell_script : eargp.command_name) : null;
+        IRubyObject prog = eargp != null ? (eargp.use_shell ? eargp.command_name : eargp.command_name) : null;
         long pid = 0;
         OpenFile fptr;
         IRubyObject port;
@@ -865,7 +863,8 @@ public class PopenExecutor {
 //        #if !defined(HAVE_FORK)
         boolean clearEnv = false;
         if (eargp.unsetenv_others_given() && eargp.unsetenv_others_do()) {
-            clearEnv = true;
+            // only way to do this is manually build a list of env assignments that clear all parent values
+            throw runtime.newNotImplementedError("clearing env in child is not supported");
 //            saveEnv(context, runtime, sargp);
 
             // we can't clear env in parent process
@@ -874,9 +873,7 @@ public class PopenExecutor {
 
         RubyArray env = eargp.env_modification;
         if (env != null) {
-            eargp.envp_str = ShellLauncher.getModifiedEnv(runtime, env, !clearEnv);
-        } else {
-            eargp.envp_str = ShellLauncher.getModifiedEnv(runtime, Collections.EMPTY_LIST, !clearEnv);
+            eargp.envp_str = ShellLauncher.getModifiedEnv(runtime, env, clearEnv);
         }
 //        #endif
 
@@ -919,7 +916,9 @@ public class PopenExecutor {
                 return -1;
         }
 
-        if (eargp.chdir_given()) {
+        // This should probably check actual cwd rather than property
+        if (eargp.chdir_given() || !runtime.getCurrentDirectory().equals(SafePropertyAccessor.getProperty("user.dir"))) {
+            throw runtime.newNotImplementedError("chdir in the child is not supported");
             // we can't chdir in the parent
 //            if (sargp != null) {
 //                String cwd = runtime.getCurrentDirectory();
@@ -934,6 +933,7 @@ public class PopenExecutor {
 
 //        #ifdef HAVE_SETGID
         if (eargp.gid_given()) {
+            throw runtime.newNotImplementedError("setgid in the child is not supported");
             // we can't setgid in the parent
 //            if (setgid(eargp.gid) < 0) {
 //                ERRMSG("setgid");
@@ -943,6 +943,7 @@ public class PopenExecutor {
 //        #endif
 //        #ifdef HAVE_SETUID
         if (eargp.uid_given()) {
+            throw runtime.newNotImplementedError("setuid in the child is not supported");
             // we can't setuid in the parent
 //            if (setuid(eargp.uid) < 0) {
 //                ERRMSG("setuid");
@@ -951,15 +952,15 @@ public class PopenExecutor {
         }
 //        #endif
 
-        if (sargp != null) {
-            IRubyObject ary = sargp.fd_dup2;
-            if (ary != null) {
-                int len = runExecDup2TmpbufSize(((RubyArray)ary).size());
-                run_exec_dup2_fd_pair[] tmpbuf = new run_exec_dup2_fd_pair[len];
-                for (int i = 0; i < tmpbuf.length; i++) tmpbuf[i] = new run_exec_dup2_fd_pair();
-                sargp.dup2_tmpbuf = tmpbuf;
-            }
-        }
+//        if (sargp != null) {
+//            IRubyObject ary = sargp.fd_dup2;
+//            if (ary != null) {
+//                int len = runExecDup2TmpbufSize(((RubyArray)ary).size());
+//                run_exec_dup2_fd_pair[] tmpbuf = new run_exec_dup2_fd_pair[len];
+//                for (int i = 0; i < tmpbuf.length; i++) tmpbuf[i] = new run_exec_dup2_fd_pair();
+//                sargp.dup2_tmpbuf = tmpbuf;
+//            }
+//        }
 
         // Additional logic to clear all hooked signals
         eargp.attributes.add(SpawnAttribute.sigdef(Long.MAX_VALUE));
@@ -1553,7 +1554,7 @@ public class PopenExecutor {
         IRubyObject[][] argv_p = {argv};
         prog = execGetargs(context, argv_p, accept_shell, env_opt);
         execFillarg(context, prog, argv_p[0], env_opt[0], env_opt[1], eargp);
-        ret = eargp.use_shell ? eargp.shell_script : eargp.command_name;
+        ret = eargp.use_shell ? eargp.command_name : eargp.command_name;
         return ret;
     }
 
@@ -1669,7 +1670,7 @@ public class PopenExecutor {
         prog = prog.export(context);
         eargp.use_shell = argc == 0;
         if (eargp.use_shell)
-            eargp.shell_script = prog;
+            eargp.command_name = prog;
         else
             eargp.command_name = prog;
 
@@ -1764,30 +1765,23 @@ public class PopenExecutor {
                 eargp.command_abspath = null;
         }
 
-        if (!eargp.use_shell && eargp.argv_buf != null) {
+        if (!eargp.use_shell && eargp.argv_buf == null) {
             int i;
             List<byte[]> argv_buf;
             argv_buf = new ArrayList();
             for (i = 0; i < argc; i++) {
                 IRubyObject arg = argv[i];
                 RubyString argStr = StringSupport.checkEmbeddedNulls(runtime, arg);
-                ByteList argBL = argStr.getByteList();
-                byte[] sBytes = argBL.getUnsafeBytes();
-                int s = argBL.begin();
-//                #ifdef DEFAULT_PROCESS_ENCODING
-//                arg = EXPORT_STR(arg);
-//                s = RSTRING_PTR(arg);
-//                #endif
-                argv_buf.add(Arrays.copyOfRange(sBytes, s, argStr.size() + s));
+                argStr = argStr.export(context);
+                argv_buf.add(argStr.getBytes());
             }
             eargp.argv_buf = argv_buf;
         }
 
         if (!eargp.use_shell) {
             ArgvStr argv_str = new ArgvStr();
-            argv_str.argv = new byte[argc + 1][];
+            argv_str.argv = new byte[argc + 1][]; // +1 for progname
             int i = 0;
-            argv_str.argv[i++] = null; /* place holder for /bin/sh of try_with_sh. */
             for (byte[] bytes : eargp.argv_buf) {
                 argv_str.argv[i++] = bytes;
             }
@@ -1799,7 +1793,8 @@ public class PopenExecutor {
         if (path != null) throw new RuntimeException("BUG: dln_find_exe_r with path is not supported yet");
         // FIXME: need to reencode path as same
         File exePath = ShellLauncher.findPathExecutable(runtime, fname);
-        return exePath.getAbsolutePath();
+        // TODO: should we error if executable can't be found?
+        return exePath != null ? exePath.getAbsolutePath() : fname;
     }
 
     private static class ArgvStr {
@@ -1808,7 +1803,6 @@ public class PopenExecutor {
 
     public static class ExecArg {
         boolean use_shell;
-        RubyString shell_script;
         RubyString command_name;
         RubyString command_abspath; /* full path string or nil */
         ArgvStr argv_str;

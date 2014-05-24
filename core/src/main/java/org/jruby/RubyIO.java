@@ -1296,8 +1296,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "binmode")
     public IRubyObject binmode() {
-        if (isClosed()) throw getRuntime().newIOError("closed stream");
-
         setAscii8bitBinmode();
 
         RubyIO write_io = GetWriteIO();
@@ -1383,12 +1381,18 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     public RubyIO GetWriteIO() {
         RubyIO writeIO;
-//        rb_io_check_initialized(RFILE(io)->fptr);
+        checkInitialized();
         writeIO = openFile.tiedIOForWriting;
         if (writeIO != null) {
             return writeIO;
         }
         return this;
+    }
+
+    private void checkInitialized() {
+        if (openFile == null) {
+            throw getRuntime().newIOError("uninitialized stream");
+        }
     }
     
     /** io_write_m
