@@ -148,7 +148,7 @@ public class ObjectSpaceManager {
     private static void runFinalizers(FinalizerReference finalizerReference) {
         try {
             for (RubyProc proc : finalizerReference.getFinalizers()) {
-                proc.call(null);
+                proc.call();
             }
         } catch (Exception e) {
             // MRI seems to silently ignore exceptions in finalizers

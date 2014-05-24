@@ -65,7 +65,6 @@ public class RubyMethod {
         methodMap.put(sharedMethodInfo, method);
     }
 
-    @Deprecated
     public Object call(Object self, RubyProc block, Object... args) {
         assert self != null;
         assert args != null;

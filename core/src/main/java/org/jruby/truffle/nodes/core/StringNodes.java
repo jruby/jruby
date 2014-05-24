@@ -242,7 +242,7 @@ public abstract class StringNodes {
         public RubyString getIndex(RubyString string, int start, int length) {
             notDesignedForCompilation();
 
-            return (RubyString) getContext().toTruffle(getContext().toJRuby(string).substr(start, length));
+            return (RubyString) getContext().toTruffle(getContext().toJRuby(string).substr(getContext().getRuntime(), start, length));
         }
 
     }
@@ -665,7 +665,7 @@ public abstract class StringNodes {
         public RubyArray scan(RubyString string, RubyRegexp regexp) {
             notDesignedForCompilation();
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), regexp.scan(string));
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) regexp.scan(string));
         }
 
     }
@@ -738,7 +738,7 @@ public abstract class StringNodes {
         public RubyArray split(RubyString string, RubyRegexp sep) {
             notDesignedForCompilation();
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), sep.split(string.toString()));
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) sep.split(string.toString()));
         }
     }
 
