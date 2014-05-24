@@ -41,6 +41,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.Pipe;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -270,11 +271,10 @@ public class PopenExecutor {
     }
 
     static void execargSetenv(ThreadContext context, Ruby runtime, ExecArg eargp, IRubyObject env) {
-        env = !env.isNil() ? checkExecEnv(context, runtime, (RubyHash)env) : runtime.getFalse();
-        eargp.env_modification = env;
+        eargp.env_modification = !env.isNil() ? checkExecEnv(context, runtime, (RubyHash)env) : null;
     }
 
-    static IRubyObject checkExecEnv(ThreadContext context, Ruby runtime, RubyHash hash) {
+    static RubyArray checkExecEnv(ThreadContext context, Ruby runtime, RubyHash hash) {
         RubyArray env;
 
         env = runtime.newArray();
@@ -383,7 +383,7 @@ public class PopenExecutor {
     // MRI: pipe_open
     private IRubyObject pipeOpen(ThreadContext context, ExecArg eargp, String modestr, int fmode, IOEncodable convconfig) {
         final Ruby runtime = context.runtime;
-        IRubyObject prog = eargp != null ? (eargp.use_shell ? eargp.shell_script : eargp.command_name) : runtime.getFalse();
+        IRubyObject prog = eargp != null ? (eargp.use_shell ? eargp.shell_script : eargp.command_name) : null;
         long pid = 0;
         OpenFile fptr;
         IRubyObject port;
@@ -574,41 +574,40 @@ public class PopenExecutor {
     }
 
     static int run_exec_pgroup(Ruby runtime, ExecArg eargp, ExecArg sargp, String[] errmsg) {
-    /*
-     * If FD_CLOEXEC is available, rb_fork waits the child's execve.
-     * So setpgid is done in the child when rb_fork is returned in the parent.
-     * No race condition, even without setpgid from the parent.
-     * (Is there an environment which has setpgid but no FD_CLOEXEC?)
-     */
-        int ret;
+        /*
+         * If FD_CLOEXEC is available, rb_fork waits the child's execve.
+         * So setpgid is done in the child when rb_fork is returned in the parent.
+         * No race condition, even without setpgid from the parent.
+         * (Is there an environment which has setpgid but no FD_CLOEXEC?)
+         */
+        int ret = 0;
         long pgroup;
 
         pgroup = eargp.pgroup_pgid;
         if (pgroup == -1)
-            return 0;
-
-        if (sargp != null) {
-        /* maybe meaningless with no fork environment... */
-            sargp.pgroup_given_set();
-            sargp.pgroup_pgid = runtime.getPosix().getpgrp();
-        }
+            pgroup = runtime.getPosix().getpgrp();
 
         if (pgroup == 0) {
-            pgroup = runtime.getPosix().getpid(); /* async-signal-safe */
+            // not needed for posix_spawn
+            return ret;
+//            pgroup = runtime.getPosix().getpid(); /* async-signal-safe */
         }
+
+        eargp.attributes.add(SpawnAttribute.pgroup(pgroup));
         // we can't setpgid in the parent
 //        ret = setpgid(getpid(), pgroup); /* async-signal-safe */
 //        if (ret == -1) ERRMSG("setpgid");
-        return 0; // ret
+        return ret;
     }
 
     static int run_exec_rlimit(Ruby runtime, RubyArray ary, ExecArg sargp, String[] errmsg) {
+        throw runtime.newNotImplementedError("changing rlimit in child is not supported");
+        /* Not supported by posix_spawn
         long i;
         for (i = 0; i < ary.size(); i++) {
             IRubyObject elt = ary.eltOk(i);
             int rtype = RubyNumeric.num2int(((RubyArray)elt).eltOk(0));
 
-            /* // TODO
             struct rlimit rlim;
             if (sargp != null) {
                 IRubyObject tmp, newary;
@@ -634,31 +633,32 @@ public class PopenExecutor {
 //                if (errmsg != null) errmsg[0] = "setrlimit";
 //                return -1;
 //            }
-        }
-        return 0;
+//        }
+//        return 0;
     }
 
     static void saveEnv(ThreadContext context, Ruby runtime, ExecArg sargp) {
-        if (sargp == null)
-            return;
-        if (sargp.env_modification == null) {
-            RubyHash env = runtime.getENV();
-            if (!env.isNil()) {
-                final RubyArray ary = runtime.newArray();
-                BlockCallback SaveEnvBody = new BlockCallback() {
-                    @Override
-                    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-                        ary.push(args[0].dup());
-                        return context.nil;
-                    }
-                };
-                env.each(context, CallBlock.newCallClosure(env, runtime.getHash(),
-                        Arity.OPTIONAL, SaveEnvBody, context));
-                sargp.env_modification = ary;
-            }
-            sargp.unsetenv_others_given_set();
-            sargp.unsetenv_others_do_set();
-        }
+        // We don't need to save env in parent because we let posix_spawn set it up
+//        if (sargp == null)
+//            return;
+//        if (sargp.env_modification == null) {
+//            RubyHash env = runtime.getENV();
+//            if (!env.isNil()) {
+//                final RubyArray ary = runtime.newArray();
+//                BlockCallback SaveEnvBody = new BlockCallback() {
+//                    @Override
+//                    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+//                        ary.push(args[0].dup());
+//                        return context.nil;
+//                    }
+//                };
+//                env.each(context, CallBlock.newCallClosure(env, runtime.getHash(),
+//                        Arity.OPTIONAL, SaveEnvBody, context));
+//                sargp.env_modification = ary;
+//            }
+//            sargp.unsetenv_others_given_set();
+//            sargp.unsetenv_others_do_set();
+//        }
     }
 
     static int run_exec_dup2(Ruby runtime, RubyArray ary, ExecArg eargp, ExecArg sargp, String[] errmsg) {
@@ -709,12 +709,9 @@ public class PopenExecutor {
             while (j != -1 && pairs[j].oldfd != -1 && pairs[j].num_newer == 0) {
                 if (saveRedirectFd(runtime, pairs[j].newfd, sargp, errmsg) < 0) /* async-signal-safe */
                     return -1;
-                ret = redirectDup2(eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
-//                if (ret == -1) {
-//                    if (errmsg != null) errmsg[0] = "dup2";
-//                    return -1;
-//                }
-//                rb_update_max_fd(pairs[j].newfd); /* async-signal-safe but don't need to call it in a child process. */
+
+                // This always succeeds because we just defer it to posix_spawn.
+                redirectDup2(eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
                 pairs[j].oldfd = -1;
                 j = (int)pairs[j].older_index;
                 if (j != -1)
@@ -727,58 +724,50 @@ public class PopenExecutor {
             int j;
             if (pairs[i].oldfd == -1)
                 continue;
-            if (pairs[i].oldfd == pairs[i].newfd) { /* self cycle */
-//                #ifdef F_GETFD
-                int fd = pairs[i].oldfd;
-                ret = runtime.getPosix().fcntl(fd, Fcntl.F_GETFD); /* async-signal-safe */
-                if (ret == -1) {
-                    if (errmsg != null) errmsg[0] = "fcntl(F_GETFD)";
-                    return -1;
-                }
-                if ((ret & FcntlLibrary.FD_CLOEXEC) != 0) {
-                    ret &= ~FcntlLibrary.FD_CLOEXEC;
-                    ret = runtime.getPosix().fcntl(fd, Fcntl.F_SETFD, ret); /* async-signal-safe */
-                    if (ret == -1) {
-                        if (errmsg != null) errmsg[0] = "fcntl(F_SETFD)";
-                        return -1;
-                    }
-                }
-//                #endif
-                pairs[i].oldfd = -1;
-                continue;
-            }
-            if (extra_fd == -1) {
-                extra_fd = redirectDup(runtime, pairs[i].oldfd); /* async-signal-safe */
-                if (extra_fd == -1) {
-                    if (errmsg != null) errmsg[0] = "dup";
-                    return -1;
-                }
-//                rb_update_max_fd(extra_fd);
-            }
-            else {
-                ret = redirectDup2(eargp, pairs[i].oldfd, extra_fd); /* async-signal-safe */
+            // We can't support this logic because it makes fcntl changes in parent
+            throw runtime.newNotImplementedError("cyclic redirects in child are not supported");
+//            if (pairs[i].oldfd == pairs[i].newfd) { /* self cycle */
+//                int fd = pairs[i].oldfd;
+//                ret = runtime.getPosix().fcntl(fd, Fcntl.F_GETFD); /* async-signal-safe */
 //                if (ret == -1) {
-//                    if (errmsg != null) errmsg[0] = "dup2";
+//                    if (errmsg != null) errmsg[0] = "fcntl(F_GETFD)";
 //                    return -1;
 //                }
-//                rb_update_max_fd(extra_fd);
-            }
-            pairs[i].oldfd = extra_fd;
-            j = pairs[i].older_index;
-            pairs[i].older_index = -1;
-            while (j != -1) {
-                ret = redirectDup2(eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
-//                if (ret == -1) {
-//                    if (errmsg != null) errmsg[0] = "dup2";
+//                if ((ret & FcntlLibrary.FD_CLOEXEC) != 0) {
+//                    ret &= ~FcntlLibrary.FD_CLOEXEC;
+//                    ret = runtime.getPosix().fcntl(fd, Fcntl.F_SETFD, ret); /* async-signal-safe */
+//                    if (ret == -1) {
+//                        if (errmsg != null) errmsg[0] = "fcntl(F_SETFD)";
+//                        return -1;
+//                    }
+//                }
+//                pairs[i].oldfd = -1;
+//                continue;
+//            }
+//            if (extra_fd == -1) {
+//                extra_fd = redirectDup(runtime, pairs[i].oldfd); /* async-signal-safe */
+//                if (extra_fd == -1) {
+//                    if (errmsg != null) errmsg[0] = "dup";
 //                    return -1;
 //                }
-//                rb_update_max_fd(ret);
-                pairs[j].oldfd = -1;
-                j = pairs[j].older_index;
-            }
+////                rb_update_max_fd(extra_fd);
+//            }
+//            else {
+//                // This always succeeds because we just defer it to posix_spawn.
+//                redirectDup2(eargp, pairs[i].oldfd, extra_fd); /* async-signal-safe */
+//            }
+//            pairs[i].oldfd = extra_fd;
+//            j = pairs[i].older_index;
+//            pairs[i].older_index = -1;
+//            while (j != -1) {
+//                // This always succeeds because we just defer it to posix_spawn.
+//                redirectDup2(eargp, pairs[j].oldfd, pairs[j].newfd); /* async-signal-safe */
+//                pairs[j].oldfd = -1;
+//                j = pairs[j].older_index;
+//            }
         }
         if (extra_fd != -1) {
-            ret = redirectClose(eargp, extra_fd); /* async-signal-safe */
+            ret = redirectClose(runtime, eargp, extra_fd, sargp != null); /* async-signal-safe */
             if (ret == -1) {
                 if (errmsg != null) errmsg[0] = "close";
                 return -1;
@@ -796,28 +785,31 @@ public class PopenExecutor {
         return ret;
     }
 
-    static int redirectDup2(ExecArg eargp, int oldfd, int newfd)
+    static void redirectDup2(ExecArg eargp, int oldfd, int newfd)
     {
         eargp.fileActions.add(SpawnFileAction.dup(oldfd, newfd));
-        return 0;
     }
 
-    static int redirectClose(ExecArg eargp, int fd)
+    static int redirectClose(Ruby runtime, ExecArg eargp, int fd, boolean forChild)
     {
-        eargp.fileActions.add(SpawnFileAction.close(fd));
-        return 0;
+        if (forChild) {
+            eargp.fileActions.add(SpawnFileAction.close(fd));
+            return 0;
+        } else {
+            return runtime.getPosix().close(fd);
+        }
     }
 
-    static int redirectOpen(Ruby runtime, String pathname, int flags, int perm)
+    static void redirectOpen(ExecArg eargp, int fd, String pathname, int flags, int perm)
     {
-        int ret;
-        ret = runtime.getPosix().open(pathname, flags, perm);
-//        ttyprintf("open(\"%s\", 0x%x, 0%o) => %d\n", pathname, flags, perm, ret);
-        return ret;
+        eargp.fileActions.add(SpawnFileAction.open(pathname, fd, flags, perm));
     }
 
     static int saveRedirectFd(Ruby runtime, int fd, ExecArg sargp, String[] errmsg) {
-        if (sargp != null) {
+        // This logic is to restore the parent's fd. Since we let posix_spawn do dup2 for us in the
+        // child, it's not necessary for us to fix up the parent.
+
+        if (false && sargp != null) {
             IRubyObject newary;
             int save_fd = redirectDup(runtime, fd);
             if (save_fd == -1) {
@@ -827,6 +819,7 @@ public class PopenExecutor {
                 return -1;
             }
 //            rb_update_max_fd(save_fd);
+
             newary = sargp.fd_dup2;
             if (newary == null) {
                 newary = runtime.newArray();
@@ -863,42 +856,39 @@ public class PopenExecutor {
 //        #if defined(HAVE_SETRLIMIT) && defined(RLIM2NUM)
         obj = eargp.rlimit_limits;
         if (obj != null) {
-            if (run_exec_rlimit(runtime, (RubyArray)obj, sargp, errmsg) == -1) /* hopefully async-signal-safe */
-                return -1;
+            throw runtime.newNotImplementedError("setting rlimit in child is unsupported");
+//            if (run_exec_rlimit(runtime, (RubyArray)obj, sargp, errmsg) == -1) /* hopefully async-signal-safe */
+//                return -1;
         }
 //        #endif
 
 //        #if !defined(HAVE_FORK)
+        boolean clearEnv = false;
         if (eargp.unsetenv_others_given() && eargp.unsetenv_others_do()) {
-            saveEnv(context, runtime, sargp);
+            clearEnv = true;
+//            saveEnv(context, runtime, sargp);
+
             // we can't clear env in parent process
 //            runtime.getENV().clear();
         }
 
-        obj = eargp.env_modification;
-        if (obj != null) {
-//            long i;
-            saveEnv(context, runtime, sargp);
-            // we can't setenv in parent process
-//            for (i = 0; i < ((RubyArray)obj).size(); i++) {
-//                IRubyObject pair = ((RubyArray)obj).eltOk(i);
-//                IRubyObject key = ((RubyArray)pair).eltOk(0);
-//                IRubyObject val = ((RubyArray)pair).eltOk(1);
-//                if (val.isNil())
-//                    ruby_setenv(StringValueCStr(key), 0);
-//                else
-//                    ruby_setenv(StringValueCStr(key), StringValueCStr(val));
-//            }
+        RubyArray env = eargp.env_modification;
+        if (env != null) {
+            eargp.envp_str = ShellLauncher.getModifiedEnv(runtime, env, !clearEnv);
+        } else {
+            eargp.envp_str = ShellLauncher.getModifiedEnv(runtime, Collections.EMPTY_LIST, !clearEnv);
         }
 //        #endif
 
         if (eargp.umask_given()) {
-            int mask = eargp.umask_mask;
-            int oldmask = runtime.getPosix().umask(mask); /* never fail */ /* async-signal-safe */
-            if (sargp != null) {
-                sargp.umask_given_set();
-                sargp.umask_mask = oldmask;
-            }
+            throw runtime.newNotImplementedError("setting umask in child is unsupported");
+//            int mask = eargp.umask_mask;
+//            SpawnAttribute.
+//            int oldmask = runtime.getPosix().umask(mask); /* never fail */ /* async-signal-safe */
+//            if (sargp != null) {
+//                sargp.umask_given_set();
+//                sargp.umask_mask = oldmask;
+//            }
         }
 
         obj = eargp.fd_dup2;
@@ -930,12 +920,12 @@ public class PopenExecutor {
         }
 
         if (eargp.chdir_given()) {
-            if (sargp != null) {
-                String cwd = runtime.getCurrentDirectory();
-                sargp.chdir_given_set();
-                sargp.chdir_dir = cwd;
-            }
             // we can't chdir in the parent
+//            if (sargp != null) {
+//                String cwd = runtime.getCurrentDirectory();
+//                sargp.chdir_given_set();
+//                sargp.chdir_dir = cwd;
+//            }
 //            if (chdir(RSTRING_PTR(eargp.chdir_dir)) == -1) { /* async-signal-safe */
 //                ERRMSG("chdir");
 //                return -1;
@@ -971,6 +961,9 @@ public class PopenExecutor {
             }
         }
 
+        // Additional logic to clear all hooked signals
+        eargp.attributes.add(SpawnAttribute.sigdef(Long.MAX_VALUE));
+
         return 0;
     }
     /* This function should be async-signal-safe.  Actually it is. */
@@ -981,7 +974,7 @@ public class PopenExecutor {
         for (i = 0; i < ary.size(); i++) {
             RubyArray elt = (RubyArray)ary.eltOk(i);
             int fd = RubyNumeric.fix2int(elt.eltOk(0));
-            ret = redirectClose(eargp, fd); /* async-signal-safe */
+            ret = redirectClose(runtime, eargp, fd, true); /* async-signal-safe */
             if (ret == -1) {
                 if (errmsg != null) errmsg[0] = "close";
                 return -1;
@@ -1003,38 +996,41 @@ public class PopenExecutor {
             int flags = RubyNumeric.num2int(param.eltOk(1));
             int perm = RubyNumeric.num2int(param.eltOk(2));
             boolean need_close = true;
-            int fd2 = redirectOpen(runtime, path, flags, perm); /* async-signal-safe */
-            if (fd2 == -1) {
-                if (errmsg != null) errmsg[0] = "open";
-                return -1;
-            }
+            // This always succeeds because we defer to posix_spawn
+            elt = (RubyArray)ary.eltOk(i);
+            fd = RubyNumeric.fix2int(elt.eltOk(0));
+            redirectOpen(eargp, fd, path, flags, perm); /* async-signal-safe */
+
+            // The rest of this logic is for closing the opened file in parent and preserving
+            // the file descriptors modified. Since we defer to posix_spawn, this is not needed.
+
 //            rb_update_max_fd(fd2);
-            while (i < ary.size() &&
-                    elt.eltOk(1) == param) {
-                elt = (RubyArray)ary.eltOk(i);
-                fd = RubyNumeric.fix2int(elt.eltOk(0));
-                if (fd == fd2) {
-                    need_close = false;
-                }
-                else {
-                    if (saveRedirectFd(runtime, fd, sargp, errmsg) < 0) /* async-signal-safe */
-                        return -1;
-                    ret = redirectDup2(eargp, fd2, fd); /* async-signal-safe */
-                    if (ret == -1) {
-                        if (errmsg != null) errmsg[0] = "dup2";
-                        return -1;
-                    }
-//                    rb_update_max_fd(fd);
-                }
-                i++;
-            }
-            if (need_close) {
-                ret = redirectClose(eargp, fd2); /* async-signal-safe */
-                if (ret == -1) {
-                    if (errmsg != null) errmsg[0] = "close";
-                    return -1;
-                }
-            }
+//            while (i < ary.size() &&
+//                    elt.eltOk(1) == param) {
+//                elt = (RubyArray)ary.eltOk(i);
+//                fd = RubyNumeric.fix2int(elt.eltOk(0));
+//                if (fd == fd2) {
+//                    need_close = false;
+//                }
+//                else {
+//                    if (saveRedirectFd(runtime, fd, sargp, errmsg) < 0) /* async-signal-safe */
+//                        return -1;
+//                    ret = redirectDup2(eargp, fd2, fd); /* async-signal-safe */
+//                    if (ret == -1) {
+//                        if (errmsg != null) errmsg[0] = "dup2";
+//                        return -1;
+//                    }
+////                    rb_update_max_fd(fd);
+//                }
+//                i++;
+//            }
+//            if (need_close) {
+//                ret = redirectClose(eargp, fd2); /* async-signal-safe */
+//                if (ret == -1) {
+//                    if (errmsg != null) errmsg[0] = "close";
+//                    return -1;
+//                }
+//            }
         }
         return 0;
     }
@@ -1047,15 +1043,14 @@ public class PopenExecutor {
         for (i = 0; i < ary.size(); i++) {
             RubyArray elt = (RubyArray)ary.eltOk(i);
             int newfd = RubyNumeric.fix2int(elt.eltOk(0));
-            int oldfd = RubyNumeric.fix2int(elt.eltOk(0));
+            int oldfd = RubyNumeric.fix2int(elt.eltOk(1));
 
-            if (saveRedirectFd(runtime, newfd, sargp, errmsg) < 0) /* async-signal-safe */
-                return -1;
-            ret = redirectDup2(eargp, oldfd, newfd); /* async-signal-safe */
-            if (ret == -1) {
-                if (errmsg != null) errmsg[0] = "dup2";
-                return -1;
-            }
+            // Don't have to save in parent, since we let posix_spawn dup2
+//            if (saveRedirectFd(runtime, newfd, sargp, errmsg) < 0) /* async-signal-safe */
+//                return -1;
+
+            // This always succeeds
+            redirectDup2(eargp, oldfd, newfd); /* async-signal-safe */
 //            rb_update_max_fd(newfd);
         }
         return 0;
@@ -1074,7 +1069,7 @@ public class PopenExecutor {
 
     static void execargFixup(ThreadContext context, Ruby runtime, ExecArg eargp) {
         boolean unsetenv_others;
-        IRubyObject envopts;
+        RubyArray envopts;
         IRubyObject ary;
 
         eargp.redirect_fds = checkExecFds(context, runtime, eargp);
@@ -1103,8 +1098,8 @@ public class PopenExecutor {
             if (envopts != null) {
                 RubyHash stenv = (RubyHash)envtbl;
                 long i;
-                for (i = 0; i < ((RubyArray)envopts).size(); i++) {
-                    IRubyObject pair = ((RubyArray)envopts).eltOk(i);
+                for (i = 0; i < envopts.size(); i++) {
+                    IRubyObject pair = envopts.eltOk(i);
                     IRubyObject key = ((RubyArray)pair).eltOk(0);
                     IRubyObject val = ((RubyArray)pair).eltOk(1);
                     if (val.isNil()) {
@@ -1664,12 +1659,11 @@ public class PopenExecutor {
         int argc = argv.length;
 
         if (!opthash.isNil()) {
-            RubyIO.checkExecOptions(opthash);
+            checkExecOptions(context, runtime, (RubyHash)opthash, eargp);
         }
 
         if (!env.isNil()) {
-            env = RubyIO.checkExecEnv(context, (RubyHash)env);
-            eargp.env_modification = env;
+            eargp.env_modification = RubyIO.checkExecEnv(context, (RubyHash)env);
         }
 
         prog = prog.export(context);
@@ -1823,9 +1817,9 @@ public class PopenExecutor {
         String[] envp_str;
         List<String> envp_buf;
         run_exec_dup2_fd_pair[] dup2_tmpbuf;
-        int flags = 0xFFFFFFFF;
-        long pgroup_pgid; /* asis(-1), new pgroup(0), specified pgroup (0<V). */
-        IRubyObject rlimit_limits; /* Qfalse or [[rtype, softlim, hardlim], ...] */
+        int flags;
+        long pgroup_pgid = -1; /* asis(-1), new pgroup(0), specified pgroup (0<V). */
+        IRubyObject rlimit_limits; /* null or [[rtype, softlim, hardlim], ...] */
         int umask_mask;
         int uid;
         int gid;
@@ -1834,7 +1828,7 @@ public class PopenExecutor {
         IRubyObject fd_open;
         IRubyObject fd_dup2_child;
         int close_others_maxhint;
-        IRubyObject env_modification; /* Qfalse or [[k1,v1], ...] */
+        RubyArray env_modification; /* null or [[k1,v1], ...] */
         String chdir_dir;
         List<SpawnFileAction> fileActions = new ArrayList();
         List<SpawnAttribute> attributes = new ArrayList();

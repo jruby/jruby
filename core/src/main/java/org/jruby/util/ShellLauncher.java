@@ -45,6 +45,7 @@ import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -213,10 +214,15 @@ public class ShellLauncher {
     }
 
     public static String[] getCurrentEnv(Ruby runtime) {
-        return getCurrentEnv(runtime, null);
+        return getModifiedEnv(runtime, Collections.EMPTY_LIST, true);
     }
 
     private static String[] getCurrentEnv(Ruby runtime, Map mergeEnv) {
+        // TODO: ensure nobody passes null
+        return getModifiedEnv(runtime, mergeEnv == null ? Collections.EMPTY_LIST : mergeEnv.entrySet(), true);
+    }
+
+    public static String[] getModifiedEnv(Ruby runtime, Collection mergeEnv, boolean useCurrent) {
         ThreadContext context = runtime.getCurrentContext();
 
         // disable tracing for the dup call below
@@ -225,30 +231,23 @@ public class ShellLauncher {
 
         try {
             // dup for JRUBY-6603 (avoid concurrent modification while we walk it)
-            RubyHash hash = (RubyHash)runtime.getObject().getConstant("ENV").dup();
+            RubyHash hash;
+            if (useCurrent) {
+                hash = (RubyHash)runtime.getObject().getConstant("ENV").dup();
+            } else {
+                hash = null;
+            }
             String[] ret, ary;
 
-            if (mergeEnv != null && !mergeEnv.isEmpty()) {
+            if (mergeEnv != null) {
                 ret = new String[hash.size() + mergeEnv.size()];
             } else {
                 ret = new String[hash.size()];
             }
 
             int i=0;
-            for(Map.Entry e : (Set<Map.Entry>)hash.directEntrySet()) {
-                // if the key is nil, raise TypeError
-                if (e.getKey() == null) {
-                    throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
-                }
-                // ignore if the value is nil
-                if (e.getValue() == null) {
-                    continue;
-                }
-                ret[i] = e.getKey().toString() + "=" + e.getValue().toString();
-                i++;
-            }
-            if (mergeEnv != null) {
-                for (Map.Entry e : (Set<Map.Entry>) mergeEnv.entrySet()) {
+            if (hash != null) {
+                for(Map.Entry<String, String> e : (Set<Map.Entry<String, String>>)hash.entrySet()) {
                     // if the key is nil, raise TypeError
                     if (e.getKey() == null) {
                         throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
@@ -257,8 +256,42 @@ public class ShellLauncher {
                     if (e.getValue() == null) {
                         continue;
                     }
-                    ret[i] = e.getKey().toString() + "=" + e.getValue().toString();
+                    ret[i] = e.getKey() + "=" + e.getValue();
                     i++;
+                }
+            }
+            if (mergeEnv != null) {
+                if (mergeEnv instanceof Set) {
+                    for (Map.Entry<String, String> e : (Set<Map.Entry<String, String>>)mergeEnv) {
+                        // if the key is nil, raise TypeError
+                        if (e.getKey() == null) {
+                            throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
+                        }
+                        // ignore if the value is nil
+                        if (e.getValue() == null) {
+                            continue;
+                        }
+                        ret[i] = e.getKey().toString() + "=" + e.getValue().toString();
+                        i++;
+                    }
+                } else if (mergeEnv instanceof RubyArray) {
+                    for (int j = 0; j < ((RubyArray)mergeEnv).size(); j++) {
+                        RubyArray e = ((RubyArray)mergeEnv).eltOk(j).convertToArray();
+                        // if there are not two elements, raise ArgumentError
+                        if (e.size() != 2) {
+                            throw runtime.newArgumentError("env assignments must come in pairs");
+                        }
+                        // if the key is nil, raise TypeError
+                        if (e.eltOk(0) == null) {
+                            throw runtime.newTypeError(runtime.getNil(), runtime.getStructClass());
+                        }
+                        // ignore if the value is nil
+                        if (e.eltOk(1) == null) {
+                            continue;
+                        }
+                        ret[i] = e.eltOk(0).toString() + "=" + e.eltOk(1).toString();
+                        i++;
+                    }
                 }
             }
             
