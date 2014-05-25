@@ -33,10 +33,6 @@ public class FeatureManager {
     }
 
     public boolean require(String feature) throws IOException {
-        if (context.getRuntime().getInstanceConfig().getTruffleHooks().require(context, feature)) {
-            return true;
-        }
-
         final RubyModule.RubyConstant dataConstantBefore = context.getCoreLibrary().getObjectClass().lookupConstant("DATA");
 
         try {

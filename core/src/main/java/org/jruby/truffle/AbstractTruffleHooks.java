@@ -14,8 +14,8 @@ import org.jruby.truffle.runtime.RubyContext;
 public class AbstractTruffleHooks implements TruffleHooks {
 
     @Override
-    public boolean require(RubyContext context, String feature) {
-        return false;
+    public void afterInit(RubyContext context) {
+
     }
 
 }

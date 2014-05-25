@@ -13,6 +13,6 @@ import org.jruby.truffle.runtime.RubyContext;
 
 public interface TruffleHooks {
 
-    boolean require(RubyContext context, String feature);
+    void afterInit(RubyContext context);
 
 }
