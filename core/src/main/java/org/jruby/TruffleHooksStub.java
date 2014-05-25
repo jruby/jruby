@@ -7,15 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle;
+package org.jruby;
 
-import org.jruby.truffle.runtime.RubyContext;
-
-public class AbstractTruffleHooks implements TruffleHooks {
-
-    @Override
-    public void afterInit(RubyContext context) {
-
-    }
-
+public interface TruffleHooksStub {
 }

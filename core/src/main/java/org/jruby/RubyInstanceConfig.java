@@ -36,8 +36,6 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
-import org.jruby.truffle.AbstractTruffleHooks;
-import org.jruby.truffle.TruffleHooks;
 import org.jruby.util.ClassCache;
 import org.jruby.util.InputStreamMarkCursor;
 import org.jruby.util.JRubyFile;
@@ -1758,7 +1756,7 @@ public class RubyInstanceConfig {
     public static String IR_JIT_PASSES = Options.IR_JIT_PASSES.load();
     public static String IR_INLINE_COMPILER_PASSES = Options.IR_INLINE_COMPILER_PASSES.load();
 
-    private TruffleHooks truffleHooks = new AbstractTruffleHooks();
+    private TruffleHooksStub truffleHooks = null;
 
     public static final boolean COROUTINE_FIBERS = Options.FIBER_COROUTINES.load();
 
@@ -1960,11 +1958,11 @@ public class RubyInstanceConfig {
     @Deprecated public static final boolean INVOKEDYNAMIC_LITERALS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_LITERALS.load();
     @Deprecated public static final boolean INVOKEDYNAMIC_IVARS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_IVARS.load();
 
-    public void setTruffleHooks(TruffleHooks truffleHooks) {
+    public void setTruffleHooks(TruffleHooksStub truffleHooks) {
         this.truffleHooks = truffleHooks;
     }
 
-    public TruffleHooks getTruffleHooks() {
+    public TruffleHooksStub getTruffleHooks() {
         return truffleHooks;
     }
 }

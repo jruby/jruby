@@ -9,9 +9,10 @@
  */
 package org.jruby.truffle;
 
+import org.jruby.TruffleHooksStub;
 import org.jruby.truffle.runtime.RubyContext;
 
-public interface TruffleHooks {
+public interface TruffleHooks extends TruffleHooksStub {
 
     void afterInit(RubyContext context);
 

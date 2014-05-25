@@ -75,7 +75,9 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
         // Hook
 
-        runtime.getInstanceConfig().getTruffleHooks().afterInit(truffleContext);
+        if (truffleContext.getHooks() != null) {
+            truffleContext.getHooks().afterInit(truffleContext);
+        }
     }
 
     @Override

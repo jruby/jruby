@@ -21,6 +21,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.source.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
@@ -359,6 +360,10 @@ public class RubyContext {
 
     public SourceManager getSourceManager() {
         return sourceManager;
+    }
+
+    public TruffleHooks getHooks() {
+        return (TruffleHooks) runtime.getInstanceConfig().getTruffleHooks();
     }
 
 }
