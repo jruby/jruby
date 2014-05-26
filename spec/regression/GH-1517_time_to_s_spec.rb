@@ -39,4 +39,30 @@ if RUBY_VERSION > '1.9'
     end
   end
   
+  describe Time do
+    describe '#new' do
+      let(:year) { 2014 }
+      let(:month) { 5 }
+      let(:day) { 21 }
+      let(:hour) { 22 }
+      let(:minute) { 51 }
+      let(:second) { 23 }
+
+      # These two timezone offsets should be equivalent
+      let(:offset_int) { -25200 }
+      let(:offset_str) { '-07:00' }
+
+      let(:instance_int) { Time.new(year, month, day, hour, minute, second, offset_int) }
+      let(:instance_str) { Time.new(year, month, day, hour, minute, second, offset_str) }
+
+      it 'creates equal instances with both UTC offset representations' do
+        # Fails on JRuby 1.7.10 with
+        #  expected: 2014-05-21 22:51:23 -0700
+        #       got: 2014-05-21 08:51:23 -0700
+        # 
+        #  (compared using ==)
+        expect(instance_str).to eq(instance_int)
+      end
+    end
+  end
 end
