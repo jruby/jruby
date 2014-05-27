@@ -965,12 +965,10 @@ public class BodyTranslator extends Translator {
 
         if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
             context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), "assigning to frame local global variables not implemented");
-            return rhs;
-        } else {
-            final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
 
-            return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true);
         }
+        final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
+        return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true);
     }
 
     @Override
