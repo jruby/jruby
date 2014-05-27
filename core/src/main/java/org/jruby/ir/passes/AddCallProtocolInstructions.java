@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.ListIterator;
 
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.BreakInstr;
@@ -40,6 +42,10 @@ public class AddCallProtocolInstructions extends CompilerPass {
         return DEPENDENCIES;
     }
 
+    private boolean explicitCallProtocolSupported(IRScope scope) {
+        return scope instanceof IRMethod || (scope instanceof IRModuleBody && !(scope instanceof IRMetaClassBody));
+    }
+
     @Override
     public Object execute(IRScope scope, Object... data) {
         // IRScriptBody do not get explicit call protocol instructions right now.
@@ -52,7 +58,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
         // Add explicit frame and binding push/pop instrs ONLY for methods -- we cannot handle this in closures and evals yet
         // If the scope uses $_ or $~ family of vars, has local load/stores, or if its binding has escaped, we have
         // to allocate a dynamic scope for it and add binding push/pop instructions.
-        if (scope instanceof IRMethod || scope instanceof IRModuleBody) {
+        if (explicitCallProtocolSupported(scope)) {
             StoreLocalVarPlacementProblem slvpp = (StoreLocalVarPlacementProblem)scope.getDataFlowSolution(StoreLocalVarPlacementProblem.NAME);
 
             boolean scopeHasLocalVarStores      = false;
@@ -84,10 +90,10 @@ public class AddCallProtocolInstructions extends CompilerPass {
             // 1. I think we need a different check for frames -- it is NOT scopeHasUnrescuedExceptions
             //    We need scope.requiresFrame() to push/pop frames
             // 2. Plus bindingHasEscaped check in IRScope is missing some other check since we should
-            //    jsut be able to check (bindingHasEscaped || scopeHasVarStores) to push/pop bindings.
+            //    just be able to check (bindingHasEscaped || scopeHasVarStores) to push/pop bindings.
             // We need scopeHasUnrescuedExceptions to add GEB for popping frame/binding on exit from unrescued exceptions
             BasicBlock entryBB = cfg.getEntryBB();
-            boolean requireBinding = bindingHasEscaped || scopeHasLocalVarStores;
+            boolean requireBinding = bindingHasEscaped || scopeHasLocalVarStores || scope.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE);
             if (scope.usesBackrefOrLastline() || requireBinding || scopeHasUnrescuedExceptions) {
                 // Push
                 entryBB.addInstr(new PushFrameInstr(new MethAddr(scope.getName())));
@@ -107,7 +113,12 @@ public class AddCallProtocolInstructions extends CompilerPass {
                     ListIterator<Instr> instrs = bb.getInstrs().listIterator();
                     while (instrs.hasNext()) {
                         Instr i = instrs.next();
-                        if (!bb.isExitBB() && (i instanceof ReturnBase) || (i instanceof BreakInstr)) {
+                        // Right now, we only support explicit call protocol on methods.
+                        // So, non-local returns and breaks don't get here.
+                        // Non-local-returns and breaks are tricky since they almost always
+                        // throw an exception and we don't multiple pops (once before the
+                        // return/break, and once when the exception is caught).
+                        if (!bb.isExitBB() && i instanceof ReturnBase) {
                             // Add before the break/return
                             instrs.previous();
                             if (requireBinding) instrs.add(new PopBindingInstr());
