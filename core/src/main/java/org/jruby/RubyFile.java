@@ -78,6 +78,7 @@ import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.util.io.PosixShim;
 
 /**
  * Ruby File class equivalent in java.
@@ -199,17 +200,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     public RubyFile(Ruby runtime, String path, InputStream in) {
-        super(runtime, runtime.getFile());
-        MakeOpenFile();
-        this.path = path;
-        try {
-            this.openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(in))));
-            this.openFile.setMode(openFile.getMainStreamSafe().getModes().getOpenFileFlags());
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
-        } catch (InvalidValueException ex) {
-            throw runtime.newErrnoEINVALError();
-        }
+        super(runtime, runtime.getFile(), Channels.newChannel(in));
+        this.setPath(path);
     }
     
     @Override
@@ -296,11 +288,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         checkClosed(context);
         int mode = (int) arg.convertToInteger().getLongValue();
 
-        if (!new File(path).exists()) {
-            throw context.runtime.newErrnoENOENTError(path);
+        if (!new File(getPath()).exists()) {
+            throw context.runtime.newErrnoENOENTError(getPath());
         }
 
-        return context.runtime.newFixnum(context.runtime.getPosix().chmod(path, mode));
+        return context.runtime.newFixnum(context.runtime.getPosix().chmod(getPath(), mode));
     }
 
     @JRubyMethod(required = 2)
@@ -316,34 +308,34 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             group = RubyNumeric.num2int(arg2);
         }
 
-        if (!new File(path).exists()) {
-            throw context.runtime.newErrnoENOENTError(path);
+        if (!new File(getPath()).exists()) {
+            throw context.runtime.newErrnoENOENTError(getPath());
         }
 
-        return context.runtime.newFixnum(context.runtime.getPosix().chown(path, owner, group));
+        return context.runtime.newFixnum(context.runtime.getPosix().chown(getPath(), owner, group));
     }
 
     @JRubyMethod
     public IRubyObject atime(ThreadContext context) {
         checkClosed(context);
-        return context.runtime.newFileStat(path, false).atime();
+        return context.runtime.newFileStat(getPath(), false).atime();
     }
 
     @JRubyMethod
     public IRubyObject ctime(ThreadContext context) {
         checkClosed(context);
-        return context.runtime.newFileStat(path, false).ctime();
+        return context.runtime.newFileStat(getPath(), false).ctime();
     }
 
     @JRubyMethod(required = 1)
     public IRubyObject lchmod(ThreadContext context, IRubyObject arg) {
         int mode = (int) arg.convertToInteger().getLongValue();
 
-        if (!new File(path).exists()) {
-            throw context.runtime.newErrnoENOENTError(path);
+        if (!new File(getPath()).exists()) {
+            throw context.runtime.newErrnoENOENTError(getPath());
         }
 
-        return context.runtime.newFixnum(context.runtime.getPosix().lchmod(path, mode));
+        return context.runtime.newFixnum(context.runtime.getPosix().lchmod(getPath(), mode));
     }
 
     // TODO: this method is not present in MRI!
@@ -359,23 +351,23 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             group = RubyNumeric.num2int(arg2);
         }
 
-        if (!new File(path).exists()) {
-            throw context.runtime.newErrnoENOENTError(path);
+        if (!new File(getPath()).exists()) {
+            throw context.runtime.newErrnoENOENTError(getPath());
         }
 
-        return context.runtime.newFixnum(context.runtime.getPosix().lchown(path, owner, group));
+        return context.runtime.newFixnum(context.runtime.getPosix().lchown(getPath(), owner, group));
     }
 
     @JRubyMethod
     public IRubyObject lstat(ThreadContext context) {
         checkClosed(context);
-        return context.runtime.newFileStat(path, true);
+        return context.runtime.newFileStat(getPath(), true);
     }
     
     @JRubyMethod
     public IRubyObject mtime(ThreadContext context) {
         checkClosed(context);
-        return context.runtime.newFileStat(path, false).mtime();
+        return context.runtime.newFileStat(getPath(), false).mtime();
     }
 
     @JRubyMethod(meta = true)
@@ -386,8 +378,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(name = {"path", "to_path"})
     public IRubyObject path(ThreadContext context) {
         IRubyObject newPath = context.runtime.getNil();
-        if (path != null) {
-            newPath = context.runtime.newString(path);
+        if (getPath() != null) {
+            newPath = context.runtime.newString(getPath());
             newPath.setTaint(true);
         }
         return newPath;
@@ -397,7 +389,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @Override
     public IRubyObject stat(ThreadContext context) {
         checkClosed(context);
-        return context.runtime.newFileStat(path, false);
+        return context.runtime.newFileStat(getPath(), false);
     }
 
     @JRubyMethod(required = 1)
@@ -424,7 +416,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @Override
     public IRubyObject inspect() {
         StringBuilder val = new StringBuilder();
-        val.append("#<File:").append(path);
+        val.append("#<File:").append(getPath());
         if(!openFile.isOpen()) {
             val.append(" (closed)");
         }
@@ -1091,7 +1083,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     public String getPath() {
-        return path;
+        if (openFile == null) return null;
+        return openFile.getPath();
+    }
+
+    private void setPath(String path) {
+        if (openFile == null) return;
+        openFile.setPath(path);
     }
 
     @Override
@@ -1109,7 +1107,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Ruby runtime = context.runtime;
         RubyString filename = get_path(context, args[0]);
 
-        path = adjustRootPathOnWindows(runtime, filename.asJavaString(), runtime.getCurrentDirectory());
+        setPath(adjustRootPathOnWindows(runtime, filename.asJavaString(), runtime.getCurrentDirectory()));
 
         IRubyObject[] pm = new IRubyObject[]{null, null};
         IRubyObject options = context.nil;
@@ -1813,10 +1811,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     private static final long serialVersionUID = 1L;
 
-    public static final int LOCK_SH = 1;
-    public static final int LOCK_EX = 2;
-    public static final int LOCK_NB = 4;
-    public static final int LOCK_UN = 8;
+    public static final int LOCK_SH = PosixShim.LOCK_SH;
+    public static final int LOCK_EX = PosixShim.LOCK_EX;
+    public static final int LOCK_NB = PosixShim.LOCK_NB;
+    public static final int LOCK_UN = PosixShim.LOCK_UN;
 
     private static final int FNM_NOESCAPE = 1;
     private static final int FNM_PATHNAME = 2;
@@ -1829,5 +1827,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static final String[] SLASHES = {"", "/", "//"};
     private static Pattern URI_PREFIX = Pattern.compile("^(jar:)?[a-z]{2,}:(.*)");
 
+    @Deprecated
     protected String path;
 }

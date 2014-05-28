@@ -12,6 +12,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.channels.Pipe;
 
 /**
  * Representations of as many native posix functions as possible applied to an NIO channel
@@ -207,6 +208,18 @@ public class PosixShim {
                 throw new RuntimeException("unknown IOException: " + ioe);
             }
             this.errno = errno;
+            return -1;
+        }
+    }
+
+    public int pipe(Channel[] pipes) {
+        try {
+            Pipe pipe = Pipe.open();
+            pipes[0] = pipe.source();
+            pipes[1] = pipe.sink();
+            return 0;
+        } catch (IOException ioe) {
+            errno = Helpers.errnoFromException(ioe);
             return -1;
         }
     }

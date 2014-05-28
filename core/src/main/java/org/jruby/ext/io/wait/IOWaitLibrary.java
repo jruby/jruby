@@ -30,6 +30,7 @@ package org.jruby.ext.io.wait;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
+import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -48,48 +49,120 @@ public class IOWaitLibrary implements Library {
         ioClass.defineAnnotatedMethods(IOWaitLibrary.class);
     }
 
+    @JRubyMethod
+    public static IRubyObject nread(ThreadContext context, IRubyObject _io) {
+        Ruby runtime = context.runtime;
+        OpenFile fptr;
+        int len;
+//        ioctl_arg n;
+        RubyIO io = (RubyIO)_io;
+
+        fptr = io.getOpenFileChecked();
+        fptr.checkReadable(runtime);
+        len = fptr.readPending();
+        if (len > 0) return runtime.newFixnum(len);
+        // TODO: better effort to get available bytes from our channel
+//        if (!FIONREAD_POSSIBLE_P(fptr->fd)) return INT2FIX(0);
+//        if (ioctl(fptr->fd, FIONREAD, &n)) return INT2FIX(0);
+//        if (n > 0) return ioctl_arg2num(n);
+        return RubyNumeric.int2fix(runtime, 0);
+    }
+
     /**
      * returns non-nil if input available without blocking, false if EOF or not open/readable, otherwise nil.
      */
     @JRubyMethod(name = "ready?")
-    public static IRubyObject ready(ThreadContext context, IRubyObject obj) {
-        RubyIO io = (RubyIO)obj;
-        try {
-            OpenFile openFile = io.getOpenFile();
-            ChannelDescriptor descriptor = openFile.getMainStreamSafe().getDescriptor();
-            if (!descriptor.isOpen() || !openFile.getMainStreamSafe().getModes().isReadable() || openFile.getMainStreamSafe().feof()) {
-                return context.runtime.getFalse();
-            }
+    public static IRubyObject ready(ThreadContext context, IRubyObject _io) {
+        Ruby runtime = context.runtime;
+        RubyIO io = (RubyIO)_io;
+        OpenFile fptr;
+//        ioctl_arg n;
 
-            int avail = openFile.getMainStreamSafe().ready();
-            if (avail > 0) {
-                return context.runtime.newFixnum(avail);
-            }
-        } catch (BadDescriptorException e) {
-            throw context.runtime.newErrnoEBADFError();
-        } catch (Exception anyEx) {
-            return context.runtime.getFalse();
+        fptr = io.getOpenFileChecked();
+        fptr.checkReadable(runtime);
+        if (fptr.readPending() != 0) return runtime.getTrue();
+        // TODO: better effort to get available bytes from our channel
+//        if (!FIONREAD_POSSIBLE_P(fptr->fd)) return Qnil;
+//        if (ioctl(fptr->fd, FIONREAD, &n)) return Qnil;
+//        if (n > 0) return Qtrue;
+        return runtime.getFalse();
+    }
+
+    @JRubyMethod(optional = 1)
+    public static IRubyObject wait_readable(ThreadContext context, IRubyObject _io, IRubyObject[] argv) {
+        RubyIO io = (RubyIO)_io;
+        Ruby runtime = context.runtime;
+        OpenFile fptr;
+        boolean i;
+//        ioctl_arg n;
+        IRubyObject timeout;
+        long tv;
+//        struct timeval timerec;
+//        struct timeval *tv;
+
+        fptr = io.getOpenFileChecked();
+        fptr.checkReadable(runtime);
+
+        switch (argv.length) {
+            case 1:
+                timeout = argv[0];
+                break;
+            default:
+                timeout = context.nil;
         }
-        return context.runtime.getNil();
+
+        if (timeout.isNil()) {
+            tv = 0;
+        }
+        else {
+            tv = timeout.convertToInteger().getLongValue() * 1000;
+        }
+
+        if (fptr.readPending() != 0) return runtime.getTrue();
+        // TODO: better effort to get available bytes from our channel
+//        if (!FIONREAD_POSSIBLE_P(fptr->fd)) return Qfalse;
+        // TODO: actually use timeout
+        i = fptr.waitReadable(runtime, tv);
+        fptr.checkClosed(runtime);
+//        if (ioctl(fptr->fd, FIONREAD, &n)) rb_sys_fail(0);
+//        if (n > 0) return io;
+        if (i) return io;
+        return context.nil;
     }
 
     /**
      * waits until input available or timed out and returns self, or nil when EOF reached.
      */
-    @JRubyMethod
-    public static IRubyObject io_wait(ThreadContext context, IRubyObject obj) {
-        RubyIO io = (RubyIO)obj;
-        try {
-            OpenFile openFile = io.getOpenFile();
-            if (openFile.getMainStreamSafe().feof()) {
-                return context.runtime.getNil();
-            }
-            openFile.getMainStreamSafe().waitUntilReady();
-        } catch (BadDescriptorException e) {
-            throw context.runtime.newErrnoEBADFError();
-        } catch (Exception anyEx) {
-            return context.runtime.getNil();
+    @JRubyMethod(optional = 1)
+    public static IRubyObject wait_writable(ThreadContext context, IRubyObject _io, IRubyObject[] argv) {
+        Ruby runtime = context.runtime;
+        RubyIO io = (RubyIO)_io;
+        OpenFile fptr;
+        boolean i;
+        IRubyObject timeout;
+        long tv;
+
+        fptr = io.getOpenFileChecked();
+        fptr.checkWritable(context);
+
+        switch (argv.length) {
+            case 1:
+                timeout = argv[0];
+                break;
+            default:
+                timeout = context.nil;
         }
-        return obj;
+        if (timeout.isNil()) {
+            tv = 0;
+        }
+        else {
+            tv = timeout.convertToInteger().getLongValue() * 1000;
+        }
+
+        i = fptr.waitWritable(runtime, tv);
+        fptr.checkClosed(runtime);
+        if (i)
+            return io;
+        return context.nil;
     }
 }

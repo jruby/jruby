@@ -28,10 +28,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.io;
 
-import static org.jruby.util.io.ModeFlags.RDONLY;
-import static org.jruby.util.io.ModeFlags.RDWR;
-import static org.jruby.util.io.ModeFlags.WRONLY;
-
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -260,12 +256,12 @@ public class ChannelDescriptor {
      * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
      */
     public ChannelDescriptor(Channel channel, FileDescriptor fileDescriptor) throws InvalidValueException {
-        this(channel, getModesFromChannel(channel), fileDescriptor);
+        this(channel, ModeFlags.getModesFromChannel(channel), fileDescriptor);
     }
     
     @Deprecated
     public ChannelDescriptor(Channel channel, int fileno, FileDescriptor fileDescriptor) throws InvalidValueException {
-        this(channel, getModesFromChannel(channel), fileDescriptor);
+        this(channel, ModeFlags.getModesFromChannel(channel), fileDescriptor);
     }
 
     /**
@@ -278,7 +274,7 @@ public class ChannelDescriptor {
      * @param channel The channel for the new descriptor
      */
     public ChannelDescriptor(Channel channel) throws InvalidValueException {
-        this(channel, getModesFromChannel(channel), FilenoUtil.getDescriptorFromChannel(channel));
+        this(channel, ModeFlags.getModesFromChannel(channel), FilenoUtil.getDescriptorFromChannel(channel));
     }
 
     /**
@@ -813,31 +809,6 @@ public class ChannelDescriptor {
                 }
             }
         }
-    }
-    
-    /**
-     * Build a set of mode flags using the specified channel's actual capabilities.
-     * 
-     * @param channel the channel to examine for capabilities
-     * @return the mode flags 
-     * @throws org.jruby.util.io.InvalidValueException
-     */
-    private static ModeFlags getModesFromChannel(Channel channel) throws InvalidValueException {
-        ModeFlags modes;
-        if (channel instanceof ReadableByteChannel) {
-            if (channel instanceof WritableByteChannel) {
-                modes = new ModeFlags(RDWR);
-            } else {
-                modes = new ModeFlags(RDONLY);
-            }
-        } else if (channel instanceof WritableByteChannel) {
-            modes = new ModeFlags(WRONLY);
-        } else {
-            // FIXME: I don't like this
-            modes = new ModeFlags(RDWR);
-        }
-        
-        return modes;
     }
 
     @Deprecated

@@ -35,6 +35,10 @@ package org.jruby.util.io;
 import jnr.constants.platform.OpenFlags;
 import org.jruby.Ruby;
 
+import java.nio.channels.Channel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+
 /**
  * This file represents the POSIX-like mode flags an open channel (as in a
  * ChannelDescriptor) can have. It provides the basic flags for read/write as
@@ -153,6 +157,35 @@ public class ModeFlags implements Cloneable {
             return getOFlagsFromString(modesString);
         } catch (InvalidValueException ive) {
             throw runtime.newErrnoEINVALError("mode string: " + modesString);
+        }
+    }
+
+    /**
+     * Build a set of mode flags using the specified channel's actual capabilities.
+     *
+     * @param channel the channel to examine for capabilities
+     * @return the mode flags
+     */
+    public static ModeFlags getModesFromChannel(Channel channel) {
+        try {
+            ModeFlags modes;
+            if (channel instanceof ReadableByteChannel) {
+                if (channel instanceof WritableByteChannel) {
+                    modes = new ModeFlags(RDWR);
+                } else {
+                    modes = new ModeFlags(RDONLY);
+                }
+            } else if (channel instanceof WritableByteChannel) {
+                modes = new ModeFlags(WRONLY);
+            } else {
+                // FIXME: I don't like this
+                modes = new ModeFlags(RDWR);
+            }
+
+            return modes;
+        } catch (InvalidValueException ive) {
+            // should never happen, because all values above are valid
+            throw new RuntimeException(ive);
         }
     }
 

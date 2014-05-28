@@ -396,26 +396,48 @@ public class OpenFile {
     }
 
     // rb_io_wait_writable
-    public boolean waitWritable(Ruby runtime) {
+    public boolean waitWritable(Ruby runtime, long timeout) {
         // errno logic checking here appeared to be mostly to release
         // gvl when a read would block or retry if it was interrupted
 
         // TODO: evaluate whether errno checking here is useful
 
-        return ready(runtime, SelectBlob.WRITE_CONNECT_OPS);
+        return ready(runtime, SelectBlob.WRITE_CONNECT_OPS, timeout);
+    }
+
+    // rb_io_wait_writable
+    public boolean waitWritable(Ruby runtime) {
+        return waitWritable(runtime, 0);
+    }
+
+    // rb_io_wait_readable
+    public boolean waitReadable(Ruby runtime, long timeout) {
+        // errno logic checking here appeared to be mostly to release
+        // gvl when a read would block or retry if it was interrupted
+
+        // TODO: evaluate whether errno checking here is useful
+
+        return ready(runtime, SelectBlob.READ_ACCEPT_OPS, timeout);
     }
 
     // rb_io_wait_readable
     public boolean waitReadable(Ruby runtime) {
-        // errno logic checking here appeared to be mostly to release
-        // gvl when a read would block or retry if it was interrupted
-
-        // TODO: evaluate whether errno checking here is useful
-
-        return ready(runtime, SelectBlob.READ_ACCEPT_OPS);
+        return waitReadable(runtime, 0);
     }
 
     public boolean ready(Ruby runtime, int ops) {
+        return ready(runtime, ops, 0);
+    }
+
+    /**
+     * Wait until the primary
+     *
+     * @param runtime
+     * @param ops
+     * @param timeout
+     * @return
+     */
+    public boolean ready(Ruby runtime, int ops, long timeout) {
         try {
             if (fd.chSelect != null) {
                 int ready_stat = 0;
@@ -425,7 +447,7 @@ public class OpenFile {
                     try {
                         fd.chSelect.configureBlocking(false);
                         fd.chSelect.register(sel, ops);
-                        ready_stat = sel.selectNow();
+                        ready_stat = timeout == -1 ? sel.selectNow() : sel.select(timeout);
                         sel.close();
                     } finally {
                         if (sel != null) {
@@ -2044,13 +2066,21 @@ public class OpenFile {
 
     // rb_io_set_nonblock
     public void setNonblock(Ruby runtime) {
+        setBlocking(runtime, false);
+    }
+
+    public void setBlock(Ruby runtime) {
+        setBlocking(runtime, true);
+    }
+
+    public void setBlocking(Ruby runtime, boolean blocking) {
         // Not all NIO channels are non-blocking, so we need to maintain this flag
-        // and make those channels act likenon-blocking
-        nonblock = true;
+        // and make those channels act like non-blocking
+        nonblock = !blocking;
 
         if (fd.chSelect != null) {
             try {
-                fd.chSelect.configureBlocking(false);
+                fd.chSelect.configureBlocking(blocking);
                 return;
             } catch (IOException ioe) {
                 throw runtime.newIOErrorFromException(ioe);
@@ -2058,9 +2088,8 @@ public class OpenFile {
         }
     }
 
-    public static String oflagsModestr(int oflags) {
-        // TODO
-        return null;
+    public boolean isBlocking() {
+        return !nonblock;
     }
 
     // MRI: check_tty
@@ -2087,6 +2116,11 @@ public class OpenFile {
         return stdioIn != null || stdioOut != null;
     }
 
+    public int readPending() {
+        if (READ_CHAR_PENDING()) return 1;
+        return READ_DATA_PENDING_COUNT();
+    }
+
     @Deprecated
     public Stream getMainStream() {
         return mainStream;
@@ -2094,6 +2128,7 @@ public class OpenFile {
 
     @Deprecated
     public Stream getMainStreamSafe() throws BadDescriptorException {
+        Thread.dumpStack();
         Stream stream = mainStream;
         if (stream == null) throw new BadDescriptorException();
         return stream;
@@ -2239,6 +2274,12 @@ public class OpenFile {
         // TODO?
 //        rb_maygvl_fd_fix_cloexec(ret);
         return ret;
+    }
+
+    @Deprecated
+    public static String oflagsModestr(int oflags) {
+        // TODO
+        return null;
     }
 
     @Deprecated

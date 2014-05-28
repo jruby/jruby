@@ -24,7 +24,7 @@ public class ChannelFD {
 
         realFileno = FilenoUtil.getFilenoFromChannel(ch);
         if (realFileno == -1) {
-            fakeFileno = getNewFileno();
+            fakeFileno = FilenoUtil.getNewFileno();
         } else {
             fakeFileno = -1;
         }
@@ -57,13 +57,13 @@ public class ChannelFD {
         return 0;
     }
 
-    public static int getNewFileno() {
-        return internalFilenoIndex.getAndIncrement();
-    }
-
     public void close() throws IOException {
         // tidy up
         finish(true);
+    }
+
+    public int bestFileno() {
+        return realFileno == -1 ? fakeFileno : realFileno;
     }
 
     private void finish(boolean close) throws IOException {

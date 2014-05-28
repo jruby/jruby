@@ -103,8 +103,20 @@ public class RubyFileStat extends RubyObject {
         return stat;
     }
 
+    public static RubyFileStat newFileStat(Ruby runtime, int fileno) {
+        RubyFileStat stat = new RubyFileStat(runtime, runtime.getFileStat());
+
+        stat.setup(fileno);
+
+        return stat;
+    }
+
     private void setup(FileDescriptor descriptor) {
         stat = getRuntime().getPosix().fstat(descriptor);
+    }
+
+    private void setup(int fileno) {
+        stat = getRuntime().getPosix().fstat(fileno);
     }
     
     private void setup(String filename, boolean lstat) {
