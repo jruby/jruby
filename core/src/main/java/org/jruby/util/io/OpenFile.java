@@ -1181,7 +1181,7 @@ public class OpenFile {
         }
 
         @Override
-        public void wakeup(RubyThread thread, InternalReadStruct self) {
+        public void wakeup(RubyThread thread, InternalReadStruct data) {
             // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
             thread.getNativeThread().interrupt();
         }
@@ -1194,7 +1194,7 @@ public class OpenFile {
         }
 
         @Override
-        public void wakeup(RubyThread thread, InternalWriteStruct self) {
+        public void wakeup(RubyThread thread, InternalWriteStruct data) {
             // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
             thread.getNativeThread().interrupt();
         }

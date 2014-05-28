@@ -60,7 +60,7 @@ public class Queue extends RubyObject {
         }
 
         @Override
-        public void wakeup(RubyThread thread, Queue unused) {
+        public void wakeup(RubyThread thread, Queue data) {
             thread.getNativeThread().interrupt();
         }
     };

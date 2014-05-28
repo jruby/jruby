@@ -1143,27 +1143,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * explicitly wakeup and we wait less than requested amount we will return false.  We will
      * return true if we sleep right amount or less than right amount via spurious wakeup.
      */
-    public synchronized boolean sleep(long millis) throws InterruptedException {
+    public boolean sleep(long millis) throws InterruptedException {
         assert this == getRuntime().getCurrentContext().getThread();
-        boolean result;
-
-        synchronized (this) {
-            pollThreadEvents();
-            try {
-                status.set(Status.SLEEP);
-                if (millis == -1) {
-                    wait();
-                } else {
-                    wait(millis);
-                }
-            } finally {
-                result = (status.get() != Status.RUN);
-                pollThreadEvents();
-                status.set(Status.RUN);
-            }
+        if (executeTask(getContext(), new Object[]{this, millis, 0}, SLEEP_TASK2) >= millis) {
+            return true;
+        } else {
+            return false;
         }
-
-        return result;
     }
 
     public IRubyObject status() {
@@ -1196,7 +1182,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     public interface Task<Data, Return> extends Unblocker<Data> {
         public Return run(ThreadContext context, Data data) throws InterruptedException;
-        public void wakeup(RubyThread thread, Data self);
+        public void wakeup(RubyThread thread, Data data);
     }
 
     public static final class SleepTask implements BlockingTask {
@@ -1224,6 +1210,28 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             }
         }
     }
+
+    private static final class SleepTask2 implements Task<Object[], Long> {
+        @Override
+        public Long run(ThreadContext context, Object[] data) throws InterruptedException {
+            Object syncObj = data[0];
+            long millis = (Long)data[1];
+            int nanos = (Integer)data[2];
+            synchronized (syncObj) {
+                long start = System.currentTimeMillis();
+                syncObj.wait(millis, nanos);
+                // TODO: nano handling?
+                return System.currentTimeMillis() - start;
+            }
+        }
+
+        @Override
+        public void wakeup(RubyThread thread, Object[] data) {
+            thread.getNativeThread().interrupt();
+        }
+    }
+
+    private static final Task<Object[], Long> SLEEP_TASK2 = new SleepTask2();
 
     @Deprecated
     public void executeBlockingTask(BlockingTask task) throws InterruptedException {
@@ -1528,7 +1536,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         Unblocker task = this.unblockFunc;
         if (task != null) {
-            task.wakeup(this, (IRubyObject)unblockArg);
+            task.wakeup(this, unblockArg);
         }
 
         // deprecated

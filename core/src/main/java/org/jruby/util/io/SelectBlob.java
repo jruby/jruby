@@ -75,15 +75,18 @@ public class SelectBlob {
             
             // If all streams are nil, just sleep the specified time (JRUBY-4699)
             if (args[0].isNil() && args[1].isNil() && args[2].isNil()) {
-                if (timeout > 0) {
-                    RubyThread thread = context.getThread();
-                    long now = System.currentTimeMillis();
-                    thread.sleep(timeout);
-                    // Guard against spurious wakeup
-                    while (System.currentTimeMillis() < now + timeout) {
-                        thread.sleep(1);
+                RubyThread thread = context.getThread();
+                if (has_timeout) {
+                    if (timeout > 0) {
+                        long now = System.currentTimeMillis();
+                        thread.sleep(timeout);
+                        // Guard against spurious wakeup
+                        while (System.currentTimeMillis() < now + timeout) {
+                            thread.sleep(1);
+                        }
                     }
-
+                } else {
+                    thread.sleep(0);
                 }
             } else {
                 doSelect(runtime, has_timeout, timeout);
