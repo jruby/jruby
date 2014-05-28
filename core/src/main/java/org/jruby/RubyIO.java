@@ -1071,57 +1071,43 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public static IRubyObject sysopen(IRubyObject recv, IRubyObject[] args, Block block) {
         return sysopen19(recv.getRuntime().getCurrentContext(), recv, args, block);
     }
-    
+
+    // rb_io_s_sysopen
     @JRubyMethod(name = "sysopen", required = 1, optional = 2, meta = true)
-    public static IRubyObject sysopen19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        RubyString path = RubyFile.get_path(context, args[0]);
-        StringSupport.checkStringSafety(context.runtime, path);
+    public static IRubyObject sysopen19(ThreadContext context, IRubyObject recv, IRubyObject[] argv, Block block) {
+        Ruby runtime = context.runtime;
+        IRubyObject fname, vmode, vperm;
+        fname = vmode = vperm = context.nil;
+        IRubyObject intmode;
+        int oflags;
+        ChannelFD fd;
+        int perm;
 
-        return sysopenCommon(recv, args, block, path);
-    }
-
-    private static IRubyObject sysopenCommon(IRubyObject recv, IRubyObject[] args, Block block, IRubyObject pathString) {
-        Ruby runtime = recv.getRuntime();
-        String path = pathString.toString();
-
-        IOOptions modes;
-        int perms = -1; // -1 == don't set permissions
-
-        if (args.length > 1 && !args[1].isNil()) {
-            IRubyObject modeString = args[1].convertToString();
-            modes = newIOOptions(runtime, modeString.toString());
-        } else {
-            modes = newIOOptions(runtime, "r");
+        switch (argv.length) {
+            case 3:
+                vperm = argv[2];
+            case 2:
+                vmode = argv[1];
+            case 1:
+                fname = argv[0];
         }
+        fname = RubyFile.get_path(context, fname);
 
-        if (args.length > 2 && !args[2].isNil()) {
-            RubyInteger permsInt =
-                args.length >= 3 ? args[2].convertToInteger() : null;
-            perms = RubyNumeric.fix2int(permsInt);
+        if (vmode.isNil())
+            oflags = OpenFlags.O_RDONLY.intValue();
+        else if (!(intmode = TypeConverter.checkIntegerType(runtime, vmode, "to_int")).isNil())
+            oflags = RubyNumeric.num2int(intmode);
+        else {
+            vmode = vmode.convertToString();
+            oflags = OpenFile.ioModestrOflags(runtime, vmode.toString());
         }
+        if (vperm.isNil()) perm = 0666;
+        else              perm = RubyNumeric.num2int(vperm);
 
-        int fileno = -1;
-        try {
-            ChannelDescriptor descriptor =
-                ChannelDescriptor.open(runtime.getCurrentDirectory(),
-                                       path, modes.getModeFlags(), perms, runtime.getPosix(),
-                                       runtime.getJRubyClassLoader());
-            // always a new fileno, so ok to use internal only
-            fileno = descriptor.getFileno();
-        } catch (ResourceException resourceException) {
-            throw resourceException.newRaiseException(runtime);
-        } catch (FileNotFoundException ignored) {
-          throw new IllegalStateException("For compile compatibility only");
-        } catch (DirectoryAsFileException ignored) {
-          throw new IllegalStateException("For compile compatibility only");
-        } catch (FileExistsException ignored) {
-          throw new IllegalStateException("For compile compatibility only");
-        } catch (IOException ignored) {
-          throw new IllegalStateException("For compile compatibility only");
-        }
-
-
-        return runtime.newFixnum(fileno);
+        StringSupport.checkStringSafety(context.runtime, fname);
+        fname = ((RubyString)fname).dupFrozen();
+        fd = sysopen(runtime, fname.toString(), oflags, perm);
+        return runtime.newFixnum(fd.bestFileno());
     }
 
     private static class Sysopen {
@@ -1131,6 +1117,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Errno errno;
     }
 
+    // rb_sysopen
     protected static ChannelFD sysopen(Ruby runtime, String fname, int oflags, int perm) {
         ChannelFD fd;
         Sysopen data = new Sysopen();

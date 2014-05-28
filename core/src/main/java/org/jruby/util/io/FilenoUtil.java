@@ -1,5 +1,7 @@
 package org.jruby.util.io;
 
+import jnr.enxio.channels.NativeDeviceChannel;
+import jnr.enxio.channels.NativeSocketChannel;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketChannel;
 
@@ -72,6 +74,14 @@ public class FilenoUtil {
     }
 
     public static int getFilenoFromChannel(Channel channel) {
+        if (channel instanceof NativeDeviceChannel) {
+            return ((NativeDeviceChannel)channel).getFD();
+        }
+
+        if (channel instanceof NativeSocketChannel) {
+            return ((NativeSocketChannel)channel).getFD();
+        }
+
         if (FILE_DESCRIPTOR_FD != null) {
             FileDescriptor fd = getDescriptorFromChannel(channel);
             if (fd.valid()) {
