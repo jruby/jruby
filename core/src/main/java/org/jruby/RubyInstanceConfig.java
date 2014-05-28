@@ -1764,6 +1764,8 @@ public class RubyInstanceConfig {
     public static String IR_JIT_PASSES = Options.IR_JIT_PASSES.load();
     public static String IR_INLINE_COMPILER_PASSES = Options.IR_INLINE_COMPILER_PASSES.load();
 
+    private TruffleHooksStub truffleHooks = null;
+
     public static final boolean COROUTINE_FIBERS = Options.FIBER_COROUTINES.load();
 
     /**
@@ -1963,4 +1965,12 @@ public class RubyInstanceConfig {
     @Deprecated public static final boolean INVOKEDYNAMIC_CONSTANTS = invokedynamicCache && Options.INVOKEDYNAMIC_CACHE_CONSTANTS.load();
     @Deprecated public static final boolean INVOKEDYNAMIC_LITERALS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_LITERALS.load();
     @Deprecated public static final boolean INVOKEDYNAMIC_IVARS = invokedynamicCache&& Options.INVOKEDYNAMIC_CACHE_IVARS.load();
+
+    public void setTruffleHooks(TruffleHooksStub truffleHooks) {
+        this.truffleHooks = truffleHooks;
+    }
+
+    public TruffleHooksStub getTruffleHooks() {
+        return truffleHooks;
+    }
 }

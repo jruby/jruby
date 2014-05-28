@@ -53,7 +53,7 @@ end
 
 report_references = {
   "topaz" => "topaz-dev",
-  "rbx" => "rbx-2.2.6",
+  "rbx" => "rbx-2.2.7",
   "jruby" => "jruby-1.7.12-server-indy",
   "jruby-master" => "jruby-master-server-indy",
   "competition" => "jruby-1.7.12-server-indy",
@@ -73,7 +73,7 @@ Ruby = Struct.new(
 
 rubies = []
 
-["1.8.7-p375", "1.9.3-p547", "2.0.0-p481", "2.1.2", "ree-1.8.7-2012.02", "rbx-2.2.6"].each do |name|
+["1.8.7-p375", "1.9.3-p547", "2.0.0-p481", "2.1.2", "ree-1.8.7-2012.02", "rbx-2.2.7"].each do |name|
   dir = "~/.rbenv/versions/" + name
 
   if Dir.exists? File.expand_path(dir)
@@ -83,11 +83,11 @@ rubies = []
       relevant_reports.push("interpreters")
     end
 
-    if ["2.1.2", "rbx-2.2.6"].include? name
+    if ["2.1.2", "rbx-2.2.7"].include? name
       relevant_reports.push("almost-all")
     end
 
-    if name == "rbx-2.2.6"
+    if name == "rbx-2.2.7"
       relevant_reports.push("summary")
       relevant_reports.push("competition")
       relevant_reports.push("other-vms")

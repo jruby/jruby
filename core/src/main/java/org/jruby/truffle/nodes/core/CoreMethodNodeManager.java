@@ -34,12 +34,17 @@ import java.util.List;
 
 public abstract class CoreMethodNodeManager {
 
-    /**
-     * Register all the nodes that represent core methods as methods with their respective classes,
-     * given the Object class object, which should already be initialized with all the core classes.
-     */
-    public static void addMethods(RubyClass rubyObjectClass) {
+    public static void addStandardMethods(RubyClass rubyObjectClass) {
         for (MethodDetails methodDetails : getMethods()) {
+            addMethod(rubyObjectClass, methodDetails);
+        }
+    }
+
+    public static void addExtensionMethods(RubyClass rubyObjectClass, List<? extends NodeFactory<? extends CoreMethodNode>> nodeFactories) {
+        final List<MethodDetails> methods = new ArrayList<>();
+        getMethods(methods, nodeFactories);
+
+        for (MethodDetails methodDetails : methods) {
             addMethod(rubyObjectClass, methodDetails);
         }
     }
@@ -102,10 +107,12 @@ public abstract class CoreMethodNodeManager {
         }
     }
 
-    /**
-     * Take a core method node factory, the annotations for the class and method, and add it as a
-     * method on the correct class.
-     */
+    private static void addMethods(RubyClass rubyObjectClass, List<MethodDetails> methods) {
+        for (MethodDetails methodDetails : methods) {
+            addMethod(rubyObjectClass, methodDetails);
+        }
+    }
+
     private static void addMethod(RubyClass rubyObjectClass, MethodDetails methodDetails) {
         assert rubyObjectClass != null;
         assert methodDetails != null;

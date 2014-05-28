@@ -15,6 +15,7 @@ import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.core.RubyModule;
@@ -24,10 +25,14 @@ import java.util.Iterator;
 
 public abstract class RubyCallStack {
 
-    public static void dump() {
+    public static void dump(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
 
         System.err.println("call stack ----------");
+
+        if (currentNode != null) {
+            System.err.println("    at " + currentNode.getEncapsulatingSourceSection());
+        }
 
         System.err.println("    in " + Truffle.getRuntime().getCurrentFrame().getCallTarget());
 
@@ -80,6 +85,8 @@ public abstract class RubyCallStack {
     }
 
     private static RubyMethod getMethod(FrameInstance frame) {
+        CompilerAsserts.neverPartOfCompilation();
+
         final CallTarget callTarget = frame.getCallTarget();
 
         if (!(callTarget instanceof RootCallTarget)) {
@@ -101,6 +108,9 @@ public abstract class RubyCallStack {
 
 
     public static RubyModule getCurrentDeclaringModule() {
+        CompilerAsserts.neverPartOfCompilation();
+
         return getCurrentMethod().getDeclaringModule();
     }
+
 }

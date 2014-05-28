@@ -58,6 +58,8 @@ public final class RubyArray extends RubyObject {
         assert !(store instanceof long[]) || size <= ((long[]) store).length;
         assert !(store instanceof double[]) || size <= ((double[]) store).length;
 
+        // TODO: assert that an object array doesn't contain all primitives - performance warning?
+
         this.store = store;
         this.size = size;
     }
@@ -234,6 +236,8 @@ public final class RubyArray extends RubyObject {
         assert !(store instanceof int[]) || size <= ((int[]) store).length;
         assert !(store instanceof long[]) || size <= ((long[]) store).length;
         assert !(store instanceof double[]) || size <= ((double[]) store).length;
+
+        // TODO: assert that an object array doesn't contain all primitives - performance warning?
     }
 
     public int getSize() {

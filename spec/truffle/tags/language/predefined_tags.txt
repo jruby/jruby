@@ -1,5 +1,4 @@
 fails:Predefined global $~ is set at the method-scoped level rather than block-scoped
-fails:Predefined global $~ raises an error if assigned an object not nil or instanceof MatchData
 fails:Predefined global $~ changes the value of derived capture globals when assigned
 fails:Predefined global $~ changes the value of the derived preceding match global
 fails:Predefined global $~ changes the value of the derived following match global

@@ -67,12 +67,10 @@ public class RubyProc extends RubyObject {
         method = setMethod;
     }
 
-    @Deprecated
     public Object call(Object... args) {
         return callWithModifiedSelf(selfCapturedInScope, args);
     }
 
-    @Deprecated
     public Object callWithModifiedSelf(Object modifiedSelf, Object... args) {
         RubyNode.notDesignedForCompilation();
 

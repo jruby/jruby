@@ -2961,7 +2961,7 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
-        IRClosure beginClosure = new IRClosure(manager, s, preExeNode.getPosition().getStartLine(), s.getTopLevelScope().getStaticScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType());
+        IRClosure beginClosure = new IRFor(manager, s, preExeNode.getPosition().getStartLine(), s.getTopLevelScope().getStaticScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType(), "_BEGIN_");
         // Create a new nested builder to ensure this gets its own IR builder state
         // like the ensure block stack
         IRBuilder closureBuilder = newIRBuilder(manager);

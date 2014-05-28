@@ -418,9 +418,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             IRubyObject rv = (IRubyObject)bi.getReturnValue().retrieve(context, self, currDynScope, temp);
             // This also handles breaks in lambdas -- by converting them to a return
             //
-            // SSS FIXME: Assumes that scopes with break instr. have a frame / dynamic scope pushed so that we can get to its static scope
-            // Discovered that for-loops don't leave any information on the runtime stack -- hmm ... that sucks! So, we need to figure out
-            // a way of pushing a scope onto the stack and exploit that info.
+            // This assumes that scopes with break instr. have a frame / dynamic scope
+            // pushed so that we can get to its static scope. For-loops now always have
+            // a dyn-scope pushed onto stack which makes this work in all scenarios.
             return IRRuntimeHelpers.initiateBreak(context, currDynScope, rv, blockType);
         }
         case NONLOCAL_RETURN: {

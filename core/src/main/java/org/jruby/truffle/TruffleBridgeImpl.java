@@ -51,7 +51,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
         // Bring in core method nodes
 
-        CoreMethodNodeManager.addMethods(truffleContext.getCoreLibrary().getObjectClass());
+        CoreMethodNodeManager.addStandardMethods(truffleContext.getCoreLibrary().getObjectClass());
 
         // Give the core library manager a chance to tweak some of those methods
 
@@ -71,6 +71,12 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
         for (IRubyObject path : ((org.jruby.RubyArray) runtime.getLoadService().getLoadPath()).toJavaArray()) {
             loadPath.slowPush(truffleContext.makeString(path.toString()));
+        }
+
+        // Hook
+
+        if (truffleContext.getHooks() != null) {
+            truffleContext.getHooks().afterInit(truffleContext);
         }
     }
 

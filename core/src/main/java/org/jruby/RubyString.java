@@ -2221,12 +2221,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect19() {
-        Ruby runtime = getRuntime();
-        byte bytes[] = value.getUnsafeBytes();
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
+        return inspect19(getRuntime(), value).infectBy(this);
+    }
+
+    public static IRubyObject inspect19(Ruby runtime, ByteList byteList) {
+        byte bytes[] = byteList.getUnsafeBytes();
+        int p = byteList.getBegin();
+        int end = p + byteList.getRealSize();
         RubyString result = new RubyString(runtime, runtime.getString(), new ByteList(end - p));
-        Encoding enc = getEncoding();
+        Encoding enc = byteList.getEncoding();
 
         Encoding resultEnc = runtime.getDefaultInternalEncoding();
         if (resultEnc == null) resultEnc = runtime.getDefaultExternalEncoding();
@@ -2327,7 +2330,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         if (p > prev) result.cat(bytes, prev, p - prev);
         result.cat('"');
-        return result.infectBy(this);
+        return result;
     }
 
     public int size() {

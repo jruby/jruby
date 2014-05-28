@@ -16,7 +16,9 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.cast.BoxingNode;
 import org.jruby.truffle.nodes.objectstorage.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyMatchData;
 import org.jruby.truffle.runtime.objectstorage.*;
 
 public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
@@ -64,6 +66,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
         try {
             final int value = rhs.executeIntegerFixnum(frame);
+
             writeNode.execute(object, value);
             return value;
         } catch (UnexpectedResultException e) {
@@ -78,6 +81,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
         try {
             final long value = rhs.executeLongFixnum(frame);
+
             writeNode.execute(object, value);
             return value;
         } catch (UnexpectedResultException e) {
@@ -92,6 +96,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
         try {
             final double value = rhs.executeFloat(frame);
+
             writeNode.execute(object, value);
             return value;
         } catch (UnexpectedResultException e) {
@@ -105,8 +110,13 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
         final RubyBasicObject object = receiver.executeRubyBasicObject(frame);
 
         final Object value = rhs.execute(frame);
-        writeNode.execute(object, value);
-        return value;
+        if(writeNode.getName().equals("$~") && !(value instanceof RubyMatchData || value instanceof NilPlaceholder)) {
+            throw new RaiseException(getContext().getCoreLibrary().typeError("wrong argument type (expected MatchData)"));
+        } else {
+            writeNode.execute(object, value);
+            return value;
+        }
+
     }
 
     @Override
