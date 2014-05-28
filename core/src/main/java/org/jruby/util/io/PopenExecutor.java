@@ -337,8 +337,8 @@ public class PopenExecutor {
 //        System.out.println("fd_close: " + eargp.fd_close);
 //        System.out.println("fd_dup2_child: " + eargp.fd_dup2_child);
 //        System.out.println("fd_open: " + eargp.fd_open);
-        if (envp != null) System.out.println(Arrays.asList(envp));
-        if (args != null) System.out.println(Arrays.asList(args));
+//        if (envp != null) System.out.println(Arrays.asList(envp));
+//        if (args != null) System.out.println(Arrays.asList(args));
         return runtime.getPosix().posix_spawnp(
                 cmd,
                 eargp.fileActions,
@@ -421,21 +421,21 @@ public class PopenExecutor {
                     throw runtime.newErrnoFromErrno(errno, prog.toString());
                 }
                 if (eargp != null) {
-                    execargAddopt(context, runtime, eargp, RubyFixnum.zero(runtime), RubyFixnum.newFixnum(runtime, ChannelDescriptor.getFilenoFromChannel(arg.write_pair[0])));
-                    execargAddopt(context, runtime, eargp, RubyFixnum.one(runtime), RubyFixnum.newFixnum(runtime, ChannelDescriptor.getFilenoFromChannel(arg.pair[1])));
+                    execargAddopt(context, runtime, eargp, RubyFixnum.zero(runtime), RubyFixnum.newFixnum(runtime, FilenoUtil.getFilenoFromChannel(arg.write_pair[0])));
+                    execargAddopt(context, runtime, eargp, RubyFixnum.one(runtime), RubyFixnum.newFixnum(runtime, FilenoUtil.getFilenoFromChannel(arg.pair[1])));
                 }
                 break;
             case OpenFile.READABLE:
                 if (pipe(arg.pair) < 0)
                     throw runtime.newErrnoFromErrno(errno, prog.toString());
                 if (eargp != null)
-                    execargAddopt(context, runtime, eargp, RubyFixnum.one(runtime), RubyFixnum.newFixnum(runtime, ChannelDescriptor.getFilenoFromChannel(arg.pair[1])));
+                    execargAddopt(context, runtime, eargp, RubyFixnum.one(runtime), RubyFixnum.newFixnum(runtime, FilenoUtil.getFilenoFromChannel(arg.pair[1])));
                 break;
             case OpenFile.WRITABLE:
                 if (pipe(arg.pair) < 0)
                     throw runtime.newErrnoFromErrno(errno, prog.toString());
                 if (eargp != null)
-                    execargAddopt(context, runtime, eargp, RubyFixnum.zero(runtime), RubyFixnum.newFixnum(runtime, ChannelDescriptor.getFilenoFromChannel(arg.pair[0])));
+                    execargAddopt(context, runtime, eargp, RubyFixnum.zero(runtime), RubyFixnum.newFixnum(runtime, FilenoUtil.getFilenoFromChannel(arg.pair[0])));
                 break;
             default:
                 throw runtime.newErrnoFromErrno(errno, prog.toString());
@@ -489,7 +489,7 @@ public class PopenExecutor {
 
         port = runtime.getIO().allocate();
         fptr = ((RubyIO)port).MakeOpenFile();
-        fptr.setFD(fd);
+        fptr.setChannel(fd);
         fptr.setMode(fmode | (OpenFile.SYNC|OpenFile.DUPLEX));
         if (convconfig != null) {
             fptr.encs.copy(convconfig);
@@ -529,12 +529,17 @@ public class PopenExecutor {
             @Override
             public int waitFor() throws InterruptedException {
                 int[] stat_loc = {0};
+                // TODO: investigate WNOHANG
                 int result = runtime.getPosix().waitpid((int)finalPid, stat_loc, 0);
                 if (result == -1) {
-                    if (runtime.getPosix().errno() == Errno.EINTR.intValue()) {
-                        throw new InterruptedException();
-                    } else {
-                        throw new RuntimeException("unexpected waitpid errno: " + Errno.valueOf(runtime.getPosix().errno()));
+                    switch (Errno.valueOf(runtime.getPosix().errno())) {
+                        case EINTR:
+                            throw new InterruptedException();
+                        case ECHILD:
+                            // ignore?
+                            break;
+                        default:
+                            throw new RuntimeException("unexpected waitpid errno: " + Errno.valueOf(runtime.getPosix().errno()));
                     }
                 }
                 return stat_loc[0];
@@ -558,7 +563,7 @@ public class PopenExecutor {
         if (write_fd != null) {
             write_port = runtime.getIO().allocate();
             write_fptr = ((RubyIO)write_port).MakeOpenFile();
-            write_fptr.setFD(write_fd);
+            write_fptr.setChannel(write_fd);
             write_fptr.setMode((fmode & ~OpenFile.READABLE)| OpenFile.SYNC|OpenFile.DUPLEX);
             fptr.setMode(fptr.getMode() & ~OpenFile.WRITABLE);
             fptr.tiedIOForWriting = (RubyIO)write_port;
@@ -1501,7 +1506,7 @@ public class PopenExecutor {
             fptr = ((RubyIO)tmp).getOpenFileChecked();
             if (fptr.tiedIOForWriting != null)
                 throw runtime.newArgumentError("duplex IO redirection");
-            fd = ChannelDescriptor.getFilenoFromChannel(fptr.getFd());
+            fd = FilenoUtil.getFilenoFromChannel(fptr.channel());
         }
         else {
             throw runtime.newArgumentError("wrong exec redirect");
@@ -1780,7 +1785,7 @@ public class PopenExecutor {
 
         if (!eargp.use_shell) {
             ArgvStr argv_str = new ArgvStr();
-            argv_str.argv = new byte[argc + 1][]; // +1 for progname
+            argv_str.argv = new byte[eargp.argv_buf.size()][];
             int i = 0;
             for (byte[] bytes : eargp.argv_buf) {
                 argv_str.argv[i++] = bytes;

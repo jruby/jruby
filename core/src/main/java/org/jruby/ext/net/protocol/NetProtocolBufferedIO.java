@@ -47,15 +47,12 @@ import org.jruby.RubyClass;
 import org.jruby.RubyString;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Visibility;
-import org.jruby.util.io.ChannelStream;
 import org.jruby.exceptions.RaiseException;
 
 import org.jruby.util.io.SelectorFactory;
 import java.nio.channels.spi.SelectorProvider;
-import org.jruby.util.io.BadDescriptorException;
+
 import org.jruby.util.io.OpenFile;
-import org.jruby.util.io.Stream;
 
 /**
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
@@ -78,8 +75,8 @@ public class NetProtocolBufferedIO {
         if (io instanceof RubyIO) {
             RubyIO rubyIO = (RubyIO)io;
             OpenFile of = rubyIO.getOpenFile();
-            if (of.getFdSelect() != null)  {
-                SelectableChannel selChannel = of.getFdSelect();
+            if (of.selectChannel() != null)  {
+                SelectableChannel selChannel = of.selectChannel();
 
                 ((RubyObject)recv).extend(
                         new IRubyObject[]{((RubyModule)recv.getRuntime().getModule("Net").getConstant("BufferedIO")).getConstant("NativeImplementation")});

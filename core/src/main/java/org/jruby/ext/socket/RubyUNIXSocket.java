@@ -48,9 +48,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.io.BadDescriptorException;
-import org.jruby.util.io.ChannelDescriptor;
-import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.ModeFlags;
 
 import java.io.File;
@@ -281,7 +278,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
         MakeOpenFile();
 
-        openFile.setFD(channel);
+        openFile.setChannel(channel);
         openFile.setMode(modes.getOpenFileFlags());
         openFile.setSync(true);
     }

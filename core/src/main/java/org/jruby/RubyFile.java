@@ -35,35 +35,27 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import jnr.constants.platform.Errno;
 import jnr.constants.platform.OpenFlags;
 import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URI;
 import java.net.URL;
-import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.nio.channels.OverlappingFileLockException;
 import java.util.Enumeration;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import org.jcodings.specific.ASCIIEncoding;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import jnr.posix.FileStat;
-import jnr.posix.JavaLibCHelper;
 import jnr.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -75,22 +67,15 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.util.ByteList;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.ResourceException;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ChannelStream;
-import org.jruby.util.io.DirectoryAsFileException;
 import org.jruby.util.io.EncodingUtils;
-import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.IOEncodable;
-import org.jruby.util.io.IOOptions;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
-import org.jruby.util.io.PipeException;
-import org.jruby.util.io.Stream;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.encoding.EncodingService;
 
@@ -259,8 +244,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // MRI's logic differs here. For a nonblocking flock that produces EAGAIN, EACCES, or EWOULBLOCK, MRI
         // just returns false immediately. For the same errnos in blocking mode, MRI waits for 0.1s and then
         // attempts the lock again, indefinitely.
-        while (fptr.threadFlock(context, op1) < 0) {
-            switch (fptr.errno) {
+        while (fptr.threadFlock(op1) < 0) {
+            switch (fptr.errno()) {
                 case EAGAIN:
                 case EACCES:
                 case EWOULDBLOCK:
@@ -278,7 +263,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     break;
 
                 default:
-                    throw runtime.newErrnoFromErrno(fptr.errno, fptr.getPath());
+                    throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
             }
         }
         return RubyFixnum.zero(context.runtime);
@@ -423,9 +408,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             throw runtime.newErrnoEINVALError(openFile.getPath());
         }
 
-        if (openFile.getFdFile() != null) {
+        if (openFile.fileChannel() != null) {
             try {
-                openFile.getFdFile().truncate(newLength);
+                openFile.fileChannel().truncate(newLength);
             } catch (IOException ioe) {
                 throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), openFile.getPath());
             }
@@ -1091,9 +1076,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
 
         // if it's a FileChannel, just get size directly
-        if (fptr.getFd() instanceof FileChannel) {
+        if (fptr.channel() instanceof FileChannel) {
             try {
-                size = ((FileChannel)fptr.getFd()).size();
+                size = ((FileChannel)fptr.channel()).size();
             } catch (IOException ioe) {
                 throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), fptr.getPath());
             }

@@ -38,9 +38,6 @@ import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.BadDescriptorException;
-import org.jruby.util.io.ChannelStream;
-import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.OpenFile;
 
 /**
@@ -84,7 +81,7 @@ public class IOModule {
             }
 
             // TODO: This used to use ChannelStream and honor its buffers; it does not honor OpenFile buffers now
-            return runtime.newFixnum(openFile.getFdRead().read(buffer));
+            return runtime.newFixnum(openFile.readChannel().read(buffer));
         } catch (EOFException e) {
             return runtime.newFixnum(-1);
         } catch (IOException e) {

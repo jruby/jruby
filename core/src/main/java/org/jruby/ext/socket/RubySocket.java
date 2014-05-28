@@ -50,8 +50,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Visibility;
 import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.Sockaddr;
 
@@ -71,7 +71,6 @@ import java.nio.channels.ConnectionPendingException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -145,7 +144,7 @@ public class RubySocket extends RubyBasicSocket {
         if (fd instanceof RubyFixnum) {
             int intFD = (int)((RubyFixnum)fd).getLongValue();
 
-            ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(intFD);
+            ChannelDescriptor descriptor = FilenoUtil.getDescriptorByFileno(intFD);
 
             if (descriptor == null) {
                 throw runtime.newErrnoEBADFError();

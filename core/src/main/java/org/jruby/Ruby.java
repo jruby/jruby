@@ -78,7 +78,6 @@ import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.ir.Compiler;
-import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.persistence.IRReader;
@@ -140,6 +139,7 @@ import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.func.Function1;
 import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.SelectorPool;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -4014,7 +4014,7 @@ public final class Ruby {
     public int filenoForChannel(Channel channel) {
         Integer val = channelFileno.get(channel);
         if (val == null) {
-            ChannelDescriptor.getDescriptorFromChannel(channel);
+            FilenoUtil.getDescriptorFromChannel(channel);
         }
         return val;
     }
@@ -4034,7 +4034,7 @@ public final class Ruby {
 
     @Deprecated
     public ChannelDescriptor getDescriptorByFileno(int aFileno) {
-        return ChannelDescriptor.getDescriptorByFileno(aFileno);
+        return FilenoUtil.getDescriptorByFileno(aFileno);
     }
 
     public InputStream getIn() {

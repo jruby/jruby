@@ -158,7 +158,7 @@ public class SelectBlob {
     }
 
     private void trySelectRead(ThreadContext context, Map<Character,Integer> attachment, OpenFile fptr) throws IOException {
-        if (fptr.getFdSelect() != null && registerSelect(getSelector(context, fptr.getFdSelect()), attachment, fptr.getFdSelect(), SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) {
+        if (fptr.selectChannel() != null && registerSelect(getSelector(context, fptr.selectChannel()), attachment, fptr.selectChannel(), SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) {
             selectedReads++;
             if (fptr.READ_CHAR_PENDING() || fptr.READ_DATA_PENDING()) {
                 getPendingReads()[attachment.get('r')] = true;
@@ -218,8 +218,8 @@ public class SelectBlob {
     }
 
     private void trySelectWrite(ThreadContext context, Map<Character,Integer> attachment, OpenFile fptr) throws IOException {
-        if (fptr.getFdSelect() == null
-                || false == registerSelect(getSelector(context, fptr.getFdSelect()), attachment, fptr.getFdSelect(), SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT)) {
+        if (fptr.selectChannel() == null
+                || false == registerSelect(getSelector(context, fptr.selectChannel()), attachment, fptr.selectChannel(), SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT)) {
             selectedReads++;
             if (fptr.isWritable()) {
                 getUnselectableWrites()[attachment.get('w')] = true;

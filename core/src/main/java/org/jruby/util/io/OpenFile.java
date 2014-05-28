@@ -20,18 +20,17 @@ import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
+import sun.util.logging.resources.logging_ko;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -41,7 +40,6 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.WritableByteChannel;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class OpenFile {
@@ -62,65 +60,11 @@ public class OpenFile {
     public static final int TEXTMODE           = 0x00001000;
     public static final int SETENC_BY_BOM      = 0x00100000;
     public static final int PREP         = (1<<16);
-
-    public static final int LOCK_SH = 1;
-    public static final int LOCK_EX = 2;
-    public static final int LOCK_NB = 4;
-    public static final int LOCK_UN = 8;
-
-    public static final int SEEK_SET = 0;
-    public static final int SEEK_CUR = 1;
-    public static final int SEEK_END = 2;
     
     public static final int SYNCWRITE = SYNC | WRITABLE;
 
     public static final int PIPE_BUF = 512; // value of _POSIX_PIPE_BUF from Mac OS X 10.9
     public static final int BUFSIZ = 1024; // value of BUFSIZ from Mac OS X 10.9 stdio.h
-
-    public static class ChannelFD {
-        public ChannelFD(Channel fd) {
-            this.ch = fd;
-
-            if (fd instanceof ReadableByteChannel) chRead = (ReadableByteChannel)fd;
-            else chRead = null;
-            if (fd instanceof WritableByteChannel) chWrite = (WritableByteChannel)fd;
-            else chWrite = null;
-            if (fd instanceof SeekableByteChannel) chSeek = (SeekableByteChannel)fd;
-            else chSeek = null;
-            if (fd instanceof SelectableChannel) chSelect = (SelectableChannel)fd;
-            else chSelect = null;
-            if (fd instanceof FileChannel) chFile = (FileChannel)fd;
-            else chFile = null;
-
-            realFileno = ChannelDescriptor.getFilenoFromChannel(fd);
-            if (realFileno == -1) {
-                fakeFileno = ChannelDescriptor.getNewFileno();
-            } else {
-                fakeFileno = -1;
-            }
-
-            refs = 1;
-        }
-
-        public final Channel ch;
-        public final ReadableByteChannel chRead;
-        public final WritableByteChannel chWrite;
-        public final SeekableByteChannel chSeek;
-        public final SelectableChannel chSelect;
-        public final FileChannel chFile;
-        public final int realFileno;
-        public final int fakeFileno;
-//        private final int fakeFileno;
-        private volatile int refs = 0;
-
-        // FIXME shouldn't use static; would interfere with other runtimes in the same JVM
-        public static int FIRST_FAKE_FD = 100000;
-        protected static final AtomicInteger internalFilenoIndex = new AtomicInteger(FIRST_FAKE_FD);
-
-        public static int getNewFileno() {
-            return internalFilenoIndex.getAndIncrement();
-        }
-    }
 
     public static interface Finalizer {
 
@@ -132,8 +76,10 @@ public class OpenFile {
         writeconvAsciicompat = nil;
         writeconvPreEcopts = nil;
         encs.ecopts = nil;
+        posix = new PosixShim(nil.getRuntime().getPosix());
     }
-    private ChannelFD fd;
+    private static final ChannelFD DUMMY_FD = new ChannelFD(null);
+    private ChannelFD fd = DUMMY_FD;
     private int mode;
     public Process process;
     private int lineno;
@@ -167,175 +113,8 @@ public class OpenFile {
     public RubyIO tiedIOForWriting;
 
     private boolean nonblock = false;
-    public Errno errno = null;
 
-    public int getFileno() {
-        int fileno = fd.realFileno;
-        if (fileno != -1) return fileno;
-        return fd.fakeFileno;
-    }
-
-    // rb_thread_flock
-    public int threadFlock(ThreadContext context, int lockMode) {
-        Ruby runtime = context.runtime;
-
-        // null channel always succeeds for all locking operations
-//        if (descriptor.isNull()) return RubyFixnum.zero(runtime);
-
-        Channel channel = fd.ch;
-        errno = null;
-
-        FileDescriptor fdObj = ChannelDescriptor.getDescriptorFromChannel(channel);
-        int real_fd = JavaLibCHelper.getfdFromDescriptor(fdObj);
-
-        if (real_fd != -1) {
-            // we have a real fd...try native flocking
-            IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
-            try {
-                int result = runtime.getPosix().flock(real_fd, lockMode);
-                if (result < 0) {
-                    errno = Errno.valueOf(runtime.getPosix().errno());
-                    return -1;
-                }
-                return 0;
-            } catch (RaiseException re) {
-                if (re.getException().getMetaClass() == runtime.getNotImplementedError()) {
-                    // not implemented, probably pure Java; fall through
-                    runtime.getGlobalVariables().set("$!", oldExc);
-                } else {
-                    throw re;
-                }
-            }
-        }
-
-        if (fd.chFile != null) {
-            checkSharedExclusive(runtime, lockMode);
-
-            if (!lockStateChanges(currentLock, lockMode)) return 0;
-
-            try {
-                synchronized (fd.chFile) {
-                    // check again, to avoid unnecessary overhead
-                    if (!lockStateChanges(currentLock, lockMode)) return 0;
-
-                    switch (lockMode) {
-                        case LOCK_UN:
-                        case LOCK_UN | LOCK_NB:
-                            return unlock(runtime);
-                        case LOCK_EX:
-                            return lock(runtime, fd.chFile, true);
-                        case LOCK_EX | LOCK_NB:
-                            return tryLock(runtime, fd.chFile, true);
-                        case LOCK_SH:
-                            return lock(runtime, fd.chFile, false);
-                        case LOCK_SH | LOCK_NB:
-                            return tryLock(runtime, fd.chFile, false);
-                    }
-                }
-            } catch (IOException ioe) {
-                if (runtime.getDebug().isTrue()) {
-                    ioe.printStackTrace(System.err);
-                }
-            } catch (OverlappingFileLockException ioe) {
-                if (runtime.getDebug().isTrue()) {
-                    ioe.printStackTrace(System.err);
-                }
-            }
-            return lockFailedReturn(runtime, lockMode);
-        } else {
-            // We're not actually a real file, so we can't flock
-            // FIXME: This needs to be ENOTSUP
-            errno = Errno.ENOENT;
-            return -1;
-        }
-    }
-
-    private void checkSharedExclusive(Ruby runtime, int lockMode) {
-        // This logic used to attempt a shared lock instead of an exclusive
-        // lock, because LOCK_EX on some systems (as reported in JRUBY-1214)
-        // allow exclusively locking a read-only file. However, the JDK
-        // APIs do not allow acquiring an exclusive lock on files that are
-        // not open for read, and there are other platforms (such as Solaris,
-        // see JRUBY-5627) that refuse at an *OS* level to exclusively lock
-        // files opened only for read. As a result, this behavior is platform-
-        // dependent, and so we will obey the JDK's policy of disallowing
-        // exclusive locks on files opened only for read.
-        if (!isWritable() && (lockMode & LOCK_EX) > 0) {
-            throw runtime.newErrnoEBADFError("cannot acquire exclusive lock on File not opened for write");
-        }
-
-        // Likewise, JDK does not allow acquiring a shared lock on files
-        // that have not been opened for read. We comply here.
-        if (!isReadable() && (lockMode & LOCK_SH) > 0) {
-            throw runtime.newErrnoEBADFError("cannot acquire shared lock on File not opened for read");
-        }
-    }
-
-    private static int lockFailedReturn(Ruby runtime, int lockMode) {
-        return (lockMode & LOCK_EX) == 0 ? 0 : -1;
-    }
-
-    private static boolean lockStateChanges(FileLock lock, int lockMode) {
-        if (lock == null) {
-            // no lock, only proceed if we are acquiring
-            switch (lockMode & 0xF) {
-                case LOCK_UN:
-                case LOCK_UN | LOCK_NB:
-                    return false;
-                default:
-                    return true;
-            }
-        } else {
-            // existing lock, only proceed if we are unlocking or changing
-            switch (lockMode & 0xF) {
-                case LOCK_UN:
-                case LOCK_UN | LOCK_NB:
-                    return true;
-                case LOCK_EX:
-                case LOCK_EX | LOCK_NB:
-                    return lock.isShared();
-                case LOCK_SH:
-                case LOCK_SH | LOCK_NB:
-                    return !lock.isShared();
-                default:
-                    return false;
-            }
-        }
-    }
-
-    private int unlock(Ruby runtime) throws IOException {
-        if (currentLock != null) {
-            currentLock.release();
-            currentLock = null;
-
-            return 0;
-        }
-        return -1;
-    }
-
-    private int lock(Ruby runtime, FileChannel fileChannel, boolean exclusive) throws IOException {
-        if (currentLock != null) currentLock.release();
-
-        currentLock = fileChannel.lock(0L, Long.MAX_VALUE, !exclusive);
-
-        if (currentLock != null) {
-            return 0;
-        }
-
-        return lockFailedReturn(runtime, exclusive ? LOCK_EX : LOCK_SH);
-    }
-
-    private int tryLock(Ruby runtime, FileChannel fileChannel, boolean exclusive) throws IOException {
-        if (currentLock != null) currentLock.release();
-
-        currentLock = fileChannel.tryLock(0L, Long.MAX_VALUE, !exclusive);
-
-        if (currentLock != null) {
-            return 0;
-        }
-
-        return lockFailedReturn(runtime, exclusive ? LOCK_EX : LOCK_SH);
-    }
+    public final PosixShim posix;
 
     public void clearStdio() {
         stdioOut = null;
@@ -371,7 +150,11 @@ public class OpenFile {
         return (mode & PREP) == PREP;
     }
 
-    public void setFD(Channel fd) {
+    public void setFD(ChannelFD fd) {
+        this.fd = fd;
+    }
+
+    public void setChannel(Channel fd) {
         this.fd = new ChannelFD(fd);
     }
 
@@ -464,11 +247,11 @@ public class OpenFile {
         if ((fmode & OpenFile.CREATE) != 0) {
             oflags |= OpenFlags.O_CREAT.intValue();
         }
-//        #ifdef OpenFlags.O_BINARY
-//        if (fmode & OpenFile.BINMODE) {
-//            oflags |= OpenFlags.O_BINARY.intValue();
-//        }
-//        #endif
+        if (OpenFlags.O_BINARY.defined()) {
+            if ((fmode & OpenFile.BINMODE) != 0) {
+                oflags |= OpenFlags.O_BINARY.intValue();
+            }
+        }
 
         return oflags;
     }
@@ -539,49 +322,6 @@ public class OpenFile {
         return a;
     }
 
-    public static int getFModeFromString(String modesString) throws InvalidValueException {
-        int fmode = 0;
-        int length = modesString.length();
-
-        if (length == 0) {
-            throw new InvalidValueException();
-        }
-
-        switch (modesString.charAt(0)) {
-            case 'r' :
-                fmode |= READABLE;
-                break;
-            case 'w' :
-                fmode |= WRITABLE | TRUNC | CREATE;
-                break;
-            case 'a' :
-                fmode |= WRITABLE | APPEND | CREATE;
-                break;
-            default :
-                throw new InvalidValueException();
-        }
-
-        ModifierLoop: for (int n = 1; n < length; n++) {
-            switch (modesString.charAt(n)) {
-                case 'b':
-                    fmode |= BINMODE;
-                    break;
-                case 't' :
-                    fmode |= TEXTMODE;
-                    break;
-                case '+':
-                    fmode |= READWRITE;
-                    break;
-                case ':':
-                    break ModifierLoop;
-                default:
-                    throw new InvalidValueException();
-            }
-        }
-
-        return fmode;        
-    }    
-
     public static String getStringFromMode(int mode) {
         if ((mode & APPEND) != 0) {
             if ((mode & READWRITE) != 0) {
@@ -612,15 +352,15 @@ public class OpenFile {
         }
 
         if (wbuf.len != 0) {
-            if (fflush(runtime) < 0) {
-                throw runtime.newErrnoFromErrno(errno, "error flushing");
+            if (io_fflush(runtime) < 0) {
+                throw runtime.newErrnoFromErrno(posix.errno, "error flushing");
             }
         }
         if (tiedIOForWriting != null) {
             OpenFile wfptr;
             wfptr = tiedIOForWriting.getOpenFileChecked();
-            if (wfptr.fflush(runtime) < 0)
-                throw runtime.newErrnoFromErrno(wfptr.errno, wfptr.getPath());
+            if (wfptr.io_fflush(runtime) < 0)
+                throw runtime.newErrnoFromErrno(wfptr.posix.errno, wfptr.getPath());
         }
     }
 
@@ -638,7 +378,7 @@ public class OpenFile {
     }
 
     // io_fflush
-    public int fflush(Ruby runtime) {
+    public int io_fflush(Ruby runtime) {
         checkClosed(runtime);
 
         if (wbuf.len == 0) return 0;
@@ -737,8 +477,8 @@ public class OpenFile {
 
         if (ret == 0) {
             // TODO
-	/* pending async interrupt is there. */
-            errno = Errno.EAGAIN;
+	        /* pending async interrupt is there. */
+            posix.errno = Errno.EAGAIN;
             return -1;
         } else if (ret == 1) {
             return 0;
@@ -751,10 +491,10 @@ public class OpenFile {
     {
         int result = flushBufferSync(runtime);
 
-    /*
-     * rb_thread_call_without_gvl2 uses 0 as interrupted.
-     * So, we need to avoid to use 0.
-     */
+        /*
+         * rb_thread_call_without_gvl2 uses 0 as interrupted.
+         * So, we need to avoid to use 0.
+         */
         return result == 0 ? 1 : result;
     }
 
@@ -762,24 +502,19 @@ public class OpenFile {
     public int flushBufferSync(Ruby runtime)
     {
         int l = writableLength(wbuf.len);
-        ByteBuffer tmp = ByteBuffer.wrap(wbuf.ptr, wbuf.off, l);
-        try {
-            int r = fd.chWrite.write(tmp);
+        int r = posix.write(fd, wbuf.ptr, wbuf.off, l, nonblock);
 
-            if (wbuf.len <= r) {
-                wbuf.off = 0;
-                wbuf.len = 0;
-                return 0;
-            }
-            if (0 <= r) {
-                wbuf.off += (int)r;
-                wbuf.len -= (int)r;
-                errno = Errno.EAGAIN;
-            }
-            return -1;
-        } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+        if (wbuf.len <= r) {
+            wbuf.off = 0;
+            wbuf.len = 0;
+            return 0;
         }
+        if (0 <= r) {
+            wbuf.off += (int)r;
+            wbuf.len -= (int)r;
+            posix.errno = Errno.EAGAIN;
+        }
+        return -1;
     }
 
     // io_writable_length
@@ -821,50 +556,16 @@ public class OpenFile {
     // io_seek
     public long seek(ThreadContext context, long offset, int whence) {
         flushBeforeSeek(context);
-        return lseek(context, offset, whence);
+        return posix.lseek(fd, offset, whence);
     }
 
     // flush_before_seek
     void flushBeforeSeek(ThreadContext context)
     {
-        if (fflush(context.runtime) < 0)
-            throw context.runtime.newErrnoFromErrno(errno, "");
+        if (io_fflush(context.runtime) < 0)
+            throw context.runtime.newErrnoFromErrno(posix.errno, "");
         unread(context);
-        errno = null;
-    }
-
-    // pseudo lseek(2)
-    public long lseek(ThreadContext context, long offset, int type) {
-        if (fd.chSeek != null) {
-            int adj = 0;
-            try {
-                switch (type) {
-                    case SEEK_SET:
-                        return fd.chSeek.position(offset).position();
-                    case SEEK_CUR:
-                        return fd.chSeek.position(fd.chSeek.position() - adj + offset).position();
-                    case SEEK_END:
-                        return fd.chSeek.position(fd.chSeek.size() + offset).position();
-                    default:
-                        throw context.runtime.newArgumentError("invalid seek whence: " + type);
-                }
-            } catch (IllegalArgumentException e) {
-                errno = Errno.EINVAL;
-                return -1;
-            } catch (IOException ioe) {
-                errno = Helpers.errnoFromException(ioe);
-                return -1;
-            }
-        } else if (fd.chSelect != null) {
-            // TODO: It's perhaps just a coincidence that all the channels for
-            // which we should raise are instanceof SelectableChannel, since
-            // stdio is not...so this bothers me slightly. -CON
-            errno = Errno.EPIPE;
-            return -1;
-        } else {
-            errno = Errno.EPIPE;
-            return -1;
-        }
+        posix.errno = null;
     }
 
     public void checkWritable(ThreadContext context) {
@@ -1028,8 +729,8 @@ public class OpenFile {
                     err = runtime.getTrue();
             }
             else {
-                if (fflush(runtime) < 0 && err.isNil()) {
-                    err = RubyFixnum.newFixnum(runtime, errno == null ? 0 : errno.longValue());
+                if (io_fflush(runtime) < 0 && err.isNil()) {
+                    err = RubyFixnum.newFixnum(runtime, posix.errno == null ? 0 :posix.errno.longValue());
                 }
             }
         }
@@ -1039,7 +740,7 @@ public class OpenFile {
         mode &= ~(READABLE|WRITABLE);
 
         if (IS_PREP_STDIO() || isStdio()) {
-	/* need to keep FILE objects of stdin, stdout and stderr */
+	        /* need to keep FILE objects of stdin, stdout and stderr */
         }
         // TODO: ???
 //        else if (stdio_file) {
@@ -1049,18 +750,18 @@ public class OpenFile {
 //            if ((maygvl_fclose(stdio_file, noraise) < 0) && NIL_P(err))
 //                err = noraise ? Qtrue : INT2NUM(errno);
 //        }
-//        else if (0 <= fd) {
-//	/* fptr->fd may be closed even if close fails.
-//         * POSIX doesn't specify it.
-//         * We assumes it is closed.  */
-//            if ((maygvl_close(fd, noraise) < 0) && NIL_P(err))
-//                err = noraise ? Qtrue : INT2NUM(errno);
-//        }
+        else if (fd != null) {
+	    /* fptr->fd may be closed even if close fails.
+         * POSIX doesn't specify it.
+         * We assumes it is closed.  */
+            if ((posix.close(fd) < 0) && err.isNil())
+                err = noraise ? runtime.getTrue() : runtime.newFixnum(posix.errno.intValue());
+        }
 
         if (!err.isNil() && !noraise) {
             if (err instanceof RubyFixnum || err instanceof RubyBignum) {
-                errno = Errno.valueOf(RubyNumeric.num2int(err));
-                throw runtime.newErrnoFromErrno(errno, pathv);
+                posix.errno = Errno.valueOf(RubyNumeric.num2int(err));
+                throw runtime.newErrnoFromErrno(posix.errno, pathv);
             } else {
                 throw new RaiseException((RubyException)err);
             }
@@ -1416,14 +1117,14 @@ public class OpenFile {
         }
         if (rbuf.len == 0) {
             retry: while (true) {
-                r = readInternal(context, this, fd.chRead, rbuf.ptr, 0, rbuf.capa);
+                r = readInternal(context, this, fd, rbuf.ptr, 0, rbuf.capa);
 
                 if (r < 0) {
                     if (waitReadable(context, fd)) {
                         continue retry;
                     }
                     // This should be errno
-                    throw context.runtime.newErrnoFromErrno(errno, "channel: " + fd + (pathv != null ? " " + pathv : ""));
+                    throw context.runtime.newErrnoFromErrno(posix.errno, "channel: " + fd + (pathv != null ? " " + pathv : ""));
                 }
                 break;
             }
@@ -1436,7 +1137,7 @@ public class OpenFile {
     }
 
     public static class InternalReadStruct {
-        InternalReadStruct(OpenFile fptr, ReadableByteChannel fd, byte[] bufBytes, int buf, int count) {
+        InternalReadStruct(OpenFile fptr, ChannelFD fd, byte[] bufBytes, int buf, int count) {
             this.fptr = fptr;
             this.fd = fd;
             this.bufBytes = bufBytes;
@@ -1445,7 +1146,7 @@ public class OpenFile {
         }
 
         public OpenFile fptr;
-        public ReadableByteChannel fd;
+        public ChannelFD fd;
         public byte[] bufBytes;
         public int buf;
         public int capa;
@@ -1454,54 +1155,7 @@ public class OpenFile {
     final static RubyThread.Task<InternalReadStruct, Integer> readTask = new RubyThread.Task<InternalReadStruct, Integer>() {
         @Override
         public Integer run(ThreadContext context, InternalReadStruct iis) throws InterruptedException {
-            // TODO: make nonblocking (when possible? MRI doesn't seem to...)
-            // FIXME: inefficient to recreate ByteBuffer every time
-            try {
-                iis.fptr.errno = null;
-                if (iis.fptr.nonblock) {
-                    // need to ensure channels that don't support nonblocking IO at least
-                    // appear to be nonblocking
-                    if (iis.fd instanceof SelectableChannel) {
-                        // ok...we should have set it nonblocking already in setNonblock
-                    } else {
-                        if (iis.fd instanceof FileChannel) {
-                            long position = ((FileChannel)iis.fd).position();
-                            long size = ((FileChannel)iis.fd).size();
-                            if (position != -1 && size != -1) {
-                                // there should be bytes available...proceed
-                            } else {
-                                iis.fptr.errno = Errno.EAGAIN;
-                                return -1;
-                            }
-                        } else {
-                            iis.fptr.errno = Errno.EAGAIN;
-                            return -1;
-                        }
-                    }
-                }
-
-                ByteBuffer buffer = ByteBuffer.wrap(iis.bufBytes, iis.buf, iis.capa);
-                int read = iis.fd.read(buffer);
-
-                if (read <= 0 && iis.fd instanceof FileChannel) {
-                    // if it's a nonblocking read against a file and we've hit EOF, do EAGAIN
-                    if (iis.fptr.nonblock) {
-                        iis.fptr.errno = Errno.EAGAIN;
-                        return -1;
-                    }
-
-                    // FileChannel returns -1 upon reading to EOF rather than blocking, so we call that 0 like read(2)
-                    read = 0;
-                } else if (read <= 0 && iis.fptr.nonblock) {
-                    iis.fptr.errno = Errno.EAGAIN;
-                    return -1;
-                }
-
-                return read;
-            } catch (IOException ioe) {
-                iis.fptr.errno = Helpers.errnoFromException(ioe);
-                return -1;
-            }
+            return iis.fptr.posix.read(iis.fd, iis.bufBytes, iis.buf, iis.capa, iis.fptr.nonblock);
         }
 
         @Override
@@ -1514,7 +1168,7 @@ public class OpenFile {
     final static RubyThread.Task<InternalWriteStruct, Integer> writeTask = new RubyThread.Task<InternalWriteStruct, Integer>() {
         @Override
         public Integer run(ThreadContext context, InternalWriteStruct iis) throws InterruptedException {
-            return writeTaskBody(context.runtime, iis);
+            return iis.fptr.posix.write(iis.fd, iis.bufBytes, iis.buf, iis.capa, iis.fptr.nonblock);
         }
 
         @Override
@@ -1525,7 +1179,7 @@ public class OpenFile {
     };
 
     // rb_read_internal
-    public static int readInternal(ThreadContext context, OpenFile fptr, ReadableByteChannel fd, byte[] bufBytes, int buf, int count) {
+    public static int readInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, byte[] bufBytes, int buf, int count) {
         InternalReadStruct iis = new InternalReadStruct(fptr, fd, bufBytes, buf, count);
 
         try {
@@ -1536,8 +1190,7 @@ public class OpenFile {
     }
 
     // rb_io_wait_readable
-    boolean waitReadable(ThreadContext context, ChannelFD fd)
-    {
+    boolean waitReadable(ThreadContext context, ChannelFD fd) {
         if (!fd.ch.isOpen()) {
             throw context.runtime.newIOError("closed stream");
         }
@@ -1797,7 +1450,7 @@ public class OpenFile {
         if (!READ_DATA_PENDING()) {
             outer: while (n > 0) {
                 again: while (true) {
-                    c = readInternal(context, this, fd.chRead, ptrBytes, ptr + offset, n);
+                    c = readInternal(context, this, fd, ptrBytes, ptr + offset, n);
                     if (c == 0) break outer;
                     if (c < 0) {
                         if (waitReadable(context, fd))
@@ -1856,7 +1509,7 @@ public class OpenFile {
         bufreadCall(context, arg);
         len = arg.len;
         // should be errno
-        if (len < 0) throw context.runtime.newErrnoFromErrno(errno, pathv);
+        if (len < 0) throw context.runtime.newErrnoFromErrno(posix.errno, pathv);
         return len;
     }
 
@@ -2028,7 +1681,6 @@ public class OpenFile {
             return;
         }
 
-        errno = null;
         // TODO...only for win32?
 //        if (!rb_w32_fd_is_text(fptr->fd)) {
 //            r = lseek(fptr->fd, -fptr->rbuf.len, SEEK_CUR);
@@ -2043,9 +1695,9 @@ public class OpenFile {
 //            return;
 //        }
 
-        pos = lseek(context, 0, SEEK_CUR);
-        if (pos < 0 && errno != null) {
-            if (errno == Errno.ESPIPE)
+        pos = posix.lseek(fd, 0, PosixShim.SEEK_CUR);
+        if (pos < 0 && posix.errno != null) {
+            if (posix.errno == Errno.ESPIPE)
                 mode |= DUPLEX;
             return;
         }
@@ -2068,18 +1720,18 @@ public class OpenFile {
 
         bufBytes = new byte[rbuf.len + newlines];
         while (newlines >= 0) {
-            r = lseek(context, pos - rbuf.len - newlines, SEEK_SET);
+            r = posix.lseek(fd, pos - rbuf.len - newlines, PosixShim.SEEK_SET);
             if (newlines == 0) break;
             if (r < 0) {
                 newlines--;
                 continue;
             }
-            read_size = readInternal(context, this, fd.chRead, bufBytes, buf, rbuf.len + newlines);
+            read_size = readInternal(context, this, fd, bufBytes, buf, rbuf.len + newlines);
             if (read_size < 0) {
-                throw runtime.newErrnoFromErrno(errno, pathv);
+                throw runtime.newErrnoFromErrno(posix.errno, pathv);
             }
             if (read_size == rbuf.len) {
-                lseek(context, r, SEEK_SET);
+                posix.lseek(fd, r, PosixShim.SEEK_SET);
                 break;
             }
             else {
@@ -2203,7 +1855,7 @@ public class OpenFile {
                 wbuf.len += (int)len;
                 n = 0;
             }
-            if (fflush(context.runtime) < 0)
+            if (io_fflush(context.runtime) < 0)
                 return -1L;
             if (n == 0)
                 return len;
@@ -2227,14 +1879,14 @@ public class OpenFile {
                 }
                 else {
                     int l = writableLength(n);
-                    r = writeInternal(context, fd.chWrite, ptrBytes, ptr + offset, l);
+                    r = writeInternal(context, this, fd, ptrBytes, ptr + offset, l);
                 }
                 /* xxx: other threads may modify given string. */
                 if (r == n) return len;
                 if (0 <= r) {
                     offset += r;
                     n -= r;
-                    errno = Errno.EAGAIN;
+                    posix.errno = Errno.EAGAIN;
                 }
                 if (waitWritable(context.runtime)) {
                     checkClosed(context.runtime);
@@ -2259,26 +1911,28 @@ public class OpenFile {
     static int binwriteString(ThreadContext context, BinwriteArg arg) {
         BinwriteArg p = arg;
         int l = p.fptr.writableLength(p.length);
-        return p.fptr.writeInternal2(context.runtime, p.fptr.fd.chWrite, p.ptrBytes, p.ptr, l);
+        return p.fptr.writeInternal2(p.fptr.fd, p.ptrBytes, p.ptr, l);
     }
 
     public static class InternalWriteStruct {
-        InternalWriteStruct(WritableByteChannel fd, byte[] bufBytes, int buf, int count) {
+        InternalWriteStruct(OpenFile fptr, ChannelFD fd, byte[] bufBytes, int buf, int count) {
+            this.fptr = fptr;
             this.fd = fd;
             this.bufBytes = bufBytes;
             this.buf = buf;
             this.capa = count;
         }
 
-        public WritableByteChannel fd;
+        public final OpenFile fptr;
+        public final ChannelFD fd;
         public final byte[] bufBytes;
         public final int buf;
         public int capa;
     }
 
     // rb_write_internal
-    public static int writeInternal(ThreadContext context, WritableByteChannel fd, byte[] bufBytes, int buf, int count) {
-        InternalWriteStruct iis = new InternalWriteStruct(fd, bufBytes, buf, count);
+    public static int writeInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, byte[] bufBytes, int buf, int count) {
+        InternalWriteStruct iis = new InternalWriteStruct(fptr, fd, bufBytes, buf, count);
 
         try {
             return context.getThread().executeTask(context, iis, writeTask);
@@ -2288,33 +1942,35 @@ public class OpenFile {
     }
 
     // rb_write_internal2 (no GVL version...we just don't use executeTask as above.
-    int writeInternal2(Ruby runtime, WritableByteChannel fd, byte[] bufBytes, int buf, int count) {
-        InternalWriteStruct iis = new InternalWriteStruct(fd, bufBytes, buf, count);
-
-        return writeTaskBody(runtime, iis);
+    int writeInternal2(ChannelFD fd, byte[] bufBytes, int buf, int count) {
+        return posix.write(fd, bufBytes, buf, count, nonblock);
     }
 
-    public Channel getFd() {
+    public ChannelFD fd() {
+        return fd;
+    }
+
+    public Channel channel() {
         return fd.ch;
     }
 
-    public ReadableByteChannel getFdRead() {
+    public ReadableByteChannel readChannel() {
         return fd.chRead;
     }
 
-    public WritableByteChannel getFdWrite() {
+    public WritableByteChannel writeChannel() {
         return fd.chWrite;
     }
 
-    public SeekableByteChannel getFdSeek() {
+    public SeekableByteChannel seekChannel() {
         return fd.chSeek;
     }
 
-    public SelectableChannel getFdSelect() {
+    public SelectableChannel selectChannel() {
         return fd.chSelect;
     }
 
-    public FileChannel getFdFile() {
+    public FileChannel fileChannel() {
         return fd.chFile;
     }
 
@@ -2338,9 +1994,9 @@ public class OpenFile {
                 outer: while ((dpPtr.p-ds) != 0) {
                     retry: while (true) {
                         if (write_lock != null && write_lock.isWriteLockedByCurrentThread())
-                            r = writeInternal2(runtime, fd.chWrite, dsBytes, ds, dpPtr.p-ds);
+                            r = writeInternal2(fd, dsBytes, ds, dpPtr.p-ds);
                         else
-                            r = writeInternal(runtime.getCurrentContext(), fd.chWrite, dsBytes, ds, dpPtr.p - ds);
+                            r = writeInternal(runtime.getCurrentContext(), this, fd, dsBytes, ds, dpPtr.p - ds);
                         if (r == dpPtr.p-ds)
                             break outer;
                         if (0 <= r) {
@@ -2353,7 +2009,7 @@ public class OpenFile {
                         }
                         break retry;
                     }
-                    return noalloc ? runtime.getTrue() : RubyFixnum.newFixnum(runtime, (errno == null) ? 0 : errno.longValue());
+                    return noalloc ? runtime.getTrue() : RubyFixnum.newFixnum(runtime, (posix.errno == null) ? 0 : posix.errno.longValue());
                 }
                 if (res == EConvResult.InvalidByteSequence ||
                         res == EConvResult.IncompleteInput ||
@@ -2368,8 +2024,8 @@ public class OpenFile {
         res = EConvResult.DestinationBufferFull;
         while (res == EConvResult.DestinationBufferFull) {
             if (wbuf.len == wbuf.capa) {
-                if (fflush(runtime) < 0)
-                    return noalloc ? runtime.getTrue() : runtime.newFixnum(errno == null ? 0 : errno.longValue());
+                if (io_fflush(runtime) < 0)
+                    return noalloc ? runtime.getTrue() : runtime.newFixnum(posix.errno == null ? 0 : posix.errno.longValue());
             }
 
             dsBytes = wbuf.ptr;
@@ -2384,19 +2040,6 @@ public class OpenFile {
             }
         }
         return runtime.getNil();
-    }
-
-    private static int writeTaskBody(Ruby runtime, InternalWriteStruct iis) {
-        // TODO: make nonblocking (when possible? MRI doesn't seem to...)
-        // FIXME: inefficient to recreate ByteBuffer every time
-        try {
-            ByteBuffer buffer = ByteBuffer.wrap(iis.bufBytes, iis.buf, iis.capa);
-            int written = iis.fd.write(buffer);
-
-            return written;
-        } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
-        }
     }
 
     // rb_io_set_nonblock
@@ -2459,7 +2102,7 @@ public class OpenFile {
     @Deprecated
     public void setMainStream(Stream mainStream) {
         this.mainStream = mainStream;
-        setFD(mainStream.getChannel());
+        setChannel(mainStream.getChannel());
     }
 
     @Deprecated
@@ -2489,6 +2132,113 @@ public class OpenFile {
         Stream stream = pipeStream == null ? mainStream : pipeStream;
         if (stream == null) throw new BadDescriptorException();
         return stream;
+    }
+
+    @Deprecated
+    public static int getFModeFromString(String modesString) throws InvalidValueException {
+        int fmode = 0;
+        int length = modesString.length();
+
+        if (length == 0) {
+            throw new InvalidValueException();
+        }
+
+        switch (modesString.charAt(0)) {
+            case 'r' :
+                fmode |= READABLE;
+                break;
+            case 'w' :
+                fmode |= WRITABLE | TRUNC | CREATE;
+                break;
+            case 'a' :
+                fmode |= WRITABLE | APPEND | CREATE;
+                break;
+            default :
+                throw new InvalidValueException();
+        }
+
+        ModifierLoop: for (int n = 1; n < length; n++) {
+            switch (modesString.charAt(n)) {
+                case 'b':
+                    fmode |= BINMODE;
+                    break;
+                case 't' :
+                    fmode |= TEXTMODE;
+                    break;
+                case '+':
+                    fmode |= READWRITE;
+                    break;
+                case ':':
+                    break ModifierLoop;
+                default:
+                    throw new InvalidValueException();
+            }
+        }
+
+        return fmode;
+    }
+
+    public int getFileno() {
+        int fileno = fd.realFileno;
+        if (fileno != -1) return fileno;
+        return fd.fakeFileno;
+    }
+
+    // rb_thread_flock
+    public int threadFlock(int lockMode) {
+//        #ifdef __CYGWIN__
+//        int old_errno = errno;
+//        #endif
+        int ret = posix.flock(fd, lockMode);
+
+//        #ifdef __CYGWIN__
+//        if (GetLastError() == ERROR_NOT_LOCKED) {
+//            ret = 0;
+//            errno = old_errno;
+//        }
+//        #endif
+        return ret;
+    }
+
+    public Errno errno() {
+        return posix.errno;
+    }
+
+    public void errno(Errno newErrno) {
+        posix.errno = newErrno;
+    }
+
+    public int cloexecDup2(Ruby runtime, ChannelFD oldfd, ChannelFD newfd) {
+        int ret;
+    /* When oldfd == newfd, dup2 succeeds but dup3 fails with EINVAL.
+     * rb_cloexec_dup2 succeeds as dup2.  */
+        if (oldfd == newfd) {
+            ret = 0;
+        }
+        else {
+//            #if defined(HAVE_DUP3) && defined(O_CLOEXEC)
+//            static int try_dup3 = 1;
+//            if (2 < newfd && try_dup3) {
+//                ret = dup3(oldfd, newfd, O_CLOEXEC);
+//                if (ret != -1)
+//                    return ret;
+//            /* dup3 is available since Linux 2.6.27, glibc 2.9. */
+//                if (errno == ENOSYS) {
+//                    try_dup3 = 0;
+//                    ret = dup2(oldfd, newfd);
+//                }
+//            }
+//            else {
+//                ret = dup2(oldfd, newfd);
+//            }
+//            #else
+            ret = posix.dup2(oldfd, newfd);
+//            #endif
+            if (ret == -1) return -1;
+        }
+        // TODO?
+//        rb_maygvl_fd_fix_cloexec(ret);
+        return ret;
     }
 
     @Deprecated

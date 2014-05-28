@@ -178,7 +178,7 @@ public class Utils {
         PrintStream pstream = new PrintStream(new WriterOutputStream(writer), true);
         RubyIO io = new RubyIO(runtime, pstream, false);
         io.getOpenFile().setSync(true);
-        io.getOpenFile().fflush(runtime);
+        io.getOpenFile().io_fflush(runtime);
         return io;
     }
 

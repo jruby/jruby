@@ -39,9 +39,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.BadDescriptorException;
-import org.jruby.util.io.ChannelDescriptor;
-import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.ModeFlags;
 
 import java.nio.channels.ByteChannel;
@@ -81,7 +78,7 @@ public class FileDescriptorIO extends RubyIO {
         }
 
 //        openFile.setMainStream(ChannelStream.open(getRuntime(), new ChannelDescriptor(channel, modes, FileDescriptorHelper.wrap(fileno))));
-        openFile.setFD(channel);
+        openFile.setChannel(channel);
         openFile.setMode(modes.getOpenFileFlags());
         openFile.setMode(modes.getOpenFileFlags());
         openFile.setSync(true);

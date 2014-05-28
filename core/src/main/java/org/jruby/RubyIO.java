@@ -36,16 +36,20 @@
 package org.jruby;
 
 import jnr.constants.platform.Errno;
+import jnr.constants.platform.OpenFlags;
 import jnr.enxio.channels.NativeDeviceChannel;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.ResourceException;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.DirectoryAsFileException;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.FileExistsException;
+import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.PopenExecutor;
+import org.jruby.util.io.PosixShim;
 import org.jruby.util.io.SelectBlob;
 import jnr.constants.platform.Fcntl;
 
@@ -238,7 +242,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyIO io = (RubyIO)klass.allocate();
 
         fp = io.MakeOpenFile();
-        fp.setFD(fd);
+        fp.setChannel(fd);
         // Can we determine this?
 //        if (Platform.IS_CYGWIN) {
 //            if (!runtime.getPosix().isatty(fd)) {
@@ -311,22 +315,22 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     public OutputStream getOutStream() {
-        return Channels.newOutputStream(openFile.getFdWrite());
+        return Channels.newOutputStream(openFile.writeChannel());
     }
 
     public InputStream getInStream() {
-        return Channels.newInputStream(openFile.getFdRead());
+        return Channels.newInputStream(openFile.readChannel());
     }
 
     public Channel getChannel() {
-        return openFile.getFd();
+        return openFile.channel();
     }
 
     // io_reopen
     protected RubyIO reopenIO(ThreadContext context, RubyIO nfile) {
         Ruby runtime = context.runtime;
         OpenFile fptr, orig;
-        Channel fd, fd2;
+        ChannelFD fd, fd2;
         long pos = 0;
 
         nfile = (RubyIO)TypeConverter.ioGetIO(runtime, nfile);
@@ -342,8 +346,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
         }
         if (fptr.isWritable()) {
-            if (fptr.fflush(runtime) < 0)
-                throw runtime.newErrnoFromErrno(fptr.errno, fptr.getPath());
+            if (fptr.io_fflush(runtime) < 0)
+                throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
         }
         else {
             fptr.tell(context);
@@ -352,8 +356,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
             pos = orig.tell(context);
         }
         if (orig.isWritable()) {
-            if (orig.fflush(runtime) < 0)
-                throw runtime.newErrnoFromErrno(orig.errno, fptr.getPath());
+            if (orig.io_fflush(runtime) < 0)
+                throw runtime.newErrnoFromErrno(orig.errno(), fptr.getPath());
         }
 
         /* copy rb_io_t structure */
@@ -369,16 +373,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //            pipe_add_fptr(fptr);
 //        #endif
 
-        fd = fptr.getFd();
-        fd2 = orig.getFd();
+        fd = fptr.fd();
+        fd2 = orig.fd();
         if (fd != fd2) {
             if (fptr.IS_PREP_STDIO() /*|| fd <= 2*/ || !fptr.isStdio()) {
 	            /* need to keep FILE objects of stdin, stdout and stderr */
                 // TODO: need dup2(into) again
                 fd = fd2;
-//                if (rb_cloexec_dup2(fd2, fd) < 0)
-//                    rb_sys_fail_path(orig->pathv);
+                checkReopenCloexecDup2(runtime, orig, fd, fd2);
 //                rb_update_max_fd(fd);
+                fptr.setFD(fd);
             }
             else {
                 if (fptr.stdioIn != null) try {fptr.stdioIn.close();}catch(IOException ioe){}
@@ -387,20 +391,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 fptr.setFD(null);
                 // TODO: need dup2(into) again
                 fd = fd2;
-//                if (rb_cloexec_dup2(fd2, fd) < 0)
-//                    rb_sys_fail_path(orig->pathv);
+                checkReopenCloexecDup2(runtime, orig, fd, fd2);
 //                rb_update_max_fd(fd);
                 fptr.setFD(fd);
             }
             // TODO: clear interrupts waiting on this IO?
 //            rb_thread_fd_close(fd);
             if (orig.isReadable() && pos >= 0) {
-                if (fptr.seek(context, pos, OpenFile.SEEK_SET) < 0 && fptr.errno != null) {
-                    throw runtime.newErrnoFromErrno(fptr.errno, fptr.getPath());
-                }
-                if (orig.seek(context, pos, OpenFile.SEEK_SET) < 0 && orig.errno != null) {
-                    throw runtime.newErrnoFromErrno(orig.errno, orig.getPath());
-                }
+                checkReopenSeek(context, runtime, fptr, pos);
+                checkReopenSeek(context, runtime, orig, pos);
             }
         }
 
@@ -411,6 +410,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
         // We simply can't do this and still have real concrete types under RubyIO
 //        setMetaClass(nfile.getMetaClass());
         return this;
+    }
+
+    private void checkReopenSeek(ThreadContext context, Ruby runtime, OpenFile fptr, long pos) {
+        if (fptr.seek(context, pos, PosixShim.SEEK_SET) < 0 && fptr.errno() != null) {
+            throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
+        }
+    }
+
+    private void checkReopenCloexecDup2(Ruby runtime, OpenFile orig, ChannelFD fd, ChannelFD fd2) {
+        orig.cloexecDup2(runtime, fd2, fd);
     }
 
     // rb_io_binmode
@@ -425,14 +434,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
         fptr.setBinmode();
         fptr.clearTextMode();
         fptr.writeconvPreEcflags &= ~EConvFlags.NEWLINE_DECORATOR_MASK;
-//        #ifdef O_BINARY
-//        if (!fptr->readconv) {
-//            SET_BINARY_MODE_WITH_SEEK_CUR(fptr);
-//        }
-//        else {
-//            setmode(fptr->fd, O_BINARY);
-//        }
-//        #endif
+        if (OpenFlags.O_BINARY.defined()) {
+            // TODO: win32 stuff
+//            if (fptr.readconv == null) {
+//                SET_BINARY_MODE_WITH_SEEK_CUR(fptr);
+//            }
+//            else {
+//                setmode(fptr->fd, O_BINARY);
+//            }
+        }
         return;
     }
 
@@ -495,15 +505,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         fptr.setPath(fname.toString());
-        if (fptr.getFd() == null) {
+        if (fptr.channel() == null) {
             fptr.setFD(sysopen(runtime, fptr.getPath(), oflags_p[0], 0666));
             fptr.clearStdio();
             return file;
         }
 
         if (fptr.isWritable()) {
-            if (fptr.fflush(runtime) < 0)
-                throw runtime.newErrnoFromErrno(fptr.errno, fptr.getPath());
+            if (fptr.io_fflush(runtime) < 0)
+                throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
         }
         fptr.rbuf.off = fptr.rbuf.len = 0;
 
@@ -536,33 +546,18 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //                }
         }
         else {
-            Channel tmpfd = sysopen(runtime, fptr.getPath(), oflags_p[0], 0666);
-            int err = 0;
-            // Need to reestablish a mechanism for dup2(into) form ChannelDescriptor
-//            if (rb_cloexec_dup2(tmpfd, fptr.fd) < 0)
-//                err = errno;
-//            (void)close(tmpfd);
-//            if (err) {
-//                rb_syserr_fail_path(err, fptr.pathv);
-//            }
+            ChannelFD tmpfd = sysopen(runtime, fptr.getPath(), oflags_p[0], 0666);
+            Errno err = null;
+            if (fptr.cloexecDup2(runtime, tmpfd, fptr.fd()) < 0)
+                err = fptr.errno();
+
+            if (err != null) {
+                throw runtime.newErrnoFromErrno(err, fptr.getPath());
+            }
             fptr.setFD(tmpfd);
         }
 
         return file;
-    }
-
-    @Deprecated
-    public static ModeFlags getIOModes(Ruby runtime, String modesString) {
-        return newModeFlags(runtime, modesString);
-    }
-
-    @Deprecated
-    public static int getIOModesIntFromString(Ruby runtime, String modesString) {
-        try {
-            return ModeFlags.getOFlagsFromString(modesString);
-        } catch (InvalidValueException ive) {
-            throw runtime.newArgumentError("illegal access mode");
-        }
     }
 
     /*
@@ -820,19 +815,19 @@ public class RubyIO extends RubyObject implements IOEncodable {
             opt = opt.convertToHash();
         }
         
-        Channel ch;
+        ChannelFD fd;
 
-        if (fileno < 100_000) {
-            ch = new NativeDeviceChannel(fileno);
+        if (FilenoUtil.isFake(fileno)) {
+            fd = new ChannelFD(new NativeDeviceChannel(fileno));
         } else {
-            ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(runtime.getFilenoExtMap(fileno));
+            ChannelFD descriptor = FilenoUtil.getWrapperFromFileno(fileno);
 
             if (descriptor == null) throw runtime.newErrnoEBADFError();
 
-            ch = descriptor.getChannel();
+            fd = descriptor;
         }
 
-        if (!ch.isOpen()) {
+        if (!fd.ch.isOpen()) {
             throw runtime.newErrnoEBADFError();
         }
 
@@ -859,7 +854,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
 //            ModeFlags modes = ModeFlags.createModeFlags(oflags_p[0]);
 
-        openFile.setFD(ch);
+        openFile.setFD(fd);
         openFile.setMode(fmode_p[0]);
         openFile.encs = convconfig;
         openFile.clearCodeConversion();
@@ -1171,8 +1166,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Errno errno;
     }
 
-    protected static Channel sysopen(Ruby runtime, String fname, int oflags, int perm) {
-        Channel fd;
+    protected static ChannelFD sysopen(Ruby runtime, String fname, int oflags, int perm) {
+        ChannelFD fd;
         Sysopen data = new Sysopen();
 
         data.fname = fname;
@@ -1198,8 +1193,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     // rb_sysopen_internal
-    private static Channel sysopenInternal(Ruby runtime, Sysopen data) {
-        Channel fd;
+    private static ChannelFD sysopenInternal(Ruby runtime, Sysopen data) {
+        ChannelFD fd;
         // TODO: thread eventing as in MRI
         fd = sysopenFunc(runtime, data);
 //        if (0 <= fd)
@@ -1208,12 +1203,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     // sysopen_func
-    private static Channel sysopenFunc(Ruby runtime, Sysopen data) {
+    private static ChannelFD sysopenFunc(Ruby runtime, Sysopen data) {
         return cloexecOpen(runtime, data);
     }
 
     // rb_cloexec_open
-    private static Channel cloexecOpen(Ruby runtime, Sysopen data)
+    private static ChannelFD cloexecOpen(Ruby runtime, Sysopen data)
     {
         Channel ret = null;
 //        #ifdef O_CLOEXEC
@@ -1246,7 +1241,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (ret == null) return null;
         // TODO, if we need it?
 //        rb_maygvl_fd_fix_cloexec(ret);
-        return ret;
+        return new ChannelFD(ret);
     }
 
     private ChannelDescriptor sysopen(String path, ModeFlags modes, int perm) {
@@ -1331,7 +1326,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         ByteList strByteList = ((RubyString)str).getByteList();
-        n = OpenFile.writeInternal(context, fptr.getFdWrite(), strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize());
+        n = OpenFile.writeInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize());
 //        RB_GC_GUARD(str);
 
         if (n == -1) throw runtime.newSystemCallError(fptr.getPath());
@@ -1512,7 +1507,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         OpenFile fptr = getOpenFileChecked();
 
         long pos = fptr.tell(context);
-        if (pos < 0 && fptr.errno != null) throw context.runtime.newErrnoFromErrno(fptr.errno, fptr.getPath());
+        if (pos < 0 && fptr.errno() != null) throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
         pos -= fptr.rbuf.len;
         return context.runtime.newFixnum(pos);
     }
@@ -1525,8 +1520,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         pos = offset.convertToInteger().getLongValue();
         fptr = getOpenFileChecked();
-        pos = fptr.seek(context, pos, OpenFile.SEEK_SET);
-        if (pos < 0 && fptr.errno != null) throw context.runtime.newErrnoFromErrno(fptr.errno, fptr.getPath());
+        pos = fptr.seek(context, pos, PosixShim.SEEK_SET);
+        if (pos < 0 && fptr.errno() != null) throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
 
         return context.runtime.newFixnum(pos);
     }
@@ -1635,7 +1630,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         pos = RubyNumeric.num2long(offset);
         fptr = getOpenFileChecked();
         pos = fptr.seek(context, pos, whence);
-        if (pos < 0 && fptr.errno != null) throw getRuntime().newErrnoFromInt(fptr.errno.intValue(), fptr.getPath());
+        if (pos < 0 && fptr.errno() != null) throw getRuntime().newErrnoFromErrno(fptr.errno(), fptr.getPath());
 
         return RubyFixnum.zero(context.runtime);
     }
@@ -1646,7 +1641,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public RubyFixnum sysseek(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         IRubyObject offset = context.nil, ptrname = context.nil;
-        int whence = OpenFile.SEEK_SET;
+        int whence = PosixShim.SEEK_SET;
         OpenFile fptr;
         long pos;
 
@@ -1666,9 +1661,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (fptr.isWritable() && fptr.wbuf.len != 0) {
             runtime.getWarnings().warn("sysseek for buffered IO");
         }
-        fptr.errno = null;
-        pos = fptr.lseek(context, pos, whence);
-        if (pos == -1 && fptr.errno != null) throw runtime.newErrnoFromErrno(fptr.errno, fptr.getPath());
+        fptr.errno(null);
+        pos = fptr.posix.lseek(fptr.fd(), pos, whence);
+        if (pos == -1 && fptr.errno() != null) throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
 
         return RubyFixnum.newFixnum(runtime, pos);
     }
@@ -1676,11 +1671,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private static int interpretSeekWhence(IRubyObject vwhence) {
         if (vwhence instanceof RubySymbol) {
             if (vwhence.toString() == "SET")
-                return OpenFile.SEEK_SET;
+                return PosixShim.SEEK_SET;
             if (vwhence.toString() == "CUR")
-                return OpenFile.SEEK_CUR;
+                return PosixShim.SEEK_CUR;
             if (vwhence.toString() == "END")
-                return OpenFile.SEEK_END;
+                return PosixShim.SEEK_END;
         }
         return (int)vwhence.convertToInteger().getLongValue();
     }
@@ -1692,7 +1687,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         OpenFile fptr;
 
         fptr = getOpenFileChecked();
-        if (fptr.seek(context, 0L, 0) < 0 && fptr.errno != null) throw context.runtime.newErrnoFromErrno(fptr.errno, fptr.getPath());
+        if (fptr.seek(context, 0L, 0) < 0 && fptr.errno() != null) throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
         // TODO: ARGF
 //        if (this == ARGF.current_file) {
 //            ARGF.lineno -= fptr->lineno;
@@ -1714,7 +1709,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyIO io = GetWriteIO();
         fptr = io.getOpenFileChecked();
 
-        if (fptr.fflush(runtime) < 0)
+        if (fptr.io_fflush(runtime) < 0)
             throw runtime.newSystemCallError("");
 
 //        # ifndef _WIN32	/* already called in io_fflush() */
@@ -1813,11 +1808,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //        #endif
 
         // FIXME: This must do a dup of some kind
-        fd = orig.getFd();
-        fptr.setFD(fd);
+        fd = orig.channel();
+        fptr.setChannel(fd);
         pos = orig.tell(context);
         if (0 <= pos)
-            fptr.seek(context, pos, OpenFile.SEEK_SET);
+            fptr.seek(context, pos, PosixShim.SEEK_SET);
         if (fptr.isBinmode()) {
             dest.setBinmode();
         }
@@ -1843,7 +1838,21 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * @return true if closed
      */
     public boolean isClosed() {
-        return (openFile.getMainStream() == null && openFile.getPipeStream() == null);
+        OpenFile fptr;
+        RubyIO write_io;
+        OpenFile write_fptr;
+
+        write_io = GetWriteIO();
+        if (this != write_io) {
+            write_fptr = write_io.openFile;
+            if (write_fptr != null && write_fptr.channel() != null) {
+                return false;
+            }
+        }
+
+        fptr = openFile;
+        checkInitialized();
+        return fptr.channel() != null ? false : true;
     }
 
     /** 
@@ -1865,7 +1874,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // rb_io_close  
     protected IRubyObject ioClose(Ruby runtime) {
         OpenFile fptr;
-        Channel fd;
+        ChannelFD fd;
         RubyIO write_io;
         OpenFile write_fptr;
 
@@ -1879,11 +1888,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fptr = openFile;
         if (fptr == null) return runtime.getNil();
-//        if (fptr.fd < 0) return Qnil;
 
-        fd = fptr.getFd();
         // TODO: mark this closed for all threads waiting for it
         // see interruptBlockingThreads()
+//        fd = fptr.fd();
 //        rb_thread_fd_close(fd);
         fptr.cleanup(runtime, false);
 
@@ -1910,9 +1918,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         write_io = GetWriteIO();
         fptr = write_io.getOpenFileChecked();
-        if (fptr.getFd() instanceof SocketChannel) {
+        if (fptr.channel() instanceof SocketChannel) {
             try {
-                ((SocketChannel)fptr.getFd()).shutdownOutput();
+                ((SocketChannel)fptr.channel()).shutdownOutput();
             } catch (IOException ioe) {
                 throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), fptr.getPath());
             }
@@ -1942,9 +1950,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyIO write_io;
 
         fptr = getOpenFileChecked();
-        if (fptr.getFd() instanceof SocketChannel) {
+        if (fptr.channel() instanceof SocketChannel) {
             try {
-                ((SocketChannel)fptr.getFd()).socket().shutdownInput();
+                ((SocketChannel)fptr.channel()).socket().shutdownInput();
             } catch (IOException ioe) {
                 throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), fptr.getPath());
             }
@@ -2000,7 +2008,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         fptr = getOpenFileChecked();
 
         if ((fptr.getMode() & OpenFile.WRITABLE) != 0) {
-            if (fptr.fflush(context.runtime) < 0)
+            if (fptr.io_fflush(context.runtime) < 0)
                 throw context.runtime.newSystemCallError("");
 //            #ifdef _WIN32
 //            if (sync && GetFileType((HANDLE)rb_w32_get_osfhandle(fptr->fd)) == FILE_TYPE_DISK) {
@@ -2078,8 +2086,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     public boolean getBlocking() {
-        if (openFile.getFdSelect() != null) {
-            return openFile.getFdSelect().isBlocking();
+        if (openFile.selectChannel() != null) {
+            return openFile.selectChannel().isBlocking();
         }
         return true;
     }
@@ -2600,11 +2608,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //                arg.len = len;
 //                rb_str_locktmp_ensure(str, read_internal_call, (VALUE)&arg);
 //                n = arg.len;
-                n = OpenFile.readInternal(context, fptr, fptr.getFdRead(), strByteList.unsafeBytes(), strByteList.begin(), len);
+                n = OpenFile.readInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), len);
                 if (n < 0) {
                     if (!nonblock && fptr.waitWritable(runtime))
                         continue again;
-                    if (nonblock && (fptr.errno == Errno.EWOULDBLOCK || fptr.errno == Errno.EAGAIN)) {
+                    if (nonblock && (fptr.errno() == Errno.EWOULDBLOCK || fptr.errno() == Errno.EAGAIN)) {
                         if (noException)
                             return runtime.newSymbol("wait_readable");
                         else
@@ -2667,7 +2675,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //        rb_ensure(read_internal_call, (VALUE)&arg, rb_str_unlocktmp, str);
 //        n = arg.len;
         ByteList strByteList = ((RubyString)str).getByteList();
-        n = OpenFile.readInternal(context, fptr, fptr.getFdRead(), strByteList.unsafeBytes(), strByteList.begin(), ilen);
+        n = OpenFile.readInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), ilen);
 
         if (n == -1) {
             throw runtime.newSystemCallError(fptr.getPath());
@@ -2781,7 +2789,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 int p = fptr.rbuf.off++;
                 fptr.rbuf.len--;
                 block.yield(context, runtime.newFixnum(pBytes[p] & 0xFF));
-                fptr.errno = null;
+                fptr.errno(null);
             }
             fptr.checkByteReadable(runtime);
             fptr.READ_CHECK(context);
@@ -2987,7 +2995,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @Override
     public String toString() {
-        return "RubyIO(" + openFile.getMode() + ", " + ChannelDescriptor.getDescriptorFromChannel(openFile.getFd()) + ")";
+        return "RubyIO(" + openFile.getMode() + ", " + FilenoUtil.getDescriptorFromChannel(openFile.channel()) + ")";
     }
     
     /* class methods for IO */
@@ -3823,21 +3831,21 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         try {
             long size = 0;
-            if (io1.openFile.getFdSeek() == null) {
-                if (io2.openFile.getFdSeek() == null) {
-                    ReadableByteChannel from = io1.openFile.getFdRead();
-                    WritableByteChannel to = io2.openFile.getFdWrite();
+            if (io1.openFile.seekChannel() == null) {
+                if (io2.openFile.seekChannel() == null) {
+                    ReadableByteChannel from = io1.openFile.readChannel();
+                    WritableByteChannel to = io2.openFile.writeChannel();
 
                     size = transfer(context, from, to);
                 } else {
-                    ReadableByteChannel from = io1.openFile.getFdRead();
-                    FileChannel to = io2.openFile.getFdFile();
+                    ReadableByteChannel from = io1.openFile.readChannel();
+                    FileChannel to = io2.openFile.fileChannel();
 
                     size = transfer(from, to);
                 }
             } else {
-                FileChannel from = io1.openFile.getFdFile();
-                WritableByteChannel to = io2.openFile.getFdWrite();
+                FileChannel from = io1.openFile.fileChannel();
+                WritableByteChannel to = io2.openFile.writeChannel();
                 long remaining = length == null ? from.size() : length.getLongValue();
                 long position = offset == null? from.position() : offset.getLongValue();
 
@@ -4404,6 +4412,20 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @Deprecated
     public Stream getHandler() throws BadDescriptorException {
         return getOpenFileChecked().getMainStreamSafe();
+    }
+
+    @Deprecated
+    public static ModeFlags getIOModes(Ruby runtime, String modesString) {
+        return newModeFlags(runtime, modesString);
+    }
+
+    @Deprecated
+    public static int getIOModesIntFromString(Ruby runtime, String modesString) {
+        try {
+            return ModeFlags.getOFlagsFromString(modesString);
+        } catch (InvalidValueException ive) {
+            throw runtime.newArgumentError("illegal access mode");
+        }
     }
     
     protected OpenFile openFile;
