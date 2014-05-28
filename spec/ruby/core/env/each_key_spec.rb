@@ -17,23 +17,13 @@ describe "ENV.each_key" do
     end
   end
 
-  ruby_version_is "" ... "1.8.7" do
-    it "raises LocalJumpError if no block given" do
-      lambda { ENV.each_key }.should raise_error(LocalJumpError)
-    end
+  it "returns an Enumerator if called without a block" do
+    ENV.each_key.should be_an_instance_of(enumerator_class)
   end
 
-  ruby_version_is "1.8.7" do
-    it "returns an Enumerator if called without a block" do
-      ENV.each_key.should be_an_instance_of(enumerator_class)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "returns keys in the locale encoding" do
-      ENV.each_key do |key|
-        key.encoding.should == Encoding.find('locale')
-      end
+  it "returns keys in the locale encoding" do
+    ENV.each_key do |key|
+      key.encoding.should == Encoding.find('locale')
     end
   end
 end

@@ -21,10 +21,8 @@ describe :file_zero, :shared => true do
     @object.send(@method, @nonzero_file).should == false
   end
 
-  ruby_version_is "1.9" do
-    it "accepts an object that has a #to_path method" do
-      @object.send(@method, mock_to_path(@zero_file)).should == true
-    end
+  it "accepts an object that has a #to_path method" do
+    @object.send(@method, mock_to_path(@zero_file)).should == true
   end
 
   platform_is :windows do

@@ -1,0 +1,6 @@
+fails:Enumerator#feed sets the future return value of yield if called before advancing the iterator
+fails:Enumerator#feed causes yield to return the value if called during iteration
+fails:Enumerator#feed can be called for each iteration
+fails:Enumerator#feed returns nil
+fails:Enumerator#feed raises a TypeError if called more than once without advancing the enumerator
+fails:Enumerator#feed sets the return value of Yielder#yield

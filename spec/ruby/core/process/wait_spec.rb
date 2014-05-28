@@ -8,7 +8,7 @@ describe "Process.wait" do
     end
   end
 
-  it "raises a Errno::ECHILD if there are no child processes" do
+  it "raises an Errno::ECHILD if there are no child processes" do
     lambda { Process.wait }.should raise_error(Errno::ECHILD)
   end
 

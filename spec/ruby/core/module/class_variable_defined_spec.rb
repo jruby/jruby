@@ -39,16 +39,6 @@ describe "Module#class_variable_defined?" do
     c.class_variable_defined?("@@mvar").should == false
   end
 
-  ruby_version_is ""..."1.9" do
-    not_compliant_on :rubinius do
-      it "accepts Fixnums for class variables" do
-        c = Class.new { class_variable_set :@@class_var, "test" }
-        c.class_variable_defined?(:@@class_var.to_i).should == true
-        c.class_variable_defined?(:@@no_class_var.to_i).should == false
-      end
-    end
-  end
-
   it "raises a NameError when the given name is not allowed" do
     c = Class.new
 

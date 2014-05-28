@@ -31,23 +31,13 @@ describe "Float#divmod" do
     lambda { infinity_value.divmod(1) }.should raise_error(FloatDomainError)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises FloatDomainError if other is zero" do
-      lambda { 1.0.divmod(0)   }.should raise_error(FloatDomainError)
-      lambda { 1.0.divmod(0.0) }.should raise_error(FloatDomainError)
-    end
+  it "raises a ZeroDivisionError if other is zero" do
+    lambda { 1.0.divmod(0)   }.should raise_error(ZeroDivisionError)
+    lambda { 1.0.divmod(0.0) }.should raise_error(ZeroDivisionError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a ZeroDivisionError if other is zero" do
-      lambda { 1.0.divmod(0)   }.should raise_error(ZeroDivisionError)
-      lambda { 1.0.divmod(0.0) }.should raise_error(ZeroDivisionError)
-    end
-  end
-
-  ruby_bug "redmine #5276", "1.9.2" do
-    it "returns the correct [quotient, modulus] even for large quotient" do
-      0.59.divmod(7.761021455128987e-11).first.should eql(7602092113)
-    end
+  # redmine #5276"
+  it "returns the correct [quotient, modulus] even for large quotient" do
+    0.59.divmod(7.761021455128987e-11).first.should eql(7602092113)
   end
 end

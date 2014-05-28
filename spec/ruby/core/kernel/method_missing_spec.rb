@@ -1,11 +1,5 @@
 require File.expand_path('../../../shared/kernel/method_missing', __FILE__)
 
-ruby_version_is ""..."1.9" do
-  describe "Kernel#method_missing" do
-    it_behaves_like :method_missing, nil, Kernel
-  end
-end
-
 describe "Kernel#method_missing" do
   it_behaves_like :method_missing_defined_module, nil, KernelSpecs::ModuleMM
 end

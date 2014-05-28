@@ -1,5 +1,4 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require 'rational'
 
 describe :rational_minus_rat, :shared => true do
   it "returns the result of substracting other from self as a Rational" do

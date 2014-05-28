@@ -26,8 +26,8 @@ describe :string_chars, :shared => true do
 
   with_feature :encoding do
     it "returns characters in the same encoding as self" do
-      "&%".force_encoding('Shift_JIS').chars.to_a.all? {|c| c.encoding.name.should == 'Shift_JIS'}
-      "&%".encode('ASCII-8BIT').chars.to_a.all? {|c| c.encoding.name.should == 'ASCII-8BIT'}
+      "&%".force_encoding('Shift_JIS').send(@method).to_a.all? {|c| c.encoding.name.should == 'Shift_JIS'}
+      "&%".encode('ASCII-8BIT').send(@method).to_a.all? {|c| c.encoding.name.should == 'ASCII-8BIT'}
     end
 
     it "works with multibyte characters" do
@@ -53,12 +53,22 @@ describe :string_chars, :shared => true do
     end
 
     it "uses the String's encoding to determine what characters it contains" do
-      s = "\u{287}"
-      s.force_encoding('UTF-8').send(@method).to_a.should == [s.force_encoding('UTF-8')]
+      s = "\u{24B62}"
+
+      s.force_encoding('UTF-8').send(@method).to_a.should == [
+        s.force_encoding('UTF-8')
+      ]
       s.force_encoding('BINARY').send(@method).to_a.should == [
-        "\xCA".force_encoding('BINARY'), "\x87".force_encoding('BINARY')]
+        "\xF0".force_encoding('BINARY'),
+        "\xA4".force_encoding('BINARY'),
+        "\xAD".force_encoding('BINARY'),
+        "\xA2".force_encoding('BINARY')
+      ]
       s.force_encoding('SJIS').send(@method).to_a.should == [
-        "\xCA".force_encoding('SJIS'), "\x87".force_encoding('SJIS')]
+        "\xF0\xA4".force_encoding('SJIS'),
+        "\xAD".force_encoding('SJIS'),
+        "\xA2".force_encoding('SJIS')
+      ]
     end
   end
 end

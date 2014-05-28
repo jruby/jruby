@@ -20,7 +20,7 @@ describe "Time.at" do
     it "returns a subclass instance on a Time subclass" do
       c = Class.new(Time)
       t = c.at(0)
-      t.should be_kind_of(c)
+      t.should be_an_instance_of(c)
     end
   end
 
@@ -49,7 +49,7 @@ describe "Time.at" do
     it "returns a subclass instance" do
       c = Class.new(Time)
       t = c.at(Time.now)
-      t.should be_kind_of(c)
+      t.should be_an_instance_of(c)
     end
   end
 
@@ -63,38 +63,18 @@ describe "Time.at" do
     end
 
     describe "with an argument that responds to #to_int" do
-      ruby_version_is ""..."1.9" do
-        it "raises a TypeError" do
-          o = mock('integer')
-          o.should_not_receive(:to_int)
-          lambda { Time.at(o) }.should raise_error(TypeError)
-        end
-      end
-
-      ruby_version_is "1.9" do
-        it "coerces using #to_int" do
-          o = mock('integer')
-          o.should_receive(:to_int).and_return(0)
-          Time.at(o).should == Time.at(0)
-        end
+      it "coerces using #to_int" do
+        o = mock('integer')
+        o.should_receive(:to_int).and_return(0)
+        Time.at(o).should == Time.at(0)
       end
     end
 
     describe "with an argument that responds to #to_r" do
-      ruby_version_is ""..."1.9" do
-        it "raises a TypeError" do
-          o = mock_numeric('rational')
-          o.should_not_receive(:to_r)
-          lambda { Time.at(o) }.should raise_error(TypeError)
-        end
-      end
-
-      ruby_version_is "1.9" do
-        it "coerces using #to_r" do
-          o = mock_numeric('rational')
-          o.should_receive(:to_r).and_return(Rational(5, 2))
-          Time.at(o).should == Time.at(Rational(5, 2))
-        end
+      it "coerces using #to_r" do
+        o = mock_numeric('rational')
+        o.should_receive(:to_r).and_return(Rational(5, 2))
+        Time.at(o).should == Time.at(Rational(5, 2))
       end
     end
   end
@@ -106,12 +86,10 @@ describe "Time.at" do
       t.tv_usec.should == 500000
     end
 
-    ruby_version_is "1.9" do
-      it "returns a Time object representing the given number of seconds and Float microseconds since 1970-01-01 00:00:00 UTC" do
-        t = Time.at(10, 500.500)
-        t.tv_sec.should == 10
-        t.tv_nsec.should == 500500
-      end
+    it "returns a Time object representing the given number of seconds and Float microseconds since 1970-01-01 00:00:00 UTC" do
+      t = Time.at(10, 500.500)
+      t.tv_sec.should == 10
+      t.tv_nsec.should == 500500
     end
   end
 
@@ -124,20 +102,10 @@ describe "Time.at" do
   end
 
   describe "with a second argument that responds to #to_r" do
-    ruby_version_is ""..."1.9" do
-      it "raises a TypeError" do
-        o = mock('rational')
-        o.should_not_receive(:to_r)
-        lambda { Time.at(0, o) }.should raise_error(TypeError)
-      end
-    end
-
-    ruby_version_is "1.9" do
-      it "coerces using #to_r" do
-        o = mock_numeric('rational')
-        o.should_receive(:to_r).and_return(Rational(5, 2))
-        Time.at(0, o).should == Time.at(0, Rational(5, 2))
-      end
+    it "coerces using #to_r" do
+      o = mock_numeric('rational')
+      o.should_receive(:to_r).and_return(Rational(5, 2))
+      Time.at(0, o).should == Time.at(0, Rational(5, 2))
     end
   end
 
@@ -154,16 +122,9 @@ describe "Time.at" do
   end
 
   describe "passed [Time, Integer]" do
-    ruby_version_is ""..."1.9" do
-      it "raises a TypeError" do
-        lambda { Time.at(Time.now, 500000) }.should raise_error(TypeError)
-      end
-    end
-
-    ruby_bug "#8173", "2.0" do
-      it "raises a TypeError" do
-        lambda { Time.at(Time.now, 500000) }.should raise_error(TypeError)
-      end
+    # #8173
+    it "raises a TypeError" do
+      lambda { Time.at(Time.now, 500000) }.should raise_error(TypeError)
     end
   end
 end

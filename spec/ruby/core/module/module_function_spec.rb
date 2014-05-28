@@ -1,6 +1,28 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
+describe "Module#module_function" do
+  it "is a private method" do
+    Module.should have_private_instance_method(:module_function)
+  end
+
+  describe "on Class" do
+    it "is undefined" do
+      Class.should_not have_private_instance_method(:module_function, true)
+    end
+
+    it "raises a TypeError if calling after rebinded to Class" do
+      lambda {
+        Module.instance_method(:module_function).bind(Class.new).call
+      }.should raise_error(TypeError)
+
+      lambda {
+        Module.instance_method(:module_function).bind(Class.new).call :foo
+      }.should raise_error(TypeError)
+    end
+  end
+end
+
 describe "Module#module_function with specific method names" do
   it "creates duplicates of the given instance methods on the Module object" do
     m = Module.new do
@@ -213,17 +235,17 @@ describe "Module#module_function as a toggle (no arguments) in a Module body" do
     m.respond_to?(:test1).should == true
   end
 
-  it "affects definitions when inside an eval even if the definitions are outside of it" do
+  it "does not affect definitions when inside an eval even if the definitions are outside of it" do
     m = Module.new {
           eval "module_function"
 
           def test1() end
         }
 
-    m.respond_to?(:test1).should == true
+    m.respond_to?(:test1).should be_false
   end
 
-  it "functions normally if both toggle and definitions inside a module_eval" do
+  it "functions normally if both toggle and definitions inside a eval" do
     m = Module.new {
           eval <<-CODE
             module_function

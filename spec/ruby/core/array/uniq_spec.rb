@@ -80,11 +80,21 @@ describe "Array#uniq" do
     a[1].tainted?.should == true
   end
 
-  ruby_version_is "1.9" do
-    it "compares elements based on the value returned from the block" do
-      a = [1, 2, 3, 4]
-      a.uniq { |x| x >= 2 ? 1 : 0 }.should == [1, 2]
-    end
+  it "compares elements based on the value returned from the block" do
+    a = [1, 2, 3, 4]
+    a.uniq { |x| x >= 2 ? 1 : 0 }.should == [1, 2]
+  end
+
+  it "yields items in order" do
+    a = [1, 2, 3]
+    yielded = []
+    a.uniq { |v| yielded << v }
+    yielded.should == a
+  end
+
+  it "handles nil and false like any other values" do
+    [nil, false, 42].uniq { :foo }.should == [nil]
+    [false, nil, 42].uniq { :bar }.should == [false]
   end
 
   it "returns subclass instance on Array subclasses" do
@@ -122,38 +132,24 @@ describe "Array#uniq!" do
     [ "a", "b", "c" ].uniq!.should == nil
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError on a frozen array when the array is modified" do
-      dup_ary = [1, 1, 2]
-      dup_ary.freeze
-      lambda { dup_ary.uniq! }.should raise_error(TypeError)
-    end
-
-    it "does not raise an exception on a frozen array when the array would not be modified" do
-      ArraySpecs.frozen_array.uniq!.should be_nil
-    end
+  it "raises a RuntimeError on a frozen array when the array is modified" do
+    dup_ary = [1, 1, 2]
+    dup_ary.freeze
+    lambda { dup_ary.uniq! }.should raise_error(RuntimeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError on a frozen array when the array is modified" do
-      dup_ary = [1, 1, 2]
-      dup_ary.freeze
-      lambda { dup_ary.uniq! }.should raise_error(RuntimeError)
-    end
+  # see [ruby-core:23666]
+  it "raises a RuntimeError on a frozen array when the array would not be modified" do
+    lambda { ArraySpecs.frozen_array.uniq!}.should raise_error(RuntimeError)
+    lambda { ArraySpecs.empty_frozen_array.uniq!}.should raise_error(RuntimeError)
+  end
 
-    # see [ruby-core:23666]
-    it "raises a RuntimeError on a frozen array when the array would not be modified" do
-      lambda { ArraySpecs.frozen_array.uniq!}.should raise_error(RuntimeError)
-      lambda { ArraySpecs.empty_frozen_array.uniq!}.should raise_error(RuntimeError)
-    end
+  it "doesn't yield to the block on a frozen array" do
+    lambda { ArraySpecs.frozen_array.uniq!{ raise RangeError, "shouldn't yield"}}.should raise_error(RuntimeError)
+  end
 
-    it "doesn't yield to the block on a frozen array" do
-      lambda { ArraySpecs.frozen_array.uniq!{ raise RangeError, "shouldn't yield"}}.should raise_error(RuntimeError)
-    end
-
-    it "compares elements based on the value returned from the block" do
-      a = [1, 2, 3, 4]
-      a.uniq! { |x| x >= 2 ? 1 : 0 }.should == [1, 2]
-    end
+  it "compares elements based on the value returned from the block" do
+    a = [1, 2, 3, 4]
+    a.uniq! { |x| x >= 2 ? 1 : 0 }.should == [1, 2]
   end
 end

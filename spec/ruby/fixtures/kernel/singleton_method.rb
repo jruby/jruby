@@ -12,6 +12,9 @@ module KernelSpecs
       ScratchPad.record [:method_undefined, name]
     end
 
+    def self.singleton_method_to_alias
+    end
+
     def self.singleton_method_to_remove
     end
 

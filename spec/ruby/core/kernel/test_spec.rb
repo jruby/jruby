@@ -36,24 +36,60 @@ describe "Kernel#test" do
     Kernel.test(?l, @link).should be_true
   end
 
-  ruby_version_is "1.9" do
-    it "calls #to_path on second argument when passed ?f and a filename" do
-      p = mock('path')
-      p.should_receive(:to_path).and_return @file
-      Kernel.test(?f, p)
+  it "returns true when passed ?r if the argument is readable by the effective uid" do
+    Kernel.test(?r, @file).should be_true
+  end
+
+  it "returns true when passed ?R if the argument is readable by the real uid" do
+    Kernel.test(?R, @file).should be_true
+  end
+
+  it "returns true when passed ?w if the argument is readable by the effective uid" do
+    Kernel.test(?w, @file).should be_true
+  end
+
+  it "returns true when passed ?W if the argument is readable by the real uid" do
+    Kernel.test(?W, @file).should be_true
+  end
+
+  context "time commands" do
+    before :all do
+      @tmp_file = File.new(tmp("file.kernel.test"), "w") { |f| f.write "foo" }
     end
 
-    it "calls #to_path on second argument when passed ?e and a filename" do
-      p = mock('path')
-      p.should_receive(:to_path).and_return @file
-      Kernel.test(?e, p)
+    after :all do
+      rm_r @tmp_file
     end
 
-    it "calls #to_path on second argument when passed ?d and a directory" do
-      p = mock('path')
-      p.should_receive(:to_path).and_return @dir
-      Kernel.test(?d, p)
+    it "returns the last access time for the provided file when passed ?A" do
+      Kernel.test(?A, @tmp_file).should == @tmp_file.atime
     end
+
+    it "returns the time at which the file was created when passed ?C" do
+      Kernel.test(?C, @tmp_file).should == @tmp_file.ctime
+    end
+
+    it "returns the time at which the file was modified when passed ?M" do
+      Kernel.test(?M, @tmp_file).should == @tmp_file.mtime
+    end
+  end
+
+  it "calls #to_path on second argument when passed ?f and a filename" do
+    p = mock('path')
+    p.should_receive(:to_path).and_return @file
+    Kernel.test(?f, p)
+  end
+
+  it "calls #to_path on second argument when passed ?e and a filename" do
+    p = mock('path')
+    p.should_receive(:to_path).and_return @file
+    Kernel.test(?e, p)
+  end
+
+  it "calls #to_path on second argument when passed ?d and a directory" do
+    p = mock('path')
+    p.should_receive(:to_path).and_return @dir
+    Kernel.test(?d, p)
   end
 end
 

@@ -31,3 +31,18 @@ describe "Array#join" do
     lambda { [1, 2].join(false) }.should raise_error(TypeError)
   end
 end
+
+describe "Array#join with $," do
+  before(:each) do
+    @before_separator = $,
+  end
+
+  after(:each) do
+    $, = @before_separator
+  end
+
+  it "separates elements with default separator when the passed separator is nil" do
+    $, = "_"
+    [1, 2, 3].join(nil).should == '1_2_3'
+  end
+end

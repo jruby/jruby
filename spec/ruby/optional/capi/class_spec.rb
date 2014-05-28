@@ -101,11 +101,19 @@ describe "C-API Class function" do
     it "returns the class name" do
       @s.rb_class2name(CApiClassSpecs).should == "CApiClassSpecs"
     end
+
+    it "returns a string for an anonymous class" do
+      @s.rb_class2name(Class.new).should be_kind_of(String)
+    end
   end
 
   describe "rb_class_name" do
     it "returns the class name" do
-      @s.rb_class2name(CApiClassSpecs).should == "CApiClassSpecs"
+      @s.rb_class_name(CApiClassSpecs).should == "CApiClassSpecs"
+    end
+
+    it "returns a string for an anonymous class" do
+      @s.rb_class_name(Class.new).should be_kind_of(String)
     end
   end
 
@@ -113,10 +121,8 @@ describe "C-API Class function" do
     it_behaves_like :rb_path_to_class, :rb_path2class
   end
 
-  ruby_version_is "1.9" do
-    describe "rb_path_to_class" do
-      it_behaves_like :rb_path_to_class, :rb_path_to_class
-    end
+  describe "rb_path_to_class" do
+    it_behaves_like :rb_path_to_class, :rb_path_to_class
   end
 
   describe "rb_cvar_defined" do
@@ -183,7 +189,7 @@ describe "C-API Class function" do
       cls.name.should == "CApiClassSpecs::ClassUnder3"
     end
 
-    it "call #inherited on the superclass" do
+    it "calls #inherited on the superclass" do
       CApiClassSpecs::Super.should_receive(:inherited)
       cls = @s.rb_define_class_under(CApiClassSpecs,
                                      "ClassUnder4", CApiClassSpecs::Super)
@@ -250,16 +256,32 @@ describe "C-API Class function" do
     end
   end
 
-  ruby_version_is "1.9.3" do
-    describe "rb_class_superclass" do
-      it "returns the superclass of a class" do
-        cls = @s.rb_class_superclass(CApiClassSpecs::Sub)
-        cls.should == CApiClassSpecs::Super
-      end
+  describe "rb_class_superclass" do
+    it "returns the superclass of a class" do
+      cls = @s.rb_class_superclass(CApiClassSpecs::Sub)
+      cls.should == CApiClassSpecs::Super
+    end
 
-      it "returns nil if the class has no superclass" do
-        @s.rb_class_superclass(BasicObject).should be_nil
-      end
+    it "returns nil if the class has no superclass" do
+      @s.rb_class_superclass(BasicObject).should be_nil
+    end
+  end
+
+  describe "rb_class_real" do
+    it "returns the class of an object ignoring the singleton class" do
+      obj = CApiClassSpecs::Sub.new
+      def obj.some_method() end
+
+      @s.rb_class_real(obj).should == CApiClassSpecs::Sub
+    end
+
+    it "returns the class of an object ignoring included modules" do
+      obj = CApiClassSpecs::SubM.new
+      @s.rb_class_real(obj).should == CApiClassSpecs::SubM
+    end
+
+    it "returns 0 if passed 0" do
+      @s.rb_class_real(0).should == 0
     end
   end
 end

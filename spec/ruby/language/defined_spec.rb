@@ -21,6 +21,25 @@ describe "The defined? keyword for literals" do
     ret = defined?(false)
     ret.should == "false"
   end
+
+  describe "for a literal Array" do
+
+    it "returns 'expression' if each element is defined" do
+      ret = defined?([Object, Array])
+      ret.should == "expression"
+    end
+
+    it "returns nil if one element is not defined" do
+      ret = defined?([NonExistantConstant, Array])
+      ret.should == nil
+    end
+
+    it "returns nil if all elements are not defined" do
+      ret = defined?([NonExistantConstant, AnotherNonExistantConstant])
+      ret.should == nil
+    end
+
+  end
 end
 
 describe "The defined? keyword when called with a method name" do
@@ -85,12 +104,10 @@ describe "The defined? keyword when called with a method name" do
       defined?(nonexistent_local_variable.some_method).should be_nil
     end
 
-    ruby_version_is "1.9" do
-      it "calls #respond_to_missing?" do
-        obj = mock("respond_to_missing object")
-        obj.should_receive(:respond_to_missing?).and_return(true)
-        defined?(obj.something_undefined).should == "method"
-      end
+    it "calls #respond_to_missing?" do
+      obj = mock("respond_to_missing object")
+      obj.should_receive(:respond_to_missing?).and_return(true)
+      defined?(obj.something_undefined).should == "method"
     end
   end
 
@@ -258,28 +275,14 @@ describe "The defined? keyword for an expression" do
     defined?(x == 2).should == "method"
   end
 
-  ruby_version_is ""..."1.9" do
-    it "returns 'expression' for an expression with '!='" do
-      x = 42
-      defined?(x != 2).should == "expression"
-    end
-
-    it "returns 'expression' for an expression with '!~'" do
-      x = 42
-      defined?(x !~ 2).should == "expression"
-    end
+  it "returns 'method' for an expression with '!='" do
+    x = 42
+    defined?(x != 2).should == "method"
   end
 
-  ruby_version_is "1.9" do
-    it "returns 'method' for an expression with '!='" do
-      x = 42
-      defined?(x != 2).should == "method"
-    end
-
-    it "returns 'method' for an expression with '!~'" do
-      x = 42
-      defined?(x !~ 2).should == "method"
-    end
+  it "returns 'method' for an expression with '!~'" do
+    x = 42
+    defined?(x !~ 2).should == "method"
   end
 
   describe "with logical connectives" do
@@ -338,154 +341,69 @@ describe "The defined? keyword for an expression" do
       defined?(true or false).should == "expression"
     end
 
-    ruby_version_is ""..."1.9" do
-      it "returns 'expression' for an expression with '!' and an unset global variable" do
-        defined?(!$defined_specs_undefined_global_variable).should == "expression"
-      end
-
-      it "returns 'expression' for an expression with '!' and an unset instance variable" do
-        defined?(!@defined_specs_undefined_instance_variable).should == "expression"
-      end
-
-      it "calls a method in a 'not' expression and returns 'expression'" do
-        defined?(not DefinedSpecs.side_effects).should == "expression"
-        ScratchPad.recorded.should == :defined_specs_side_effects
-      end
-
-      it "returns 'expression' for an expression with 'not' and an unset global variable" do
-        defined?(not $defined_specs_undefined_global_variable).should == "expression"
-      end
-
-      it "returns 'expression' for an expression with 'not' and an unset instance variable" do
-        defined?(not @defined_specs_undefined_instance_variable).should == "expression"
-      end
-
-      it "returns nil for an expression with '&&/and' and an undefined method" do
-        defined?(defined_specs_undefined_method && true).should be_nil
-        defined?(defined_specs_undefined_method or true).should be_nil
-      end
-
-      it "returns nil for an expression with '&&/and' and an unset class variable" do
-        defined?(@@defined_specs_undefined_class_variable && true).should be_nil
-        defined?(@@defined_specs_undefined_class_variable or true).should be_nil
-      end
-
-      it "does not propagate an exception raised by a method in an '&&' expression" do
-        defined?(DefinedSpecs.exception_method && true).should be_nil
-        ScratchPad.recorded.should == :defined_specs_exception
-      end
-
-      it "calls a method in an '&&' expression and returns 'expression'" do
-        defined?(DefinedSpecs.side_effects && true).should == "expression"
-        ScratchPad.recorded.should == :defined_specs_side_effects
-      end
-
-      it "does not propagate an exception raised by a method in an 'and' expression" do
-        defined?(DefinedSpecs.exception_method and true).should be_nil
-        ScratchPad.recorded.should == :defined_specs_exception
-      end
-
-      it "calls a method in an 'and' expression and returns 'expression'" do
-        defined?(DefinedSpecs.side_effects and true).should == "expression"
-        ScratchPad.recorded.should == :defined_specs_side_effects
-      end
-
-      it "returns nil for an expression with '||/or' and an undefined method" do
-        defined?(defined_specs_undefined_method || true).should be_nil
-        defined?(defined_specs_undefined_method or true).should be_nil
-      end
-
-      it "returns nil for an expression with '||/or' and an unset class variable" do
-        defined?(@@defined_specs_undefined_class_variable || true).should be_nil
-        defined?(@@defined_specs_undefined_class_variable or true).should be_nil
-      end
-
-      it "does not propagate an exception raised by a method in an '||' expression" do
-        defined?(DefinedSpecs.exception_method || true).should be_nil
-        ScratchPad.recorded.should == :defined_specs_exception
-      end
-
-      it "calls a method in an '||' expression and returns 'expression'" do
-        defined?(DefinedSpecs.side_effects || true).should == "expression"
-        ScratchPad.recorded.should == :defined_specs_side_effects
-      end
-
-      it "does not propagate an exception raised by a method in an 'or' expression" do
-        defined?(DefinedSpecs.exception_method or true).should be_nil
-        ScratchPad.recorded.should == :defined_specs_exception
-      end
-
-      it "calls a method in an 'or' expression and returns 'expression'" do
-        defined?(DefinedSpecs.side_effects or true).should == "expression"
-        ScratchPad.recorded.should == :defined_specs_side_effects
-      end
+    it "returns nil for an expression with '!' and an unset global variable" do
+      defined?(!$defined_specs_undefined_global_variable).should be_nil
     end
 
-    ruby_version_is "1.9" do
-      it "returns nil for an expression with '!' and an unset global variable" do
-        defined?(!$defined_specs_undefined_global_variable).should be_nil
-      end
+    it "returns nil for an expression with '!' and an unset instance variable" do
+      defined?(!@defined_specs_undefined_instance_variable).should be_nil
+    end
 
-      it "returns nil for an expression with '!' and an unset instance variable" do
-        defined?(!@defined_specs_undefined_instance_variable).should be_nil
-      end
+    it "returns 'method' for a 'not' expression with a method" do
+      defined?(not DefinedSpecs.side_effects).should == "method"
+    end
 
-      it "returns 'method' for a 'not' expression with a method" do
-        defined?(not DefinedSpecs.side_effects).should == "method"
-      end
+    it "calls a method in a 'not' expression and returns 'method'" do
+      defined?(not DefinedSpecs.side_effects).should == "method"
+      ScratchPad.recorded.should == :defined_specs_side_effects
+    end
 
-      it "calls a method in a 'not' expression and returns 'method'" do
-        defined?(not DefinedSpecs.side_effects).should == "method"
-        ScratchPad.recorded.should == :defined_specs_side_effects
-      end
+    it "returns nil for an expression with 'not' and an unset global variable" do
+      defined?(not $defined_specs_undefined_global_variable).should be_nil
+    end
 
-      it "returns nil for an expression with 'not' and an unset global variable" do
-        defined?(not $defined_specs_undefined_global_variable).should be_nil
-      end
+    it "returns nil for an expression with 'not' and an unset instance variable" do
+      defined?(not @defined_specs_undefined_instance_variable).should be_nil
+    end
 
-      it "returns nil for an expression with 'not' and an unset instance variable" do
-        defined?(not @defined_specs_undefined_instance_variable).should be_nil
-      end
+    it "returns 'expression' for an expression with '&&/and' and an undefined method" do
+      defined?(defined_specs_undefined_method && true).should == "expression"
+      defined?(defined_specs_undefined_method and true).should == "expression"
+    end
 
-      it "returns 'expression' for an expression with '&&/and' and an undefined method" do
-        defined?(defined_specs_undefined_method && true).should == "expression"
-        defined?(defined_specs_undefined_method and true).should == "expression"
-      end
+    it "returns 'expression' for an expression with '&&/and' and an unset class variable" do
+      defined?(@@defined_specs_undefined_class_variable && true).should == "expression"
+      defined?(@@defined_specs_undefined_class_variable and true).should == "expression"
+    end
 
-      it "returns 'expression' for an expression with '&&/and' and an unset class variable" do
-        defined?(@@defined_specs_undefined_class_variable && true).should == "expression"
-        defined?(@@defined_specs_undefined_class_variable and true).should == "expression"
-      end
+    it "does not call a method in an '&&' expression and returns 'expression'" do
+      defined?(DefinedSpecs.side_effects && true).should == "expression"
+      ScratchPad.recorded.should be_nil
+    end
 
-      it "does not call a method in an '&&' expression and returns 'expression'" do
-        defined?(DefinedSpecs.side_effects && true).should == "expression"
-        ScratchPad.recorded.should be_nil
-      end
+    it "does not call a method in an 'and' expression and returns 'expression'" do
+      defined?(DefinedSpecs.side_effects and true).should == "expression"
+      ScratchPad.recorded.should be_nil
+    end
 
-      it "does not call a method in an 'and' expression and returns 'expression'" do
-        defined?(DefinedSpecs.side_effects and true).should == "expression"
-        ScratchPad.recorded.should be_nil
-      end
+    it "returns 'expression' for an expression with '||/or' and an undefined method" do
+      defined?(defined_specs_undefined_method || true).should == "expression"
+      defined?(defined_specs_undefined_method or true).should == "expression"
+    end
 
-      it "returns 'expression' for an expression with '||/or' and an undefined method" do
-        defined?(defined_specs_undefined_method || true).should == "expression"
-        defined?(defined_specs_undefined_method or true).should == "expression"
-      end
+    it "returns 'expression' for an expression with '||/or' and an unset class variable" do
+      defined?(@@defined_specs_undefined_class_variable || true).should == "expression"
+      defined?(@@defined_specs_undefined_class_variable or true).should == "expression"
+    end
 
-      it "returns 'expression' for an expression with '||/or' and an unset class variable" do
-        defined?(@@defined_specs_undefined_class_variable || true).should == "expression"
-        defined?(@@defined_specs_undefined_class_variable or true).should == "expression"
-      end
+    it "does not call a method in an '||' expression and returns 'expression'" do
+      defined?(DefinedSpecs.side_effects || true).should == "expression"
+      ScratchPad.recorded.should be_nil
+    end
 
-      it "does not call a method in an '||' expression and returns 'expression'" do
-        defined?(DefinedSpecs.side_effects || true).should == "expression"
-        ScratchPad.recorded.should be_nil
-      end
-
-      it "does not call a method in an 'or' expression and returns 'expression'" do
-        defined?(DefinedSpecs.side_effects or true).should == "expression"
-        ScratchPad.recorded.should be_nil
-      end
+    it "does not call a method in an 'or' expression and returns 'expression'" do
+      defined?(DefinedSpecs.side_effects or true).should == "expression"
+      ScratchPad.recorded.should be_nil
     end
   end
 
@@ -502,36 +420,13 @@ describe "The defined? keyword for an expression" do
       defined?("garble #{DefinedSpecs.side_effects}").should == "expression"
     end
 
-    ruby_version_is ""..."1.9" do
-      it "returns nil when the String contains a call to an undefined method" do
-        defined?("garble #{DefinedSpecs.undefined_method}").should be_nil
-      end
-
-      it "calls the method in the String" do
-        defined?("garble #{DefinedSpecs.side_effects}").should == "expression"
-        ScratchPad.recorded.should == :defined_specs_side_effects
-      end
-
-      it "returns nil if any of the interpolated method calls are undefined" do
-        defined?("#{DefinedSpecs.side_effects} #{DefinedSpecs.undefined_method}").should be_nil
-        ScratchPad.recorded.should == :defined_specs_side_effects
-      end
-
-      it "returns nil and stops processing if any of the interpolated method calls are undefined" do
-        defined?("#{DefinedSpecs.undefined_method} #{DefinedSpecs.side_effects}").should be_nil
-        ScratchPad.recorded.should be_nil
-      end
+    it "returns 'expression' when the String contains a call to an undefined method" do
+      defined?("garble #{DefinedSpecs.undefined_method}").should == "expression"
     end
 
-    ruby_version_is "1.9" do
-      it "returns 'expression' when the String contains a call to an undefined method" do
-        defined?("garble #{DefinedSpecs.undefined_method}").should == "expression"
-      end
-
-      it "does not call the method in the String" do
-        defined?("garble #{DefinedSpecs.dynamic_string}").should == "expression"
-        ScratchPad.recorded.should be_nil
-      end
+    it "does not call the method in the String" do
+      defined?("garble #{DefinedSpecs.dynamic_string}").should == "expression"
+      ScratchPad.recorded.should be_nil
     end
   end
 
@@ -544,36 +439,13 @@ describe "The defined? keyword for an expression" do
       defined?(/garble #{DefinedSpecs.side_effects}/).should == "expression"
     end
 
-    ruby_version_is ""..."1.9" do
-      it "returns nil when the Regexp contains a call to an undefined method" do
-        defined?(/garble #{DefinedSpecs.undefined_method}/).should be_nil
-      end
-
-      it "calls the method in the Regexp" do
-        defined?(/garble #{DefinedSpecs.side_effects}/).should == "expression"
-        ScratchPad.recorded.should == :defined_specs_side_effects
-      end
-
-      it "returns nil if any of the interpolated method calls are undefined" do
-        defined?(/#{DefinedSpecs.side_effects} #{DefinedSpecs.undefined_method}/).should be_nil
-        ScratchPad.recorded.should == :defined_specs_side_effects
-      end
-
-      it "returns nil and stops processing if any of the interpolated method calls are undefined" do
-        defined?(/#{DefinedSpecs.undefined_method} #{DefinedSpecs.side_effects}/).should be_nil
-        ScratchPad.recorded.should be_nil
-      end
+    it "returns 'expression' when the Regexp contains a call to an undefined method" do
+      defined?(/garble #{DefinedSpecs.undefined_method}/).should == "expression"
     end
 
-    ruby_version_is "1.9" do
-      it "returns 'expression' when the Regexp contains a call to an undefined method" do
-        defined?(/garble #{DefinedSpecs.undefined_method}/).should == "expression"
-      end
-
-      it "does not call the method in the Regexp" do
-        defined?(/garble #{DefinedSpecs.dynamic_string}/).should == "expression"
-        ScratchPad.recorded.should be_nil
-      end
+    it "does not call the method in the Regexp" do
+      defined?(/garble #{DefinedSpecs.dynamic_string}/).should == "expression"
+      ScratchPad.recorded.should be_nil
     end
   end
 
@@ -691,58 +563,29 @@ describe "The defined? keyword for variables" do
       "mis-matched" =~ /s(-)m(.)/
     end
 
-    ruby_version_is ""..."1.9" do
-      it "returns 'global-variable' for $~" do
-        defined?($~).should == "global-variable"
-      end
-
-      it "returns 'global-variable' for $&" do
-        defined?($&).should == "$&"
-      end
-
-      it "returns 'global-variable' for $`" do
-        defined?($`).should == "$`"
-      end
-
-      it "returns 'global-variable' for $'" do
-        defined?($').should == "$'"
-      end
-
-      it "returns 'global-variable' for $+" do
-        defined?($+).should == "$+"
-      end
-
-      it "returns 'global-variable' for the capture references" do
-        defined?($1).should == "$1"
-        defined?($2).should == "$2"
-      end
+    it "returns 'global-variable' for $~" do
+      defined?($~).should == "global-variable"
     end
 
-    ruby_version_is "1.9" do
-      it "returns 'global-variable' for $~" do
-        defined?($~).should == "global-variable"
-      end
+    it "returns 'global-variable' for $&" do
+      defined?($&).should == "global-variable"
+    end
 
-      it "returns 'global-variable' for $&" do
-        defined?($&).should == "global-variable"
-      end
+    it "returns 'global-variable' for $`" do
+      defined?($`).should == "global-variable"
+    end
 
-      it "returns 'global-variable' for $`" do
-        defined?($`).should == "global-variable"
-      end
+    it "returns 'global-variable' for $'" do
+      defined?($').should == "global-variable"
+    end
 
-      it "returns 'global-variable' for $'" do
-        defined?($').should == "global-variable"
-      end
+    it "returns 'global-variable' for $+" do
+      defined?($+).should == "global-variable"
+    end
 
-      it "returns 'global-variable' for $+" do
-        defined?($+).should == "global-variable"
-      end
-
-      it "returns 'global-variable' for the capture references" do
-        defined?($1).should == "global-variable"
-        defined?($2).should == "global-variable"
-      end
+    it "returns 'global-variable' for the capture references" do
+      defined?($1).should == "global-variable"
+      defined?($2).should == "global-variable"
     end
 
     it "returns nil for non-captures" do
@@ -799,58 +642,29 @@ describe "The defined? keyword for variables" do
       /s(-)m(.)/ =~ "mis-matched"
     end
 
-    ruby_version_is ""..."1.9" do
-      it "returns 'global-variable' for $~" do
-        defined?($~).should == "global-variable"
-      end
-
-      it "returns 'global-variable' for $&" do
-        defined?($&).should == "$&"
-      end
-
-      it "returns 'global-variable' for $`" do
-        defined?($`).should == "$`"
-      end
-
-      it "returns 'global-variable' for $'" do
-        defined?($').should == "$'"
-      end
-
-      it "returns 'global-variable' for $+" do
-        defined?($+).should == "$+"
-      end
-
-      it "returns 'global-variable' for the capture references" do
-        defined?($1).should == "$1"
-        defined?($2).should == "$2"
-      end
+    it "returns 'global-variable' for $~" do
+      defined?($~).should == "global-variable"
     end
 
-    ruby_version_is "1.9" do
-      it "returns 'global-variable' for $~" do
-        defined?($~).should == "global-variable"
-      end
+    it "returns 'global-variable' for $&" do
+      defined?($&).should == "global-variable"
+    end
 
-      it "returns 'global-variable' for $&" do
-        defined?($&).should == "global-variable"
-      end
+    it "returns 'global-variable' for $`" do
+      defined?($`).should == "global-variable"
+    end
 
-      it "returns 'global-variable' for $`" do
-        defined?($`).should == "global-variable"
-      end
+    it "returns 'global-variable' for $'" do
+      defined?($').should == "global-variable"
+    end
 
-      it "returns 'global-variable' for $'" do
-        defined?($').should == "global-variable"
-      end
+    it "returns 'global-variable' for $+" do
+      defined?($+).should == "global-variable"
+    end
 
-      it "returns 'global-variable' for $+" do
-        defined?($+).should == "global-variable"
-      end
-
-      it "returns 'global-variable' for the capture references" do
-        defined?($1).should == "global-variable"
-        defined?($2).should == "global-variable"
-      end
+    it "returns 'global-variable' for the capture references" do
+      defined?($1).should == "global-variable"
+      defined?($2).should == "global-variable"
     end
 
     it "returns nil for non-captures" do
@@ -879,30 +693,9 @@ describe "The defined? keyword for variables" do
     DefinedSpecs::Basic.new.class_variable_defined.should == "class variable"
   end
 
-  ruby_version_is ""..."1.9" do
-    not_compliant_on :rubinius do
-      it "returns 'local-variable(in-block)' when called with the name of a block local" do
-        block = Proc.new { |xxx| defined?(xxx) }
-        block.call(1).should == "local-variable(in-block)"
-      end
-    end
-
-  deviates_on :rubinius do
-    # Rubinius does not care about dynamic vars
-    it "returns 'local-variable' when called with the name of a block local" do
-      block = Proc.new { |x| defined?(x) }
-      ret = block.call(1)
-      ret.should == 'local-variable'
-    end
-  end
-
-  end
-
-  ruby_version_is "1.9" do
-    it "returns 'local-variable' when called with the name of a block local" do
-      block = Proc.new { |xxx| defined?(xxx) }
-      block.call(1).should == "local-variable"
-    end
+  it "returns 'local-variable' when called with the name of a block local" do
+    block = Proc.new { |xxx| defined?(xxx) }
+    block.call(1).should == "local-variable"
   end
 end
 
@@ -953,18 +746,6 @@ describe "The defined? keyword for a scoped constant" do
     defined?(DefinedSpecs::Undefined).should be_nil
   end
 
-  ruby_version_is ""..."1.9" do
-    it "calls .const_missing if the parent to the constant is not defined" do
-      Object.should_receive(:const_missing).with(:DefinedSpecsUndefined).and_return(nil)
-      defined?(DefinedSpecsUndefined::A).should be_nil
-    end
-
-    it "calls .const_missing for the parent and uses the return constant for scope" do
-      Object.should_receive(:const_missing).with(:DefinedSpecsUndefined).and_return(DefinedSpecs)
-      defined?(DefinedSpecsUndefined::Child).should == "constant"
-    end
-  end
-
   it "does not call .const_missing if the constant is not defined" do
     DefinedSpecs.should_not_receive(:const_missing)
     defined?(DefinedSpecs::UnknownChild).should be_nil
@@ -978,24 +759,8 @@ describe "The defined? keyword for a scoped constant" do
     defined?(DefinedSpecs::Undefined::Undefined).should be_nil
   end
 
-  it "return 'constant' if the scoped-scoped constant is defined" do
+  it "returns 'constant' if the scoped-scoped constant is defined" do
     defined?(DefinedSpecs::Child::A).should == "constant"
-  end
-
-  ruby_version_is ""..."1.9" do
-    describe "when the scope chain has undefined constants" do
-      it "calls .const_missing for each constant in the scope chain and returns nil if any are not defined" do
-        Object.should_receive(:const_missing).with(:DefinedSpecsUndefined).and_return(DefinedSpecs)
-        DefinedSpecs.should_receive(:const_missing).with(:Undefined).and_return(nil)
-        defined?(DefinedSpecsUndefined::Undefined::Undefined).should be_nil
-      end
-
-      it "calls .const_missing and returns 'constant' if all constants are defined" do
-        Object.should_receive(:const_missing).with(:DefinedSpecsUndefined).and_return(DefinedSpecs)
-        DefinedSpecs.should_receive(:const_missing).with(:Undefined).and_return(DefinedSpecs::Child)
-        defined?(DefinedSpecsUndefined::Undefined::A).should == "constant"
-      end
-    end
   end
 end
 
@@ -1008,18 +773,6 @@ describe "The defined? keyword for a top-level scoped constant" do
     defined?(::DefinedSpecs::Undefined).should be_nil
   end
 
-  ruby_version_is ""..."1.9" do
-    it "calls .const_missing if the constant is not defined" do
-      Object.should_receive(:const_missing).with(:DefinedSpecsUndefined).and_return(nil)
-      defined?(::DefinedSpecsUndefined::A).should be_nil
-    end
-
-    it "calls .const_missing and uses the return constant for scope" do
-      Object.should_receive(:const_missing).with(:DefinedSpecsUndefined).and_return(DefinedSpecs)
-      defined?(::DefinedSpecsUndefined::Child).should == "constant"
-    end
-  end
-
   it "returns nil when an undefined constant is scoped to a defined constant" do
     defined?(::DefinedSpecs::Child::B).should be_nil
   end
@@ -1028,24 +781,8 @@ describe "The defined? keyword for a top-level scoped constant" do
     defined?(::DefinedSpecs::Undefined::Undefined).should be_nil
   end
 
-  it "return 'constant' if the scoped-scoped constant is defined" do
+  it "returns 'constant' if the scoped-scoped constant is defined" do
     defined?(::DefinedSpecs::Child::A).should == "constant"
-  end
-
-  ruby_version_is ""..."1.9" do
-    describe "when the scope chain has undefined constants" do
-      it "calls .const_missing for each constant in the scope chain and returns nil if any are not defined" do
-        Object.should_receive(:const_missing).with(:DefinedSpecsUndefined).and_return(DefinedSpecs)
-        DefinedSpecs.should_receive(:const_missing).with(:Undefined).and_return(nil)
-        defined?(::DefinedSpecsUndefined::Undefined::Undefined).should be_nil
-      end
-
-      it "calls .const_missing and returns 'constant' if all constants are defined" do
-        Object.should_receive(:const_missing).with(:DefinedSpecsUndefined).and_return(DefinedSpecs)
-        DefinedSpecs.should_receive(:const_missing).with(:Undefined).and_return(DefinedSpecs::Child)
-        defined?(::DefinedSpecsUndefined::Undefined::A).should == "constant"
-      end
-    end
   end
 end
 
@@ -1231,20 +968,16 @@ describe "The defined? keyword for super" do
       DefinedSpecs::Super.new.method_no_args.should == "super"
     end
 
-    ruby_bug '#6644', '1.9.3' do
-      it "returns 'super' from a block when a superclass method exists" do
-        DefinedSpecs::Super.new.method_block_no_args.should == nil
-      end
+    it "returns 'super' from a block when a superclass method exists" do
+      DefinedSpecs::Super.new.method_block_no_args.should == "super"
     end
 
     it "returns 'super' from a #define_method when a superclass method exists" do
       DefinedSpecs::Super.new.define_method_no_args.should == "super"
     end
 
-    ruby_bug '#6644', '1.9.3' do
-      it "returns 'super' from a block in a #define_method when a superclass method exists" do
-        DefinedSpecs::Super.new.define_method_block_no_args.should == nil
-      end
+    it "returns 'super' from a block in a #define_method when a superclass method exists" do
+      DefinedSpecs::Super.new.define_method_block_no_args.should == "super"
     end
 
     it "returns 'super' when the method exists in a supermodule" do
@@ -1273,20 +1006,16 @@ describe "The defined? keyword for super" do
       DefinedSpecs::Super.new.method_args.should == "super"
     end
 
-    ruby_bug '#6644', '1.9.3' do
-      it "returns 'super' from a block when a superclass method exists" do
-        DefinedSpecs::Super.new.method_block_args.should == nil
-      end
+    it "returns 'super' from a block when a superclass method exists" do
+      DefinedSpecs::Super.new.method_block_args.should == "super"
     end
 
     it "returns 'super' from a #define_method when a superclass method exists" do
       DefinedSpecs::Super.new.define_method_args.should == "super"
     end
 
-    ruby_bug '#6644', '1.9.3' do
-      it "returns 'super' from a block in a #define_method when a superclass method exists" do
-        DefinedSpecs::Super.new.define_method_block_args.should == nil
-      end
+    it "returns 'super' from a block in a #define_method when a superclass method exists" do
+      DefinedSpecs::Super.new.define_method_block_args.should == "super"
     end
   end
 
@@ -1309,3 +1038,78 @@ describe "The defined? keyword for instance variables" do
   end
 end
 
+describe "The defined? keyword for pseudo-variables" do
+  it "returns 'expression' for __FILE__" do
+    defined?(__FILE__).should == "expression"
+  end
+
+  it "returns 'expression' for __LINE__" do
+    defined?(__LINE__).should == "expression"
+  end
+
+  it "returns 'expression' for __ENCODING__" do
+    defined?(__ENCODING__).should == "expression"
+  end
+end
+
+describe "The defined? keyword for conditional expressions" do
+  it "returns 'expression' for an 'if' conditional" do
+    defined?(if x then 'x' else '' end).should == "expression"
+  end
+
+  it "returns 'expression' for an 'unless' conditional" do
+    defined?(unless x then '' else 'x' end).should == "expression"
+  end
+
+  it "returns 'expression' for ternary expressions" do
+    defined?(x ? 'x' : '').should == "expression"
+  end
+end
+
+describe "The defined? keyword for case expressions" do
+  it "returns 'expression'" do
+    defined?(case x; when 'x'; 'y' end).should == "expression"
+  end
+end
+
+describe "The defined? keyword for loop expressions" do
+  it "returns 'expression' for a 'for' expression" do
+    defined?(for n in 1..3 do true end).should == "expression"
+  end
+
+  it "returns 'expression' for a 'while' expression" do
+    defined?(while x do y end).should == "expression"
+  end
+
+  it "returns 'expression' for an 'until' expression" do
+    defined?(until x do y end).should == "expression"
+  end
+
+  it "returns 'expression' for a 'break' expression" do
+    defined?(break).should == "expression"
+  end
+
+  it "returns 'expression' for a 'next' expression" do
+    defined?(next).should == "expression"
+  end
+
+  it "returns 'expression' for a 'redo' expression" do
+    defined?(redo).should == "expression"
+  end
+
+  it "returns 'expression' for a 'retry' expression" do
+    defined?(retry).should == "expression"
+  end
+end
+
+describe "The defined? keyword for return expressions" do
+  it "returns 'expression'" do
+    defined?(return).should == "expression"
+  end
+end
+
+describe "The defined? keyword for exception expressions" do
+  it "returns 'expression'" do
+    defined?(begin 1 end).should == "expression"
+  end
+end

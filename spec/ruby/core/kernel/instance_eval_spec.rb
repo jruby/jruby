@@ -19,22 +19,8 @@ describe "Kernel#instance_eval" do
     ScratchPad.recorded.should == "hola"
   end
 
-  ruby_version_is "".."1.9.0" do
-    it "returns the result of the block" do
-      "hola".instance_eval { :result }.should == :result
-    end
-  end
-
-  ruby_version_is "1.9.1".."1.9.2" do
-    it "returns nil" do
-      "hola".instance_eval { :result }.should == nil
-    end
-  end
-
-  ruby_version_is "1.9.2" do
-    it "returns the result of the block" do
-      "hola".instance_eval { :result }.should == :result
-    end
+  it "returns the result of the block" do
+    "hola".instance_eval { :result }.should == :result
   end
 
   it "only binds the eval to the receiver" do
@@ -51,20 +37,6 @@ describe "Kernel#instance_eval" do
   # TODO: This should probably be replaced with a "should behave like" that uses
   # the many scoping/binding specs from kernel/eval_spec, since most of those
   # behaviors are the same for instance_eval. See also module_eval/class_eval.
-
-  # Feature removed in 1.9
-  ruby_version_is ""..."1.9" do
-    it "shares a scope across sibling evals" do
-      a, b = Object.new, Object.new
-
-      result = nil
-      a.instance_eval "x = 1"
-      lambda do
-        b.instance_eval "result = x"
-      end.should_not raise_error
-      result.should == 1
-    end
-  end
 
   it "binds self to the receiver" do
     s = "hola"
@@ -102,20 +74,11 @@ describe "Kernel#instance_eval" do
     prc.call(false, prc).should == 1
   end
 
-  ruby_version_is ""..."1.9" do
-    it "sets class variables in the receiver" do
-      KernelSpecs::IncludesInstEval.class_variables.should include("@@count")
-      KernelSpecs::IncludesInstEval.send(:class_variable_get, :@@count).should == 2
-    end
-  end
-
-  ruby_version_is "1.9" do
-    # On 1.9 class variables aren't inherited so we have to modify the test
-    # from 1.8
-    it "sets class variables in the receiver" do
-      KernelSpecs::InstEvalCVar.class_variables.should include(:@@count)
-      KernelSpecs::InstEvalCVar.send(:class_variable_get, :@@count).should == 2
-    end
+  # On 1.9 class variables aren't inherited so we have to modify the test
+  # from 1.8
+  it "sets class variables in the receiver" do
+    KernelSpecs::InstEvalCVar.class_variables.should include(:@@count)
+    KernelSpecs::InstEvalCVar.send(:class_variable_get, :@@count).should == 2
   end
 
   it "makes the receiver metaclass the scoped class when used with a string" do

@@ -7,5 +7,5 @@ describe "Struct#size" do
     StructClasses::Car.new.size.should == StructClasses::Car.new.length
   end
 
-  it_behaves_like :struct_accessor, :length
+  it_behaves_like :struct_accessor, :size
 end

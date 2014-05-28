@@ -30,7 +30,7 @@ describe :file_unlink, :shared => true do
     File.exists?(@file2).should == false
   end
 
-  it "raises an TypeError if not passed a String type" do
+  it "raises a TypeError if not passed a String type" do
     lambda { File.send(@method, 1) }.should raise_error(TypeError)
   end
 
@@ -48,9 +48,7 @@ describe :file_unlink, :shared => true do
     File.send(@method, Coercable.new).should == 1
   end
 
-  ruby_version_is "1.9" do
-    it "accepts an object that has a #to_path method" do
-      File.send(@method, mock_to_path(@file1)).should == 1
-    end
+  it "accepts an object that has a #to_path method" do
+    File.send(@method, mock_to_path(@file1)).should == 1
   end
 end

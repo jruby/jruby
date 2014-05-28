@@ -11,21 +11,25 @@ describe "Module#const_get" do
     lambda { ConstantSpecs.const_get :CS_CONSTX }.should raise_error(NameError)
   end
 
+  it "raises a NameError with the not found constant symbol" do
+    error_inspection = lambda { |e| e.name.should == :CS_CONSTX }
+    lambda { ConstantSpecs.const_get :CS_CONSTX }.should raise_error(NameError, &error_inspection)
+  end
+
   it "raises a NameError if the name does not start with a capital letter" do
     lambda { ConstantSpecs.const_get "name" }.should raise_error(NameError)
   end
 
   it "raises a NameError if the name starts with a non-alphabetic character" do
     lambda { ConstantSpecs.const_get "__CONSTX__" }.should raise_error(NameError)
-    lambda { ConstantSpecs.const_get "@Name" }.should raise_error(NameError)
-    lambda { ConstantSpecs.const_get "!Name" }.should raise_error(NameError)
-    lambda { ConstantSpecs.const_get "::Name" }.should raise_error(NameError)
+    lambda { ConstantSpecs.const_get "@CS_CONST1" }.should raise_error(NameError)
+    lambda { ConstantSpecs.const_get "!CS_CONST1" }.should raise_error(NameError)
   end
 
   it "raises a NameError if the name contains non-alphabetic characters except '_'" do
     Object.const_get("CS_CONST1").should == :const1
-    lambda { ConstantSpecs.const_get "Name=" }.should raise_error(NameError)
-    lambda { ConstantSpecs.const_get "Name?" }.should raise_error(NameError)
+    lambda { ConstantSpecs.const_get "CS_CONST1=" }.should raise_error(NameError)
+    lambda { ConstantSpecs.const_get "CS_CONST1?" }.should raise_error(NameError)
   end
 
   it "calls #to_str to convert the given name to a String" do
@@ -61,28 +65,46 @@ describe "Module#const_get" do
     end.should raise_error(NameError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a NameError if the constant is defined in the receiver's supperclass and the inherit flag is false" do
-      lambda do
-        ConstantSpecs::ContainerA::ChildA.const_get(:CS_CONST4, false)
-      end.should raise_error(NameError)
-    end
+  it "raises a NameError if the constant is defined in the receiver's supperclass and the inherit flag is false" do
+    lambda do
+      ConstantSpecs::ContainerA::ChildA.const_get(:CS_CONST4, false)
+    end.should raise_error(NameError)
+  end
 
-    it "searches into the receiver superclasses if the inherit flag is true" do
-      ConstantSpecs::ContainerA::ChildA.const_get(:CS_CONST4, true).should == :const4
-    end
-    
-    it "raises a NameError when the receiver is a Module, the constant is defined at toplevel and the inherit flag is false" do
-      lambda do
-        ConstantSpecs::ModuleA.const_get(:CS_CONST1, false)
-      end.should raise_error(NameError)
-    end
+  it "searches into the receiver superclasses if the inherit flag is true" do
+    ConstantSpecs::ContainerA::ChildA.const_get(:CS_CONST4, true).should == :const4
+  end
 
-    it "raises a NameError when the receiver is a Class, the constant is defined at toplevel and the inherit flag is false" do
-      lambda do
-        ConstantSpecs::ContainerA::ChildA.const_get(:CS_CONST1, false)
-      end.should raise_error(NameError)
-    end
+  it "raises a NameError when the receiver is a Module, the constant is defined at toplevel and the inherit flag is false" do
+    lambda do
+      ConstantSpecs::ModuleA.const_get(:CS_CONST1, false)
+    end.should raise_error(NameError)
+  end
+
+  it "raises a NameError when the receiver is a Class, the constant is defined at toplevel and the inherit flag is false" do
+    lambda do
+      ConstantSpecs::ContainerA::ChildA.const_get(:CS_CONST1, false)
+    end.should raise_error(NameError)
+  end
+
+  it "accepts a toplevel scope qualifier" do
+    ConstantSpecs.const_get("::CS_CONST1").should == :const1
+  end
+
+  it "accepts a scoped constant name" do
+    ConstantSpecs.const_get("ClassA::CS_CONST10").should == :const10_10
+  end
+
+  it "raises a NameError if only '::' is passed" do
+    lambda { ConstantSpecs.const_get("::") }.should raise_error(NameError)
+  end
+
+  it "raises a NameError if a Symbol has a toplevel scope qualifier" do
+    lambda { ConstantSpecs.const_get(:'::CS_CONST1') }.should raise_error(NameError)
+  end
+
+  it "raises a NameError if a Symbol is a scoped constant name" do
+    lambda { ConstantSpecs.const_get(:'ClassA::CS_CONST10') }.should raise_error(NameError)
   end
 
   describe "with statically assigned constants" do

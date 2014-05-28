@@ -8,6 +8,15 @@ describe :kernel_send, :shared => true do
     KernelSpecs::Foo.new.send(@method, :bar).should == 'done'
   end
 
+  it "accepts a String method name" do
+    class KernelSpecs::Foo
+      def bar
+        'done'
+      end
+    end
+    KernelSpecs::Foo.new.send(@method, 'bar').should == 'done'
+  end
+
   it "invokes a class method if called on a class" do
     class KernelSpecs::Foo
       def self.bar

@@ -244,16 +244,36 @@ describe "CApiModule" do
   end
 
   describe "rb_undef_method" do
-    it "undef'ines a method on a class" do
-      cls = Class.new do
+    before(:each) do
+      @class = Class.new do
         def ruby_test_method
           :ruby_test_method
         end
       end
+    end
 
-      cls.new.ruby_test_method.should == :ruby_test_method
-      @m.rb_undef_method cls, "ruby_test_method"
-      cls.should_not have_instance_method(:ruby_test_method)
+    it "undef'ines a method on a class" do
+      @class.new.ruby_test_method.should == :ruby_test_method
+      @m.rb_undef_method @class, "ruby_test_method"
+      @class.should_not have_instance_method(:ruby_test_method)
+    end
+
+    it "does not raise exceptions when passed a missing name" do
+      lambda { @m.rb_undef_method @class, "not_exist" }.should_not raise_error
+    end
+
+    describe "when given a frozen Class" do
+      before(:each) do
+        @frozen = @class.dup.freeze
+      end
+
+      it "raises a RuntimeError when passed a name" do
+        lambda { @m.rb_undef_method @frozen, "ruby_test_method" }.should raise_error(RuntimeError)
+      end
+
+      it "raises a RuntimeError when passed a missing name" do
+        lambda { @m.rb_undef_method @frozen, "not_exist" }.should raise_error(RuntimeError)
+      end
     end
   end
 

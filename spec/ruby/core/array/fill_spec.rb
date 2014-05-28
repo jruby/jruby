@@ -43,22 +43,12 @@ describe "Array#fill" do
     [nil, nil, nil, nil].fill { |i| i * 2 }.should == [0, 2, 4, 6]
   end
 
-  ruby_version_is '' ... '1.9' do
-    it "raises a TypeError on a frozen array" do
-      lambda { ArraySpecs.frozen_array.fill('x') }.should raise_error(TypeError)
-    end
-    it "raises a TypeError on an empty frozen array" do
-      lambda { ArraySpecs.empty_frozen_array.fill('x') }.should raise_error(TypeError)
-    end
+  it "raises a RuntimeError on a frozen array" do
+    lambda { ArraySpecs.frozen_array.fill('x') }.should raise_error(RuntimeError)
   end
 
-  ruby_version_is '1.9' do
-    it "raises a RuntimeError on a frozen array" do
-      lambda { ArraySpecs.frozen_array.fill('x') }.should raise_error(RuntimeError)
-    end
-    it "raises a RuntimeError on an empty frozen array" do
-      lambda { ArraySpecs.empty_frozen_array.fill('x') }.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError on an empty frozen array" do
+    lambda { ArraySpecs.empty_frozen_array.fill('x') }.should raise_error(RuntimeError)
   end
 
   it "raises an ArgumentError if 4 or more arguments are passed when no block given" do
@@ -98,7 +88,7 @@ describe "Array#fill with (filler, index, length)" do
     [true, false, true, false, true, false, true].fill(1, 4) { |i| i + 3 }.should == [true, 4, 5, 6, 7, false, true]
   end
 
-  it "replaces all elements after the index if given an index and no length " do
+  it "replaces all elements after the index if given an index and no length" do
     ary = [1, 2, 3]
     ary.fill('x', 1).should == [1, 'x', 'x']
     ary.fill(1){|i| i*2}.should == [1, 2, 4]
@@ -326,7 +316,7 @@ describe "Array#fill with (filler, range)" do
     [1, 2, 3, 4, 5, 6].fill(2..-5, &@never_passed).should == [1, 2, 3, 4, 5, 6]
   end
 
-  it "raise an exception if some of the given range lies before the first of the array" do
+  it "raises an exception if some of the given range lies before the first of the array" do
     lambda { [1, 2, 3].fill('x', -5..-3) }.should raise_error(RangeError)
     lambda { [1, 2, 3].fill('x', -5...-3) }.should raise_error(RangeError)
     lambda { [1, 2, 3].fill('x', -5..-4) }.should raise_error(RangeError)

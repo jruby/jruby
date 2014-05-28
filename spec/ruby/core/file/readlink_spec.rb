@@ -15,7 +15,7 @@ describe "File.readlink" do
         rm_r @file, @link
       end
 
-      it "return the name of the file referenced by the given link" do
+      it "returns the name of the file referenced by the given link" do
         touch @file
         File.readlink(@link).should == @file
       end

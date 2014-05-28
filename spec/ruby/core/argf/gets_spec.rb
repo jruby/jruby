@@ -29,4 +29,28 @@ describe "ARGF.gets" do
       ARGF.gets.should == nil
     end
   end
+
+  with_feature :encoding do
+
+    before :each do
+      @external = Encoding.default_external
+      @internal = Encoding.default_internal
+
+      Encoding.default_external = Encoding::UTF_8
+      Encoding.default_internal = nil
+    end
+
+    after :each do
+      Encoding.default_external = @external
+      Encoding.default_internal = @internal
+    end
+
+    it "reads the contents of the file with default encoding" do
+      Encoding.default_external = Encoding::US_ASCII
+      argv [@file1_name, @file2_name] do
+        ARGF.gets.encoding.should == Encoding::US_ASCII
+      end
+    end
+  end
+
 end

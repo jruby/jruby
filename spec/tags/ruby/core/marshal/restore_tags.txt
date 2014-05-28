@@ -9,3 +9,7 @@ fails:Marshal.restore for a user Class loads a user-marshaled extended object
 fails:Marshal.restore for a user Class loads an extended Object
 fails:Marshal.restore for a Regexp loads an extended Regexp
 fails:Marshal.restore for a Regexp loads a extended_user_regexp having ivar
+fails:Marshal.restore when source is tainted does not taint Bignums
+fails:Marshal.restore when source is tainted does not taint Floats
+fails:Marshal.restore when a class with the same name as the dumped one exists outside the namespace raises a NameError
+fails:Marshal.restore when a class with the same name as the dumped one exists outside the namespace invokes Module#const_missing

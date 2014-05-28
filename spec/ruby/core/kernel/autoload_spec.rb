@@ -55,6 +55,26 @@ describe "Kernel#autoload" do
       KSAutoloadD.loaded.should == :ksautoload_d
     end
   end
+
+  describe "when Object is frozen" do
+    before(:each) do
+      non_existent = fixture __FILE__, "no_autoload.rb"
+
+      @script = <<-"EOD"
+        Object.freeze
+
+        begin
+          autoload :ANY_CONSTANT, "#{non_existent}"
+        rescue Exception => e
+          print e.class, " - ", defined?(ANY_CONSTANT).inspect
+        end
+      EOD
+    end
+
+    it "raises a RuntimeError before defining the constant" do
+      ruby_exe(@script, :args => "2>&1", :escape => true).should == "RuntimeError - nil"
+    end
+  end
 end
 
 describe "Kernel#autoload?" do
@@ -93,24 +113,16 @@ describe "Kernel.autoload" do
     Kernel.autoload?(:KSAutoloadAA).should == @non_existent
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "sets the autoload constant in Object's constant table" do
-      Object.should have_constant(:KSAutoloadBB)
+  it "sets the autoload constant in Object's metaclass's constant table" do
+    class << Object
+      should have_constant(:KSAutoloadBB)
     end
   end
 
-  ruby_version_is "1.9" do
-    it "sets the autoload constant in Object's metaclass's constant table" do
-      class << Object
-        should have_constant(:KSAutoloadBB)
-      end
-    end
-
-    it "calls #to_path on non-String filenames" do
-      p = mock('path')
-      p.should_receive(:to_path).and_return @non_existent
-      Kernel.autoload :KSAutoloadAA, p
-    end
+  it "calls #to_path on non-String filenames" do
+    p = mock('path')
+    p.should_receive(:to_path).and_return @non_existent
+    Kernel.autoload :KSAutoloadAA, p
   end
 end
 

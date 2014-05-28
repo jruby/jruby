@@ -99,36 +99,28 @@ describe "IO#ungetc" do
     lambda { @io.sysread(1) }.should raise_error(IOError)
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "raises IOError when invoked on stream that was not yet read" do
-      lambda { @io.ungetc(100) }.should raise_error(IOError)
-    end
+  it "does not affect the stream and returns nil when passed nil" do
+    @io.getc.should == ?V
+    @io.ungetc(nil)
+    @io.getc.should == ?o
   end
 
-  ruby_version_is "1.9" do
-    it "does not affect the stream and returns nil when passed nil" do
-      @io.getc.should == ?V
-      @io.ungetc(nil)
-      @io.getc.should == ?o
-    end
+  it "puts one or more characters back in the stream" do
+    @io.gets
+    @io.ungetc("Aquí ").should be_nil
+    @io.gets.chomp.should == "Aquí Qui è la linea due."
+  end
 
-    it "puts one or more characters back in the stream" do
-      @io.gets
-      @io.ungetc("Aquí ").should be_nil
-      @io.gets.chomp.should == "Aquí Qui è la linea due."
-    end
+  it "calls #to_str to convert the argument if it is not an Integer" do
+    chars = mock("io ungetc")
+    chars.should_receive(:to_str).and_return("Aquí ")
 
-    it "calls #to_str to convert the argument if it is not an Integer" do
-      chars = mock("io ungetc")
-      chars.should_receive(:to_str).and_return("Aquí ")
+    @io.ungetc(chars).should be_nil
+    @io.gets.chomp.should == "Aquí Voici la ligne une."
+  end
 
-      @io.ungetc(chars).should be_nil
-      @io.gets.chomp.should == "Aquí Voici la ligne une."
-    end
-
-    it "returns nil when invoked on stream that was not yet read" do
-      @io.ungetc(100).should be_nil
-    end
+  it "returns nil when invoked on stream that was not yet read" do
+    @io.ungetc(100).should be_nil
   end
 
   it "raises IOError on closed stream" do

@@ -265,33 +265,16 @@ describe "String#%" do
     ("%.4b" % 2).should == "0010"
   end
 
-  ruby_version_is ""..."1.9" do
-    it "supports binary formats using %b for negative numbers" do
-      ("%b" % -5).should == "..1011"
-      ("%0b" % -5).should == "1011"
-      ("%.4b" % 2).should == "0010"
-      ("%.1b" % -5).should == "1011"
-      ("%.7b" % -5).should == "1111011"
-      ("%.10b" % -5).should == "1111111011"
-      ("% b" % -5).should == "-101"
-      ("%+b" % -5).should == "-101"
-      ("%b" % -(2 ** 64 + 5)).should ==
-      "..101111111111111111111111111111111111111111111111111111111111111011"
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "supports binary formats using %b for negative numbers" do
-      ("%b" % -5).should == "..1011"
-      ("%0b" % -5).should == "..1011"
-      ("%.1b" % -5).should == "..1011"
-      ("%.7b" % -5).should == "..11011"
-      ("%.10b" % -5).should == "..11111011"
-      ("% b" % -5).should == "-101"
-      ("%+b" % -5).should == "-101"
-      ("%b" % -(2 ** 64 + 5)).should ==
-      "..101111111111111111111111111111111111111111111111111111111111111011"
-    end
+  it "supports binary formats using %b for negative numbers" do
+    ("%b" % -5).should == "..1011"
+    ("%0b" % -5).should == "..1011"
+    ("%.1b" % -5).should == "..1011"
+    ("%.7b" % -5).should == "..11011"
+    ("%.10b" % -5).should == "..11111011"
+    ("% b" % -5).should == "-101"
+    ("%+b" % -5).should == "-101"
+    ("%b" % -(2 ** 64 + 5)).should ==
+    "..101111111111111111111111111111111111111111111111111111111111111011"
   end
 
   it "supports binary formats using %B with same behaviour as %b except for using 0B instead of 0b for #" do
@@ -316,63 +299,42 @@ describe "String#%" do
     ("%#B" % 10).should == "0B1010"
   end
 
-  ruby_version_is ""..."1.9" do
-    it "supports character formats using %c" do
-      ("%c" % 10).should == "\n"
-      ("%2$c" % [10, 11, 14]).should == "\v"
-      ("%-4c" % 10).should == "\n   "
-      ("%*c" % [10, 3]).should == "         \003"
-      ("%c" % (256 + 42)).should == "*"
+  it "supports character formats using %c" do
+    ("%c" % 10).should == "\n"
+    ("%2$c" % [10, 11, 14]).should == "\v"
+    ("%-4c" % 10).should == "\n   "
+    ("%*c" % [10, 3]).should == "         \003"
+    ("%c" % 42).should == "*"
 
-      lambda { "%c" % Object }.should raise_error(TypeError)
-    end
-
-    it "uses argument % 256" do
-      ("%c" % [256 * 3 + 64]).should == ("%c" % 64)
-      ("%c" % -200).should == ("%c" % 56)
-    end
+    lambda { "%c" % Object }.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9" do
-    it "supports character formats using %c" do
-      ("%c" % 10).should == "\n"
-      ("%2$c" % [10, 11, 14]).should == "\v"
-      ("%-4c" % 10).should == "\n   "
-      ("%*c" % [10, 3]).should == "         \003"
-      ("%c" % 42).should == "*"
-
-      lambda { "%c" % Object }.should raise_error(TypeError)
-    end
-
-    it "supports single character strings as argument for %c" do
-      ("%c" % 'A').should == "A"
-    end
-
-    it "raises an exception for multiple character strings as argument for %c" do
-      lambda { "%c" % 'AA' }.should raise_error(ArgumentError)
-    end
-
-    it "calls to_str on argument for %c formats" do
-      obj = mock('A')
-      obj.should_receive(:to_str).and_return('A')
-
-      ("%c" % obj).should == "A"
-    end
+  it "supports single character strings as argument for %c" do
+    ("%c" % 'A').should == "A"
   end
 
-  ruby_version_is "1.8.6.278" do
-    it "calls #to_ary on argument for %c formats" do
-      obj = mock('65')
-      obj.should_receive(:to_ary).and_return([65])
-      ("%c" % obj).should == ("%c" % [65])
-    end
+  it "raises an exception for multiple character strings as argument for %c" do
+    lambda { "%c" % 'AA' }.should raise_error(ArgumentError)
+  end
 
-    it "calls #to_int on argument for %c formats, if the argument does not respond to #to_ary" do
-      obj = mock('65')
-      obj.should_receive(:to_int).and_return(65)
+  it "calls to_str on argument for %c formats" do
+    obj = mock('A')
+    obj.should_receive(:to_str).and_return('A')
 
-      ("%c" % obj).should == ("%c" % 65)
-    end
+    ("%c" % obj).should == "A"
+  end
+
+  it "calls #to_ary on argument for %c formats" do
+    obj = mock('65')
+    obj.should_receive(:to_ary).and_return([65])
+    ("%c" % obj).should == ("%c" % [65])
+  end
+
+  it "calls #to_int on argument for %c formats, if the argument does not respond to #to_ary" do
+    obj = mock('65')
+    obj.should_receive(:to_int).and_return(65)
+
+    ("%c" % obj).should == ("%c" % 65)
   end
 
   %w(d i).each do |f|
@@ -386,6 +348,7 @@ describe "String#%" do
       ("%-7#{f}" % 10).should == "10     "
       ("%04#{f}" % 10).should == "0010"
       ("%*#{f}" % [10, 4]).should == "         4"
+      ("%6.4#{f}" % 123).should == "  0123"
     end
 
     it "supports negative integers using #{format}" do
@@ -393,23 +356,14 @@ describe "String#%" do
       ("%3#{f}" % -5).should == " -5"
       ("%03#{f}" % -5).should == "-05"
       ("%+03#{f}" % -5).should == "-05"
+      ("%+.2#{f}" % -5).should == "-05"
       ("%-3#{f}" % -5).should == "-5 "
+      ("%6.4#{f}" % -123).should == " -0123"
     end
 
-    # The following version inconsistency in negative-integers is explained in
-    # http://ujihisa.blogspot.com/2009/12/string-differs-between-ruby-18-and-19.html
-    ruby_version_is ""..."1.9" do
-      it "supports negative integers using #{format}, giving priority to `0`" do
-        ("%-03#{f}" % -5).should == "-05"
-        ("%+-03#{f}" % -5).should == "-05"
-      end
-    end
-
-    ruby_version_is "1.9" do
-      it "supports negative integers using #{format}, giving priority to `-`" do
-        ("%-03#{f}" % -5).should == "-5 "
-        ("%+-03#{f}" % -5).should == "-5 "
-      end
+    it "supports negative integers using #{format}, giving priority to `-`" do
+      ("%-03#{f}" % -5).should == "-5 "
+      ("%+-03#{f}" % -5).should == "-5 "
     end
   end
 
@@ -422,29 +376,6 @@ describe "String#%" do
     ("%-7e" % 10).should == "1.000000e+01"
     ("%05e" % 10).should == "1.000000e+01"
     ("%*e" % [10, 9]).should == "9.000000e+00"
-  end
-
-  ruby_version_is ""..."1.9" do
-    not_compliant_on :rubinius, :jruby do
-      it "supports float formats using %e, and downcases -Inf, Inf" do
-        ("%e" % 1e1020).should == "inf"
-        ("%e" % -1e1020).should == "-inf"
-      end
-
-      platform_is :bsd do
-        it "supports float formats using %e, and downcases NaN" do
-          ("%e" % (0.0/0)).should == "nan"
-          ("%e" % (-0e0/0)).should == "nan"
-        end
-      end
-
-      platform_is :linux do
-        it "supports float formats using %e, and downcases -NaN" do
-          ("%e" % (0.0/0)).should == "-nan"
-          ("%e" % (-0e0/0)).should == "-nan"
-        end
-      end
-    end
   end
 
   # Inf, -Inf, and NaN are identifiers for results of floating point operations
@@ -484,62 +415,10 @@ describe "String#%" do
   end
 
   not_compliant_on :rubinius, :jruby do
-    ruby_version_is ""..."1.9" do
-      it "supports float formats using %E, and upcases Inf, -Inf" do
-        ("%E" % 1e1020).should == "INF"
-        ("%E" % -1e1020).should == "-INF"
-        ("%-10E" % 1e1020).should == "INF       "
-        ("%+E" % 1e1020).should == "+INF"
-        ("% E" % 1e1020).should == " INF"
-      end
-
-      platform_is :bsd do
-        it "supports float formats using %E, and upcases NaN" do
-          ("%E" % (0.0/0)).should == "NAN"
-          ("%E" % (-0e0/0)).should == "NAN"
-        end
-      end
-
-      platform_is :linux do
-        it "supports float formats using %E, and upcases -NaN" do
-          ("%E" % (0.0/0)).should == "-NAN"
-          ("%E" % (-0e0/0)).should == "-NAN"
-        end
-      end
-    end
-
-    ruby_version_is ""..."1.9" do
-      platform_is :darwin do
-        it "pads with zeros using %E with Inf, -Inf, and NaN" do
-          ("%010E" % -1e1020).should == "-000000INF"
-          ("%010E" % 1e1020).should == "0000000INF"
-          ("%010E" % (0.0/0)).should == "0000000NAN"
-        end
-      end
-
-      platform_is :linux do
-        it "pads with spaces for %E with Inf, -Inf, and NaN" do
-          ("%010E" % -1e1020).should == "      -INF"
-          ("%010E" % 1e1020).should == "       INF"
-          ("%010E" % (0.0/0)).should == "      -NAN"
-        end
-      end
-
-      platform_is_not :darwin, :linux do
-        it "pads with spaces for %E with Inf, -Inf, and NaN" do
-          ("%010E" % -1e1020).should == "      -INF"
-          ("%010E" % 1e1020).should == "       INF"
-          ("%010E" % (0.0/0)).should == "       NAN"
-        end
-      end
-    end
-
-    ruby_version_is "1.9" do
-      it "pads with spaces for %E with Inf, -Inf, and NaN" do
-        ("%010E" % -1e1020).should == "      -Inf"
-        ("%010E" % 1e1020).should == "       Inf"
-        ("%010E" % (0.0/0)).should == "       NaN"
-      end
+    it "pads with spaces for %E with Inf, -Inf, and NaN" do
+      ("%010E" % -1e1020).should == "      -Inf"
+      ("%010E" % 1e1020).should == "       Inf"
+      ("%010E" % (0.0/0)).should == "       NaN"
     end
   end
 
@@ -592,36 +471,18 @@ describe "String#%" do
     ("%*o" % [10, 6]).should == "         6"
   end
 
-  ruby_version_is ""..."1.9" do
-    it "supports octal formats using %o for negative numbers" do
-      # These are incredibly wrong. -05 == -5, not 7177777...whatever
-      ("%o" % -5).should == "..73"
-      ("%0o" % -5).should == "73"
-      ("%.4o" % 20).should == "0024"
-      ("%.1o" % -5).should == "73"
-      ("%.7o" % -5).should == "7777773"
-      ("%.10o" % -5).should == "7777777773"
+  it "supports octal formats using %o for negative numbers" do
+    # These are incredibly wrong. -05 == -5, not 7177777...whatever
+    ("%o" % -5).should == "..73"
+    ("%0o" % -5).should == "..73"
+    ("%.4o" % 20).should == "0024"
+    ("%.1o" % -5).should == "..73"
+    ("%.7o" % -5).should == "..77773"
+    ("%.10o" % -5).should == "..77777773"
 
-      ("% o" % -26).should == "-32"
-      ("%+o" % -26).should == "-32"
-      ("%o" % -(2 ** 64 + 5)).should == "..75777777777777777777773"
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "supports octal formats using %o for negative numbers" do
-      # These are incredibly wrong. -05 == -5, not 7177777...whatever
-      ("%o" % -5).should == "..73"
-      ("%0o" % -5).should == "..73"
-      ("%.4o" % 20).should == "0024"
-      ("%.1o" % -5).should == "..73"
-      ("%.7o" % -5).should == "..77773"
-      ("%.10o" % -5).should == "..77777773"
-
-      ("% o" % -26).should == "-32"
-      ("%+o" % -26).should == "-32"
-      ("%o" % -(2 ** 64 + 5)).should == "..75777777777777777777773"
-    end
+    ("% o" % -26).should == "-32"
+    ("%+o" % -26).should == "-32"
+    ("%o" % -(2 ** 64 + 5)).should == "..75777777777777777777773"
   end
 
   it "supports inspect formats using %p" do
@@ -688,12 +549,6 @@ describe "String#%" do
     ("%s" % mock('x').taint).tainted?.should == true
   end
 
-  ruby_version_is ""..."2.0" do
-    it "taints result for %s when argument is tainted float" do
-      ("%s" % 0.0.taint).tainted?.should == true # float is frozen on 2.0
-    end
-  end
-
   # MRI crashes on this one.
   # See http://groups.google.com/group/ruby-core-google/t/c285c18cd94c216d
   it "raises an ArgumentError for huge precisions for %s" do
@@ -714,48 +569,14 @@ describe "String#%" do
     ("%*u" % [10, 4]).should == "         4"
   end
 
-  ruby_version_is "" ... "1.9" do
-    platform_is :wordsize => 64 do
-      it "supports unsigned formats using %u on 64-bit" do
-        ("%u" % -5).should == "..#{2**64 - 5}"
-        ("%0u" % -5).should == (2**64 - 5).to_s
-        ("%.1u" % -5).should == (2**64 - 5).to_s
-        ("%.7u" % -5).should == (2**64 - 5).to_s
-        ("%.10u" % -5).should == (2**64 - 5).to_s
-      end
-    end
-
-    platform_is :wordsize => 32 do
-      it "supports unsigned formats using %u on 32-bit" do
-        ("%u" % -5).should == "..#{2**32 - 5}"
-        ("%0u" % -5).should == (2**32 - 5).to_s
-        ("%.1u" % -5).should == (2**32 - 5).to_s
-        ("%.7u" % -5).should == (2**32 - 5).to_s
-        ("%.10u" % -5).should == (2**32 - 5).to_s
-      end
-    end
-  end
-
   it "formats negative values with a leading sign using %u" do
     ("% u" % -26).should == "-26"
     ("%+u" % -26).should == "-26"
   end
 
-  ruby_version_is ""..."1.9" do
-    # This is the proper, compliant behavior of both JRuby, and
-    # MRI 1.8.6 with patchlevel greater than 114.
-    ruby_bug "http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/8418", "1.8.6.114" do
-      it "supports negative bignums by prefixing the value with dots" do
-        ("%u" % -(2 ** 64 + 5)).should == "..79228162495817593519834398715"
-      end
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "supports negative bignums with %u or %d" do
-      ("%u" % -(2 ** 64 + 5)).should == "-18446744073709551621"
-      ("%d" % -(2 ** 64 + 5)).should == "-18446744073709551621"
-    end
+  it "supports negative bignums with %u or %d" do
+    ("%u" % -(2 ** 64 + 5)).should == "-18446744073709551621"
+    ("%d" % -(2 ** 64 + 5)).should == "-18446744073709551621"
   end
 
   it "supports hex formats using %x for positive numbers" do
@@ -771,32 +592,15 @@ describe "String#%" do
     ("%x" % 0xFFFFFFFF).should == "ffffffff"
   end
 
-  ruby_version_is ""..."1.9" do
-    it "supports hex formats using %x for negative numbers" do
-      ("%x" % -5).should == "..fb"
-      ("%0x" % -5).should == "fb"
-      ("%.4x" % 20).should == "0014"
-      ("%.1x" % -5).should == "fb"
-      ("%.7x" % -5).should == "ffffffb"
-      ("%.10x" % -5).should == "fffffffffb"
-      ("% x" % -26).should == "-1a"
-      ("%+x" % -26).should == "-1a"
-      ("%x" % 0xFFFFFFFF).should == "ffffffff"
-      ("%x" % -(2 ** 64 + 5)).should == "..fefffffffffffffffb"
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "supports hex formats using %x for negative numbers" do
-      ("%x" % -5).should == "..fb"
-      ("%0x" % -5).should == "..fb"
-      ("%.1x" % -5).should == "..fb"
-      ("%.7x" % -5).should == "..ffffb"
-      ("%.10x" % -5).should == "..fffffffb"
-      ("% x" % -26).should == "-1a"
-      ("%+x" % -26).should == "-1a"
-      ("%x" % -(2 ** 64 + 5)).should == "..fefffffffffffffffb"
-    end
+  it "supports hex formats using %x for negative numbers" do
+    ("%x" % -5).should == "..fb"
+    ("%0x" % -5).should == "..fb"
+    ("%.1x" % -5).should == "..fb"
+    ("%.7x" % -5).should == "..ffffb"
+    ("%.10x" % -5).should == "..fffffffb"
+    ("% x" % -26).should == "-1a"
+    ("%+x" % -26).should == "-1a"
+    ("%x" % -(2 ** 64 + 5)).should == "..fefffffffffffffffb"
   end
 
   it "supports hex formats using %X for positive numbers" do
@@ -811,51 +615,23 @@ describe "String#%" do
     ("%X" % 0xFFFFFFFF).should == "FFFFFFFF"
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "supports hex formats using %X for negative numbers" do
-      ("%X" % -5).should == "..FB"
-      ("%0X" % -5).should == "FB"
-      ("%.1X" % -5).should == "FB"
-      ("%.7X" % -5).should == "FFFFFFB"
-      ("%.10X" % -5).should == "FFFFFFFFFB"
-      ("% X" % -26).should == "-1A"
-      ("%+X" % -26).should == "-1A"
-      ("%X" % 0xFFFFFFFF).should == "FFFFFFFF"
-      ("%X" % -(2 ** 64 + 5)).should == "..FEFFFFFFFFFFFFFFFB"
-    end
+  it "supports hex formats using %X for negative numbers" do
+    ("%X" % -5).should == "..FB"
+    ("%0X" % -5).should == "..FB"
+    ("%.1X" % -5).should == "..FB"
+    ("%.7X" % -5).should == "..FFFFB"
+    ("%.10X" % -5).should == "..FFFFFFFB"
+    ("% X" % -26).should == "-1A"
+    ("%+X" % -26).should == "-1A"
+    ("%X" % -(2 ** 64 + 5)).should == "..FEFFFFFFFFFFFFFFFB"
   end
 
-  ruby_version_is "1.9" do
-    it "supports hex formats using %X for negative numbers" do
-      ("%X" % -5).should == "..FB"
-      ("%0X" % -5).should == "..FB"
-      ("%.1X" % -5).should == "..FB"
-      ("%.7X" % -5).should == "..FFFFB"
-      ("%.10X" % -5).should == "..FFFFFFFB"
-      ("% X" % -26).should == "-1A"
-      ("%+X" % -26).should == "-1A"
-      ("%X" % -(2 ** 64 + 5)).should == "..FEFFFFFFFFFFFFFFFB"
-    end
+  it "formats zero without prefix using %#x" do
+    ("%#x" % 0).should == "0"
   end
 
-  ruby_version_is "1.9" do
-    it "formats zero without prefix using %#x" do
-      ("%#x" % 0).should == "0"
-    end
-
-    it "formats zero without prefix using %#X" do
-      ("%#X" % 0).should == "0"
-    end
-  end
-
-  ruby_version_is "" ... "1.9" do
-    it "formats zero with prefix using %#x" do
-      ("%#x" % 0).should == "0x0"
-    end
-
-    it "formats zero without prefix using %#X" do
-      ("%#X" % 0).should == "0X0"
-    end
+  it "formats zero without prefix using %#X" do
+    ("%#X" % 0).should == "0"
   end
 
   %w(b d i o u x X).each do |f|
@@ -890,32 +666,15 @@ describe "String#%" do
       obj.should_receive(:to_int).and_return(6)
       (format % obj).should == (format % 6)
     end
-
-    # 1.9 raises a TypeError for Kernel.Integer(nil), so we version guard this
-    # case
-    ruby_version_is ""..."1.9" do
-      it "behaves as if calling Kernel#Integer(nil) for format argument, if it does not respond to #to_ary" do
-        %w(b d i o u x X).each do |f|
-          format = "%" + f
-          (format % nil).should == (format % Kernel.Integer(nil))
-        end
-      end
-    end
-
-    it "doesn't taint the result for #{format} when argument is tainted" do
-      (format % "5".taint).tainted?.should == false
-    end
   end
 
   %w(e E f g G).each do |f|
     format = "%" + f
 
-    ruby_version_is "1.8.6.278" do
-      it "tries to convert the passed argument to an Array using #to_ary" do
-        obj = mock('3.14')
-        obj.should_receive(:to_ary).and_return([3.14])
-        (format % obj).should == (format % [3.14])
-      end
+    it "tries to convert the passed argument to an Array using #to_ary" do
+      obj = mock('3.14')
+      obj.should_receive(:to_ary).and_return([3.14])
+      (format % obj).should == (format % [3.14])
     end
 
     it "behaves as if calling Kernel#Float for #{format} arguments, when the passed argument does not respond to #to_ary" do
@@ -943,50 +702,41 @@ describe "String#%" do
       obj.should_receive(:to_f).and_return(5.0)
       (format % obj).should == (format % 5.0)
     end
-    ruby_version_is ""..."1.9.2" do
-      it "behaves as if calling Kernel#Float for #{format} arguments, when the passed argument is hexadecimal string" do
-        lambda { format % "0xA" }.should raise_error(ArgumentError)
-      end
-    end
-    ruby_version_is "1.9.2" do
-      it "behaves as if calling Kernel#Float for #{format} arguments, when the passed argument is hexadecimal string" do
-        (format % "0xA").should == (format % 0xA)
-      end
+
+    it "behaves as if calling Kernel#Float for #{format} arguments, when the passed argument is hexadecimal string" do
+      (format % "0xA").should == (format % 0xA)
     end
 
     it "doesn't taint the result for #{format} when argument is tainted" do
       (format % "5".taint).tainted?.should == false
     end
   end
-  
-  ruby_version_is "1.9.2" do
-    describe "when format string contains %{} sections" do
-    
-      it "replaces %{} sections with values from passed-in hash" do
-        ("%{foo}bar" % {:foo => 'oof'}).should == "oofbar"
-      end
-      
-      it "raises KeyError if key is missing from passed-in hash" do
-        lambda {"%{foo}" % {}}.should raise_error(KeyError)
-      end
-      
-      it "should raise ArgumentError if no hash given" do
-        lambda {"%{foo}" % []}.should raise_error(ArgumentError)
-      end
+
+  describe "when format string contains %{} sections" do
+    it "replaces %{} sections with values from passed-in hash" do
+      ("%{foo}bar" % {:foo => 'oof'}).should == "oofbar"
     end
-    
-    describe "when format string contains %<> formats" do
-      it "uses the named argument for the format's value" do
-        ("%<foo>d" % {:foo => 1}).should == "1"
-      end
-      
-      it "raises KeyError if key is missing from passed-in hash" do
-        lambda {"%<foo>d" % {}}.should raise_error(KeyError)
-      end
-      
-      it "should raise ArgumentError if no hash given" do
-        lambda {"%<foo>" % []}.should raise_error(ArgumentError)
-      end
+
+    it "raises KeyError if key is missing from passed-in hash" do
+      lambda {"%{foo}" % {}}.should raise_error(KeyError)
+    end
+
+    it "should raise ArgumentError if no hash given" do
+      lambda {"%{foo}" % []}.should raise_error(ArgumentError)
+    end
+  end
+
+  describe "when format string contains %<> formats" do
+    it "uses the named argument for the format's value" do
+      ("%<foo>d" % {:foo => 1}).should == "1"
+    end
+
+    it "raises KeyError if key is missing from passed-in hash" do
+      lambda {"%<foo>d" % {}}.should raise_error(KeyError)
+    end
+
+    it "should raise ArgumentError if no hash given" do
+      lambda {"%<foo>" % []}.should raise_error(ArgumentError)
     end
   end
 end

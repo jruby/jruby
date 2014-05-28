@@ -8,5 +8,5 @@ when 1
 when 2
   puts $_name
 when 3
-  puts $___name
+  puts $___name__test__
 end

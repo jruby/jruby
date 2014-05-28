@@ -49,21 +49,19 @@ describe "Dir.chdir" do
     Dir.chdir(obj) { }
   end
 
-  ruby_version_is "1.9" do
-    it "calls #to_path on the argument if it's not a String" do
-      obj = mock('path')
-      obj.should_receive(:to_path).and_return(Dir.pwd)
-      Dir.chdir(obj)
-    end
+  it "calls #to_path on the argument if it's not a String" do
+    obj = mock('path')
+    obj.should_receive(:to_path).and_return(Dir.pwd)
+    Dir.chdir(obj)
+  end
 
-    it "prefers #to_path over #to_str" do
-      obj = Class.new do
-        def to_path; Dir.pwd; end
-        def to_str;  DirSpecs.mock_dir; end
-      end
-      Dir.chdir(obj.new)
-      Dir.pwd.should == @original
+  it "prefers #to_path over #to_str" do
+    obj = Class.new do
+      def to_path; Dir.pwd; end
+      def to_str;  DirSpecs.mock_dir; end
     end
+    Dir.chdir(obj.new)
+    Dir.pwd.should == @original
   end
 
   it "returns the value of the block when a block is given" do

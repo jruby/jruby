@@ -1,5 +1,3 @@
-require File.expand_path('../caller_fixture1', __FILE__)
-
 module KernelSpecs
   def self.Array_function(arg)
     Array(arg)
@@ -7,6 +5,22 @@ module KernelSpecs
 
   def self.Array_method(arg)
     Kernel.Array(arg)
+  end
+
+  def self.Hash_function(arg)
+    Hash(arg)
+  end
+
+  def self.Hash_method(arg)
+    Kernel.Hash(arg)
+  end
+
+  def self.Integer_function(arg)
+    Integer(arg)
+  end
+
+  def self.Integer_method(arg)
+    Kernel.Integer(arg)
   end
 
   def self.putc_function(arg)
@@ -372,6 +386,26 @@ print m.map { |x| x.to_s }.join("")
       @greeting = "hello"
     end
   end
+
+  class PrivateToAry
+    private
+
+    def to_ary
+      [1, 2]
+    end
+
+    def to_a
+      [3, 4]
+    end
+  end
+
+  class PrivateToA
+    private
+
+    def to_a
+      [3, 4]
+    end
+  end
 end
 
 class EvalSpecs
@@ -379,6 +413,16 @@ class EvalSpecs
     eval "class B; end"
     def c
       eval "class C; end"
+    end
+  end
+
+  class CoercedObject
+    def to_str
+      '2 + 3'
+    end
+
+    def hash
+      nil
     end
   end
 
@@ -390,13 +434,6 @@ class EvalSpecs
     f = __FILE__
     eval "true", binding, "(eval)", 1
     return f
-  end
-end
-
-module CallerSpecs
-  def self.recurse(n)
-    return caller if n <= 0
-    recurse(n-1)
   end
 end
 

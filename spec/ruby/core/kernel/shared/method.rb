@@ -15,17 +15,15 @@ describe :kernel_method, :shared => true do
     m.call.should == 'class done'
   end
 
-  ruby_version_is "1.9" do
-    it "returns a method object if we repond_to_missing? method" do
-      class KernelSpecs::Foo;
-        def respond_to_missing?(method, priv=false)
-          method == :we_handle_this
-        end
+  it "returns a method object if we repond_to_missing? method" do
+    class KernelSpecs::Foo;
+      def respond_to_missing?(method, priv=false)
+        method == :we_handle_this
       end
-      m = KernelSpecs::RespondViaMissing.new.method(:handled_publicly)
-      m.should be_an_instance_of Method
-      m.call(42).should == "Done handled_publicly([42])"
     end
+    m = KernelSpecs::RespondViaMissing.new.send(@method, :handled_publicly)
+    m.should be_an_instance_of Method
+    m.call(42).should == "Done handled_publicly([42])"
   end
 
   it "raises a NameError for an invalid method name" do

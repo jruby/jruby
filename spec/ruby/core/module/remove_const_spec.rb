@@ -69,16 +69,7 @@ describe "Module#remove_const" do
     lambda { ConstantSpecs.send :remove_const, name }.should raise_error(TypeError)
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "is a private method" do
-      Module.private_methods.should include("remove_const")
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "is a private method" do
-      Module.private_methods.should include(:remove_const)
-    end
+  it "is a private method" do
+    Module.private_methods.should include(:remove_const)
   end
 end
-

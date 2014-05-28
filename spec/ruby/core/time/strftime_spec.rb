@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/methods', __FILE__)
 
@@ -118,11 +120,12 @@ describe "Time#strftime" do
     time.strftime('%j').should == '261'
   end
 
-  ruby_version_is "1.9" do
-    describe "with %L" do
-      it "formats the milliseconds of of the second" do
-        Time.local(2009, 1, 1, 0, 0, Rational(999, 1000)).strftime("%L").should == "999"
-      end
+  describe "with %L" do
+    it "formats the milliseconds of a second" do
+      Time.local(2009, 1, 1, 0, 0, Rational(100, 1000)).strftime("%L").should == "100"
+      Time.local(2009, 1, 1, 0, 0, Rational(10, 1000)).strftime("%L").should == "010"
+      Time.local(2009, 1, 1, 0, 0, Rational(1, 1000)).strftime("%L").should == "001"
+      Time.local(2009, 1, 1, 0, 0, Rational(1, 10000)).strftime("%L").should == "000"
     end
   end
 
@@ -136,27 +139,25 @@ describe "Time#strftime" do
     time.strftime('%M').should == '06'
   end
 
-  ruby_version_is "1.9" do
-    describe "with %N" do
-      it "formats the nanoseconds of of the second with %N" do
-        Time.local(2009, 1, 1, 0, 0, Rational(999999999, 1000000000)).strftime("%N").should == "999999999"
-      end
+  describe "with %N" do
+    it "formats the nanoseconds of of the second with %N" do
+      Time.local(2009, 1, 1, 0, 0, Rational(999999999, 1000000000)).strftime("%N").should == "999999999"
+    end
 
-      it "formats the milliseconds of of the second with %3N" do
-        Time.local(2009, 1, 1, 0, 0, Rational(999, 1000)).strftime("%3N").should == "999"
-      end
+    it "formats the milliseconds of of the second with %3N" do
+      Time.local(2009, 1, 1, 0, 0, Rational(999, 1000)).strftime("%3N").should == "999"
+    end
 
-      it "formats the microseconds of of the second with %6N" do
-        Time.local(2009, 1, 1, 0, 0, Rational(999999, 1000000)).strftime("%6N").should == "999999"
-      end
+    it "formats the microseconds of of the second with %6N" do
+      Time.local(2009, 1, 1, 0, 0, Rational(999999, 1000000)).strftime("%6N").should == "999999"
+    end
 
-      it "formats the nanoseconds of of the second with %9N" do
-        Time.local(2009, 1, 1, 0, 0, Rational(999999999, 1000000000)).strftime("%9N").should == "999999999"
-      end
+    it "formats the nanoseconds of of the second with %9N" do
+      Time.local(2009, 1, 1, 0, 0, Rational(999999999, 1000000000)).strftime("%9N").should == "999999999"
+    end
 
-      it "formats the picoseconds of of the second with %12N" do
-        Time.local(2009, 1, 1, 0, 0, Rational(999999999999, 1000000000000)).strftime("%12N").should == "999999999999"
-      end
+    it "formats the picoseconds of of the second with %12N" do
+      Time.local(2009, 1, 1, 0, 0, Rational(999999999999, 1000000000000)).strftime("%12N").should == "999999999999"
     end
   end
 
@@ -191,10 +192,8 @@ describe "Time#strftime" do
   end
 
   describe "with %z" do
-    ruby_version_is "1.9" do
-      it "formats a UTC time offset as '+0000'" do
-        Time.utc(2005).strftime("%z").should == "+0000"
-      end
+    it "formats a UTC time offset as '+0000'" do
+      Time.utc(2005).strftime("%z").should == "+0000"
     end
 
     it "formats a local time with positive UTC offset as '+HHMM'" do
@@ -209,26 +208,24 @@ describe "Time#strftime" do
       end
     end
 
-    ruby_version_is "1.9" do
-      it "formats a time with fixed positive offset as '+HHMM'" do
-        Time.new(2012, 1, 1, 0, 0, 0, 3660).strftime("%z").should == "+0101"
-      end
+    it "formats a time with fixed positive offset as '+HHMM'" do
+      Time.new(2012, 1, 1, 0, 0, 0, 3660).strftime("%z").should == "+0101"
+    end
 
-      it "formats a time with fixed negative offset as '-HHMM'" do
-        Time.new(2012, 1, 1, 0, 0, 0, -3660).strftime("%z").should == "-0101"
-      end
+    it "formats a time with fixed negative offset as '-HHMM'" do
+      Time.new(2012, 1, 1, 0, 0, 0, -3660).strftime("%z").should == "-0101"
+    end
 
-      it "formats a time with fixed offset as '+/-HH:MM' with ':' specifier" do
-        Time.new(2012, 1, 1, 0, 0, 0, 3660).strftime("%:z").should == "+01:01"
-      end
+    it "formats a time with fixed offset as '+/-HH:MM' with ':' specifier" do
+      Time.new(2012, 1, 1, 0, 0, 0, 3660).strftime("%:z").should == "+01:01"
+    end
 
-      it "formats a time with fixed offset as '+/-HH:MM:SS' with '::' specifier" do
-        Time.new(2012, 1, 1, 0, 0, 0, 3665).strftime("%::z").should == "+01:01:05"
-      end
+    it "formats a time with fixed offset as '+/-HH:MM:SS' with '::' specifier" do
+      Time.new(2012, 1, 1, 0, 0, 0, 3665).strftime("%::z").should == "+01:01:05"
+    end
 
-      it "rounds fixed offset to the nearest second" do
-        Time.new(2012, 1, 1, 0, 0, 0, Rational(36645, 10)).strftime("%::z").should == "+01:01:05"
-      end
+    it "rounds fixed offset to the nearest second" do
+      Time.new(2012, 1, 1, 0, 0, 0, Rational(36645, 10)).strftime("%::z").should == "+01:01:05"
     end
   end
 
@@ -238,62 +235,66 @@ describe "Time#strftime" do
     time.strftime("%Z").should == zone
   end
 
-  ruby_version_is "1.9" .. "" do
-    it "supports am/pm formatting with %P" do
-      time = Time.local(2004, 8, 26, 22, 38, 3)
-      time.strftime('%P').should == 'pm'
-      time = Time.local(2004, 8, 26, 11, 38, 3)
-      time.strftime('%P').should == 'am'
-    end
-  end
-  
-  ruby_version_is '1.9' do
-    it "returns the fractional seconds digits, default is 9 digits (nanosecond) with %N" do
-      time = Time.local(2009, 9, 18, 12, 0, 6, 123456)
-      time.strftime('%N').should == '123456000'
-    end
+  it "supports am/pm formatting with %P" do
+    time = Time.local(2004, 8, 26, 22, 38, 3)
+    time.strftime('%P').should == 'pm'
+    time = Time.local(2004, 8, 26, 11, 38, 3)
+    time.strftime('%P').should == 'am'
   end
 
-  ruby_version_is '1.9' do
-    it "supports GNU modificators" do
-      time = Time.local(2001, 2, 3, 4, 5, 6)
+  it "returns the fractional seconds digits, default is 9 digits (nanosecond) with %N" do
+    time = Time.local(2009, 9, 18, 12, 0, 6, 123456)
+    time.strftime('%N').should == '123456000'
+  end
 
-      time.strftime('%^h').should == 'FEB'
-      time.strftime('%^_5h').should == '  FEB'
-      time.strftime('%0^5h').should == '00FEB'
-      time.strftime('%04H').should == '0004'
-      time.strftime('%0-^5h').should == 'FEB'
-      time.strftime('%_-^5h').should == 'FEB'
-      time.strftime('%^ha').should == 'FEBa'
+  it "supports GNU modificators" do
+    time = Time.local(2001, 2, 3, 4, 5, 6)
 
-      expected = {
-        "%10h" => '       Feb',
-        "%^10h" => '       FEB',
-        "%_10h" => '       Feb',
-        "%_010h" => '0000000Feb',
-        "%0_10h" => '       Feb',
-        "%0_-10h" => 'Feb',
-        "%0-_10h" => 'Feb'
-      }
+    time.strftime('%^h').should == 'FEB'
+    time.strftime('%^_5h').should == '  FEB'
+    time.strftime('%0^5h').should == '00FEB'
+    time.strftime('%04H').should == '0004'
+    time.strftime('%0-^5h').should == 'FEB'
+    time.strftime('%_-^5h').should == 'FEB'
+    time.strftime('%^ha').should == 'FEBa'
 
-      ["%10h","%^10h","%_10h","%_010h","%0_10h","%0_-10h","%0-_10h"].each do |format|
-        time.strftime(format).should == expected[format]
-      end
+    expected = {
+      "%10h" => '       Feb',
+      "%^10h" => '       FEB',
+      "%_10h" => '       Feb',
+      "%_010h" => '0000000Feb',
+      "%0_10h" => '       Feb',
+      "%0_-10h" => 'Feb',
+      "%0-_10h" => 'Feb'
+    }
+
+    ["%10h","%^10h","%_10h","%_010h","%0_10h","%0_-10h","%0-_10h"].each do |format|
+      time.strftime(format).should == expected[format]
     end
+  end
 
-    it "supports the '-' modifier to drop leading zeros" do
-      time = Time.local(2001,1,1,14,01,42)
-      time.strftime("%-m/%-d/%-y %-I:%-M %p").should == "1/1/1 2:1 PM"
+  it "supports the '-' modifier to drop leading zeros" do
+    time = Time.local(2001,1,1,14,01,42)
+    time.strftime("%-m/%-d/%-y %-I:%-M %p").should == "1/1/1 2:1 PM"
 
-      time = Time.local(2010,10,10,12,10,42)
-      time.strftime("%-m/%-d/%-y %-I:%-M %p").should == "10/10/10 12:10 PM"
-    end
+    time = Time.local(2010,10,10,12,10,42)
+    time.strftime("%-m/%-d/%-y %-I:%-M %p").should == "10/10/10 12:10 PM"
+  end
 
-    it "supports the '-' modifier for padded format directives" do
+  it "supports the '-' modifier for padded format directives" do
+    time = Time.local(2010, 8, 8, 8, 10, 42)
+    time.strftime("%-e").should == "8"
+    time.strftime("%-k%p").should == "8AM"
+    time.strftime("%-l%p").should == "8AM"
+  end
+
+  with_feature :encoding do
+    it "passes the format string's encoding to the result string" do
       time = Time.local(2010, 8, 8, 8, 10, 42)
-      time.strftime("%-e").should == "8"
-      time.strftime("%-k%p").should == "8AM"
-      time.strftime("%-l%p").should == "8AM"
+      result = time.strftime("%d. März %Y %H:%M")
+
+      result.encoding.should == Encoding::UTF_8
+      result.should == "08. März 2010 08:10"
     end
   end
 end

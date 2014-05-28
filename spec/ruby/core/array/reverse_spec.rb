@@ -15,16 +15,8 @@ describe "Array#reverse" do
     array.reverse.should == [array, array, array, array, array, 3.0, 'two', 1]
   end
 
-  ruby_version_is "" ... "1.9.3" do
-    it "returns subclass instance on Array subclasses" do
-      ArraySpecs::MyArray[1, 2, 3].reverse.should be_an_instance_of(ArraySpecs::MyArray)
-    end
-  end
-
-  ruby_version_is "1.9.3" do
-    it "does not return subclass instance on Array subclasses" do
-      ArraySpecs::MyArray[1, 2, 3].reverse.should be_an_instance_of(Array)
-    end
+  it "does not return subclass instance on Array subclasses" do
+    ArraySpecs::MyArray[1, 2, 3].reverse.should be_an_instance_of(Array)
   end
 end
 
@@ -44,15 +36,7 @@ describe "Array#reverse!" do
     array.reverse!.should == [array, array, array, array, array, 3.0, 'two', 1]
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "raises a TypeError on a frozen array" do
-      lambda { ArraySpecs.frozen_array.reverse! }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError on a frozen array" do
-      lambda { ArraySpecs.frozen_array.reverse! }.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError on a frozen array" do
+    lambda { ArraySpecs.frozen_array.reverse! }.should raise_error(RuntimeError)
   end
 end

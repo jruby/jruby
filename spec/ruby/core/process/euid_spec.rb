@@ -16,23 +16,27 @@ end
 
 describe "Process.euid=" do
 
-  platform_is_not :windows do 
-    it "raises TypeError if not passed an int" do 
-      lambda { Process.euid = "100"}.should raise_error(TypeError)
+  platform_is_not :windows do
+    it "raises TypeError if not passed an Integer" do
+      lambda { Process.euid = Object.new }.should raise_error(TypeError)
     end
-    
+
     as_user do
-      it "raises Errno::ERPERM if run by a non superuser trying to set the superuser id" do 
+      it "raises Errno::ERPERM if run by a non superuser trying to set the superuser id" do
         lambda { (Process.euid = 0)}.should raise_error(Errno::EPERM)
       end
+
+      it "raises Errno::ERPERM if run by a non superuser trying to set the superuser id from username" do
+        lambda { Process.euid = "root" }.should raise_error(Errno::EPERM)
+      end
     end
-    
+
     as_superuser do
-      describe "if run by a superuser" do 
-        with_feature :fork do 
+      describe "if run by a superuser" do
+        with_feature :fork do
           it "sets the effective user id for the current process if run by a superuser" do
             read, write = IO.pipe
-            pid = Process.fork do 
+            pid = Process.fork do
               begin
                 read.close
                 Process.euid = 1
@@ -51,6 +55,6 @@ describe "Process.euid=" do
       end
     end
   end
-  
+
   it "needs to be reviewed for spec completeness"
 end

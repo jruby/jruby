@@ -24,20 +24,10 @@ describe "Fixnum#div" do
     1.div(bignum_value).should == 0
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a FloatDomainError when the given argument is 0 and a Float" do
-      lambda { 0.div(0.0)   }.should raise_error(FloatDomainError)
-      lambda { 10.div(0.0)  }.should raise_error(FloatDomainError)
-      lambda { -10.div(0.0) }.should raise_error(FloatDomainError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a ZeroDivisionError when the given argument is 0 and a Float" do
-      lambda { 0.div(0.0)   }.should raise_error(ZeroDivisionError)
-      lambda { 10.div(0.0)  }.should raise_error(ZeroDivisionError)
-      lambda { -10.div(0.0) }.should raise_error(ZeroDivisionError)
-    end
+  it "raises a ZeroDivisionError when the given argument is 0 and a Float" do
+    lambda { 0.div(0.0)   }.should raise_error(ZeroDivisionError)
+    lambda { 10.div(0.0)  }.should raise_error(ZeroDivisionError)
+    lambda { -10.div(0.0) }.should raise_error(ZeroDivisionError)
   end
 
   it "raises a ZeroDivisionError when the given argument is 0" do

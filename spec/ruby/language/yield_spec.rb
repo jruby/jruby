@@ -80,16 +80,8 @@ describe "The yield call" do
       @y.r([[]]) { |*a| a }.should == [[]]
     end
 
-    ruby_version_is ""..."1.9" do
-      it "passes nil as a value" do
-        @y.r(nil) { |*a| a }.should == [nil]
-      end
-    end
-
-    ruby_version_is "1.9" do
-      it "passes no values when give nil as an argument" do
-        @y.r(nil) { |*a| a }.should == []
-      end
+    it "passes no values when give nil as an argument" do
+      @y.r(nil) { |*a| a }.should == []
     end
   end
 
@@ -113,16 +105,18 @@ describe "The yield call" do
       @y.rs(1, 2, [3, 4, 5]) { |*a| a }.should == [1, 2, 3, 4, 5]
     end
 
-    ruby_version_is ""..."1.9" do
-      it "passes nil as the argument value if the splatted argument is nil" do
-        @y.rs(1, 2, nil) { |*a| a }.should == [1, 2, nil]
-      end
+    it "does not pass an argument value if the splatted argument is nil" do
+      @y.rs(1, 2, nil) { |*a| a }.should == [1, 2]
+    end
+  end
+
+  describe "taking matching arguments with splats and post args" do
+    it "raises a LocalJumpError when the method is not passed a block" do
+      lambda { @y.rs(1, 2, [3, 4]) }.should raise_error(LocalJumpError)
     end
 
-    ruby_version_is "1.9" do
-      it "does not pass an argument value if the splatted argument is nil" do
-        @y.rs(1, 2, nil) { |*a| a }.should == [1, 2]
-      end
+    it "passes the arguments to the block" do
+      @y.rs([1, 2], 3, 4) { |(*a, b), c, d| [a, b, c, d] }.should == [[1], 2, 3, 4]
     end
   end
 end

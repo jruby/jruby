@@ -45,25 +45,19 @@ describe "Range#each" do
     range.each{}.should equal(range)
   end
 
-  ruby_version_is "1.8.7" do
-    it "returns an enumerator when no block given" do
-      enum = (1..3).each
-      enum.should be_an_instance_of(enumerator_class)
-      enum.to_a.should == [1, 2, 3]
-    end
+  it "returns an enumerator when no block given" do
+    enum = (1..3).each
+    enum.should be_an_instance_of(enumerator_class)
+    enum.to_a.should == [1, 2, 3]
   end
 
-  ruby_version_is '1.9' do
-    it "raises a TypeError if the first element is a Time object" do
-      t = Time.now
-      lambda { (t..t+1).each { |i| i } }.should raise_error(TypeError)
-    end
-
-    it "passes each Symbol element by using #succ" do
-      (:aa..:ac).each.to_a.should == [:aa, :ab, :ac]
-      (:aa...:ac).each.to_a.should == [:aa, :ab]
-    end
+  it "raises a TypeError if the first element is a Time object" do
+    t = Time.now
+    lambda { (t..t+1).each { |i| i } }.should raise_error(TypeError)
   end
 
+  it "passes each Symbol element by using #succ" do
+    (:aa..:ac).each.to_a.should == [:aa, :ab, :ac]
+    (:aa...:ac).each.to_a.should == [:aa, :ab]
+  end
 end
-

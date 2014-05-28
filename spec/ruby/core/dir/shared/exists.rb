@@ -43,11 +43,14 @@ describe :dir_exists, :shared => true do
     Dir.send(@method, __FILE__).should be_false
   end
 
-  ruby_version_is "1.9" do
-    it "calls #to_path on non String arguments" do
-      p = mock('path')
-      p.should_receive(:to_path).and_return(File.dirname(__FILE__))
-      Dir.send(@method, p)
-    end
+  it "doesn't set $! when file doesn't exist" do
+    Dir.exists?("/path/to/non/existent/dir")
+    $!.should be_nil
+  end
+
+  it "calls #to_path on non String arguments" do
+    p = mock('path')
+    p.should_receive(:to_path).and_return(File.dirname(__FILE__))
+    Dir.send(@method, p)
   end
 end

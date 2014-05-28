@@ -50,16 +50,8 @@ describe "String#to_f" do
     "0xx5".to_f.should == 0
   end
 
-  ruby_version_is "1.9" do
-    it "returns 0 for strings with leading underscores" do
-      "_9".to_f.should == 0
-    end
-  end
-
-  ruby_version_is "" ... "1.9" do
-    it "ignores leading underscores" do
-      "_9".to_f.should == 9.0
-    end
+  it "returns 0 for strings with leading underscores" do
+    "_9".to_f.should == 0
   end
 
   it "takes an optional sign" do

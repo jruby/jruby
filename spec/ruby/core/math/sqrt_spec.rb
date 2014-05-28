@@ -12,20 +12,12 @@ describe "Math.sqrt" do
     Math.sqrt(15241578780673814.441547445).should be_close(123456789.123457, TOLERANCE)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises an ArgumentError if the argument cannot be coerced with Float()" do
-      lambda { Math.sqrt("test") }.should raise_error(ArgumentError)
-    end
+  it "raises a TypeError if the argument cannot be coerced with Float()" do
+    lambda { Math.sqrt("test") }.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a TypeError if the argument cannot be coerced with Float()" do
-      lambda { Math.sqrt("test") }.should raise_error(TypeError)
-    end
-
-    it "returns NaN given NaN" do
-      Math.sqrt(nan_value).nan?.should be_true
-    end
+  it "returns NaN given NaN" do
+    Math.sqrt(nan_value).nan?.should be_true
   end
 
   it "raises a TypeError if the argument is nil" do

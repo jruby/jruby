@@ -158,18 +158,9 @@ describe "Array#sort" do
     pruned.sort.should == ArraySpecs::LargeTestArraySorted
   end
 
-  ruby_version_is "" ... "1.9.3" do
-    it "returns subclass instance on Array subclasses" do
-      ary = ArraySpecs::MyArray[1, 2, 3]
-      ary.sort.should be_an_instance_of(ArraySpecs::MyArray)
-    end
-  end
-
-  ruby_version_is "1.9.3" do
-    it "does not return subclass instance on Array subclasses" do
-      ary = ArraySpecs::MyArray[1, 2, 3]
-      ary.sort.should be_an_instance_of(Array)
-    end
+  it "does not return subclass instance on Array subclasses" do
+    ary = ArraySpecs::MyArray[1, 2, 3]
+    ary.sort.should be_an_instance_of(Array)
   end
 end
 
@@ -236,24 +227,8 @@ describe "Array#sort!" do
     a.sort!{ -1 }.should be_an_instance_of(Array)
   end
 
-  ruby_version_is '' ... '1.9' do
-    it "raises a TypeError on a frozen array" do
-      lambda { ArraySpecs.frozen_array.sort! }.should raise_error(TypeError)
-    end
-
-    not_compliant_on :rubinius do
-      it "temporarily freezes self and recovers after sorted" do
-        a = [1, 2, 3]
-        a.sort! { |x,y| a.frozen?.should == true; x <=> y }
-        a.frozen?.should == false
-      end
-    end
-  end
-
-  ruby_version_is '1.9' do
-    it "raises a RuntimeError on a frozen array" do
-      lambda { ArraySpecs.frozen_array.sort! }.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError on a frozen array" do
+    lambda { ArraySpecs.frozen_array.sort! }.should raise_error(RuntimeError)
   end
 
   it "returns the specified value when it would break in the given block" do

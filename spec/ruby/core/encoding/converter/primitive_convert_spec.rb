@@ -104,14 +104,38 @@ with_feature :encoding do
       dest.encoding.should == Encoding::ISO_8859_1
     end
 
+    it "removes the undefined part from the source buffer when returning :undefined_conversion" do
+      dest = "".force_encoding('utf-8')
+      s = "\u{9878}abcd"
+      @ec.primitive_convert(s, dest).should == :undefined_conversion
+
+      s.should == "abcd"
+    end
+
     it "returns :incomplete_input when source buffer ends unexpectedly and :partial_input isn't specified" do
       ec = Encoding::Converter.new("EUC-JP", "ISO-8859-1")
       ec.primitive_convert("\xa4", "", nil, nil, :partial_input => false).should == :incomplete_input
     end
 
+    it "clears the source buffer when returning :incomplete_input" do
+      ec = Encoding::Converter.new("EUC-JP", "ISO-8859-1")
+      s = "\xa4"
+      ec.primitive_convert(s, "").should == :incomplete_input
+
+      s.should == ""
+    end
+
     it "returns :source_buffer_empty when source buffer ends unexpectedly and :partial_input is true" do
       ec = Encoding::Converter.new("EUC-JP", "ISO-8859-1")
       ec.primitive_convert("\xa4", "", nil, nil, :partial_input => true).should == :source_buffer_empty
+    end
+
+    it "clears the source buffer when returning :source_buffer_empty" do
+      ec = Encoding::Converter.new("EUC-JP", "ISO-8859-1")
+      s = "\xa4"
+      ec.primitive_convert(s, "", nil, nil, :partial_input => true).should == :source_buffer_empty
+
+      s.should == ""
     end
 
     it "returns :undefined_conversion when a character in the source buffer is not representable in the output encoding" do
@@ -122,8 +146,24 @@ with_feature :encoding do
       @ec.primitive_convert("\xf1abcd","").should == :invalid_byte_sequence
     end
 
+    it "removes consumed and erroneous bytes from the source buffer when returning :invalid_byte_sequence" do
+      ec = Encoding::Converter.new(Encoding::UTF_8, Encoding::UTF_8_MAC)
+      s = "\xC3\xA1\x80\x80\xC3\xA1".force_encoding("utf-8")
+      dest = "".force_encoding("utf-8")
+      ec.primitive_convert(s, dest)
+
+      s.should == "\x80\xC3\xA1".force_encoding("utf-8")
+    end
+
     it "returns :finished when the conversion succeeded" do
       @ec.primitive_convert("glark".force_encoding('utf-8'),"").should == :finished
+    end
+
+    it "clears the source buffer when returning :finished" do
+      s = "glark".force_encoding('utf-8')
+      @ec.primitive_convert(s, "").should == :finished
+
+      s.should == ""
     end
 
     it "returns :destination_buffer_full when the destination buffer is too small" do
@@ -132,6 +172,43 @@ with_feature :encoding do
       destination_bytesize = source.bytesize - 1
       ec.primitive_convert(source, "", 0, destination_bytesize) \
         .should == :destination_buffer_full
+      source.should == ""
+    end
+
+    it "clears the source buffer when returning :destination_buffer_full" do
+      ec = Encoding::Converter.new("utf-8", "iso-2022-jp")
+      s = "\u{9999}"
+      destination_bytesize = s.bytesize - 1
+      ec.primitive_convert(s, "", 0, destination_bytesize).should == :destination_buffer_full
+
+      s.should == ""
+    end
+
+    it "keeps removing invalid bytes from the source buffer" do
+      ec = Encoding::Converter.new(Encoding::UTF_8, Encoding::UTF_8_MAC)
+      s = "\x80\x80\x80"
+      dest = "".force_encoding(Encoding::UTF_8_MAC)
+
+      ec.primitive_convert(s, dest)
+      s.should == "\x80\x80"
+      ec.primitive_convert(s, dest)
+      s.should == "\x80"
+      ec.primitive_convert(s, dest)
+      s.should == ""
+    end
+
+    it "reuses read-again bytes after the first error" do
+      s = "\xf1abcd"
+      dest = ""
+
+      @ec.primitive_convert(s, dest).should == :invalid_byte_sequence
+      s.should == "bcd"
+      @ec.primitive_errinfo[4].should == "a"
+
+      @ec.primitive_convert(s, dest).should == :finished
+      s.should == ""
+
+      dest.should == "abcd"
     end
   end
 end

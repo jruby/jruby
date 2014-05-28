@@ -22,21 +22,19 @@ describe "Time#usec" do
     Time.at(0, 0.75).usec.should == 0
   end
 
-  ruby_version_is "1.9" do
-    it "returns the microseconds part of a Time constructed with a Rational number of seconds" do
-      Time.at(Rational(3, 2)).usec.should == 500_000
-    end
+  it "returns the microseconds part of a Time constructed with a Rational number of seconds" do
+    Time.at(Rational(3, 2)).usec.should == 500_000
+  end
 
-    it "returns the microseconds part of a Time constructed with an Rational number of microseconds > 1" do
-      Time.at(0, Rational(99, 10)).usec.should == 9
-    end
+  it "returns the microseconds part of a Time constructed with an Rational number of microseconds > 1" do
+    Time.at(0, Rational(99, 10)).usec.should == 9
+  end
 
-    it "returns 0 for a Time constructed with an Rational number of microseconds < 1" do
-      Time.at(0, Rational(9, 10)).usec.should == 0
-    end
+  it "returns 0 for a Time constructed with an Rational number of microseconds < 1" do
+    Time.at(0, Rational(9, 10)).usec.should == 0
+  end
 
-    it "returns the microseconds for time created by Time#local" do
-      Time.local(1,2,3,4,5,Rational(6.78)).usec.should == 780000
-    end
+  it "returns the microseconds for time created by Time#local" do
+    Time.local(1,2,3,4,5,Rational(6.78)).usec.should == 780000
   end
 end

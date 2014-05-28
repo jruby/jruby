@@ -25,17 +25,8 @@ describe "Hash#delete" do
     new_hash(key => 5).delete(key).should == 5
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "raises a TypeError if called on a frozen instance" do
-      lambda { HashSpecs.frozen_hash.delete("foo")  }.should raise_error(TypeError)
-      lambda { HashSpecs.empty_frozen_hash.delete("foo") }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError if called on a frozen instance" do
-      lambda { HashSpecs.frozen_hash.delete("foo")  }.should raise_error(RuntimeError)
-      lambda { HashSpecs.empty_frozen_hash.delete("foo") }.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError if called on a frozen instance" do
+    lambda { HashSpecs.frozen_hash.delete("foo")  }.should raise_error(RuntimeError)
+    lambda { HashSpecs.empty_frozen_hash.delete("foo") }.should raise_error(RuntimeError)
   end
 end

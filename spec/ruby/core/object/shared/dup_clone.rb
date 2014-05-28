@@ -69,16 +69,14 @@ describe :object_dup_clone, :shared => true do
     o2.object_id.should_not == old_object_id
   end
 
-  ruby_version_is "1.9" do
-    it "preserves untrusted state from the original" do
-      o = ObjectSpecDupInitCopy.new
-      o2 = o.send(@method)
-      o.untrust
-      o3 = o.send(@method)
+  it "preserves untrusted state from the original" do
+    o = ObjectSpecDupInitCopy.new
+    o2 = o.send(@method)
+    o.untrust
+    o3 = o.send(@method)
 
-      o2.untrusted?.should == false
-      o3.untrusted?.should == true
-    end
+    o2.untrusted?.should == false
+    o3.untrusted?.should == true
   end
 
   it "raises a TypeError for NilClass" do

@@ -1,1 +1,4 @@
-fails:Kernel#taint raises error on fixnum values
+fails:Kernel#taint on a Fixnum raises a RuntimeError
+fails:Kernel#taint on a Bignum raises a RuntimeError
+fails:Kernel#taint on a Float raises a RuntimeError
+fails:Kernel#taint on a Symbol raises a RuntimeError

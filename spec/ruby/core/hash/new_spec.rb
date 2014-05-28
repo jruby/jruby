@@ -7,7 +7,7 @@ describe "Hash.new" do
     hash_class.new.size.should == 0
   end
 
-  it "creates a new Hash with default object if passed a default argument " do
+  it "creates a new Hash with default object if passed a default argument" do
     hash_class.new(5).default.should == 5
     hash_class.new(new_hash).default.should == new_hash
   end

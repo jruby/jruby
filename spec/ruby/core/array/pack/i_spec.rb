@@ -20,65 +20,63 @@ describe "Array#pack with format 'i'" do
   it_behaves_like :array_pack_integer, 'i'
 end
 
-ruby_version_is "1.9.3" do
-  describe "Array#pack with format 'I'" do
-    describe "with modifier '<'" do
-      it_behaves_like :array_pack_32bit_le, 'I<'
-    end
-
-    describe "with modifier '<' and '_'" do
-      it_behaves_like :array_pack_32bit_le, 'I<_'
-      it_behaves_like :array_pack_32bit_le, 'I_<'
-    end
-
-    describe "with modifier '<' and '!'" do
-      it_behaves_like :array_pack_32bit_le, 'I<!'
-      it_behaves_like :array_pack_32bit_le, 'I!<'
-    end
-
-    describe "with modifier '>'" do
-      it_behaves_like :array_pack_32bit_be, 'I>'
-    end
-
-    describe "with modifier '>' and '_'" do
-      it_behaves_like :array_pack_32bit_be, 'I>_'
-      it_behaves_like :array_pack_32bit_be, 'I_>'
-    end
-
-    describe "with modifier '>' and '!'" do
-      it_behaves_like :array_pack_32bit_be, 'I>!'
-      it_behaves_like :array_pack_32bit_be, 'I!>'
-    end
+describe "Array#pack with format 'I'" do
+  describe "with modifier '<'" do
+    it_behaves_like :array_pack_32bit_le, 'I<'
   end
 
-  describe "Array#pack with format 'i'" do
-    describe "with modifier '<'" do
-      it_behaves_like :array_pack_32bit_le, 'i<'
-    end
+  describe "with modifier '<' and '_'" do
+    it_behaves_like :array_pack_32bit_le, 'I<_'
+    it_behaves_like :array_pack_32bit_le, 'I_<'
+  end
 
-    describe "with modifier '<' and '_'" do
-      it_behaves_like :array_pack_32bit_le, 'i<_'
-      it_behaves_like :array_pack_32bit_le, 'i_<'
-    end
+  describe "with modifier '<' and '!'" do
+    it_behaves_like :array_pack_32bit_le, 'I<!'
+    it_behaves_like :array_pack_32bit_le, 'I!<'
+  end
 
-    describe "with modifier '<' and '!'" do
-      it_behaves_like :array_pack_32bit_le, 'i<!'
-      it_behaves_like :array_pack_32bit_le, 'i!<'
-    end
+  describe "with modifier '>'" do
+    it_behaves_like :array_pack_32bit_be, 'I>'
+  end
 
-    describe "with modifier '>'" do
-      it_behaves_like :array_pack_32bit_be, 'i>'
-    end
+  describe "with modifier '>' and '_'" do
+    it_behaves_like :array_pack_32bit_be, 'I>_'
+    it_behaves_like :array_pack_32bit_be, 'I_>'
+  end
 
-    describe "with modifier '>' and '_'" do
-      it_behaves_like :array_pack_32bit_be, 'i>_'
-      it_behaves_like :array_pack_32bit_be, 'i_>'
-    end
+  describe "with modifier '>' and '!'" do
+    it_behaves_like :array_pack_32bit_be, 'I>!'
+    it_behaves_like :array_pack_32bit_be, 'I!>'
+  end
+end
 
-    describe "with modifier '>' and '!'" do
-      it_behaves_like :array_pack_32bit_be, 'i>!'
-      it_behaves_like :array_pack_32bit_be, 'i!>'
-    end
+describe "Array#pack with format 'i'" do
+  describe "with modifier '<'" do
+    it_behaves_like :array_pack_32bit_le, 'i<'
+  end
+
+  describe "with modifier '<' and '_'" do
+    it_behaves_like :array_pack_32bit_le, 'i<_'
+    it_behaves_like :array_pack_32bit_le, 'i_<'
+  end
+
+  describe "with modifier '<' and '!'" do
+    it_behaves_like :array_pack_32bit_le, 'i<!'
+    it_behaves_like :array_pack_32bit_le, 'i!<'
+  end
+
+  describe "with modifier '>'" do
+    it_behaves_like :array_pack_32bit_be, 'i>'
+  end
+
+  describe "with modifier '>' and '_'" do
+    it_behaves_like :array_pack_32bit_be, 'i>_'
+    it_behaves_like :array_pack_32bit_be, 'i_>'
+  end
+
+  describe "with modifier '>' and '!'" do
+    it_behaves_like :array_pack_32bit_be, 'i>!'
+    it_behaves_like :array_pack_32bit_be, 'i!>'
   end
 end
 

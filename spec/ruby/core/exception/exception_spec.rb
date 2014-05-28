@@ -39,14 +39,12 @@ describe "Exception" do
     Exception.should be_ancestor_of(SystemStackError)
   end
 
-  ruby_version_is "1.9" do
-    it "is a superclass of SecurityError" do
-      Exception.should be_ancestor_of(SecurityError)
-    end
+  it "is a superclass of SecurityError" do
+    Exception.should be_ancestor_of(SecurityError)
+  end
 
-    it "is a superclass of EncodingError" do
-      Exception.should be_ancestor_of(EncodingError)
-    end
+  it "is a superclass of EncodingError" do
+    Exception.should be_ancestor_of(EncodingError)
   end
 end
 

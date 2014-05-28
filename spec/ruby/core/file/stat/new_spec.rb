@@ -22,11 +22,9 @@ describe "File::Stat#initialize" do
     st.ftype.should == 'file'
   end
 
-  ruby_version_is "1.9" do
-    it "calls #to_path on non-String arguments" do
-      p = mock('path')
-      p.should_receive(:to_path).and_return @file
-      File::Stat.new p
-    end
+  it "calls #to_path on non-String arguments" do
+    p = mock('path')
+    p.should_receive(:to_path).and_return @file
+    File::Stat.new p
   end
 end

@@ -52,42 +52,21 @@ describe "Thread#raise on a sleeping thread" do
     lambda { t.value }.should raise_error(RuntimeError)
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "raises a ZeroDivisionError when called with no arguments inside rescue" do
-      t = Thread.new do
-        begin
-          1/0
-        rescue ZeroDivisionError
-          sleep
-        end
-      end
+  it "raises a RuntimeError when called with no arguments inside rescue" do
+    t = Thread.new do
       begin
-        raise RangeError
-      rescue
-        ThreadSpecs.spin_until_sleeping(t)
-        t.raise
+        1/0
+      rescue ZeroDivisionError
+        sleep
       end
-      lambda {t.value}.should raise_error(ZeroDivisionError)
     end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError when called with no arguments inside rescue" do
-      t = Thread.new do
-        begin
-          1/0
-        rescue ZeroDivisionError
-          sleep
-        end
-      end
-      begin
-        raise RangeError
-      rescue
-        ThreadSpecs.spin_until_sleeping(t)
-        t.raise
-      end
-      lambda {t.value}.should raise_error(RuntimeError)
+    begin
+      raise RangeError
+    rescue
+      ThreadSpecs.spin_until_sleeping(t)
+      t.raise
     end
+    lambda {t.value}.should raise_error(RuntimeError)
   end
 end
 
@@ -132,7 +111,7 @@ describe "Thread#raise on a running thread" do
     lambda {t.value}.should raise_error(RuntimeError)
   end
 
-  it "raise the given argument even when there is an active exception" do
+  it "raises the given argument even when there is an active exception" do
     raised = false
     t = Thread.new do
       begin
@@ -151,75 +130,37 @@ describe "Thread#raise on a running thread" do
     end
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "raises a ZeroDivisionError when called with no arguments inside rescue" do
-      raised = false
-      t = Thread.new do
-        begin
-          1/0
-        rescue ZeroDivisionError
-          raised = true
-          loop { }
-        end
-      end
+  it "raises a RuntimeError when called with no arguments inside rescue" do
+    raised = false
+    t = Thread.new do
       begin
-        raise RangeError
-      rescue
-        Thread.pass until raised
-        t.raise
+        1/0
+      rescue ZeroDivisionError
+        raised = true
+        loop { }
       end
-      lambda {t.value}.should raise_error(ZeroDivisionError)
     end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError when called with no arguments inside rescue" do
-      raised = false
-      t = Thread.new do
-        begin
-          1/0
-        rescue ZeroDivisionError
-          raised = true
-          loop { }
-        end
-      end
-      begin
-        raise RangeError
-      rescue
-        Thread.pass until raised
-        t.raise
-      end
-      lambda {t.value}.should raise_error(RuntimeError)
+    begin
+      raise RangeError
+    rescue
+      Thread.pass until raised
+      t.raise
     end
+    lambda {t.value}.should raise_error(RuntimeError)
   end
 end
 
 describe "Thread#raise on same thread" do
   it_behaves_like :kernel_raise, :raise, Thread.current
 
-  ruby_version_is "" ... "1.9" do
-    it "raises a ZeroDivisionError when called with no arguments inside rescue" do
-      t = Thread.new do
-        begin
-          1/0
-        rescue ZeroDivisionError
-          Thread.current.raise
-        end
+  it "raises a RuntimeError when called with no arguments inside rescue" do
+    t = Thread.new do
+      begin
+        1/0
+      rescue ZeroDivisionError
+        Thread.current.raise
       end
-      lambda {t.value}.should raise_error(ZeroDivisionError)
     end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError when called with no arguments inside rescue" do
-      t = Thread.new do
-        begin
-          1/0
-        rescue ZeroDivisionError
-          Thread.current.raise
-        end
-      end
-      lambda {t.value}.should raise_error(RuntimeError)
-    end
+    lambda {t.value}.should raise_error(RuntimeError)
   end
 end

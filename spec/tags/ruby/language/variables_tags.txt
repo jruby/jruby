@@ -1,2 +1,3 @@
 fails:Assigning multiple values calls #to_ary on RHS arg if the corresponding LHS var is a splat
 fails:Basic multiple assignment with a splatted single RHS value does not call #to_ary on an object
+fails:Basic multiple assignment with a splatted single RHS value calls #to_a even if it's private

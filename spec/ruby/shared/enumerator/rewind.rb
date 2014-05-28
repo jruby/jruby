@@ -29,13 +29,11 @@ describe :enum_rewind, :shared => true do
     @enum.next.should == 1
   end
 
-  ruby_version_is "1.9" do
-    it "works with peek to reset the position" do
-      @enum.next
-      @enum.next
-      @enum.rewind
-      @enum.next
-      @enum.peek.should == 2
-    end
+  it "works with peek to reset the position" do
+    @enum.next
+    @enum.next
+    @enum.rewind
+    @enum.next
+    @enum.peek.should == 2
   end
 end

@@ -28,31 +28,15 @@ describe "Thread.new" do
     arr.should == [1]
   end
 
-  ruby_version_is ""..."1.9" do
-    it "doesn't call #initialize" do
-      c = Class.new(Thread) do
-        def initialize
-          raise
-        end
+  it "calls #initialize and raises an error if super not used" do
+    c = Class.new(Thread) do
+      def initialize
       end
-
-      lambda {
-        c.new
-      }.should_not raise_error(ThreadError)
     end
-  end
 
-  ruby_version_is "1.9" do
-    it "calls #initialize and raises an error if super not used" do
-      c = Class.new(Thread) do
-        def initialize
-        end
-      end
-
-      lambda {
-        c.new
-      }.should raise_error(ThreadError)
-    end
+    lambda {
+      c.new
+    }.should raise_error(ThreadError)
   end
 
   it "calls and respects #initialize for the block to use" do

@@ -25,12 +25,10 @@ describe "Array#select" do
   end
 end
 
-ruby_version_is "1.9" do
-  describe "Array#select!" do
-    it "returns nil if no changes were made in the array" do
-      [1, 2, 3].select! { true }.should be_nil
-    end
-
-    it_behaves_like :keep_if, :select!
+describe "Array#select!" do
+  it "returns nil if no changes were made in the array" do
+    [1, 2, 3].select! { true }.should be_nil
   end
+
+  it_behaves_like :keep_if, :select!
 end

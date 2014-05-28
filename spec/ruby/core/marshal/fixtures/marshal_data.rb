@@ -126,6 +126,11 @@ end
 class UserString < String
 end
 
+class UserCustomConstructorString < String
+  def initialize(arg1, arg2)
+  end
+end
+
 require 'openssl'
 
 class UserData < OpenSSL::X509::Name
@@ -154,12 +159,6 @@ Struct.new "Pyramid"
 Struct.new "Useful", :a, :b
 
 module MarshalSpec
-  class BasicObjectSubWithRespondToFalse
-    def respond_to?(a)
-      false
-    end
-  end
-  
   class StructWithUserInitialize < Struct.new(:a)
     THREADLOCAL_KEY = :marshal_load_struct_args
     def initialize(*args)
@@ -409,3 +408,8 @@ class ArraySubPush < Array
   alias_method :push, :<<
 end
 
+class SameName
+end
+
+module NamespaceTest
+end

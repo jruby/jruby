@@ -1,0 +1,28 @@
+.rbx
+*.rba
+*.rbc
+*.swp
+.DS_Store
+*~
+\#*\#
+.\#*\#
+/default.mspec
+/nbproject/private
+*.orig
+*.rej
+optional/ffi/fixtures/build
+jruby.1.8.mspec
+jruby.1.9.mspec
+rubyspec_temp
+Gemfile.lock
+
+# We have to generate this file because it was removed in 1.9.
+optional/capi/ext/rubyspec_version.h
+
+# Do not exclude files needed by the specs.
+# This explicitly unmasks files that may be
+# masked by a parent dirs .gitignore file.
+!*.bundle
+!*.dylib
+!*.so
+!*.dll

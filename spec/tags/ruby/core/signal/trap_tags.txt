@@ -10,3 +10,7 @@ fails:Signal.trap accepts 'SIG_IGN' in place of a proc
 fails:Signal.trap accepts 'IGNORE' in place of a proc
 fails(JRUBY-5666):Signal.trap the special EXIT signal code accepts the EXIT code
 fails(JRUBY-5666):Signal.trap the special EXIT signal code runs the proc before at_exit handlers
+fails:Signal.trap accepts 'DEFAULT' as a symbol in place of a proc
+fails:Signal.trap accepts 'SIG_DFL' as a symbol in place of a proc
+fails:Signal.trap accepts 'SIG_IGN' as a symbol in place of a proc
+fails:Signal.trap accepts 'IGNORE' as a symbol in place of a proc

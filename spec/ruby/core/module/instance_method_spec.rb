@@ -8,6 +8,14 @@ describe "Module#instance_method" do
     @mod_um = ModuleSpecs::InstanceMethChild.instance_method(:bar)
   end
 
+  it "is a public method" do
+    Module.should have_public_instance_method(:instance_method, false)
+  end
+
+  it "requires an argument" do
+    Module.new.method(:instance_method).arity.should == 1
+  end
+
   it "returns an UnboundMethod corresponding to the given name" do
     @parent_um.should be_kind_of(UnboundMethod)
     @parent_um.bind(ModuleSpecs::InstanceMeth.new).call.should == :foo
@@ -23,6 +31,14 @@ describe "Module#instance_method" do
     @mod_um.bind(ModuleSpecs::InstanceMethChild.new).call.should == :bar
   end
 
+  it "returns an UnboundMethod when given a protected method name" do
+    ModuleSpecs::Basic.instance_method(:protected_module).should be_an_instance_of(UnboundMethod)
+  end
+
+  it "returns an UnboundMethod when given a private method name" do
+    ModuleSpecs::Basic.instance_method(:private_module).should be_an_instance_of(UnboundMethod)
+  end
+
   it "gives UnboundMethod method name, Module defined in and Module extracted from" do
     @parent_um.inspect.should =~ /\bfoo\b/
     @parent_um.inspect.should =~ /\bModuleSpecs::InstanceMeth\b/
@@ -35,17 +51,9 @@ describe "Module#instance_method" do
     @mod_um.inspect.should    =~ /\bModuleSpecs::InstanceMethChild\b/
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises an ArgumentError if passed a Fixnum that is not a symbol" do
-      lambda { Object.instance_method(0) }.should raise_error(ArgumentError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a TypeError if not passed a symbol" do
-      lambda { Object.instance_method([]) }.should raise_error(TypeError)
-      lambda { Object.instance_method(0)  }.should raise_error(TypeError)
-    end
+  it "raises a TypeError if not passed a symbol" do
+    lambda { Object.instance_method([]) }.should raise_error(TypeError)
+    lambda { Object.instance_method(0)  }.should raise_error(TypeError)
   end
 
   it "raises a TypeError if the given name is not a string/symbol" do
@@ -59,10 +67,18 @@ describe "Module#instance_method" do
     um.should == @parent_um
     lambda do
       ModuleSpecs::InstanceMethChild.instance_method(:foo)
-    end.should raise_error(NameError)
+    end.should raise_exception(NameError)
   end
 
-  it "raises a NameError if the given method doesn't exist" do
-    lambda { Object.instance_method(:missing) }.should raise_error(NameError)
+  it "raises a NameError if the method does not exist" do
+    lambda { Object.instance_method(:missing) }.should raise_exception(NameError)
+  end
+
+  it "sets the NameError#name attribute to the name of the missing method" do
+    begin
+      Object.instance_method(:missing)
+    rescue NameError => e
+      e.name.should == :missing
+    end
   end
 end

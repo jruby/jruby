@@ -25,36 +25,13 @@ describe "Module#class_variable_set" do
     c.send(:class_variable_get, "@@mvar").should == :new_mvar
   end
 
-  ruby_version_is ""..."1.9" do
-    not_compliant_on :rubinius do
-      it "accepts Fixnums for class variables" do
-        c = Class.new
-        c.send(:class_variable_set, :@@test2.to_i, "test2")
-        c.send(:class_variable_get, :@@test2).should == "test2"
-      end
-    end
-  end
-
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError when self is frozen" do
-      lambda {
-        Class.new.freeze.send(:class_variable_set, :@@test, "test")
-      }.should raise_error(TypeError)
-      lambda {
-        Module.new.freeze.send(:class_variable_set, :@@test, "test")
-      }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError when self is frozen" do
-      lambda {
-        Class.new.freeze.send(:class_variable_set, :@@test, "test")
-      }.should raise_error(RuntimeError)
-      lambda {
-        Module.new.freeze.send(:class_variable_set, :@@test, "test")
-      }.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError when self is frozen" do
+    lambda {
+      Class.new.freeze.send(:class_variable_set, :@@test, "test")
+    }.should raise_error(RuntimeError)
+    lambda {
+      Module.new.freeze.send(:class_variable_set, :@@test, "test")
+    }.should raise_error(RuntimeError)
   end
 
   it "raises a NameError when the given name is not allowed" do

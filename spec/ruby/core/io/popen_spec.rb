@@ -120,25 +120,41 @@ describe "IO.popen" do
     end
   end
 
-  ruby_version_is "1.9.2" do
-    platform_is_not :windows do # not sure what commands to use on Windows
-      describe "with a leading Array parameter" do
-        it "uses the Array as command plus args for the child process" do
-          IO.popen(["yes", "hello"]) do |i|
-            i.read(5).should == 'hello'
-          end
-        end
+  with_feature :encoding do
+    it "has the given external encoding" do
+      io = IO.popen("true", :external_encoding => Encoding::EUC_JP)
+      io.external_encoding.should == Encoding::EUC_JP
+    end
 
-        it "uses a leading Hash in the Array as additional environment variables" do
-          IO.popen([{'foo' => 'bar'}, 'env']) do |i|
-            i.read.should =~ /foo=bar/
-          end
-        end
+    it "has the given internal encoding" do
+      io = IO.popen("true", :internal_encoding => Encoding::EUC_JP)
+      io.internal_encoding.should == Encoding::EUC_JP
+    end
 
-        it "uses a trailing Hash in the Array for spawn-like settings" do
-          IO.popen(['sh', '-c', 'does_not_exist', {:err => [:child, :out]}]) do |i|
-            i.read.should =~ /not found/
-          end
+    it "sets the internal encoding to nil if it's the same as the external encoding" do
+      io = IO.popen("true", :external_encoding => Encoding::EUC_JP,
+                            :internal_encoding => Encoding::EUC_JP)
+      io.internal_encoding.should be_nil
+    end
+  end
+
+  platform_is_not :windows do # not sure what commands to use on Windows
+    describe "with a leading Array parameter" do
+      it "uses the Array as command plus args for the child process" do
+        IO.popen(["yes", "hello"]) do |i|
+          i.read(5).should == 'hello'
+        end
+      end
+
+      it "uses a leading Hash in the Array as additional environment variables" do
+        IO.popen([{'foo' => 'bar'}, 'env']) do |i|
+          i.read.should =~ /foo=bar/
+        end
+      end
+
+      it "uses a trailing Hash in the Array for spawn-like settings" do
+        IO.popen(['sh', '-c', 'does_not_exist', {:err => [:child, :out]}]) do |i|
+          i.read.should =~ /not found/
         end
       end
     end

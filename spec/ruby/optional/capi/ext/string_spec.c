@@ -297,6 +297,12 @@ VALUE string_spec_rb_str_new4(VALUE self, VALUE str) {
 }
 #endif
 
+#ifdef HAVE_RB_STR_NEW5
+VALUE string_spec_rb_str_new5(VALUE self, VALUE str, VALUE ptr, VALUE len) {
+  return rb_str_new5(str, RSTRING_PTR(ptr), FIX2INT(len));
+}
+#endif
+
 #ifdef HAVE_RB_STR_PLUS
 VALUE string_spec_rb_str_plus(VALUE self, VALUE str1, VALUE str2) {
   return rb_str_plus(str1, str2);
@@ -341,7 +347,6 @@ VALUE string_spec_rb_str_ptr_assign_funcall(VALUE self, VALUE str) {
   char *ptr = rb_str_ptr(str);
 
   ptr[1] = 'x';
-  rb_str_flush(str);
   rb_funcall(str, rb_intern("<<"), 1, rb_str_new2("e"));
   return str;
 }
@@ -543,6 +548,20 @@ static VALUE string_spec_rb_str_hash(VALUE self, VALUE str) {
 }
 #endif
 
+#ifdef HAVE_RB_STR_UPDATE
+static VALUE string_spec_rb_str_update(VALUE self, VALUE str, VALUE beg, VALUE end, VALUE replacement) {
+  rb_str_update(str, FIX2LONG(beg), FIX2LONG(end), replacement);
+  return str;
+}
+#endif
+
+#ifdef HAVE_RB_STR_FREE
+static VALUE string_spec_rb_str_free(VALUE self, VALUE str) {
+  rb_str_free(str);
+  return Qnil;
+}
+#endif
+
 #ifdef HAVE_RB_SPRINTF
 static VALUE string_spec_rb_sprintf1(VALUE self, VALUE str, VALUE repl) {
   return rb_sprintf(RSTRING_PTR(str), RSTRING_PTR(repl));
@@ -639,9 +658,6 @@ void Init_string_spec() {
   rb_define_method(cls, "rb_str_dup", string_spec_rb_str_dup, 1);
 #endif
 
-#ifdef HAVE_RB_STR_FLUSH
-#endif
-
 #ifdef HAVE_RB_STR_FREEZE
   rb_define_method(cls, "rb_str_freeze", string_spec_rb_str_freeze, 1);
 #endif
@@ -705,6 +721,10 @@ void Init_string_spec() {
 
 #ifdef HAVE_RB_STR_NEW4
   rb_define_method(cls, "rb_str_new4", string_spec_rb_str_new4, 1);
+#endif
+
+#ifdef HAVE_RB_STR_NEW5
+  rb_define_method(cls, "rb_str_new5", string_spec_rb_str_new5, 3);
 #endif
 
 #ifdef HAVE_RB_STR_PLUS
@@ -792,6 +812,14 @@ void Init_string_spec() {
 
 #ifdef HAVE_RB_STR_HASH
   rb_define_method(cls, "rb_str_hash", string_spec_rb_str_hash, 1);
+#endif
+
+#ifdef HAVE_RB_STR_UPDATE
+  rb_define_method(cls, "rb_str_update", string_spec_rb_str_update, 4);
+#endif
+
+#ifdef HAVE_RB_STR_FREE
+  rb_define_method(cls, "rb_str_free", string_spec_rb_str_free, 1);
 #endif
 
 #ifdef HAVE_RB_SPRINTF

@@ -1,4 +1,5 @@
 require File.expand_path('../../spec_helper', __FILE__)
+require File.expand_path('../fixtures/precedence', __FILE__)
 
 # Specifying the behavior of operators in combination could
 # lead to combinatorial explosion. A better way seems to be
@@ -101,20 +102,6 @@ describe "Operators" do
     (++2).should == 2
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "! ~ + have a higher precedence than **" do
-      class FalseClass; def **(a); 1000; end; end
-      (!0**2).should == 1000
-      class FalseClass; undef_method :**; end
-
-      class UnaryPlusTest; def +@; 50; end; end
-      a = UnaryPlusTest.new
-      (+a**2).should == 2500
-
-      (~0**2).should == 1
-    end
-  end
-
   it "** is right-associative" do
     (2**2**3).should == 256
   end
@@ -134,6 +121,14 @@ describe "Operators" do
     (-b * 5).should == 250
     (-b / 5).should == 10
     (-b % 7).should == 1
+  end
+
+  it "treats +/- as a regular send if the arguments are known locals or block locals" do
+    a = PrecedenceSpecs::NonUnaryOpTest.new
+    a.add_num(1).should == [3]
+    a.sub_num(1).should == [1]
+    a.add_str.should == ['11']
+    a.add_var.should == [2]
   end
 
   it "* / % are left-associative" do
@@ -250,40 +245,6 @@ describe "Operators" do
 
     (e > 0 > 1).should     == (e > 0) > 1
     (e > 0 > 1).should_not == e > (0 > 1)
-  end
-
-  ruby_version_is "" ... "1.9" do
-    it "<= < > >= have higher precedence than <=> == === != =~ !~" do
-      (1 <=> 5 <  1).should == nil
-      (1 <=> 5 <= 1).should == nil
-      (1 <=> 5 >  1).should == nil
-      (1 <=> 5 >= 1).should == nil
-
-      (1 == 5 <  1).should == false
-      (1 == 5 <= 1).should == false
-      (1 == 5 >  1).should == false
-      (1 == 5 >= 1).should == false
-
-      (1 === 5 <  1).should == false
-      (1 === 5 <= 1).should == false
-      (1 === 5 >  1).should == false
-      (1 === 5 >= 1).should == false
-
-      (1 != 5 <  1).should == true
-      (1 != 5 <= 1).should == true
-      (1 != 5 >  1).should == true
-      (1 != 5 >= 1).should == true
-
-      (1 =~ 5 <  1).should == false
-      (1 =~ 5 <= 1).should == false
-      (1 =~ 5 >  1).should == false
-      (1 =~ 5 >= 1).should == false
-
-      (1 !~ 5 <  1).should == true
-      (1 !~ 5 <= 1).should == true
-      (1 !~ 5 >  1).should == true
-      (1 !~ 5 >= 1).should == true
-    end
   end
 
   it "<=> == === != =~ !~ are non-associative" do

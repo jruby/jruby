@@ -1,6 +1,8 @@
 # -*- encoding: US-ASCII -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/marshal_data', __FILE__)
+require File.expand_path('../../time/fixtures/methods', __FILE__)
+require File.expand_path('../fixtures/marshal_data19', __FILE__)
 
 describe "Marshal.dump" do
   it "dumps nil" do
@@ -57,10 +59,19 @@ describe "Marshal.dump" do
       Marshal.dump(('big' * 100).to_sym).should == "\004\b:\002,\001#{'big' * 100}"
     end
 
-    ruby_version_is "1.9" do
-      it "dumps an encoded Symbol" do
-        Marshal.dump("\u2192".encode("utf-8").to_sym).should == "\x04\bI:\b\xE2\x86\x92\x06:\x06ET"
-      end
+    it "dumps an encoded Symbol" do
+      s = "\u2192"
+      [ [Marshal, s.encode("utf-8").to_sym,
+            "\x04\bI:\b\xE2\x86\x92\x06:\x06ET"],
+        [Marshal, s.encode("utf-16").to_sym,
+            "\x04\bI:\t\xFE\xFF!\x92\x06:\rencoding\"\vUTF-16"],
+        [Marshal, s.encode("euc-jp").to_sym,
+            "\x04\bI:\a\xA2\xAA\x06:\rencoding\"\vEUC-JP"],
+        [Marshal, s.encode("sjis").to_sym,
+            "\x04\bI:\a\x81\xA8\x06:\rencoding\"\x10Windows-31J"],
+        [Marshal, s.force_encoding("binary").to_sym,
+            "\x04\bI:\b\xE2\x86\x92\x00"]
+      ].should be_computed_by(:dump)
     end
   end
 
@@ -144,18 +155,13 @@ describe "Marshal.dump" do
       [ [Marshal,  0.0,            "\004\bf\0060"],
         [Marshal, -0.0,            "\004\bf\a-0"],
         [Marshal,  1.0,            "\004\bf\0061"],
+        [Marshal,  123.4567,       "\004\bf\r123.4567"],
+        [Marshal, -0.841,          "\x04\bf\v-0.841"],
+        [Marshal, -9876.345,       "\x04\bf\x0E-9876.345"],
         [Marshal,  infinity_value, "\004\bf\binf"],
         [Marshal, -infinity_value, "\004\bf\t-inf"],
         [Marshal,  nan_value,      "\004\bf\bnan"],
       ].should be_computed_by(:dump)
-    end
-
-    ruby_version_is ""..."1.9" do
-      it "dumps a Float" do
-        [ [Marshal, 8323434.342,        "\004\bf\0328323434.3420000002\000S\370"],
-          [Marshal, 1.0799999999999912, "\004\bf\0321.0799999999999912\000\341 "],
-        ].should be_computed_by(:dump)
-      end
     end
   end
 
@@ -166,14 +172,12 @@ describe "Marshal.dump" do
       ].should be_computed_by(:dump)
     end
 
-    ruby_version_is "1.9" do
-      it "dumps a Bignum" do
-        [ [Marshal,  2**64, "\004\bl+\n\000\000\000\000\000\000\000\000\001\000"],
-          [Marshal,  2**90, "\004\bl+\v#{"\000" * 11}\004"],
-          [Marshal, -2**63, "\004\bl-\t\000\000\000\000\000\000\000\200"],
-          [Marshal, -2**64, "\004\bl-\n\000\000\000\000\000\000\000\000\001\000"],
-        ].should be_computed_by(:dump)
-      end
+    it "dumps a Bignum" do
+      [ [Marshal,  2**64, "\004\bl+\n\000\000\000\000\000\000\000\000\001\000"],
+        [Marshal,  2**90, "\004\bl+\v#{"\000" * 11}\004"],
+        [Marshal, -2**63, "\004\bl-\t\000\000\000\000\000\000\000\200"],
+        [Marshal, -2**64, "\004\bl-\n\000\000\000\000\000\000\000\000\001\000"],
+      ].should be_computed_by(:dump)
     end
   end
 
@@ -202,6 +206,12 @@ describe "Marshal.dump" do
       Marshal.dump(encode(UserString.new.extend(Meths), "binary")).should == "\004\be:\nMethsC:\017UserString\"\000"
     end
 
+    it "dumps a String with instance variables" do
+      str = ""
+      str.instance_variable_set("@foo", "bar")
+      Marshal.dump(encode(str, "binary")).should == "\x04\bI\"\x00\x06:\t@fooI\"\bbar\x06:\x06EF"
+    end
+
     with_feature :encoding do
       it "dumps a US-ASCII String" do
         str = "abc".force_encoding("us-ascii")
@@ -226,67 +236,41 @@ describe "Marshal.dump" do
   end
 
   describe "with a Regexp" do
-    ruby_version_is ""..."1.9" do
-      it "dumps a Regexp" do
-        Marshal.dump(/\A.\Z/).should == "\004\b/\n\\A.\\Z\000"
-      end
-
-      it "dumps a Regexp with flags" do
-        Marshal.dump(//im).should == "\x04\b/\000\005"
-      end
-
-      it "dumps a Regexp with instance variables" do
-        o = //
-        o.instance_variable_set(:@ivar, :ivar)
-        Marshal.dump(o).should == "\004\bI/\000\000\006:\n@ivar:\tivar"
-      end
-
-      it "dumps an extended Regexp" do
-        Marshal.dump(//.extend(Meths)).should == "\004\be:\nMeths/\000\000"
-      end
-
-      it "dumps a Regexp subclass" do
-        Marshal.dump(UserRegexp.new("")).should == "\004\bC:\017UserRegexp/\000\000"
-      end
+    it "dumps a Regexp" do
+      Marshal.dump(/\A.\Z/).should == "\x04\bI/\n\\A.\\Z\x00\x06:\x06EF"
     end
 
-    ruby_version_is "1.9" do
-      it "dumps a Regexp" do
-        Marshal.dump(/\A.\Z/).should == "\x04\bI/\n\\A.\\Z\x00\x06:\x06EF"
-      end
+    it "dumps a Regexp with flags" do
+      Marshal.dump(//im).should == "\x04\bI/\x00\x05\x06:\x06EF"
+    end
 
-      it "dumps a Regexp with flags" do
-        Marshal.dump(//im).should == "\x04\bI/\x00\x05\x06:\x06EF"
-      end
+    it "dumps a Regexp with instance variables" do
+      o = //
+      o.instance_variable_set(:@ivar, :ivar)
+      Marshal.dump(o).should == "\x04\bI/\x00\x00\a:\x06EF:\n@ivar:\tivar"
+    end
 
-      it "dumps a Regexp with instance variables" do
-        o = //
-        o.instance_variable_set(:@ivar, :ivar)
-        Marshal.dump(o).should == "\x04\bI/\x00\x00\a:\x06EF:\n@ivar:\tivar"
-      end
+    it "dumps an extended Regexp" do
+      Marshal.dump(//.extend(Meths)).should == "\x04\bIe:\nMeths/\x00\x00\x06:\x06EF"
+    end
 
-      it "dumps an extended Regexp" do
-        Marshal.dump(//.extend(Meths)).should == "\x04\bIe:\nMeths/\x00\x00\x06:\x06EF"
-      end
+    it "dumps a Regexp subclass" do
+      Marshal.dump(UserRegexp.new("")).should == "\x04\bIC:\x0FUserRegexp/\x00\x00\x06:\x06EF"
+    end
 
-      it "dumps a Regexp subclass" do
-        Marshal.dump(UserRegexp.new("")).should == "\x04\bIC:\x0FUserRegexp/\x00\x00\x06:\x06EF"
-      end
+    it "dumps a binary Regexp" do
+      o = Regexp.new(encode("", "binary"), Regexp::FIXEDENCODING)
+      Marshal.dump(o).should == "\x04\b/\x00\x10"
+    end
 
-      it "dumps a binary Regexp" do
-        o = Regexp.new(encode("", "binary"), Regexp::FIXEDENCODING)
-        Marshal.dump(o).should == "\x04\b/\x00\x10"
-      end
+    it "dumps a UTF-8 Regexp" do
+      o = Regexp.new(encode("", "utf-8"), Regexp::FIXEDENCODING)
+      Marshal.dump(o).should == "\x04\bI/\x00\x10\x06:\x06ET"
+    end
 
-      it "dumps a UTF-8 Regexp" do
-        o = Regexp.new(encode("", "utf-8"), Regexp::FIXEDENCODING)
-        Marshal.dump(o).should == "\x04\bI/\x00\x10\x06:\x06ET"
-      end
-
-      it "dumps a Regexp in another encoding" do
-        o = Regexp.new(encode("", "utf-16le"), Regexp::FIXEDENCODING)
-        Marshal.dump(o).should == "\x04\bI/\x00\x10\x06:\rencoding\"\rUTF-16LE"
-      end
+    it "dumps a Regexp in another encoding" do
+      o = Regexp.new(encode("", "utf-16le"), Regexp::FIXEDENCODING)
+      Marshal.dump(o).should == "\x04\bI/\x00\x10\x06:\rencoding\"\rUTF-16LE"
     end
   end
 
@@ -395,11 +379,9 @@ describe "Marshal.dump" do
       Marshal.dump(obj).should == "\004\bo:\x0BObject\x00"
     end
 
-    ruby_version_is "1.9" do
-      it "dumps a BasicObject subclass if it defines respond_to?" do
-        obj = MarshalSpec::BasicObjectSubWithRespondToFalse.new
-        Marshal.dump(obj).should == "\x04\bo:2MarshalSpec::BasicObjectSubWithRespondToFalse\x00"
-      end
+    it "dumps a BasicObject subclass if it defines respond_to?" do
+      obj = MarshalSpec::BasicObjectSubWithRespondToFalse.new
+      Marshal.dump(obj).should == "\x04\bo:2MarshalSpec::BasicObjectSubWithRespondToFalse\x00"
     end
   end
 
@@ -417,6 +399,55 @@ describe "Marshal.dump" do
     end
   end
 
+  describe "with a Time" do
+    before :each do
+      @internal = Encoding.default_internal
+      Encoding.default_internal = Encoding::UTF_8
+
+      @utc = Time.utc(2012, 1, 1)
+      @utc_dump = @utc.send(:_dump)
+
+      with_timezone 'AST', 3 do
+        @t = Time.local(2012, 1, 1)
+        @fract = Time.local(2012, 1, 1, 1, 59, 56.2)
+        @t_dump = @t.send(:_dump)
+        @fract_dump = @fract.send(:_dump)
+      end
+    end
+
+    after :each do
+      Encoding.default_internal = @internal
+    end
+
+    it "dumps the zone and the offset" do
+      with_timezone 'AST', 3 do
+        dump = Marshal.dump(@t)
+        dump.should == "\x04\bIu:\tTime\r#{@t_dump}\a:\voffseti\x020*:\tzoneI\"\bAST\x06:\x06ET"
+      end
+    end
+
+    it "dumps the zone, but not the offset if zone is UTC" do
+      dump = Marshal.dump(@utc)
+      dump.should == "\x04\bIu:\tTime\r#{@utc_dump}\x06:\tzoneI\"\bUTC\x06:\x06ET"
+    end
+  end
+
+  describe "with an Exception" do
+    it "dumps an empty Exception" do
+      Marshal.dump(Exception.new).should == "\x04\bo:\x0EException\a:\tmesg0:\abt0"
+    end
+
+    it "dumps the message for the exception" do
+      Marshal.dump(Exception.new("foo")).should == "\x04\bo:\x0EException\a:\tmesgI\"\bfoo\x06:\x06EF:\abt0"
+    end
+
+    it "contains the filename in the backtrace" do
+      obj = Exception.new("foo")
+      obj.set_backtrace(["foo/bar.rb:10"])
+      Marshal.dump(obj).should == "\x04\bo:\x0EException\a:\tmesgI\"\bfoo\x06:\x06EF:\abt[\x06I\"\x12foo/bar.rb:10\x06;\aF"
+    end
+  end
+
   it "dumps subsequent appearances of a symbol as a link" do
     Marshal.dump([:a, :a]).should == "\004\b[\a:\006a;\000"
   end
@@ -426,11 +457,9 @@ describe "Marshal.dump" do
     Marshal.dump([o, o]).should == "\004\b[\ao:\vObject\000@\006"
   end
 
-  ruby_version_is "1.9" do
-    MarshalSpec::DATA_19.each do |description, (object, marshal, attributes)|
-      it "#{description} returns a binary string" do
-        Marshal.dump(object).encoding.should == Encoding::BINARY
-      end
+  MarshalSpec::DATA_19.each do |description, (object, marshal, attributes)|
+    it "#{description} returns a binary string" do
+      Marshal.dump(object).encoding.should == Encoding::BINARY
     end
   end
 
@@ -448,19 +477,34 @@ describe "Marshal.dump" do
     Marshal.dump([[[]]], -1).should == "\004\b[\006[\006[\000"
   end
 
-  it "writes the serialized data to the IO-Object" do
-    (obj = mock('test')).should_receive(:write).at_least(1)
-    Marshal.dump("test", obj)
-  end
+  describe "when passed an IO" do
 
-  it "returns the IO-Object" do
-    (obj = mock('test')).should_receive(:write).at_least(1)
-    Marshal.dump("test", obj).should == obj
-  end
+    it "writes the serialized data to the IO-Object" do
+      (obj = mock('test')).should_receive(:write).at_least(1)
+      Marshal.dump("test", obj)
+    end
 
-  it "raises an Error when the IO-Object does not respond to #write" do
-    obj = mock('test')
-    lambda { Marshal.dump("test", obj) }.should raise_error(TypeError)
+    it "returns the IO-Object" do
+      (obj = mock('test')).should_receive(:write).at_least(1)
+      Marshal.dump("test", obj).should == obj
+    end
+
+    it "raises an Error when the IO-Object does not respond to #write" do
+      obj = mock('test')
+      lambda { Marshal.dump("test", obj) }.should raise_error(TypeError)
+    end
+
+    with_feature :encoding do
+
+      it "calls binmode when it's defined" do
+        obj = mock('test')
+        obj.should_receive(:write).at_least(1)
+        obj.should_receive(:binmode).at_least(1)
+        Marshal.dump("test", obj)
+      end
+
+    end
+
   end
 
   it "raises a TypeError if marshalling a Method instance" do
@@ -492,17 +536,15 @@ describe "Marshal.dump" do
     Marshal.dump([[Object.new.taint]]).tainted?.should be_true
   end
 
-  ruby_version_is "1.9" do
-    it "returns a trusted string if object is trusted" do
-      Marshal.dump(Object.new).untrusted?.should be_false
-    end
+  it "returns a trusted string if object is trusted" do
+    Marshal.dump(Object.new).untrusted?.should be_false
+  end
 
-    it "returns an untrusted string if object is untrusted" do
-      Marshal.dump(Object.new.untrust).untrusted?.should be_true
-    end
+  it "returns an untrusted string if object is untrusted" do
+    Marshal.dump(Object.new.untrust).untrusted?.should be_true
+  end
 
-    it "returns an untrusted string if nested object is untrusted" do
-      Marshal.dump([[Object.new.untrust]]).untrusted?.should be_true
-    end
+  it "returns an untrusted string if nested object is untrusted" do
+    Marshal.dump([[Object.new.untrust]]).untrusted?.should be_true
   end
 end

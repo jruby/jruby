@@ -30,6 +30,9 @@ module UnboundMethodSpecs
     def foo
       true
     end
+
+    def with_block(&block); end
+
     alias bar foo
     alias alias_1 foo
     alias alias_2 foo

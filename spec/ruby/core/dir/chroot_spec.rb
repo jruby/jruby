@@ -29,12 +29,10 @@ platform_is_not :windows do
             lambda { Dir.chroot('xgwhwhsjai2222jg') }.should raise_error(SystemCallError)
           end
 
-          ruby_version_is "1.9" do
-            it "calls #to_path on non-String argument" do
-              p = mock('path')
-              p.should_receive(:to_path).and_return('.')
-              lambda { Dir.chroot(p) }.should raise_error
-            end
+          it "calls #to_path on non-String argument" do
+            p = mock('path')
+            p.should_receive(:to_path).and_return('.')
+            lambda { Dir.chroot(p) }.should raise_error
           end
         end
       end

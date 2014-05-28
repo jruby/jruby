@@ -1,6 +1,5 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
-require 'enumerator'
 
 describe "Enumerable#each_cons" do
   before :each do
@@ -47,16 +46,14 @@ describe "Enumerable#each_cons" do
     cnt.times_yielded.should == 3
   end
 
-  ruby_version_is "1.8.7" do
-    it "returns an enumerator if no block" do
-      e = @enum.each_cons(3)
-      e.should be_an_instance_of(enumerator_class)
-      e.to_a.should == @in_threes
-    end
+  it "returns an enumerator if no block" do
+    e = @enum.each_cons(3)
+    e.should be_an_instance_of(enumerator_class)
+    e.to_a.should == @in_threes
+  end
 
-    it "gathers whole arrays as elements when each yields multiple" do
-      multi = EnumerableSpecs::YieldsMulti.new
-      multi.each_cons(2).to_a.should == [[[1, 2], [3, 4, 5]], [[3, 4, 5], [6, 7, 8, 9]]]
-    end
+  it "gathers whole arrays as elements when each yields multiple" do
+    multi = EnumerableSpecs::YieldsMulti.new
+    multi.each_cons(2).to_a.should == [[[1, 2], [3, 4, 5]], [[3, 4, 5], [6, 7, 8, 9]]]
   end
 end

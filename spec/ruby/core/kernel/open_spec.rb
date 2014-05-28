@@ -38,6 +38,11 @@ describe "Kernel#open" do
       @output = open("|date") { |f| f.gets }
       @output.should_not == ''
     end
+
+    it "opens an io for writing" do
+      bytes = open("|cat", "w") { |io| io.write(".") }
+      bytes.should == 1
+    end
   end
 
   platform_is :windows do
@@ -56,75 +61,65 @@ describe "Kernel#open" do
     lambda { open }.should raise_error(ArgumentError)
   end
 
-  ruby_version_is "1.9" do
-    describe "when given an object that responds to to_open" do
-      before :each do
-        ScratchPad.clear
-      end
-
-      it "calls #to_path to covert the argument to a String before calling #to_str" do
-        obj = mock("open to_path")
-        obj.should_receive(:to_path).at_least(1).times.and_return(@name)
-        obj.should_not_receive(:to_str)
-
-        open(obj, "r") { |f| f.gets }.should == @content
-      end
-
-      it "calls #to_str to convert the argument to a String" do
-        obj = mock("open to_str")
-        obj.should_receive(:to_str).at_least(1).times.and_return(@name)
-
-        open(obj, "r") { |f| f.gets }.should == @content
-      end
-
-      it "calls #to_open on argument" do
-        obj = mock('fileish')
-        @file = File.open(@name)
-        obj.should_receive(:to_open).and_return(@file)
-        @file = open(obj)
-        @file.should be_kind_of(File)
-      end
-
-      it "returns the value from #to_open" do
-        obj = mock('to_open')
-        obj.should_receive(:to_open).and_return(:value)
-
-        open(obj).should == :value
-      end
-
-      it "passes its arguments onto #to_open" do
-        obj = mock('to_open')
-        obj.should_receive(:to_open).with(1,2,3)
-
-        open(obj, 1, 2, 3)
-      end
-
-      it "passes the return value from #to_open to a block" do
-        obj = mock('to_open')
-        obj.should_receive(:to_open).and_return(:value)
-
-        open(obj) do |mock|
-          ScratchPad.record(mock)
-        end
-
-        ScratchPad.recorded.should == :value
-      end
+  describe "when given an object that responds to to_open" do
+    before :each do
+      ScratchPad.clear
     end
 
-    it "raises a TypeError if passed a non-String that does not respond to #to_open" do
-      obj = mock('non-fileish')
-      lambda { open(obj) }.should raise_error(TypeError)
-      lambda { open(nil) }.should raise_error(TypeError)
-      lambda { open(7)   }.should raise_error(TypeError)
+    it "calls #to_path to covert the argument to a String before calling #to_str" do
+      obj = mock("open to_path")
+      obj.should_receive(:to_path).at_least(1).times.and_return(@name)
+      obj.should_not_receive(:to_str)
+
+      open(obj, "r") { |f| f.gets }.should == @content
+    end
+
+    it "calls #to_str to convert the argument to a String" do
+      obj = mock("open to_str")
+      obj.should_receive(:to_str).at_least(1).times.and_return(@name)
+
+      open(obj, "r") { |f| f.gets }.should == @content
+    end
+
+    it "calls #to_open on argument" do
+      obj = mock('fileish')
+      @file = File.open(@name)
+      obj.should_receive(:to_open).and_return(@file)
+      @file = open(obj)
+      @file.should be_kind_of(File)
+    end
+
+    it "returns the value from #to_open" do
+      obj = mock('to_open')
+      obj.should_receive(:to_open).and_return(:value)
+
+      open(obj).should == :value
+    end
+
+    it "passes its arguments onto #to_open" do
+      obj = mock('to_open')
+      obj.should_receive(:to_open).with(1,2,3)
+
+      open(obj, 1, 2, 3)
+    end
+
+    it "passes the return value from #to_open to a block" do
+      obj = mock('to_open')
+      obj.should_receive(:to_open).and_return(:value)
+
+      open(obj) do |mock|
+        ScratchPad.record(mock)
+      end
+
+      ScratchPad.recorded.should == :value
     end
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError if not passed a String type" do
-      lambda { open(nil)       }.should raise_error(TypeError)
-      lambda { open(7)         }.should raise_error(TypeError)
-      lambda { open(mock('x')) }.should raise_error(TypeError)
-    end
+  it "raises a TypeError if passed a non-String that does not respond to #to_open" do
+    obj = mock('non-fileish')
+    lambda { open(obj) }.should raise_error(TypeError)
+    lambda { open(nil) }.should raise_error(TypeError)
+    lambda { open(7)   }.should raise_error(TypeError)
   end
 
   it "accepts nil for mode and permission" do

@@ -1,0 +1,2 @@
+fails:Hash#to_s returns a tainted string if self is tainted and not empty
+fails:Hash#to_s returns an untrusted string if self is untrusted and not empty

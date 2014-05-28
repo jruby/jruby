@@ -34,39 +34,26 @@ describe :hash_update, :shared => true do
     merge_bang_pairs.should == merge_pairs
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError if called on a non-empty, frozen instance" do
-      lambda { HashSpecs.frozen_hash.send(@method, 1 => 2) }.should raise_error(TypeError)
-    end
-
-    it "does not raise an exception on a frozen instance that would not be modified" do
-      hash = HashSpecs.frozen_hash.send(@method, HashSpecs.empty_frozen_hash)
-      hash.should == HashSpecs.frozen_hash
-    end
+  it "raises a RuntimeError on a frozen instance that is modified" do
+    lambda do
+      HashSpecs.frozen_hash.send(@method, 1 => 2)
+    end.should raise_error(RuntimeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError on a frozen instance that is modified" do
-      lambda do
-        HashSpecs.frozen_hash.send(@method, 1 => 2)
-      end.should raise_error(RuntimeError)
-    end
+  it "checks frozen status before coercing an object with #to_hash" do
+    obj = mock("to_hash frozen")
+    # This is necessary because mock cleanup code cannot run on the frozen
+    # object.
+    def obj.to_hash() raise Exception, "should not receive #to_hash" end
+    obj.freeze
 
-    it "checks frozen status before coercing an object with #to_hash" do
-      obj = mock("to_hash frozen")
-      # This is necessary because mock cleanup code cannot run on the frozen
-      # object.
-      def obj.to_hash() raise Exception, "should not receive #to_hash" end
-      obj.freeze
+    lambda { HashSpecs.frozen_hash.send(@method, obj) }.should raise_error(RuntimeError)
+  end
 
-      lambda { HashSpecs.frozen_hash.send(@method, obj) }.should raise_error(RuntimeError)
-    end
-
-    # see redmine #1571
-    it "raises a RuntimeError on a frozen instance that would not be modified" do
-      lambda do
-        HashSpecs.frozen_hash.send(@method, HashSpecs.empty_frozen_hash)
-      end.should raise_error(RuntimeError)
-    end
+  # see redmine #1571
+  it "raises a RuntimeError on a frozen instance that would not be modified" do
+    lambda do
+      HashSpecs.frozen_hash.send(@method, HashSpecs.empty_frozen_hash)
+    end.should raise_error(RuntimeError)
   end
 end

@@ -36,9 +36,7 @@ describe "Array#pack with format 'w'" do
     lambda { [-1].pack("w") }.should raise_error(ArgumentError)
   end
 
-  ruby_version_is "1.9" do
-    it "returns an ASCII-8BIT string" do
-      [1].pack('w').encoding.should == Encoding::ASCII_8BIT
-    end
+  it "returns an ASCII-8BIT string" do
+    [1].pack('w').encoding.should == Encoding::ASCII_8BIT
   end
 end

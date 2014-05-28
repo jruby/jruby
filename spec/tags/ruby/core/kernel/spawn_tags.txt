@@ -15,7 +15,6 @@ fails:Kernel.spawn redirects both STDERR and STDOUT to the given IO
 fails(compiler):Kernel.spawn executes the given command
 fails(compiler):Kernel.spawn uses the current working directory as its working directory
 fails(compiler):Kernel.spawn does NOT redirect both STDERR and STDOUT at the time to the given name
-fails:Kernel.spawn uses the given working directory if :chdir => dir is supplied
 fails(ci):Kernel#spawn executes the given command
 fails:Kernel#spawn returns immediately
 fails:Kernel#spawn unsets environment variables whose value is nil
@@ -29,9 +28,6 @@ fails:Kernel#spawn unsets other environment variables when given a non-false :un
 fails:Kernel#spawn joins a new process group if :pgroup => true
 fails:Kernel#spawn joins a new process group if :pgroup => 0
 fails:Kernel#spawn raises an ArgumentError if given a negative :pgroup option
-fails:Kernel#spawn raises an TypeError if given a symbol as :pgroup option
-fails:Kernel#spawn uses the given working directory if :chdir => dir is supplied
-fails:Kernel#spawn calls #to_path to convert the :chdir option value
 fails:Kernel#spawn sets the umask if given the :umask option
 fails:Kernel#spawn redirects STDOUT to the given file descriptior if :out => Fixnum
 fails:Kernel#spawn redirects STDOUT to the given file if :out => IO
@@ -43,7 +39,6 @@ fails:Kernel#spawn redirects both STDERR and STDOUT to the given file descriptio
 fails:Kernel#spawn redirects both STDERR and STDOUT to the given IO
 fails:Kernel#spawn does NOT redirect both STDERR and STDOUT at the time to the given name
 fails:Kernel#spawn closes file descriptors >= 3 in the child process
-fails:Kernel#spawn does not close file descriptors >= 3 in the child process when given a false :close_others option
 fails:Kernel#spawn raises an Errno::EACCES when passed a directory
 fails:Kernel#spawn raises an ArgumentError when passed a string key in options
 fails:Kernel#spawn raises an ArgumentError when passed an unknown option key
@@ -66,11 +61,8 @@ fails:Kernel.spawn unsets other environment variables when given a true :unseten
 fails:Kernel.spawn unsets other environment variables when given a non-false :unsetenv_others option
 fails:Kernel.spawn joins a new process group if :pgroup => 0
 fails:Kernel.spawn raises an ArgumentError if given a negative :pgroup option
-fails:Kernel.spawn raises an TypeError if given a symbol as :pgroup option
-fails:Kernel.spawn calls #to_path to convert the :chdir option value
 fails:Kernel.spawn sets the umask if given the :umask option
 fails:Kernel.spawn closes file descriptors >= 3 in the child process
-fails:Kernel.spawn does not close file descriptors >= 3 in the child process when given a false :close_others option
 fails:Kernel.spawn raises an Errno::EACCES when passed a directory
 fails:Kernel.spawn raises an ArgumentError when passed a string key in options
 fails:Kernel.spawn raises an ArgumentError when passed an unknown option key
@@ -125,3 +117,11 @@ unstable(intermittent, gh-779):Kernel.spawn joins the current process if :pgroup
 unstable(intermittent, gh-779):Kernel.spawn joins the specified process group if :pgroup => pgid
 unstable(intermittent, gh-779):Kernel.spawn uses the current umask by default
 unstable(intermittent, gh-779):Kernel#spawn with a command array calls #to_str to convert the second element to a String
+fails:Kernel#spawn raises a TypeError if given a symbol as :pgroup option
+fails:Kernel#spawn does not close file descriptors >= 3 in the child process when given a false :close_others option and fds are set close_on_exec=false
+fails:Kernel#spawn when passed :chdir changes to the directory passed for :chdir
+fails:Kernel#spawn when passed :chdir calls #to_path to convert the :chdir value
+fails:Kernel.spawn raises a TypeError if given a symbol as :pgroup option
+fails:Kernel.spawn does not close file descriptors >= 3 in the child process when given a false :close_others option and fds are set close_on_exec=false
+fails:Kernel.spawn when passed :chdir changes to the directory passed for :chdir
+fails:Kernel.spawn when passed :chdir calls #to_path to convert the :chdir value

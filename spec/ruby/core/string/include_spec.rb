@@ -25,23 +25,3 @@ describe "String#include? with String" do
     lambda { "hello".include?(mock('x')) }.should raise_error(TypeError)
   end
 end
-
-ruby_version_is ""..."1.9" do
-  describe "String#include? with Fixnum" do
-    it "returns true if self contains the given char" do
-      "hello".include?(?h).should == true
-      "hello".include?(?z).should == false
-      "hello".include?(0).should == false
-    end
-
-    it "uses fixnum % 256" do
-      "hello".include?(?h + 256 * 3).should == true
-    end
-
-    it "doesn't try to convert fixnum to an Integer using to_int" do
-      obj = mock('x')
-      obj.should_not_receive(:to_int)
-      lambda { "hello".include?(obj) }.should raise_error(TypeError)
-    end
-  end
-end

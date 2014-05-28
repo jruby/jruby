@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "IO#to_i" do
-  it "return the numeric file descriptor of the given IO object" do
+  it "returns the numeric file descriptor of the given IO object" do
     $stdout.to_i.should == 1
   end
 

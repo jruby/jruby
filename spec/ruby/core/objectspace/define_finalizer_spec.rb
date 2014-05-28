@@ -23,43 +23,35 @@ describe "ObjectSpace.define_finalizer" do
     ObjectSpace.define_finalizer("garbage", handler).should == [0, handler]
   end
 
-  it "raises ArgumentError trying to define a finalizer on a non-reference" do
-    lambda {
-      ObjectSpace.define_finalizer(:blah) { 1 }
-    }.should raise_error(ArgumentError)
-  end
-
   # see [ruby-core:24095]
-  ruby_version_is "1.9" do
-    with_feature :fork do
-      it "calls finalizer on process termination" do
-        rd, wr = IO.pipe
-        if Kernel::fork then
-          wr.close
-          rd.read.should == "finalized"
-          rd.close
-        else
-          rd.close
-          handler = ObjectSpaceFixtures.scoped(wr)
-          obj = "Test"
-          ObjectSpace.define_finalizer(obj, handler)
-          exit 0
-        end
+  with_feature :fork do
+    it "calls finalizer on process termination" do
+      rd, wr = IO.pipe
+      if Kernel::fork then
+        wr.close
+        rd.read.should == "finalized"
+        rd.close
+      else
+        rd.close
+        handler = ObjectSpaceFixtures.scoped(wr)
+        obj = "Test"
+        ObjectSpace.define_finalizer(obj, handler)
+        exit 0
       end
+    end
 
-      it "calls finalizer at exit even if it is self-referencing" do
-        rd, wr = IO.pipe
-        if Kernel::fork then
-          wr.close
-          rd.read.should == "finalized"
-          rd.close
-        else
-          rd.close
-          obj = "Test"
-          handler = Proc.new { wr.write "finalized"; wr.close }
-          ObjectSpace.define_finalizer(obj, handler)
-          exit 0
-        end
+    it "calls finalizer at exit even if it is self-referencing" do
+      rd, wr = IO.pipe
+      if Kernel::fork then
+        wr.close
+        rd.read.should == "finalized"
+        rd.close
+      else
+        rd.close
+        obj = "Test"
+        handler = Proc.new { wr.write "finalized"; wr.close }
+        ObjectSpace.define_finalizer(obj, handler)
+        exit 0
       end
     end
   end

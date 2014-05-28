@@ -13,18 +13,9 @@ describe "Kernel#untaint" do
     o.tainted?.should == false
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises TypeError on a tainted, frozen object" do
-      o = Object.new.taint.freeze
-      lambda { o.untaint }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises RuntimeError on a tainted, frozen object" do
-      o = Object.new.taint.freeze
-      lambda { o.untaint }.should raise_error(RuntimeError)
-    end
+  it "raises RuntimeError on a tainted, frozen object" do
+    o = Object.new.taint.freeze
+    lambda { o.untaint }.should raise_error(RuntimeError)
   end
 
   it "does not raise an error on an untainted, frozen object" do

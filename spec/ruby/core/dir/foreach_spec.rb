@@ -24,29 +24,18 @@ describe "Dir.foreach" do
     Dir.foreach(DirSpecs.mock_dir) {|f| f}.should == nil
   end
 
-  ruby_version_is "1.9" do
-    it "calls #to_path on non-String arguments" do
-      p = mock('path')
-      p.should_receive(:to_path).and_return(DirSpecs.mock_dir)
-      Dir.foreach(p).to_a
-    end
+  it "calls #to_path on non-String arguments" do
+    p = mock('path')
+    p.should_receive(:to_path).and_return(DirSpecs.mock_dir)
+    Dir.foreach(p).to_a
   end
 
   it "raises a SystemCallError if passed a nonexistent directory" do
     lambda { Dir.foreach(DirSpecs.nonexistent) {} }.should raise_error(SystemCallError)
   end
 
-  ruby_version_is '' ... '1.8.7' do
-    it "raises a LocalJumpError if no block given" do
-      lambda{ Dir.foreach(DirSpecs.mock_dir) }.should raise_error(LocalJumpError)
-    end
+  it "returns an Enumerator if no block given" do
+    Dir.foreach(DirSpecs.mock_dir).should be_an_instance_of(enumerator_class)
+    Dir.foreach(DirSpecs.mock_dir).to_a.sort.should == DirSpecs.expected_paths
   end
-
-  ruby_version_is '1.8.7' do
-    it "returns an Enumerator if no block given" do
-      Dir.foreach(DirSpecs.mock_dir).should be_an_instance_of(enumerator_class)
-      Dir.foreach(DirSpecs.mock_dir).to_a.sort.should == DirSpecs.expected_paths
-    end
-  end
-
 end

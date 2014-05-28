@@ -24,9 +24,11 @@ describe "Module#method_added" do
         def test() end
         def test2() end
         def test() end
+        alias_method :aliased_test, :test
+        alias aliased_test2 test
       end
 
-      $methods_added.should == [:test,:test2, :test]
+      $methods_added.should == [:test, :test2, :test, :aliased_test, :aliased_test2]
     ensure
       $methods_added = nil
     end

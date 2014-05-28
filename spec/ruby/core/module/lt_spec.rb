@@ -9,6 +9,13 @@ describe "Module#<" do
     (ModuleSpecs::Super < ModuleSpecs::Basic).should == true
   end
 
+  it "returns false if self is a superclass of or included by the given module" do
+    (ModuleSpecs::Parent < ModuleSpecs::Child).should be_false
+    (ModuleSpecs::Basic < ModuleSpecs::Child).should be_false
+    (ModuleSpecs::Super < ModuleSpecs::Child).should be_false
+    (ModuleSpecs::Basic < ModuleSpecs::Super).should be_false
+  end
+
   it "returns false if self is the same as the given module" do
     (ModuleSpecs::Child  < ModuleSpecs::Child).should == false
     (ModuleSpecs::Parent < ModuleSpecs::Parent).should == false

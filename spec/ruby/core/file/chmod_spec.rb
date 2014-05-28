@@ -159,10 +159,8 @@ describe "File.chmod" do
     end
   end
 
-  ruby_version_is "1.9" do
-    it "accepts an object that has a #to_path method" do
-      File.chmod(0, mock_to_path(@file))
-    end
+  it "accepts an object that has a #to_path method" do
+    File.chmod(0, mock_to_path(@file))
   end
 
   it "throws a TypeError if the given path is not coercable into a string" do

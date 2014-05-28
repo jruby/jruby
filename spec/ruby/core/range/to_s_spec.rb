@@ -8,6 +8,24 @@ describe "Range#to_s" do
     ('A'..'Z').to_s.should == 'A..Z'
     ('A'...'Z').to_s.should == 'A...Z'
     (0xfff..0xfffff).to_s.should == "4095..1048575"
-    (0.5..2.4).inspect.should == "0.5..2.4"
+    (0.5..2.4).to_s.should == "0.5..2.4"
+  end
+
+  it "returns a tainted string if either end is tainted" do
+    (("a".taint)..."c").to_s.tainted?.should be_true
+    ("a"...("c".taint)).to_s.tainted?.should be_true
+  end
+
+  it "ignores own tainted status" do
+    ("a"..."c").taint.to_s.tainted?.should be_false
+  end
+
+  it "returns a untrusted string if either end is untrusted" do
+    (("a".untrust)..."c").to_s.untrusted?.should be_true
+    ("a"...("c".untrust)).to_s.untrusted?.should be_true
+  end
+
+  it "ignores own untrusted status" do
+    ("a"..."c").untrust.to_s.untrusted?.should be_false
   end
 end

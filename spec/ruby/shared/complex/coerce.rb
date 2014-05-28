@@ -41,21 +41,19 @@ describe :complex_coerce, :shared => true do
     result.last.should equal(@one)
   end
 
-  ruby_version_is "1.9" do
-    it "returns an array containing other as Complex and self when other is a Numeric which responds to #real? with true" do
-      other = mock_numeric('other')
-      other.should_receive(:real?).any_number_of_times.and_return(true)
-      result = @one.coerce(other)
-      result.should == [other, @one]
-      result.first.should eql(Complex(other))
-      result.last.should equal(@one)
-    end
+  it "returns an array containing other as Complex and self when other is a Numeric which responds to #real? with true" do
+    other = mock_numeric('other')
+    other.should_receive(:real?).any_number_of_times.and_return(true)
+    result = @one.coerce(other)
+    result.should == [other, @one]
+    result.first.should eql(Complex(other))
+    result.last.should equal(@one)
+  end
 
-    it "raises TypeError when other is a Numeric which responds to #real? with false" do
-      other = mock_numeric('other')
-      other.should_receive(:real?).any_number_of_times.and_return(false)
-      lambda { @one.coerce(other) }.should raise_error(TypeError)
-    end
+  it "raises TypeError when other is a Numeric which responds to #real? with false" do
+    other = mock_numeric('other')
+    other.should_receive(:real?).any_number_of_times.and_return(false)
+    lambda { @one.coerce(other) }.should raise_error(TypeError)
   end
 
   it "raises a TypeError when other is a String" do

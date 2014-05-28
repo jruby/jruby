@@ -25,26 +25,16 @@ describe "IO#puts" do
     lambda { $stdout.puts "\n" }.should output_to_fd("\n", STDOUT)
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "writes nil with a newline when given nil as an arg" do
-      @io.should_receive(:write).with("nil")
-      @io.should_receive(:write).with("\n")
-      @io.puts(nil).should == nil
-    end
+  it "writes empty string with a newline when given nil as an arg" do
+    @io.should_receive(:write).with("")
+    @io.should_receive(:write).with("\n")
+    @io.puts(nil).should == nil
   end
 
-  ruby_version_is "1.9" do
-    it "writes empty string with a newline when given nil as an arg" do
-      @io.should_receive(:write).with("")
-      @io.should_receive(:write).with("\n")
-      @io.puts(nil).should == nil
-    end
-
-    it "writes empty string with a newline when when given nil as multiple args" do
-      @io.should_receive(:write).with("").twice
-      @io.should_receive(:write).with("\n").twice
-      @io.puts(nil, nil).should == nil
-    end
+  it "writes empty string with a newline when when given nil as multiple args" do
+    @io.should_receive(:write).with("").twice
+    @io.should_receive(:write).with("\n").twice
+    @io.puts(nil, nil).should == nil
   end
 
   it "calls to_s before writing non-string objects" do

@@ -2,3 +2,9 @@ fails:Encoding::Converter#primitive_convert uses the destination byte offset to 
 fails:Encoding::Converter#primitive_convert returns :incomplete_input when source buffer ends unexpectedly and :partial_input isn't specified
 fails:Encoding::Converter#primitive_convert returns :source_buffer_empty when source buffer ends unexpectedly and :partial_input is true
 fails:Encoding::Converter#primitive_convert calls #to_int to convert the destination byte size
+fails:Encoding::Converter#primitive_convert removes the undefined part from the source buffer when returning :undefined_conversion
+fails:Encoding::Converter#primitive_convert clears the source buffer when returning :incomplete_input
+fails:Encoding::Converter#primitive_convert clears the source buffer when returning :source_buffer_empty
+fails:Encoding::Converter#primitive_convert removes consumed and erroneous bytes from the source buffer when returning :invalid_byte_sequence
+fails:Encoding::Converter#primitive_convert keeps removing invalid bytes from the source buffer
+fails:Encoding::Converter#primitive_convert reuses read-again bytes after the first error

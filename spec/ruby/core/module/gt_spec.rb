@@ -2,6 +2,13 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Module#>" do
+  it "returns false if self is a subclass of or includes the given module" do
+    (ModuleSpecs::Child > ModuleSpecs::Parent).should be_false
+    (ModuleSpecs::Child > ModuleSpecs::Basic).should be_false
+    (ModuleSpecs::Child > ModuleSpecs::Super).should be_false
+    (ModuleSpecs::Super > ModuleSpecs::Basic).should be_false
+  end
+
   it "returns true if self is a superclass of or included by the given module" do
     (ModuleSpecs::Parent > ModuleSpecs::Child).should == true
     (ModuleSpecs::Basic  > ModuleSpecs::Child).should == true

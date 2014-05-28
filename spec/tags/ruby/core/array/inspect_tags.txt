@@ -1,1 +1,1 @@
-fails:Array#inspect raises if inspected result is not default external encoding
+fails:Array#inspect with encoding raises if inspected result is not default external encoding

@@ -1,1 +1,2 @@
 windows(JRUBY-4446):File.grpowned? returns false if the file exist
+fails:File.grpowned? takes non primary groups into account

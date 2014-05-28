@@ -35,14 +35,6 @@ describe :array_pack_8bit, :shared => true do
     [obj].pack(pack_format).should == "\x05"
   end
 
-  not_compliant_on :rubinius do
-    ruby_version_is '' ... '1.9' do
-      it "accepts a Symbol as a pack argument because it responds to #to_int" do
-        [:hello].pack(pack_format).should == [:hello.to_i].pack('C')
-      end
-    end
-  end
-
   it "encodes the number of array elements specified by the count modifier" do
     [ [[1, 2, 3], pack_format(3), "\x01\x02\x03"],
       [[1, 2, 3], pack_format(2) + pack_format(1), "\x01\x02\x03"]

@@ -1,0 +1,1 @@
+fails:Enumerator::Generator#initialize on frozen instance raises a RuntimeError

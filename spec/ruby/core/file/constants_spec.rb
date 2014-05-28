@@ -3,7 +3,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 # TODO: migrate these to constants/constants_spec.rb
 
 describe "File::Constants" do
-  it "match mode constants" do
+  it "matches mode constants" do
     File::FNM_NOESCAPE.should_not == nil
     File::FNM_PATHNAME.should_not == nil
     File::FNM_DOTMATCH.should_not == nil

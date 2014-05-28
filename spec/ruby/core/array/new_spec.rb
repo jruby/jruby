@@ -10,7 +10,7 @@ describe "Array.new" do
     ArraySpecs::MyArray.new(1, 2).should be_an_instance_of(ArraySpecs::MyArray)
   end
 
-  it "raise an ArgumentError if passed 3 or more arguments" do
+  it "raises an ArgumentError if passed 3 or more arguments" do
     lambda do
       [1, 2].send :initialize, 1, 'x', true
     end.should raise_error(ArgumentError)

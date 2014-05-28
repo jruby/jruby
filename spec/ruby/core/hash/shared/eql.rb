@@ -189,15 +189,13 @@ describe :hash_eql_additional, :shared => true do
 
   # The specs above all pass in 1.8.6p287 for Hash#== but not Hash#eql
   # except this one, which does not pass for Hash#==.
-  ruby_version_is "1.8.7" do
-    it "compares the values in self to values in other hash" do
-      l_val = mock("left")
-      r_val = mock("right")
+  it "compares the values in self to values in other hash" do
+    l_val = mock("left")
+    r_val = mock("right")
 
-      l_val.should_receive(:eql?).with(r_val).and_return(true)
+    l_val.should_receive(:eql?).with(r_val).and_return(true)
 
-      new_hash(1 => l_val).eql?(new_hash(1 => r_val)).should be_true
-    end
+    new_hash(1 => l_val).eql?(new_hash(1 => r_val)).should be_true
   end
 end
 

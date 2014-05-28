@@ -10,9 +10,6 @@ fails:Process.spawn unsets other environment variables when given a non-false :u
 fails:Process.spawn joins a new process group if :pgroup => true
 fails:Process.spawn joins a new process group if :pgroup => 0
 fails:Process.spawn raises an ArgumentError if given a negative :pgroup option
-fails:Process.spawn raises an TypeError if given a symbol as :pgroup option
-fails:Process.spawn uses the given working directory if :chdir => dir is supplied
-fails:Process.spawn calls #to_path to convert the :chdir option value
 fails:Process.spawn sets the umask if given the :umask option
 fails:Process.spawn redirects STDOUT to the given file descriptior if :out => Fixnum
 fails:Process.spawn redirects STDOUT to the given file if :out => IO
@@ -24,7 +21,6 @@ fails:Process.spawn redirects both STDERR and STDOUT to the given file descripti
 fails:Process.spawn redirects both STDERR and STDOUT to the given IO
 fails:Process.spawn does NOT redirect both STDERR and STDOUT at the time to the given name
 fails:Process.spawn closes file descriptors >= 3 in the child process
-fails:Process.spawn does not close file descriptors >= 3 in the child process when given a false :close_others option
 fails:Process.spawn raises an Errno::EACCES when passed a directory
 fails:Process.spawn raises an ArgumentError when passed a string key in options
 fails:Process.spawn raises an ArgumentError when passed an unknown option key
@@ -60,3 +56,7 @@ unstable(intermittent, gh-779):Process.spawn joins the current process if :pgrou
 unstable(intermittent, gh-779):Process.spawn joins the specified process group if :pgroup => pgid
 unstable(intermittent, gh-779):Process.spawn uses the current working directory as its working directory
 unstable(intermittent, gh-779):Process.spawn uses the current umask by default
+fails:Process.spawn raises a TypeError if given a symbol as :pgroup option
+fails:Process.spawn does not close file descriptors >= 3 in the child process when given a false :close_others option and fds are set close_on_exec=false
+fails:Process.spawn when passed :chdir changes to the directory passed for :chdir
+fails:Process.spawn when passed :chdir calls #to_path to convert the :chdir value

@@ -1,2 +1,0 @@
-fails:String#inspect returns a string with a NUL character replaced by \0
-fails:String#inspect when default external is UTF-8 returns a string with a NUL character replaced by \0

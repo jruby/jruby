@@ -14,48 +14,18 @@ describe "C-API Proc function" do
       @prc.kind_of?(Proc).should == true
     end
 
-    ruby_version_is "" ... "1.8.7" do
-      it "calls the C function wrapped by the Proc instance when sent #call" do
-        @prc.call(:foo_bar).should == "[:foo_bar]"
-        @prc.call([:foo, :bar]).should == "[:foo, :bar]"
-      end
-
-      it "calls the C function wrapped by the Proc instance when sent #[]" do
-        @prc[:foo_bar].should == "[:foo_bar]"
-        @prc[[:foo, :bar]].should == "[:foo, :bar]"
-      end
-
-      it "returns a Proc instance correctly described in #inspect with source location" do
-        @prc.inspect.should =~ /^#<Proc:0x[0-9a-f]*@.*:\d+>$/
-      end
+    it "calls the C function wrapped by the Proc instance when sent #call" do
+      @prc.call(:foo_bar).should == ":foo_bar"
+      @prc.call([:foo, :bar]).should == "[:foo, :bar]"
     end
 
-    ruby_version_is "1.8.7" ... "1.9" do
-      it "calls the C function wrapped by the Proc instance when sent #call" do
-        @prc.call(:foo_bar).should == "[:foo_bar]"
-        @prc.call([:foo, :bar]).should == "[[:foo, :bar]]"
-      end
-
-      it "calls the C function wrapped by the Proc instance when sent #[]" do
-        @prc[:foo_bar].should == "[:foo_bar]"
-        @prc[[:foo, :bar]].should == "[[:foo, :bar]]"
-      end
+    it "calls the C function wrapped by the Proc instance when sent #[]" do
+      @prc[:foo_bar].should == ":foo_bar"
+      @prc[[:foo, :bar]].should == "[:foo, :bar]"
     end
 
-    ruby_version_is "1.9" do
-      it "calls the C function wrapped by the Proc instance when sent #call" do
-        @prc.call(:foo_bar).should == ":foo_bar"
-        @prc.call([:foo, :bar]).should == "[:foo, :bar]"
-      end
-
-      it "calls the C function wrapped by the Proc instance when sent #[]" do
-        @prc[:foo_bar].should == ":foo_bar"
-        @prc[[:foo, :bar]].should == "[:foo, :bar]"
-      end
-
-      it "returns a Proc instance correctly described in #inspect without source location" do
-        @prc.inspect.should =~ /^#<Proc:([^ :@]*?)>$/
-      end
+    it "returns a Proc instance correctly described in #inspect without source location" do
+      @prc.inspect.should =~ /^#<Proc:([^ :@]*?)>$/
     end
 
     it "returns a Proc instance with #aricy == -1" do
@@ -66,10 +36,8 @@ describe "C-API Proc function" do
       @prc.should_not == @p.rb_proc_new
     end
 
-    ruby_version_is "1.9" do
-      it "returns a Proc instance with #source_location == nil" do
-        @prc.source_location.should == nil
-      end
+    it "returns a Proc instance with #source_location == nil" do
+      @prc.source_location.should == nil
     end
   end
 end

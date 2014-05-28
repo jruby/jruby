@@ -37,31 +37,13 @@ describe :to_s, :shared => true do
     y.send(@method).should == "{1=>{0=>{...}}}"
   end
 
-  # Recursive hash keys are disallowed on 1.9
-  ruby_version_is ""..."1.9" do
-    it "handles hashes with recursive keys" do
-      x = new_hash
-      x[x] = 0
-      x.send(@method).should == '{{...}=>0}'
+  it "returns a tainted string if self is tainted and not empty" do
+    new_hash.taint.send(@method).tainted?.should be_false
+    new_hash(nil => nil).taint.send(@method).tainted?.should be_true
+  end
 
-      x = new_hash
-      x[x] = x
-      x.send(@method).should == '{{...}=>{...}}'
-
-
-      x = new_hash
-      y = new_hash
-      x[y] = 0
-      y[x] = 1
-      x.send(@method).should == "{{{...}=>1}=>0}"
-      y.send(@method).should == "{{{...}=>0}=>1}"
-
-      x = new_hash
-      y = new_hash
-      x[y] = x
-      y[x] = y
-      x.send(@method).should == "{{{...}=>{...}}=>{...}}"
-      y.send(@method).should == "{{{...}=>{...}}=>{...}}"
-    end
+  it "returns an untrusted string if self is untrusted and not empty" do
+    new_hash.untrust.send(@method).untrusted?.should be_false
+    new_hash(nil => nil).untrust.send(@method).untrusted?.should be_true
   end
 end

@@ -2,3 +2,14 @@ fails:The defined? keyword for super for a method taking no arguments returns 's
 fails:The defined? keyword for super for a method taking no arguments returns 'super' from a block in a #define_method when a superclass method exists
 fails:The defined? keyword for super for a method taking arguments returns 'super' from a block when a superclass method exists
 fails:The defined? keyword for super for a method taking arguments returns 'super' from a block in a #define_method when a superclass method exists
+fails:The defined? keyword for conditional expressions returns 'expression' for an 'if' conditional
+fails:The defined? keyword for conditional expressions returns 'expression' for an 'unless' conditional
+fails:The defined? keyword for conditional expressions returns 'expression' for ternary expressions
+fails:The defined? keyword for case expressions returns 'expression'
+fails:The defined? keyword for loop expressions returns 'expression' for a 'while' expression
+fails:The defined? keyword for loop expressions returns 'expression' for an 'until' expression
+fails:The defined? keyword for loop expressions returns 'expression' for a 'break' expression
+fails:The defined? keyword for loop expressions returns 'expression' for a 'next' expression
+fails:The defined? keyword for loop expressions returns 'expression' for a 'redo' expression
+fails:The defined? keyword for loop expressions returns 'expression' for a 'retry' expression
+fails:The defined? keyword for return expressions returns 'expression'

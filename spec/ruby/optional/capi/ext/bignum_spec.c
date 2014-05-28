@@ -53,6 +53,12 @@ static VALUE bignum_spec_RBIGNUM_NEGATIVE_P(VALUE self, VALUE num) {
 }
 #endif
 
+#ifdef HAVE_RBIGNUM_LEN
+static VALUE bignum_spec_RBIGNUM_LEN(VALUE self, VALUE num) {
+  return LONG2NUM(RBIGNUM_LEN(num));
+}
+#endif
+
 void Init_bignum_spec() {
   VALUE cls;
   cls = rb_define_class("CApiBignumSpecs", rb_cObject);
@@ -87,6 +93,10 @@ void Init_bignum_spec() {
 
 #ifdef HAVE_RBIGNUM_NEGATIVE_P
   rb_define_method(cls, "RBIGNUM_NEGATIVE_P", bignum_spec_RBIGNUM_NEGATIVE_P, 1);
+#endif
+
+#ifdef HAVE_RBIGNUM_LEN
+  rb_define_method(cls, "RBIGNUM_LEN", bignum_spec_RBIGNUM_LEN, 1);
 #endif
 }
 

@@ -11,9 +11,7 @@ describe "ENV.values_at" do
     ENV.delete "bar"
   end
 
-  ruby_version_is "1.9" do
-    it "uses the locale encoding" do
-      ENV.values_at(ENV.keys.first).first.encoding.should == Encoding.find('locale')
-    end
+  it "uses the locale encoding" do
+    ENV.values_at(ENV.keys.first).first.encoding.should == Encoding.find('locale')
   end
 end

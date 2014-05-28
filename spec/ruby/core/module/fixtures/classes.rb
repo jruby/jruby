@@ -1,6 +1,12 @@
 module ModuleSpecs
   CONST = :plain_constant
 
+  module PrivConstModule
+    PRIVATE_CONSTANT = 1
+    private_constant :PRIVATE_CONSTANT
+    PUBLIC_CONSTANT = 2
+  end
+
   class Subclass < Module
   end
 
@@ -202,6 +208,9 @@ module ModuleSpecs
     def protected_one; 1; end
   end
 
+  class AliasingSubclass < Aliasing
+  end
+
   module AliasingSuper
 
     module Parent
@@ -388,6 +397,9 @@ module ModuleSpecs
     include CyclicAppendA
   end
 
+  module CyclicPrepend
+  end
+
   module ExtendObject
     C = :test
     def test_method
@@ -401,6 +413,82 @@ module ModuleSpecs
         ScratchPad.record :extended
       end
       private :extend_object
+    end
+  end
+
+  class CyclicBarrier
+    def initialize(count = 1)
+      @count = count
+      @state = 0
+      @mutex = Mutex.new
+      @cond  = ConditionVariable.new
+    end
+
+    def await
+      @mutex.synchronize do
+        @state += 1
+        if @state >= @count
+          @state = 0
+          @cond.broadcast
+          true
+        else
+          @cond.wait @mutex
+          false
+        end
+      end
+    end
+
+    def enabled?
+      @mutex.synchronize { @count != -1 }
+    end
+
+    def disable!
+      @mutex.synchronize do
+        @count = -1
+        @cond.broadcast
+      end
+    end
+  end
+
+  class ThreadSafeCounter
+    def initialize(value = 0)
+      @value = 0
+      @mutex = Mutex.new
+    end
+
+    def get
+      @mutex.synchronize { @value }
+    end
+
+    def increment_and_get
+      @mutex.synchronize do
+        prev_value = @value
+        @value += 1
+        prev_value
+      end
+    end
+  end
+
+  module ShadowingOuter
+    module M
+      SHADOW = 123
+    end
+
+    module N
+      SHADOW = 456
+    end
+
+    class Foo
+      include M
+      def self.get
+        SHADOW
+      end
+    end
+  end
+
+  module UnboundMethodTest
+    def foo
+      'bar'
     end
   end
 end

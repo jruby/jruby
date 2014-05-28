@@ -9,22 +9,10 @@ describe :dir_path, :shared => true do
     dir.close rescue nil
   end
 
-  ruby_version_is ""..."1.8.7" do
-    it "raises an IOError when called on a closed Dir instance" do
-      lambda {
-        dir = Dir.open DirSpecs.mock_dir
-        dir.close
-        dir.send(@method)
-      }.should raise_error(IOError)
-    end
-  end
-
-  ruby_version_is "1.8.7" do
-    it "returns the path even when called on a closed Dir instance" do
-      dir = Dir.open DirSpecs.mock_dir
-      dir.close
-      dir.send(@method).should == DirSpecs.mock_dir
-    end
+  it "returns the path even when called on a closed Dir instance" do
+    dir = Dir.open DirSpecs.mock_dir
+    dir.close
+    dir.send(@method).should == DirSpecs.mock_dir
   end
 
   with_feature :encoding do

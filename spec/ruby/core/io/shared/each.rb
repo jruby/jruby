@@ -54,20 +54,12 @@ describe :io_each, :shared => true do
       ScratchPad.recorded.should == [ 1,2,3,4,5,6,7,8,9 ]
     end
 
-    ruby_version_is "" ... "1.8.7" do
-      it "raises a LocalJumpError when passed no block" do
-        lambda { @io.send(@method) }.should raise_error(LocalJumpError)
-      end
-    end
+    it "returns an Enumerator when passed no block" do
+      enum = @io.send(@method)
+      enum.should be_an_instance_of(enumerator_class)
 
-    ruby_version_is "1.8.7" do
-      it "returns an Enumerator when passed no block" do
-        enum = @io.send(@method)
-        enum.should be_an_instance_of(enumerator_class)
-
-        enum.each { |l| ScratchPad << l }
-        ScratchPad.recorded.should == IOSpecs.lines
-      end
+      enum.each { |l| ScratchPad << l }
+      ScratchPad.recorded.should == IOSpecs.lines
     end
   end
 

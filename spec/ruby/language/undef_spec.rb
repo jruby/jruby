@@ -5,7 +5,7 @@ class UndefSpecClass
 end
 
 describe "The undef keyword" do
-  it "undefines 'meth='" do
+  it "undefines a method" do
     obj = ::UndefSpecClass.new
     (obj.meth 5).should == 5
     class ::UndefSpecClass

@@ -27,7 +27,7 @@ describe "String#upcase" do
   end
 
   it "returns a subclass instance for subclasses" do
-    StringSpecs::MyString.new("fooBAR").upcase.should be_kind_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("fooBAR").upcase.should be_an_instance_of(StringSpecs::MyString)
   end
 end
 
@@ -44,17 +44,8 @@ describe "String#upcase!" do
     a.should == "HELLO"
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError when self is frozen" do
-      lambda { "HeLlo".freeze.upcase! }.should raise_error(TypeError)
-      lambda { "HELLO".freeze.upcase! }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError when self is frozen" do
-      lambda { "HeLlo".freeze.upcase! }.should raise_error(RuntimeError)
-      lambda { "HELLO".freeze.upcase! }.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError when self is frozen" do
+    lambda { "HeLlo".freeze.upcase! }.should raise_error(RuntimeError)
+    lambda { "HELLO".freeze.upcase! }.should raise_error(RuntimeError)
   end
 end

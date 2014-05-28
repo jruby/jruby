@@ -13,7 +13,7 @@ describe "File.rename" do
     rm_r @old, @new
   end
 
-  it "renames a file " do
+  it "renames a file" do
     File.exists?(@old).should == true
     File.exists?(@new).should == false
     File.rename(@old, @new)

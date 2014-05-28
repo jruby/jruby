@@ -13,7 +13,7 @@ describe "Enumerable#min" do
     EnumerableSpecs::Numerous.new.min.should == 1
   end
 
-  it "return the minimun (basic cases)" do
+  it "returns the minimum (basic cases)" do
     EnumerableSpecs::EachDefiner.new(55).min.should == 55
 
     EnumerableSpecs::EachDefiner.new(11,99).min.should ==  11
@@ -33,24 +33,14 @@ describe "Enumerable#min" do
     @e_ints.min.should == 22
   end
 
-  it "returns nil for an empty Enumerable " do
+  it "returns nil for an empty Enumerable" do
     EnumerableSpecs::EachDefiner.new.min.should be_nil
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a NoMethodError for elements without #<=>" do
-      lambda do
-        EnumerableSpecs::EachDefiner.new(Object.new, Object.new).min
-      end.should raise_error(NoMethodError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a NoMethodError for elements without #<=>" do
-      lambda do
-        EnumerableSpecs::EachDefiner.new(BasicObject.new, BasicObject.new).min
-      end.should raise_error(NoMethodError)
-    end
+  it "raises a NoMethodError for elements without #<=>" do
+    lambda do
+      EnumerableSpecs::EachDefiner.new(BasicObject.new, BasicObject.new).min
+    end.should raise_error(NoMethodError)
   end
 
   it "raises an ArgumentError for incomparable elements" do
@@ -62,7 +52,7 @@ describe "Enumerable#min" do
     end.should raise_error(ArgumentError)
   end
 
-  it "return the minimun when using a block rule" do
+  it "returns the minimum when using a block rule" do
     EnumerableSpecs::EachDefiner.new("2","33","4","11").min {|a,b| a <=> b }.should == "11"
     EnumerableSpecs::EachDefiner.new( 2 , 33 , 4 , 11 ).min {|a,b| a <=> b }.should == 2
 

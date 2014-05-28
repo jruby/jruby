@@ -305,4 +305,26 @@ module Super
       end
     end
   end
+
+  class AnonymousModuleIncludedTwiceBase
+    def self.whatever
+      mod = Module.new do
+        def a(array)
+          array << "anon"
+          super
+        end
+      end
+
+      include mod
+    end
+
+    def a(array)
+      array << "non-anon"
+    end
+  end
+
+  class AnonymousModuleIncludedTwice < AnonymousModuleIncludedTwiceBase
+    whatever
+    whatever
+  end
 end

@@ -9,16 +9,8 @@ describe :kernel___method__, :shared => true do
     f.should == :f
   end
 
-  ruby_version_is ""..."2.0" do
-    it "returns the original name when aliased method" do
-      g.should == :f
-    end
-  end
-
-  ruby_version_is "2.0" do
-    it "returns the aliased name when aliased method" do
-      g.should == :g
-    end
+  it "returns the aliased name when aliased method" do
+    g.should == :g
   end
 
   it "returns the caller from blocks too" do

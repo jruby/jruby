@@ -23,22 +23,12 @@ describe "Kernel#puts" do
     Kernel.puts.should == nil
   end
 
-  ruby_version_is ""..."1.9" do
-    it "writes nil with a newline when given nil as an arg" do
-      $stdout.should_receive(:write).with("nil")
-      $stdout.should_receive(:write).with("\n")
-      Kernel.puts(nil).should == nil
-    end
-  end
-
   # Declared intentional in
   # http://redmine.ruby-lang.org/issues/show/1748
-  ruby_version_is "1.9" do
-    it "writes a newline when given nil as an arg" do
-      $stdout.should_receive(:write).with('')
-      $stdout.should_receive(:write).with("\n")
-      Kernel.puts(nil).should == nil
-    end
+  it "writes a newline when given nil as an arg" do
+    $stdout.should_receive(:write).with('')
+    $stdout.should_receive(:write).with("\n")
+    Kernel.puts(nil).should == nil
   end
 
   it "calls to_s before writing non-string objects" do

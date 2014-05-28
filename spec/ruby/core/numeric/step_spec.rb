@@ -20,22 +20,20 @@ describe "Numeric#step" do
     ScratchPad.recorded.should == [1, 2, 3, 4, 5]
   end
 
-  ruby_version_is "1.8.7" do
-    it "returns an Enumerator when step is 0" do
-      1.step(2, 0).should be_an_instance_of(enumerator_class)
-    end
+  it "returns an Enumerator when step is 0" do
+    1.step(2, 0).should be_an_instance_of(enumerator_class)
+  end
 
-    it "returns an Enumerator when not passed a block and self > stop" do
-      1.step(0, 2).should be_an_instance_of(enumerator_class)
-    end
+  it "returns an Enumerator when not passed a block and self > stop" do
+    1.step(0, 2).should be_an_instance_of(enumerator_class)
+  end
 
-    it "returns an Enumerator when not passed a block and self < stop" do
-      1.step(2, 3).should be_an_instance_of(enumerator_class)
-    end
+  it "returns an Enumerator when not passed a block and self < stop" do
+    1.step(2, 3).should be_an_instance_of(enumerator_class)
+  end
 
-    it "returns an Enumerator that uses the given step" do
-      0.step(5, 2).to_a.should == [0, 2, 4]
-    end
+  it "returns an Enumerator that uses the given step" do
+    0.step(5, 2).to_a.should == [0, 2, 4]
   end
 
   describe "with [stop, step]" do
@@ -43,21 +41,6 @@ describe "Numeric#step" do
       @stop = mock("Numeric#step stop value")
       @step = mock("Numeric#step step value")
       @obj = NumericSpecs::Subclass.new
-    end
-
-    ruby_version_is ""..."1.8.7" do
-      it "does not raise a LocalJumpError when not passed a block and self > stop" do
-        @step.should_receive(:>).with(0).and_return(true)
-        @obj.should_receive(:>).with(@stop).and_return(true)
-        @obj.step(@stop, @step)
-      end
-
-      it "raises a LocalJumpError when not passed a block and self < stop" do
-        @step.should_receive(:>).with(0).and_return(true)
-        @obj.should_receive(:>).with(@stop).and_return(false)
-
-        lambda { @obj.step(@stop, @step) }.should raise_error(LocalJumpError)
-      end
     end
 
     it "increments self using #+ until self > stop when step > 0" do
@@ -84,6 +67,38 @@ describe "Numeric#step" do
   describe "Numeric#step with [stop, step] when self, stop and step are Fixnums" do
     it "yields only Fixnums" do
       1.step(5, 1) { |x| x.should be_kind_of(Fixnum) }
+    end
+  end
+
+  describe "Numeric#step with [stop, step] when self and stop are Fixnums but step is a String" do
+    it "returns an Enumerator if not given a block" do
+      1.step(5, "1").should be_an_instance_of(enumerator_class)
+      1.step(5, "0.1").should be_an_instance_of(enumerator_class)
+      1.step(5, "1/3").should be_an_instance_of(enumerator_class)
+      1.step(5, "foo").should be_an_instance_of(enumerator_class)
+    end
+
+    it "raises an ArgumentError if given a block" do
+      lambda { 1.step(5, "1") {} }.should raise_error(ArgumentError)
+      lambda { 1.step(5, "0.1") {} }.should raise_error(ArgumentError)
+      lambda { 1.step(5, "1/3") {} }.should raise_error(ArgumentError)
+      lambda { 1.step(5, "foo") {} }.should raise_error(ArgumentError)
+    end
+  end
+
+  describe "Numeric#step with [stop, step] when self and stop are Floats but step is a String" do
+    it "returns an Enumerator if not given a block" do
+      1.1.step(5.1, "1").should be_an_instance_of(enumerator_class)
+      1.1.step(5.1, "0.1").should be_an_instance_of(enumerator_class)
+      1.1.step(5.1, "1/3").should be_an_instance_of(enumerator_class)
+      1.1.step(5.1, "foo").should be_an_instance_of(enumerator_class)
+    end
+
+    it "raises a TypeError if given a block" do
+      lambda { 1.1.step(5.1, "1") {} }.should raise_error(TypeError)
+      lambda { 1.1.step(5.1, "0.1") {} }.should raise_error(TypeError)
+      lambda { 1.1.step(5.1, "1/3") {} }.should raise_error(TypeError)
+      lambda { 1.1.step(5.1, "foo") {} }.should raise_error(TypeError)
     end
   end
 
@@ -254,6 +269,39 @@ describe "Numeric#step" do
         42.step(infinity_value, -infinity_value, &@prc)
         ScratchPad.recorded.should == []
       end
+    end
+  end
+
+  describe "Numeric#step with [infinity, -step]" do
+    it "does not yield when self is -infinity" do
+      (-infinity_value).step(infinity_value, -1, &@prc)
+      ScratchPad.recorded.should == []
+    end
+
+    it "does not yield when self is +infinity" do
+      infinity_value.step(infinity_value, -1, &@prc)
+      ScratchPad.recorded.should == []
+    end
+  end
+
+  describe "Numeric#step with [infinity, step]" do
+    it "does not yield when self is infinity" do
+      (infinity_value).step(infinity_value, 1, &@prc)
+      ScratchPad.recorded.should == []
+    end
+  end
+
+  describe "Numeric#step with [-infinity, step]" do
+    it "does not yield when self is -infinity" do
+      (-infinity_value).step(-infinity_value, 1, &@prc)
+      ScratchPad.recorded.should == []
+    end
+  end
+
+  describe "Numeric#step with [-infinity, -step]" do
+    it "does not yield when self is -infinity" do
+      (-infinity_value).step(-infinity_value, -1, &@prc)
+      ScratchPad.recorded.should == []
     end
   end
 

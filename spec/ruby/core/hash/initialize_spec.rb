@@ -24,35 +24,17 @@ describe "Hash#initialize" do
     h.send(:initialize).should equal(h)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError if called on a frozen instance" do
-      block = lambda { HashSpecs.frozen_hash.instance_eval { initialize() }}
-      block.should raise_error(TypeError)
+  it "raises a RuntimeError if called on a frozen instance" do
+    block = lambda { HashSpecs.frozen_hash.instance_eval { initialize() }}
+    block.should raise_error(RuntimeError)
 
-      block = lambda { HashSpecs.frozen_hash.instance_eval { initialize(nil) }  }
-      block.should raise_error(TypeError)
+    block = lambda { HashSpecs.frozen_hash.instance_eval { initialize(nil) }  }
+    block.should raise_error(RuntimeError)
 
-      block = lambda { HashSpecs.frozen_hash.instance_eval { initialize(5) }    }
-      block.should raise_error(TypeError)
+    block = lambda { HashSpecs.frozen_hash.instance_eval { initialize(5) }    }
+    block.should raise_error(RuntimeError)
 
-      block = lambda { HashSpecs.frozen_hash.instance_eval { initialize { 5 } } }
-      block.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError if called on a frozen instance" do
-      block = lambda { HashSpecs.frozen_hash.instance_eval { initialize() }}
-      block.should raise_error(RuntimeError)
-
-      block = lambda { HashSpecs.frozen_hash.instance_eval { initialize(nil) }  }
-      block.should raise_error(RuntimeError)
-
-      block = lambda { HashSpecs.frozen_hash.instance_eval { initialize(5) }    }
-      block.should raise_error(RuntimeError)
-
-      block = lambda { HashSpecs.frozen_hash.instance_eval { initialize { 5 } } }
-      block.should raise_error(RuntimeError)
-    end
+    block = lambda { HashSpecs.frozen_hash.instance_eval { initialize { 5 } } }
+    block.should raise_error(RuntimeError)
   end
 end

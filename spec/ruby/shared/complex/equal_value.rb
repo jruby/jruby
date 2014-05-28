@@ -64,32 +64,30 @@ describe :complex_equal_value, :shared => true do
     end
   end
 
-  ruby_version_is "1.9" do
-    describe "with a Numeric which responds to #real? with true" do
-      before do
-        @other = mock_numeric('other')
-        @other.should_receive(:real?).any_number_of_times.and_return(true)
-      end
-
-      it "returns real == other when the imaginary part is zero" do
-        real = mock_numeric('real')
-        real.should_receive(:==).with(@other).and_return(true)
-        (Complex(real, 0) == @other).should be_true
-      end
-
-      it "returns false when when the imaginary part is not zero" do
-        (Complex(3, 1) == @other).should be_false
-      end
+  describe "with a Numeric which responds to #real? with true" do
+    before do
+      @other = mock_numeric('other')
+      @other.should_receive(:real?).any_number_of_times.and_return(true)
     end
 
-    describe "with a Numeric which responds to #real? with false" do
-      it "returns other == self" do
-        complex = Complex(3, 0)
-        other = mock_numeric('other')
-        other.should_receive(:real?).any_number_of_times.and_return(false)
-        other.should_receive(:==).with(complex).and_return(true)
-        (complex == other).should be_true
-      end
+    it "returns real == other when the imaginary part is zero" do
+      real = mock_numeric('real')
+      real.should_receive(:==).with(@other).and_return(true)
+      (Complex(real, 0) == @other).should be_true
+    end
+
+    it "returns false when when the imaginary part is not zero" do
+      (Complex(3, 1) == @other).should be_false
+    end
+  end
+
+  describe "with a Numeric which responds to #real? with false" do
+    it "returns other == self" do
+      complex = Complex(3, 0)
+      other = mock_numeric('other')
+      other.should_receive(:real?).any_number_of_times.and_return(false)
+      other.should_receive(:==).with(complex).and_return(true)
+      (complex == other).should be_true
     end
   end
 end

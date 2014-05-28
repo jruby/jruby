@@ -2,10 +2,10 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "IO" do
   it "includes File::Constants" do
-    IO.should include(File::Constants)
+    IO.include?(File::Constants).should == true
   end
 
   it "includes Enumerable" do
-    IO.should include(Enumerable)
+    IO.include?(Enumerable).should == true
   end
 end

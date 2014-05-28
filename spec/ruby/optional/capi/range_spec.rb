@@ -34,13 +34,14 @@ describe "C-API Range function" do
       lambda { @s.rb_range_new(1, mock('x'))         }.should raise_error(ArgumentError)
       lambda { @s.rb_range_new(mock('x'), mock('y')) }.should raise_error(ArgumentError)
     end
+  end
 
-    ruby_version_is ""..."1.9" do
-      it "raises an ArgumentError when the given start uses method_missing and end is mock" do
-        b = mock('x')
-        (a = mock('nil')).should_receive(:method_missing).with(:<=>, b).and_return(nil)
-        lambda { @s.rb_range_new(a, b) }.should raise_error(ArgumentError)
-      end
+  describe "rb_range_values" do
+    it "stores the range properties" do
+      beg, fin, excl = @s.rb_range_values(10..20)
+      beg.should == 10
+      fin.should == 20
+      excl.should be_false
     end
   end
 end

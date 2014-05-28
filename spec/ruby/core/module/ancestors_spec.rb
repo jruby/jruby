@@ -17,4 +17,23 @@ describe "Module#ancestors" do
   it "has 1 entry per module or class" do
     ModuleSpecs::Parent.ancestors.should == ModuleSpecs::Parent.ancestors.uniq
   end
+
+  describe "when called on a singleton class" do
+    it "includes the singleton classes of ancestors" do
+      Parent  = Class.new
+      Child   = Class.new(Parent)
+      SChild  = Child.singleton_class
+
+      SChild.ancestors.should include(SChild,
+                                      Parent.singleton_class,
+                                      Object.singleton_class,
+                                      BasicObject.singleton_class,
+                                      Class,
+                                      Module,
+                                      Object,
+                                      Kernel,
+                                      BasicObject)
+
+    end
+  end
 end

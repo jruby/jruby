@@ -15,16 +15,8 @@ describe "Math.hypot" do
     Math.hypot(2, 10).should be_close(10.1980390271856, TOLERANCE)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises an ArgumentError if the argument cannot be coerced with Float()" do
-      lambda { Math.hypot("test", "this") }.should raise_error(ArgumentError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a TypeError if the argument cannot be coerced with Float()" do
-      lambda { Math.hypot("test", "this") }.should raise_error(TypeError)
-    end
+  it "raises a TypeError if the argument cannot be coerced with Float()" do
+    lambda { Math.hypot("test", "this") }.should raise_error(TypeError)
   end
 
   it "returns NaN given NaN" do
@@ -33,7 +25,7 @@ describe "Math.hypot" do
     Math.hypot(nan_value, nan_value).nan?.should be_true
   end
 
-  it "raises a ArgumentError if the argument is nil" do
+  it "raises an ArgumentError if the argument is nil" do
     lambda { Math.hypot(nil) }.should raise_error(ArgumentError)
   end
 

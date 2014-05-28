@@ -2,6 +2,10 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Module#include" do
+  it "is a public method" do
+    Module.should have_public_instance_method(:include, true)
+  end
+
   it "calls #append_features(self) in reversed order on each module" do
     $appended_modules = []
 
@@ -43,20 +47,16 @@ describe "Module#include" do
     lambda { ModuleSpecs::SubclassSpec.send(:include, ModuleSpecs::Subclass.new) }.should_not raise_error(TypeError)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "imports constants to modules and classes" do
-      ModuleSpecs::A.constants.should include("CONSTANT_A")
-      ModuleSpecs::B.constants.should include("CONSTANT_A","CONSTANT_B")
-      ModuleSpecs::C.constants.should include("CONSTANT_A","CONSTANT_B")
-    end
+  it "imports constants to modules and classes" do
+    ModuleSpecs::A.constants.should include(:CONSTANT_A)
+    ModuleSpecs::B.constants.should include(:CONSTANT_A, :CONSTANT_B)
+    ModuleSpecs::C.constants.should include(:CONSTANT_A, :CONSTANT_B)
   end
 
-  ruby_version_is "1.9" do
-    it "imports constants to modules and classes" do
-      ModuleSpecs::A.constants.should include(:CONSTANT_A)
-      ModuleSpecs::B.constants.should include(:CONSTANT_A, :CONSTANT_B)
-      ModuleSpecs::C.constants.should include(:CONSTANT_A, :CONSTANT_B)
-    end
+  it "shadows constants from outer scopes" do
+    ModuleSpecs::ShadowingOuter::Foo.get.should == 123
+    ModuleSpecs::ShadowingOuter::Foo.send(:include, ModuleSpecs::ShadowingOuter::N)
+    ModuleSpecs::ShadowingOuter::Foo.get.should == 456
   end
 
   it "does not override existing constants in modules and classes" do
@@ -65,40 +65,18 @@ describe "Module#include" do
     ModuleSpecs::C::OVERRIDE.should == :c
   end
 
-  ruby_version_is ""..."1.9" do
-    it "imports instance methods to modules and classes" do
-      ModuleSpecs::A.instance_methods.should include("ma")
-      ModuleSpecs::B.instance_methods.should include("ma","mb")
-      ModuleSpecs::C.instance_methods.should include("ma","mb")
-    end
+  it "imports instance methods to modules and classes" do
+    ModuleSpecs::A.instance_methods.should include(:ma)
+    ModuleSpecs::B.instance_methods.should include(:ma,:mb)
+    ModuleSpecs::C.instance_methods.should include(:ma,:mb)
   end
 
-  ruby_version_is "1.9" do
-    it "imports instance methods to modules and classes" do
-      ModuleSpecs::A.instance_methods.should include(:ma)
-      ModuleSpecs::B.instance_methods.should include(:ma,:mb)
-      ModuleSpecs::C.instance_methods.should include(:ma,:mb)
-    end
-  end
-
-  ruby_version_is ""..."1.9" do
-    it "does not import methods to modules and classes" do
-      ModuleSpecs::A.methods.include?("cma").should == true
-      ModuleSpecs::B.methods.include?("cma").should == false
-      ModuleSpecs::B.methods.include?("cmb").should == true
-      ModuleSpecs::C.methods.include?("cma").should == false
-      ModuleSpecs::C.methods.include?("cmb").should == false
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "does not import methods to modules and classes" do
-      ModuleSpecs::A.methods.include?(:cma).should == true
-      ModuleSpecs::B.methods.include?(:cma).should == false
-      ModuleSpecs::B.methods.include?(:cmb).should == true
-      ModuleSpecs::C.methods.include?(:cma).should == false
-      ModuleSpecs::C.methods.include?(:cmb).should == false
-    end
+  it "does not import methods to modules and classes" do
+    ModuleSpecs::A.methods.include?(:cma).should == true
+    ModuleSpecs::B.methods.include?(:cma).should == false
+    ModuleSpecs::B.methods.include?(:cmb).should == true
+    ModuleSpecs::C.methods.include?(:cma).should == false
+    ModuleSpecs::C.methods.include?(:cmb).should == false
   end
 
   it "attaches the module as the caller's immediate ancestor" do

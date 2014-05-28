@@ -52,19 +52,9 @@ describe :array_replace, :shared => true do
     [].send(@method, ArraySpecs::ToAryArray[5, 6, 7]).should == [5, 6, 7]
   end
 
-  ruby_version_is '' ... '1.9' do
-    it "raises a TypeError on a frozen array" do
-      lambda {
-        ArraySpecs.frozen_array.send(@method, ArraySpecs.frozen_array)
-      }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is '1.9' do
-    it "raises a RuntimeError on a frozen array" do
-      lambda {
-        ArraySpecs.frozen_array.send(@method, ArraySpecs.frozen_array)
-      }.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError on a frozen array" do
+    lambda {
+      ArraySpecs.frozen_array.send(@method, ArraySpecs.frozen_array)
+    }.should raise_error(RuntimeError)
   end
 end

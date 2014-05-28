@@ -67,29 +67,20 @@ describe "A Symbol literal" do
     }
   end
 
-  ruby_version_is ""..."1.9" do
-    it "does not contain null in the string" do
-      lambda { eval ':"\0" ' }.should raise_error(SyntaxError)
-    end
+  it "can contain null in the string" do
+    eval(':"\0" ').inspect.should == ':"\\x00"'
   end
 
-  ruby_version_is "1.9"..."2.0" do
-    it "can contain null in the string" do
-      eval(':"\0" ').inspect.should == ':"\\x00"'
-    end
+  it "can be an empty string" do
+    c = :''
+    c.should be_kind_of(Symbol)
+    c.inspect.should == ':""'
   end
 
-  ruby_version_is "2.0" do
-    it "can contain null in the string" do
-      eval(':"\0" ').inspect.should == ':"\\0"'
-    end
-  end
-
-  ruby_version_is "2.1"..."" do
-    it "can contain null in the string" do
-      eval(':"\0" ').inspect.should == ':"\\000"'
+  it "can be :!, :!=, or :!~" do
+    %w{'!', '!=', '!~'}.each do |sym|
+      lambda { sym.to_sym }.should_not raise_error(SyntaxError)
+      sym.to_sym.to_s.should == sym
     end
   end
 end
-
-language_version __FILE__, 'symbol'

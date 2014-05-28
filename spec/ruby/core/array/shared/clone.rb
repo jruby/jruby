@@ -29,16 +29,14 @@ describe :array_clone, :shared => true do
     bb.tainted?.should == false
   end
 
-  ruby_version_is '1.9' do
-    it "copies untrusted status from the original" do
-      a = [1, 2, 3, 4]
-      b = [1, 2, 3, 4]
-      a.untrust
-      aa = a.send @method
-      bb = b.send @method
+  it "copies untrusted status from the original" do
+    a = [1, 2, 3, 4]
+    b = [1, 2, 3, 4]
+    a.untrust
+    aa = a.send @method
+    bb = b.send @method
 
-      aa.untrusted?.should == true
-      bb.untrusted?.should == false
-    end
+    aa.untrusted?.should == true
+    bb.untrusted?.should == false
   end
 end

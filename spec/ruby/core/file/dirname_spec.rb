@@ -64,10 +64,8 @@ describe "File.dirname" do
     end
   end
 
-  ruby_version_is "1.9" do
-    it "accepts an object that has a #to_path method" do
-      File.dirname(mock_to_path("/")).should == "/"
-    end
+  it "accepts an object that has a #to_path method" do
+    File.dirname(mock_to_path("/")).should == "/"
   end
 
   it "raises a TypeError if not passed a String type" do

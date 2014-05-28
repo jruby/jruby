@@ -29,96 +29,6 @@ describe "String#rindex with object" do
   end
 end
 
-# Ruby 1.9 doesn't support the String#rindex(Fixnum) invocation. However,
-# confusingly, many of the tests in this block pass because it also changes
-# the semantics of ?l, where _l_ is a character, to return the character
-# corresponding to _l_; not the Fixnum. Regardless, it doesn't make sense to
-# have a describe block for "String#rindex with Fixnum" on 1.9 when 1.9
-# doesn't support that invocation. The other tests in this file exercise
-# String#rindex(?l) on 1.9 inadvertently because they test for
-# String#rindex(str).
-ruby_version_is ""..."1.9" do
-  describe "String#rindex with Fixnum" do
-    it "returns the index of the last occurrence of the given character" do
-      "hello".rindex(?e).should == 1
-      "hello".rindex(?l).should == 3
-    end
-
-    it "doesn't use fixnum % 256" do
-      "hello".rindex(?e + 256 * 3).should == nil
-      "hello".rindex(-(256 - ?e)).should == nil
-    end
-
-    it "starts the search at the given offset" do
-      "blablabla".rindex(?b, 0).should == 0
-      "blablabla".rindex(?b, 1).should == 0
-      "blablabla".rindex(?b, 2).should == 0
-      "blablabla".rindex(?b, 3).should == 3
-      "blablabla".rindex(?b, 4).should == 3
-      "blablabla".rindex(?b, 5).should == 3
-      "blablabla".rindex(?b, 6).should == 6
-      "blablabla".rindex(?b, 7).should == 6
-      "blablabla".rindex(?b, 8).should == 6
-      "blablabla".rindex(?b, 9).should == 6
-      "blablabla".rindex(?b, 10).should == 6
-
-      "blablabla".rindex(?a, 2).should == 2
-      "blablabla".rindex(?a, 3).should == 2
-      "blablabla".rindex(?a, 4).should == 2
-      "blablabla".rindex(?a, 5).should == 5
-      "blablabla".rindex(?a, 6).should == 5
-      "blablabla".rindex(?a, 7).should == 5
-      "blablabla".rindex(?a, 8).should == 8
-      "blablabla".rindex(?a, 9).should == 8
-      "blablabla".rindex(?a, 10).should == 8
-    end
-
-    it "starts the search at offset + self.length if offset is negative" do
-      str = "blablabla"
-
-      [?a, ?b].each do |needle|
-        (-str.length .. -1).each do |offset|
-          str.rindex(needle, offset).should ==
-          str.rindex(needle, offset + str.length)
-        end
-      end
-    end
-
-    it "returns nil if the character isn't found" do
-      "hello".rindex(0).should == nil
-
-      "hello".rindex(?H).should == nil
-      "hello".rindex(?z).should == nil
-      "hello".rindex(?o, 2).should == nil
-
-      "blablabla".rindex(?a, 0).should == nil
-      "blablabla".rindex(?a, 1).should == nil
-
-      "blablabla".rindex(?a, -8).should == nil
-      "blablabla".rindex(?a, -9).should == nil
-
-      "blablabla".rindex(?b, -10).should == nil
-      "blablabla".rindex(?b, -20).should == nil
-    end
-
-    it "tries to convert start_offset to an integer via to_int" do
-      obj = mock('5')
-      def obj.to_int() 5 end
-      "str".rindex(?s, obj).should == 0
-
-      obj = mock('5')
-      def obj.respond_to?(arg, *) true end
-      def obj.method_missing(*args); 5; end
-      "str".rindex(?s, obj).should == 0
-    end
-
-    it "raises a TypeError when given offset is nil" do
-      lambda { "str".rindex(?s, nil) }.should raise_error(TypeError)
-      lambda { "str".rindex(?t, nil) }.should raise_error(TypeError)
-    end
-  end
-end
-
 describe "String#rindex with String" do
   it "behaves the same as String#rindex(char) for one-character strings" do
     ["blablabla", "hello cruel world...!"].each do |str|
@@ -137,23 +47,18 @@ describe "String#rindex with String" do
     end
   end
 
-  # On 1.9 ?chr, where _chr_ is a character returns the character as a string.
-  # The test below repeats the one above but uses the ?l notation for single
-  # characters instead.
-  ruby_version_is "1.9" do
-    it "behaves the same as String#rindex(?char) for one-character strings" do
-      ["blablabla", "hello cruel world...!"].each do |str|
-        str.split("").uniq.each do |str|
-          chr = str[0] =~ / / ? str[0] : eval("?#{str[0]}")
-          str.rindex(str).should == str.rindex(chr)
+  it "behaves the same as String#rindex(?char) for one-character strings" do
+    ["blablabla", "hello cruel world...!"].each do |str|
+      str.split("").uniq.each do |str|
+        chr = str[0] =~ / / ? str[0] : eval("?#{str[0]}")
+        str.rindex(str).should == str.rindex(chr)
 
-          0.upto(str.size + 1) do |start|
-            str.rindex(str, start).should == str.rindex(chr, start)
-          end
+        0.upto(str.size + 1) do |start|
+          str.rindex(str, start).should == str.rindex(chr, start)
+        end
 
-          (-str.size - 1).upto(-1) do |start|
-            str.rindex(str, start).should == str.rindex(chr, start)
-          end
+        (-str.size - 1).upto(-1) do |start|
+          str.rindex(str, start).should == str.rindex(chr, start)
         end
       end
     end

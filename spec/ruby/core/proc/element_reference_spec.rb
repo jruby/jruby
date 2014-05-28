@@ -1,14 +1,10 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../shared/call', __FILE__)
-
-language_version __FILE__, "call"
+require File.expand_path('../shared/call_arguments', __FILE__)
 
 describe "Proc#[]" do
   it_behaves_like :proc_call, :[]
-
-  ruby_version_is "1.8.7" do
-    it_behaves_like :proc_call_block_args, :[]
-  end
+  it_behaves_like :proc_call_block_args, :[]
 end
 
 describe "Proc#call on a Proc created with Proc.new" do

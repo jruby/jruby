@@ -1,0 +1,3 @@
+fails:Module#const_get raises a NameError with the not found constant symbol
+fails:Module#const_get accepts a toplevel scope qualifier
+fails:Module#const_get raises a NameError if a Symbol is a scoped constant name

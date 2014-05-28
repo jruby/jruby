@@ -22,28 +22,23 @@ describe "Kernel.chop" do
   it_behaves_like :kernel_chop, "Kernel.chop"
 end
 
-ruby_version_is ""..."1.9" do
-  describe ".chop!" do
-    it_behaves_like :kernel_chop, "Kernel.chop!"
-  end
-end
-
 describe "#chop" do
   it_behaves_like :kernel_chop_private, :chop
 
   it_behaves_like :kernel_chop, "chop"
 end
 
-ruby_version_is ""..."1.9" do
-  describe "#chop!" do
-    it_behaves_like :kernel_chop_private, :chop!
-
-    it_behaves_like :kernel_chop, "chop!"
-  end
-end
-
 with_feature :encoding do
   describe :kernel_chop_encoded, :shared => true do
+    before :each do
+      @external = Encoding.default_external
+      Encoding.default_external = Encoding::UTF_8
+    end
+
+    after :each do
+      Encoding.default_external = @external
+    end
+
     it "removes the final multi-byte character from $_" do
       script = fixture __FILE__, "#{@method}.rb"
       KernelSpecs.encoded_chop(script).should == "あ"

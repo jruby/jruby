@@ -175,10 +175,10 @@ describe "String#sub with pattern, replacement" do
   end
 
   it "returns subclass instances when called on a subclass" do
-    StringSpecs::MyString.new("").sub(//, "").should be_kind_of(StringSpecs::MyString)
-    StringSpecs::MyString.new("").sub(/foo/, "").should be_kind_of(StringSpecs::MyString)
-    StringSpecs::MyString.new("foo").sub(/foo/, "").should be_kind_of(StringSpecs::MyString)
-    StringSpecs::MyString.new("foo").sub("foo", "").should be_kind_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("").sub(//, "").should be_an_instance_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("").sub(/foo/, "").should be_an_instance_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("foo").sub(/foo/, "").should be_an_instance_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("foo").sub("foo", "").should be_an_instance_of(StringSpecs::MyString)
   end
 
   it "sets $~ to MatchData of match and nil when there's none" do
@@ -231,23 +231,6 @@ describe "String#sub with pattern and block" do
     end.should == "hhellollo"
 
     offsets.should == [[1, 2]]
-  end
-
-  # The conclusion of bug #1749 was that this example was version-specific...
-  ruby_version_is "".."1.9" do
-    it "restores $~ after leaving the block" do
-      [/./, "l"].each do |pattern|
-        old_md = nil
-        "hello".sub(pattern) do
-          old_md = $~
-          "ok".match(/./)
-          "x"
-        end
-
-        $~.should == old_md
-        $~.string.should == "hello"
-      end
-    end
   end
 
   it "sets $~ to MatchData of last match and nil when there's none for access from outside" do
@@ -327,26 +310,13 @@ describe "String#sub! with pattern, replacement" do
     a.should == "hello"
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError when self is frozen" do
-      s = "hello"
-      s.freeze
+  it "raises a RuntimeError when self is frozen" do
+    s = "hello"
+    s.freeze
 
-      s.sub!(/ROAR/, "x") # ok
-      lambda { s.sub!(/e/, "e")       }.should raise_error(TypeError)
-      lambda { s.sub!(/[aeiou]/, '*') }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError when self is frozen" do
-      s = "hello"
-      s.freeze
-
-      lambda { s.sub!(/ROAR/, "x")    }.should raise_error(RuntimeError)
-      lambda { s.sub!(/e/, "e")       }.should raise_error(RuntimeError)
-      lambda { s.sub!(/[aeiou]/, '*') }.should raise_error(RuntimeError)
-    end
+    lambda { s.sub!(/ROAR/, "x")    }.should raise_error(RuntimeError)
+    lambda { s.sub!(/e/, "e")       }.should raise_error(RuntimeError)
+    lambda { s.sub!(/[aeiou]/, '*') }.should raise_error(RuntimeError)
   end
 end
 
@@ -395,41 +365,181 @@ describe "String#sub! with pattern and block" do
     end
   end
 
-  ruby_version_is ""..."1.9" do
-    deviates_on :rubinius do
-      # MRI 1.8.x is inconsistent here, raising a TypeError when not passed
-      # a block and a RuntimeError when passed a block. This is arguably a
-      # bug in MRI. In 1.9, both situations raise a RuntimeError.
-      it "raises a TypeError when self is frozen" do
-        s = "hello"
-        s.freeze
+  it "raises a RuntimeError when self is frozen" do
+    s = "hello"
+    s.freeze
 
-        s.sub!(/ROAR/) { "x" } # ok
-        lambda { s.sub!(/e/) { "e" }       }.should raise_error(TypeError)
-        lambda { s.sub!(/[aeiou]/) { '*' } }.should raise_error(TypeError)
-      end
-    end
+    lambda { s.sub!(/ROAR/) { "x" }    }.should raise_error(RuntimeError)
+    lambda { s.sub!(/e/) { "e" }       }.should raise_error(RuntimeError)
+    lambda { s.sub!(/[aeiou]/) { '*' } }.should raise_error(RuntimeError)
+  end
+end
 
-    not_compliant_on :rubinius do
-      it "raises a RuntimeError when self is frozen" do
-        s = "hello"
-        s.freeze
+describe "String#sub with pattern and Hash" do
 
-        s.sub!(/ROAR/) { "x" } # ok
-        lambda { s.sub!(/e/) { "e" }       }.should raise_error(RuntimeError)
-        lambda { s.sub!(/[aeiou]/) { '*' } }.should raise_error(RuntimeError)
-      end
-    end
+  it "returns a copy of self with the first occurrence of pattern replaced with the value of the corresponding hash key" do
+    "hello".sub(/./, 'l' => 'L').should == "ello"
+    "hello!".sub(/(.)(.)/, 'he' => 'she ', 'll' => 'said').should == 'she llo!'
+    "hello".sub('l', 'l' => 'el').should == 'heello'
   end
 
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError when self is frozen" do
-      s = "hello"
-      s.freeze
+  it "removes keys that don't correspond to matches" do
+    "hello".sub(/./, 'z' => 'L', 'z' => 'b', 'o' => 'ow').should == "ello"
+  end
 
-      lambda { s.sub!(/ROAR/) { "x" }    }.should raise_error(RuntimeError)
-      lambda { s.sub!(/e/) { "e" }       }.should raise_error(RuntimeError)
-      lambda { s.sub!(/[aeiou]/) { '*' } }.should raise_error(RuntimeError)
-    end
+  it "ignores non-String keys" do
+    "hello".sub(/(ll)/, 'll' => 'r', :ll => 'z').should == "hero"
+  end
+
+  it "uses a key's value only a single time" do
+    "food".sub(/o/, 'o' => '0').should == "f0od"
+  end
+
+  it "uses the hash's default value for missing keys" do
+    hsh = new_hash
+    hsh.default='?'
+    hsh['o'] = '0'
+    "food".sub(/./, hsh).should == "?ood"
+  end
+
+  it "coerces the hash values with #to_s" do
+    hsh = new_hash
+    hsh.default=[]
+    hsh['o'] = 0
+    obj = mock('!')
+    obj.should_receive(:to_s).and_return('!')
+    hsh['f'] = obj
+    "food!".sub(/./, hsh).should == "!ood!"
+  end
+
+  it "uses the hash's value set from default_proc for missing keys" do
+    hsh = new_hash
+    hsh.default_proc = lambda { |k,v| 'lamb' }
+    "food!".sub(/./, hsh).should == "lambood!"
+  end
+
+  it "sets $~ to MatchData of first match and nil when there's none for access from outside" do
+    'hello.'.sub('l', 'l' => 'L')
+    $~.begin(0).should == 2
+    $~[0].should == 'l'
+
+    'hello.'.sub('not', 'ot' => 'to')
+    $~.should == nil
+
+    'hello.'.sub(/.(.)/, 'o' => ' hole')
+    $~[0].should == 'he'
+
+    'hello.'.sub(/not/, 'z' => 'glark')
+    $~.should == nil
+  end
+
+  it "doesn't interpolate special sequences like \\1 for the block's return value" do
+    repl = '\& \0 \1 \` \\\' \+ \\\\ foo'
+    "hello".sub(/(.+)/, 'hello' => repl ).should == repl
+  end
+
+  it "untrusts the result if the original string is untrusted" do
+    str = "Ghana".untrust
+    str.sub(/[Aa]na/, 'ana' => '').untrusted?.should be_true
+  end
+
+  it "untrusts the result if a hash value is untrusted" do
+    str = "Ghana"
+    str.sub(/a$/, 'a' => 'di'.untrust).untrusted?.should be_true
+  end
+
+  it "taints the result if the original string is tainted" do
+    str = "Ghana".taint
+    str.sub(/[Aa]na/, 'ana' => '').tainted?.should be_true
+  end
+
+  it "taints the result if a hash value is tainted" do
+    str = "Ghana"
+    str.sub(/a$/, 'a' => 'di'.taint).tainted?.should be_true
+  end
+
+end
+
+describe "String#sub! with pattern and Hash" do
+
+  it "returns self with the first occurrence of pattern replaced with the value of the corresponding hash key" do
+    "hello".sub!(/./, 'l' => 'L').should == "ello"
+    "hello!".sub!(/(.)(.)/, 'he' => 'she ', 'll' => 'said').should == 'she llo!'
+    "hello".sub!('l', 'l' => 'el').should == 'heello'
+  end
+
+  it "removes keys that don't correspond to matches" do
+    "hello".sub!(/./, 'z' => 'L', 'z' => 'b', 'o' => 'ow').should == "ello"
+  end
+
+  it "ignores non-String keys" do
+    "hello".sub!(/(ll)/, 'll' => 'r', :ll => 'z').should == "hero"
+  end
+
+  it "uses a key's value only a single time" do
+    "food".sub!(/o/, 'o' => '0').should == "f0od"
+  end
+
+  it "uses the hash's default value for missing keys" do
+    hsh = new_hash
+    hsh.default='?'
+    hsh['o'] = '0'
+    "food".sub!(/./, hsh).should == "?ood"
+  end
+
+  it "coerces the hash values with #to_s" do
+    hsh = new_hash
+    hsh.default=[]
+    hsh['o'] = 0
+    obj = mock('!')
+    obj.should_receive(:to_s).and_return('!')
+    hsh['f'] = obj
+    "food!".sub!(/./, hsh).should == "!ood!"
+  end
+
+  it "uses the hash's value set from default_proc for missing keys" do
+    hsh = new_hash
+    hsh.default_proc = lambda { |k,v| 'lamb' }
+    "food!".sub!(/./, hsh).should == "lambood!"
+  end
+
+  it "sets $~ to MatchData of first match and nil when there's none for access from outside" do
+    'hello.'.sub!('l', 'l' => 'L')
+    $~.begin(0).should == 2
+    $~[0].should == 'l'
+
+    'hello.'.sub!('not', 'ot' => 'to')
+    $~.should == nil
+
+    'hello.'.sub!(/.(.)/, 'o' => ' hole')
+    $~[0].should == 'he'
+
+    'hello.'.sub!(/not/, 'z' => 'glark')
+    $~.should == nil
+  end
+
+  it "doesn't interpolate special sequences like \\1 for the block's return value" do
+    repl = '\& \0 \1 \` \\\' \+ \\\\ foo'
+    "hello".sub!(/(.+)/, 'hello' => repl ).should == repl
+  end
+
+  it "keeps untrusted state" do
+    str = "Ghana".untrust
+    str.sub!(/[Aa]na/, 'ana' => '').untrusted?.should be_true
+  end
+
+  it "untrusts self if a hash value is untrusted" do
+    str = "Ghana"
+    str.sub!(/a$/, 'a' => 'di'.untrust).untrusted?.should be_true
+  end
+
+  it "keeps tainted state" do
+    str = "Ghana".taint
+    str.sub!(/[Aa]na/, 'ana' => '').tainted?.should be_true
+  end
+
+  it "taints self if a hash value is tainted" do
+    str = "Ghana"
+    str.sub!(/a$/, 'a' => 'di'.taint).tainted?.should be_true
   end
 end

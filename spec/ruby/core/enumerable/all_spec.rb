@@ -105,18 +105,9 @@ describe "Enumerable#all?" do
       }.should raise_error(RuntimeError)
     end
 
-    ruby_version_is "" ... "1.9" do
-      it "gathers whole arrays as elements when each yields multiple" do
-        multi = EnumerableSpecs::YieldsMulti.new
-        multi.all? {|e| Array === e}.should be_true
-      end
-    end
-
-    ruby_version_is "1.9" do
-      it "gathers initial args as elements when each yields multiple" do
-        multi = EnumerableSpecs::YieldsMulti.new
-        multi.all? {|e| !(Array === e) }.should be_true
-      end
+    it "gathers initial args as elements when each yields multiple" do
+      multi = EnumerableSpecs::YieldsMulti.new
+      multi.all? {|e| !(Array === e) }.should be_true
     end
 
     it "yields multiple arguments when each yields multiple" do

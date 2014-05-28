@@ -1,5 +1,4 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require 'rational'
 
 describe :rational_cmp_rat, :shared => true do
   it "returns 1 when self is greater than the passed argument" do

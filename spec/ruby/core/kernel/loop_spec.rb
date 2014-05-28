@@ -28,45 +28,35 @@ describe "Kernel.loop" do
     end.should == nil
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a LocalJumpError if no block given" do
-      lambda { loop }.should raise_error(LocalJumpError)
-    end
+  it "returns an enumerator if no block given" do
+    enum = loop
+    enum.instance_of?(enumerator_class).should be_true
+    cnt = 0
+    enum.each do |*args|
+      raise "Args should be empty #{args.inspect}" unless args.empty?
+      cnt += 1
+      break cnt if cnt >= 42
+    end.should == 42
   end
 
-  ruby_version_is "1.9" do
-    it "returns an enumerator if no block given" do
-      enum = loop
-      enum.instance_of?(enumerator_class).should be_true
-      cnt = 0
-      enum.each do |*args|
-        raise "Args should be empty #{args.inspect}" unless args.empty?
-        cnt += 1
-        break cnt if cnt >= 42
-      end.should == 42
+  it "rescues StopIteration" do
+    n = 42
+    loop do
+      raise StopIteration
     end
+    42.should == 42
   end
 
-  ruby_version_is "1.8.7" do
-    it "rescues StopIteration" do
-      n = 42
-      loop do
-        raise StopIteration
-      end
-      42.should == 42
+  it "rescues StopIteration's subclasses" do
+    finish = Class::new StopIteration
+    n = 42
+    loop do
+      raise finish
     end
+    42.should == 42
+  end
 
-    it "rescues StopIteration's subclasses" do
-      finish = Class::new StopIteration
-      n = 42
-      loop do
-        raise finish
-      end
-      42.should == 42
-    end
-
-    it "does not rescue other errors" do
-      lambda{ loop do raise StandardError end }.should raise_error( StandardError )
-    end
+  it "does not rescue other errors" do
+    lambda{ loop do raise StandardError end }.should raise_error( StandardError )
   end
 end

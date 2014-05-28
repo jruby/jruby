@@ -160,4 +160,20 @@ describe "Regexps with anchors" do
   it "supports (?! ) (negative lookahead)" do
     /foo.(?!bar)/.match("foo1bar foo2").to_a.should == ["foo2"]
   end
+
+  it "supports (?!<) (negative lookbehind)" do
+    /(?<!foo)bar./.match("foobar1 bar2").to_a.should == ["bar2"]
+  end
+
+  it "supports (?<=) (positive lookbehind)" do
+    /(?<=foo)bar./.match("bar1 foobar2").to_a.should == ["bar2"]
+  end
+
+  it "supports (?<=\b) (positive lookbehind with word boundary)" do
+    /(?<=\bfoo)bar./.match("1foobar1 foobar2").to_a.should == ["bar2"]
+  end
+
+  it "supports (?!<\b) (negative lookbehind with word boundary)" do
+    /(?<!\bfoo)bar./.match("foobar1 1foobar2").to_a.should == ["bar2"]
+  end
 end

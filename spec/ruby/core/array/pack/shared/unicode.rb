@@ -76,14 +76,12 @@ describe :array_pack_unicode, :shared => true do
     lambda { [2**32].pack("U") }.should raise_error(RangeError)
   end
 
-  ruby_version_is "1.9" do
-    it "sets the output string to UTF-8 encoding" do
-      [ [[0x00].pack("U"),     Encoding::UTF_8],
-        [[0x41].pack("U"),     Encoding::UTF_8],
-        [[0x7F].pack("U"),     Encoding::UTF_8],
-        [[0x80].pack("U"),     Encoding::UTF_8],
-        [[0x10FFFF].pack("U"), Encoding::UTF_8]
-      ].should be_computed_by(:encoding)
-    end
+  it "sets the output string to UTF-8 encoding" do
+    [ [[0x00].pack("U"),     Encoding::UTF_8],
+      [[0x41].pack("U"),     Encoding::UTF_8],
+      [[0x7F].pack("U"),     Encoding::UTF_8],
+      [[0x80].pack("U"),     Encoding::UTF_8],
+      [[0x10FFFF].pack("U"), Encoding::UTF_8]
+    ].should be_computed_by(:encoding)
   end
 end

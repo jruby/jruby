@@ -23,7 +23,7 @@ describe "Time#dup" do
     c = Class.new(Time)
     t = c.now
 
-    t.should be_kind_of(c)
-    t.dup.should be_kind_of(c)
+    t.should be_an_instance_of(c)
+    t.dup.should be_an_instance_of(c)
   end
 end

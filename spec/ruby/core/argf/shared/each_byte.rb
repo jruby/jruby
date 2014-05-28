@@ -26,24 +26,14 @@ describe :argf_each_byte, :shared => true do
     end
   end
 
-  ruby_version_is "" ... "1.8.7" do
-    it "raises a LocalJumpError when passed no block" do
-      argv [@file1_name, @file2_name] do
-        lambda { ARGF.send(@method) }.should raise_error(LocalJumpError)
-      end
-    end
-  end
+  it "returns an Enumerator when passed no block" do
+    argv [@file1_name, @file2_name] do
+      enum = ARGF.send(@method)
+      enum.should be_an_instance_of(enumerator_class)
 
-  ruby_version_is "1.8.7" do
-    it "returns an Enumerator when passed no block" do
-      argv [@file1_name, @file2_name] do
-        enum = ARGF.send(@method)
-        enum.should be_an_instance_of(enumerator_class)
-
-        bytes = []
-        enum.each { |b| bytes << b }
-        bytes.should == @bytes
-      end
+      bytes = []
+      enum.each { |b| bytes << b }
+      bytes.should == @bytes
     end
   end
 end

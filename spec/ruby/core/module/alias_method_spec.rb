@@ -34,18 +34,9 @@ describe "Module#alias_method" do
     lambda { @class.make_alias :ni, :san }.should raise_error(NameError)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises TypeError if frozen" do
-      @class.freeze
-      lambda { @class.make_alias :uno, :public_one }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises RuntimeError if frozen" do
-      @class.freeze
-      lambda { @class.make_alias :uno, :public_one }.should raise_error(RuntimeError)
-    end
+  it "raises RuntimeError if frozen" do
+    @class.freeze
+    lambda { @class.make_alias :uno, :public_one }.should raise_error(RuntimeError)
   end
 
   it "converts the names using #to_str" do
@@ -67,6 +58,10 @@ describe "Module#alias_method" do
     lambda { @class.alias_method :ichi, :public_one }.should raise_error(NoMethodError)
   end
 
+  it "returns self" do
+    @class.send(:alias_method, :checking_return_value, :public_one).should equal(@class)
+  end
+
   it "works in module" do
     ModuleSpecs::Allonym.new.publish.should == :report
   end
@@ -85,5 +80,52 @@ describe "Module#alias_method" do
 
   it "can call a method with super aliased twice" do
     ModuleSpecs::AliasingSuper::Target.new.super_call(1).should == 1
+  end
+
+  describe "aliasing special methods" do
+    before(:all) do
+      @class = ModuleSpecs::Aliasing
+      @subclass = ModuleSpecs::AliasingSubclass
+    end
+
+    it "keeps initialize private when aliasing" do
+      @class.make_alias(:initialize, :public_one)
+      @class.private_instance_methods.include?(:initialize).should be_true
+
+      @subclass.make_alias(:initialize, :public_one)
+      @subclass.private_instance_methods.include?(:initialize).should be_true
+    end
+
+    it "keeps initialize_copy private when aliasing" do
+      @class.make_alias(:initialize_copy, :public_one)
+      @class.private_instance_methods.include?(:initialize_copy).should be_true
+
+      @subclass.make_alias(:initialize_copy, :public_one)
+      @subclass.private_instance_methods.include?(:initialize_copy).should be_true
+    end
+
+    it "keeps initialize_clone private when aliasing" do
+      @class.make_alias(:initialize_clone, :public_one)
+      @class.private_instance_methods.include?(:initialize_clone).should be_true
+
+      @subclass.make_alias(:initialize_clone, :public_one)
+      @subclass.private_instance_methods.include?(:initialize_clone).should be_true
+    end
+
+    it "keeps initialize_dup private when aliasing" do
+      @class.make_alias(:initialize_dup, :public_one)
+      @class.private_instance_methods.include?(:initialize_dup).should be_true
+
+      @subclass.make_alias(:initialize_dup, :public_one)
+      @subclass.private_instance_methods.include?(:initialize_dup).should be_true
+    end
+
+    it "keeps respond_to_missing? private when aliasing" do
+      @class.make_alias(:respond_to_missing?, :public_one)
+      @class.private_instance_methods.include?(:respond_to_missing?).should be_true
+
+      @subclass.make_alias(:respond_to_missing?, :public_one)
+      @subclass.private_instance_methods.include?(:respond_to_missing?).should be_true
+    end
   end
 end

@@ -19,6 +19,7 @@ describe "Module#autoload" do
 
   before :each do
     @loaded_features = $".dup
+    @frozen_module = Module.new.freeze
 
     ScratchPad.clear
   end
@@ -178,24 +179,12 @@ describe "Module#autoload" do
     ModuleSpecs::Autoload.should have_constant(:O)
   end
 
-  ruby_version_is '1.9' ... '1.9.3' do
-    it "return nil on refering the constant with defined?()" do
-      module ModuleSpecs::Autoload::Q
-        autoload :R, fixture(__FILE__, "autoload.rb")
-        defined?(R).should be_nil
-      end
-      ModuleSpecs::Autoload::Q.should have_constant(:R)
+  it "returns 'constant' on refering the constant with defined?()" do
+    module ModuleSpecs::Autoload::Q
+      autoload :R, fixture(__FILE__, "autoload.rb")
+      defined?(R).should == 'constant'
     end
-  end
-
-  ruby_version_is '1.9.3' do
-    it "return 'constant' on refering the constant with defined?()" do
-      module ModuleSpecs::Autoload::Q
-        autoload :R, fixture(__FILE__, "autoload.rb")
-        defined?(R).should == 'constant'
-      end
-      ModuleSpecs::Autoload::Q.should have_constant(:R)
-    end
+    ModuleSpecs::Autoload::Q.should have_constant(:R)
   end
 
   it "does not load the file when removing an autoload constant" do
@@ -258,50 +247,25 @@ describe "Module#autoload" do
     ModuleSpecs::Autoload.r.should be_kind_of(ModuleSpecs::Autoload::R)
   end
 
-  ruby_version_is "1.9" do
-    # [ruby-core:19127] [ruby-core:29941]
-    it "does NOT raise a NameError when the autoload file did not define the constant and a module is opened with the same name" do
-      module ModuleSpecs::Autoload
-        class W
-          autoload :Y, fixture(__FILE__, "autoload_w.rb")
+  # [ruby-core:19127] [ruby-core:29941]
+  it "does NOT raise a NameError when the autoload file did not define the constant and a module is opened with the same name" do
+    module ModuleSpecs::Autoload
+      class W
+        autoload :Y, fixture(__FILE__, "autoload_w.rb")
 
-          class Y
-          end
+        class Y
         end
       end
-
-      ModuleSpecs::Autoload::W::Y.should be_kind_of(Class)
-      ScratchPad.recorded.should == :loaded
     end
+
+    ModuleSpecs::Autoload::W::Y.should be_kind_of(Class)
+    ScratchPad.recorded.should == :loaded
   end
 
-  # This spec used autoload_w.rb which is TOTALLY WRONG. Both of these specs run on rubinius
-  # (only one on MRI), and autoload uses require logic, so we can only pull in
-  # autoload_w.rb ONCE. Thusly, it now uses autoload_w2.rb.
-
-  ruby_version_is ""..."1.9" do
-    # [ruby-core:19127]
-    it "raises a NameError when the autoload file did not define the constant and a module is opened with the same name" do
-      lambda do
-        module ModuleSpecs::Autoload2
-          class W2
-            autoload :Y2, fixture(__FILE__, "autoload_w2.rb")
-
-            class Y2
-            end
-          end
-        end
-      end.should raise_error(NameError)
-      ScratchPad.recorded.should == :loaded
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "calls #to_path on non-string filenames" do
-      p = mock('path')
-      p.should_receive(:to_path).and_return @non_existent
-      ModuleSpecs.autoload :A, p
-    end
+  it "calls #to_path on non-string filenames" do
+    p = mock('path')
+    p.should_receive(:to_path).and_return @non_existent
+    ModuleSpecs.autoload :A, p
   end
 
   it "raises an ArgumentError when an empty filename is given" do
@@ -346,28 +310,23 @@ describe "Module#autoload" do
     end.should raise_error(TypeError)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError if not passed a String for the filename" do
-      name = mock("autoload_name.rb")
-      name.stub!(:to_s).and_return("autoload_name.rb")
-      name.stub!(:to_str).and_return("autoload_name.rb")
+  it "raises a TypeError if not passed a String or object respodning to #to_path for the filename" do
+    name = mock("autoload_name.rb")
 
-      lambda { ModuleSpecs::Autoload.autoload :Str, name }.should raise_error(TypeError)
-    end
+    lambda { ModuleSpecs::Autoload.autoload :Str, name }.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a TypeError if not passed a String or object respodning to #to_path for the filename" do
-      name = mock("autoload_name.rb")
+  it "calls #to_path on non-String filename arguments" do
+    name = mock("autoload_name.rb")
+    name.should_receive(:to_path).and_return("autoload_name.rb")
 
-      lambda { ModuleSpecs::Autoload.autoload :Str, name }.should raise_error(TypeError)
-    end
+    lambda { ModuleSpecs::Autoload.autoload :Str, name }.should_not raise_error
+  end
 
-    it "calls #to_path on non-String filename arguments" do
-      name = mock("autoload_name.rb")
-      name.should_receive(:to_path).and_return("autoload_name.rb")
-
-      lambda { ModuleSpecs::Autoload.autoload :Str, name }.should_not raise_error
+  describe "on a frozen module" do
+    it "raises a RuntimeError before setting the name" do
+      lambda { @frozen_module.autoload :Foo, @non_existent }.should raise_error(RuntimeError)
+      @frozen_module.should_not have_constant(:Foo)
     end
   end
 
@@ -416,6 +375,69 @@ describe "Module#autoload" do
       t2_val.should == t1_val
 
       t2_exc.should be_nil
+    end
+  end
+
+  describe "when changing $LOAD_PATH" do
+
+    before do
+      $LOAD_PATH.unshift(File.expand_path('../fixtures/path1', __FILE__))
+    end
+
+    after do
+      $LOAD_PATH.shift
+      $LOAD_PATH.shift
+    end
+
+    it "does not reload a file due to a different load path" do
+      ModuleSpecs::Autoload.autoload :LoadPath, "load_path"
+      ModuleSpecs::Autoload::LoadPath.loaded.should == :autoload_load_path
+    end
+
+  end
+
+  describe "(concurrently)" do
+    it "blocks others threads while doing an autoload" do
+      file_path     = fixture(__FILE__, "repeated_concurrent_autoload.rb")
+      autoload_path = file_path.sub /\.rb\Z/, ''
+      mod_count     = 30
+      thread_count  = 16
+
+      mod_names = []
+      mod_count.times do |i|
+        mod_name = :"Mod#{i}"
+        autoload mod_name, autoload_path
+        mod_names << mod_name
+      end
+
+      barrier = ModuleSpecs::CyclicBarrier.new thread_count
+      ScratchPad.record ModuleSpecs::ThreadSafeCounter.new
+
+      threads = (1..thread_count).map do
+        Thread.new do
+          mod_names.each do |mod_name|
+            break false unless barrier.enabled?
+
+            was_last_one_in = barrier.await # wait for all threads to finish the iteration
+            # clean up so we can autoload the same file again
+            $LOADED_FEATURES.delete(file_path) if was_last_one_in && $LOADED_FEATURES.include?(file_path)
+            barrier.await # get ready for race
+
+            begin
+              Object.const_get(mod_name).foo
+            rescue NoMethodError
+              barrier.disable!
+              break false
+            end
+          end
+        end
+      end
+
+      # check that no thread got a NoMethodError because of partially loaded module
+      threads.all? {|t| t.value}.should be_true
+
+      # check that the autoloaded file was evaled exactly once
+      ScratchPad.recorded.get.should == mod_count
     end
   end
 end

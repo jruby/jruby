@@ -13,20 +13,10 @@ describe "Math.atan2" do
     Math.atan2(7.22, -3.3).should be_close(1.99950888779256, TOLERANCE)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises an ArgumentError if the argument cannot be coerced with Float()" do
-      lambda { Math.atan2(1.0, "test")    }.should raise_error(ArgumentError)
-      lambda { Math.atan2("test", 0.0)    }.should raise_error(ArgumentError)
-      lambda { Math.atan2("test", "this") }.should raise_error(ArgumentError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises an TypeError if the argument cannot be coerced with Float()" do
-      lambda { Math.atan2(1.0, "test")    }.should raise_error(TypeError)
-      lambda { Math.atan2("test", 0.0)    }.should raise_error(TypeError)
-      lambda { Math.atan2("test", "this") }.should raise_error(TypeError)
-    end
+  it "raises a TypeError if the argument cannot be coerced with Float()" do
+    lambda { Math.atan2(1.0, "test")    }.should raise_error(TypeError)
+    lambda { Math.atan2("test", 0.0)    }.should raise_error(TypeError)
+    lambda { Math.atan2("test", "this") }.should raise_error(TypeError)
   end
 
   it "raises a TypeError if the argument is nil" do

@@ -50,8 +50,8 @@ static VALUE so_check_array_type(VALUE self, VALUE ary) {
 #endif
 
 #ifdef HAVE_RB_CHECK_CONVERT_TYPE
-static VALUE so_check_convert_type(VALUE self, VALUE obj) {
-  return rb_check_convert_type(obj, T_ARRAY, "Array", "to_ary");
+static VALUE so_check_convert_type(VALUE self, VALUE obj, VALUE klass, VALUE method) {
+  return rb_check_convert_type(obj, T_ARRAY, RSTRING_PTR(klass), RSTRING_PTR(method));
 }
 #endif
 
@@ -81,8 +81,8 @@ static VALUE so_rbclassof(VALUE self, VALUE obj) {
 #endif
 
 #ifdef HAVE_RB_CONVERT_TYPE
-static VALUE so_convert_type(VALUE self, VALUE obj) {
-  return rb_convert_type(obj, T_ARRAY, "Array", "to_ary");
+static VALUE so_convert_type(VALUE self, VALUE obj, VALUE klass, VALUE method) {
+  return rb_convert_type(obj, T_ARRAY, RSTRING_PTR(klass), RSTRING_PTR(method));
 }
 #endif
 
@@ -427,7 +427,7 @@ void Init_object_spec() {
 #endif
 
 #ifdef HAVE_RB_CHECK_CONVERT_TYPE
-  rb_define_method(cls, "rb_check_convert_type", so_check_convert_type, 1);
+  rb_define_method(cls, "rb_check_convert_type", so_check_convert_type, 3);
 #endif
 
 #ifdef HAVE_RB_CHECK_TO_INTEGER
@@ -447,7 +447,7 @@ void Init_object_spec() {
 #endif
 
 #ifdef HAVE_RB_CONVERT_TYPE
-  rb_define_method(cls, "rb_convert_type", so_convert_type, 1);
+  rb_define_method(cls, "rb_convert_type", so_convert_type, 3);
 #endif
 
 #ifdef HAVE_RB_EXTEND_OBJECT

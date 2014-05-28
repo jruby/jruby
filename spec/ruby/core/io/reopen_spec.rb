@@ -36,7 +36,7 @@ describe "IO#reopen" do
     lambda { @io.reopen obj }.should raise_error(IOError)
   end
 
-  it "raises an TypeError if #to_io does not return an IO instance" do
+  it "raises a TypeError if #to_io does not return an IO instance" do
     obj = mock("io")
     obj.should_receive(:to_io).and_return("something else")
     lambda { @io.reopen obj }.should raise_error(TypeError)
@@ -108,12 +108,10 @@ describe "IO#reopen with a String" do
     @tmp_file.should have_data("from system\nfrom exec", "r")
   end
 
-  ruby_version_is "1.9" do
-    it "calls #to_path on non-String arguments" do
-      obj = mock('path')
-      obj.should_receive(:to_path).and_return(@other_name)
-      @io.reopen(obj)
-    end
+  it "calls #to_path on non-String arguments" do
+    obj = mock('path')
+    obj.should_receive(:to_path).and_return(@other_name)
+    @io.reopen(obj)
   end
 end
 

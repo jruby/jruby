@@ -35,17 +35,8 @@ describe :float_modulo, :shared => true do
     (1/r).should < 0
   end
 
-  ruby_version_is ""..."1.9" do
-    it "does NOT raise ZeroDivisionError if other is zero" do
-      1.0.send(@method, 0).should be_nan
-      1.0.send(@method, 0.0).should be_nan
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a ZeroDivisionError if other is zero" do
-      lambda { 1.0.send(@method, 0) }.should raise_error(ZeroDivisionError)
-      lambda { 1.0.send(@method, 0.0) }.should raise_error(ZeroDivisionError)
-    end
+  it "raises a ZeroDivisionError if other is zero" do
+    lambda { 1.0.send(@method, 0) }.should raise_error(ZeroDivisionError)
+    lambda { 1.0.send(@method, 0.0) }.should raise_error(ZeroDivisionError)
   end
 end

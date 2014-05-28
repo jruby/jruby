@@ -4,7 +4,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 describe "String.new" do
   it "returns an instance of String" do
     str = String.new
-    str.should be_kind_of(String)
+    str.should be_an_instance_of(String)
   end
 
   it "returns a fully-formed String" do
@@ -17,15 +17,15 @@ describe "String.new" do
   it "returns a new string given a string argument" do
     str1 = "test"
     str = String.new(str1)
-    str.should be_kind_of(String)
-    str.should == str
+    str.should be_an_instance_of(String)
+    str.should == str1
     str << "more"
     str.should == "testmore"
   end
 
   it "returns an instance of a subclass" do
     a = StringSpecs::MyString.new("blah")
-    a.should be_kind_of(StringSpecs::MyString)
+    a.should be_an_instance_of(StringSpecs::MyString)
     a.should == "blah"
   end
 
@@ -44,9 +44,7 @@ describe "String.new" do
     lambda { String.new nil }.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9" do
-    it "returns a binary String" do
-      String.new.encoding.should == Encoding::BINARY
-    end
+  it "returns a binary String" do
+    String.new.encoding.should == Encoding::BINARY
   end
 end

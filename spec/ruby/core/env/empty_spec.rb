@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "ENV.empty?" do
 
-  it "return true if the Environment is empty" do
+  it "returns true if the Environment is empty" do
     if ENV.keys.size > 0
       ENV.empty?.should == false
     end

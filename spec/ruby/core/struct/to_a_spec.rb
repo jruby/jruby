@@ -8,5 +8,5 @@ describe "Struct#to_a" do
     StructClasses::Car.new('Ford').to_a.should == ['Ford', nil, nil]
   end
 
-  it_behaves_like :struct_accessor, :length
+  it_behaves_like :struct_accessor, :to_a
 end

@@ -32,25 +32,13 @@ describe "Array#concat" do
     [].concat(obj).should == [5, 6, 7]
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError when Array is frozen and modification occurs" do
-      lambda { ArraySpecs.frozen_array.concat [1] }.should raise_error(TypeError)
-    end
-
-    it "does not raise a TypeError when Array is frozen but no modification occurs" do
-      ArraySpecs.frozen_array.concat([]).should == [1, 2, 3]
-    end
+  it "raises a RuntimeError when Array is frozen and modification occurs" do
+    lambda { ArraySpecs.frozen_array.concat [1] }.should raise_error(RuntimeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError when Array is frozen and modification occurs" do
-      lambda { ArraySpecs.frozen_array.concat [1] }.should raise_error(RuntimeError)
-    end
-
-    # see [ruby-core:23666]
-    it "raises a RuntimeError when Array is frozen and no modification occurs" do
-      lambda { ArraySpecs.frozen_array.concat([]) }.should raise_error(RuntimeError)
-    end
+  # see [ruby-core:23666]
+  it "raises a RuntimeError when Array is frozen and no modification occurs" do
+    lambda { ArraySpecs.frozen_array.concat([]) }.should raise_error(RuntimeError)
   end
 
   it "keeps tainted status" do
@@ -81,33 +69,31 @@ describe "Array#concat" do
     ary[3].tainted?.should be_false
   end
 
-  ruby_version_is '1.9' do
-    it "keeps untrusted status" do
-      ary = [1, 2]
-      ary.untrust
-      ary.concat([3])
-      ary.untrusted?.should be_true
-      ary.concat([])
-      ary.untrusted?.should be_true
-    end
+  it "keeps untrusted status" do
+    ary = [1, 2]
+    ary.untrust
+    ary.concat([3])
+    ary.untrusted?.should be_true
+    ary.concat([])
+    ary.untrusted?.should be_true
+  end
 
-    it "is not infected untrustedness by the other" do
-      ary = [1,2]
-      other = [3]; other.untrust
-      ary.untrusted?.should be_false
-      ary.concat(other)
-      ary.untrusted?.should be_false
-    end
+  it "is not infected untrustedness by the other" do
+    ary = [1,2]
+    other = [3]; other.untrust
+    ary.untrusted?.should be_false
+    ary.concat(other)
+    ary.untrusted?.should be_false
+  end
 
-    it "keeps the untrusted status of elements" do
-      ary = [ Object.new, Object.new, Object.new ]
-      ary.each {|x| x.untrust }
+  it "keeps the untrusted status of elements" do
+    ary = [ Object.new, Object.new, Object.new ]
+    ary.each {|x| x.untrust }
 
-      ary.concat([ Object.new ])
-      ary[0].untrusted?.should be_true
-      ary[1].untrusted?.should be_true
-      ary[2].untrusted?.should be_true
-      ary[3].untrusted?.should be_false
-    end
+    ary.concat([ Object.new ])
+    ary[0].untrusted?.should be_true
+    ary[1].untrusted?.should be_true
+    ary[2].untrusted?.should be_true
+    ary[3].untrusted?.should be_false
   end
 end

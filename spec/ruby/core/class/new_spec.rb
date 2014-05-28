@@ -40,32 +40,14 @@ describe "Class.new with a block given" do
     klass.new.message2.should == "hello"
   end
 
-  ruby_version_is ""..."1.9" do
-
-    it "runs the inherited hook before yielding the block" do
-      ScratchPad.record []
-      klass = Class.new(CoreClassSpecs::Inherited::D) do
-        ScratchPad << self
-      end
-
-      ScratchPad.recorded.should == [klass, CoreClassSpecs::Inherited::D]
+  it "runs the inherited hook after yielding the block" do
+    ScratchPad.record []
+    klass = Class.new(CoreClassSpecs::Inherited::D) do
+      ScratchPad << self
     end
 
+    ScratchPad.recorded.should == [CoreClassSpecs::Inherited::D, klass]
   end
-
-  ruby_version_is "1.9" do
-
-    it "runs the inherited hook after yielding the block" do
-      ScratchPad.record []
-      klass = Class.new(CoreClassSpecs::Inherited::D) do
-        ScratchPad << self
-      end
-
-      ScratchPad.recorded.should == [CoreClassSpecs::Inherited::D, klass]
-    end
-
-  end
-
 end
 
 describe "Class.new" do
@@ -83,16 +65,8 @@ describe "Class.new" do
     lambda { Class.new meta }.should raise_error(TypeError)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "creates a class without a name" do
-      Class.new.name.should == ""
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "creates a class without a name" do
-      Class.new.name.should be_nil
-    end
+  it "creates a class without a name" do
+    Class.new.name.should be_nil
   end
 
   it "creates a class that can be given a name by assigning it to a constant" do

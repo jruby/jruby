@@ -17,14 +17,6 @@ describe "C-API Array function" do
     it "returns an empty array" do
       @s.rb_ary_new2(5).should == []
     end
-
-    ruby_version_is ""..."1.9" do
-      it "returns an array which can be assigned to from C" do
-        ary = @s.rb_ary_new2(5)
-        @s.RARRAY_ptr_assign(ary, :set, 4)
-        ary.should == [:set, :set, :set, :set]
-      end
-    end
   end
 
   describe "rb_ary_new3" do
@@ -62,18 +54,9 @@ describe "C-API Array function" do
   end
 
   describe "rb_ary_to_s" do
-    ruby_version_is ""..."1.9" do
-      it "joins elements of an array with a string" do
-        @s.rb_ary_to_s([1,2,3]).should == "123"
-        @s.rb_ary_to_s([]).should == ""
-      end
-    end
-
-    ruby_version_is "1.9" do
-      it "creates an Array literal representation as a String" do
-        @s.rb_ary_to_s([1,2,3]).should == "[1, 2, 3]"
-        @s.rb_ary_to_s([]).should == "[]"
-      end
+    it "creates an Array literal representation as a String" do
+      @s.rb_ary_to_s([1,2,3]).should == "[1, 2, 3]"
+      @s.rb_ary_to_s([]).should == "[]"
     end
   end
 
@@ -176,107 +159,6 @@ describe "C-API Array function" do
       a = [5, 1, 1, 5, 4]
       b = [2, 3]
       @s.rb_ary_concat(a, b).should == [5, 1, 1, 5, 4, 2, 3]
-    end
-  end
-
-  ruby_version_is ""..."1.9" do
-    describe "RARRAY" do
-      before :each do
-        @array = (-2..5).to_a
-        ScratchPad.record []
-      end
-
-      it "returns a struct with a pointer to a C array of the array's elements" do
-        @s.RARRAY_ptr_iterate(@array) do |e|
-          ScratchPad << e
-        end
-        ScratchPad.recorded.should == [-2, -1, 0, 1, 2, 3, 4, 5]
-      end
-
-      it "allows assigning to the elements of the C array" do
-        @s.RARRAY_ptr_assign(@array, :nasty, 2)
-        @array.should == [:nasty, :nasty]
-      end
-
-      it "allows changing the array and calling an rb_ary_xxx function" do
-        @s.RARRAY_ptr_assign_call(@array)
-        @array.should == [-2, 5, 7, 1, 2, 3, 4, 5, 9]
-      end
-
-      it "allows changing the array and calling a method via rb_funcall" do
-        @s.RARRAY_ptr_assign_funcall(@array)
-        @array.should == [-2, 1, 2, 1, 2, 3, 4, 5, 3]
-      end
-
-      it "returns a struct with the length of the array" do
-        @s.RARRAY_len(@array).should == 8
-      end
-
-      describe "when the Array is mutated in Ruby" do
-        it "returns the length when #shift is called" do
-          @array.shift.should == -2
-          @s.RARRAY_len(@array).should == 7
-        end
-
-        it "returns the length when #unshift is called" do
-          @array.unshift(-5).should == [-5, -2, -1, 0, 1, 2, 3, 4, 5]
-          @s.RARRAY_len(@array).should == 9
-        end
-
-        it "returns the length when #pop is called" do
-          @array.pop.should == 5
-          @s.RARRAY_len(@array).should == 7
-        end
-
-        it "returns the length when #push is called" do
-          @array.push(-5).should == [-2, -1, 0, 1, 2, 3, 4, 5, -5]
-          @s.RARRAY_len(@array).should == 9
-        end
-
-        it "returns the length when #<< is called" do
-          @array.<<(-5).should == [-2, -1, 0, 1, 2, 3, 4, 5, -5]
-          @s.RARRAY_len(@array).should == 9
-        end
-
-        it "returns the length when #concat is called" do
-          @array.concat([1, 2, 3, 4, 5]).should == [-2, -1, 0, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5]
-          @s.RARRAY_len(@array).should == 13
-        end
-
-        it "returns the length when #clear is called" do
-          @array.clear
-          @s.RARRAY_len(@array).should == 0
-        end
-
-        it "returns the length when #[]= is called" do
-          @array[3] = 9
-          @s.RARRAY_len(@array).should == 8
-          @array.should == [-2, -1, 0, 9, 2, 3, 4, 5]
-        end
-
-        # This spec is partially redundant. The specific cases are tested
-        # in distinct specs so that a failure of an individual case is
-        # easily recognized. This spec is more complex and tests possible
-        # interactions between multiple mutations.
-        it "returns the length during multiple mutations" do
-          @s.RARRAY_len(@array).should == 8
-
-          @array.unshift(@array.pop).pop
-          @s.RARRAY_len(@array).should == 7
-          @array.should == [5, -2, -1, 0, 1, 2, 3]
-
-          @array.push(@array.shift).shift
-          @s.RARRAY_len(@array).should == 6
-          @array.should == [-1, 0, 1, 2, 3, 5]
-
-          @array.clear
-          @s.RARRAY_len(@array).should == 0
-
-          @array << -5 << 2 << -4 << 3
-          @s.RARRAY_len(@array).should == 4
-          @array.should == [-5, 2, -4, 3]
-        end
-      end
     end
   end
 
@@ -402,14 +284,6 @@ describe "C-API Array function" do
     end
   end
 
-  ruby_version_is ""..."1.9" do
-    describe "rb_protect_inspect" do
-      it "tracks an object recursively" do
-        @s.rb_protect_inspect("blah").should be_true
-      end
-    end
-  end
-
   describe "rb_ary_freeze" do
     it "freezes the object exactly like Object#freeze" do
       ary = [1,2]
@@ -486,4 +360,25 @@ describe "C-API Array function" do
 
   end
 
+  describe "rb_ary_subseq" do
+    it "returns a subsequence of the given array" do
+      @s.rb_ary_subseq([1, 2, 3, 4, 5], 1, 3).should == [2, 3, 4]
+    end
+
+    it "returns an empty array for a subsequence of 0 elements" do
+      @s.rb_ary_subseq([1, 2, 3, 4, 5], 1, 0).should == []
+    end
+
+    it "returns nil if the begin index is out of bound" do
+      @s.rb_ary_subseq([1, 2, 3, 4, 5], 6, 3).should be_nil
+    end
+
+    it "returns the existing subsequence of the length is out of bounds" do
+      @s.rb_ary_subseq([1, 2, 3, 4, 5], 4, 3).should == [5]
+    end
+
+    it "returns nil if the size is negative" do
+      @s.rb_ary_subseq([1, 2, 3, 4, 5], 1, -1).should be_nil
+    end
+  end
 end

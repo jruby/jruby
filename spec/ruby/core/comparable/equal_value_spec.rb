@@ -32,28 +32,14 @@ describe "Comparable#==" do
     (@a == @b).should be_false
   end
 
-  ruby_version_is ""..."1.9" do
-    it "returns nil if calling #<=> on self returns nil" do
-      @a.should_receive(:<=>).any_number_of_times.and_return(nil)
-      (@a == @b).should be_nil
-    end
-
-    it "returns nil if calling #<=> on self returns a non-Integer" do
-      @a.should_receive(:<=>).any_number_of_times.and_return("abc")
-      (@a == @b).should be_nil
-    end
+  it "returns false if calling #<=> on self returns nil" do
+    @a.should_receive(:<=>).any_number_of_times.and_return(nil)
+    (@a == @b).should be_false
   end
 
-  ruby_version_is "1.9" do
-    it "returns false if calling #<=> on self returns nil" do
-      @a.should_receive(:<=>).any_number_of_times.and_return(nil)
-      (@a == @b).should be_false
-    end
-
-    it "returns false if calling #<=> on self returns a non-Integer" do
-      @a.should_receive(:<=>).any_number_of_times.and_return("abc")
-      (@a == @b).should be_false
-    end
+  it "returns false if calling #<=> on self returns a non-Integer" do
+    @a.should_receive(:<=>).any_number_of_times.and_return("abc")
+    (@a == @b).should be_false
   end
 
   describe "when calling #<=> on self raises an Exception" do
@@ -73,19 +59,10 @@ describe "Comparable#==" do
       lambda { @raise_not_standard_error == @b }.should raise_error(@not_standard_error)
     end
 
-    ruby_version_is ""..."1.9" do
-      it "returns nil if #<=> raises a StandardError" do
-        (@raise_standard_error == @b).should be_nil
-        (@raise_sub_standard_error == @b).should be_nil
-      end
-    end
-
-    ruby_version_is "1.9" do
-      # Behaviour confirmed by MRI test suite
-      it "returns false if #<=> raises a StandardError" do
-        (@raise_standard_error == @b).should be_false
-        (@raise_sub_standard_error == @b).should be_false
-      end
+    # Behaviour confirmed by MRI test suite
+    it "returns false if #<=> raises a StandardError" do
+      (@raise_standard_error == @b).should be_false
+      (@raise_sub_standard_error == @b).should be_false
     end
   end
 end

@@ -1,0 +1,2 @@
+fails:Enumerator::Lazy#grep sets nil to size
+fails:Enumerator::Lazy#grep on a nested Lazy sets nil to size

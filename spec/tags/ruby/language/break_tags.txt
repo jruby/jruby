@@ -1,0 +1,2 @@
+fails:The break statement in a lambda when the invocation of the scope creating the lambda is still active raises a LocalJumpError when yielding to a lambda passed as a block argument
+fails:The break statement in a lambda from a scope that has returned returns a value to the scope yielding to the lambda passed as a block

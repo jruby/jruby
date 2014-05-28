@@ -5,7 +5,7 @@ describe :env_include, :shared => true do
     ENV.delete "foo"
   end
 
-  it "return false if ENV doesn't include the key" do
+  it "returns false if ENV doesn't include the key" do
     ENV.send(@method, "should_never_be_set").should == false
   end
 end

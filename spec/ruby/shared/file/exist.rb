@@ -1,10 +1,10 @@
 describe :file_exist, :shared => true do
-  it "return true if the file exist" do
+  it "returns true if the file exist" do
     @object.send(@method, __FILE__).should == true
     @object.send(@method, 'a_fake_file').should == false
   end
 
-  it "return true if the file exist using the alias exists?" do
+  it "returns true if the file exist using the alias exists?" do
     @object.send(@method, __FILE__).should == true
     @object.send(@method, 'a_fake_file').should == false
   end
@@ -18,9 +18,7 @@ describe :file_exist, :shared => true do
     lambda { @object.send(@method, nil) }.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9" do
-    it "accepts an object that has a #to_path method" do
-      @object.send(@method, mock_to_path(__FILE__)).should == true
-    end
+  it "accepts an object that has a #to_path method" do
+    @object.send(@method, mock_to_path(__FILE__)).should == true
   end
 end

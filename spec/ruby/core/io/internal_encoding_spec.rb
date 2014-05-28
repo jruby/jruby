@@ -82,6 +82,17 @@ with_feature :encoding do
         @io.set_encoding(Encoding::US_ASCII, Encoding::IBM437)
         @io.internal_encoding.should equal(Encoding::IBM437)
       end
+
+      it "returns nil when Encoding.default_external is ASCII-8BIT and the internal encoding is not set" do
+        Encoding.default_external = Encoding::ASCII_8BIT
+        @io = new_io @name, @object
+        @io.internal_encoding.should be_nil
+      end
+
+      it "returns nil when the external encoding is ASCII-8BIT and the internal encoding is not set" do
+        @io = new_io @name, "#{@object}:ascii-8bit"
+        @io.internal_encoding.should be_nil
+      end
     end
   end
 

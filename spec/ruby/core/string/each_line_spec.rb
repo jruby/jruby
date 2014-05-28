@@ -5,8 +5,5 @@ require File.expand_path('../shared/each_line_without_block', __FILE__)
 
 describe "String#each_line" do
   it_behaves_like(:string_each_line, :each_line)
-
-  ruby_version_is "1.8.7" do
-    it_behaves_like(:string_each_line_without_block, :each_line)
-  end
+  it_behaves_like(:string_each_line_without_block, :each_line)
 end

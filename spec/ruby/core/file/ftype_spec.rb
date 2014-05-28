@@ -12,7 +12,7 @@ describe "File.ftype" do
     l.should raise_error(Errno::ENOENT)
   end
 
-  it "returns a String " do
+  it "returns a String" do
     FileSpecs.normal_file do |file|
       File.ftype(file).should be_kind_of(String)
     end

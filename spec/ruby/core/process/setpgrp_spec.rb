@@ -3,7 +3,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 # TODO: put these in the right files.
 describe "Process.setpgrp and Process.getpgrp" do
   platform_is_not :windows do
-    it "set and get the process group ID of the calling process" do
+    it "sets and gets the process group ID of the calling process" do
       # there are two synchronization points here:
       # One for the child to let the parent know that it has finished
       #   setting its process group;

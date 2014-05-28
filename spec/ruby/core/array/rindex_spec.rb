@@ -31,6 +31,12 @@ describe "Array#rindex" do
     [1, 1, 3, 2, 1, 3].rindex(4).should == nil
   end
 
+  it "returns correct index even after delete_at" do
+    array = ["fish", "bird", "lion", "cat"]
+    array.delete_at(0)
+    array.rindex("lion").should == 1
+  end
+
   it "properly handles empty recursive arrays" do
     empty = ArraySpecs.empty_recursive_array
     empty.rindex(empty).should == 0
@@ -43,29 +49,27 @@ describe "Array#rindex" do
     array.rindex(array).should == 7
   end
 
-  ruby_version_is "1.8.7" do
-    it "accepts a block instead of an argument" do
-      [4, 2, 1, 5, 1, 3].rindex { |x| x < 2 }.should == 4
-    end
+  it "accepts a block instead of an argument" do
+    [4, 2, 1, 5, 1, 3].rindex { |x| x < 2 }.should == 4
+  end
 
-    it "ignore the block if there is an argument" do
-      [4, 2, 1, 5, 1, 3].rindex(5) { |x| x < 2 }.should == 3
-    end
+  it "ignores the block if there is an argument" do
+    [4, 2, 1, 5, 1, 3].rindex(5) { |x| x < 2 }.should == 3
+  end
 
-    it "rechecks the array size during iteration" do
-      ary = [4, 2, 1, 5, 1, 3]
-      seen = []
-      ary.rindex { |x| seen << x; ary.clear; false }
+  it "rechecks the array size during iteration" do
+    ary = [4, 2, 1, 5, 1, 3]
+    seen = []
+    ary.rindex { |x| seen << x; ary.clear; false }
 
-      seen.should == [3]
-    end
+    seen.should == [3]
+  end
 
-    describe "given no argument and no block" do
-      it "produces an Enumerator" do
-        enum = [4, 2, 1, 5, 1, 3].rindex
-        enum.should be_an_instance_of(enumerator_class)
-        enum.each { |x| x < 2 }.should == 4
-      end
+  describe "given no argument and no block" do
+    it "produces an Enumerator" do
+      enum = [4, 2, 1, 5, 1, 3].rindex
+      enum.should be_an_instance_of(enumerator_class)
+      enum.each { |x| x < 2 }.should == 4
     end
   end
 end

@@ -30,27 +30,15 @@ describe "Math.acos" do
     end
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises an ArgumentError if the string argument cannot be coerced with Float()" do
-      lambda { Math.acos("test") }.should raise_error(ArgumentError)
-    end
-
-    it "raises Errno::EDOM given NaN" do
-      lambda { Math.acos(nan_value) }.should raise_error(Errno::EDOM)
-    end
+  it "raises a TypeError if the string argument cannot be coerced with Float()" do
+    lambda { Math.acos("test") }.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a TypeError if the string argument cannot be coerced with Float()" do
-      lambda { Math.acos("test") }.should raise_error(TypeError)
-    end
-
-    it "returns NaN given NaN" do
-      Math.acos(nan_value).nan?.should be_true
-    end
+  it "returns NaN given NaN" do
+    Math.acos(nan_value).nan?.should be_true
   end
 
-  it "raises an TypeError if the argument cannot be coerced with Float()" do
+  it "raises a TypeError if the argument cannot be coerced with Float()" do
     lambda { Math.acos(MathSpecs::UserClass.new) }.should raise_error(TypeError)
   end
 
@@ -60,14 +48,6 @@ describe "Math.acos" do
 
   it "accepts any argument that can be coerced with Float()" do
     Math.acos(MathSpecs::Float.new(0.5)).should be_close(Math.acos(0.5), TOLERANCE)
-  end
-
-  ruby_version_is ""..."1.9" do
-    it "coerces string argument with Float() without calling to_f" do
-      s = MathSpecs::StringSubClass.new("0.5")
-      s.should_not_receive(:to_f)
-      Math.acos(s).should be_close(Math.acos(0.5), TOLERANCE)
-    end
   end
 end
 

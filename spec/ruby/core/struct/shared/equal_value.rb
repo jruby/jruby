@@ -17,7 +17,7 @@ describe :struct_equal_value, :shared => true do
   end
 
   ruby_bug "redmine #1885", "1.8" do
-    it "handles recursive structures by returning false if a difference can be found " do
+    it "handles recursive structures by returning false if a difference can be found" do
       MyClass = Struct.new(:foo)
       x = StructClasses::Car.new("Honda", "Accord", "1998")
       x[:make] = x

@@ -90,12 +90,12 @@ describe "String#center with length, padding" do
   end
 
   it "returns subclass instances when called on subclasses" do
-    StringSpecs::MyString.new("").center(10).should be_kind_of(StringSpecs::MyString)
-    StringSpecs::MyString.new("foo").center(10).should be_kind_of(StringSpecs::MyString)
-    StringSpecs::MyString.new("foo").center(10, StringSpecs::MyString.new("x")).should be_kind_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("").center(10).should be_an_instance_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("foo").center(10).should be_an_instance_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("foo").center(10, StringSpecs::MyString.new("x")).should be_an_instance_of(StringSpecs::MyString)
 
-    "".center(10, StringSpecs::MyString.new("x")).should be_kind_of(String)
-    "foo".center(10, StringSpecs::MyString.new("x")).should be_kind_of(String)
+    "".center(10, StringSpecs::MyString.new("x")).should be_an_instance_of(String)
+    "foo".center(10, StringSpecs::MyString.new("x")).should be_an_instance_of(String)
   end
 
   it "when padding is tainted and self is untainted returns a tainted string if and only if length is longer than self" do

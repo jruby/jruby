@@ -28,4 +28,12 @@ describe "Enumerable#grep" do
     ary = ["aba", "aba"]
     ary.grep(/a(b)a/) { $1 }.should == ["b", "b"]
   end
+
+  it "calls the block with an array when yielded with multiple arguments" do
+    yields = []
+    EnumerableSpecs::YieldsMixed.new.grep(Object){ |v| yields << v }
+    yields.should == [1, [2], [3, 4], [5, 6, 7], [8, 9], nil, []]
+
+    EnumerableSpecs::YieldsMixed.new.grep(Object).should == yields
+  end
 end

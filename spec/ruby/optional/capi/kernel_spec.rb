@@ -27,35 +27,31 @@ describe "C-API Kernel function" do
     end
   end
 
-  ruby_version_is "1.8.7" do
-    describe "rb_block_call" do
-      before :each do
-        ScratchPad.record []
-      end
+  describe "rb_block_call" do
+    before :each do
+      ScratchPad.record []
+    end
 
-      it "calls the block with a single argument" do
-        ary = [1, 3, 5]
-        @s.rb_block_call(ary).should == [2, 4, 6]
-      end
+    it "calls the block with a single argument" do
+      ary = [1, 3, 5]
+      @s.rb_block_call(ary).should == [2, 4, 6]
+    end
 
-      ruby_version_is "1.9" do
-        it "calls the block with multiple arguments in argc / argv" do
-          ary = [1, 3, 5]
-          @s.rb_block_call_multi_arg(ary).should == 9
-        end
+    it "calls the block with multiple arguments in argc / argv" do
+      ary = [1, 3, 5]
+      @s.rb_block_call_multi_arg(ary).should == 9
+    end
 
-        it "calls the method with no function callback and no block" do
-          ary = [1, 3, 5]
-          @s.rb_block_call_no_func(ary).should be_kind_of(Enumerator)
-        end
+    it "calls the method with no function callback and no block" do
+      ary = [1, 3, 5]
+      @s.rb_block_call_no_func(ary).should be_kind_of(Enumerator)
+    end
 
-        it "calls the method with no function callback and a block" do
-          ary = [1, 3, 5]
-          @s.rb_block_call_no_func(ary) do |i|
-            i + 1
-          end.should == [2, 4, 6]
-        end
-      end
+    it "calls the method with no function callback and a block" do
+      ary = [1, 3, 5]
+      @s.rb_block_call_no_func(ary) do |i|
+        i + 1
+      end.should == [2, 4, 6]
     end
   end
 
@@ -91,44 +87,34 @@ describe "C-API Kernel function" do
       ScratchPad.recorded.should == [:before_throw]
     end
 
-    ruby_version_is ""..."1.9" do
-      it "raises a NameError if there is no catch block for the symbol" do
-        lambda { @s.rb_throw(nil) }.should raise_error(NameError)
-      end
-    end
-
-    ruby_version_is "1.9" do
-      it "raises an ArgumentError if there is no catch block for the symbol" do
-        lambda { @s.rb_throw(nil) }.should raise_error(ArgumentError)
-      end
+    it "raises an ArgumentError if there is no catch block for the symbol" do
+      lambda { @s.rb_throw(nil) }.should raise_error(ArgumentError)
     end
   end
 
-  ruby_version_is "1.9" do
-    describe "rb_throw_obj" do
-      before :each do
-        ScratchPad.record []
-        @tag = Object.new
-      end
+  describe "rb_throw_obj" do
+    before :each do
+      ScratchPad.record []
+      @tag = Object.new
+    end
 
-      it "sets the return value of the catch block to the specified value" do
-        catch(@tag) do
-          @s.rb_throw_obj(@tag, :thrown_value)
-        end.should == :thrown_value
-      end
+    it "sets the return value of the catch block to the specified value" do
+      catch(@tag) do
+        @s.rb_throw_obj(@tag, :thrown_value)
+      end.should == :thrown_value
+    end
 
-      it "terminates the function at the point it was called" do
-        catch(@tag) do
-          ScratchPad << :before_throw
-          @s.rb_throw_obj(@tag, :thrown_value)
-          ScratchPad << :after_throw
-        end.should == :thrown_value
-        ScratchPad.recorded.should == [:before_throw]
-      end
+    it "terminates the function at the point it was called" do
+      catch(@tag) do
+        ScratchPad << :before_throw
+        @s.rb_throw_obj(@tag, :thrown_value)
+        ScratchPad << :after_throw
+      end.should == :thrown_value
+      ScratchPad.recorded.should == [:before_throw]
+    end
 
-      it "raises an ArgumentError if there is no catch block for the symbol" do
-        lambda { @s.rb_throw(nil) }.should raise_error(ArgumentError)
-      end
+    it "raises an ArgumentError if there is no catch block for the symbol" do
+      lambda { @s.rb_throw(nil) }.should raise_error(ArgumentError)
     end
   end
 
@@ -170,19 +156,17 @@ describe "C-API Kernel function" do
     end
   end
 
-  ruby_version_is "1.9.3" do
-    describe "rb_syserr_fail" do
-      it "raises an exception from the given error" do
-        lambda do
-          @s.rb_syserr_fail(Errno::EINVAL::Errno, "additional info")
-        end.should raise_error(Errno::EINVAL, /additional info/)
-      end
+  describe "rb_syserr_fail" do
+    it "raises an exception from the given error" do
+      lambda do
+        @s.rb_syserr_fail(Errno::EINVAL::Errno, "additional info")
+      end.should raise_error(Errno::EINVAL, /additional info/)
+    end
 
-      it "can take a NULL message" do
-        lambda do
-          @s.rb_syserr_fail(Errno::EINVAL::Errno, nil)
-        end.should raise_error(Errno::EINVAL)
-      end
+    it "can take a NULL message" do
+      lambda do
+        @s.rb_syserr_fail(Errno::EINVAL::Errno, nil)
+      end.should raise_error(Errno::EINVAL)
     end
   end
 
@@ -312,44 +296,34 @@ describe "C-API Kernel function" do
       ScratchPad.recorded.should == [:before_throw]
     end
 
-    ruby_version_is ""..."1.9" do
-      it "raises a NameError if the throw symbol isn't caught" do
-        lambda { @s.rb_catch("foo", lambda { throw :bar }) }.should raise_error(NameError)
-      end
-    end
-
-    ruby_version_is "1.9" do
-      it "raises a ArgumentError if the throw symbol isn't caught" do
-        lambda { @s.rb_catch("foo", lambda { throw :bar }) }.should raise_error(ArgumentError)
-      end
+    it "raises an ArgumentError if the throw symbol isn't caught" do
+      lambda { @s.rb_catch("foo", lambda { throw :bar }) }.should raise_error(ArgumentError)
     end
   end
 
-  ruby_version_is "1.9" do
-    describe "rb_catch_obj" do
+  describe "rb_catch_obj" do
 
-      before :each do
-        ScratchPad.record []
-        @tag = Object.new
-      end
+    before :each do
+      ScratchPad.record []
+      @tag = Object.new
+    end
 
-      it "executes passed function" do
-        @s.rb_catch_obj(@tag, lambda { 1 }).should == 1
-      end
+    it "executes passed function" do
+      @s.rb_catch_obj(@tag, lambda { 1 }).should == 1
+    end
 
-      it "terminates the function at the point it was called" do
-        proc = lambda do
-          ScratchPad << :before_throw
-          throw @tag
-          ScratchPad << :after_throw
-        end
-        @s.rb_catch_obj(@tag, proc).should be_nil
-        ScratchPad.recorded.should == [:before_throw]
+    it "terminates the function at the point it was called" do
+      proc = lambda do
+        ScratchPad << :before_throw
+        throw @tag
+        ScratchPad << :after_throw
       end
+      @s.rb_catch_obj(@tag, proc).should be_nil
+      ScratchPad.recorded.should == [:before_throw]
+    end
 
-      it "raises a ArgumentError if the throw symbol isn't caught" do
-        lambda { @s.rb_catch("foo", lambda { throw :bar }) }.should raise_error(ArgumentError)
-      end
+    it "raises an ArgumentError if the throw symbol isn't caught" do
+      lambda { @s.rb_catch("foo", lambda { throw :bar }) }.should raise_error(ArgumentError)
     end
   end
 
@@ -396,12 +370,10 @@ describe "C-API Kernel function" do
     end
   end
 
-  ruby_version_is "1.8.7" do
-    describe "rb_exec_recursive" do
-      it "detects recursive invocations of a method and indicates as such" do
-        s = "hello"
-        @s.rb_exec_recursive(s).should == s
-      end
+  describe "rb_exec_recursive" do
+    it "detects recursive invocations of a method and indicates as such" do
+      s = "hello"
+      @s.rb_exec_recursive(s).should == s
     end
   end
 
@@ -423,29 +395,25 @@ describe "C-API Kernel function" do
     end
   end
 
-  ruby_version_is "1.9.3" do
-    describe "rb_make_backtrace" do
-      it "returns a caller backtrace" do
-        backtrace = @s.rb_make_backtrace
-        lines = backtrace.select {|l| l =~ /#{__FILE__}/ }
-        lines.should_not be_empty
-      end
+  describe "rb_make_backtrace" do
+    it "returns a caller backtrace" do
+      backtrace = @s.rb_make_backtrace
+      lines = backtrace.select {|l| l =~ /#{__FILE__}/ }
+      lines.should_not be_empty
     end
   end
 
-  ruby_version_is "1.8.7" do
-    describe "rb_obj_method" do
-      it "returns the method object for a symbol" do
-        method = @s.rb_obj_method("test", :size)
-        method.owner.should == String
-        method.name.to_sym.should == :size
-      end
+  describe "rb_obj_method" do
+    it "returns the method object for a symbol" do
+      method = @s.rb_obj_method("test", :size)
+      method.owner.should == String
+      method.name.to_sym.should == :size
+    end
 
-      it "returns the method object for a string" do
-        method = @s.rb_obj_method("test", "size")
-        method.owner.should == String
-        method.name.to_sym.should == :size
-      end
+    it "returns the method object for a string" do
+      method = @s.rb_obj_method("test", "size")
+      method.owner.should == String
+      method.name.to_sym.should == :size
     end
   end
 end

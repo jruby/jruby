@@ -1,12 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../../../fixtures/kernel/classes', __FILE__)
 
-describe :method_missing, :shared => true do
-  it "is a private method" do
-    @object.should have_private_instance_method(:method_missing)
-  end
-end
-
 describe :method_missing_defined_module, :shared => true do
   describe "for a Module with #method_missing defined" do
     it "is not called when a defined method is called" do

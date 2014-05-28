@@ -39,26 +39,12 @@ describe "Array#unshift" do
     array[0..5].should == [:new, 1, 'two', 3.0, array, array]
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "raises a TypeError on a frozen array" do
-      lambda { ArraySpecs.frozen_array.unshift(1) }.should raise_error(TypeError)
-    end
+  it "raises a RuntimeError on a frozen array when the array is modified" do
+    lambda { ArraySpecs.frozen_array.unshift(1) }.should raise_error(RuntimeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError on a frozen array when the array is modified" do
-      lambda { ArraySpecs.frozen_array.unshift(1) }.should raise_error(RuntimeError)
-    end
-
-    # see [ruby-core:23666]
-    it "raises a RuntimeError on a frozen array when the array would not be modified" do
-      lambda { ArraySpecs.frozen_array.unshift    }.should raise_error(RuntimeError)
-    end
-  end
-
-  ruby_version_is ""..."1.9" do
-    it "does not raise an exception on a frozen array if no modification takes place" do
-      ArraySpecs.frozen_array.unshift.should == [1, 2, 3]
-    end
+  # see [ruby-core:23666]
+  it "raises a RuntimeError on a frozen array when the array would not be modified" do
+    lambda { ArraySpecs.frozen_array.unshift    }.should raise_error(RuntimeError)
   end
 end

@@ -185,27 +185,8 @@ describe "Array#pack with format 'M'" do
     end
   end
 
-  ruby_version_is "".."1.9" do
-    describe "with a multibyte $KCODE" do
-      before :each do
-        @kcode = $KCODE
-      end
-
-      after :each do
-        $KCODE = @kcode
-      end
-
-      it "encodes multibyte characters" do
-        $KCODE = "UTF8"
-        ["あ"].pack("M").should == "=E3=81=82=\n"
-      end
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "sets the output string to US-ASCII encoding" do
-      ["abcd"].pack("M").encoding.should == Encoding::US_ASCII
-    end
+  it "sets the output string to US-ASCII encoding" do
+    ["abcd"].pack("M").encoding.should == Encoding::US_ASCII
   end
 end
 
@@ -315,23 +296,13 @@ describe "Array#pack with format 'm'" do
     lambda { [bignum_value].pack("m") }.should raise_error(TypeError)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "emits a newline after 45 characters if passed zero as the count modifier" do
-      s = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-      r = "YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFh\nYWFhYWE=\n"
-      [s].pack("m0").should == r
-    end
+  it "does not emit a newline if passed zero as the count modifier" do
+    s = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    r = "YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE="
+    [s].pack("m0").should == r
   end
 
-  ruby_version_is "1.9" do
-    it "does not emit a newline if passed zero as the count modifier" do
-      s = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-      r = "YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE="
-      [s].pack("m0").should == r
-    end
-
-    it "sets the output string to US-ASCII encoding" do
-      ["abcd"].pack("m").encoding.should == Encoding::US_ASCII
-    end
+  it "sets the output string to US-ASCII encoding" do
+    ["abcd"].pack("m").encoding.should == Encoding::US_ASCII
   end
 end

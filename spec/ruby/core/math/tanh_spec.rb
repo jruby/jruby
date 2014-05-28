@@ -15,16 +15,8 @@ describe "Math.tanh" do
     Math.tanh(-4.892).should be_close(-0.999887314427707, TOLERANCE)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises an ArgumentError if the argument cannot be coerced with Float()" do
-      lambda { Math.tanh("test") }.should raise_error(ArgumentError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises an TypeError if the argument cannot be coerced with Float()" do
-      lambda { Math.tanh("test") }.should raise_error(TypeError)
-    end
+  it "raises a TypeError if the argument cannot be coerced with Float()" do
+    lambda { Math.tanh("test") }.should raise_error(TypeError)
   end
 
   it "returns NaN given NaN" do

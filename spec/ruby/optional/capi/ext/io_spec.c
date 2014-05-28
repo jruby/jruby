@@ -98,6 +98,11 @@ VALUE io_spec_rb_io_write(VALUE self, VALUE io, VALUE str) {
 }
 #endif
 
+#ifdef HAVE_RB_IO_CHECK_IO
+VALUE io_spec_rb_io_check_io(VALUE self, VALUE io) {
+  return rb_io_check_io(io);
+}
+#endif
 
 #ifdef HAVE_RB_IO_CHECK_READABLE
 VALUE io_spec_rb_io_check_readable(VALUE self, VALUE io) {
@@ -193,6 +198,13 @@ VALUE io_spec_rb_io_binmode(VALUE self, VALUE io) {
 }
 #endif
 
+#ifdef HAVE_RB_FD_FIX_CLOEXEC
+VALUE io_spec_rb_fd_fix_cloexec(VALUE self, VALUE io) {
+  rb_fd_fix_cloexec(io_spec_get_fd(io));
+  return Qnil;
+}
+#endif
+
 #ifdef HAVE_RB_IO_CLOSE
 VALUE io_spec_rb_io_close(VALUE self, VALUE io) {
   return rb_io_close(io);
@@ -230,6 +242,10 @@ void Init_io_spec() {
   rb_define_method(cls, "rb_io_close", io_spec_rb_io_close, 1);
 #endif
 
+#ifdef HAVE_RB_IO_CHECK_IO
+  rb_define_method(cls, "rb_io_check_io", io_spec_rb_io_check_io, 1);
+#endif
+
 #ifdef HAVE_RB_IO_CHECK_READABLE
   rb_define_method(cls, "rb_io_check_readable", io_spec_rb_io_check_readable, 1);
 #endif
@@ -260,6 +276,10 @@ void Init_io_spec() {
 
 #ifdef HAVE_RB_IO_BINMODE
   rb_define_method(cls, "rb_io_binmode", io_spec_rb_io_binmode, 1);
+#endif
+
+#ifdef HAVE_RB_FD_FIX_CLOEXEC
+  rb_define_method(cls, "rb_fd_fix_cloexec", io_spec_rb_fd_fix_cloexec, 1);
 #endif
 
 }

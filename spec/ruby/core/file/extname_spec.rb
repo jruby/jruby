@@ -28,10 +28,8 @@ describe "File.extname" do
     File.extname("a.b.c.d.e").should == ".e"
   end
 
-  ruby_version_is "1.9" do
-    it "accepts an object that has a #to_path method" do
-      File.extname(mock_to_path("a.b.c.d.e")).should == ".e"
-    end
+  it "accepts an object that has a #to_path method" do
+    File.extname(mock_to_path("a.b.c.d.e")).should == ".e"
   end
 
   it "raises a TypeError if not passed a String type" do

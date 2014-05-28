@@ -14,30 +14,28 @@ describe "C-API Hash function" do
       @s.rb_hash(obj).should == 5
     end
 
-    ruby_version_is "1.8.7" do
-      it "converts a Bignum returned by #hash to a Fixnum" do
-        obj = mock("rb_hash bignum")
-        obj.should_receive(:hash).and_return(bignum_value())
+    it "converts a Bignum returned by #hash to a Fixnum" do
+      obj = mock("rb_hash bignum")
+      obj.should_receive(:hash).and_return(bignum_value())
 
-        # The actual conversion is an implementation detail.
-        # We only care that ultimately we get a Fixnum instance.
-        @s.rb_hash(obj).should be_an_instance_of(Fixnum)
-      end
+      # The actual conversion is an implementation detail.
+      # We only care that ultimately we get a Fixnum instance.
+      @s.rb_hash(obj).should be_an_instance_of(Fixnum)
+    end
 
-      it "calls #to_int to converts a value returned by #hash to a Fixnum" do
-        obj = mock("rb_hash to_int")
-        obj.should_receive(:hash).and_return(obj)
-        obj.should_receive(:to_int).and_return(12)
+    it "calls #to_int to converts a value returned by #hash to a Fixnum" do
+      obj = mock("rb_hash to_int")
+      obj.should_receive(:hash).and_return(obj)
+      obj.should_receive(:to_int).and_return(12)
 
-        @s.rb_hash(obj).should == 12
-      end
+      @s.rb_hash(obj).should == 12
+    end
 
-      it "raises a TypeError if the object does not implement #to_int" do
-        obj = mock("rb_hash no to_int")
-        obj.should_receive(:hash).and_return(nil)
+    it "raises a TypeError if the object does not implement #to_int" do
+      obj = mock("rb_hash no to_int")
+      obj.should_receive(:hash).and_return(nil)
 
-        lambda { @s.rb_hash(obj) }.should raise_error(TypeError)
-      end
+      lambda { @s.rb_hash(obj) }.should raise_error(TypeError)
     end
   end
 
@@ -93,16 +91,8 @@ describe "C-API Hash function" do
       h.should == { :a => 1, :c => 3 }
     end
 
-    ruby_version_is ""..."1.8.7" do
-      it "raises a LocalJumpError when no block is passed" do
-        lambda { @s.rb_hash_delete_if({:a => 1}) }.should raise_error(LocalJumpError)
-      end
-    end
-
-    ruby_version_is "1.8.7" do
-      it "returns an Enumerator when no block is passed" do
-        @s.rb_hash_delete_if({:a => 1}).should be_an_instance_of(enumerator_class)
-      end
+    it "returns an Enumerator when no block is passed" do
+      @s.rb_hash_delete_if({:a => 1}).should be_an_instance_of(enumerator_class)
     end
   end
 

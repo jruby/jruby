@@ -24,10 +24,8 @@ describe "String#slice with Regexp, index" do
   it_behaves_like :string_slice_regexp_index, :slice
 end
 
-ruby_version_is "1.9" do
-  describe "String#slice with Regexp, group" do
-    it_behaves_like :string_slice_regexp_group, :slice
-  end
+describe "String#slice with Regexp, group" do
+  it_behaves_like :string_slice_regexp_group, :slice
 end
 
 describe "String#slice with String" do
@@ -51,25 +49,10 @@ describe "String#slice! with index" do
     a.should == "hello"
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError if self is frozen" do
-      lambda { "hello".freeze.slice!(1) }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError if self is frozen" do
-      lambda { "hello".freeze.slice!(1)  }.should raise_error(RuntimeError)
-      lambda { "hello".freeze.slice!(10) }.should raise_error(RuntimeError)
-      lambda { "".freeze.slice!(0)       }.should raise_error(RuntimeError)
-    end
-  end
-
-  ruby_version_is ""..."1.9" do
-    it "doesn't raise a TypeError if self is frozen and idx is outside of self" do
-      "hello".freeze.slice!(10).should be_nil
-      "".freeze.slice!(0).should be_nil
-    end
+  it "raises a RuntimeError if self is frozen" do
+    lambda { "hello".freeze.slice!(1)  }.should raise_error(RuntimeError)
+    lambda { "hello".freeze.slice!(10) }.should raise_error(RuntimeError)
+    lambda { "".freeze.slice!(0)       }.should raise_error(RuntimeError)
   end
 
   it "calls to_int on index" do
@@ -133,16 +116,14 @@ describe "String#slice! with index, length" do
     a.should == "hello"
   end
 
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError if self is frozen" do
-      lambda { "hello".freeze.slice!(1, 2)  }.should raise_error(RuntimeError)
-      lambda { "hello".freeze.slice!(10, 3) }.should raise_error(RuntimeError)
-      lambda { "hello".freeze.slice!(-10, 3)}.should raise_error(RuntimeError)
-      lambda { "hello".freeze.slice!(4, -3) }.should raise_error(RuntimeError)
-      lambda { "hello".freeze.slice!(10, 3) }.should raise_error(RuntimeError)
-      lambda { "hello".freeze.slice!(-10, 3)}.should raise_error(RuntimeError)
-      lambda { "hello".freeze.slice!(4, -3) }.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError if self is frozen" do
+    lambda { "hello".freeze.slice!(1, 2)  }.should raise_error(RuntimeError)
+    lambda { "hello".freeze.slice!(10, 3) }.should raise_error(RuntimeError)
+    lambda { "hello".freeze.slice!(-10, 3)}.should raise_error(RuntimeError)
+    lambda { "hello".freeze.slice!(4, -3) }.should raise_error(RuntimeError)
+    lambda { "hello".freeze.slice!(10, 3) }.should raise_error(RuntimeError)
+    lambda { "hello".freeze.slice!(-10, 3)}.should raise_error(RuntimeError)
+    lambda { "hello".freeze.slice!(4, -3) }.should raise_error(RuntimeError)
   end
 
   it "calls to_int on idx and length" do
@@ -160,8 +141,8 @@ describe "String#slice! with index, length" do
 
   it "returns subclass instances" do
     s = StringSpecs::MyString.new("hello")
-    s.slice!(0, 0).should be_kind_of(StringSpecs::MyString)
-    s.slice!(0, 4).should be_kind_of(StringSpecs::MyString)
+    s.slice!(0, 0).should be_an_instance_of(StringSpecs::MyString)
+    s.slice!(0, 4).should be_an_instance_of(StringSpecs::MyString)
   end
 
   with_feature :encoding do
@@ -214,8 +195,8 @@ describe "String#slice! Range" do
 
   it "returns subclass instances" do
     s = StringSpecs::MyString.new("hello")
-    s.slice!(0...0).should be_kind_of(StringSpecs::MyString)
-    s.slice!(0..4).should be_kind_of(StringSpecs::MyString)
+    s.slice!(0...0).should be_an_instance_of(StringSpecs::MyString)
+    s.slice!(0..4).should be_an_instance_of(StringSpecs::MyString)
   end
 
   it "calls to_int on range arguments" do
@@ -266,25 +247,13 @@ describe "String#slice! Range" do
 
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError on a frozen instance that would be modifed" do
-      lambda { "hello".freeze.slice!(1..3) }.should raise_error(TypeError)
-    end
-
-    it "does not raise an exception on a frozen instance that would not be modified" do
-      "hello".freeze.slice!(10..20).should be_nil
-    end
+  it "raises a RuntimeError on a frozen instance that is modified" do
+    lambda { "hello".freeze.slice!(1..3)  }.should raise_error(RuntimeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError on a frozen instance that is modified" do
-      lambda { "hello".freeze.slice!(1..3)  }.should raise_error(RuntimeError)
-    end
-
-    # see redmine #1551
-    it "raises a RuntimeError on a frozen instance that would not be modified" do
-      lambda { "hello".freeze.slice!(10..20)}.should raise_error(RuntimeError)
-    end
+  # see redmine #1551
+  it "raises a RuntimeError on a frozen instance that would not be modified" do
+    lambda { "hello".freeze.slice!(10..20)}.should raise_error(RuntimeError)
   end
 end
 
@@ -329,8 +298,8 @@ describe "String#slice! with Regexp" do
 
   it "returns subclass instances" do
     s = StringSpecs::MyString.new("hello")
-    s.slice!(//).should be_kind_of(StringSpecs::MyString)
-    s.slice!(/../).should be_kind_of(StringSpecs::MyString)
+    s.slice!(//).should be_an_instance_of(StringSpecs::MyString)
+    s.slice!(/../).should be_an_instance_of(StringSpecs::MyString)
   end
 
   with_feature :encoding do
@@ -348,24 +317,12 @@ describe "String#slice! with Regexp" do
     $~.should == nil
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError on a frozen instance that is modified" do
-      lambda { "this is a string".freeze.slice!(/s.*t/) }.should raise_error(TypeError)
-    end
-
-    it "does not raise an exception on a frozen instance that would not be modified" do
-      "this is a string".freeze.slice!(/zzz/).should be_nil
-    end
+  it "raises a RuntimeError on a frozen instance that is modified" do
+    lambda { "this is a string".freeze.slice!(/s.*t/) }.should raise_error(RuntimeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError on a frozen instance that is modified" do
-      lambda { "this is a string".freeze.slice!(/s.*t/) }.should raise_error(RuntimeError)
-    end
-
-    it "raises a RuntimeError on a frozen instance that would not be modified" do
-      lambda { "this is a string".freeze.slice!(/zzz/)  }.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError on a frozen instance that would not be modified" do
+    lambda { "this is a string".freeze.slice!(/zzz/)  }.should raise_error(RuntimeError)
   end
 end
 
@@ -427,8 +384,8 @@ describe "String#slice! with Regexp, index" do
 
   it "returns subclass instances" do
     s = StringSpecs::MyString.new("hello")
-    s.slice!(/(.)(.)/, 0).should be_kind_of(StringSpecs::MyString)
-    s.slice!(/(.)(.)/, 1).should be_kind_of(StringSpecs::MyString)
+    s.slice!(/(.)(.)/, 0).should be_an_instance_of(StringSpecs::MyString)
+    s.slice!(/(.)(.)/, 1).should be_an_instance_of(StringSpecs::MyString)
   end
 
   with_feature :encoding do
@@ -454,26 +411,10 @@ describe "String#slice! with Regexp, index" do
     $~.should == nil
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError if self is frozen" do
-      lambda { "this is a string".freeze.slice!(/s.*t/) }.should raise_error(TypeError)
-    end
-
-    it "doesn't raise a TypeError if self is frozen but there is no match" do
-      "this is a string".freeze.slice!(/zzz/, 0).should == nil
-    end
-
-    it "doesn't raise a TypeError if self is frozen but there is no capture for idx" do
-      "this is a string".freeze.slice!(/(.)/, 2).should == nil
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError if self is frozen" do
-      lambda { "this is a string".freeze.slice!(/s.*t/)  }.should raise_error(RuntimeError)
-      lambda { "this is a string".freeze.slice!(/zzz/, 0)}.should raise_error(RuntimeError)
-      lambda { "this is a string".freeze.slice!(/(.)/, 2)}.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError if self is frozen" do
+    lambda { "this is a string".freeze.slice!(/s.*t/)  }.should raise_error(RuntimeError)
+    lambda { "this is a string".freeze.slice!(/zzz/, 0)}.should raise_error(RuntimeError)
+    lambda { "this is a string".freeze.slice!(/(.)/, 2)}.should raise_error(RuntimeError)
   end
 end
 
@@ -523,20 +464,12 @@ describe "String#slice! with String" do
     s = StringSpecs::MyString.new("el")
     r = "hello".slice!(s)
     r.should == "el"
-    r.should be_kind_of(StringSpecs::MyString)
+    r.should be_an_instance_of(StringSpecs::MyString)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError if self is frozen" do
-      lambda { "hello hello".freeze.slice!('llo') }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError if self is frozen" do
-      lambda { "hello hello".freeze.slice!('llo')     }.should raise_error(RuntimeError)
-      lambda { "this is a string".freeze.slice!('zzz')}.should raise_error(RuntimeError)
-      lambda { "this is a string".freeze.slice!('zzz')}.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError if self is frozen" do
+    lambda { "hello hello".freeze.slice!('llo')     }.should raise_error(RuntimeError)
+    lambda { "this is a string".freeze.slice!('zzz')}.should raise_error(RuntimeError)
+    lambda { "this is a string".freeze.slice!('zzz')}.should raise_error(RuntimeError)
   end
 end

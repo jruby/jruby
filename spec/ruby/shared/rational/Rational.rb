@@ -42,30 +42,28 @@ describe :kernel_Rational, :shared => true do
     end
   end
 
-  ruby_version_is "1.9" do
-    describe "when passed a String" do
-      it "converts the String to a Rational using the same method as String#to_r" do
-        r = Rational(13, 25)
-        s_r = ".52".to_r
-        r_s = Rational(".52")
+  describe "when passed a String" do
+    it "converts the String to a Rational using the same method as String#to_r" do
+      r = Rational(13, 25)
+      s_r = ".52".to_r
+      r_s = Rational(".52")
 
-        r_s.should == r
-        r_s.should == s_r
-      end
+      r_s.should == r
+      r_s.should == s_r
+    end
 
-      it "scales the Rational value of the first argument by the Rational value of the second" do
-        Rational(".52", ".6").should == Rational(13, 15)
-        Rational(".52", "1.6").should == Rational(13, 40)
-      end
+    it "scales the Rational value of the first argument by the Rational value of the second" do
+      Rational(".52", ".6").should == Rational(13, 15)
+      Rational(".52", "1.6").should == Rational(13, 40)
+    end
 
-      it "does not use the same method as Float#to_r" do
-        r = Rational(3, 5)
-        f_r = 0.6.to_r
-        r_s = Rational("0.6")
+    it "does not use the same method as Float#to_r" do
+      r = Rational(3, 5)
+      f_r = 0.6.to_r
+      r_s = Rational("0.6")
 
-        r_s.should == r
-        r_s.should_not == f_r
-      end
+      r_s.should == r
+      r_s.should_not == f_r
     end
 
     describe "when passed a Numeric" do
@@ -100,22 +98,6 @@ describe :kernel_Rational, :shared => true do
 
     it "raises a TypeError if the second argument is a Symbol" do
       lambda { Rational(1, :sym) }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is ""..."1.9" do
-    describe "when Rational::Unify is defined" do
-      after :each do
-        Rational.send :remove_const, :Unify
-      end
-
-      it "returns the passed Integer" do
-        Rational::Unify = true
-
-        Rational(1).should eql(1)
-        Rational(-3).should eql(-3)
-        Rational(bignum_value).should eql(bignum_value)
-      end
     end
   end
 end

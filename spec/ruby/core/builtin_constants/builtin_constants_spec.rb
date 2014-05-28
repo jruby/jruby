@@ -12,27 +12,21 @@ describe "RUBY_PATCHLEVEL" do
 	end
 end
 
-ruby_version_is "1.8.7" do
-  describe "RUBY_COPYRIGHT" do
-    it "is a String" do
-      RUBY_COPYRIGHT.should be_kind_of(String)
-    end
+describe "RUBY_COPYRIGHT" do
+  it "is a String" do
+    RUBY_COPYRIGHT.should be_kind_of(String)
   end
 end
 
-ruby_version_is "1.8.7" do
-  describe "RUBY_DESCRIPTION" do
-    it "is a String" do
-      RUBY_DESCRIPTION.should be_kind_of(String)
-    end
+describe "RUBY_DESCRIPTION" do
+  it "is a String" do
+    RUBY_DESCRIPTION.should be_kind_of(String)
   end
 end
 
-ruby_version_is "1.9" do
-  describe "RUBY_ENGINE" do
-    it "is a String" do
-      RUBY_ENGINE.should be_kind_of(String)
-    end
+describe "RUBY_ENGINE" do
+  it "is a String" do
+    RUBY_ENGINE.should be_kind_of(String)
   end
 end
 
@@ -48,10 +42,8 @@ describe "RUBY_RELEASE_DATE" do
   end
 end
 
-ruby_version_is "1.9" do
-  describe "RUBY_REVISION" do
-    it "is a Fixnum" do
-      RUBY_REVISION.should be_kind_of(Fixnum)
-    end
+describe "RUBY_REVISION" do
+  it "is a Fixnum" do
+    RUBY_REVISION.should be_kind_of(Fixnum)
   end
 end

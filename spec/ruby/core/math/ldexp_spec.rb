@@ -14,27 +14,19 @@ describe "Math.ldexp" do
     Math.ldexp(5.7, 4).should be_close(91.2, TOLERANCE)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises an ArgumentError if the first argument cannot be coerced with Float()" do
-      lambda { Math.ldexp("test", 2) }.should raise_error(ArgumentError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a TypeError if the first argument cannot be coerced with Float()" do
-      lambda { Math.ldexp("test", 2) }.should raise_error(TypeError)
-    end
+  it "raises a TypeError if the first argument cannot be coerced with Float()" do
+    lambda { Math.ldexp("test", 2) }.should raise_error(TypeError)
   end
 
   it "returns NaN given NaN" do
     Math.ldexp(nan_value, 0).nan?.should be_true
   end
-  
+
   it "raises RangeError if NaN is given as the second arg" do
     lambda { Math.ldexp(0, nan_value) }.should raise_error(RangeError)
   end
 
-  it "raises an TypeError if the second argument cannot be coerced with Integer()" do
+  it "raises a TypeError if the second argument cannot be coerced with Integer()" do
     lambda { Math.ldexp(3.2, "this") }.should raise_error(TypeError)
   end
 

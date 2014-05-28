@@ -1,1 +1,1 @@
-fails:The super keyword can't be used with implicit arguments from a method defined with define_method
+fails:The super keyword raises a RuntimeError when called with implicit arguments from a method defined with define_method

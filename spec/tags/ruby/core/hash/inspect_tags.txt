@@ -1,0 +1,2 @@
+fails:Hash#inspect returns a tainted string if self is tainted and not empty
+fails:Hash#inspect returns an untrusted string if self is untrusted and not empty

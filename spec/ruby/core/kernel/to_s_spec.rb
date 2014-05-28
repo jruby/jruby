@@ -10,9 +10,7 @@ describe "Kernel#to_s" do
     Object.new.taint.to_s.tainted?.should be_true
   end
 
-  ruby_version_is "1.9" do
-    it "returns an untrusted result if self is untrusted" do
-      Object.new.untrust.to_s.untrusted?.should be_true
-    end
+  it "returns an untrusted result if self is untrusted" do
+    Object.new.untrust.to_s.untrusted?.should be_true
   end
 end

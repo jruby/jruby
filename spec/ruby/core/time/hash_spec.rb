@@ -3,7 +3,7 @@ require File.expand_path('../fixtures/methods', __FILE__)
 
 describe "Time#hash" do
   it "returns a Fixnum" do
-    Time.at(100).hash.should be_kind_of(Fixnum)
+    Time.at(100).hash.should be_an_instance_of(Fixnum)
   end
 
   it "is stable" do

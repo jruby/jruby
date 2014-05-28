@@ -17,10 +17,22 @@ describe "Kernel#sleep" do
     sleep(0.01).should be_kind_of(Integer)
   end
 
+  it "raises an ArgumentError when passed a negative duration" do
+    lambda { sleep(-0.1) }.should raise_error(ArgumentError)
+    lambda { sleep(-1) }.should raise_error(ArgumentError)
+  end
+
   it "raises a TypeError when passed a non-numeric duration" do
     lambda { sleep(nil)   }.should raise_error(TypeError)
     lambda { sleep('now') }.should raise_error(TypeError)
     lambda { sleep('2')   }.should raise_error(TypeError)
+  end
+
+  it "accepts a Rational" do
+    duration = Rational 1, 9
+    start = Time.now
+    sleep duration
+    (Time.now - start).should be_close(duration, 0.01)
   end
 
   it "pauses execution indefinitely if not given a duration" do

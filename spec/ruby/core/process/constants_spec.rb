@@ -47,7 +47,7 @@ describe "Process::Constants" do
       Process::RLIMIT_AS.should == 9
 
       # These values appear to change according to the platform.
-      values = [9223372036854775807, 18446744073709551615]
+      values = [4294967295, 9223372036854775807, 18446744073709551615]
       values.include?(Process::RLIM_INFINITY).should be_true
       values.include?(Process::RLIM_SAVED_MAX).should be_true
       values.include?(Process::RLIM_SAVED_CUR).should be_true

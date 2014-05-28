@@ -95,10 +95,8 @@ describe "Array#pack with format 'H'" do
     ].should be_computed_by(:pack, "H")
   end
 
-  ruby_version_is "1.9" do
-    it "returns an ASCII-8BIT string" do
-      ["41"].pack("H").encoding.should == Encoding::ASCII_8BIT
-    end
+  it "returns an ASCII-8BIT string" do
+    ["41"].pack("H").encoding.should == Encoding::ASCII_8BIT
   end
 end
 
@@ -193,9 +191,7 @@ describe "Array#pack with format 'h'" do
     ].should be_computed_by(:pack, "h")
   end
 
-  ruby_version_is "1.9" do
-    it "returns an ASCII-8BIT string" do
-      ["41"].pack("h").encoding.should == Encoding::ASCII_8BIT
-    end
+  it "returns an ASCII-8BIT string" do
+    ["41"].pack("h").encoding.should == Encoding::ASCII_8BIT
   end
 end

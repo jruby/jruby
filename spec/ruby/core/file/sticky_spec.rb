@@ -33,18 +33,16 @@ describe "File.sticky?" do
   end
 
   platform_is :bsd do
-    ruby_version_is "1.9" do
-      # FreeBSD and NetBSD can't set stiky bit to a normal file
-      it "cannot set sticky bit to a normal file" do
-        filename = tmp("i_exist")
-        touch(filename)
-        stat = File.stat(filename)
-        mode = stat.mode
-        raise_error(Errno::EFTYPE){File.chmod(mode|01000, filename)}
-        File.sticky?(filename).should == false
+    # FreeBSD and NetBSD can't set stiky bit to a normal file
+    it "cannot set sticky bit to a normal file" do
+      filename = tmp("i_exist")
+      touch(filename)
+      stat = File.stat(filename)
+      mode = stat.mode
+      raise_error(Errno::EFTYPE){File.chmod(mode|01000, filename)}
+      File.sticky?(filename).should == false
 
-        rm_r filename
-      end
+      rm_r filename
     end
   end
 end

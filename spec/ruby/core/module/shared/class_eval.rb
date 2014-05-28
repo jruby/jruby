@@ -9,7 +9,7 @@ describe :module_class_eval, :shared => true do
   end
 
   it "does not add defined methods to other classes" do
-    FalseClass.class_eval do
+    FalseClass.send(@method) do
       def foo
         'foo'
       end
@@ -85,8 +85,8 @@ describe :module_class_eval, :shared => true do
       self::C = "B"
     end
 
-    a.class_eval code
-    b.class_eval code
+    a.send @method, code
+    b.send @method, code
 
     a.attribute.should == "A"
     b.attribute.should == "B"

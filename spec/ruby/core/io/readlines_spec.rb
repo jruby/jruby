@@ -6,21 +6,13 @@ require File.expand_path('../shared/readlines', __FILE__)
 describe "IO#readlines" do
   before :each do
     @io = IOSpecs.io_fixture "lines.txt"
+    @orig_exteenc = Encoding.default_external
+    Encoding.default_external = Encoding::UTF_8
   end
 
   after :each do
     @io.close unless @io.closed?
-  end
-
-  ruby_version_is "1.9" do
-    before :each do
-      @orig_exteenc = Encoding.default_external
-      Encoding.default_external = Encoding::UTF_8
-    end
-
-    after :each do
-      Encoding.default_external = @orig_exteenc
-    end
+    Encoding.default_external = @orig_exteenc
   end
 
   it "raises an IOError if the stream is closed" do
@@ -152,39 +144,61 @@ describe "IO#readlines" do
   end
 end
 
-ruby_version_is ""..."1.9" do
-  describe "IO.readlines" do
-    before :each do
-      @name = fixture __FILE__, "lines.txt"
-      ScratchPad.record []
-    end
+describe "IO.readlines" do
+  before :each do
+    @external = Encoding.default_external
+    Encoding.default_external = Encoding::UTF_8
 
-    it_behaves_like :io_readlines, :readlines
-    it_behaves_like :io_readlines_options_18, :readlines
+    @name = fixture __FILE__, "lines.txt"
+    ScratchPad.record []
   end
+
+  after :each do
+    Encoding.default_external = @external
+  end
+
+  it "does not change $_" do
+    $_ = "test"
+    IO.readlines(@name)
+    $_.should == "test"
+  end
+
+  it_behaves_like :io_readlines, :readlines
+  it_behaves_like :io_readlines_options_19, :readlines
 end
 
-ruby_version_is "1.9" do
-  describe "IO.readlines" do
-    before :each do
-      @external = Encoding.default_external
-      Encoding.default_external = Encoding::UTF_8
+describe "IO.readlines" do
+  before :each do
+    @external = Encoding.default_external
+    @internal = Encoding.default_internal
+    @name = fixture __FILE__, "lines.txt"
+    @dollar_slash = $/
+  end
 
-      @name = fixture __FILE__, "lines.txt"
-      ScratchPad.record []
-    end
+  after :each do
+    Encoding.default_external = @external
+    Encoding.default_internal = @internal
+    $/ = @dollar_slash
+  end
 
-    after :each do
-      Encoding.default_external = @external
-    end
+  it "encodes lines using the default external encoding" do
+    Encoding.default_external = Encoding::UTF_8
+    lines = IO.readlines(@name)
+    lines.all? { |s| s.encoding == Encoding::UTF_8 }.should be_true
+  end
 
-    it "does not change $_" do
-      $_ = "test"
-      IO.readlines(@name)
-      $_.should == "test"
-    end
+  it "encodes lines using the default internal encoding, when set" do
+    Encoding.default_external = Encoding::UTF_8
+    Encoding.default_internal = Encoding::UTF_16
+    $/ = $/.encode Encoding::UTF_16
+    lines = IO.readlines(@name)
+    lines.all? { |s| s.encoding == Encoding::UTF_16 }.should be_true
+  end
 
-    it_behaves_like :io_readlines, :readlines
-    it_behaves_like :io_readlines_options_19, :readlines
+  it "ignores the default internal encoding if the external encoding is ASCII-8BIT" do
+    Encoding.default_external = Encoding::ASCII_8BIT
+    Encoding.default_internal = Encoding::UTF_8
+    lines = IO.readlines(@name)
+    lines.all? { |s| s.encoding == Encoding::ASCII_8BIT }.should be_true
   end
 end

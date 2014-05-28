@@ -1,11 +1,15 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
+describe "Struct" do
+  it "includes Enumerable" do
+    Struct.include?(Enumerable).should == true
+  end
+end
+
 describe "Struct anonymous class instance methods" do
-  it "Enumerable methods should work" do
-    car = StructClasses::Car.new('Ford', 'Ranger', '2001')
-    car.detect { |value| value.include? 'F' }.should == 'Ford'
-    car.reject { |value| value.include? 'F' }.should == ['Ranger', '2001']
+  it "includes Enumerable" do
+    StructClasses::Car.include?(Enumerable).should == true
   end
 
   it "reader method should be a synonym for []" do

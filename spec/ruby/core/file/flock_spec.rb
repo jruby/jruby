@@ -68,7 +68,7 @@ describe "File#flock" do
     end
   end
 
-  platform_is :solaris do
+  platform_is :solaris, :java do
     before :each do
       @read_file = File.open @name, "r"
       @write_file = File.open @name, "w"

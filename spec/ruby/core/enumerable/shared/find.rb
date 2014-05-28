@@ -47,27 +47,19 @@ describe :enumerable_find, :shared => true do
     @empty.send(@method, fail_proc) {|e| true}.should == "yay"
   end
 
-  ruby_version_is ""..."1.8.7" do
-    it "raises a LocalJumpError if no block given" do
-      lambda { @numerous.send(@method) }.should raise_error(LocalJumpError)
-    end
+  it "passes through the values yielded by #each_with_index" do
+    [:a, :b].each_with_index.send(@method) { |x, i| ScratchPad << [x, i]; nil }
+    ScratchPad.recorded.should == [[:a, 0], [:b, 1]]
   end
 
-  ruby_version_is "1.8.7" do
-    it "passes through the values yielded by #each_with_index" do
-      [:a, :b].each_with_index.send(@method) { |x, i| ScratchPad << [x, i]; nil }
-      ScratchPad.recorded.should == [[:a, 0], [:b, 1]]
-    end
+  it "returns an enumerator when no block given" do
+    @numerous.send(@method).should be_an_instance_of(enumerator_class)
+  end
 
-    it "returns an enumerator when no block given" do
-      @numerous.send(@method).should be_an_instance_of(enumerator_class)
-    end
-
-    it "passes the ifnone proc to the enumerator" do
-      times = 0
-      fail_proc = lambda { times += 1; raise if times > 1; "cheeseburgers" }
-      @numerous.send(@method, fail_proc).each {|e| false }.should == "cheeseburgers"
-    end
+  it "passes the ifnone proc to the enumerator" do
+    times = 0
+    fail_proc = lambda { times += 1; raise if times > 1; "cheeseburgers" }
+    @numerous.send(@method, fail_proc).each {|e| false }.should == "cheeseburgers"
   end
 
   it "gathers whole arrays as elements when each yields multiple" do

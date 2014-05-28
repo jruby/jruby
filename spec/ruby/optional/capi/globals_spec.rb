@@ -53,23 +53,6 @@ describe "CApiGlobalSpecs" do
     end
   end
 
-  ruby_version_is ""..."1.9" do
-    describe "rb_set_kcode" do
-      before :each do
-        @kcode = $KCODE
-      end
-
-      after :each do
-        $KCODE = @kcode
-      end
-
-      it "sets the value of $KCODE" do
-        @f.rb_set_kcode("U")
-        $KCODE.should == "UTF8"
-      end
-    end
-  end
-
   describe "rb_rs" do
     before :each do
       @dollar_slash = $/

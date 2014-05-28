@@ -12,6 +12,15 @@ describe "Dir.[]" do
   end
 
   it_behaves_like :dir_glob, :[]
+
+  it "calls #to_path to convert multiple patterns" do
+    pat1 = mock('file_one.ext')
+    pat1.should_receive(:to_path).and_return('file_one.ext')
+    pat2 = mock('file_two.ext')
+    pat2.should_receive(:to_path).and_return('file_two.ext')
+
+    Dir[pat1, pat2].should == %w[file_one.ext file_two.ext]
+  end
 end
 
 describe "Dir.[]" do

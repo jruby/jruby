@@ -13,48 +13,11 @@ class MSpecScript
     'core',
   ]
 
-  # Standard library specs
-  set :library, [
-    'library',
-
-    # obsolete libraries
-    '^library/cgi-lib',
-    '^library/date2',
-    '^library/enumerator',
-    '^library/eregex',
-    '^library/finalize',
-    '^library/ftools',
-    '^library/generator',
-    '^library/getopts',
-    '^library/importenv',
-    '^library/jcode',
-    '^library/mailread',
-    '^library/parsearg',
-    '^library/parsedate',
-    '^library/ping',
-    '^library/readbytes',
-    '^library/rubyunit',
-    '^library/runit',
-    '^library/soap',
-    '^library/wsdl',
-    '^library/xsd',
-    '^library/Win32API',
-
-    '^library/test/unit/collector',
-    '^library/test/unit/ui',
-    '^library/test/unit/util',
-
-    '^library/dl',  # reimplemented and API changed
-  ]
-
   # An ordered list of the directories containing specs to run
-  set :files, get(:language) + get(:core) + get(:library)
+  set :files, get(:language) + get(:core)
 
   # This set of files is run by mspec ci
   set :ci_files, get(:files)
-
-  # Optional library specs
-  set :ffi, 'optional/ffi'
 
   set :capi, 'optional/capi'
 
@@ -69,10 +32,9 @@ class MSpecScript
   set :backtrace_filter, /mspec\//
 
   set :tags_patterns, [
-                        [%r(language/),     'tags/1.9/language/'],
-                        [%r(core/),         'tags/1.9/core/'],
-                        [%r(command_line/), 'tags/1.9/command_line/'],
-                        [%r(library/),      'tags/1.9/library/'],
+                        [%r(language/),     'tags/2.0/language/'],
+                        [%r(core/),         'tags/2.0/core/'],
+                        [%r(command_line/), 'tags/2.0/command_line/'],
                         [/_spec.rb$/,       '_tags.txt']
                       ]
 

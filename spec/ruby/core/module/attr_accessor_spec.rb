@@ -87,14 +87,5 @@ describe "Module#attr_accessor" do
     it "can read through the accessor" do
       1.foobar.should be_nil
     end
-
-    # On Ruby 2.0 immediates are always frozen, so setting fails.
-    ruby_version_is ""..."2.0" do
-      it "can set a value through the accessor" do
-        1.foobar = 2
-        1.foobar.should == 2
-      end
-    end
   end
-
 end

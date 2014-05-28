@@ -59,9 +59,9 @@ describe :string_succ, :shared => true do
   end
 
   it "returns subclass instances when called on a subclass" do
-    StringSpecs::MyString.new("").send(@method).should be_kind_of(StringSpecs::MyString)
-    StringSpecs::MyString.new("a").send(@method).should be_kind_of(StringSpecs::MyString)
-    StringSpecs::MyString.new("z").send(@method).should be_kind_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("").send(@method).should be_an_instance_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("a").send(@method).should be_an_instance_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("z").send(@method).should be_an_instance_of(StringSpecs::MyString)
   end
 
   it "taints the result if self is tainted" do
@@ -80,17 +80,8 @@ describe :string_succ_bang, :shared => true do
     end
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError if self is frozen" do
-      lambda { "".freeze.send(@method)     }.should raise_error(TypeError)
-      lambda { "abcd".freeze.send(@method) }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError if self is frozen" do
-      lambda { "".freeze.send(@method)     }.should raise_error(RuntimeError)
-      lambda { "abcd".freeze.send(@method) }.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError if self is frozen" do
+    lambda { "".freeze.send(@method)     }.should raise_error(RuntimeError)
+    lambda { "abcd".freeze.send(@method) }.should raise_error(RuntimeError)
   end
 end

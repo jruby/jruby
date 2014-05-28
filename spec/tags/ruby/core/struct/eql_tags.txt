@@ -1,1 +1,1 @@
-fails:Struct#eql? handles recursive structures by returning false if a difference can be found 
+fails:Struct#eql? handles recursive structures by returning false if a difference can be found
