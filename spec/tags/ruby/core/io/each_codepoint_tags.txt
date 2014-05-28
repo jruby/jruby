@@ -1,2 +1,0 @@
-fails:IO#each_codepoint yields each codepoint
-fails:IO#each_codepoint calls the given block
