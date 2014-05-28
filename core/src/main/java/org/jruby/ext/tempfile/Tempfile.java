@@ -163,7 +163,7 @@ public class Tempfile extends org.jruby.RubyFile {
     @JRubyMethod(visibility = PUBLIC)
     public IRubyObject open(ThreadContext context) {
         Ruby runtime = context.runtime;
-        if (!isClosed()) ioClose(runtime);
+        if (!isClosed()) rbIoClose(runtime);
 
         openFile(context, new IRubyObject[]{runtime.newString(path), runtime.newFixnum(mode), opts});
 

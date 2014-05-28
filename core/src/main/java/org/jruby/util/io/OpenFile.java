@@ -35,6 +35,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -1993,6 +1994,10 @@ public class OpenFile {
 
     public FileChannel fileChannel() {
         return fd.chFile;
+    }
+
+    public SocketChannel socketChannel() {
+        return fd.chSock;
     }
 
     IRubyObject finishWriteconv(Ruby runtime, boolean noalloc) {

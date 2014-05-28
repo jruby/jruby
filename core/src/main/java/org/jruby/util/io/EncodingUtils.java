@@ -114,8 +114,28 @@ public class EncodingUtils {
         return runtime.getEncodingService().getAscii8bitEncoding();   
     }
 
-    public static final int VMODE = 0;
-    public static final int PERM = 1;
+    static final int VMODE = 0;
+    static final int PERM = 1;
+
+    public static Object vmodeVperm(IRubyObject vmode, IRubyObject vperm) {
+        return new IRubyObject[] {vmode, vperm};
+    }
+
+    public static IRubyObject vmode(Object vmodeVperm) {
+        return ((IRubyObject[])vmodeVperm)[VMODE];
+    }
+
+    public static void vmode(Object vmodeVperm, IRubyObject vmode) {
+        ((IRubyObject[])vmodeVperm)[VMODE] = vmode;
+    }
+
+    public static IRubyObject vperm(Object vmodeVperm) {
+        return ((IRubyObject[])vmodeVperm)[PERM];
+    }
+
+    public static void vperm(Object vmodeVperm, IRubyObject vperm) {
+        ((IRubyObject[])vmodeVperm)[PERM] = vperm;
+    }
     
     public static final int MODE_BTMODE(int fmode, int a, int b, int c) {
         return (fmode & OpenFile.BINMODE) != 0 ? b :
@@ -138,7 +158,7 @@ public class EncodingUtils {
      */
     // mri: rb_io_extract_modeenc
     public static void extractModeEncoding(ThreadContext context, 
-            IOEncodable ioEncodable, IRubyObject[] vmodeAndVperm_p, IRubyObject options, int[] oflags_p, int[] fmode_p) {
+            IOEncodable ioEncodable, Object vmodeAndVperm_p, IRubyObject options, int[] oflags_p, int[] fmode_p) {
         Ruby runtime = context.runtime;
         int ecflags;
         IRubyObject[] ecopts_p = {context.nil};
@@ -149,18 +169,18 @@ public class EncodingUtils {
         ioExtIntToEncs(context, ioEncodable, null, null, 0);
 
         vmode_handle: do {
-            if (vmodeAndVperm_p[VMODE] == null || vmodeAndVperm_p[VMODE].isNil()) {
+            if (vmode(vmodeAndVperm_p) == null || vmode(vmodeAndVperm_p).isNil()) {
                 fmode_p[0] = OpenFile.READABLE;
                 oflags_p[0] = ModeFlags.RDONLY;
             } else {
-                intmode = TypeConverter.checkIntegerType(context.runtime, vmodeAndVperm_p[VMODE], "to_int");
+                intmode = TypeConverter.checkIntegerType(context.runtime, vmode(vmodeAndVperm_p), "to_int");
 
                 if (!intmode.isNil()) {
-                    vmodeAndVperm_p[VMODE] = intmode;
+                    vmode(vmodeAndVperm_p, intmode);
                     oflags_p[0] = RubyNumeric.num2int(intmode);
                     fmode_p[0] = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
                 } else {
-                    String p = vmodeAndVperm_p[VMODE].convertToString().asJavaString();
+                    String p = vmode(vmodeAndVperm_p).convertToString().asJavaString();
                     fmode_p[0] = OpenFile.ioModestrFmode(runtime, p);
                     oflags_p[0] = OpenFile.ioFmodeOflags(fmode_p[0]);
                     int colonSplit = p.indexOf(":");
@@ -195,7 +215,7 @@ public class EncodingUtils {
                     if (!hasEnc) {
                         ioExtIntToEncs(context, ioEncodable, ascii8bitEncoding(context.runtime), null, fmode_p[0]);
                     }
-                } else if (DEFAULT_TEXTMODE != 0 && (vmodeAndVperm_p[VMODE] == null || vmodeAndVperm_p[VMODE].isNil())) {
+                } else if (DEFAULT_TEXTMODE != 0 && (vmode(vmodeAndVperm_p) == null || vmode(vmodeAndVperm_p).isNil())) {
                     fmode_p[0] |= DEFAULT_TEXTMODE;
                 }
 
@@ -203,21 +223,21 @@ public class EncodingUtils {
                     IRubyObject v = hashARef(context.runtime, options, "mode");
 
                     if (!v.isNil()) {
-                        if (vmodeAndVperm_p[VMODE] != null && !vmodeAndVperm_p[VMODE].isNil()) {
+                        if (vmode(vmodeAndVperm_p) != null && !vmode(vmodeAndVperm_p).isNil()) {
                             throw context.runtime.newArgumentError("mode specified twice");
                         }
                         hasVmode = true;
-                        vmodeAndVperm_p[VMODE] = v;
+                        vmode(vmodeAndVperm_p, v);
 
                         continue vmode_handle;
                     }
                 }
                 IRubyObject v = hashARef(context.runtime, options, "perm");
                 if (!v.isNil()) {
-                    if (vmodeAndVperm_p[PERM] != null) {
-                        if (!vmodeAndVperm_p[PERM].isNil()) throw context.runtime.newArgumentError("perm specified twice");
+                    if (vperm(vmodeAndVperm_p) != null) {
+                        if (!vperm(vmodeAndVperm_p).isNil()) throw context.runtime.newArgumentError("perm specified twice");
 
-                        vmodeAndVperm_p[PERM] = v;
+                        vperm(vmodeAndVperm_p, v);
                     }
                 }
                 

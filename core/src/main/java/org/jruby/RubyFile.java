@@ -45,7 +45,6 @@ import java.io.Reader;
 import java.net.URI;
 import java.net.URL;
 import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.util.Enumeration;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
@@ -68,17 +67,16 @@ import org.jruby.util.ByteList;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.io.BadDescriptorException;
-import org.jruby.util.io.ChannelDescriptor;
-import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
-import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.io.PosixShim;
+
+import static org.jruby.util.io.EncodingUtils.vmode;
+import static org.jruby.util.io.EncodingUtils.vperm;
 
 /**
  * Ruby File class equivalent in java.
@@ -205,7 +203,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
     
     @Override
-    protected IRubyObject ioClose(Ruby runtime) {
+    protected IRubyObject rbIoClose(Ruby runtime) {
         // Make sure any existing lock is released before we try and close the file
         if (openFile.currentLock != null) {
             try {
@@ -214,7 +212,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw getRuntime().newIOError(e.getMessage());
             }
         }
-        return super.ioClose(runtime);
+        return super.rbIoClose(runtime);
     }
 
     @JRubyMethod(required = 1)
@@ -1068,9 +1066,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
 
         // if it's a FileChannel, just get size directly
-        if (fptr.channel() instanceof FileChannel) {
+        if (fptr.fileChannel() != null) {
             try {
-                size = ((FileChannel)fptr.channel()).size();
+                size = fptr.fileChannel().size();
             } catch (IOException ioe) {
                 throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), fptr.getPath());
             }
@@ -1109,7 +1107,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         setPath(adjustRootPathOnWindows(runtime, filename.asJavaString(), runtime.getCurrentDirectory()));
 
-        IRubyObject[] pm = new IRubyObject[]{null, null};
+        Object pm = EncodingUtils.vmodeVperm(null, null);
         IRubyObject options = context.nil;
         
         switch(args.length) {
@@ -1120,7 +1118,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 if (test instanceof RubyHash) {
                     options = test;
                 } else {
-                    pm[EncodingUtils.VMODE] = args[1];
+                    vmode(pm, args[1]);
                 }
                 break;
             }
@@ -1129,23 +1127,23 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 if (test instanceof RubyHash) {
                     options = test;
                 } else {
-                    pm[EncodingUtils.PERM] = args[2];
+                    vperm(pm, args[2]);
                 }
-                pm[EncodingUtils.VMODE] = args[1];                
+                vmode(pm, args[1]);
                 break;
             }
             case 4:
                 options = args[3].convertToHash();
-                pm[EncodingUtils.PERM] = args[2];
-                pm[EncodingUtils.VMODE] = args[1];
+                vperm(pm, args[2]);
+                vmode(pm, args[1]);
                 break;
         }
         
         int[] oflags_p = {0}, fmode_p = {0};
         IOEncodable convconfig = new ConvConfig();
         EncodingUtils.extractModeEncoding(context, convconfig, pm, options, oflags_p, fmode_p);
-        int perm = (pm[EncodingUtils.PERM] != null && !pm[EncodingUtils.PERM].isNil()) ? 
-                RubyNumeric.num2int(pm[EncodingUtils.PERM]) : 0666;
+        int perm = (vperm(pm) != null && !vperm(pm).isNil()) ? 
+                RubyNumeric.num2int(vperm(pm)) : 0666;
         
         return fileOpenGeneric(context, filename, oflags_p[0], fmode_p[0], convconfig, perm);
     }

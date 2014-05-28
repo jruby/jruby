@@ -45,6 +45,9 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.DirectoryAsFileException;
 import org.jruby.util.io.EncodingUtils;
+import static org.jruby.util.io.EncodingUtils.vmodeVperm;
+import static org.jruby.util.io.EncodingUtils.vmode;
+import static org.jruby.util.io.EncodingUtils.vperm;
 import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.ModeFlags;
@@ -62,7 +65,6 @@ import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -484,7 +486,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         if (!nmode.isNil() || !opt.isNil()) {
             ConvConfig convconfig = new ConvConfig();
-            IRubyObject[] vmode_vperm = {null, null};
+            Object vmode_vperm = vmodeVperm(null, null);
             int[] fmode_p = {0};
 
             EncodingUtils.extractModeEncoding(context, convconfig, vmode_vperm, opt, oflags_p, fmode_p);
@@ -501,7 +503,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         fptr.setPath(fname.toString());
-        if (fptr.channel() == null) {
+        if (fptr.fd() == null) {
             fptr.setFD(sysopen(runtime, fptr.getPath(), oflags_p[0], 0666));
             fptr.clearStdio();
             return file;
@@ -837,7 +839,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             throw runtime.newErrnoEBADFError();
         }
 
-        IRubyObject[] pm = new IRubyObject[] { runtime.newFixnum(0), vmodeArg };
+        Object pm = EncodingUtils.vmodeVperm(vmodeArg, runtime.newFixnum(0));
         int[] fmode_p = {0};
         ConvConfig convconfig = new ConvConfig();
         EncodingUtils.extractModeEncoding(context, convconfig, pm, opt, oflags_p, fmode_p);
@@ -1797,14 +1799,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
         write_io = GetWriteIO();
         if (this != write_io) {
             write_fptr = write_io.openFile;
-            if (write_fptr != null && write_fptr.channel() != null) {
+            if (write_fptr != null && write_fptr.fd() != null) {
                 return false;
             }
         }
 
         fptr = openFile;
         checkInitialized();
-        return fptr.channel() != null ? false : true;
+        return fptr.fd() != null ? false : true;
     }
 
     /** 
@@ -1820,11 +1822,23 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = getRuntime();
 
         openFile.checkClosed(runtime);
-        return ioClose(runtime);
+        return rbIoClose(runtime);
+    }
+
+    // io_close
+    protected static IRubyObject ioClose(Ruby runtime, IRubyObject io) {
+        ThreadContext context = runtime.getCurrentContext();
+        try {
+            return io.callMethod(runtime.getCurrentContext(), "close");
+        } catch (RaiseException re) {
+            // ignore
+            context.setErrorInfo(context.nil);
+            return context.nil;
+        }
     }
     
     // rb_io_close  
-    protected IRubyObject ioClose(Ruby runtime) {
+    protected IRubyObject rbIoClose(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
         OpenFile fptr;
         ChannelFD fd;
@@ -1872,15 +1886,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         write_io = GetWriteIO();
         fptr = write_io.getOpenFileChecked();
-        if (fptr.channel() instanceof SocketChannel) {
+        if (fptr.socketChannel() != null) {
             try {
-                ((SocketChannel)fptr.channel()).shutdownOutput();
+                fptr.socketChannel().shutdownOutput();
             } catch (IOException ioe) {
                 throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), fptr.getPath());
             }
             fptr.setMode(fptr.getMode() & ~OpenFile.WRITABLE);
             if (!fptr.isReadable())
-                return ioClose(runtime);
+                return rbIoClose(runtime);
             return context.nil;
         }
 
@@ -1893,7 +1907,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             fptr.tiedIOForWriting = null;
             fptr.setMode(fptr.getMode() & ~OpenFile.DUPLEX);
         }
-        ioClose(runtime);
+        rbIoClose(runtime);
         return context.nil;
     }
 
@@ -1904,15 +1918,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyIO write_io;
 
         fptr = getOpenFileChecked();
-        if (fptr.channel() instanceof SocketChannel) {
+        if (fptr.socketChannel() != null) {
             try {
-                ((SocketChannel)fptr.channel()).socket().shutdownInput();
+                fptr.socketChannel().socket().shutdownInput();
             } catch (IOException ioe) {
                 throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), fptr.getPath());
             }
             fptr.setMode(fptr.getMode() & ~OpenFile.READABLE);
             if (!fptr.isWritable())
-                return ioClose(runtime);
+                return rbIoClose(runtime);
             return context.nil;
         }
 
@@ -1935,7 +1949,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (fptr.isWritable()) {
             throw runtime.newIOError("closing non-duplex IO for reading");
         }
-        return ioClose(runtime);
+        return rbIoClose(runtime);
     }
 
     /** Flushes the IO output stream.
@@ -2938,7 +2952,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     @Override
     public String toString() {
-        return "RubyIO(" + openFile.getMode() + ", " + FilenoUtil.getDescriptorFromChannel(openFile.channel()) + ")";
+        return "RubyIO(" + openFile.getMode() + ", " + openFile.fd().bestFileno() + ")";
     }
     
     /* class methods for IO */
@@ -3040,11 +3054,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
         int perm;
         IRubyObject cmd;
         
-        IRubyObject[] pm = {vperm, vmode};
+        Object pm = EncodingUtils.vmodeVperm(vmode, vperm);
 
         IOEncodable convconfig = new IOEncodable.ConvConfig();
         EncodingUtils.extractModeEncoding(context, convconfig, pm, opt, oflags_p, fmode_p);
-        perm = (pm[EncodingUtils.PERM] == null || pm[EncodingUtils.PERM].isNil()) ? 0666 : RubyNumeric.num2int(pm[EncodingUtils.PERM]);
+        perm = (vperm(pm) == null || vperm(pm).isNil()) ? 0666 : RubyNumeric.num2int(vperm(pm));
     
         if (!(cmd = PopenExecutor.checkPipeCommand(context, filename)).isNil()) {
             // FIXME: not passing convconfig for transcoding
@@ -3431,7 +3445,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         
         io.MakeOpenFile();
         
-        IRubyObject[] pm = new IRubyObject[] { runtime.newFixnum(0), pmode };
+        Object pm = vmodeVperm(pmode, runtime.newFixnum(0));
         int[] oflags_p = {0}, fmode_p = {0};
         EncodingUtils.extractModeEncoding(context, io, pm, options, oflags_p, fmode_p);
         ModeFlags modes = ModeFlags.createModeFlags(oflags_p[0]);
@@ -3714,7 +3728,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 if (!opt.isNil()) {
                     argc--;
                 } else {
-                    v1 = argv[1];
+                    v1 = argv[0];
                 }
         }
 
@@ -3747,7 +3761,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //        }
         w = new RubyIO(runtime, (RubyClass)klass);
         w.initializeCommon(context, new ChannelFD(pipes[1]), runtime.newFixnum(OpenFlags.O_WRONLY), context.nil);
-        fptr2 = r.getOpenFileChecked();
+        fptr2 = w.getOpenFileChecked();
         fptr2.setSync(true);
 
         EncodingUtils.extractBinmode(runtime, opt, fmode_p);
@@ -3758,8 +3772,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 // TODO: setmode O_BINARY means what via NIO?
 //                setmode(fptr->fd, O_BINARY);
             }
-//            #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
-            if (Platform.IS_WINDOWS) {
+            if (Platform.IS_WINDOWS) { // #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
                 if ((fptr.encs.ecflags & EncodingUtils.ECONV_DEFAULT_NEWLINE_DECORATOR) != 0) {
                     fptr.encs.ecflags |= EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
                 }
@@ -3778,19 +3791,29 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         ret = runtime.newArray(r, w);
         if (block.isGiven()) {
-            IRubyObject[] rw = new IRubyObject[2];
-            rw[0] = r;
-            rw[1] = w;
-            try {
-                return block.yield(context, runtime.newArray(r, w));
-            } finally {
-                r.close();
-                w.close();
-            }
+            return ensureYieldClosePipes(context, ret, r, w, block);
         }
         return ret;
     }
-    
+
+    // MRI: rb_ensure(... pipe_pair_close ...)
+    public static IRubyObject ensureYieldClosePipes(ThreadContext context, IRubyObject obj, RubyIO r, RubyIO w, Block block) {
+        try {
+            return block.yield(context, obj);
+        } finally {
+            pipePairClose(context.runtime, r, w);
+        }
+    }
+
+    // MRI: pipe_pair_close
+    private static void pipePairClose(Ruby runtime, RubyIO r, RubyIO w) {
+        try {
+            ioClose(runtime, r);
+        } finally {
+            ioClose(runtime, w);
+        }
+    }
+
     @JRubyMethod(name = "copy_stream", required = 2, optional = 2, meta = true)
     public static IRubyObject copy_stream(ThreadContext context, IRubyObject recv, 
             IRubyObject[] args) {
@@ -4371,7 +4394,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public OpenFile MakeOpenFile() {
         Ruby runtime = getRuntime();
         if (openFile != null) {
-            ioClose(runtime);
+            rbIoClose(runtime);
             openFile.finalize(runtime, false);
             openFile = null;
         }

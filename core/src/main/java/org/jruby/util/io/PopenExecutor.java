@@ -195,7 +195,8 @@ public class PopenExecutor {
     public static IRubyObject popen(ThreadContext context, IRubyObject[] argv, RubyClass klass, Block block) {
         Ruby runtime = context.runtime;
         String modestr;
-        IRubyObject pname, pmode[] = {null, null}, port, tmp, opt = context.nil, env = context.nil;
+        IRubyObject pname, port, tmp, opt = context.nil, env = context.nil;
+        Object pmode = EncodingUtils.vmodeVperm(null, null);
         ExecArg eargp;
         int[] oflags_p = {0}, fmode_p = {0};
         IOEncodable.ConvConfig convconfig = new IOEncodable.ConvConfig();
@@ -208,7 +209,7 @@ public class PopenExecutor {
         }
         switch (argc) {
             case 2:
-                pmode[0] = argv[1];
+                EncodingUtils.vmode(pmode, argv[1]);
             case 1:
                 pname = argv[0];
                 break;
@@ -1376,11 +1377,10 @@ public class PopenExecutor {
                 return ST_STOP;
         }
 
-//        RB_GC_GUARD(execarg_obj);
-
         return ST_CONTINUE;
     }
 
+    // MRI: check_exec_redirect
     static void checkExecRedirect(ThreadContext context, Ruby runtime, IRubyObject key, IRubyObject val, ExecArg eargp) {
         IRubyObject param;
         IRubyObject path, flags, perm;
@@ -1413,8 +1413,8 @@ public class PopenExecutor {
 
             case FILE:
             case IO:
-                val = checkExecRedirectFd(runtime, val, 0);
-        /* fall through */
+                val = checkExecRedirectFd(runtime, val, false);
+                /* fall through */
             case FIXNUM:
                 param = val;
                 eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, key, param);
@@ -1424,7 +1424,7 @@ public class PopenExecutor {
                 path = ((RubyArray)val).eltOk(0);
                 if (((RubyArray)val).size() == 2 && path instanceof RubySymbol &&
                         path.toString().equals("child")) {
-                    param = checkExecRedirectFd(runtime, ((RubyArray)val).eltOk(1), 0);
+                    param = checkExecRedirectFd(runtime, ((RubyArray)val).eltOk(1), false);
                     eargp.fd_dup2_child = checkExecRedirect1(runtime, eargp.fd_dup2_child, key, param);
                 }
                 else {
@@ -1450,7 +1450,7 @@ public class PopenExecutor {
                 path = val;
                 path = RubyFile.get_path(context, path);
                 if (key instanceof RubyIO)
-                    key = checkExecRedirectFd(runtime, key, 1);
+                    key = checkExecRedirectFd(runtime, key, true);
                 if (key instanceof RubyFixnum && (((RubyFixnum)key).getIntValue() == 1 || ((RubyFixnum)key).getIntValue() == 2))
                     flags = runtime.newFixnum(OpenFlags.O_WRONLY.intValue()|OpenFlags.O_CREAT.intValue()|OpenFlags.O_TRUNC.intValue());
                 else
@@ -1465,7 +1465,7 @@ public class PopenExecutor {
                 tmp = val;
                 val = TypeConverter.ioCheckIO(runtime, tmp);
                 if (!val.isNil()) {
-                    val = checkExecRedirectFd(runtime, val, 0);
+                    val = checkExecRedirectFd(runtime, val, false);
                     param = val;
                     eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, key, param);
                 }
@@ -1474,7 +1474,8 @@ public class PopenExecutor {
 
     }
 
-    static IRubyObject checkExecRedirectFd(Ruby runtime, IRubyObject v, int iskey) {
+    // MRI: check_exec_redirect_fd
+    static IRubyObject checkExecRedirectFd(Ruby runtime, IRubyObject v, boolean iskey) {
         IRubyObject tmp;
         int fd;
         if (v instanceof RubyFixnum) {
@@ -1496,7 +1497,7 @@ public class PopenExecutor {
             fptr = ((RubyIO)tmp).getOpenFileChecked();
             if (fptr.tiedIOForWriting != null)
                 throw runtime.newArgumentError("duplex IO redirection");
-            fd = FilenoUtil.getFilenoFromChannel(fptr.channel());
+            fd = fptr.fd().bestFileno();
         }
         else {
             throw runtime.newArgumentError("wrong exec redirect");
@@ -1504,27 +1505,26 @@ public class PopenExecutor {
         if (fd < 0) {
             throw runtime.newArgumentError("negative file descriptor");
         }
-//        #ifdef _WIN32
-//        else if (fd >= 3 && iskey) {
-//        throw runtime.newArgumentError("wrong file descriptor (%d)", fd);
-//    }
-//        #endif
+        else if (Platform.IS_WINDOWS && fd >= 3 && iskey) {
+            throw runtime.newArgumentError("wrong file descriptor (" + fd + ")");
+        }
         return runtime.newFixnum(fd);
     }
 
+    // MRI: check_exec_redirect1
     static IRubyObject checkExecRedirect1(Ruby runtime, IRubyObject ary, IRubyObject key, IRubyObject param) {
         if (ary == null) {
             ary = runtime.newArray();
         }
         if (!(key instanceof RubyArray)) {
-            IRubyObject fd = checkExecRedirectFd(runtime, key, param.isNil() ? 0 : 1);
+            IRubyObject fd = checkExecRedirectFd(runtime, key, !param.isNil());
             ((RubyArray)ary).push(runtime.newArray(fd, param));
         }
         else {
             int i, n=0;
             for (i = 0 ; i < ((RubyArray)key).size(); i++) {
                 IRubyObject v = ((RubyArray)key).eltOk(i);
-                IRubyObject fd = checkExecRedirectFd(runtime, v, param.isNil() ? 0 : 1);
+                IRubyObject fd = checkExecRedirectFd(runtime, v, !param.isNil());
                 ((RubyArray)ary).push(runtime.newArray(fd, param));
                 n++;
             }

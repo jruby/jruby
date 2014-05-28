@@ -11,6 +11,7 @@ import java.nio.channels.FileLock;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -107,6 +108,8 @@ public class ChannelFD implements Closeable {
         else chSelect = null;
         if (ch instanceof FileChannel) chFile = (FileChannel)ch;
         else chFile = null;
+        if (ch instanceof SocketChannel) chSock = (SocketChannel)ch;
+        else chFile = null;
     }
 
     public Channel ch;
@@ -115,6 +118,7 @@ public class ChannelFD implements Closeable {
     public SeekableByteChannel chSeek;
     public SelectableChannel chSelect;
     public FileChannel chFile;
+    public SocketChannel chSock;
     public final int realFileno;
     public final int fakeFileno;
     private AtomicInteger refs;
