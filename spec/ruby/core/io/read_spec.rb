@@ -17,40 +17,38 @@ describe "IO.read" do
     IO.read(@fname).should == @contents
   end
 
-  ruby_version_is "1.9" do
-    it "calls #to_path on non-String arguments" do
-      p = mock('path')
-      p.should_receive(:to_path).and_return(@fname)
-      IO.read(p)
-    end
+  it "calls #to_path on non-String arguments" do
+    p = mock('path')
+    p.should_receive(:to_path).and_return(@fname)
+    IO.read(p)
+  end
 
-    it "accepts an empty options Hash" do
-      IO.read(@fname, {}).should == @contents
-    end
+  it "accepts an empty options Hash" do
+    IO.read(@fname, {}).should == @contents
+  end
 
-    it "accepts a length, offset, and empty options Hash" do
-      IO.read(@fname, 3, 0, {}).should == @contents[0, 3]
-    end
+  it "accepts a length, offset, and empty options Hash" do
+    IO.read(@fname, 3, 0, {}).should == @contents[0, 3]
+  end
 
-    it "raises an IOError if the options Hash specifies write mode" do
-      lambda { IO.read(@fname, 3, 0, {:mode => "w"}) }.should raise_error(IOError)
-    end
+  it "raises an IOError if the options Hash specifies write mode" do
+    lambda { IO.read(@fname, 3, 0, {:mode => "w"}) }.should raise_error(IOError)
+  end
 
-    it "raises an IOError if the options Hash specifies append only mode" do
-      lambda { IO.read(@fname, {:mode => "a"}) }.should raise_error(IOError)
-    end
+  it "raises an IOError if the options Hash specifies append only mode" do
+    lambda { IO.read(@fname, {:mode => "a"}) }.should raise_error(IOError)
+  end
 
-    it "reads the file if the options Hash includes read mode" do
-      IO.read(@fname, {:mode => "r"}).should == @contents
-    end
+  it "reads the file if the options Hash includes read mode" do
+    IO.read(@fname, {:mode => "r"}).should == @contents
+  end
 
-    it "reads the file if the options Hash includes read/write mode" do
-      IO.read(@fname, {:mode => "r+"}).should == @contents
-    end
+  it "reads the file if the options Hash includes read/write mode" do
+    IO.read(@fname, {:mode => "r+"}).should == @contents
+  end
 
-    it "reads the file if the options Hash includes read/write append mode" do
-      IO.read(@fname, {:mode => "a+"}).should == @contents
-    end
+  it "reads the file if the options Hash includes read/write append mode" do
+    IO.read(@fname, {:mode => "a+"}).should == @contents
   end
 
   it "treats second nil argument as no length limit" do
@@ -91,6 +89,18 @@ describe "IO.read" do
   it "raises an Errno::EINVAL when not passed a valid offset" do
     lambda { IO.read @fname, 0, -1  }.should raise_error(Errno::EINVAL)
     lambda { IO.read @fname, -1, -1 }.should raise_error(Errno::EINVAL)
+  end
+
+  with_feature :encoding do
+    it "uses the external encoding specified via the :external_encoding option" do
+      str = IO.read(@fname, :external_encoding => Encoding::ISO_8859_1)
+      str.encoding.should == Encoding::ISO_8859_1
+    end
+
+    it "uses the external encoding specified via the :encoding option" do
+      str = IO.read(@fname, :encoding => Encoding::ISO_8859_1)
+      str.encoding.should == Encoding::ISO_8859_1
+    end
   end
 end
 
@@ -221,17 +231,6 @@ describe "IO#read" do
     buf.should == @contents[0..4]
   end
 
-  ruby_version_is ""..."1.9" do
-    it "trucates the buffer to the limit when no data remains" do
-      buf = "abc"
-      @io.read
-
-      @io.read(2, buf).should be_nil
-      buf.should == "ab"
-      buf.size.should == 2
-    end
-  end
-
   it "returns the given buffer" do
     buf = ""
 
@@ -321,71 +320,92 @@ describe "IO#read with $KCODE set to UTF-8" do
   end
 end
 
-ruby_version_is "1.9" do
-  describe "IO#read in binary mode" do
-    before :each do
-      @internal = Encoding.default_internal
-      @name = fixture __FILE__, "read_binary.txt"
-    end
+describe "IO#read in binary mode" do
+  before :each do
+    @internal = Encoding.default_internal
+    @name = fixture __FILE__, "read_binary.txt"
+  end
 
-    after :each do
-      Encoding.default_internal = @internal
-    end
+  after :each do
+    Encoding.default_internal = @internal
+  end
 
-    it "does not transcode file contents when Encoding.default_internal is set" do
-      Encoding.default_internal = "utf-8"
+  it "does not transcode file contents when Encoding.default_internal is set" do
+    Encoding.default_internal = "utf-8"
 
-      result = File.open(@name, "rb") { |f| f.read }.chomp
+    result = File.open(@name, "rb") { |f| f.read }.chomp
 
+    result.encoding.should == Encoding::ASCII_8BIT
+    result.should == "abc\xE2def".force_encoding(Encoding::ASCII_8BIT)
+  end
+
+  ruby_bug "#8342", "2.0" do
+    it "does not transcode file contents when an internal encoding is specified" do
+      result = File.open(@name, "r:binary:utf-8") { |f| f.read }.chomp
       result.encoding.should == Encoding::ASCII_8BIT
       result.should == "abc\xE2def".force_encoding(Encoding::ASCII_8BIT)
     end
+  end
+end
 
-    it "does transcode file contents when an internal encoding is specified" do
-      Encoding.default_internal = "euc-jp"
-
-      lambda do
-        File.open(@name, "r:binary:utf-8") { |f| f.read }
-      end.should raise_error(Encoding::UndefinedConversionError)
-    end
+describe "IO#read in text mode" do
+  before :each do
+    @external = Encoding.default_external
+    @internal = Encoding.default_internal
+    @name = fixture __FILE__, "read_text.txt"
   end
 
-  describe "IO.read with BOM" do
-    it "reads a file without a bom" do
-      name = fixture __FILE__, "no_bom_UTF-8.txt"
-      result = File.read(name, :mode => "rb:BOM|utf-8")
-      result.force_encoding("ascii-8bit").should == "UTF-8\n"
-    end
+  after :each do
+    Encoding.default_external = @external
+    Encoding.default_internal = @internal
+  end
 
-    it "reads a file with a utf-8 bom" do
-      name = fixture __FILE__, "bom_UTF-8.txt"
-      result = File.read(name, :mode => "rb:BOM|utf-16le")
-      result.force_encoding("ascii-8bit").should == "UTF-8\n"
-    end
+  it "reads data according to the internal encoding" do
+    Encoding.default_internal = "utf-8"
+    Encoding.default_external = "utf-8"
 
-    it "reads a file with a utf-16le bom" do
-      name = fixture __FILE__, "bom_UTF-16LE.txt"
-      result = File.read(name, :mode => "rb:BOM|utf-8")
-      result.force_encoding("ascii-8bit").should == "U\x00T\x00F\x00-\x001\x006\x00L\x00E\x00\n\x00"
-    end
+    result = File.open(@name, "rt") { |f| f.read }.chomp
 
-    it "reads a file with a utf-16be bom" do
-      name = fixture __FILE__, "bom_UTF-16BE.txt"
-      result = File.read(name, :mode => "rb:BOM|utf-8")
-      result.force_encoding("ascii-8bit").should == "\x00U\x00T\x00F\x00-\x001\x006\x00B\x00E\x00\n"
-    end
+    result.encoding.should == Encoding::UTF_8
+    result.should == "abcâdef"
+  end
+end
 
-    it "reads a file with a utf-32le bom" do
-      name = fixture __FILE__, "bom_UTF-32LE.txt"
-      result = File.read(name, :mode => "rb:BOM|utf-8")
-      result.force_encoding("ascii-8bit").should == "U\x00\x00\x00T\x00\x00\x00F\x00\x00\x00-\x00\x00\x003\x00\x00\x002\x00\x00\x00L\x00\x00\x00E\x00\x00\x00\n\x00\x00\x00"
-    end
+describe "IO.read with BOM" do
+  it "reads a file without a bom" do
+    name = fixture __FILE__, "no_bom_UTF-8.txt"
+    result = File.read(name, :mode => "rb:BOM|utf-8")
+    result.force_encoding("ascii-8bit").should == "UTF-8\n"
+  end
 
-    it "reads a file with a utf-32be bom" do
-      name = fixture __FILE__, "bom_UTF-32BE.txt"
-      result = File.read(name, :mode => "rb:BOM|utf-8")
-      result.force_encoding("ascii-8bit").should == "\x00\x00\x00U\x00\x00\x00T\x00\x00\x00F\x00\x00\x00-\x00\x00\x003\x00\x00\x002\x00\x00\x00B\x00\x00\x00E\x00\x00\x00\n"
-    end
+  it "reads a file with a utf-8 bom" do
+    name = fixture __FILE__, "bom_UTF-8.txt"
+    result = File.read(name, :mode => "rb:BOM|utf-16le")
+    result.force_encoding("ascii-8bit").should == "UTF-8\n"
+  end
+
+  it "reads a file with a utf-16le bom" do
+    name = fixture __FILE__, "bom_UTF-16LE.txt"
+    result = File.read(name, :mode => "rb:BOM|utf-8")
+    result.force_encoding("ascii-8bit").should == "U\x00T\x00F\x00-\x001\x006\x00L\x00E\x00\n\x00"
+  end
+
+  it "reads a file with a utf-16be bom" do
+    name = fixture __FILE__, "bom_UTF-16BE.txt"
+    result = File.read(name, :mode => "rb:BOM|utf-8")
+    result.force_encoding("ascii-8bit").should == "\x00U\x00T\x00F\x00-\x001\x006\x00B\x00E\x00\n"
+  end
+
+  it "reads a file with a utf-32le bom" do
+    name = fixture __FILE__, "bom_UTF-32LE.txt"
+    result = File.read(name, :mode => "rb:BOM|utf-8")
+    result.force_encoding("ascii-8bit").should == "U\x00\x00\x00T\x00\x00\x00F\x00\x00\x00-\x00\x00\x003\x00\x00\x002\x00\x00\x00L\x00\x00\x00E\x00\x00\x00\n\x00\x00\x00"
+  end
+
+  it "reads a file with a utf-32be bom" do
+    name = fixture __FILE__, "bom_UTF-32BE.txt"
+    result = File.read(name, :mode => "rb:BOM|utf-8")
+    result.force_encoding("ascii-8bit").should == "\x00\x00\x00U\x00\x00\x00T\x00\x00\x00F\x00\x00\x00-\x00\x00\x003\x00\x00\x002\x00\x00\x00B\x00\x00\x00E\x00\x00\x00\n"
   end
 end
 

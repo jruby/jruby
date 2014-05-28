@@ -1,1 +1,3 @@
 fails:Dir.open accepts an options Hash
+fails:Dir.open calls #to_hash to convert the options object
+fails:Dir.open ignores the :encoding option if it is nil

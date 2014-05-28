@@ -10,12 +10,6 @@ describe "Kernel#sprintf" do
     sprintf("%s%d%s%s", nil, 4, 'a', 'b').should == '4ab'
   end
 
-  ruby_version_is ""..."1.9" do
-    it "treats nil arguments as zeroes in %d slots" do
-      sprintf("%d%d%s%s", nil, 4, 'a', 'b').should == '04ab'
-    end
-  end
-
   it "passes some tests for positive %x" do
     sprintf("%x", 123).should == "7b"
     sprintf("%0x", 123).should == "7b"
@@ -66,78 +60,47 @@ describe "Kernel#sprintf" do
     sprintf("% 010.8x", 123).should == "  0000007b"
   end
 
-  ruby_version_is ""..."1.9" do
-    describe "with negative values" do
-      describe "with format %x" do
-        it "doesn't precede the number with '..'" do
-          [ ["%0x",     "f85"],
-            ["%#0x",    "0xf85"],
-            ["%08x",    "ffffff85"],
-            ["%#08x",   "0xffff85"],
-            ["%8.10x",  "ffffffff85"],
-            ["%08.10x", "ffffffff85"],
-            ["%10.8x",  "  ffffff85"],
-            ["%010.8x", "  ffffff85"],
-          ].should be_computed_by_function(:sprintf, -123)
-        end
-      end
+  describe "with format string that contains %{} sections" do
+    it "substitutes values for named references" do
+      sprintf("%{foo}f", {:foo => 1}).should == "1f"
+    end
 
-      describe "with format %b or %B" do
-        it "doesn't precede the number with '..'" do
-          [ ["%.7b", "1111011"],
-            ["%.7B", "1111011"],
-            ["%0b",  "1011"],
-          ].should be_computed_by_function(:sprintf, -5)
-        end
-      end
+    it "raises KeyError when no matching key is in second argument" do
+      lambda { sprintf("%{foo}f", {}) }.should raise_error(KeyError)
     end
   end
 
-  ruby_version_is "1.9" do
-    describe "with format string that contains %{} sections" do
-      it "substitutes values for named references" do
-        sprintf("%{foo}f", {:foo => 1}).should == "1f"
-      end
-
-      it "raises KeyError when no matching key is in second argument" do
-        lambda { sprintf("%{foo}f", {}) }.should raise_error(KeyError)
-      end
+  describe "with format string that contains %<> sections" do
+    it "formats values for named references" do
+      sprintf("%<foo>f", {:foo => 1}).should == "1.000000"
     end
 
-    describe "with format string that contains %<> sections" do
-      it "formats values for named references" do
-        sprintf("%<foo>f", {:foo => 1}).should == "1.000000"
-      end
-
-      it "raises KeyError when no matching key is in second argument" do
-        lambda { sprintf("%<foo>f", {}) }.should raise_error(KeyError)
-      end
+    it "raises KeyError when no matching key is in second argument" do
+      lambda { sprintf("%<foo>f", {}) }.should raise_error(KeyError)
     end
   end
 
-  ruby_version_is "1.9" do
-    describe "with negative values" do
-      describe "with format %x" do
-        it "precedes the number with '..'" do
-          [ ["%0x",     "..f85"],
-            ["%#0x",    "0x..f85"],
-            ["%08x",    "..ffff85"],
-            ["%#08x",   "0x..ff85"],
-            ["%8.10x",  "..ffffff85"],
-            ["%08.10x", "..ffffff85"],
-            ["%10.8x",  "  ..ffff85"],
-            ["%010.8x", "  ..ffff85"],
-          ].should be_computed_by_function(:sprintf, -123)
-        end
+  describe "with negative values" do
+    describe "with format %x" do
+      it "precedes the number with '..'" do
+        [ ["%0x",     "..f85"],
+          ["%#0x",    "0x..f85"],
+          ["%08x",    "..ffff85"],
+          ["%#08x",   "0x..ff85"],
+          ["%8.10x",  "..ffffff85"],
+          ["%08.10x", "..ffffff85"],
+          ["%10.8x",  "  ..ffff85"],
+          ["%010.8x", "  ..ffff85"],
+        ].should be_computed_by_function(:sprintf, -123)
       end
+    end
 
-      describe "with format %b or %B" do
-        it "precedes the number with '..'" do
-          [ ["%.7b", "..11011"],
-            ["%.7B", "..11011"],
-            ["%0b",  "..1011"],
-          ].should be_computed_by_function(:sprintf, -5)
-        end
+    describe "with format %b or %B" do
+      it "precedes the number with '..'" do
+        [ ["%.7b", "..11011"],
+          ["%.7B", "..11011"],
+          ["%0b",  "..1011"],
+        ].should be_computed_by_function(:sprintf, -5)
       end
     end
   end
@@ -184,96 +147,34 @@ describe "Kernel#sprintf" do
     sprintf("% 010.8x", -123).should == " -0000007b"
   end
 
-  ruby_version_is ""..."1.9" do
-    platform_is :wordsize => 32 do
-      it "passes some tests for negative %u" do
-          [ ["%u",       "..4294967173"],
-            ["%0u",      "4294967173"],
-            ["%#u",      "..4294967173"],
-            ["%#0u",     "4294967173"],
-            ["%8u",      "..4294967173"],
-            ["%08u",     "4294967173"],
-            ["%#8u",     "..4294967173"],
-            ["%#08u",    "4294967173"],
-            ["%30u",     "                  ..4294967173"],
-            ["%030u",    "....................4294967173"],
-            ["%#30u",    "                  ..4294967173"],
-            ["%#030u",   "....................4294967173"],
-            ["%24.30u",  "....................4294967173"],
-            ["%024.30u", "....................4294967173"],
-            ["%#24.30u", "....................4294967173"],
-            ["%#024.30u", "....................4294967173"],
-            ["%30.24u",   "      ..............4294967173"],
-            ["%030.24u",  "      ..............4294967173"],
-            ["%#30.24u",  "      ..............4294967173"],
-            ["%#030.24u", "      ..............4294967173"]
-          ].should be_computed_by_function(:sprintf, -123)
-      end
-    end
+  it "passes some tests for negative %u" do
+    sprintf("%u", -123).should == "-123"
+    sprintf("%0u", -123).should == "-123"
+    sprintf("%#u", -123).should == "-123"
+    sprintf("%#0u", -123).should == "-123"
+    sprintf("%8u", -123).should == "    -123"
+    sprintf("%08u", -123).should == "-0000123"
+    sprintf("%#8u", -123).should == "    -123"
+    sprintf("%#08u", -123).should == "-0000123"
 
-    platform_is :wordsize => 64 do
-      it "passes some tests for negative %u" do
-        sprintf("%u", -123).should == "..18446744073709551493"
-        sprintf("%0u", -123).should == "18446744073709551493"
-        sprintf("%#u", -123).should == "..18446744073709551493"
-        sprintf("%#0u", -123).should == "18446744073709551493"
-        sprintf("%8u", -123).should == "..18446744073709551493"
-        sprintf("%08u", -123).should == "18446744073709551493"
-        sprintf("%#8u", -123).should == "..18446744073709551493"
-        sprintf("%#08u", -123).should == "18446744073709551493"
+    sprintf("%30u", -123).should == "                          -123"
+    sprintf("%030u", -123).should == "-00000000000000000000000000123"
 
-        sprintf("%30u", -123).should == "        ..18446744073709551493"
-        sprintf("%030u", -123).should == "..........18446744073709551493"
+    sprintf("%#30u", -123).should == "                          -123"
+    sprintf("%#030u", -123).should == "-00000000000000000000000000123"
 
-        sprintf("%#30u", -123).should == "        ..18446744073709551493"
-        sprintf("%#030u", -123).should == "..........18446744073709551493"
+    sprintf("%24.30u", -123).should == "-000000000000000000000000000123"
+    sprintf("%024.30u", -123).should == "-000000000000000000000000000123"
 
-        sprintf("%24.30u", -123).should == "..........18446744073709551493"
-        sprintf("%024.30u", -123).should == "..........18446744073709551493"
-
-        sprintf("%#24.30u", -123).should == "..........18446744073709551493"
-        sprintf("%#024.30u", -123).should == "..........18446744073709551493"
+    sprintf("%#24.30u", -123).should == "-000000000000000000000000000123"
+    sprintf("%#024.30u", -123).should == "-000000000000000000000000000123"
 
 
-        sprintf("%30.24u", -123).should == "      ....18446744073709551493"
-        sprintf("%030.24u", -123).should == "      ....18446744073709551493"
+    sprintf("%30.24u", -123).should == "     -000000000000000000000123"
+    sprintf("%030.24u", -123).should == "     -000000000000000000000123"
 
-        sprintf("%#30.24u", -123).should == "      ....18446744073709551493"
-        sprintf("%#030.24u", -123).should == "      ....18446744073709551493"
-      end
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "passes some tests for negative %u" do
-      sprintf("%u", -123).should == "-123"
-      sprintf("%0u", -123).should == "-123"
-      sprintf("%#u", -123).should == "-123"
-      sprintf("%#0u", -123).should == "-123"
-      sprintf("%8u", -123).should == "    -123"
-      sprintf("%08u", -123).should == "-0000123"
-      sprintf("%#8u", -123).should == "    -123"
-      sprintf("%#08u", -123).should == "-0000123"
-
-      sprintf("%30u", -123).should == "                          -123"
-      sprintf("%030u", -123).should == "-00000000000000000000000000123"
-
-      sprintf("%#30u", -123).should == "                          -123"
-      sprintf("%#030u", -123).should == "-00000000000000000000000000123"
-
-      sprintf("%24.30u", -123).should == "-000000000000000000000000000123"
-      sprintf("%024.30u", -123).should == "-000000000000000000000000000123"
-
-      sprintf("%#24.30u", -123).should == "-000000000000000000000000000123"
-      sprintf("%#024.30u", -123).should == "-000000000000000000000000000123"
-
-
-      sprintf("%30.24u", -123).should == "     -000000000000000000000123"
-      sprintf("%030.24u", -123).should == "     -000000000000000000000123"
-
-      sprintf("%#30.24u", -123).should == "     -000000000000000000000123"
-      sprintf("%#030.24u", -123).should == "     -000000000000000000000123"
-    end
+    sprintf("%#30.24u", -123).should == "     -000000000000000000000123"
+    sprintf("%#030.24u", -123).should == "     -000000000000000000000123"
   end
 
   it "passes some tests for positive %u" do
@@ -376,10 +277,18 @@ describe "Kernel#sprintf" do
   end
 
   with_feature :encoding do
-    it "returns a String in the same encoding as the format String" do
+    it "returns a String in the same encoding as the format String if compatible" do
       format = "%.2f %4s".force_encoding(Encoding::KOI8_U)
       result = sprintf(format, 1.2, "dogs")
       result.encoding.should equal(Encoding::KOI8_U)
+    end
+
+    it "returns a String in the argument encoding if format encoding is more restrictive" do
+      format = "foo %s".force_encoding(Encoding::US_ASCII)
+      arg = "b\303\274r".force_encoding(Encoding::UTF_8)
+
+      result = sprintf(format, arg)
+      result.encoding.should equal(Encoding::UTF_8)
     end
   end
 end

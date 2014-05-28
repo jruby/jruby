@@ -11,12 +11,10 @@ describe "Class#initialize_copy" do
     }.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9" do
-    # See [redmine:2601]
-    it "raises a TypeError when called on BasicObject" do
-      lambda{
-        BasicObject.send :initialize_copy, String
-      }.should raise_error(TypeError)
-    end
+  # See [redmine:2601]
+  it "raises a TypeError when called on BasicObject" do
+    lambda{
+      BasicObject.send :initialize_copy, String
+    }.should raise_error(TypeError)
   end
 end

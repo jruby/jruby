@@ -1,0 +1,1 @@
+fails:Integer#pred returns the Integer equal to self - 1

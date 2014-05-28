@@ -32,18 +32,37 @@ describe :process_exec, :shared => true do
     ruby_exe('exec "echo hello"; puts "fail"', :escape => true).should == "hello\n"
   end
 
+  it "sets the current directory when given the :chdir option" do
+    tmpdir = tmp("")[0..-2]
+    ruby_exe("exec(\"pwd\", :chdir => #{tmpdir.inspect})", :escape => true).should == "#{tmpdir}\n"
+  end
+
+  it "flushes STDOUT upon exit when it's not set to sync" do
+    ruby_exe("STDOUT.sync = false; STDOUT.write 'hello'").should == "hello"
+  end
+
+  it "flushes STDERR upon exit when it's not set to sync" do
+    ruby_exe("STDERR.sync = false; STDERR.write 'hello'", :args => "2>&1").should == "hello"
+  end
+
   describe "with a single argument" do
     before(:each) do
-      @path = tmp("tmp")
+      @dir = tmp("exec_with_dir", false)
+      Dir.mkdir @dir
+
+      @name = "some_file"
+      @path = tmp("exec_with_dir/#{@name}", false)
       touch @path
     end
 
     after(:each) do
       rm_r @path
+      rm_r @dir
     end
 
     it "subjects the specified command to shell expansion" do
-      ruby_exe('exec "echo *"', :escape => true, :dir => tmp("")).should == "#{File.basename(@path)}\n"
+      result = ruby_exe('exec "echo *"', :escape => true, :dir => @dir)
+      result.chomp.should == @name
     end
 
     it "creates an argument array with shell parsing semantics for whitespace" do
@@ -57,7 +76,7 @@ describe :process_exec, :shared => true do
     end
   end
 
-  ruby_version_is "1.9.2" do
+  describe "(environment variables)" do
     before(:each) do
       ENV["FOO"] = "FOO"
     end
@@ -81,11 +100,6 @@ describe :process_exec, :shared => true do
     it "unsets other environment variables when given a true :unsetenv_others option" do
       ruby_exe('exec("echo $FOO", :unsetenv_others => true)', :escape => true).should == "\n"
     end
-
-    it "sets the current directory when given the :chdir option" do
-      tmpdir = tmp("")[0..-2]
-      ruby_exe("exec(\"pwd\", :chdir => #{tmpdir.inspect})", :escape => true).should == "#{tmpdir}\n"
-    end
   end
 
   describe "with a command array" do
@@ -97,7 +111,7 @@ describe :process_exec, :shared => true do
       ruby_exe('o = Object.new; def o.to_ary; ["/bin/sh", "argv_zero"]; end; exec(o, "-c", "echo $0")', :escape => true).should == "argv_zero\n"
     end
 
-    it "raises Argument error if the Array does not have exactly two elements" do
+    it "raises an ArgumentError if the Array does not have exactly two elements" do
       lambda { @object.exec([]) }.should raise_error(ArgumentError)
       lambda { @object.exec([:a]) }.should raise_error(ArgumentError)
       lambda { @object.exec([:a, :b, :c]) }.should raise_error(ArgumentError)

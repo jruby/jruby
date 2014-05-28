@@ -24,27 +24,30 @@ describe :string_replace, :shared => true do
     a.tainted?.should == true
   end
 
-  ruby_version_is "1.9" do
-    it "untrusts self if other is untrusted" do
-      a = ""
-      b = "".untrust
-      a.send(@method, b)
-      a.untrusted?.should == true
-    end
+  it "untrusts self if other is untrusted" do
+    a = ""
+    b = "".untrust
+    a.send(@method, b)
+    a.untrusted?.should == true
+  end
 
-    it "does not trust self if other is trusted" do
-      a = "".untrust
-      b = ""
-      a.send(@method, b)
-      a.untrusted?.should == true
-    end
+  it "does not trust self if other is trusted" do
+    a = "".untrust
+    b = ""
+    a.send(@method, b)
+    a.untrusted?.should == true
+  end
 
-    it "replaces the encoding of self with that of other" do
-      a = "".encode("UTF-16LE")
-      b = "".encode("UTF-8")
-      a.send(@method, b)
-      a.encoding.should == Encoding::UTF_8
-    end
+  it "replaces the encoding of self with that of other" do
+    a = "".encode("UTF-16LE")
+    b = "".encode("UTF-8")
+    a.send(@method, b)
+    a.encoding.should == Encoding::UTF_8
+  end
+
+  it "carries over the encoding invalidity" do
+    a = "\u{8765}".force_encoding('ascii')
+    "".send(@method, a).valid_encoding?.should be_false
   end
 
   it "tries to convert other to string using to_str" do
@@ -59,28 +62,14 @@ describe :string_replace, :shared => true do
     lambda { "hello".send(@method, mock('x')) }.should raise_error(TypeError)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError on a frozen instance that is modified" do
-      a = "hello".freeze
-      lambda { a.send(@method, "world") }.should raise_error(TypeError)
-    end
-
-    it "does not raise an exception on a frozen instance when self-replacing" do
-      a = "hello".freeze
-      a.send(@method, a).should equal(a)
-    end
+  it "raises a RuntimeError on a frozen instance that is modified" do
+    a = "hello".freeze
+    lambda { a.send(@method, "world") }.should raise_error(RuntimeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError on a frozen instance that is modified" do
-      a = "hello".freeze
-      lambda { a.send(@method, "world") }.should raise_error(RuntimeError)
-    end
-
-    # see [ruby-core:23666]
-    it "raises a RuntimeError on a frozen instance when self-replacing" do
-      a = "hello".freeze
-      lambda { a.send(@method, a) }.should raise_error(RuntimeError)
-    end
+  # see [ruby-core:23666]
+  it "raises a RuntimeError on a frozen instance when self-replacing" do
+    a = "hello".freeze
+    lambda { a.send(@method, a) }.should raise_error(RuntimeError)
   end
 end

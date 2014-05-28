@@ -4,48 +4,24 @@ require File.expand_path('../../../fixtures/reflection', __FILE__)
 
 # TODO: rewrite
 describe "Module#protected_instance_methods" do
-  ruby_version_is ""..."1.9" do
-    it "returns a list of protected methods in module and its ancestors" do
-      methods = ModuleSpecs::CountsMixin.protected_instance_methods
-      methods.should include('protected_3')
+  it "returns a list of protected methods in module and its ancestors" do
+    methods = ModuleSpecs::CountsMixin.protected_instance_methods
+    methods.should include(:protected_3)
 
-      methods = ModuleSpecs::CountsParent.protected_instance_methods
-      methods.should include('protected_3')
-      methods.should include('protected_2')
+    methods = ModuleSpecs::CountsParent.protected_instance_methods
+    methods.should include(:protected_3)
+    methods.should include(:protected_2)
 
-      methods = ModuleSpecs::CountsChild.protected_instance_methods
-      methods.should include('protected_3')
-      methods.should include('protected_2')
-      methods.should include('protected_1')
-    end
-
-    it "when passed false as a parameter, should return only methods defined in that module" do
-      ModuleSpecs::CountsMixin.protected_instance_methods(false).should == ['protected_3']
-      ModuleSpecs::CountsParent.protected_instance_methods(false).should == ['protected_2']
-      ModuleSpecs::CountsChild.protected_instance_methods(false).should == ['protected_1']
-    end
+    methods = ModuleSpecs::CountsChild.protected_instance_methods
+    methods.should include(:protected_3)
+    methods.should include(:protected_2)
+    methods.should include(:protected_1)
   end
 
-  ruby_version_is "1.9" do
-    it "returns a list of protected methods in module and its ancestors" do
-      methods = ModuleSpecs::CountsMixin.protected_instance_methods
-      methods.should include(:protected_3)
-
-      methods = ModuleSpecs::CountsParent.protected_instance_methods
-      methods.should include(:protected_3)
-      methods.should include(:protected_2)
-
-      methods = ModuleSpecs::CountsChild.protected_instance_methods
-      methods.should include(:protected_3)
-      methods.should include(:protected_2)
-      methods.should include(:protected_1)
-    end
-
-    it "when passed false as a parameter, should return only methods defined in that module" do
-      ModuleSpecs::CountsMixin.protected_instance_methods(false).should == [:protected_3]
-      ModuleSpecs::CountsParent.protected_instance_methods(false).should == [:protected_2]
-      ModuleSpecs::CountsChild.protected_instance_methods(false).should == [:protected_1]
-    end
+  it "when passed false as a parameter, should return only methods defined in that module" do
+    ModuleSpecs::CountsMixin.protected_instance_methods(false).should == [:protected_3]
+    ModuleSpecs::CountsParent.protected_instance_methods(false).should == [:protected_2]
+    ModuleSpecs::CountsChild.protected_instance_methods(false).should == [:protected_1]
   end
 
   it "default list should be the same as passing true as an argument" do

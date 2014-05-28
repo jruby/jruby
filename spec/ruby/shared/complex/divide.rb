@@ -24,10 +24,8 @@ describe :complex_divide, :shared => true do
       lambda { Complex(20, 40).send(@method, 0) }.should raise_error(ZeroDivisionError)
     end
 
-    ruby_version_is "1.9" do
-      it "produces Rational parts" do
-        Complex(5, 9).send(@method, 2).should eql(Complex(Rational(5,2), Rational(9,2)))
-      end
+    it "produces Rational parts" do
+      Complex(5, 9).send(@method, 2).should eql(Complex(Rational(5,2), Rational(9,2)))
     end
   end
 
@@ -62,27 +60,25 @@ describe :complex_divide, :shared => true do
     end
   end
 
-  ruby_version_is "1.9" do
-    describe "with a Numeric which responds to #real? with true" do
-      it "returns Complex(real.quo(other), imag.quo(other))" do
-        other = mock_numeric('other')
-        real = mock_numeric('real')
-        imag = mock_numeric('imag')
-        other.should_receive(:real?).and_return(true)
-        real.should_receive(:quo).with(other).and_return(1)
-        imag.should_receive(:quo).with(other).and_return(2)
-        Complex(real, imag).send(@method, other).should == Complex(1, 2)
-      end
+  describe "with a Numeric which responds to #real? with true" do
+    it "returns Complex(real.quo(other), imag.quo(other))" do
+      other = mock_numeric('other')
+      real = mock_numeric('real')
+      imag = mock_numeric('imag')
+      other.should_receive(:real?).and_return(true)
+      real.should_receive(:quo).with(other).and_return(1)
+      imag.should_receive(:quo).with(other).and_return(2)
+      Complex(real, imag).send(@method, other).should == Complex(1, 2)
     end
+  end
 
-    describe "with a Numeric which responds to #real? with false" do
-      it "coerces the passed argument to Complex and divides the resulting elements" do
-        complex = Complex(3, 0)
-        other = mock_numeric('other')
-        other.should_receive(:real?).any_number_of_times.and_return(false)
-        other.should_receive(:coerce).with(complex).and_return([5, 2])
-        complex.send(@method, other).should eql(Rational(5, 2))
-      end
+  describe "with a Numeric which responds to #real? with false" do
+    it "coerces the passed argument to Complex and divides the resulting elements" do
+      complex = Complex(3, 0)
+      other = mock_numeric('other')
+      other.should_receive(:real?).any_number_of_times.and_return(false)
+      other.should_receive(:coerce).with(complex).and_return([5, 2])
+      complex.send(@method, other).should eql(Rational(5, 2))
     end
   end
 end

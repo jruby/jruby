@@ -73,23 +73,17 @@ describe "String#count" do
     "abcde".count("^ac-e").should == 1
   end
 
-  ruby_version_is ""..."1.9" do
-    it "regards invalid sequences as empty" do
-      s = "hel-[()]-lo012^"
+  it "raises if the given sequences are invalid" do
+    s = "hel-[()]-lo012^"
 
-      # empty sequences (end before start)
-      s.count("h-e").should == 0
-      s.count("^h-e").should == s.size
-    end
+    lambda { s.count("h-e") }.should raise_error(ArgumentError)
+    lambda { s.count("^h-e") }.should raise_error(ArgumentError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises if the given sequences are invalid" do
-      s = "hel-[()]-lo012^"
-
-      lambda { s.count("h-e") }.should raise_error(ArgumentError)
-      lambda { s.count("^h-e") }.should raise_error(ArgumentError)
-    end
+  it 'returns the number of occurrences of a multi-byte character' do
+    str = "\u{2605}"
+    str.count(str).should == 1
+    "asd#{str}zzz#{str}ggg".count(str).should == 2
   end
 
   it "calls #to_str to convert each set arg to a String" do

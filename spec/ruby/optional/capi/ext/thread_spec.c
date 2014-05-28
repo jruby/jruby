@@ -83,6 +83,142 @@ static VALUE thread_spec_rb_thread_blocking_region_with_ubf_io(VALUE self) {
 }
 #endif
 
+#ifdef HAVE_RB_THREAD_CALL_WITHOUT_GVL
+/* This is unblocked by unblock_func(). */
+static void* blocking_gvl_func(void* data) {
+  int rfd = (int)(size_t)data;
+  char dummy;
+  ssize_t rv;
+
+  do {
+    rv = read(rfd, &dummy, 1);
+  } while (rv == -1 && errno == EINTR);
+
+  return (void*)((rv == 1) ? Qtrue : Qfalse);
+}
+
+static void unblock_gvl_func(void *data) {
+  int wfd = (int)(size_t)data;
+  char dummy = 0;
+  ssize_t rv;
+
+  do {
+    rv = write(wfd, &dummy, 1);
+  } while (rv == -1 && errno == EINTR);
+}
+
+/* Returns true if the thread is interrupted. */
+static VALUE thread_spec_rb_thread_call_without_gvl(VALUE self) {
+  int fds[2];
+  void* ret;
+
+  if (pipe(fds) == -1) {
+    return Qfalse;
+  }
+  ret = rb_thread_call_without_gvl(blocking_gvl_func, (void*)(size_t)fds[0],
+                                   unblock_gvl_func, (void*)(size_t)fds[1]);
+  close(fds[0]);
+  close(fds[1]);
+  return (VALUE)ret;
+}
+
+/* This is unblocked by a signal. */
+static void* blocking_gvl_func_for_udf_io(void *data) {
+  int rfd = (int)(size_t)data;
+  char dummy;
+
+  if (read(rfd, &dummy, 1) == -1 && errno == EINTR) {
+    return (void*)Qtrue;
+  } else {
+    return (void*)Qfalse;
+  }
+}
+
+/* Returns true if the thread is interrupted. */
+static VALUE thread_spec_rb_thread_call_without_gvl_with_ubf_io(VALUE self) {
+  int fds[2];
+  void* ret;
+
+  if (pipe(fds) == -1) {
+    return Qfalse;
+  }
+
+  ret = rb_thread_call_without_gvl(blocking_gvl_func_for_udf_io,
+                                  (void*)(size_t)fds[0], RUBY_UBF_IO, 0);
+  close(fds[0]);
+  close(fds[1]);
+  return (VALUE)ret;
+}
+#endif
+
+#ifdef HAVE_RB_THREAD_CALL_WITHOUT_GVL2
+/* This is unblocked by unblock_func(). */
+static void* blocking_gvl2_func(void* data) {
+  int rfd = (int)(size_t)data;
+  char dummy;
+  ssize_t rv;
+
+  do {
+    rv = read(rfd, &dummy, 1);
+  } while (rv == -1 && errno == EINTR);
+
+  return (void*)((rv == 1) ? Qtrue : Qfalse);
+}
+
+static void unblock_gvl2_func(void *data) {
+  int wfd = (int)(size_t)data;
+  char dummy = 0;
+  ssize_t rv;
+
+  do {
+    rv = write(wfd, &dummy, 1);
+  } while (rv == -1 && errno == EINTR);
+}
+
+/* Returns true if the thread is interrupted. */
+static VALUE thread_spec_rb_thread_call_without_gvl2(VALUE self) {
+  int fds[2];
+  void* ret;
+
+  if (pipe(fds) == -1) {
+    return Qfalse;
+  }
+  ret = rb_thread_call_without_gvl2(blocking_gvl2_func, (void*)(size_t)fds[0],
+                                   unblock_gvl2_func, (void*)(size_t)fds[1]);
+  close(fds[0]);
+  close(fds[1]);
+  return (VALUE)ret;
+}
+
+/* This is unblocked by a signal. */
+static void* blocking_gvl2_func_for_udf_io(void *data) {
+  int rfd = (int)(size_t)data;
+  char dummy;
+
+  if (read(rfd, &dummy, 1) == -1 && errno == EINTR) {
+    return (void*)Qtrue;
+  } else {
+    return (void*)Qfalse;
+  }
+}
+
+/* Returns true if the thread is interrupted. */
+static VALUE thread_spec_rb_thread_call_without_gvl2_with_ubf_io(VALUE self) {
+  int fds[2];
+  void* ret;
+
+  if (pipe(fds) == -1) {
+    return Qfalse;
+  }
+
+  ret = rb_thread_call_without_gvl2(blocking_gvl2_func_for_udf_io,
+                                  (void*)(size_t)fds[0], RUBY_UBF_IO, 0);
+  close(fds[0]);
+  close(fds[1]);
+  return (VALUE)ret;
+}
+#endif
+
 #ifdef HAVE_RB_THREAD_CURRENT
 static VALUE thread_spec_rb_thread_current() {
   return rb_thread_current();
@@ -172,6 +308,16 @@ void Init_thread_spec() {
 #ifdef HAVE_RB_THREAD_BLOCKING_REGION
   rb_define_method(cls, "rb_thread_blocking_region", thread_spec_rb_thread_blocking_region, 0);
   rb_define_method(cls, "rb_thread_blocking_region_with_ubf_io", thread_spec_rb_thread_blocking_region_with_ubf_io, 0);
+#endif
+
+#ifdef HAVE_RB_THREAD_CALL_WITHOUT_GVL
+  rb_define_method(cls, "rb_thread_call_without_gvl", thread_spec_rb_thread_call_without_gvl, 0);
+  rb_define_method(cls, "rb_thread_call_without_gvl_with_ubf_io", thread_spec_rb_thread_call_without_gvl_with_ubf_io, 0);
+#endif
+
+#ifdef HAVE_RB_THREAD_CALL_WITHOUT_GVL2
+  rb_define_method(cls, "rb_thread_call_without_gvl2", thread_spec_rb_thread_call_without_gvl2, 0);
+  rb_define_method(cls, "rb_thread_call_without_gvl2_with_ubf_io", thread_spec_rb_thread_call_without_gvl2_with_ubf_io, 0);
 #endif
 
 #ifdef HAVE_RB_THREAD_CURRENT

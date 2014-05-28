@@ -92,20 +92,11 @@ describe :string_each_line, :shared => true do
     a.should == [ "hel", "l", "o\nworl", "d" ]
   end
 
-  ruby_version_is ''...'1.9' do
-    it "raises a RuntimeError if the string is modified while substituting" do
-      str = "hello\nworld"
-      lambda { str.send(@method) { str[0] = 'x' } }.should raise_error(RuntimeError)
-    end
-  end
-
-  ruby_version_is '1.9' do
-    it "does not care if the string is modified while substituting" do
-      str = "hello\nworld."
-      out = []
-      str.send(@method){|x| out << x; str[-1] = '!' }.should == "hello\nworld!"
-      out.should == ["hello\n", "world."]
-    end
+  it "does not care if the string is modified while substituting" do
+    str = "hello\nworld."
+    out = []
+    str.send(@method){|x| out << x; str[-1] = '!' }.should == "hello\nworld!"
+    out.should == ["hello\n", "world."]
   end
 
   it "raises a TypeError when the separator can't be converted to a string" do
@@ -113,20 +104,11 @@ describe :string_each_line, :shared => true do
     lambda { "hello world".send(@method, mock('x')) {} }.should raise_error(TypeError)
   end
 
-  ruby_version_is ''...'1.9' do
-    it "raises a TypeError when the separator is a character or a symbol" do
-      lambda { "hello world".send(@method, ?o) {}        }.should raise_error(TypeError)
-      lambda { "hello world".send(@method, :o) {}        }.should raise_error(TypeError)
-    end
+  it "accepts a string separator" do
+    "hello world".send(@method, ?o).to_a.should == ["hello", " wo", "rld"]
   end
 
-  ruby_version_is '1.9' do
-    it "accept string separator" do
-      "hello world".send(@method, ?o).to_a.should == ["hello", " wo", "rld"]
-    end
-
-    it "raises a TypeError when the separator is a symbol" do
-      lambda { "hello world".send(@method, :o).to_a }.should raise_error(TypeError)
-    end
+  it "raises a TypeError when the separator is a symbol" do
+    lambda { "hello world".send(@method, :o).to_a }.should raise_error(TypeError)
   end
 end

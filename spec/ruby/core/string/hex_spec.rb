@@ -13,26 +13,10 @@ describe "String#hex" do
     "abcdefG".hex.should == 0xabcdef
   end
 
-  ruby_version_is "" ... "1.8.7" do
-    it "accepts a sequence of underscores as part of a number" do
-      "a__b".hex.should == 0xab
-      "a____b".hex.should == 0xab
-      "a___f".hex.should == 0xaf
-    end
-
-    it "accepts a sequence of underscores in front of string as part of a number" do
-      "_a".hex.should == 0xa
-      "___b".hex.should == 0xb
-      "___0xc".hex.should == 0xc
-    end
-  end
-
-  ruby_version_is "1.8.7" do
-    it "does not accept a sequence of underscores as part of a number" do
-      "a__b".hex.should == 0xa
-      "a____b".hex.should == 0xa
-      "a___f".hex.should == 0xa
-    end
+  it "does not accept a sequence of underscores as part of a number" do
+    "a__b".hex.should == 0xa
+    "a____b".hex.should == 0xa
+    "a___f".hex.should == 0xa
   end
 
   it "takes an optional sign" do
@@ -57,11 +41,9 @@ describe "String#hex" do
     "0x0x42".hex.should == 0
   end
 
-  ruby_version_is "1.9" do
-    it "returns 0 if sequence begins with underscore" do
-      "_a".hex.should == 0
-      "___b".hex.should == 0
-      "___0xc".hex.should == 0
-    end
+  it "returns 0 if sequence begins with underscore" do
+    "_a".hex.should == 0
+    "___b".hex.should == 0
+    "___0xc".hex.should == 0
   end
 end

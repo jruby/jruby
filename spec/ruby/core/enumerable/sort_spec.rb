@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Enumerable#sort" do
-  it "sorts by the natural order as defined by <=> " do
+  it "sorts by the natural order as defined by <=>" do
     EnumerableSpecs::Numerous.new.sort.should == [1, 2, 3, 4, 5, 6]
     sorted = EnumerableSpecs::ComparesByVowelCount.wrap("a" * 1, "a" * 2, "a"*3, "a"*4, "a"*5)
     EnumerableSpecs::Numerous.new(sorted[2],sorted[0],sorted[1],sorted[3],sorted[4]).sort.should == sorted
@@ -13,20 +13,10 @@ describe "Enumerable#sort" do
     EnumerableSpecs::Numerous.new(2,0,1,3,4).sort { |n, m| -(n <=> m) }.should == [4,3,2,1,0]
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a NoMethodError if elements do not define <=>" do
-      lambda {
-        EnumerableSpecs::Numerous.new(Object.new, Object.new, Object.new).sort
-      }.should raise_error(NoMethodError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a NoMethodError if elements do not define <=>" do
-      lambda do
-        EnumerableSpecs::Numerous.new(BasicObject.new, BasicObject.new, BasicObject.new).sort
-      end.should raise_error(NoMethodError)
-    end
+  it "raises a NoMethodError if elements do not define <=>" do
+    lambda do
+      EnumerableSpecs::Numerous.new(BasicObject.new, BasicObject.new, BasicObject.new).sort
+    end.should raise_error(NoMethodError)
   end
 
   it "sorts enumerables that contain nils" do

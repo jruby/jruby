@@ -33,20 +33,10 @@ describe "IO.sysopen" do
     end
   end
 
-  ruby_version_is ""..."1.9" do
-    it "calls #to_str to convert an object to a String" do
-      path = mock('sysopen to_str')
-      path.should_receive(:to_str).and_return(@filename)
-      @fd = IO.sysopen(path, 'w')
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "calls #to_path to convert an object to a path" do
-      path = mock('sysopen to_path')
-      path.should_receive(:to_path).and_return(@filename)
-      @fd = IO.sysopen(path, 'w')
-    end
+  it "calls #to_path to convert an object to a path" do
+    path = mock('sysopen to_path')
+    path.should_receive(:to_path).and_return(@filename)
+    @fd = IO.sysopen(path, 'w')
   end
 
   it "accepts a mode as second argument" do

@@ -59,62 +59,37 @@ describe "Float#to_s" do
     -10000000000000.0.to_s.should == "-10000000000000.0"
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "uses e format for a positive value with whole part having 16 significant figures" do
-      100000000000000.0.to_s.should == "1.0e+14"
-    end
-
-    it "uses e format for a negative value with whole part having 16 significant figures" do
-      -100000000000000.0.to_s.should == "-1.0e+14"
-    end
+  it "uses non-e format for a positive value with whole part having 16 significant figures" do
+    100000000000000.0.to_s.should == "100000000000000.0"
   end
 
-  ruby_version_is "1.9" do
-    it "uses non-e format for a positive value with whole part having 16 significant figures" do
-      100000000000000.0.to_s.should == "100000000000000.0"
-    end
-
-    it "uses non-e format for a negative value with whole part having 16 significant figures" do
-      -100000000000000.0.to_s.should == "-100000000000000.0"
-    end
-
-    it "uses e format for a positive value with whole part having 18 significant figures" do
-      10000000000000000.0.to_s.should == "1.0e+16"
-    end
-
-    it "uses e format for a negative value with whole part having 18 significant figures" do
-      -10000000000000000.0.to_s.should == "-1.0e+16"
-    end
+  it "uses non-e format for a negative value with whole part having 16 significant figures" do
+    -100000000000000.0.to_s.should == "-100000000000000.0"
   end
 
-  ruby_version_is "1.9"..."2.0" do
-    it "uses non-e format for a positive value with whole part having 17 significant figures" do
-      1000000000000000.0.to_s.should == "1000000000000000.0"
-    end
-
-    it "uses non-e format for a negative value with whole part having 17 significant figures" do
-      -1000000000000000.0.to_s.should == "-1000000000000000.0"
-    end
+  it "uses e format for a positive value with whole part having 18 significant figures" do
+    10000000000000000.0.to_s.should == "1.0e+16"
   end
 
-  ruby_version_is "2.0" do
-    it "uses non-e format for a positive value with whole part having 17 significant figures" do
-      1000000000000000.0.to_s.should == "1.0e+15"
-    end
-
-    it "uses non-e format for a negative value with whole part having 17 significant figures" do
-      -1000000000000000.0.to_s.should == "-1.0e+15"
-    end
+  it "uses e format for a negative value with whole part having 18 significant figures" do
+    -10000000000000000.0.to_s.should == "-1.0e+16"
   end
 
-  ruby_bug "#3273", "1.8.7" do
-    it "outputs the minimal, unique form necessary to recreate the value" do
-      value = 0.21611564636388508
-      string = "0.21611564636388508"
+  it "uses non-e format for a positive value with whole part having 17 significant figures" do
+    1000000000000000.0.to_s.should == "1.0e+15"
+  end
 
-      value.to_s.should == string
-      string.to_f.should == value
-    end
+  it "uses non-e format for a negative value with whole part having 17 significant figures" do
+    -1000000000000000.0.to_s.should == "-1.0e+15"
+  end
+
+  # #3273
+  it "outputs the minimal, unique form necessary to recreate the value" do
+    value = 0.21611564636388508
+    string = "0.21611564636388508"
+
+    value.to_s.should == string
+    string.to_f.should == value
   end
 
   it "outputs the minimal, unique form to represent the value" do

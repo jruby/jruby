@@ -15,12 +15,20 @@ describe "Class#initialize" do
     }.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9" do
-    # See [redmine:2601]
-    it "raises a TypeError when called on BasicObject" do
-      lambda{
-        BasicObject.send :initialize
-      }.should raise_error(TypeError)
+  # See [redmine:2601]
+  it "raises a TypeError when called on BasicObject" do
+    lambda{
+      BasicObject.send :initialize
+    }.should raise_error(TypeError)
+  end
+
+  describe "when given the Class" do
+    before(:each) do
+      @uninitialized = Class.allocate
+    end
+
+    it "raises a TypeError" do
+      lambda{@uninitialized.send(:initialize, Class)}.should raise_error(TypeError)
     end
   end
 end

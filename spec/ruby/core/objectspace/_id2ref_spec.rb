@@ -18,9 +18,4 @@ describe "ObjectSpace._id2ref" do
     r = ObjectSpace._id2ref(s.object_id)
     r.should == s
   end
-
-  it "raises a RangeError for invalid immediate object_id" do
-    lambda { ObjectSpace._id2ref(1073741822) }.should raise_error(RangeError)
-  end
-
 end

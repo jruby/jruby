@@ -18,10 +18,8 @@ describe "Time#eql?" do
     Time.at(100, 100).should_not eql(Time.at(100, 99))
   end
 
-  ruby_version_is "1.9" do
-    it "returns false if self and other have differing fractional microseconds" do
-      Time.at(100, Rational(100,1000)).should_not eql(Time.at(100, Rational(99,1000)))
-    end
+  it "returns false if self and other have differing fractional microseconds" do
+    Time.at(100, Rational(100,1000)).should_not eql(Time.at(100, Rational(99,1000)))
   end
 
   it "returns false when given a non-time value" do

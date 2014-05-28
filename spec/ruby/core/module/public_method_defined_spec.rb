@@ -31,75 +31,42 @@ describe "Module#public_method_defined?" do
     ModuleSpecs::CountsMixin.public_method_defined?(:public_3).should == true
   end
 
-  not_compliant_on :rubinius do
-    ruby_version_is ""..."1.9" do
-      it "raises an ArgumentError if called with a Fixnum" do
-        lambda {
-          ModuleSpecs::CountsMixin.public_method_defined?(1)
-        }.should raise_error(ArgumentError)
-      end
-
-      it "raises a TypeError if not passed a Symbol" do
-        lambda {
-          ModuleSpecs::CountsMixin.public_method_defined?(nil)
-        }.should raise_error(TypeError)
-        lambda {
-          ModuleSpecs::CountsMixin.public_method_defined?(false)
-        }.should raise_error(TypeError)
-
-        sym = mock('symbol')
-        def sym.to_sym() :public_3 end
-        lambda {
-          ModuleSpecs::CountsMixin.public_method_defined?(sym)
-        }.should raise_error(TypeError)
-      end
-    end
+  it "raises a TypeError if passed a Fixnum" do
+    lambda do
+      ModuleSpecs::CountsMixin.public_method_defined?(1)
+    end.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a TypeError if not passed a Symbol" do
-      lambda {
-        ModuleSpecs::CountsMixin.public_method_defined?(1)
-      }.should raise_error(TypeError)
-      lambda {
-        ModuleSpecs::CountsMixin.public_method_defined?(nil)
-      }.should raise_error(TypeError)
-      lambda {
-        ModuleSpecs::CountsMixin.public_method_defined?(false)
-      }.should raise_error(TypeError)
-    end
+  it "raises a TypeError if passed nil" do
+    lambda do
+      ModuleSpecs::CountsMixin.public_method_defined?(nil)
+    end.should raise_error(TypeError)
   end
 
-  not_compliant_on :rubinius do
-    it "raises a TypeError if passed an object that defines #to_sym" do
-      sym = mock('symbol')
-      def sym.to_sym() :public_3 end
-      lambda {
-        ModuleSpecs::CountsMixin.public_method_defined?(sym)
-      }.should raise_error(TypeError)
-    end
+  it "raises a TypeError if passed false" do
+    lambda do
+      ModuleSpecs::CountsMixin.public_method_defined?(false)
+    end.should raise_error(TypeError)
   end
 
-  deviates_on :rubinius do
-    it "calls #to_sym to coerce the passed object to a Symbol" do
-      sym = mock('symbol')
-      def sym.to_sym() :public_3 end
-
-      ModuleSpecs::CountsMixin.public_method_defined?(sym).should be_true
-    end
+  it "raises a TypeError if passed an object that does not defined #to_str" do
+    lambda do
+      ModuleSpecs::CountsMixin.public_method_defined?(mock('x'))
+    end.should raise_error(TypeError)
   end
 
-  it "accepts any object that is a String type" do
+  it "raises a TypeError if passed an object that defines #to_sym" do
+    sym = mock('symbol')
+    def sym.to_sym() :public_3 end
+
+    lambda do
+      ModuleSpecs::CountsMixin.public_method_defined?(sym)
+    end.should raise_error(TypeError)
+  end
+
+  it "calls #to_str to convert an Object" do
     str = mock('public_3')
     def str.to_str() 'public_3' end
     ModuleSpecs::CountsMixin.public_method_defined?(str).should == true
-  end
-
-  deviates_on :rubinius do
-    it "raises a TypeError if not passed a String type" do
-      lambda {
-        ModuleSpecs::CountsMixin.public_method_defined?(mock('x'))
-      }.should raise_error(TypeError)
-    end
   end
 end

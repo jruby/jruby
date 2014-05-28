@@ -137,9 +137,23 @@ describe :string_slice_index_length, :shared => true do
 
   it "returns subclass instances" do
     s = StringSpecs::MyString.new("hello")
-    s.send(@method, 0,0).should be_kind_of(StringSpecs::MyString)
-    s.send(@method, 0,4).should be_kind_of(StringSpecs::MyString)
-    s.send(@method, 1,4).should be_kind_of(StringSpecs::MyString)
+    s.send(@method, 0,0).should be_an_instance_of(StringSpecs::MyString)
+    s.send(@method, 0,4).should be_an_instance_of(StringSpecs::MyString)
+    s.send(@method, 1,4).should be_an_instance_of(StringSpecs::MyString)
+  end
+
+  it "handles repeated application" do
+    "hello world".send(@method, 6, 5).send(@method, 0, 1).should == 'w'
+    "hello world".send(@method, 6, 5).send(@method, 0, 5).should == 'world'
+
+    "hello world".send(@method, 6, 5).send(@method, 1, 1).should == 'o'
+    "hello world".send(@method, 6, 5).send(@method, 1, 4).should == 'orld'
+
+    "hello world".send(@method, 6, 5).send(@method, 4, 1).should == 'd'
+    "hello world".send(@method, 6, 5).send(@method, 5, 0).should == ''
+
+    "hello world".send(@method, 6, 0).send(@method, -1, 0).should == nil
+    "hello world".send(@method, 6, 0).send(@method, 1, 1).should == nil
   end
 end
 
@@ -210,9 +224,9 @@ describe :string_slice_range, :shared => true do
 
   it "returns subclass instances" do
     s = StringSpecs::MyString.new("hello")
-    s.send(@method, 0...0).should be_kind_of(StringSpecs::MyString)
-    s.send(@method, 0..4).should be_kind_of(StringSpecs::MyString)
-    s.send(@method, 1..4).should be_kind_of(StringSpecs::MyString)
+    s.send(@method, 0...0).should be_an_instance_of(StringSpecs::MyString)
+    s.send(@method, 0..4).should be_an_instance_of(StringSpecs::MyString)
+    s.send(@method, 1..4).should be_an_instance_of(StringSpecs::MyString)
   end
 
   it "calls to_int on range arguments" do
@@ -236,6 +250,20 @@ describe :string_slice_range, :shared => true do
 
     a.send(@method, range_incl).should == "OO"
     a.send(@method, range_excl).should == "OO"
+  end
+
+  it "handles repeated application" do
+    "hello world".send(@method, 6..11).send(@method, 0..0).should == 'w'
+    "hello world".send(@method, 6..11).send(@method, 0..4).should == 'world'
+
+    "hello world".send(@method, 6..11).send(@method, 1..1).should == 'o'
+    "hello world".send(@method, 6..11).send(@method, 1..4).should == 'orld'
+
+    "hello world".send(@method, 6..11).send(@method, 4..4).should == 'd'
+    "hello world".send(@method, 6..11).send(@method, 5..4).should == ''
+
+    "hello world".send(@method, 6..5).send(@method, -1..-1).should == nil
+    "hello world".send(@method, 6..5).send(@method, 1..1).should == nil
   end
 end
 
@@ -264,10 +292,14 @@ describe :string_slice_regexp, :shared => true do
     end
   end
 
+  it "returns an untrusted string if the regexp is untrusted" do
+    "hello".send(@method, /./.untrust).untrusted?.should be_true
+  end
+
   it "returns subclass instances" do
     s = StringSpecs::MyString.new("hello")
-    s.send(@method, //).should be_kind_of(StringSpecs::MyString)
-    s.send(@method, /../).should be_kind_of(StringSpecs::MyString)
+    s.send(@method, //).should be_an_instance_of(StringSpecs::MyString)
+    s.send(@method, /../).should be_an_instance_of(StringSpecs::MyString)
   end
 
   it "sets $~ to MatchData when there is a match and nil when there's none" do
@@ -316,6 +348,10 @@ describe :string_slice_regexp_index, :shared => true do
     end
   end
 
+  it "returns an untrusted string if the regexp is untrusted" do
+    "hello".send(@method, /(.)/.untrust, 1).untrusted?.should be_true
+  end
+
   it "returns nil if there is no match" do
     "hello there".send(@method, /(what?)/, 1).should == nil
   end
@@ -346,8 +382,8 @@ describe :string_slice_regexp_index, :shared => true do
 
   it "returns subclass instances" do
     s = StringSpecs::MyString.new("hello")
-    s.send(@method, /(.)(.)/, 0).should be_kind_of(StringSpecs::MyString)
-    s.send(@method, /(.)(.)/, 1).should be_kind_of(StringSpecs::MyString)
+    s.send(@method, /(.)(.)/, 0).should be_an_instance_of(StringSpecs::MyString)
+    s.send(@method, /(.)(.)/, 1).should be_an_instance_of(StringSpecs::MyString)
   end
 
   it "sets $~ to MatchData when there is a match and nil when there's none" do
@@ -403,8 +439,83 @@ describe :string_slice_string, :shared => true do
     s = StringSpecs::MyString.new("el")
     r = "hello".send(@method, s)
     r.should == "el"
-    r.should be_kind_of(StringSpecs::MyString)
+    r.should be_an_instance_of(StringSpecs::MyString)
   end
 end
 
-language_version __FILE__, "slice"
+describe :string_slice_regexp_group, :shared => true do
+  it "returns the capture for the given name" do
+    "hello there".send(@method, /(?<g>[aeiou](.))/, 'g').should == "el"
+    "hello there".send(@method, /[aeiou](?<g>.)/, 'g').should == "l"
+
+    "har".send(@method, /(?<g>(.)(.)(.))/, 'g').should == "har"
+    "har".send(@method, /(?<h>.)(.)(.)/, 'h').should == "h"
+    "har".send(@method, /(.)(?<a>.)(.)/, 'a').should == "a"
+    "har".send(@method, /(.)(.)(?<r>.)/, 'r').should == "r"
+    "har".send(@method, /(?<h>.)(?<a>.)(?<r>.)/, 'r').should == "r"
+  end
+
+  it "returns the last capture for duplicate names" do
+    "hello there".send(@method, /(?<g>h)(?<g>.)/, 'g').should == "e"
+    "hello there".send(@method, /(?<g>h)(?<g>.)(?<f>.)/, 'g').should == "e"
+  end
+
+  it "returns the innermost capture for nested duplicate names" do
+    "hello there".send(@method, /(?<g>h(?<g>.))/, 'g').should == "e"
+  end
+
+  it "always taints resulting strings when self or regexp is tainted" do
+    strs = ["hello world"]
+    strs += strs.map { |s| s.dup.taint }
+
+    strs.each do |str|
+      str.send(@method, /(?<hi>hello)/, 'hi').tainted?.should == str.tainted?
+
+      str.send(@method, /(?<g>(.)(.)(.))/, 'g').tainted?.should == str.tainted?
+      str.send(@method, /(?<h>.)(.)(.)/, 'h').tainted?.should == str.tainted?
+      str.send(@method, /(.)(?<a>.)(.)/, 'a').tainted?.should == str.tainted?
+      str.send(@method, /(.)(.)(?<r>.)/, 'r').tainted?.should == str.tainted?
+      str.send(@method, /(?<h>.)(?<a>.)(?<r>.)/, 'r').tainted?.should == str.tainted?
+
+      tainted_re = /(?<a>.)(?<b>.)(?<c>.)/
+      tainted_re.taint
+
+      str.send(@method, tainted_re, 'a').tainted?.should be_true
+      str.send(@method, tainted_re, 'b').tainted?.should be_true
+      str.send(@method, tainted_re, 'c').tainted?.should be_true
+    end
+  end
+
+  it "returns nil if there is no match" do
+    "hello there".send(@method, /(?<whut>what?)/, 'whut').should be_nil
+  end
+
+  it "raises an IndexError if there is no capture for the given name" do
+    lambda do
+      "hello there".send(@method, /[aeiou](.)\1/, 'non')
+    end.should raise_error(IndexError)
+  end
+
+  it "raises a TypeError when the given name is not a String" do
+    lambda { "hello".send(@method, /(?<q>.)/, mock('x')) }.should raise_error(TypeError)
+    lambda { "hello".send(@method, /(?<q>.)/, {})        }.should raise_error(TypeError)
+    lambda { "hello".send(@method, /(?<q>.)/, [])        }.should raise_error(TypeError)
+  end
+
+  it "raises an IndexError when given the empty String as a group name" do
+    lambda { "hello".send(@method, /(?<q>)/, '') }.should raise_error(IndexError)
+  end
+
+  it "returns subclass instances" do
+    s = StringSpecs::MyString.new("hello")
+    s.send(@method, /(?<q>.)/, 'q').should be_an_instance_of(StringSpecs::MyString)
+  end
+
+  it "sets $~ to MatchData when there is a match and nil when there's none" do
+    'hello'.send(@method, /(?<hi>.(.))/, 'hi')
+    $~[0].should == 'he'
+
+    'hello'.send(@method, /(?<non>not)/, 'non')
+    $~.should be_nil
+  end
+end

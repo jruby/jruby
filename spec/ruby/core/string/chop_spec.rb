@@ -56,15 +56,13 @@ describe "String#chop" do
     "".taint.chop.tainted?.should == true
   end
 
-  ruby_version_is "1.9" do
-    it "untrusts result when self is untrusted" do
-      "hello".untrust.chop.untrusted?.should == true
-      "".untrust.chop.untrusted?.should == true
-    end
+  it "untrusts result when self is untrusted" do
+    "hello".untrust.chop.untrusted?.should == true
+    "".untrust.chop.untrusted?.should == true
   end
 
   it "returns subclass instances when called on a subclass" do
-    StringSpecs::MyString.new("hello\n").chop.should be_kind_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("hello\n").chop.should be_an_instance_of(StringSpecs::MyString)
   end
 end
 
@@ -117,26 +115,14 @@ describe "String#chop!" do
     "".chop!.should be_nil
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError when self is frozen" do
-      lambda { "string\n\r".freeze.chop! }.should raise_error(TypeError)
-    end
-
-    it "does not raise an exception on a frozen instance that would not be modified" do
-      "".freeze.chop!.should be_nil
-    end
+  it "raises a RuntimeError on a frozen instance that is modified" do
+    lambda { "string\n\r".freeze.chop! }.should raise_error(RuntimeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError on a frozen instance that is modified" do
-      lambda { "string\n\r".freeze.chop! }.should raise_error(RuntimeError)
-    end
-
-    # see [ruby-core:23666]
-    it "raises a RuntimeError on a frozen instance that would not be modified" do
-      a = ""
-      a.freeze
-      lambda { a.chop! }.should raise_error(RuntimeError)
-    end
+  # see [ruby-core:23666]
+  it "raises a RuntimeError on a frozen instance that would not be modified" do
+    a = ""
+    a.freeze
+    lambda { a.chop! }.should raise_error(RuntimeError)
   end
 end

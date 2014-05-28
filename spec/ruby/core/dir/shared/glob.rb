@@ -16,13 +16,11 @@ describe :dir_glob, :shared => true do
     end
   end
 
-  ruby_version_is "1.9" do
-    it "calls #to_path to convert patterns" do
-      obj = mock('file_one.ext')
-      obj.should_receive(:to_path).and_return('file_one.ext')
+  it "calls #to_path to convert a pattern" do
+    obj = mock('file_one.ext')
+    obj.should_receive(:to_path).and_return('file_one.ext')
 
-      Dir.send(@method, obj).should == %w[file_one.ext]
-    end
+    Dir.send(@method, obj).should == %w[file_one.ext]
   end
 
   it "splits the string on \\0 if there is only one string given" do
@@ -233,9 +231,9 @@ describe :dir_glob, :shared => true do
     Dir.mkdir 'foo^bar'
 
     begin
-      Dir.glob('foo?bar').should == %w|foo^bar|
-      Dir.glob('foo\?bar').should == []
-      Dir.glob('nond\otfile').should == %w|nondotfile|
+      Dir.send(@method, 'foo?bar').should == %w|foo^bar|
+      Dir.send(@method, 'foo\?bar').should == []
+      Dir.send(@method, 'nond\otfile').should == %w|nondotfile|
     ensure
       Dir.rmdir 'foo^bar'
     end
@@ -277,6 +275,10 @@ describe :dir_glob, :shared => true do
   it "ignores matching only directories under an nonexistant path" do
     Dir.send(@method, "deeply/notthere/blah/").should == []
   end
+
+  it "matches UTF-8 paths" do
+    Dir.send(@method, "special/こんにちは{,.txt}").should == ["special/こんにちは.txt"]
+  end
 end
 
 describe :dir_glob_recursive, :shared => true do
@@ -308,5 +310,23 @@ describe :dir_glob_recursive, :shared => true do
     ]
 
     Dir.send(@method, 'a/**/b/**/e').uniq.sort.should == expected
+  end
+
+  platform_is_not :windows do
+    it "ignores symlinks" do
+      file = File.join @mock_dir, 'b/z/e'
+      link = File.join @mock_dir, 'a/y'
+
+      mkdir_p File.dirname(file)
+      touch file
+      File.symlink(File.dirname(file), link)
+
+      expected = %w[
+        a/x/b/y/b/z/e
+        a/x/b/y/e
+      ]
+
+      Dir.send(@method, 'a/**/e').uniq.sort.should == expected
+    end
   end
 end

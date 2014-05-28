@@ -41,26 +41,12 @@ describe :env_store, :shared => true do
     lambda { ENV.send(@method, "foo", Object.new) }.should raise_error(TypeError)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "fails silently when the key contains the '=' character" do
-      ENV.send(@method, "foo=", "bar")
-      ENV.key?("foo=").should be_false
-    end
-
-    it "fails silently when the key is an empty string" do
-      ENV.send(@method, "", "bar")
-      ENV.key?("").should be_false
-    end
+  it "raises Errno::EINVAL when the key contains the '=' character" do
+    lambda { ENV.send(@method, "foo=", "bar") }.should raise_error(Errno::EINVAL)
   end
 
-  ruby_version_is "1.9" do
-    it "raises Errno::EINVAL when the key contains the '=' character" do
-      lambda { ENV.send(@method, "foo=", "bar") }.should raise_error(Errno::EINVAL)
-    end
-
-    it "raises Errno::EINVAL when the key is an empty string" do
-      lambda { ENV.send(@method, "", "bar") }.should raise_error(Errno::EINVAL)
-    end
+  it "raises Errno::EINVAL when the key is an empty string" do
+    lambda { ENV.send(@method, "", "bar") }.should raise_error(Errno::EINVAL)
   end
 
   it "does nothing when the key is not a valid environment variable key and the value is nil" do

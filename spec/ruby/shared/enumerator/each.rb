@@ -1,4 +1,16 @@
+# -*- encoding: us-ascii -*-
+
 describe :enum_each, :shared => true do
+  before(:each) do
+    object_each_with_arguments = Object.new
+    def object_each_with_arguments.each_with_arguments(arg, *args)
+      yield arg, *args
+      :method_returned
+    end
+
+    @enum_with_arguments = object_each_with_arguments.to_enum(:each_with_arguments, :arg0, :arg1, :arg2)
+  end
+
   it "yields each element of self to the given block" do
     acc = []
     enumerator_class.new([1,2,3]).each {|e| acc << e }
@@ -39,7 +51,34 @@ describe :enum_each, :shared => true do
     end.should raise_error(NoMethodError)
   end
 
-  it "returns an Enumerator if no block is given" do
-    enumerator_class.new([1]).each.should be_an_instance_of(enumerator_class)
+  it "returns self if not given arguments and not given a block" do
+    @enum_with_arguments.each.should equal(@enum_with_arguments)
+  end
+
+  it "returns the same value from receiver.each if block is given" do
+    @enum_with_arguments.each {}.should equal(:method_returned)
+  end
+
+  it "passes given arguments at initialized to receiver.each" do
+    @enum_with_arguments.each.to_a.should == [[:arg0, :arg1, :arg2]]
+  end
+
+  it "requires multiple arguments" do
+    enumerator_class.instance_method(:each).arity.should < 0
+  end
+
+  it "appends given arguments to receiver.each" do
+    @enum_with_arguments.each(:each0, :each1).to_a.should == [[:arg0, :arg1, :arg2, :each0, :each1]]
+    @enum_with_arguments.each(:each2, :each3).to_a.should == [[:arg0, :arg1, :arg2, :each2, :each3]]
+  end
+
+  it "returns the same value from receiver.each if block and arguments are given" do
+    @enum_with_arguments.each(:each1, :each2) {}.should equal(:method_returned)
+  end
+
+  it "returns new Enumerator if given arguments but not given a block" do
+    ret = @enum_with_arguments.each 1
+    ret.should be_an_instance_of(enumerator_class)
+    ret.should_not equal(@enum_with_arguments)
   end
 end

@@ -74,6 +74,16 @@ static VALUE class_spec_rb_class_new_instance(VALUE self,
 }
 #endif
 
+#ifdef HAVE_RB_CLASS_REAL
+static VALUE class_spec_rb_class_real(VALUE self, VALUE object) {
+  if(rb_type_p(object, T_FIXNUM)) {
+    return INT2FIX(rb_class_real(FIX2INT(object)));
+  } else {
+    return rb_class_real(CLASS_OF(object));
+  }
+}
+#endif
+
 #ifdef HAVE_RB_CLASS_SUPERCLASS
 static VALUE class_spec_rb_class_superclass(VALUE self, VALUE klass) {
   return rb_class_superclass(klass);
@@ -192,6 +202,10 @@ void Init_class_spec() {
 
 #ifdef HAVE_RB_CLASS_NEW_INSTANCE
   rb_define_method(cls, "rb_class_new_instance", class_spec_rb_class_new_instance, 3);
+#endif
+
+#ifdef HAVE_RB_CLASS_REAL
+  rb_define_method(cls, "rb_class_real", class_spec_rb_class_real, 1);
 #endif
 
 #ifdef HAVE_RB_CLASS_SUPERCLASS

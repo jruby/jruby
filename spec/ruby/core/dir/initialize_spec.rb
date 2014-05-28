@@ -10,20 +10,9 @@ describe "Dir#initialize" do
     DirSpecs.delete_mock_dirs
   end
 
-  ruby_version_is ""..."1.9" do
-    it "calls #to_str on non-String arguments" do
-      p = mock('path')
-      p.stub!(:to_str).and_return(DirSpecs.mock_dir)
-
-      Dir.new(p).path.should == DirSpecs.mock_dir
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "calls #to_path on non-String arguments" do
-      p = mock('path')
-      p.stub!(:to_path).and_return(DirSpecs.mock_dir)
-      Dir.new(p).path.should == DirSpecs.mock_dir
-    end
+  it "calls #to_path on non-String arguments" do
+    p = mock('path')
+    p.stub!(:to_path).and_return(DirSpecs.mock_dir)
+    Dir.new(p).path.should == DirSpecs.mock_dir
   end
 end

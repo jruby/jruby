@@ -6,20 +6,10 @@ describe "Hash#fetch" do
     new_hash(:a => 1, :b => -1).fetch(:b).should == -1
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises an IndexError if key is not found" do
-      lambda { new_hash.fetch(:a)       }.should raise_error(IndexError)
-      lambda { new_hash(5).fetch(:a)    }.should raise_error(IndexError)
-      lambda { new_hash { 5 }.fetch(:a) }.should raise_error(IndexError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises an KeyError if key is not found" do
-      lambda { new_hash.fetch(:a)       }.should raise_error(KeyError)
-      lambda { new_hash(5).fetch(:a)    }.should raise_error(KeyError)
-      lambda { new_hash { 5 }.fetch(:a) }.should raise_error(KeyError)
-    end
+  it "raises a KeyError if key is not found" do
+    lambda { new_hash.fetch(:a)       }.should raise_error(KeyError)
+    lambda { new_hash(5).fetch(:a)    }.should raise_error(KeyError)
+    lambda { new_hash { 5 }.fetch(:a) }.should raise_error(KeyError)
   end
 
   it "returns default if key is not found when passed a default" do

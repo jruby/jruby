@@ -11,6 +11,14 @@ describe :argf_each_line, :shared => true do
     ARGF.close unless ARGF.closed?
   end
 
+  it "is a public method" do
+    ARGF.public_methods(false).should include(stasy(@method))
+  end
+
+  it "requires multiple arguments" do
+    ARGF.method(@method).arity.should < 0
+  end
+
   it "reads each line of files" do
     argv [@file1_name, @file2_name] do
       lines = []
@@ -22,6 +30,21 @@ describe :argf_each_line, :shared => true do
   it "returns self when passed a block" do
     argv [@file1_name, @file2_name] do
       ARGF.send(@method) {}.should equal(ARGF)
+    end
+  end
+
+  it "returns an Enumerator when passed no block" do
+    argv [@file1_name, @file2_name] do
+      ARGF.send(@method).should be_an_instance_of(enumerator_class)
+    end
+  end
+
+  describe "with a separator" do
+    it "yields each separated section of all streams" do
+      argv [@file1_name, @file2_name] do
+        ARGF.send(@method, '.').to_a.should ==
+          (File.readlines(@file1_name, '.') + File.readlines(@file2_name, '.'))
+      end
     end
   end
 end

@@ -352,5 +352,3 @@ describe "The postfix if form" do
     b.should == 126
   end
 end
-
-language_version __FILE__, "if"

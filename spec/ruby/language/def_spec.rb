@@ -31,6 +31,43 @@ describe "Defining an 'initialize_copy' method" do
   end
 end
 
+describe "Defining an 'initialize_dup' method" do
+  it "sets the method's visibility to private" do
+    class DefInitializeDupSpec
+      def initialize_dup
+      end
+    end
+    DefInitializeDupSpec.should have_private_instance_method(:initialize_dup, false)
+  end
+end
+
+describe "Defining an 'initialize_clone' method" do
+  it "sets the method's visibility to private" do
+    class DefInitializeCloneSpec
+      def initialize_clone
+      end
+    end
+    DefInitializeCloneSpec.should have_private_instance_method(:initialize_clone, false)
+  end
+end
+
+describe "Defining a 'respond_to_missing?' method" do
+  it "sets the method's visibility to private" do
+    class DefRespondToMissingPSpec
+      def respond_to_missing?
+      end
+    end
+    DefRespondToMissingPSpec.should have_private_instance_method(:respond_to_missing?, false)
+  end
+end
+
+describe "Defining a method" do
+  it "returns a symbol of the method name" do
+    method_name = def some_method; end
+    method_name.should == :some_method
+  end
+end
+
 describe "An instance method definition with a splat" do
   it "accepts an unnamed '*' argument" do
     def foo(*); end;
@@ -116,6 +153,17 @@ describe "An instance method with a default argument" do
     end
     foo(2,3,3).should == [2,3,[3]]
   end
+
+  it "calls a method with the same name as the local" do
+    def bar
+      1
+    end
+    def foo(bar = bar)
+      bar
+    end
+    foo.should == 1
+    foo(2).should == 2
+  end
 end
 
 describe "A singleton method definition" do
@@ -174,25 +222,15 @@ describe "A singleton method definition" do
     (obj==2).should == 2
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises TypeError if frozen" do
-      obj = Object.new
-      obj.freeze
-      lambda { def obj.foo; end }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises RuntimeError if frozen" do
-      obj = Object.new
-      obj.freeze
-      lambda { def obj.foo; end }.should raise_error(RuntimeError)
-    end
+  it "raises RuntimeError if frozen" do
+    obj = Object.new
+    obj.freeze
+    lambda { def obj.foo; end }.should raise_error(RuntimeError)
   end
 end
 
 describe "Redefining a singleton method" do
-  it "does not inherit a previously set visibility " do
+  it "does not inherit a previously set visibility" do
     o = Object.new
 
     class << o; private; def foo; end; end;
@@ -208,7 +246,7 @@ describe "Redefining a singleton method" do
 end
 
 describe "Redefining a singleton method" do
-  it "does not inherit a previously set visibility " do
+  it "does not inherit a previously set visibility" do
     o = Object.new
 
     class << o; private; def foo; end; end;
@@ -327,25 +365,12 @@ describe "A method definition inside a metaclass scope" do
     lambda { Object.new.a_singleton_method }.should raise_error(NoMethodError)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises TypeError if frozen" do
-      obj = Object.new
-      obj.freeze
+  it "raises RuntimeError if frozen" do
+    obj = Object.new
+    obj.freeze
 
-      class << obj
-        lambda { def foo; end }.should raise_error(TypeError)
-      end
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises RuntimeError if frozen" do
-      obj = Object.new
-      obj.freeze
-
-      class << obj
-        lambda { def foo; end }.should raise_error(RuntimeError)
-      end
+    class << obj
+      lambda { def foo; end }.should raise_error(RuntimeError)
     end
   end
 end
@@ -548,4 +573,7 @@ describe "The def keyword" do
   end
 end
 
-language_version __FILE__, "def"
+ruby_version_is "2.0" do
+  # Temporarily excluded until keyword args are added.
+  # require File.expand_path('../versions/def_2.0.rb', __FILE__)
+end

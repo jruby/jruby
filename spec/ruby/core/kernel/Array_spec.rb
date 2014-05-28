@@ -45,22 +45,23 @@ describe :kernel_Array, :shared => true do
     @object.send(@method, obj).should == @array
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError if #to_a returns nil" do
-      obj = mock("Array([1,2,3])")
-      obj.should_receive(:to_a).and_return(nil)
+  it "returns an Array containing the argument if #to_a returns nil" do
+    obj = mock("Array([1,2,3])")
+    obj.should_receive(:to_a).and_return(nil)
 
-      lambda { @object.send(@method, obj) }.should raise_error(TypeError)
-    end
+    @object.send(@method, obj).should == [obj]
   end
 
-  ruby_version_is "1.9" do
-    it "returns an Array containing the argument if #to_a returns nil" do
-      obj = mock("Array([1,2,3])")
-      obj.should_receive(:to_a).and_return(nil)
+  it "calls #to_ary first, even if it's private" do
+    obj = KernelSpecs::PrivateToAry.new
 
-      @object.send(@method, obj).should == [obj]
-    end
+    @object.send(@method, obj).should == [1, 2]
+  end
+
+  it "calls #to_a if #to_ary is not defined, even if it's private" do
+    obj = KernelSpecs::PrivateToA.new
+
+    @object.send(@method, obj).should == [3, 4]
   end
 
   it "returns an Array containing the argument if it responds to neither #to_ary nor #to_a" do

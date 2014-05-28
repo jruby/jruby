@@ -1,8 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../shared/succ', __FILE__)
 
-ruby_version_is "1.9" do
-  describe "Symbol#succ" do
-    it_behaves_like :symbol_succ, :succ
-  end
+describe "Symbol#succ" do
+  it_behaves_like :symbol_succ, :succ
 end

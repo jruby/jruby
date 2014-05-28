@@ -56,22 +56,9 @@ describe "Process.kill" do
     @sp.result.should == "signaled"
   end
 
-  ruby_version_is "1.9" do
-    it "calls #to_int to coerce the pid to an Integer" do
-      Process.kill("SIGTERM", mock_int(@sp.pid))
-      @sp.result.should == "signaled"
-    end
-  end
-end
-
-describe "Process.kill" do
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError if the PID is not a Fixnum" do
-      pid = mock("process kill pid")
-      pid.should_not_receive(:to_int)
-
-      lambda { Process.kill("SIGTERM", pid) }.should raise_error(TypeError)
-    end
+  it "calls #to_int to coerce the pid to an Integer" do
+    Process.kill("SIGTERM", mock_int(@sp.pid))
+    @sp.result.should == "signaled"
   end
 end
 

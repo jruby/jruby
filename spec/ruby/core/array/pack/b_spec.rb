@@ -45,14 +45,12 @@ describe "Array#pack with format 'B'" do
     ].should be_computed_by(:pack, "B*")
   end
 
-  ruby_version_is "1.9" do
-    it "returns an ASCII-8BIT string" do
-      ["1"].pack("B").encoding.should == Encoding::ASCII_8BIT
-    end
+  it "returns an ASCII-8BIT string" do
+    ["1"].pack("B").encoding.should == Encoding::ASCII_8BIT
+  end
 
-    it "encodes the string as a sequence of bytes" do
-      ["ああああああああ"].pack("B*").should == "\xdbm\xb6"
-    end
+  it "encodes the string as a sequence of bytes" do
+    ["ああああああああ"].pack("B*").should == "\xdbm\xb6"
   end
 end
 
@@ -97,13 +95,11 @@ describe "Array#pack with format 'b'" do
     ].should be_computed_by(:pack, "b*")
   end
 
-  ruby_version_is "1.9" do
-    it "returns an ASCII-8BIT string" do
-      ["1"].pack("b").encoding.should == Encoding::ASCII_8BIT
-    end
+  it "returns an ASCII-8BIT string" do
+    ["1"].pack("b").encoding.should == Encoding::ASCII_8BIT
+  end
 
-    it "encodes the string as a sequence of bytes" do
-      ["ああああああああ"].pack("b*").should == "\xdb\xb6m"
-    end
+  it "encodes the string as a sequence of bytes" do
+    ["ああああああああ"].pack("b*").should == "\xdb\xb6m"
   end
 end

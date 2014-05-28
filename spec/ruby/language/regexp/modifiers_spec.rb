@@ -32,32 +32,6 @@ describe "Regexps with modifers" do
     ScratchPad.recorded.should == [:to_s_callback]
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "does not do thread synchronization for /o" do
-      ScratchPad.record []
-
-      to_s_callback2 = Proc.new do
-        ScratchPad << :to_s_callback2
-        "class_with_to_s2"
-      end
-
-      to_s_callback1 = Proc.new do
-        ScratchPad << :to_s_callback1
-        t2 = Thread.new do
-          o2 = LanguageSpecs::ClassWith_to_s.new(to_s_callback2)
-          ScratchPad << LanguageSpecs.get_regexp_with_substitution(o2)
-        end
-        t2.join
-        "class_with_to_s1"
-      end
-
-      o1 = LanguageSpecs::ClassWith_to_s.new(to_s_callback1)
-      ScratchPad << LanguageSpecs.get_regexp_with_substitution(o1)
-
-      ScratchPad.recorded.should == [:to_s_callback1, :to_s_callback2, /class_with_to_s2/, /class_with_to_s2/]
-    end
-  end
-
   it "supports modifier combinations" do
     /foo/imox.match("foo").to_a.should == ["foo"]
     /foo/imoximox.match("foo").to_a.should == ["foo"]
@@ -125,22 +99,12 @@ describe "Regexps with modifers" do
     /./m.match("\n").to_a.should == ["\n"]
   end
 
-  ruby_version_is ""..."2.0" do
-    it "raises SyntaxError for ASII/Unicode modifiers" do
-      lambda { eval('/(?a)/') }.should raise_error(SyntaxError)
-      lambda { eval('/(?d)/') }.should raise_error(SyntaxError)
-      lambda { eval('/(?u)/') }.should raise_error(SyntaxError)
-    end
-  end
-
-  ruby_version_is "2.0" do
-    it "supports ASII/Unicode modifiers" do
-      eval('/(?a)[[:alpha:]]+/').match("a\u3042").to_a.should == ["a"]
-      eval('/(?d)[[:alpha:]]+/').match("a\u3042").to_a.should == ["a\u3042"]
-      eval('/(?u)[[:alpha:]]+/').match("a\u3042").to_a.should == ["a\u3042"]
-      eval('/(?a)\w+/').match("a\u3042").to_a.should == ["a"]
-      eval('/(?d)\w+/').match("a\u3042").to_a.should == ["a"]
-      eval('/(?u)\w+/').match("a\u3042").to_a.should == ["a\u3042"]
-    end
+  it "supports ASII/Unicode modifiers" do
+    eval('/(?a)[[:alpha:]]+/').match("a\u3042").to_a.should == ["a"]
+    eval('/(?d)[[:alpha:]]+/').match("a\u3042").to_a.should == ["a\u3042"]
+    eval('/(?u)[[:alpha:]]+/').match("a\u3042").to_a.should == ["a\u3042"]
+    eval('/(?a)\w+/').match("a\u3042").to_a.should == ["a"]
+    eval('/(?d)\w+/').match("a\u3042").to_a.should == ["a"]
+    eval('/(?u)\w+/').match("a\u3042").to_a.should == ["a\u3042"]
   end
 end

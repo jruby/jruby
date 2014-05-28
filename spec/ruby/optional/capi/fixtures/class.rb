@@ -65,6 +65,10 @@ class CApiClassSpecs
     end
   end
 
+  class SubM < Super
+    include M
+  end
+
   class SubSub < Sub
     def call_super_method
       :subclass_method

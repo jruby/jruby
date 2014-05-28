@@ -22,16 +22,8 @@ with_feature :encoding do
       lambda { Encoding.find(:"utf-8") }.should raise_error(TypeError)
     end
 
-    ruby_version_is "1.9"..."1.9.3" do
-      it "raises a TypeError if passed an Encoding object" do
-        lambda { Encoding.find(Encoding::UTF_8) }.should raise_error(TypeError)
-      end
-    end
-
-    ruby_version_is "1.9.3" do
-      it "returns the passed Encoding object" do
-        Encoding.find(Encoding::UTF_8).should == Encoding::UTF_8
-      end
+    it "returns the passed Encoding object" do
+      Encoding.find(Encoding::UTF_8).should == Encoding::UTF_8
     end
 
     it "accepts encoding names as Strings" do

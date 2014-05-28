@@ -7,7 +7,7 @@ describe "Math.atan" do
     Math.atan(1).should be_kind_of(Float)
   end
 
-  it "return the arctangent of the argument" do
+  it "returns the arctangent of the argument" do
     Math.atan(1).should be_close(Math::PI/4, TOLERANCE)
     Math.atan(0).should be_close(0.0, TOLERANCE)
     Math.atan(-1).should be_close(-Math::PI/4, TOLERANCE)
@@ -16,18 +16,10 @@ describe "Math.atan" do
     Math.atan(0.75).should be_close(0.643501108793284, TOLERANCE)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises an ArgumentError if the argument cannot be coerced with Float()" do
-      lambda { Math.atan("test") }.should raise_error(ArgumentError)
-    end
+  it "raises a TypeError if the argument cannot be coerced with Float()" do
+    lambda { Math.atan("test") }.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a TypeError if the argument cannot be coerced with Float()" do
-      lambda { Math.atan("test") }.should raise_error(TypeError)
-    end
-  end
-    
   it "returns NaN given NaN" do
     Math.atan(nan_value).nan?.should be_true
   end

@@ -29,7 +29,7 @@ describe :array_slice, :shared => true do
     a.should == [1, 2, 3, 4]
   end
 
-  it "return count elements starting from index with [index, count]" do
+  it "returns count elements starting from index with [index, count]" do
     [ "a", "b", "c", "d", "e" ].send(@method, 2, 3).should == ["c", "d", "e"]
 
     a = [1, 2, 3, 4]
@@ -266,10 +266,10 @@ describe :array_slice, :shared => true do
     a.send(@method, 1..0).should == []
     a.send(@method, 1...0).should == []
 
-    lambda { a.slice("a" .. "b") }.should raise_error(TypeError)
-    lambda { a.slice("a" ... "b") }.should raise_error(TypeError)
-    lambda { a.slice(from .. "b") }.should raise_error(TypeError)
-    lambda { a.slice(from ... "b") }.should raise_error(TypeError)
+    lambda { a.send(@method, "a" .. "b") }.should raise_error(TypeError)
+    lambda { a.send(@method, "a" ... "b") }.should raise_error(TypeError)
+    lambda { a.send(@method, from .. "b") }.should raise_error(TypeError)
+    lambda { a.send(@method, from ... "b") }.should raise_error(TypeError)
   end
 
   it "returns the same elements as [m..n] and [m...n] with Range subclasses" do

@@ -41,16 +41,8 @@ describe "Kernel.throw" do
     res.should == :return_value
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a NameError if there is no catch block for the symbol" do
-      lambda { throw :blah }.should raise_error(NameError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises an ArgumentError if there is no catch block for the symbol" do
-      lambda { throw :blah }.should raise_error(ArgumentError)
-    end
+  it "raises an ArgumentError if there is no catch block for the symbol" do
+    lambda { throw :blah }.should raise_error(ArgumentError)
   end
 
   it "raises ArgumentError if 3 or more arguments provided" do
@@ -67,25 +59,13 @@ describe "Kernel.throw" do
     }.should raise_error(ArgumentError)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises TypeError if the first argument is not a symbol" do
-      lambda {
-        catch :blah do
-          throw Object.new
-        end
-      }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "can throw an object" do
-      lambda {
-        obj = Object.new
-        catch obj do
-          throw obj
-        end
-      }.should_not raise_error(NameError)
-    end
+  it "can throw an object" do
+    lambda {
+      obj = Object.new
+      catch obj do
+        throw obj
+      end
+    }.should_not raise_error(NameError)
   end
 end
 

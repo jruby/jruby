@@ -75,5 +75,4 @@ describe :io_binwrite, :shared => true do
     IO.send(@method, @filename, "hello, world!", {})
     File.read(@filename).should == "hello, world!"
   end
-
 end

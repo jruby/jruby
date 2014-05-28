@@ -58,91 +58,69 @@ describe :kernel_Complex, :shared => true do
     end
   end
 
-  ruby_version_is "1.9" do
-    describe "when passed a String" do
-      it "needs to be reviewed for spec completeness"
-    end
+  describe "when passed a String" do
+    it "needs to be reviewed for spec completeness"
+  end
 
-    describe "when passed a Numeric which responds to #real? with false" do
-      it "returns the passed argument" do
-        n = mock_numeric("unreal")
-        n.should_receive(:real?).and_return(false)
-        Complex(n).should equal(n)
-      end
+  describe "when passed a Numeric which responds to #real? with false" do
+    it "returns the passed argument" do
+      n = mock_numeric("unreal")
+      n.should_receive(:real?).and_return(false)
+      Complex(n).should equal(n)
     end
+  end
 
-    describe "when passed a Numeric which responds to #real? with true" do
-      it "returns a Complex with the passed argument as the real component and 0 as the imaginary component" do
-        n = mock_numeric("real")
-        n.should_receive(:real?).any_number_of_times.and_return(true)
-        result = Complex(n)
-        result.real.should equal(n)
-        result.imag.should equal(0)
-      end
+  describe "when passed a Numeric which responds to #real? with true" do
+    it "returns a Complex with the passed argument as the real component and 0 as the imaginary component" do
+      n = mock_numeric("real")
+      n.should_receive(:real?).any_number_of_times.and_return(true)
+      result = Complex(n)
+      result.real.should equal(n)
+      result.imag.should equal(0)
     end
+  end
 
-    describe "when passed Numerics n1 and n2 and at least one responds to #real? with false" do
-      [[false, false], [false, true], [true, false]].each do |r1, r2|
-        it "returns n1 + n2 * Complex(0, 1)" do
-          n1 = mock_numeric("n1")
-          n2 = mock_numeric("n2")
-          n3 = mock_numeric("n3")
-          n4 = mock_numeric("n4")
-          n1.should_receive(:real?).any_number_of_times.and_return(r1)
-          n2.should_receive(:real?).any_number_of_times.and_return(r2)
-          n2.should_receive(:*).with(Complex(0, 1)).and_return(n3)
-          n1.should_receive(:+).with(n3).and_return(n4)
-          Complex(n1, n2).should equal(n4)
-        end
-      end
-    end
-
-    describe "when passed two Numerics and both respond to #real? with true" do
-      it "returns a Complex with the passed arguments as real and imaginary components respectively" do
+  describe "when passed Numerics n1 and n2 and at least one responds to #real? with false" do
+    [[false, false], [false, true], [true, false]].each do |r1, r2|
+      it "returns n1 + n2 * Complex(0, 1)" do
         n1 = mock_numeric("n1")
         n2 = mock_numeric("n2")
-        n1.should_receive(:real?).any_number_of_times.and_return(true)
-        n2.should_receive(:real?).any_number_of_times.and_return(true)
-        result = Complex(n1, n2)
-        result.real.should equal(n1)
-        result.imag.should equal(n2)
-      end
-    end
-
-    describe "when passed a single non-Numeric" do
-      it "coerces the passed argument using #to_c" do
-        n = mock("n")
-        c = Complex(0, 0)
-        n.should_receive(:to_c).and_return(c)
-        Complex(n).should equal(c)
-      end
-    end
-
-    describe "when passed a non-Numeric second argument" do
-      it "raises TypeError" do
-        lambda { Complex.send(@method, :sym, :sym) }.should raise_error(TypeError)
-        lambda { Complex.send(@method, 0,    :sym) }.should raise_error(TypeError)
+        n3 = mock_numeric("n3")
+        n4 = mock_numeric("n4")
+        n1.should_receive(:real?).any_number_of_times.and_return(r1)
+        n2.should_receive(:real?).any_number_of_times.and_return(r2)
+        n2.should_receive(:*).with(Complex(0, 1)).and_return(n3)
+        n1.should_receive(:+).with(n3).and_return(n4)
+        Complex(n1, n2).should equal(n4)
       end
     end
   end
 
-  ruby_version_is ""..."1.9" do
-    describe "when Rational::Unify is defined" do
-      it "returns the passed Integer" do
-        # Guard against the Mathn library
-        conflicts_with :Prime do
-          begin
-            Complex::Unify = true
+  describe "when passed two Numerics and both respond to #real? with true" do
+    it "returns a Complex with the passed arguments as real and imaginary components respectively" do
+      n1 = mock_numeric("n1")
+      n2 = mock_numeric("n2")
+      n1.should_receive(:real?).any_number_of_times.and_return(true)
+      n2.should_receive(:real?).any_number_of_times.and_return(true)
+      result = Complex(n1, n2)
+      result.real.should equal(n1)
+      result.imag.should equal(n2)
+    end
+  end
 
-            Complex(1).should eql(1)
-            Complex(-3).should eql(-3)
-            Complex(-4.5).should eql(-4.5)
-            Complex(bignum_value).should eql(bignum_value)
-          ensure
-            Complex.send :remove_const, :Unify
-          end
-        end
-      end
+  describe "when passed a single non-Numeric" do
+    it "coerces the passed argument using #to_c" do
+      n = mock("n")
+      c = Complex(0, 0)
+      n.should_receive(:to_c).and_return(c)
+      Complex(n).should equal(c)
+    end
+  end
+
+  describe "when passed a non-Numeric second argument" do
+    it "raises TypeError" do
+      lambda { Complex.send(@method, :sym, :sym) }.should raise_error(TypeError)
+      lambda { Complex.send(@method, 0,    :sym) }.should raise_error(TypeError)
     end
   end
 end

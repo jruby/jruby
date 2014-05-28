@@ -30,12 +30,6 @@ describe "Thread#inspect" do
     ThreadSpecs.status_of_thread_with_uncaught_exception.inspect.should include('dead')
   end
 
-  ruby_version_is ""..."1.9" do
-    it "describes a dying running thread" do
-      ThreadSpecs.status_of_dying_running_thread.inspect.should include('aborting')
-    end
-  end
-
   it "describes a dying sleeping thread" do
     ThreadSpecs.status_of_dying_sleeping_thread.status.should include('sleep')
   end

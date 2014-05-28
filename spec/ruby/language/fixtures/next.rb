@@ -125,4 +125,10 @@ class NextSpecs
       end
     end
   end
+
+  class Block
+    def method(v)
+      yield v
+    end
+  end
 end

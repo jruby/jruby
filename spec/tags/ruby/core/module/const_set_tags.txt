@@ -1,0 +1,1 @@
+fails:Module#const_set does not set the name of a module scoped by an anonymous module

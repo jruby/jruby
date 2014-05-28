@@ -58,8 +58,6 @@ as_superuser do
   end
 end
 
-ruby_version_is "1.9" do
-  describe "File.lchown" do
-    it "needs to be reviewed for spec completeness"
-  end
+describe "File.lchown" do
+  it "needs to be reviewed for spec completeness"
 end

@@ -9,9 +9,7 @@ describe :time_month, :shared => true do
     Time.utc(1970, 1).send(@method).should == 1
   end
 
-  ruby_version_is "1.9" do
-    it "returns the four digit year for a Time with a fixed offset" do
-      Time.new(2012, 1, 1, 0, 0, 0, -3600).send(@method).should == 1
-    end
+  it "returns the four digit year for a Time with a fixed offset" do
+    Time.new(2012, 1, 1, 0, 0, 0, -3600).send(@method).should == 1
   end
 end

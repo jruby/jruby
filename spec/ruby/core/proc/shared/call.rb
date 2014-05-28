@@ -18,28 +18,6 @@ describe :proc_call, :shared => true do
     proc { |*args| args }.send(@method, 1, 2, 3, 4).should == [1, 2, 3, 4]
     proc { |_, *args| args }.send(@method, 1, 2, 3).should == [2, 3]
   end
-
-  ruby_version_is ""..."1.9" do
-    it "sets self's single parameter to an Array of all given values" do
-      [Proc.new { |x| [x] }, lambda { |x| [x] }, proc { |x| [x] }].each do |p|
-        a = p.send(@method)
-        a.should be_kind_of(Array)
-        a.should == [nil]
-
-        a = p.send(@method, 1)
-        a.should be_kind_of(Array)
-        a.should == [1]
-
-        a = p.send(@method, 1, 2)
-        a.should be_kind_of(Array)
-        a.should == [[1, 2]]
-
-        a = p.send(@method, 1, 2, 3)
-        a.should be_kind_of(Array)
-        a.should == [[1, 2, 3]]
-      end
-    end
-  end
 end
 
 
@@ -63,71 +41,48 @@ describe :proc_call_on_proc_new, :shared => true do
 end
 
 describe :proc_call_on_proc_or_lambda, :shared => true do
-  ruby_version_is ""..."1.9" do
-    it "raises an ArgumentError when called with too few arguments" do
-      lambda { lambda { |a, b| [a, b] }.send(@method)    }.should raise_error(ArgumentError)
-      lambda { lambda { |a, b| [a, b] }.send(@method, 1) }.should raise_error(ArgumentError)
-      lambda { proc { |a, b| [a, b] }.send(@method)      }.should raise_error(ArgumentError)
-      lambda { proc { |a, b| [a, b] }.send(@method, 1)   }.should raise_error(ArgumentError)
-    end
+  it "ignores excess arguments when self is a proc" do
+    a = proc {|x| x}.send(@method, 1, 2)
+    a.should == 1
 
-    it "raises an ArgumentError when called with too many arguments" do
-      lambda { lambda { |a, b| [a, b] }.send(@method, 1, 2, 3) }.should raise_error(ArgumentError)
-      lambda { proc { |a, b| [a, b] }.send(@method, 1, 2, 3)   }.should raise_error(ArgumentError)
-    end
-
-    it "treats a single Array argument as a single argument" do
-      lambda { |a| [a] }.send(@method, [1, 2]).should == [[1, 2]]
-      lambda { lambda { |a, b| [a, b] }.send(@method, [1, 2]) }.should raise_error(ArgumentError)
-      proc { |a| [a] }.send(@method, [1, 2]).should == [[1, 2]]
-      lambda { proc { |a, b| [a, b] }.send(@method, [1, 2]) }.should raise_error(ArgumentError)
-    end
+    a = proc {|x| x}.send(@method, 1, 2, 3)
+    a.should == 1
   end
 
-  ruby_version_is "1.9" do
-    it "ignores excess arguments when self is a proc" do
-      a = proc {|x| x}.send(@method, 1, 2)
-      a.should == 1
+  it "substitutes nil for missing arguments when self is a proc" do
+    proc {|x,y| [x,y]}.send(@method).should == [nil,nil]
 
-      a = proc {|x| x}.send(@method, 1, 2, 3)
-      a.should == 1
-    end
+    a = proc {|x,y| [x, y]}.send(@method, 1)
+    a.should == [1,nil]
+  end
 
-    it "substitutes nil for missing arguments when self is a proc" do
-      proc {|x,y| [x,y]}.send(@method).should == [nil,nil]
+  it "raises an ArgumentError on excess arguments when self is a lambda" do
+    lambda {
+      lambda {|x| x}.send(@method, 1, 2)
+    }.should raise_error(ArgumentError)
 
-      a = proc {|x,y| [x, y]}.send(@method, 1)
-      a.should == [1,nil]
-    end
+    lambda {
+      lambda {|x| x}.send(@method, 1, 2, 3)
+    }.should raise_error(ArgumentError)
+  end
 
-    it "raises an ArgumentError on excess arguments when self is a lambda" do
-      lambda {
-        lambda {|x| x}.send(@method, 1, 2)
-      }.should raise_error(ArgumentError)
+  it "raises an ArgumentError on missing arguments when self is a lambda" do
+    lambda {
+      lambda {|x| x}.send(@method)
+    }.should raise_error(ArgumentError)
 
-      lambda {
-        lambda {|x| x}.send(@method, 1, 2, 3)
-      }.should raise_error(ArgumentError)
-    end
+    lambda {
+      lambda {|x,y| [x,y]}.send(@method, 1)
+    }.should raise_error(ArgumentError)
+  end
 
-    it "raises an ArgumentError on missing arguments when self is a lambda" do
-      lambda {
-        lambda {|x| x}.send(@method)
-      }.should raise_error(ArgumentError)
+  it "treats a single Array argument as a single argument when self is a lambda" do
+    lambda { |a| a }.send(@method, [1, 2]).should == [1, 2]
+    lambda { |a, b| [a, b] }.send(@method, [1, 2], 3).should == [[1,2], 3]
+  end
 
-      lambda {
-        lambda {|x,y| [x,y]}.send(@method, 1)
-      }.should raise_error(ArgumentError)
-    end
-
-    it "treats a single Array argument as a single argument when self is a lambda" do
-      lambda { |a| a }.send(@method, [1, 2]).should == [1, 2]
-      lambda { |a, b| [a, b] }.send(@method, [1, 2], 3).should == [[1,2], 3]
-    end
-
-    it "treats a single Array argument as a single argument when self is a proc" do
-      proc { |a| a }.send(@method, [1, 2]).should == [1, 2]
-      proc { |a, b| [a, b] }.send(@method, [1, 2], 3).should == [[1,2], 3]
-    end
+  it "treats a single Array argument as a single argument when self is a proc" do
+    proc { |a| a }.send(@method, [1, 2]).should == [1, 2]
+    proc { |a, b| [a, b] }.send(@method, [1, 2], 3).should == [[1,2], 3]
   end
 end

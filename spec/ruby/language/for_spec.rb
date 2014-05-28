@@ -73,44 +73,23 @@ describe "The for expression" do
     end
   end
 
-  ruby_version_is ""..."1.9" do
-    it "splats multiple arguments together if there are fewer arguments than values" do
-      class OFor
-        def each
-          [[1,2,3], [4,5,6]].each do |a|
-            yield(a[0],a[1],a[2])
-          end
-        end
-      end
-      o = OFor.new
-      qs = []
-      for q in o
-        qs << q
-      end
-      qs.should == [[1,2,3], [4,5,6]]
-      q.should == [4,5,6]
-    end
-  end
-
   # 1.9 behaviour verified by nobu in
   # http://redmine.ruby-lang.org/issues/show/2053
-  ruby_version_is "1.9" do
-    it "yields only as many values as there are arguments" do
-      class OFor
-        def each
-          [[1,2,3], [4,5,6]].each do |a|
-            yield(a[0],a[1],a[2])
-          end
+  it "yields only as many values as there are arguments" do
+    class OFor
+      def each
+        [[1,2,3], [4,5,6]].each do |a|
+          yield(a[0],a[1],a[2])
         end
       end
-      o = OFor.new
-      qs = []
-      for q in o
-        qs << q
-      end
-      qs.should == [1, 4]
-      q.should == 4
     end
+    o = OFor.new
+    qs = []
+    for q in o
+      qs << q
+    end
+    qs.should == [1, 4]
+    q.should == 4
   end
 
   it "optionally takes a 'do' after the expression" do
@@ -188,5 +167,3 @@ describe "The for expression" do
     j.should == 8
   end
 end
-
-language_version __FILE__, "for"

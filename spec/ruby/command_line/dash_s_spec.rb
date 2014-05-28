@@ -20,10 +20,10 @@ describe "The -s command line option" do
                           :args => "-- --name=blah").chomp.should == "blah"
     end
 
-    it "converts extra dashes into underscorse" do
-      ruby_exe("puts $___name", :escape => true,
+    it "converts extra dashes into underscores" do
+      ruby_exe("puts $___name__test__", :escape => true,
                           :options => "-s",
-                          :args => "-- ----name=blah").chomp.should == "blah"
+                          :args => "-- ----name--test--=blah").chomp.should == "blah"
     end
   end
 
@@ -47,9 +47,9 @@ describe "The -s command line option" do
                         :args => "--name=blah 2").chomp.should == "blah"
     end
 
-    it "converts extra dashes into underscorse" do
+    it "converts extra dashes into underscores" do
       ruby_exe(@script, :options => "-s",
-                        :args => "----name=blah 3").chomp.should == "blah"
+                        :args => "----name--test--=blah 3").chomp.should == "blah"
     end
 
   end

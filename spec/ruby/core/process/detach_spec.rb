@@ -29,22 +29,20 @@ describe "Process.detach" do
       end
     end
 
-    ruby_version_is "1.9" do
-      it "sets the :pid thread-local to the PID" do
-        pid = Process.fork { Process.exit! }
-        thr = Process.detach(pid)
-        timeout(3) { thr.join }
+    it "sets the :pid thread-local to the PID" do
+      pid = Process.fork { Process.exit! }
+      thr = Process.detach(pid)
+      timeout(3) { thr.join }
 
-        thr[:pid].should == pid
-      end
+      thr[:pid].should == pid
+    end
 
-      it "provides a #pid method on the returned thread which returns the PID" do
-        pid = Process.fork { Process.exit! }
-        thr = Process.detach(pid)
-        timeout(3) { thr.join }
+    it "provides a #pid method on the returned thread which returns the PID" do
+      pid = Process.fork { Process.exit! }
+      thr = Process.detach(pid)
+      timeout(3) { thr.join }
 
-        thr.pid.should == pid
-      end
+      thr.pid.should == pid
     end
   end
 end

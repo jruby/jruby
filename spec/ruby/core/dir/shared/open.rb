@@ -16,7 +16,7 @@ describe :dir_open, :shared => true do
   end
 
   it "returns the value of the block if a block is given" do
-    Dir.open(DirSpecs.mock_dir) {|dir| :value }.should == :value
+    Dir.send(@method, DirSpecs.mock_dir) {|dir| :value }.should == :value
   end
 
   it "closes the Dir instance when the block exits if given a block" do
@@ -37,24 +37,27 @@ describe :dir_open, :shared => true do
     lambda { @closed_dir.close }.should raise_error(IOError)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "calls #to_str on non-String arguments" do
-      p = mock('path')
-      p.should_receive(:to_str).and_return(DirSpecs.mock_dir)
-      Dir.send(@method, p) { true }
-    end
+  it "calls #to_path on non-String arguments" do
+    p = mock('path')
+    p.should_receive(:to_path).and_return(DirSpecs.mock_dir)
+    Dir.send(@method, p) { true }
   end
 
-  ruby_version_is "1.9" do
-    it "calls #to_path on non-String arguments" do
-      p = mock('path')
-      p.should_receive(:to_path).and_return(DirSpecs.mock_dir)
-      Dir.send(@method, p) { true }
-    end
+  it "accepts an options Hash" do
+    dir = Dir.send(@method, DirSpecs.mock_dir, :encoding => "utf-8") {|dir| dir }
+    dir.should be_kind_of(Dir)
+  end
 
-    it "accepts an options Hash" do
-      dir = Dir.send(@method, DirSpecs.mock_dir, :encoding => "utf-8") {|dir| dir }
-      dir.should be_kind_of(Dir)
-    end
+  it "calls #to_hash to convert the options object" do
+    options = mock("dir_open")
+    options.should_receive(:to_hash).and_return({ :encoding => Encoding::UTF_8 })
+
+    dir = Dir.send(@method, DirSpecs.mock_dir, options) {|dir| dir }
+    dir.should be_kind_of(Dir)
+  end
+
+  it "ignores the :encoding option if it is nil" do
+    dir = Dir.send(@method, DirSpecs.mock_dir, :encoding => nil) {|dir| dir }
+    dir.should be_kind_of(Dir)
   end
 end

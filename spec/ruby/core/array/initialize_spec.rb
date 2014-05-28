@@ -23,7 +23,7 @@ describe "Array#initialize" do
     a.should_not == [1, 2, 3]
   end
 
-  it "raise an ArgumentError if passed 3 or more arguments" do
+  it "raises an ArgumentError if passed 3 or more arguments" do
     lambda do
       [1, 2].send :initialize, 1, 'x', true
     end.should raise_error(ArgumentError)
@@ -32,26 +32,18 @@ describe "Array#initialize" do
     end.should raise_error(ArgumentError)
   end
 
-  ruby_version_is '' ... '1.9' do
-    it "raises a TypeError on frozen arrays even if the array would not be modified" do
-      lambda do
-        ArraySpecs.frozen_array.send :initialize
-      end.should raise_error(TypeError)
-      lambda do
-        ArraySpecs.frozen_array.send :initialize, ArraySpecs.frozen_array
-      end.should raise_error(TypeError)
-    end
+  it "raises a RuntimeError on frozen arrays" do
+    lambda do
+      ArraySpecs.frozen_array.send :initialize
+    end.should raise_error(RuntimeError)
+    lambda do
+      ArraySpecs.frozen_array.send :initialize, ArraySpecs.frozen_array
+    end.should raise_error(RuntimeError)
   end
 
-  ruby_version_is '1.9' do
-    it "raises a RuntimeError on frozen arrays" do
-      lambda do
-        ArraySpecs.frozen_array.send :initialize
-      end.should raise_error(RuntimeError)
-      lambda do
-        ArraySpecs.frozen_array.send :initialize, ArraySpecs.frozen_array
-      end.should raise_error(RuntimeError)
-    end
+  it "calls #to_ary to convert the value to an array, even if it's private" do
+    a = ArraySpecs::PrivateToAry.new
+    [].send(:initialize, a).should == [1, 2, 3]
   end
 end
 

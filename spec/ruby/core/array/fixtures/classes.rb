@@ -535,4 +535,11 @@ module ArraySpecs
  "test_schema_migrations_table_name",
  "test_target_version_zero_should_run_only_once"]
 
+  class PrivateToAry
+    private
+
+    def to_ary
+      [1, 2, 3]
+    end
+  end
 end

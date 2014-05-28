@@ -1,5 +1,4 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require 'rational'
 
 describe :rational_hash, :shared => true do
   # BUG: Rational(2, 3).hash == Rational(3, 2).hash

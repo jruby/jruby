@@ -50,17 +50,29 @@ describe "Hash literal" do
     h.size.should == 2
     h.should == {:a => 1, :b => 2}
   end
-  
+
   it "recognizes '=' at the end of the key" do
     eval("{:a==>1}").should   == {:"a=" => 1}
     eval("{:a= =>1}").should  == {:"a=" => 1}
     eval("{:a= => 1}").should == {:"a=" => 1}
   end
-  
+
   it "with '==>' in the middle raises SyntaxError" do
     lambda {eval("{:a ==> 1}")}.should raise_error(SyntaxError)
   end
+
+  it "constructs a new hash with the given elements" do
+    {foo: 123}.should == {:foo => 123}
+    {rbx: :cool, specs: 'fail_sometimes'}.should == {:rbx => :cool, :specs => 'fail_sometimes'}
+  end
+
+  it "ignores a hanging comma" do
+    {foo: 123,}.should == {:foo => 123}
+    {rbx: :cool, specs: 'fail_sometimes',}.should == {:rbx => :cool, :specs => 'fail_sometimes'}
+  end
+
+  it "can mix and match syntax styles" do
+    {rbx: :cool, :specs => 'fail_sometimes'}.should == {:rbx => :cool, :specs => 'fail_sometimes'}
+    {'rbx' => :cool, specs: 'fail_sometimes'}.should == {'rbx' => :cool, :specs => 'fail_sometimes'}
+  end
 end
-
-language_version __FILE__, "hash"
-

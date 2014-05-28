@@ -1,1 +1,0 @@
-critical(very slow to run):Rational#round doesn't fail when rounding to an absurdly large positive precision

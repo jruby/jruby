@@ -12,7 +12,7 @@ describe "File.umask" do
     File.umask(@orig_umask)
   end
 
-  it "return a Fixnum" do
+  it "returns a Fixnum" do
     File.umask.should be_kind_of(Fixnum)
   end
 

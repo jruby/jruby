@@ -9,9 +9,48 @@ describe "Time#zone" do
     end
   end
 
-  ruby_version_is "1.9" do
-    it "returns nil for a Time with a fixed offset" do
-      Time.new(2001, 1, 1, 0, 0, 0, "+05:00").zone.should == nil
+  it "returns nil for a Time with a fixed offset" do
+    Time.new(2001, 1, 1, 0, 0, 0, "+05:00").zone.should == nil
+  end
+
+  it "returns the correct timezone for a local time" do
+    t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
+
+    with_timezone("US/Eastern") do
+      t.getlocal.zone.should == "EST"
+    end
+  end
+
+  it "returns nil when getting the local time with a fixed offset" do
+    t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
+
+    with_timezone("US/Eastern") do
+      t.getlocal("+05:00").zone.should be_nil
+    end
+  end
+
+  describe "Encoding.default_internal is set" do
+    before :each do
+      @encoding = Encoding.default_internal
+      Encoding.default_internal = Encoding::UTF_8
+    end
+
+    after :each do
+      Encoding.default_internal = @encoding
+    end
+
+    it "returns the string with the default internal encoding" do
+      t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
+
+      with_timezone("US/Eastern") do
+        t.getlocal.zone.encoding.should == Encoding::UTF_8
+      end
+    end
+
+    it "doesn't raise errors for a Time with a fixed offset" do
+      lambda {
+        Time.new(2001, 1, 1, 0, 0, 0, "+05:00").zone
+      }.should_not raise_error
     end
   end
 

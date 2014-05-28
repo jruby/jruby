@@ -16,49 +16,38 @@ describe "Thread#key?" do
     @th.key?(:stanley.to_s).should == false
   end
 
-  quarantine! do
-    ruby_version_is ""..."1.9" do
-      it "raises exceptions on the wrong type of keys" do
-        lambda { Thread.current.key? nil }.should raise_error(TypeError)
-        lambda { Thread.current.key? 5 }.should raise_error(ArgumentError)
-      end
-    end
+  it "raises exceptions on the wrong type of keys" do
+    lambda { Thread.current.key? nil }.should raise_error(TypeError)
+    lambda { Thread.current.key? 5 }.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises exceptions on the wrong type of keys" do
-      lambda { Thread.current.key? nil }.should raise_error(TypeError)
-      lambda { Thread.current.key? 5 }.should raise_error(TypeError)
+  it "is not shared across fibers" do
+    fib = Fiber.new do
+      Thread.current[:val1] = 1
+      Fiber.yield
+      Thread.current.key?(:val1).should be_true
+      Thread.current.key?(:val2).should be_false
     end
+    Thread.current.key?(:val1).should_not be_true
+    fib.resume
+    Thread.current[:val2] = 2
+    fib.resume
+    Thread.current.key?(:val1).should be_false
+    Thread.current.key?(:val2).should be_true
+  end
 
-    it "is not shared across fibers" do
-      fib = Fiber.new do
-        Thread.current[:val1] = 1
-        Fiber.yield
-        Thread.current.key?(:val1).should be_true
-        Thread.current.key?(:val2).should be_false
+  it "stores a local in another thread when in a fiber" do
+    fib = Fiber.new do
+      t = Thread.new do
+        sleep
+        Thread.current.key?(:value).should be_true
       end
-      Thread.current.key?(:val1).should_not be_true
-      fib.resume
-      Thread.current[:val2] = 2
-      fib.resume
-      Thread.current.key?(:val1).should be_false
-      Thread.current.key?(:val2).should be_true
-    end
 
-    it "stores a local in another thread when in a fiber" do
-      fib = Fiber.new do
-        t = Thread.new do
-          sleep
-          Thread.current.key?(:value).should be_true
-        end
-
-        Thread.pass while t.status and t.status != "sleep"
-        t[:value] = 1
-        t.wakeup
-        t.join
-      end
-      fib.resume
+      Thread.pass while t.status and t.status != "sleep"
+      t[:value] = 1
+      t.wakeup
+      t.join
     end
+    fib.resume
   end
 end

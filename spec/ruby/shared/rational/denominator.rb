@@ -1,5 +1,4 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require 'rational'
 
 describe :rational_denominator, :shared => true do
   it "returns the denominator" do

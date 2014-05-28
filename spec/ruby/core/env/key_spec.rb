@@ -7,7 +7,5 @@ describe "ENV.key?" do
 end
 
 describe "ENV.key" do
-  ruby_version_is "1.9" do
-    it_behaves_like(:env_key, :key)
-  end
+  it_behaves_like(:env_key, :key)
 end

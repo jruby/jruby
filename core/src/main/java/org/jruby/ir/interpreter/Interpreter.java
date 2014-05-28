@@ -376,11 +376,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation, IRScope scope, IRubyObject[] args, IRubyObject self, Block block, RubyModule implClass, Visibility visibility)
+    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation, IRScope scope, String name, IRubyObject[] args, IRubyObject self, Block block, RubyModule implClass, Visibility visibility)
     {
         switch(operation) {
         case PUSH_FRAME:
-            context.preMethodFrameAndClass(implClass, scope.getName(), self, block, scope.getStaticScope());
+            context.preMethodFrameAndClass(implClass, name, self, block, scope.getStaticScope());
             context.setCurrentVisibility(visibility);
             break;
         case POP_FRAME:
@@ -533,7 +533,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
-            IRScope scope, Visibility visibility, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType)
+            IRScope scope, Visibility visibility, RubyModule implClass, String name, IRubyObject[] args, Block block, Block.Type blockType)
     {
         Instr[] instrs = scope.getInstrsForInterpretation(blockType == Block.Type.LAMBDA);
         Map<Integer, Integer> rescueMap = scope.getRescueMap();
@@ -609,7 +609,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                         }
                         context.pushScope(currDynScope);
                     } else {
-                        processBookKeepingOp(context, instr, operation, scope, args, self, block, implClass, visibility);
+                        processBookKeepingOp(context, instr, operation, scope, name, args, self, block, implClass, visibility);
                     }
                     break;
                 case OTHER_OP:
@@ -638,7 +638,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             IRScope scope, RubyModule clazz, String name) {
         try {
             ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
-            return interpret(context, self, scope, null, clazz, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, null);
+            return interpret(context, self, scope, null, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, null);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -648,7 +648,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             IRScope scope, RubyModule clazz, IRubyObject[] args, String name, Block block, Block.Type blockType) {
         try {
             ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
-            return interpret(context, self, scope, null, clazz, args, block, blockType);
+            return interpret(context, self, scope, null, clazz, name, args, block, blockType);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -658,7 +658,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             IRScope scope, IRubyObject[] args, String name, Block block, Block.Type blockType) {
         try {
             ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
-            return interpret(context, self, scope, null, null, args, block, blockType);
+            return interpret(context, self, scope, null, null, name, args, block, blockType);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -675,7 +675,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         try {
             if (!syntheticMethod) ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
             if (isTraceable) methodPreTrace(runtime, context, name, implClass);
-            return interpret(context, self, scope, viz, implClass, args, block, blockType);
+            return interpret(context, self, scope, viz, implClass, name, args, block, blockType);
         } finally {
             if (isTraceable) {
                 try {methodPostTrace(runtime, context, name, implClass);}

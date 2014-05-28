@@ -33,44 +33,21 @@ describe :kernel_String, :shared => true do
     lambda { @object.send(@method, obj) }.should raise_error(TypeError)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError if respond_to? returns false for #to_s" do
-      obj = mock("to_s")
-      obj.does_not_respond_to(:to_s)
+  # #5158
+  it "raises a TypeError if respond_to? returns false for #to_s" do
+    obj = mock("to_s")
+    obj.does_not_respond_to(:to_s)
 
-      lambda { @object.send(@method, obj) }.should raise_error(TypeError)
-    end
+    lambda { @object.send(@method, obj) }.should raise_error(TypeError)
   end
 
-  ruby_bug "#5158", "1.9.3.116" do
-    it "raises a TypeError if respond_to? returns false for #to_s" do
-      obj = mock("to_s")
-      obj.does_not_respond_to(:to_s)
+  it "raises a TypeError if #to_s is not defined, even though #respond_to?(:to_s) returns true" do
+    # cannot use a mock because of how RSpec affects #method_missing
+    obj = Object.new
+    obj.undefine(:to_s)
+    obj.responds_to(:to_s)
 
-      lambda { @object.send(@method, obj) }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is ""..."1.9" do
-    it "raises a NoMethodError if #to_s is not defined but #respond_to?(:to_s) returns true" do
-      # cannot use a mock because of how RSpec affects #method_missing
-      obj = Object.new
-      obj.undefine(:to_s)
-      obj.responds_to(:to_s)
-
-      lambda { @object.send(@method, obj) }.should raise_error(NoMethodError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a TypeError if #to_s is not defined, even though #respond_to?(:to_s) returns true" do
-      # cannot use a mock because of how RSpec affects #method_missing
-      obj = Object.new
-      obj.undefine(:to_s)
-      obj.responds_to(:to_s)
-
-      lambda { @object.send(@method, obj) }.should raise_error(TypeError)
-    end
+    lambda { @object.send(@method, obj) }.should raise_error(TypeError)
   end
 
   it "calls #to_s if #respond_to?(:to_s) returns true" do

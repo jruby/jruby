@@ -52,7 +52,8 @@ describe :string_unpack_float_le, :shared => true do
   end
 
   it "decodes NaN" do
-    "\x00\x00\xc0\xff".unpack(unpack_format).first.nan?.should be_true
+    # mumble mumble NaN mumble https://bugs.ruby-lang.org/issues/5884
+    [nan_value].pack(unpack_format).unpack(unpack_format).first.nan?.should be_true
   end
 
   it "ignores NULL bytes between directives" do
@@ -118,7 +119,8 @@ describe :string_unpack_float_be, :shared => true do
   end
 
   it "decodes NaN" do
-    "\xff\xc0\x00\x00".unpack(unpack_format).first.nan?.should be_true
+    # mumble mumble NaN mumble https://bugs.ruby-lang.org/issues/5884
+    [nan_value].pack(unpack_format).unpack(unpack_format).first.nan?.should be_true
   end
 
   it "ignores NULL bytes between directives" do
@@ -187,7 +189,8 @@ describe :string_unpack_double_le, :shared => true do
   end
 
   it "decodes NaN" do
-    "\x00\x00\x00\x00\x00\x00\xf8\xff".unpack(unpack_format).first.nan?.should be_true
+    # mumble mumble NaN mumble https://bugs.ruby-lang.org/issues/5884
+    [nan_value].pack(unpack_format).unpack(unpack_format).first.nan?.should be_true
   end
 
   it "ignores NULL bytes between directives" do
@@ -254,7 +257,8 @@ describe :string_unpack_double_be, :shared => true do
   end
 
   it "decodes NaN" do
-    "\xff\xf8\x00\x00\x00\x00\x00\x00".unpack(unpack_format).first.nan?.should be_true
+    # mumble mumble NaN mumble https://bugs.ruby-lang.org/issues/5884
+    [nan_value].pack(unpack_format).unpack(unpack_format).first.nan?.should be_true
   end
 
   it "ignores NULL bytes between directives" do

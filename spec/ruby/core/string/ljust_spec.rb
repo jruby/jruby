@@ -73,12 +73,12 @@ describe "String#ljust with length, padding" do
   end
 
   it "returns subclass instances when called on subclasses" do
-    StringSpecs::MyString.new("").ljust(10).should be_kind_of(StringSpecs::MyString)
-    StringSpecs::MyString.new("foo").ljust(10).should be_kind_of(StringSpecs::MyString)
-    StringSpecs::MyString.new("foo").ljust(10, StringSpecs::MyString.new("x")).should be_kind_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("").ljust(10).should be_an_instance_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("foo").ljust(10).should be_an_instance_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("foo").ljust(10, StringSpecs::MyString.new("x")).should be_an_instance_of(StringSpecs::MyString)
 
-    "".ljust(10, StringSpecs::MyString.new("x")).should be_kind_of(String)
-    "foo".ljust(10, StringSpecs::MyString.new("x")).should be_kind_of(String)
+    "".ljust(10, StringSpecs::MyString.new("x")).should be_an_instance_of(String)
+    "foo".ljust(10, StringSpecs::MyString.new("x")).should be_an_instance_of(String)
   end
 
   it "when padding is tainted and self is untainted returns a tainted string if and only if length is longer than self" do

@@ -1,5 +1,4 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require 'rational'
 
 describe :rational_divide_rat, :shared => true do
   it "returns self divided by other as a Rational" do

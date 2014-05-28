@@ -12,9 +12,7 @@ describe "Time#hour" do
     Time.utc(1970, 1, 1, 0).hour.should == 0
   end
 
-  ruby_version_is "1.9" do
-    it "returns the hour of the day for a Time with a fixed offset" do
-      Time.new(2012, 1, 1, 0, 0, 0, -3600).hour.should == 0
-    end
+  it "returns the hour of the day for a Time with a fixed offset" do
+    Time.new(2012, 1, 1, 0, 0, 0, -3600).hour.should == 0
   end
 end

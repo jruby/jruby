@@ -1,13 +1,11 @@
 describe :process_fork, :shared => true do
-  ruby_version_is "1.9" do
-    platform_is :windows do
-      it "returns false from #respond_to?" do
-        @object.respond_to?(:fork).should be_false
-      end
+  platform_is :windows do
+    it "returns false from #respond_to?" do
+      @object.respond_to?(:fork).should be_false
+    end
 
-      it "raises a NotImplementedError when called" do
-        lambda { @object.fork }.should raise_error(NotImplementedError)
-      end
+    it "raises a NotImplementedError when called" do
+      lambda { @object.fork }.should raise_error(NotImplementedError)
     end
   end
 
@@ -22,7 +20,7 @@ describe :process_fork, :shared => true do
         rm_r @file
       end
 
-      it "return nil for the child process" do
+      it "returns nil for the child process" do
         child_id = @object.fork
         if child_id == nil
           touch(@file) { |f| f.write 'rubinius' }
@@ -40,6 +38,21 @@ describe :process_fork, :shared => true do
         }
         Process.waitpid(pid)
         File.exist?(@file).should == true
+      end
+
+      it "marks threads from the parent as killed" do
+        t = Thread.new { sleep }
+        pid = @object.fork {
+          touch(@file) do |f|
+            f.write Thread.current.alive?
+            f.write t.alive?
+          end
+          Process.exit!
+        }
+        Process.waitpid(pid)
+        t.kill
+        t.join
+        File.read(@file).should == "truefalse"
       end
     end
   end

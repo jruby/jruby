@@ -13,11 +13,6 @@ describe "Array#values_at" do
     [1, 2].values_at(obj, obj, obj).should == [2, 2, 2]
   end
 
-  it "returns an array of elements in the ranges when passes ranges" do
-    [1, 2, 3, 4, 5].values_at(0..2, 1...3, 2..-2).should == [1, 2, 3, 2, 3, 3, 4]
-    [1, 2, 3, 4, 5].values_at(6..4).should == []
-  end
-
   it "properly handles recursive arrays" do
     empty = ArraySpecs.empty_recursive_array
     empty.values_at(0, 1, 2).should == [empty, nil, nil]
@@ -26,19 +21,40 @@ describe "Array#values_at" do
     array.values_at(0, 1, 2, 3).should == [1, 'two', 3.0, array]
   end
 
-  it "calls to_int on arguments of ranges when passes ranges" do
-    from = mock('from')
-    to = mock('to')
+  describe "when passed ranges" do
+    it "returns an array of elements in the ranges" do
+      [1, 2, 3, 4, 5].values_at(0..2, 1...3, 2..-2).should == [1, 2, 3, 2, 3, 3, 4]
+      [1, 2, 3, 4, 5].values_at(6..4).should == []
+    end
 
-    # So we can construct a range out of them...
-    def from.<=>(o) 0 end
-    def to.<=>(o) 0 end
+    it "calls to_int on arguments of ranges" do
+      from = mock('from')
+      to = mock('to')
 
-    def from.to_int() 1 end
-    def to.to_int() -2 end
+      # So we can construct a range out of them...
+      def from.<=>(o) 0 end
+      def to.<=>(o) 0 end
 
-    ary = [1, 2, 3, 4, 5]
-    ary.values_at(from .. to, from ... to, to .. from).should == [2, 3, 4, 2, 3]
+      def from.to_int() 1 end
+      def to.to_int() -2 end
+
+      ary = [1, 2, 3, 4, 5]
+      ary.values_at(from .. to, from ... to, to .. from).should == [2, 3, 4, 2, 3]
+    end
+  end
+
+  describe "when passed a range" do
+    it "fills with nil if the index is out of the range" do
+      [0, 1].values_at(0..3).should == [0, 1, nil, nil]
+      [0, 1].values_at(2..4).should == [nil, nil, nil]
+    end
+
+    describe "on an empty array" do
+      it "fills with nils if the index is out of the range" do
+        [].values_at(0..2).should == [nil, nil, nil]
+        [].values_at(1..3).should == [nil, nil, nil]
+      end
+    end
   end
 
   it "does not return subclass instance on Array subclasses" do

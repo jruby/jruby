@@ -122,9 +122,7 @@ describe "Array#pack with format 'u'" do
     lambda { [bignum_value].pack("u") }.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9" do
-    it "sets the output string to US-ASCII encoding" do
-      ["abcd"].pack("u").encoding.should == Encoding::US_ASCII
-    end
+  it "sets the output string to US-ASCII encoding" do
+    ["abcd"].pack("u").encoding.should == Encoding::US_ASCII
   end
 end

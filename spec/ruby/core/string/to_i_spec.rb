@@ -2,25 +2,8 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes.rb', __FILE__)
 
 describe "String#to_i" do
-  # Ruby 1.9 doesn't allow underscores and spaces as part of a number
-  ruby_version_is ""..."1.9" do
-    it "ignores leading underscores" do
-      "_123".to_i.should == 123
-      "__123".to_i.should == 123
-      "___123".to_i.should == 123
-    end
-
-    it "ignores a leading mix of whitespaces and underscores" do
-      [ "_ _123", "_\t_123", "_\r\n_123" ].each do |str|
-        str.to_i.should == 123
-      end
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "returns 0 for strings with leading underscores" do
-      "_123".to_i.should == 0
-    end
+  it "returns 0 for strings with leading underscores" do
+    "_123".to_i.should == 0
   end
 
   it "ignores underscores in between the digits" do
@@ -159,5 +142,187 @@ describe "String#to_i" do
 
     "                            -10".to_i.should == -10
     "                            -10".to_i.should be_an_instance_of(Fixnum)
+  end
+
+  it "returns the correct Bignum for long strings" do
+    "245789127594125924165923648312749312749327482".to_i.should == 245789127594125924165923648312749312749327482
+    "-245789127594125924165923648312749312749327482".to_i.should == -245789127594125924165923648312749312749327482
+  end
+end
+
+describe "String#to_i with bases" do
+  it "parses a String in base 2" do
+    str = "10" * 50
+    str.to_i(2).to_s(2).should == str
+  end
+
+  it "parses a String in base 3" do
+    str = "120" * 33
+    str.to_i(3).to_s(3).should == str
+  end
+
+  it "parses a String in base 4" do
+    str = "1230" * 25
+    str.to_i(4).to_s(4).should == str
+  end
+
+  it "parses a String in base 5" do
+    str = "12340" * 20
+    str.to_i(5).to_s(5).should == str
+  end
+
+  it "parses a String in base 6" do
+    str = "123450" * 16
+    str.to_i(6).to_s(6).should == str
+  end
+
+  it "parses a String in base 7" do
+    str = "1234560" * 14
+    str.to_i(7).to_s(7).should == str
+  end
+
+  it "parses a String in base 8" do
+    str = "12345670" * 12
+    str.to_i(8).to_s(8).should == str
+  end
+
+  it "parses a String in base 9" do
+    str = "123456780" * 11
+    str.to_i(9).to_s(9).should == str
+  end
+
+  it "parses a String in base 10" do
+    str = "1234567890" * 10
+    str.to_i(10).to_s(10).should == str
+  end
+
+  it "parses a String in base 11" do
+    str = "1234567890a" * 9
+    str.to_i(11).to_s(11).should == str
+  end
+
+  it "parses a String in base 12" do
+    str = "1234567890ab" * 8
+    str.to_i(12).to_s(12).should == str
+  end
+
+  it "parses a String in base 13" do
+    str = "1234567890abc" * 7
+    str.to_i(13).to_s(13).should == str
+  end
+
+  it "parses a String in base 14" do
+    str = "1234567890abcd" * 7
+    str.to_i(14).to_s(14).should == str
+  end
+
+  it "parses a String in base 15" do
+    str = "1234567890abcde" * 6
+    str.to_i(15).to_s(15).should == str
+  end
+
+  it "parses a String in base 16" do
+    str = "1234567890abcdef" * 6
+    str.to_i(16).to_s(16).should == str
+  end
+
+  it "parses a String in base 17" do
+    str = "1234567890abcdefg" * 5
+    str.to_i(17).to_s(17).should == str
+  end
+
+  it "parses a String in base 18" do
+    str = "1234567890abcdefgh" * 5
+    str.to_i(18).to_s(18).should == str
+  end
+
+  it "parses a String in base 19" do
+    str = "1234567890abcdefghi" * 5
+    str.to_i(19).to_s(19).should == str
+  end
+
+  it "parses a String in base 20" do
+    str = "1234567890abcdefghij" * 5
+    str.to_i(20).to_s(20).should == str
+  end
+
+  it "parses a String in base 21" do
+    str = "1234567890abcdefghijk" * 4
+    str.to_i(21).to_s(21).should == str
+  end
+
+  it "parses a String in base 22" do
+    str = "1234567890abcdefghijkl" * 4
+    str.to_i(22).to_s(22).should == str
+  end
+
+  it "parses a String in base 23" do
+    str = "1234567890abcdefghijklm" * 4
+    str.to_i(23).to_s(23).should == str
+  end
+
+  it "parses a String in base 24" do
+    str = "1234567890abcdefghijklmn" * 4
+    str.to_i(24).to_s(24).should == str
+  end
+
+  it "parses a String in base 25" do
+    str = "1234567890abcdefghijklmno" * 4
+    str.to_i(25).to_s(25).should == str
+  end
+
+  it "parses a String in base 26" do
+    str = "1234567890abcdefghijklmnop" * 3
+    str.to_i(26).to_s(26).should == str
+  end
+
+  it "parses a String in base 27" do
+    str = "1234567890abcdefghijklmnopq" * 3
+    str.to_i(27).to_s(27).should == str
+  end
+
+  it "parses a String in base 28" do
+    str = "1234567890abcdefghijklmnopqr" * 3
+    str.to_i(28).to_s(28).should == str
+  end
+
+  it "parses a String in base 29" do
+    str = "1234567890abcdefghijklmnopqrs" * 3
+    str.to_i(29).to_s(29).should == str
+  end
+
+  it "parses a String in base 30" do
+    str = "1234567890abcdefghijklmnopqrst" * 3
+    str.to_i(30).to_s(30).should == str
+  end
+
+  it "parses a String in base 31" do
+    str = "1234567890abcdefghijklmnopqrstu" * 3
+    str.to_i(31).to_s(31).should == str
+  end
+
+  it "parses a String in base 32" do
+    str = "1234567890abcdefghijklmnopqrstuv" * 3
+    str.to_i(32).to_s(32).should == str
+  end
+
+  it "parses a String in base 33" do
+    str = "1234567890abcdefghijklmnopqrstuvw" * 3
+    str.to_i(33).to_s(33).should == str
+  end
+
+  it "parses a String in base 34" do
+    str = "1234567890abcdefghijklmnopqrstuvwx" * 2
+    str.to_i(34).to_s(34).should == str
+  end
+
+  it "parses a String in base 35" do
+    str = "1234567890abcdefghijklmnopqrstuvwxy" * 2
+    str.to_i(35).to_s(35).should == str
+  end
+
+  it "parses a String in base 36" do
+    str = "1234567890abcdefghijklmnopqrstuvwxyz" * 2
+    str.to_i(36).to_s(36).should == str
   end
 end

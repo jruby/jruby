@@ -45,48 +45,46 @@ describe "C-API File function" do
     it_behaves_like :rb_file_open, :rb_file_open
   end
 
-  ruby_version_is "1.9" do
-    describe "rb_file_open_str" do
-      it_behaves_like :rb_file_open, :rb_file_open_str
+  describe "rb_file_open_str" do
+    it_behaves_like :rb_file_open, :rb_file_open_str
+  end
+
+  describe "rb_file_open_str" do
+    it "calls #to_path to convert on object to a path" do
+      path = mock("rb_file_open_str to_path")
+      path.should_receive(:to_path).and_return(@name)
+      @s.rb_file_open_str(path, "w")
     end
 
-    describe "rb_file_open_str" do
-      it "calls #to_path to convert on object to a path" do
-        path = mock("rb_file_open_str to_path")
-        path.should_receive(:to_path).and_return(@name)
-        @s.rb_file_open_str(path, "w")
-      end
+    it "calls #to_str to convert an object to a path if #to_path isn't defined" do
+      path = mock("rb_file_open_str to_str")
+      path.should_receive(:to_str).and_return(@name)
+      @s.rb_file_open_str(path, "w")
+    end
+  end
 
-      it "calls #to_str to convert an object to a path if #to_path isn't defined" do
-        path = mock("rb_file_open_str to_str")
-        path.should_receive(:to_str).and_return(@name)
-        @s.rb_file_open_str(path, "w")
-      end
+  describe "FilePathValue" do
+    it "returns a String argument unchanged" do
+      obj = "path"
+      @s.FilePathValue(obj).should eql(obj)
     end
 
-    describe "FilePathValue" do
-      it "returns a String argument unchanged" do
-        obj = "path"
-        @s.FilePathValue(obj).should eql(obj)
-      end
+    it "does not call #to_str on a String" do
+      obj = "path"
+      obj.should_not_receive(:to_str)
+      @s.FilePathValue(obj).should eql(obj)
+    end
 
-      it "does not call #to_str on a String" do
-        obj = "path"
-        obj.should_not_receive(:to_str)
-        @s.FilePathValue(obj).should eql(obj)
-      end
+    it "calls #to_path to convert an object to a String" do
+      obj = mock("FilePathValue to_path")
+      obj.should_receive(:to_path).and_return("path")
+      @s.FilePathValue(obj).should == "path"
+    end
 
-      it "calls #to_path to convert an object to a String" do
-        obj = mock("FilePathValue to_path")
-        obj.should_receive(:to_path).and_return("path")
-        @s.FilePathValue(obj).should == "path"
-      end
-
-      it "calls #to_str to convert an object to a String if #to_path isn't defined" do
-        obj = mock("FilePathValue to_str")
-        obj.should_receive(:to_str).and_return("path")
-        @s.FilePathValue(obj).should == "path"
-      end
+    it "calls #to_str to convert an object to a String if #to_path isn't defined" do
+      obj = mock("FilePathValue to_str")
+      obj.should_receive(:to_str).and_return("path")
+      @s.FilePathValue(obj).should == "path"
     end
   end
 end

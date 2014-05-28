@@ -41,5 +41,3 @@ describe "The unless expression" do
     unless false then 'foo'; else 'bar'; end.should == 'foo'
   end
 end
-
-language_version __FILE__, "unless"

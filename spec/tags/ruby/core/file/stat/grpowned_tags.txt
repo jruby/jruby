@@ -1,1 +1,2 @@
 windows:File::Stat#grpowned? returns false if the file exist
+fails:File::Stat#grpowned? takes non primary groups into account

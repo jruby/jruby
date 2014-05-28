@@ -33,19 +33,7 @@ describe "Kernel.block_given?" do
 end
 
 describe "self.send(:block_given?)" do
-  ruby_version_is ""..."1.9" do
-    it "always returns false" do
-      KernelSpecs::SelfBlockGiven.accept_block {}.should == false
-      KernelSpecs::SelfBlockGiven.accept_block_as_argument {}.should == false
-      KernelSpecs::SelfBlockGiven.accept_block.should == false
-      KernelSpecs::SelfBlockGiven.accept_block_as_argument.should == false
-      KernelSpecs::SelfBlockGiven.defined_block {}.should == false
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it_behaves_like :kernel_block_given, :block_given?, KernelSpecs::SelfBlockGiven
-  end
+  it_behaves_like :kernel_block_given, :block_given?, KernelSpecs::SelfBlockGiven
 end
 
 describe "Kernel.block_given?" do

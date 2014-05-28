@@ -12,6 +12,21 @@ describe "String#split with String" do
     $KCODE = @kcode
   end
 
+  with_feature :encoding do
+    it "throws an ArgumentError if the pattern is not a valid string" do
+      str = 'проверка'
+      broken_str = 'проверка'
+      broken_str.force_encoding('binary')
+      broken_str.chop!
+      broken_str.force_encoding('utf-8')
+      lambda { str.split(broken_str) }.should raise_error(ArgumentError)
+    end
+
+    it "splits on multibyte characters" do
+      "ありがりがとう".split("が").should == ["あり", "り", "とう"]
+    end
+  end
+
   it "returns an array of substrings based on splitting on the given string" do
     "mellow yellow".split("ello").should == ["m", "w y", "w"]
   end
@@ -119,11 +134,11 @@ describe "String#split with String" do
       ["", ".", " "].each do |pat|
         [-1, 0, 1, 2].each do |limit|
           StringSpecs::MyString.new(str).split(pat, limit).each do |x|
-            x.should be_kind_of(StringSpecs::MyString)
+            x.should be_an_instance_of(StringSpecs::MyString)
           end
 
           str.split(StringSpecs::MyString.new(pat), limit).each do |x|
-            x.should be_kind_of(String)
+            x.should be_an_instance_of(String)
           end
         end
       end
@@ -252,17 +267,6 @@ describe "String#split with Regexp" do
     ary.should == ["こ", "に", "ち", "わ"]
   end
 
-  ruby_version_is ""..."1.9" do
-    it "uses $KCODE when splitting invalid characters" do
-      str = [129, 0].pack('C*')
-
-      $KCODE = "SJIS"
-      ary = str.split(//)
-      ary.size.should == 1
-      ary.should == [str]
-    end
-  end
-
   it "respects the encoding of the regexp when splitting between characters" do
     str = "\303\202"
 
@@ -312,7 +316,7 @@ describe "String#split with Regexp" do
       [//, /:/, /\s+/].each do |pat|
         [-1, 0, 1, 2].each do |limit|
           StringSpecs::MyString.new(str).split(pat, limit).each do |x|
-            x.should be_kind_of(StringSpecs::MyString)
+            x.should be_an_instance_of(StringSpecs::MyString)
           end
         end
       end
@@ -361,19 +365,22 @@ describe "String#split with Regexp" do
     end
   end
 
-  ruby_version_is "1.9" do
-    it "retains the encoding of the source string" do
-      ary = "а б в".split
-      encodings = ary.map { |s| s.encoding }
-      encodings.should == [Encoding::UTF_8, Encoding::UTF_8, Encoding::UTF_8]
-    end
+  it "retains the encoding of the source string" do
+    ary = "а б в".split
+    encodings = ary.map { |s| s.encoding }
+    encodings.should == [Encoding::UTF_8, Encoding::UTF_8, Encoding::UTF_8]
+  end
 
-    it "returns an ArgumentError if an invalid UTF-8 string is supplied" do
-      broken_str = 'проверка' # in russian, means "test"
-      broken_str.force_encoding('binary')
-      broken_str.chop!
-      broken_str.force_encoding('utf-8')
-      lambda{ broken_str.split(/\r\n|\r|\n/) }.should raise_error(ArgumentError)
-    end
+
+  it "splits a string on each character for a multibyte encoding and empty split" do
+    "That's why eﬃciency could not be helped".split("").size.should == 39
+  end
+
+  it "returns an ArgumentError if an invalid UTF-8 string is supplied" do
+    broken_str = 'проверка' # in russian, means "test"
+    broken_str.force_encoding('binary')
+    broken_str.chop!
+    broken_str.force_encoding('utf-8')
+    lambda{ broken_str.split(/\r\n|\r|\n/) }.should raise_error(ArgumentError)
   end
 end

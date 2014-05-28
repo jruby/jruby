@@ -1,0 +1,2 @@
+fails:Enumerator::Lazy#select sets nil to size
+fails:Enumerator::Lazy#select on a nested Lazy sets nil to size

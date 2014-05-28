@@ -10,32 +10,35 @@ describe "Time#_dump" do
     @s = @t.send(:_dump)
   end
 
-  ruby_bug("http://redmine.ruby-lang.org/issues/show/627", "1.8.7") do
-    it "preserves the GMT flag" do
-      @t.gmt?.should == true
-      dump = @t.send(:_dump).unpack("VV").first
-      ((dump >> 30) & 0x1).should == 1
+  it "is a private method" do
+    Time.should have_private_instance_method(:_dump, false)
+  end
 
-      @local.gmt?.should == false
-      dump = @local.send(:_dump).unpack("VV").first
-      ((dump >> 30) & 0x1).should == 0
-    end
+  # http://redmine.ruby-lang.org/issues/show/627
+  it "preserves the GMT flag" do
+    @t.gmt?.should == true
+    dump = @t.send(:_dump).unpack("VV").first
+    ((dump >> 30) & 0x1).should == 1
 
-    it "dumps a Time object to a bytestring" do
-      @s.should be_kind_of(String)
-      @s.should == [3222863947, 2235564032].pack("VV")
-    end
+    @local.gmt?.should == false
+    dump = @local.send(:_dump).unpack("VV").first
+    ((dump >> 30) & 0x1).should == 0
+  end
 
-    it "dumps an array with a date as first element" do
-      high =                1 << 31 |
-            (@t.gmt? ? 1 : 0) << 30 |
-             (@t.year - 1900) << 14 |
-                (@t.mon  - 1) << 10 |
-                       @t.mday << 5 |
-                            @t.hour
+  it "dumps a Time object to a bytestring" do
+    @s.should be_an_instance_of(String)
+    @s.should == [3222863947, 2235564032].pack("VV")
+  end
 
-      high.should == @s.unpack("VV").first
-    end
+  it "dumps an array with a date as first element" do
+    high =                1 << 31 |
+          (@t.gmt? ? 1 : 0) << 30 |
+           (@t.year - 1900) << 14 |
+              (@t.mon  - 1) << 10 |
+                     @t.mday << 5 |
+                          @t.hour
+
+    high.should == @s.unpack("VV").first
   end
 
   it "dumps an array with a time as second element" do

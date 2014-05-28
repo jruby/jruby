@@ -38,12 +38,6 @@ describe "Kernel#instance_variable_get" do
     obj.stub!(:to_str).and_return("test")
     lambda { @obj.instance_variable_get(obj) }.should raise_error(NameError)
   end
-
-  it "returns nil when passed just '@'" do
-    obj = mock("to_str")
-    obj.stub!(:to_str).and_return('@')
-    @obj.instance_variable_get(obj).should be_nil
-  end
 end
 
 describe "Kernel#instance_variable_get when passed Symbol" do
@@ -56,12 +50,16 @@ describe "Kernel#instance_variable_get when passed Symbol" do
     @obj.instance_variable_get(:@test).should == :test
   end
 
+  it "raises a NameError when passed :@ as an instance variable name" do
+    lambda { @obj.instance_variable_get(:"@") }.should raise_error(NameError)
+  end
+
   it "raises a NameError when the passed Symbol does not start with an '@'" do
     lambda { @obj.instance_variable_get(:test) }.should raise_error(NameError)
   end
 
-  it "returns nil when passed just '@'" do
-    @obj.instance_variable_get(:"@").should be_nil
+  it "raises a NameError when the passed Symbol is an invalid instance variable name" do
+    lambda { @obj.instance_variable_get(:"@0") }.should raise_error(NameError)
   end
 end
 
@@ -79,8 +77,12 @@ describe "Kernel#instance_variable_get when passed String" do
     lambda { @obj.instance_variable_get("test") }.should raise_error(NameError)
   end
 
-  it "returns nil when passed just '@'" do
-    @obj.instance_variable_get("@").should be_nil
+  it "raises a NameError when the passed String is an invalid instance variable name" do
+    lambda { @obj.instance_variable_get("@0") }.should raise_error(NameError)
+  end
+
+  it "raises a NameError when passed '@' as an instance variable name" do
+    lambda { @obj.instance_variable_get("@") }.should raise_error(NameError)
   end
 end
 
@@ -90,39 +92,8 @@ describe "Kernel#instance_variable_get when passed Fixnum" do
     @obj.instance_variable_set("@test", :test)
   end
 
-  ruby_version_is "" ... "1.9" do
-    deviates_on :rubinius do
-      it "always raises an ArgumentError" do
-        lambda { @obj.instance_variable_get(0) }.should raise_error(ArgumentError)
-        lambda { @obj.instance_variable_get(10) }.should raise_error(ArgumentError)
-        lambda { @obj.instance_variable_get(100) }.should raise_error(ArgumentError)
-        lambda { @obj.instance_variable_get(-100) }.should raise_error(ArgumentError)
-      end
-    end
-
-    not_compliant_on :rubinius do
-      it "tries to convert the passed Integer to a Symbol and returns the instance variable that is referred by the Symbol" do
-        @obj.instance_variable_get(:@test.to_i).should == :test
-      end
-
-      it "outputs a warning" do
-        lambda { @obj.instance_variable_get(:@test.to_i) }.should complain(/#{"do not use Fixnums as Symbols"}/)
-      end
-
-      it "raises an ArgumentError when the passed Fixnum can't be converted to a Symbol" do
-        lambda { @obj.instance_variable_get(-10) }.should raise_error(ArgumentError)
-      end
-
-      it "raises a NameError when the Symbol does not start with an '@'" do
-        lambda { @obj.instance_variable_get(:test.to_i) }.should raise_error(NameError)
-      end
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a TypeError" do
-      lambda { @obj.instance_variable_get(10) }.should raise_error(TypeError)
-      lambda { @obj.instance_variable_get(-10) }.should raise_error(TypeError)
-    end
+  it "raises a TypeError" do
+    lambda { @obj.instance_variable_get(10) }.should raise_error(TypeError)
+    lambda { @obj.instance_variable_get(-10) }.should raise_error(TypeError)
   end
 end

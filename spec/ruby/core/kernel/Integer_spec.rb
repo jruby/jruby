@@ -1,6 +1,5 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
-require "rational"
 
 describe :kernel_integer, :shared => true do
   it "returns a Bignum for a Bignum" do
@@ -18,16 +17,8 @@ describe :kernel_integer, :shared => true do
     Integer(obj).should == "1"
   end
 
-  ruby_version_is "1.9" do
-    it "raises a TypeError when passed nil" do
-      lambda { Integer(nil) }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is ""..."1.9" do
-    it "returns 0 when passed nil" do
-      Integer(nil).should == 0
-    end
+  it "raises a TypeError when passed nil" do
+    lambda { Integer(nil) }.should raise_error(TypeError)
   end
 
   it "returns a Fixnum or Bignum object" do
@@ -64,13 +55,6 @@ describe :kernel_integer, :shared => true do
     obj.should_receive(:to_int).and_return(nil)
     obj.should_receive(:to_i).and_return(1)
     Integer(obj).should == 1
-  end
-
-  it "uncritically return the value of to_int even if it is not an Integer" do
-    obj = mock("object")
-    obj.should_receive(:to_int).and_return("1")
-    obj.should_not_receive(:to_i)
-    Integer(obj).should == "1"
   end
 
   it "raises a TypeError if to_i returns a value that is not an Integer" do
@@ -119,11 +103,13 @@ describe "Integer() given a String", :shared => true do
   it "ignores leading whitespace" do
     Integer(" 1").should == 1
     Integer("   1").should == 1
+    Integer("\t\n1").should == 1
   end
 
   it "ignores trailing whitespace" do
     Integer("1 ").should == 1
     Integer("1   ").should == 1
+    Integer("1\t\n").should == 1
   end
 
   it "raises an ArgumentError if there are leading _s" do
@@ -290,11 +276,13 @@ describe "Integer() given a String and base", :shared => true do
   it "ignores leading whitespace" do
     Integer(" 16", 16).should == 22
     Integer("   16", 16).should == 22
+    Integer("\t\n16", 16).should == 22
   end
 
   it "ignores trailing whitespace" do
     Integer("16 ", 16).should == 22
     Integer("16   ", 16).should == 22
+    Integer("16\t\n", 16).should == 22
   end
 
   it "raises an ArgumentError if there are leading _s" do
@@ -500,12 +488,190 @@ describe "Integer() given a String and base", :shared => true do
   end
 end
 
+describe :kernel_Integer, :shared => true do
+  it "raises an ArgumentError when the String contains digits out of range of radix 2" do
+    str = "23456789abcdefghijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 2) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 3" do
+    str = "3456789abcdefghijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 3) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 4" do
+    str = "456789abcdefghijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 4) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 5" do
+    str = "56789abcdefghijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 5) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 6" do
+    str = "6789abcdefghijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 6) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 7" do
+    str = "789abcdefghijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 7) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 8" do
+    str = "89abcdefghijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 8) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 9" do
+    str = "9abcdefghijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 9) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 10" do
+    str = "abcdefghijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 10) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 11" do
+    str = "bcdefghijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 11) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 12" do
+    str = "cdefghijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 12) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 13" do
+    str = "defghijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 13) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 14" do
+    str = "efghijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 14) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 15" do
+    str = "fghijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 15) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 16" do
+    str = "ghijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 16) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 17" do
+    str = "hijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 17) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 18" do
+    str = "ijklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 18) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 19" do
+    str = "jklmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 19) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 20" do
+    str = "klmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 20) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 21" do
+    str = "lmnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 21) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 22" do
+    str = "mnopqrstuvwxyz"
+    lambda { @object.send(@method, str, 22) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 23" do
+    str = "nopqrstuvwxyz"
+    lambda { @object.send(@method, str, 23) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 24" do
+    str = "opqrstuvwxyz"
+    lambda { @object.send(@method, str, 24) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 25" do
+    str = "pqrstuvwxyz"
+    lambda { @object.send(@method, str, 25) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 26" do
+    str = "qrstuvwxyz"
+    lambda { @object.send(@method, str, 26) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 27" do
+    str = "rstuvwxyz"
+    lambda { @object.send(@method, str, 27) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 28" do
+    str = "stuvwxyz"
+    lambda { @object.send(@method, str, 28) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 29" do
+    str = "tuvwxyz"
+    lambda { @object.send(@method, str, 29) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 30" do
+    str = "uvwxyz"
+    lambda { @object.send(@method, str, 30) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 31" do
+    str = "vwxyz"
+    lambda { @object.send(@method, str, 31) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 32" do
+    str = "wxyz"
+    lambda { @object.send(@method, str, 32) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 33" do
+    str = "xyz"
+    lambda { @object.send(@method, str, 33) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 34" do
+    str = "yz"
+    lambda { @object.send(@method, str, 34) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 35" do
+    str = "z"
+    lambda { @object.send(@method, str, 35) }.should raise_error(ArgumentError)
+  end
+
+  it "raises an ArgumentError when the String contains digits out of range of radix 36" do
+    lambda { @object.send(@method, "{", 36) }.should raise_error(ArgumentError)
+  end
+end
+
 describe "Kernel.Integer" do
+  it_behaves_like :kernel_Integer, :Integer_method, KernelSpecs
+
+  # TODO: fix these specs
   it_behaves_like :kernel_integer, :Integer, Kernel
   it_behaves_like "Integer() given a String", :Integer
-  ruby_version_is "1.9" do
-    it_behaves_like "Integer() given a String and base", :Integer
-  end
+
+  it_behaves_like "Integer() given a String and base", :Integer
 
   it "is a public method" do
     Kernel.Integer(10).should == 10
@@ -513,11 +679,13 @@ describe "Kernel.Integer" do
 end
 
 describe "Kernel#Integer" do
+  it_behaves_like :kernel_Integer, :Integer_function, KernelSpecs
+
+  # TODO: fix these specs
   it_behaves_like :kernel_integer, :Integer, Object.new
   it_behaves_like "Integer() given a String", :Integer
-  ruby_version_is "1.9" do
-    it_behaves_like "Integer() given a String and base", :Integer
-  end
+
+  it_behaves_like "Integer() given a String and base", :Integer
 
   it "is a private method" do
     Kernel.should have_private_instance_method(:Integer)

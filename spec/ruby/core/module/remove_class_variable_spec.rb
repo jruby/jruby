@@ -38,15 +38,7 @@ describe "Module#remove_class_variable" do
     lambda { ModuleSpecs::MVars.send(:remove_class_variable, :@@nonexisting_class_variable) }.should raise_error(NameError)
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "is private" do
-      Module.should have_private_instance_method(:remove_class_variable)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "is public" do
-      Module.should_not have_private_instance_method(:remove_class_variable)
-    end
+  it "is public" do
+    Module.should_not have_private_instance_method(:remove_class_variable)
   end
 end

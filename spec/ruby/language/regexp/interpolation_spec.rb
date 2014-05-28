@@ -3,7 +3,7 @@ require File.expand_path('../../fixtures/classes', __FILE__)
 
 describe "Regexps with interpolation" do
 
-  it "allow interpolation of strings" do
+  it "allows interpolation of strings" do
     str = "foo|bar"
     /#{str}/.should == /foo|bar/
   end

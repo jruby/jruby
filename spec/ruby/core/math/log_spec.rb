@@ -21,43 +21,26 @@ describe "Math.log" do
     end
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises an ArgumentError if the argument cannot be coerced with Float()" do
-      lambda { Math.log("test") }.should raise_error(ArgumentError)
-    end
-
-    it "accepts numerical values as string" do
-      Math.log("10").should be_close( 2.30258509299405, TOLERANCE)
-      Math.log("10e15").should be_close(36.8413614879047, TOLERANCE)
-    end
-    
-    it "raises Errno::EDOM given NaN" do
-      lambda { Math.log(nan_value) }.should raise_error(Errno::EDOM)
-    end
+  it "raises a TypeError if the argument cannot be coerced with Float()" do
+    lambda { Math.log("test") }.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a TypeError if the argument cannot be coerced with Float()" do
-      lambda { Math.log("test") }.should raise_error(TypeError)
-    end
+  it "raises a TypeError for numerical values passed as string" do
+    lambda { Math.log("10") }.should raise_error(TypeError)
+  end
 
-    it "raises a TypeError for numerical values passed as string" do
-      lambda { Math.log("10") }.should raise_error(TypeError)
-    end
+  it "accepts a second argument for the base" do
+    Math.log(9, 3).should be_close(2, TOLERANCE)
+    Math.log(8, 1.4142135623730951).should be_close(6, TOLERANCE)
+  end
 
-    it "accepts a second argument for the base" do
-      Math.log(9, 3).should be_close(2, TOLERANCE)
-      Math.log(8, 1.4142135623730951).should be_close(6, TOLERANCE)
-    end
+  it "raises a TypeError when the numerical base cannot be coerced to a float" do
+    lambda { Math.log(10, "2") }.should raise_error(TypeError)
+    lambda { Math.log(10, nil) }.should raise_error(TypeError)
+  end
 
-    it "raises a TypeError when the numerical base cannot be coerced to a float" do
-      lambda { Math.log(10, "2") }.should raise_error(TypeError)
-      lambda { Math.log(10, nil) }.should raise_error(TypeError)
-    end
-
-    it "returns NaN given NaN" do
-      Math.log(nan_value).nan?.should be_true
-    end
+  it "returns NaN given NaN" do
+    Math.log(nan_value).nan?.should be_true
   end
 
   it "raises a TypeError if the argument is nil" do

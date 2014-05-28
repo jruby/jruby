@@ -1,0 +1,1 @@
+fails:Enumerator#rewind clears a pending #feed value

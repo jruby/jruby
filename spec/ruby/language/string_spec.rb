@@ -37,12 +37,12 @@ describe "Ruby character strings" do
     "#@@ip".should == 'xxx'
   end
 
-  it "allow underscore as part of a variable name in a simple interpolation" do
+  it "allows underscore as part of a variable name in a simple interpolation" do
     @my_ip = 'xxx'
     "#@my_ip".should == 'xxx'
   end
 
-  it "have characters [.(=?!# end simple # interpolation" do
+  it "has characters [.(=?!# end simple # interpolation" do
     "#@ip[".should == 'xxx['
     "#@ip.".should == 'xxx.'
     "#@ip(".should == 'xxx('
@@ -65,22 +65,20 @@ describe "Ruby character strings" do
     "#$ip".tainted?.should be_true
   end
 
-  ruby_version_is "1.9" do
-    it "untrusts the result of interpolation when an interpolated value is untrusted" do
-      "#{"".untrust}".untrusted?.should be_true
+  it "untrusts the result of interpolation when an interpolated value is untrusted" do
+    "#{"".untrust}".untrusted?.should be_true
 
-      @ip.untrust
-      "#@ip".untrusted?.should be_true
+    @ip.untrust
+    "#@ip".untrusted?.should be_true
 
-      @@ip.untrust
-      "#@@ip".untrusted?.should be_true
+    @@ip.untrust
+    "#@@ip".untrusted?.should be_true
 
-      $ip.untrust
-      "#$ip".untrusted?.should be_true
-    end
+    $ip.untrust
+    "#$ip".untrusted?.should be_true
   end
 
-  it "allow using non-alnum characters as string delimiters" do
+  it "allows using non-alnum characters as string delimiters" do
     %(hey #{@ip}).should == "hey xxx"
     %[hey #{@ip}].should == "hey xxx"
     %{hey #{@ip}}.should == "hey xxx"
@@ -133,7 +131,7 @@ describe "Ruby character strings" do
     '\t\n\r\f\b\a\e =b\030'.should == "\\t\\n\\r\\f\\b\\a\\e =b\\030"
   end
 
-  it "allow HEREDOC with <<identifier, interpolated" do
+  it "allows HEREDOC with <<identifier, interpolated" do
     s = <<HERE
 foo bar#{@ip}
 HERE
@@ -147,14 +145,14 @@ HERE
     s.should == "foo barxxx\n"
   end
 
-  it "allow HEREDOC with <<'identifier', no interpolation" do
+  it "allows HEREDOC with <<'identifier', no interpolation" do
     s = <<'HERE'
 foo bar#{@ip}
 HERE
     s.should == 'foo bar#{@ip}' + "\n"
   end
 
-  it "allow HEREDOC with <<-identifier, allowing to indent identifier, interpolated" do
+  it "allows HEREDOC with <<-identifier, allowing to indent identifier, interpolated" do
     s = <<-HERE
     foo bar#{@ip}
     HERE
@@ -170,7 +168,7 @@ HERE
     s.should == "    foo barxxx\n"
   end
 
-  it "allow HEREDOC with <<-'identifier', allowing to indent identifier, no interpolation" do
+  it "allows HEREDOC with <<-'identifier', allowing to indent identifier, no interpolation" do
     s = <<-'HERE'
     foo bar#{@ip}
     HERE
@@ -178,14 +176,14 @@ HERE
     s.should == '    foo bar#{@ip}' + "\n"
   end
 
-  it "call #to_s when the object is not a String" do
+  it "calls #to_s when the object is not a String" do
     obj = mock('to_s')
     obj.stub!(:to_s).and_return('42')
 
     "#{obj}".should == '42'
   end
 
-  it "call #to_s as a private method" do
+  it "calls #to_s as a private method" do
     obj = mock('to_s')
     obj.stub!(:to_s).and_return('42')
 
@@ -209,61 +207,59 @@ HERE
     "#{obj}".should be_an_instance_of(String)
   end
 
-  it "allow a dynamic string to parse a nested do...end block as an argument to a call without parens, interpolated" do
+  it "allows a dynamic string to parse a nested do...end block as an argument to a call without parens, interpolated" do
     s = eval 'eval "#{proc do; 1; end.call}"'
     s.should == 1
   end
 
-  ruby_version_is '1.9' do
-    it "are produced from character shortcuts" do
-      ?z.should == 'z'
+  it "are produced from character shortcuts" do
+    ?z.should == 'z'
+  end
+
+  it "are produced from control character shortcuts" do
+    # Control-Z
+    ?\C-z.should == "\x1A"
+
+    # Meta-Z
+    ?\M-z.should == "\xFA"
+
+    # Meta-Control-Z
+    ?\M-\C-z.should == "\x9A"
+  end
+
+  describe "Unicode escaping" do
+    it "can be done with \\u and four hex digits" do
+      [ ["\u0000", 0x0000],
+        ["\u2020", 0x2020]
+      ].should be_computed_by(:ord)
     end
 
-    it "are produced from control character shortcuts" do
-      # Control-Z
-      ?\C-z.should == "\x1A"
-
-      # Meta-Z
-      ?\M-z.should == "\xFA"
-
-      # Meta-Control-Z
-      ?\M-\C-z.should == "\x9A"
+    it "can be done with \\u{} and one to six hex digits" do
+      [ ["\u{a}", 0xa],
+        ["\u{ab}", 0xab],
+        ["\u{abc}", 0xabc],
+        ["\u{1abc}", 0x1abc],
+        ["\u{12abc}", 0x12abc],
+        ["\u{100000}", 0x100000]
+      ].should be_computed_by(:ord)
     end
 
-    describe "Unicode escaping" do
-      it "can be done with \\u and four hex digits" do
-        [ ["\u0000", 0x0000],
-          ["\u2020", 0x2020]
-        ].should be_computed_by(:ord)
+    # TODO: spec other source encodings
+    describe "with US-ASCII source encoding" do
+      it "produces an ASCII string when escaping ASCII characters via \\u" do
+        "\u0000".encoding.should == Encoding::US_ASCII
       end
 
-      it "can be done with \\u{} and one to six hex digits" do
-        [ ["\u{a}", 0xa],
-          ["\u{ab}", 0xab],
-          ["\u{abc}", 0xabc],
-          ["\u{1abc}", 0x1abc],
-          ["\u{12abc}", 0x12abc],
-          ["\u{100000}", 0x100000]
-        ].should be_computed_by(:ord)
+      it "produces an ASCII string when escaping ASCII characters via \\u{}" do
+        "\u{0000}".encoding.should == Encoding::US_ASCII
       end
 
-      # TODO: spec other source encodings
-      describe "with US-ASCII source encoding" do
-        it "produces an ASCII string when escaping ASCII characters via \\u" do
-          "\u0000".encoding.should == Encoding::US_ASCII
-        end
+      it "produces a UTF-8-encoded string when escaping non-ASCII characters via \\u" do
+        "\u1234".encoding.should == Encoding::UTF_8
+      end
 
-        it "produces an ASCII string when escaping ASCII characters via \\u{}" do
-          "\u{0000}".encoding.should == Encoding::US_ASCII
-        end
-
-        it "produces a UTF-8-encoded string when escaping non-ASCII characters via \\u" do
-          "\u1234".encoding.should == Encoding::UTF_8
-        end
-
-        it "produces a UTF-8-encoded string when escaping non-ASCII characters via \\u{}" do
-          "\u{1234}".encoding.should == Encoding::UTF_8
-        end
+      it "produces a UTF-8-encoded string when escaping non-ASCII characters via \\u{}" do
+        "\u{1234}".encoding.should == Encoding::UTF_8
       end
     end
   end

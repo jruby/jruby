@@ -36,54 +36,56 @@ describe :array_inspect, :shared => true do
     ["str".taint].send(@method).tainted?.should be_true
   end
 
-  ruby_version_is "1.9" do
-    it "untrusts the result if the Array is untrusted" do
-      [1, 2].untrust.send(@method).untrusted?.should be_true
-    end
-
-    it "does not untrust the result if the Array is untrusted but empty" do
-      [].untrust.send(@method).untrusted?.should be_false
-    end
-
-    it "untrusts the result if an element is untrusted" do
-      ["str".untrust].send(@method).untrusted?.should be_true
-    end
+  it "untrusts the result if the Array is untrusted" do
+    [1, 2].untrust.send(@method).untrusted?.should be_true
   end
 
-  ruby_version_is "1.9" do
+  it "does not untrust the result if the Array is untrusted but empty" do
+    [].untrust.send(@method).untrusted?.should be_false
+  end
+
+  it "untrusts the result if an element is untrusted" do
+    ["str".untrust].send(@method).untrusted?.should be_true
+  end
+
+  describe "with encoding" do
+    before :each do
+       @default_external_encoding = Encoding.default_external
+    end
+
+    after :each do
+      Encoding.default_external = @default_external_encoding
+    end
+
     it "returns a US-ASCII string for an empty Array" do
       [].send(@method).encoding.should == Encoding::US_ASCII
     end
 
-    it "copies the ASCII-compatible encoding of the result of inspecting the first element" do
-      euc_jp = mock("euc_jp")
-      euc_jp.should_receive(:inspect).and_return("euc_jp".encode!(Encoding::EUC_JP))
+    it "use the default external encoding if it is ascii compatible" do
+      Encoding.default_external = Encoding.find('UTF-8')
 
-      utf_8 = mock("utf_8")
-      utf_8.should_receive(:inspect).and_return("utf_8".encode!(Encoding::UTF_8))
+      utf8 = "utf8".encode("UTF-8")
+      jp   = "jp".encode("EUC-JP")
+      array = [jp, utf8]
 
-      result = [euc_jp, utf_8].send(@method)
-      result.encoding.should == Encoding::EUC_JP
-      result.should == "[euc_jp, utf_8]".encode(Encoding::EUC_JP)
+      array.inspect.encoding.name.should == "UTF-8"
     end
 
-    ruby_version_is "2.0" do
-      it "raises if inspected result is not default external encoding" do
-        utf_16be = mock("utf_16be")
-        utf_16be.should_receive(:inspect).and_return("utf_16be".encode!(Encoding::UTF_16BE))
+    it "use US-ASCII encoding if the default external encoding is not ascii compatible" do
+      Encoding.default_external = Encoding.find('UTF-32')
 
-        lambda { [utf_16be].send(@method) }.should raise_error(Encoding::CompatibilityError)
-      end
+      utf8 = "utf8".encode("UTF-8")
+      jp   = "jp".encode("EUC-JP")
+      array = [jp, utf8]
+
+      array.inspect.encoding.name.should == "US-ASCII"
     end
 
-    it "raises if inspecting two elements produces incompatible encodings" do
-      utf_8 = mock("utf_8")
-      utf_8.should_receive(:inspect).and_return("utf_8".encode!(Encoding::UTF_8))
-
+    it "raises if inspected result is not default external encoding" do
       utf_16be = mock("utf_16be")
       utf_16be.should_receive(:inspect).and_return("utf_16be".encode!(Encoding::UTF_16BE))
 
-      lambda { [utf_8, utf_16be].send(@method) }.should raise_error(Encoding::CompatibilityError)
+      lambda { [utf_16be].send(@method) }.should raise_error(Encoding::CompatibilityError)
     end
   end
 end

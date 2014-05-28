@@ -13,16 +13,8 @@ describe "Math.cosh" do
     Math.cosh(-2.99).should be_close(9.96798496414416, TOLERANCE)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises an ArgumentError if the argument cannot be coerced with Float()" do
-      lambda { Math.cosh("test") }.should raise_error(ArgumentError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a TypeError if the argument cannot be coerced with Float()" do
-      lambda { Math.cosh("test") }.should raise_error(TypeError)
-    end
+  it "raises a TypeError if the argument cannot be coerced with Float()" do
+    lambda { Math.cosh("test") }.should raise_error(TypeError)
   end
 
   it "returns NaN given NaN" do

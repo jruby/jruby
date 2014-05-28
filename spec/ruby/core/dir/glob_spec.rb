@@ -58,6 +58,15 @@ describe "Dir.glob" do
                %w!file_one.ext file_two.ext!
   end
 
+  it "calls #to_path to convert multiple patterns" do
+    pat1 = mock('file_one.ext')
+    pat1.should_receive(:to_path).and_return('file_one.ext')
+    pat2 = mock('file_two.ext')
+    pat2.should_receive(:to_path).and_return('file_two.ext')
+
+    Dir.glob([pat1, pat2]).should == %w[file_one.ext file_two.ext]
+  end
+
   it "matches both dot and non-dotfiles with '*' and option File::FNM_DOTMATCH" do
     Dir.glob('*', File::FNM_DOTMATCH).sort.should == DirSpecs.expected_paths
   end
@@ -119,6 +128,14 @@ describe "Dir.glob" do
   it "ignores non-dirs when traversing recursively" do
     touch "spec"
     Dir.glob("spec/**/*.rb").should == []
+  end
+
+  it "matches nothing when given an empty list of paths" do
+    Dir.glob('{}').should == []
+  end
+
+  it "handles infinite directory wildcards" do
+    Dir.glob('**/**/**').empty?.should == false
   end
 
   platform_is_not(:windows) do

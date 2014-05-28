@@ -42,29 +42,12 @@ describe "Array#[]=" do
     a.should == [1, 2, 3, "a", "b", "c", "d", 6]
   end
 
-  ruby_version_is '' ... '1.9' do
-    it "removes the section defined by [start,length] when set to nil" do
-      a = ['a', 'b', 'c', 'd', 'e']
-      a[1, 3] = nil
-      a.should == ["a", "e"]
-    end
-
-    it "is not confused by shift when removing elements with nil" do
-      a = [1,2,3]
-
-      a.shift
-      a[1,1] = nil
-
-      a.should == [2]
-    end
+  it "just sets the section defined by [start,length] to other even if other is nil" do
+    a = ['a', 'b', 'c', 'd', 'e']
+    a[1, 3] = nil
+    a.should == ["a", nil, "e"]
   end
-  ruby_version_is '1.9' do
-    it "just sets the section defined by [start,length] to other even if other is nil" do
-      a = ['a', 'b', 'c', 'd', 'e']
-      a[1, 3] = nil
-      a.should == ["a", nil, "e"]
-    end
-  end
+
   it "returns nil if the rhs is nil" do
     a = [1, 2, 3]
     (a[1, 3] = nil).should == nil
@@ -84,24 +67,16 @@ describe "Array#[]=" do
     a.should == [6, 5, 4, :a, :b, :c]
   end
 
-  ruby_version_is '' ... '1.9' do
-    it "removes the section defined by range when set to nil" do
-      a = [1, 2, 3, 4, 5]
-      a[0..1] = nil
-      a.should == [3, 4, 5]
-    end
-    it "just sets the section defined by range to nil when the rhs is [nil]." do
-      a = [1, 2, 3, 4, 5]
-      a[0..1] = [nil]
-      a.should == [nil, 3, 4, 5]
-    end
+  it "just sets the section defined by range to other even if other is nil" do
+    a = [1, 2, 3, 4, 5]
+    a[0..1] = nil
+    a.should == [nil, 3, 4, 5]
   end
-  ruby_version_is '1.9' do
-    it "just sets the section defined by range to other even if other is nil" do
-      a = [1, 2, 3, 4, 5]
-      a[0..1] = nil
-      a.should == [nil, 3, 4, 5]
-    end
+
+  it 'expands and nil-pads the array if section assigned by range is outside array boundaries' do
+    a = ['a']
+    a[3..4] = ['b', 'c']
+    a.should == ['a', nil, nil, 'b', 'c']
   end
 
   it "calls to_int on its start and length arguments" do
@@ -117,12 +92,10 @@ describe "Array#[]=" do
     a.should == [1, 2, -1]
   end
 
-  ruby_version_is '1.9' do
-    it "checks frozen before attempting to coerce arguments" do
-      a = [1,2,3,4].freeze
-      lambda {a[:foo] = 1}.should raise_error(RuntimeError)
-      lambda {a[:foo, :bar] = 1}.should raise_error(RuntimeError)
-    end
+  it "checks frozen before attempting to coerce arguments" do
+    a = [1,2,3,4].freeze
+    lambda {a[:foo] = 1}.should raise_error(RuntimeError)
+    lambda {a[:foo, :bar] = 1}.should raise_error(RuntimeError)
   end
 
   it "sets elements in the range arguments when passed ranges" do
@@ -179,29 +152,16 @@ describe "Array#[]=" do
     ary.should == [1, :a, :b, :c, 4, 3, 0, 2, 3]
   end
 
-  ruby_version_is '' ... '1.9' do
-    it "does nothing if the section defined by range is zero-width and the rhs is nil" do
-      ary = [1, 2, 3]
-      ary[1...1] = nil
-      ary.should == [1, 2, 3]
-    end
-    it "does nothing if the section defined by range has negative width and the rhs is nil" do
-      ary = [1, 2, 3]
-      ary[1..0] = nil
-      ary.should == [1, 2, 3]
-    end
+  it "just inserts nil if the section defined by range is zero-width and the rhs is nil" do
+    ary = [1, 2, 3]
+    ary[1...1] = nil
+    ary.should == [1, nil, 2, 3]
   end
-  ruby_version_is '1.9' do
-    it "just inserts nil if the section defined by range is zero-width and the rhs is nil" do
-      ary = [1, 2, 3]
-      ary[1...1] = nil
-      ary.should == [1, nil, 2, 3]
-    end
-    it "just inserts nil if the section defined by range has negative width and the rhs is nil" do
-      ary = [1, 2, 3]
-      ary[1..0] = nil
-      ary.should == [1, nil, 2, 3]
-    end
+
+  it "just inserts nil if the section defined by range has negative width and the rhs is nil" do
+    ary = [1, 2, 3]
+    ary[1..0] = nil
+    ary.should == [1, nil, 2, 3]
   end
 
   it "does nothing if the section defined by range is zero-width and the rhs is an empty array" do
@@ -276,16 +236,8 @@ describe "Array#[]=" do
     ary.should == [5, 6, 7]
   end
 
-  ruby_version_is '' ... '1.9' do
-    it "raises a TypeError on a frozen array" do
-      lambda { ArraySpecs.frozen_array[0, 0] = [] }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is '1.9' do
-    it "raises a RuntimeError on a frozen array" do
-      lambda { ArraySpecs.frozen_array[0, 0] = [] }.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError on a frozen array" do
+    lambda { ArraySpecs.frozen_array[0, 0] = [] }.should raise_error(RuntimeError)
   end
 end
 
@@ -332,35 +284,16 @@ describe "Array#[]= with [index, count]" do
     (a[2, 3] = [4, 5]).should == [4, 5]
   end
 
-  ruby_version_is '' ... '1.9' do
-    it "removes the section defined by [start,length] when set to nil" do
-      a = ['a', 'b', 'c', 'd', 'e']
-      a[1, 3] = nil
-      a.should == ["a", "e"]
-    end
-  end
-  ruby_version_is '1.9' do
-    it "just sets the section defined by [start,length] to nil even if the rhs is nil" do
-      a = ['a', 'b', 'c', 'd', 'e']
-      a[1, 3] = nil
-      a.should == ["a", nil, "e"]
-    end
+  it "just sets the section defined by [start,length] to nil even if the rhs is nil" do
+    a = ['a', 'b', 'c', 'd', 'e']
+    a[1, 3] = nil
+    a.should == ["a", nil, "e"]
   end
 
-  ruby_version_is '' ... '1.9' do
-    it "removes the section when set to nil if negative index within bounds and cnt > 0" do
-      a = ['a', 'b', 'c', 'd', 'e']
-      a[-3, 2] = nil
-      a.should == ["a", "b", "e"]
-    end
-  end
-
-  ruby_version_is '1.9' do
-    it "just sets the section defined by [start,length] to nil if negative index within bounds, cnt > 0 and the rhs is nil" do
-      a = ['a', 'b', 'c', 'd', 'e']
-      a[-3, 2] = nil
-      a.should == ["a", "b", nil, "e"]
-    end
+  it "just sets the section defined by [start,length] to nil if negative index within bounds, cnt > 0 and the rhs is nil" do
+    a = ['a', 'b', 'c', 'd', 'e']
+    a[-3, 2] = nil
+    a.should == ["a", "b", nil, "e"]
   end
 
   it "replaces the section defined by [start,length] to other" do
@@ -424,30 +357,16 @@ describe "Array#[]= with [m..n]" do
     (a[2..4] = [7, 8]).should == [7, 8]
   end
 
-  ruby_version_is '' ... '1.9' do
-    it "removes the section defined by range when set to nil" do
-      a = [1, 2, 3, 4, 5]
-      a[0..1] = nil
-      a.should == [3, 4, 5]
-    end
-    it "removes the section when set to nil if m and n < 0" do
-      a = [1, 2, 3, 4, 5]
-      a[-3..-2] = nil
-      a.should == [1, 2, 5]
-    end
+  it "just sets the section defined by range to nil even if the rhs is nil" do
+    a = [1, 2, 3, 4, 5]
+    a[0..1] = nil
+    a.should == [nil, 3, 4, 5]
   end
 
-  ruby_version_is '1.9' do
-    it "just sets the section defined by range to nil even if the rhs is nil" do
-      a = [1, 2, 3, 4, 5]
-      a[0..1] = nil
-      a.should == [nil, 3, 4, 5]
-    end
-    it "just sets the section defined by range to nil if m and n < 0 and the rhs is nil" do
-      a = [1, 2, 3, 4, 5]
-      a[-3..-2] = nil
-      a.should == [1, 2, nil, 5]
-    end
+  it "just sets the section defined by range to nil if m and n < 0 and the rhs is nil" do
+    a = [1, 2, 3, 4, 5]
+    a[-3..-2] = nil
+    a.should == [1, 2, nil, 5]
   end
 
   it "replaces the section defined by range" do

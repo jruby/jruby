@@ -13,6 +13,8 @@ describe "UnboundMethod#==" do
     @from_module = UnboundMethodSpecs::Methods.instance_method(:foo)
     @from_unbind = UnboundMethodSpecs::Methods.new.method(:foo).unbind
 
+    @with_block = UnboundMethodSpecs::Methods.instance_method(:with_block)
+
     @includee = UnboundMethodSpecs::Mod.instance_method(:from_mod)
     @includer = UnboundMethodSpecs::Methods.instance_method(:from_mod)
 
@@ -40,6 +42,7 @@ describe "UnboundMethod#==" do
     (@from_unbind == @from_unbind).should == true
     (@from_module == @from_unbind).should == true
     (@from_unbind == @from_module).should == true
+    (@with_block  == @with_block).should == true
   end
 
   it "returns true if either is an alias for the other" do

@@ -16,10 +16,7 @@ describe "Range#to_a" do
     (0xffff...0xfffd).to_a.should == []
   end
 
-  ruby_version_is "1.9" do
-    # This crashed on 1.9 prior to r24573
-    it "works with Ranges of Symbols" do
-      (:A..:z).to_a.size.should == 58
-    end
+  it "works with Ranges of Symbols" do
+    (:A..:z).to_a.size.should == 58
   end
 end

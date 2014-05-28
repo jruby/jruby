@@ -25,23 +25,21 @@ describe :complex_plus, :shared => true do
     end
   end
 
-  ruby_version_is "1.9" do
-    describe "passed Numeric which responds to #real? with true" do
-      it "coerces the passed argument to the type of the real part and adds the resulting elements" do
-        n = mock_numeric('n')
-        n.should_receive(:real?).and_return(true)
-        n.should_receive(:coerce).with(1).and_return([1, 4])
-        (Complex(1, 2) + n).should == Complex(5, 2)
-      end
+  describe "passed Numeric which responds to #real? with true" do
+    it "coerces the passed argument to the type of the real part and adds the resulting elements" do
+      n = mock_numeric('n')
+      n.should_receive(:real?).and_return(true)
+      n.should_receive(:coerce).with(1).and_return([1, 4])
+      (Complex(1, 2) + n).should == Complex(5, 2)
     end
+  end
 
-    describe "passed Numeric which responds to #real? with false" do
-      it "coerces the passed argument to Complex and adds the resulting elements" do
-        n = mock_numeric('n')
-        n.should_receive(:real?).and_return(false)
-        n.should_receive(:coerce).with(Complex(1, 2)).and_return([Complex(1, 2), Complex(3, 4)])
-        (Complex(1, 2) + n).should == Complex(4, 6)
-      end
+  describe "passed Numeric which responds to #real? with false" do
+    it "coerces the passed argument to Complex and adds the resulting elements" do
+      n = mock_numeric('n')
+      n.should_receive(:real?).and_return(false)
+      n.should_receive(:coerce).with(Complex(1, 2)).and_return([Complex(1, 2), Complex(3, 4)])
+      (Complex(1, 2) + n).should == Complex(4, 6)
     end
   end
 end

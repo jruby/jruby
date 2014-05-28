@@ -2,7 +2,11 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes.rb', __FILE__)
 
-language_version __FILE__, "match"
+describe :string_match_escaped_literal, :shared => true do
+  it "matches a literal Regexp that uses ASCII-only UTF-8 escape sequences" do
+    "a b".match(/([\u{20}-\u{7e}])/)[0].should == "a"
+  end
+end
 
 describe "String#=~" do
   it "behaves the same way as index() when given a regexp" do
@@ -36,6 +40,13 @@ describe "String#=~" do
     'hello' =~ /not/
     $~.should == nil
   end
+
+  with_feature :encoding do
+    it "returns the character index of a found match" do
+      ("こにちわ" =~ /に/).should == 1
+    end
+  end
+
 end
 
 describe "String#match" do
@@ -43,32 +54,48 @@ describe "String#match" do
     'hello'.match(/(.)\1/)[0].should == 'll'
   end
 
-  ruby_version_is "1.9" do
-    it_behaves_like :string_match_escaped_literal, :match
+  it_behaves_like :string_match_escaped_literal, :match
 
-    it "matches the pattern against self starting at an optional index" do
-      "hello".match(/(.+)/,2)[0].should == 'llo'
+  describe "with [pattern, position]" do
+    describe "when given a positive position" do
+      it "matches the pattern against self starting at an optional index" do
+        "01234".match(/(.).(.)/, 1).captures.should == ["1", "3"]
+      end
+
+      with_feature :encoding do
+        it "uses the start as a character offset" do
+          "零一二三四".match(/(.).(.)/, 1).captures.should == ["一", "三"]
+        end
+      end
     end
 
-    it "uses the start as a character offset" do
-      "hüllo".match(/(.+)/, 2)[0].should == 'llo'
+    describe "when given a negative position" do
+      it "matches the pattern against self starting at an optional index" do
+        "01234".match(/(.).(.)/, -4).captures.should == ["1", "3"]
+      end
+
+      with_feature :encoding do
+        it "uses the start as a character offset" do
+          "零一二三四".match(/(.).(.)/, -4).captures.should == ["一", "三"]
+        end
+      end
+    end
+  end
+
+  describe "when passed a block" do
+    it "yields the MatchData" do
+      "abc".match(/./) {|m| ScratchPad.record m }
+      ScratchPad.recorded.should be_kind_of(MatchData)
     end
 
-    describe "when passed a block" do
-      it "yields the MatchData" do
-        "abc".match(/./) {|m| ScratchPad.record m }
-        ScratchPad.recorded.should be_kind_of(MatchData)
-      end
+    it "returns the block result" do
+      "abc".match(/./) { :result }.should == :result
+    end
 
-      it "returns the block result" do
-        "abc".match(/./) { :result }.should == :result
-      end
-
-      it "does not yield if there is no match" do
-        ScratchPad.record []
-        "b".match(/a/) {|m| ScratchPad << m }
-        ScratchPad.recorded.should == []
-      end
+    it "does not yield if there is no match" do
+      ScratchPad.record []
+      "b".match(/a/) {|m| ScratchPad << m }
+      ScratchPad.recorded.should == []
     end
   end
 
@@ -109,5 +136,11 @@ describe "String#match" do
     'hello'.match(/X/)
     $~.should == nil
     Regexp.last_match.should == nil
+  end
+
+  it "calls match on the regular expression" do
+    regexp = /./
+    regexp.should_receive(:match).and_return(:foo)
+    'hello'.match(regexp).should == :foo
   end
 end

@@ -30,69 +30,37 @@ describe "Kernel.catch" do
     ScratchPad.recorded.should == :thrown_key
   end
 
-  ruby_version_is ""..."1.9" do
-    it "matches strings as symbols" do
-      catch "thrown_key" do
-        ScratchPad.record :catch_block
-        throw :thrown_key
-      end
-      ScratchPad.recorded.should == :catch_block
-    end
-
-    it "matches strings that are the same value" do
-      catch "thrown_key" do
-        ScratchPad.record :catch_block
-        throw "thrown_key"
-      end
-      ScratchPad.recorded.should == :catch_block
-    end
-
-    it "raises a TypeError if the argument is an Object" do
-      lambda { catch(Object.new) {} }.should raise_error(TypeError)
-    end
-
-    it "raises an ArgumentError if called without an argument" do
-      lambda { catch {} }.should raise_error(ArgumentError)
-    end
-
-    it "passes a symbol converted from the given string to its block" do
-      catch("thrown_key") { |tag| tag }.should == :thrown_key
-    end
+  it "raises an ArgumentError if a Symbol is thrown for a String catch value" do
+    lambda { catch("exit") { throw :exit } }.should raise_error(ArgumentError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises an ArgumentError if a Symbol is thrown for a String catch value" do
-      lambda { catch("exit") { throw :exit } }.should raise_error(ArgumentError)
-    end
+  it "raises an ArgumentError if a String with different identity is thrown" do
+    lambda { catch("exit") { throw "exit" } }.should raise_error(ArgumentError)
+  end
 
-    it "raises an ArgumentError if a String with different identity is thrown" do
-      lambda { catch("exit") { throw "exit" } }.should raise_error(ArgumentError)
+  it "catches a Symbol when thrown a matching Symbol" do
+    catch :thrown_key do
+      ScratchPad.record :catch_block
+      throw :thrown_key
     end
+    ScratchPad.recorded.should == :catch_block
+  end
 
-    it "catches a Symbol when thrown a matching Symbol" do
-      catch :thrown_key do
-        ScratchPad.record :catch_block
-        throw :thrown_key
-      end
-      ScratchPad.recorded.should == :catch_block
+  it "catches a String when thrown a String with the same identity" do
+    key = "thrown_key"
+    catch key do
+      ScratchPad.record :catch_block
+      throw key
     end
+    ScratchPad.recorded.should == :catch_block
+  end
 
-    it "catches a String when thrown a String with the same identity" do
-      key = "thrown_key"
-      catch key do
-        ScratchPad.record :catch_block
-        throw key
-      end
-      ScratchPad.recorded.should == :catch_block
-    end
+  it "accepts an object as an argument" do
+    catch(Object.new) { :catch_block }.should == :catch_block
+  end
 
-    it "accepts an object as an argument" do
-      catch(Object.new) { :catch_block }.should == :catch_block
-    end
-
-    it "yields an object when called without arguments" do
-      catch { |tag| tag }.should be_an_instance_of(Object)
-    end
+  it "yields an object when called without arguments" do
+    catch { |tag| tag }.should be_an_instance_of(Object)
   end
 
   it "can be used even in a method different from where throw is called" do

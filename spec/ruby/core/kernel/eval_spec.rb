@@ -16,6 +16,10 @@ describe "Kernel#eval" do
     eval("2 + 3").should == 5
   end
 
+  it "coerces an object to string" do
+    eval(EvalSpecs::CoercedObject.new).should == 5
+  end
+
   it "evaluates within the scope of the eval" do
     EvalSpecs::A::B.name.should == "EvalSpecs::A::B"
   end
@@ -63,37 +67,16 @@ describe "Kernel#eval" do
     eval('test = 10; eval("test")').should == 10
   end
 
-  ruby_version_is ""..."1.9" do
-    it "updates a local at script scope" do
-      code = fixture __FILE__, "eval_locals.rb"
-      ruby_exe(code).chomp.should == "2"
-    end
-
-    it "accepts a Proc object as a binding" do
-      x = 1
-      bind = proc {}
-
-      eval("x", bind).should == 1
-      eval("y = 2", bind)
-      eval("y", bind).should == 2
-
-      eval("z = 3")
-      eval("z", bind).should == 3
-    end
+  it "does not share locals across eval scopes" do
+    code = fixture __FILE__, "eval_locals.rb"
+    ruby_exe(code).chomp.should == "NameError"
   end
 
-  ruby_version_is "1.9" do
-    it "does not share locals across eval scopes" do
-      code = fixture __FILE__, "eval_locals.rb"
-      ruby_exe(code).chomp.should == "NameError"
-    end
+  it "doesn't accept a Proc object as a binding" do
+    x = 1
+    bind = proc {}
 
-    it "doesn't accept a Proc object as a binding" do
-      x = 1
-      bind = proc {}
-
-      lambda { eval("x", bind) }.should raise_error(TypeError)
-    end
+    lambda { eval("x", bind) }.should raise_error(TypeError)
   end
 
   it "does not make Proc locals visible to evaluated code" do
@@ -101,129 +84,55 @@ describe "Kernel#eval" do
     lambda { eval("inner", bind.binding) }.should raise_error(NameError)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "stores all locals of nested eval bindings in the first non-eval binding" do
-      non_eval = binding
-      eval1 = eval("binding", non_eval)
-      eval2 = eval("binding", eval1)
+  # This differs from the 1.8 example because 1.9 doesn't share scope across
+  # sibling evals
+  #
+  # REWRITE ME: This obscures the real behavior of where locals are stored
+  # in eval bindings.
+  it "allows a binding to be captured inside an eval" do
+    outer_binding = binding
+    level1 = eval("binding", outer_binding)
+    level2 = eval("binding", level1)
 
-      # Set locals an variables depths of nested eval bindings
-      eval("w = 1")
-      eval("x = 2", non_eval)
-      eval("y = 3", eval1)
-      eval("z = 4", eval2)
+    eval("x = 2", outer_binding)
+    eval("y = 3", level1)
 
-      # Now read them back and show that they're all accessible via
-      # the toplevel binding.
-      eval("w").should == 1
-      eval("x").should == 2
-      eval("y").should == 3
-      eval("z").should == 4
-    end
+    eval("w=1", outer_binding)
+    eval("w", outer_binding).should == 1
+    eval("w=1", level1).should == 1
+    eval("w", level1).should == 1
+    eval("w=1", level2).should == 1
+    eval("w", level2).should == 1
+
+    eval("x", outer_binding).should == 2
+    eval("x=2", level1)
+    eval("x", level1).should == 2
+    eval("x=2", level2)
+    eval("x", level2).should == 2
+
+    eval("y=3", outer_binding)
+    eval("y", outer_binding).should == 3
+    eval("y=3", level1)
+    eval("y", level1).should == 3
+    eval("y=3", level2)
+    eval("y", level2).should == 3
   end
 
-  ruby_version_is "1.9" do
-    # This differs from the 1.8 example because 1.9 doesn't share scope across
-    # sibling evals
-    #
-    # REWRITE ME: This obscures the real behavior of where locals are stored
-    # in eval bindings.
-    it "allows a binding to be captured inside an eval" do
-      outer_binding = binding
-      level1 = eval("binding", outer_binding)
-      level2 = eval("binding", level1)
+  it "uses the same scope for local variables when given the same binding" do
+    outer_binding = binding
 
-      eval("x = 2", outer_binding)
-      eval("y = 3", level1)
-
-      eval("w=1", outer_binding)
-      eval("w", outer_binding).should == 1
-      eval("w=1", level1).should == 1
-      eval("w", level1).should == 1
-      eval("w=1", level2).should == 1
-      eval("w", level2).should == 1
-
-      eval("x", outer_binding).should == 2
-      eval("x=2", level1)
-      eval("x", level1).should == 2
-      eval("x=2", level2)
-      eval("x", level2).should == 2
-
-      eval("y=3", outer_binding)
-      eval("y", outer_binding).should == 3
-      eval("y=3", level1)
-      eval("y", level1).should == 3
-      eval("y=3", level2)
-      eval("y", level2).should == 3
-    end
+    eval("if false; a = 1; end", outer_binding)
+    eval("a", outer_binding).should be_nil
   end
 
-  ruby_version_is ""..."1.9" do
-    it "allows a Proc invocation to terminate the eval binding chain on local creation" do
-      outer_binding = binding
-      proc_binding = eval("proc {binding}.call", outer_binding)
-      inner_binding = eval("proc {binding}.call", proc_binding)
-
-      eval("w = 1")
-
-      # The proc bindings can see eval locals set above them
-      eval("w", proc_binding).should == 1
-      eval("w", inner_binding).should == 1
-
-      # Show that creating the local stops at the proc because of the
-      # non-eval binding introduced.
-      eval("yy = 3", proc_binding)
-
-      lambda { eval("yy") }.should raise_error(NameError)
-      lambda { eval("yy", outer_binding) }.should raise_error(NameError)
-      eval("yy", proc_binding).should == 3
-
-      # Show that even though there is a non-eval binding, reading the
-      # local is still possible.
-      eval("yy", inner_binding).should == 3
-    end
-
-    it "can access normal locals in nested closures" do
-      outer_binding = binding
-      proc_binding = eval("proc {l = 5; binding}.call", outer_binding)
-      inner_binding = eval("proc {k = 6; binding}.call", proc_binding)
-
-      lambda { eval("l") }.should raise_error(NameError)
-      lambda { eval("l", outer_binding) }.should raise_error(NameError)
-      eval("l", proc_binding).should == 5
-      eval("l", inner_binding).should == 5
-
-      lambda { eval("k") }.should raise_error(NameError)
-      lambda { eval("k", outer_binding) }.should raise_error(NameError)
-      lambda { eval("k", proc_binding)  }.should raise_error(NameError)
-      eval("k", inner_binding).should == 6
-    end
+  it "allows creating a new class in a binding" do
+    bind = proc {}
+    eval("class A; end; A.name", bind.binding).should =~ /A$/
   end
 
-  ruby_version_is ""..."1.9" do
-    it "allows creating a new class in a binding" do
-      bind = proc {}
-      eval "class A; end", bind.binding
-      eval("A.name", bind.binding).should == "A"
-    end
-
-    it "allows creating a new class in a binding created by #eval" do
-      bind = eval "binding"
-      eval "class A; end", bind
-      eval("A.name").should == "A"
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "allows creating a new class in a binding" do
-      bind = proc {}
-      eval("class A; end; A.name", bind.binding).should =~ /A$/
-    end
-
-    it "allows creating a new class in a binding created by #eval" do
-      bind = eval "binding"
-      eval("class A; end; A.name", bind).should =~ /A$/
-    end
+  it "allows creating a new class in a binding created by #eval" do
+    bind = eval "binding"
+    eval("class A; end; A.name", bind).should =~ /A$/
   end
 
   it "includes file and line information in syntax error" do
@@ -231,7 +140,7 @@ describe "Kernel#eval" do
     lambda {
       eval('if true',TOPLEVEL_BINDING,expected)
     }.should raise_error(SyntaxError) { |e|
-      e.message.should =~ /^#{expected}:1:.+/
+      e.message.should =~ /#{expected}:1:.+/
     }
   end
 

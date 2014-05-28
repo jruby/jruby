@@ -21,21 +21,18 @@ describe "Kernel#instance_variable_set" do
     lambda { NoDog.new.instance_variable_set(:c, "cat") }.should raise_error(NameError)
   end
 
-  it "sets the value of the instance variable if argument is '@'" do
+  it "raises a NameError exception if the argument is an invalid instance variable name" do
+    class DigitDog; end
+    lambda { DigitDog.new.instance_variable_set(:"@0", "cat") }.should raise_error(NameError)
+  end
+
+  it "raises a NameError when the argument is '@'" do
     class DogAt; end
-    DogAt.new.instance_variable_set(:'@', "cat").should == "cat"
+    lambda { DogAt.new.instance_variable_set(:"@", "cat") }.should raise_error(NameError)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises an ArgumentError if the instance variable name is a Fixnum" do
-      lambda { "".instance_variable_set(1, 2) }.should raise_error(ArgumentError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a TypeError if the instance variable name is a Fixnum" do
-      lambda { "".instance_variable_set(1, 2) }.should raise_error(TypeError)
-    end
+  it "raises a TypeError if the instance variable name is a Fixnum" do
+    lambda { "".instance_variable_set(1, 2) }.should raise_error(TypeError)
   end
 
   it "raises a TypeError if the instance variable name is an object that does not respond to to_str" do
@@ -85,24 +82,12 @@ describe "Kernel#instance_variable_set" do
       @frozen.ivar.should equal(:origin)
     end
 
-    ruby_version_is ""..."1.9" do
-      it "raises a TypeError when passed replacement is identical to the stored object" do
-        lambda { @frozen.instance_variable_set(:@ivar, :origin) }.should raise_error(TypeError)
-      end
-
-      it "raises a TypeError when passed replacement is different from stored object" do
-        lambda { @frozen.instance_variable_set(:@ivar, :replacement) }.should raise_error(TypeError)
-      end
+    it "raises a RuntimeError when passed replacement is identical to stored object" do
+      lambda { @frozen.instance_variable_set(:@ivar, :origin) }.should raise_error(RuntimeError)
     end
 
-    ruby_version_is "1.9" do
-      it "raises a RuntimeError when passed replacement is identical to stored object" do
-        lambda { @frozen.instance_variable_set(:@ivar, :origin) }.should raise_error(RuntimeError)
-      end
-
-      it "raises a RuntimeError when passed replacement is different from stored object" do
-        lambda { @frozen.instance_variable_set(:@ivar, :replacement) }.should raise_error(RuntimeError)
-      end
+    it "raises a RuntimeError when passed replacement is different from stored object" do
+      lambda { @frozen.instance_variable_set(:@ivar, :replacement) }.should raise_error(RuntimeError)
     end
   end
 end

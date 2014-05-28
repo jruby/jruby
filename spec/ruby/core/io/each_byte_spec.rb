@@ -28,18 +28,10 @@ describe "IO#each_byte" do
     ScratchPad.recorded.should == [86, 111, 105, 99, 105]
   end
 
-  ruby_version_is "" ... "1.8.7" do
-    it "yields a LocalJumpError when passed no block" do
-      lambda { @io.each_byte }.should raise_error(LocalJumpError)
-    end
-  end
-
-  ruby_version_is "1.8.7" do
-    it "returns an Enumerator when passed no block" do
-      enum = @io.each_byte
-      enum.should be_an_instance_of(enumerator_class)
-      enum.first(5).should == [86, 111, 105, 99, 105]
-    end
+  it "returns an Enumerator when passed no block" do
+    enum = @io.each_byte
+    enum.should be_an_instance_of(enumerator_class)
+    enum.first(5).should == [86, 111, 105, 99, 105]
   end
 end
 

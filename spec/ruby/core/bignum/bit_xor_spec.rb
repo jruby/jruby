@@ -29,50 +29,17 @@ describe "Bignum#^" do
       -784637716923335095479473677900958302012794430558004314112
   end
 
-  ruby_version_is ""..."1.9" do
-    it "coerces Float arguments into Integers" do
-      (@bignum ^ 14.5).should == 9223372036854775836
-      (bignum_value ^ bignum_value(0xffff).to_f).should == 65536
-    end
+  it "raises a TypeError when passed a Float" do
+    lambda { @bignum ^ 14.5 }.should raise_error(TypeError)
+    lambda {
+      bignum_value ^ bignum_value(0xffff).to_f
+    }.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a TypeError when passed a Float" do
-      lambda { @bignum ^ 14.5 }.should raise_error(TypeError)
-      lambda {
-        bignum_value ^ bignum_value(0xffff).to_f
-      }.should raise_error(TypeError)
-    end
-  end
+  it "raises a TypeError and does not call #to_int when defined on an object" do
+    obj = mock("bignum bit xor")
+    obj.should_not_receive(:to_int)
 
-  ruby_version_is ""..."1.9.4" do
-    it "calls #to_int to convert an object to an Integer" do
-      obj = mock("bignum bit xor")
-      obj.should_receive(:to_int).and_return(2)
-
-      (@bignum ^ obj).should == 9223372036854775824
-    end
-
-    it "raises a TypeError if #to_int does not return an Integer" do
-      obj = mock("bignum bit xor")
-      obj.should_receive(:to_int).and_return("3")
-
-      lambda { @bignum ^ obj }.should raise_error(TypeError)
-    end
-
-    it "raises a TypeError if the object does not respond to #to_int" do
-      obj = mock("bignum bit xor")
-
-      lambda { @bignum ^ obj }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9.4" do
-    it "raises a TypeError and does not call #to_int when defined on an object" do
-      obj = mock("bignum bit xor")
-      obj.should_not_receive(:to_int)
-
-      lambda { @bignum ^ obj }.should raise_error(TypeError)
-    end
+    lambda { @bignum ^ obj }.should raise_error(TypeError)
   end
 end

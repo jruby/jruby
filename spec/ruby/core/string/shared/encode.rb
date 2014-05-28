@@ -44,6 +44,12 @@ describe :string_encode, :shared => true do
       str.send(@method, Encoding::UTF_8).should == "あ"
     end
 
+    it "transcodes Japanese multibyte characters" do
+      str = "あいうえお"
+      str.send(@method, Encoding::ISO_2022_JP).should ==
+        "\e\x24\x42\x24\x22\x24\x24\x24\x26\x24\x28\x24\x2A\e\x28\x42".force_encoding(Encoding::ISO_2022_JP)
+    end
+
     it "transcodes a 7-bit String despite no generic converting being available" do
       lambda do
         Encoding::Converter.new Encoding::Emacs_Mule, Encoding::ASCII_8BIT

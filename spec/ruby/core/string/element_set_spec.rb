@@ -5,84 +5,6 @@ require File.expand_path('../fixtures/classes.rb', __FILE__)
 # TODO: Add missing String#[]= specs:
 #   String#[re, idx] = obj
 
-ruby_version_is ""..."1.9" do
-  describe "String#[]= with Fixnum index" do
-    it "sets the code of the character at idx to char modulo 256" do
-      a = "hello"
-      a[0] = ?b
-      a.should == "bello"
-      a[-1] = ?a
-      a.should == "bella"
-      a[-1] = 0
-      a.should == "bell\x00"
-      a[-5] = 0
-      a.should == "\x00ell\x00"
-
-      a = "x"
-      a[0] = ?y
-      a.should == "y"
-      a[-1] = ?z
-      a.should == "z"
-
-      a[0] = 255
-      a[0].should == 255
-      a[0] = 256
-      a[0].should == 0
-      a[0] = 256 * 3 + 42
-      a[0].should == 42
-      a[0] = -214
-      a[0].should == 42
-    end
-
-    it "sets the code to char % 256" do
-      str = "Hello"
-
-      str[0] = ?a + 256 * 3
-      str[0].should == ?a
-      str[0] = -200
-      str[0].should == 56
-    end
-
-    it "raises an IndexError without changing self if idx is outside of self" do
-      a = "hello"
-
-      lambda { a[20] = ?a }.should raise_error(IndexError)
-      a.should == "hello"
-
-      lambda { a[-20] = ?a }.should raise_error(IndexError)
-      a.should == "hello"
-
-      lambda { ""[0] = ?a  }.should raise_error(IndexError)
-      lambda { ""[-1] = ?a }.should raise_error(IndexError)
-    end
-
-    it "calls to_int on index" do
-      str = "hello"
-      str[0.5] = ?c
-      str.should == "cello"
-
-      obj = mock('-1')
-      obj.should_receive(:to_int).and_return(-1)
-      str[obj] = ?y
-      str.should == "celly"
-    end
-
-    it "doesn't call to_int on char" do
-      obj = mock('x')
-      obj.should_not_receive(:to_int)
-      lambda { "hi"[0] = obj }.should raise_error(TypeError)
-    end
-
-    it "raises a TypeError when self is frozen" do
-      a = "hello"
-      a.freeze
-
-      lambda { a[0] = ?b }.should raise_error(TypeError)
-    end
-
-  end
-end
-
 describe "String#[]= with Fixnum index" do
   it "replaces the char at idx with other_str" do
     a = "hello"
@@ -114,20 +36,12 @@ describe "String#[]= with Fixnum index" do
     lambda { ""[-1] = "bam" }.should raise_error(IndexError)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises an IndexError when setting the zero'th element of an empty String" do
-      lambda { ""[0] = "bam"  }.should raise_error(IndexError)
-    end
-  end
-
   # Behaviour verfieid correct by matz in
   # http://redmine.ruby-lang.org/issues/show/1750
-  ruby_version_is "1.9" do
-    it "allows assignment to the zero'th element of an empty String" do
-      str = ""
-      str[0] = "bam"
-      str.should == "bam"
-    end
+  it "allows assignment to the zero'th element of an empty String" do
+    str = ""
+    str[0] = "bam"
+    str.should == "bam"
   end
 
   it "raises IndexError if the string index doesn't match a position in the string" do
@@ -136,22 +50,11 @@ describe "String#[]= with Fixnum index" do
     str.should == "hello"
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError when self is frozen" do
-      a = "hello"
-      a.freeze
+  it "raises a RuntimeError when self is frozen" do
+    a = "hello"
+    a.freeze
 
-      lambda { a[0] = "bam" }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError when self is frozen" do
-      a = "hello"
-      a.freeze
-
-      lambda { a[0] = "bam" }.should raise_error(RuntimeError)
-    end
+    lambda { a[0] = "bam" }.should raise_error(RuntimeError)
   end
 
   it "calls to_int on index" do
@@ -372,6 +275,15 @@ describe "String#[]= with a Regexp index" do
       str = "aaa bbb ccc"
       lambda { str[/a (bbb) c/,  2] = "ddd" }.should raise_error(IndexError)
       lambda { str[/a (bbb) c/, -2] = "ddd" }.should raise_error(IndexError)
+    end
+
+    describe "when the optional capture does not match" do
+      it "raises an IndexError before setting the replacement" do
+        str1 = "a b c"
+        str2 = str1.dup
+        lambda { str2[/a (b) (Z)?/,  2] = "d" }.should raise_error(IndexError)
+        str2.should == str1
+      end
     end
   end
 

@@ -1,0 +1,10 @@
+fails:Module#public_instance_method is a public method
+fails:Module#public_instance_method requires an argument
+fails:Module#public_instance_method raises a TypeError when given a name is not Symbol or String
+fails:Module#public_instance_method raises a NameError when given a protected method name
+fails:Module#public_instance_method raises a NameError if the method is private
+fails:Module#public_instance_method raises a NameError if the method has been undefined
+fails:Module#public_instance_method raises a NameError if the method does not exist
+fails:Module#public_instance_method sets the NameError#name attribute to the name of the missing method
+fails:Module#public_instance_method when given a public method name returns an UnboundMethod corresponding to the defined Module
+fails:Module#public_instance_method when given a public method name accepts if the name is a Symbol or String

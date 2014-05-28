@@ -1,2 +1,3 @@
-fails:Array#shuffle uses default random generator
-fails:Array#shuffle uses given random generator
+fails:Array#shuffle calls #to_int on the Object returned by #rand
+fails:Array#shuffle raises a RangeError if the value is less than zero
+fails:Array#shuffle raises a RangeError if the value is equal to one

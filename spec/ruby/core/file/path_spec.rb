@@ -23,9 +23,7 @@ describe "File.path" do
     rm_r @name
   end
 
-  ruby_version_is "1.9.1" do
-    it "returns the full path for the given file" do
-      File.path(@name).should == @name
-    end
+  it "returns the full path for the given file" do
+    File.path(@name).should == @name
   end
 end

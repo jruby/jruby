@@ -30,7 +30,7 @@ describe :io_putc, :shared => true do
     end
   end
 
-  it "calls #to_int to convert an object to a Integer" do
+  it "calls #to_int to convert an object to an Integer" do
     obj = mock("kernel putc")
     obj.should_receive(:to_int).and_return(65)
 
@@ -43,15 +43,15 @@ describe :io_putc, :shared => true do
     lambda { @io_object.send(@method, "a") }.should raise_error(IOError)
   end
 
-  it "raises an TypeError when passed nil" do
+  it "raises a TypeError when passed nil" do
     lambda { @io_object.send(@method, nil) }.should raise_error(TypeError)
   end
 
-  it "raises an TypeError when passed false" do
+  it "raises a TypeError when passed false" do
     lambda { @io_object.send(@method, false) }.should raise_error(TypeError)
   end
 
-  it "raises an TypeError when passed true" do
+  it "raises a TypeError when passed true" do
     lambda { @io_object.send(@method, true) }.should raise_error(TypeError)
   end
 end

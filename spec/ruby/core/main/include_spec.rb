@@ -7,12 +7,10 @@ describe "main#include" do
     Object.ancestors.should include(MainSpecs::Module)
   end
 
-  ruby_version_is "1.9" do
-    context "in a file loaded with wrapping" do
-      it "includes the given Module in the load wrapper" do
-        load(File.expand_path("../fixtures/wrapped_include.rb", __FILE__), true)
-        Object.ancestors.should_not include(MainSpecs::WrapIncludeModule)
-      end
+  context "in a file loaded with wrapping" do
+    it "includes the given Module in the load wrapper" do
+      load(File.expand_path("../fixtures/wrapped_include.rb", __FILE__), true)
+      Object.ancestors.should_not include(MainSpecs::WrapIncludeModule)
     end
   end
 end

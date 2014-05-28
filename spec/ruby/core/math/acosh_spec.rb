@@ -12,31 +12,19 @@ describe "Math.acosh" do
   end
 
   conflicts_with :Complex do
-    it "it raises Errno::EDOM if the passed argument is less than -1.0 or greater than 1.0" do
+    it "raises Errno::EDOM if the passed argument is less than -1.0 or greater than 1.0" do
       lambda { Math.acosh(1.0 - TOLERANCE) }.should raise_error(Errno::EDOM)
       lambda { Math.acosh(0) }.should raise_error(Errno::EDOM)
       lambda { Math.acosh(-1.0) }.should raise_error(Errno::EDOM)
     end
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises an ArgumentError if the argument cannot be coerced with Float()" do
-      lambda { Math.acosh("test") }.should raise_error(ArgumentError)
-    end
-
-    it "raises Errno::EDOM given NaN" do
-      lambda { Math.acosh(nan_value) }.should raise_error(Errno::EDOM)
-    end
+  it "raises a TypeError if the argument cannot be coerced with Float()" do
+    lambda { Math.acosh("test") }.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a TypeError if the argument cannot be coerced with Float()" do
-      lambda { Math.acosh("test") }.should raise_error(TypeError)
-    end
-
-    it "returns NaN given NaN" do
-      Math.acosh(nan_value).nan?.should be_true
-    end
+  it "returns NaN given NaN" do
+    Math.acosh(nan_value).nan?.should be_true
   end
 
   it "raises a TypeError if the argument is nil" do

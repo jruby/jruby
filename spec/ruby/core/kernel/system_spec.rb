@@ -14,16 +14,8 @@ describe :kernel_system, :shared => true do
     @object.system("false").should == false
   end
 
-  ruby_version_is ""..."1.9" do
-    it "returns false when command execution fails" do
-      @object.system("sad").should == false
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "returns nil when command execution fails" do
-      @object.system("sad").should be_nil
-    end
+  it "returns nil when command execution fails" do
+    @object.system("sad").should be_nil
   end
 
   it "does not write to stderr when command execution fails" do

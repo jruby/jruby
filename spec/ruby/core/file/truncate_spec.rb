@@ -79,10 +79,8 @@ describe "File.truncate" do
     lambda { File.truncate(@name, nil) }.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9" do
-    it "accepts an object that has a #to_path method" do
-      File.truncate(mock_to_path(@name), 0).should == 0
-    end
+  it "accepts an object that has a #to_path method" do
+    File.truncate(mock_to_path(@name), 0).should == 0
   end
 end
 

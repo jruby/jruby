@@ -9,13 +9,11 @@ describe "Regexp#===" do
     (/abc/ === "xyz").should be_false
   end
 
-  ruby_version_is "1.9" do
-    it "returns true if it matches a Symbol" do
-      (/a/ === :a).should be_true
-    end
+  it "returns true if it matches a Symbol" do
+    (/a/ === :a).should be_true
+  end
 
-    it "returns false if it does not match a Symbol" do
-      (/a/ === :b).should be_false
-    end
+  it "returns false if it does not match a Symbol" do
+    (/a/ === :b).should be_false
   end
 end

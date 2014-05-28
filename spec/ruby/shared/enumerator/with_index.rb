@@ -24,12 +24,9 @@ describe :enum_with_index, :shared => true do
     [1, 0, 2, 1, 3, 2, 4, 3].should == acc
   end
 
-  ruby_version_is '1.8.7' do
-    it "returns an enumerator if no block is supplied" do
-      ewi = @enum.send(@method)
-      ewi.should be_an_instance_of(enumerator_class)
-      ewi.to_a.should == [[1, 0], [2, 1], [3, 2], [4, 3]]
-    end
+  it "returns an enumerator if no block is supplied" do
+    ewi = @enum.send(@method)
+    ewi.should be_an_instance_of(enumerator_class)
+    ewi.to_a.should == [[1, 0], [2, 1], [3, 2], [4, 3]]
   end
-
 end

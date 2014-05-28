@@ -14,86 +14,37 @@ describe "Basic assignment" do
     a.should be_nil
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "assigns nil to lhs when rhs is an empty splat expression" do
-      a = *()
-      a.should be_nil
-    end
+  it "assigns [] to lhs when rhs is an empty splat expression" do
+    a = *()
+    a.should == []
   end
 
-  ruby_version_is "1.9" do
-    it "assigns [] to lhs when rhs is an empty splat expression" do
-      a = *()
-      a.should == []
-    end
+  it "allows the assignment of the rhs to the lhs using the rhs splat operator" do
+    a = *nil;      a.should == []
+    a = *1;        a.should == [1]
+    a = *[];       a.should == []
+    a = *[1];      a.should == [1]
+    a = *[nil];    a.should == [nil]
+    a = *[[]];     a.should == [[]]
+    a = *[1,2];    a.should == [1,2]
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "allows the assignment of the rhs to the lhs using the rhs splat operator" do
-      a = *nil;      a.should == nil
-      a = *1;        a.should == 1
-      a = *[];       a.should == nil
-      a = *[1];      a.should == 1
-      a = *[nil];    a.should == nil
-      a = *[[]];     a.should == []
-      a = *[1,2];    a.should == [1,2]
-    end
+  it "allows the assignment of the rhs to the lhs using the lhs splat operator" do
+    * = 1,2        # Valid syntax, but pretty useless! Nothing to test
+    *a = nil;      a.should == [nil]
+    *a = 1;        a.should == [1]
+    *a = [];       a.should == []
+    *a = [1];      a.should == [1]
+    *a = [1,2];    a.should == [1,2]
   end
 
-  ruby_version_is "1.9" do
-    it "allows the assignment of the rhs to the lhs using the rhs splat operator" do
-      a = *nil;      a.should == []
-      a = *1;        a.should == [1]
-      a = *[];       a.should == []
-      a = *[1];      a.should == [1]
-      a = *[nil];    a.should == [nil]
-      a = *[[]];     a.should == [[]]
-      a = *[1,2];    a.should == [1,2]
-    end
-  end
-
-  ruby_version_is "" ... "1.9" do
-    it "allows the assignment of the rhs to the lhs using the lhs splat operator" do
-      * = 1,2        # Valid syntax, but pretty useless! Nothing to test
-      *a = nil;      a.should == [nil]
-      *a = 1;        a.should == [1]
-      *a = [];       a.should == [[]]
-      *a = [1];      a.should == [[1]]
-      *a = [1,2];    a.should == [[1,2]]
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "allows the assignment of the rhs to the lhs using the lhs splat operator" do
-      * = 1,2        # Valid syntax, but pretty useless! Nothing to test
-      *a = nil;      a.should == [nil]
-      *a = 1;        a.should == [1]
-      *a = [];       a.should == []
-      *a = [1];      a.should == [1]
-      *a = [1,2];    a.should == [1,2]
-    end
-  end
-
-  ruby_version_is "" ... "1.9" do
-    it "allows the assignment of rhs to the lhs using the lhs and rhs splat operators simultaneously" do
-      *a = *nil;      a.should == [nil]
-      *a = *1;        a.should == [1]
-      *a = *[];       a.should == []
-      *a = *[1];      a.should == [1]
-      *a = *[nil];    a.should == [nil]
-      *a = *[1,2];    a.should == [1,2]
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "allows the assignment of rhs to the lhs using the lhs and rhs splat operators simultaneously" do
-      *a = *nil;      a.should == []
-      *a = *1;        a.should == [1]
-      *a = *[];       a.should == []
-      *a = *[1];      a.should == [1]
-      *a = *[nil];    a.should == [nil]
-      *a = *[1,2];    a.should == [1,2]
-    end
+  it "allows the assignment of rhs to the lhs using the lhs and rhs splat operators simultaneously" do
+    *a = *nil;      a.should == []
+    *a = *1;        a.should == [1]
+    *a = *[];       a.should == []
+    *a = *[1];      a.should == [1]
+    *a = *[nil];    a.should == [nil]
+    *a = *[1,2];    a.should == [1,2]
   end
 
   it "sets unavailable values to nil" do
@@ -175,18 +126,9 @@ describe "Basic assignment" do
 end
 
 describe "Assignment using expansion" do
-  ruby_version_is "" ... "1.9" do
-    it "succeeds without conversion" do
-      *x = (1..7).to_a
-      x.should == [[1, 2, 3, 4, 5, 6, 7]]
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "succeeds without conversion" do
-      *x = (1..7).to_a
-      x.should == [1, 2, 3, 4, 5, 6, 7]
-    end
+  it "succeeds without conversion" do
+    *x = (1..7).to_a
+    x.should == [1, 2, 3, 4, 5, 6, 7]
   end
 end
 
@@ -253,6 +195,20 @@ describe "Basic multiple assignment" do
       a.should == x
       b.should be_nil
     end
+
+    it "calls #to_ary on an object even if it's private" do
+      a, b = VariablesSpecs::PrivateMethods.new
+      a.should == 1
+      b.should == 2
+    end
+
+    it "doesn't take in account #to_ary if it returns nil" do
+      x = VariablesSpecs::ToAryNil.new
+
+      a, b = x
+      a.should == x
+      b.should be_nil
+    end
   end
 
   describe "with a splatted single RHS value" do
@@ -301,42 +257,29 @@ describe "Basic multiple assignment" do
       b.should == 2
     end
 
-    ruby_version_is ""..."1.9" do
-      it "calls #to_ary on an object" do
-        x = mock("single splatted rhs value for masgn")
-        x.should_receive(:to_ary).and_return([1, 2])
+    it "does not call #to_ary on an object" do
+      x = mock("single splatted rhs value for masgn")
+      x.should_not_receive(:to_ary)
 
-        a, b = *x
-        a.should == 1
-        b.should == 2
-      end
-
-      it "calls #to_a on a String" do
-        x = "one\ntwo"
-
-        a, b = *x
-        a.should == "one\n"
-        b.should == "two"
-      end
+      a, b = *x
+      a.should == x
+      b.should be_nil
     end
 
-    ruby_version_is "1.9" do
-      it "does not call #to_ary on an object" do
-        x = mock("single splatted rhs value for masgn")
-        x.should_not_receive(:to_ary)
+    it "does not call #to_a on a String" do
+      x = "one\ntwo"
 
-        a, b = *x
-        a.should == x
-        b.should be_nil
-      end
+      a, b = *x
+      a.should == x
+      b.should be_nil
+    end
 
-      it "does not call #to_a on a String" do
-        x = "one\ntwo"
+    it "calls #to_a even if it's private" do
+      x = VariablesSpecs::PrivateMethods.new
 
-        a, b = *x
-        a.should == x
-        b.should be_nil
-      end
+      a, b = *x
+      a.should == 3
+      b.should == 4
     end
   end
 end
@@ -365,26 +308,13 @@ describe "Assigning multiple values" do
     end
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "wraps a single value in an Array" do
-      *a = 1
-      a.should == [1]
+  it "wraps a single value in an Array if it's not already one" do
+    *a = 1
+    a.should == [1]
 
-      b = [1]
-      *a = b
-      a.should == [b]
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "wraps a single value in an Array if it's not already one" do
-      *a = 1
-      a.should == [1]
-
-      b = [1]
-      *a = b
-      a.should == b
-    end
+    b = [1]
+    *a = b
+    a.should == b
   end
 
   it "evaluates rhs left-to-right" do
@@ -435,79 +365,13 @@ describe "Assigning multiple values" do
     a.should == 1
   end
 
-  ruby_version_is ""..."1.9" do
-    it "calls #to_ary on rhs arg if rhs has only a single arg" do
-      x = VariablesSpecs::ParAsgn.new
-      a,b,c = x
-      a.should == 1
-      b.should == 2
-      c.should == 3
+  it "calls #to_ary on RHS arg if the corresponding LHS var is a splat" do
+    x = VariablesSpecs::ParAsgn.new
 
-      a,b,c = x,5
-      a.should == x
-      b.should == 5
-      c.should == nil
-
-      a,b,c = 5,x
-      a.should == 5
-      b.should == x
-      c.should == nil
-
-      a,b,*c = x,5
-      a.should == x
-      b.should == 5
-      c.should == []
-
-      a,(b,c) = 5,x
-      a.should == 5
-      b.should == 1
-      c.should == 2
-
-      a,(b,*c) = 5,x
-      a.should == 5
-      b.should == 1
-      c.should == [2,3,4]
-
-      a,(b,(*c)) = 5,x
-      a.should == 5
-      b.should == 1
-      c.should == [2]
-
-      a,(b,(*c),(*d)) = 5,x
-      a.should == 5
-      b.should == 1
-      c.should == [2]
-      d.should == [3]
-
-      a,(b,(*c),(d,*e)) = 5,x
-      a.should == 5
-      b.should == 1
-      c.should == [2]
-      d.should == 3
-      e.should == []
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "calls #to_ary on RHS arg if the corresponding LHS var is a splat" do
-      x = VariablesSpecs::ParAsgn.new
-
-      a,(*b),c = 5,x
-      a.should == 5
-      b.should == x.to_ary
-      c.should == nil
-    end
-  end
-
-  ruby_version_is ""..."1.9" do
-    it "doen't call #to_ary on RHS arg when the corresponding LHS var is a splat" do
-      x = VariablesSpecs::ParAsgn.new
-
-      a,(*b),c = 5,x
-      a.should == 5
-      b.should == [x]
-      c.should == nil
-    end
+    a,(*b),c = 5,x
+    a.should == 5
+    b.should == x.to_ary
+    c.should == nil
   end
 
   it "allows complex parallel assignment" do
@@ -1146,12 +1010,6 @@ describe "Multiple assignment without grouping or splatting" do
 end
 
 describe "Multiple assignments with splats" do
-  ruby_version_is ""..."1.9" do
-    it "* on the lhs has to be applied to the last parameter" do
-      lambda { eval 'a, *b, c = 1, 2, 3' }.should raise_error(SyntaxError)
-    end
-  end
-
   it "* on the lhs collects all parameters from its position onwards as an Array or an empty Array" do
     a, *b = 1, 2
     c, *d = 1
@@ -1172,18 +1030,9 @@ describe "Multiple assignments with splats" do
     k.should == [1,2,3]
   end
 
-  ruby_version_is ""..."1.9" do
-    it "* on the LHS returns the Array on the RHS enclosed in an Array" do
-      *j = [1,2,3]
-      j.should == [[1,2,3]]
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "* on the LHS returns the Array on the RHS without enclosing it in an Array" do
-      *j = [1,2,3]
-      j.should == [1,2,3]
-    end
+  it "* on the LHS returns the Array on the RHS without enclosing it in an Array" do
+    *j = [1,2,3]
+    j.should == [1,2,3]
   end
 end
 
@@ -1265,40 +1114,20 @@ end
 # containing all the elements on the rhs. As this result is never used, the cost
 # of creating and then discarding this array is avoided
 describe "Multiple assignment, array-style" do
-  not_compliant_on :rubinius do
-    it "returns an array of all rhs values" do
-      (a,b = 5,6,7).should == [5,6,7]
-      a.should == 5
-      b.should == 6
+  it "returns an array of all rhs values" do
+    (a,b = 5,6,7).should == [5,6,7]
+    a.should == 5
+    b.should == 6
 
-      (c,d,*e = 99,8).should == [99,8]
-      c.should == 99
-      d.should == 8
-      e.should == []
+    (c,d,*e = 99,8).should == [99,8]
+    c.should == 99
+    d.should == 8
+    e.should == []
 
-      (f,g,h = 99,8).should == [99,8]
-      f.should == 99
-      g.should == 8
-      h.should == nil
-    end
-  end
-
-  deviates_on :rubinius do
-    it "returns true" do
-      (a,b = 5,6,7).should == true
-      a.should == 5
-      b.should == 6
-
-      (c,d,*e = 99,8).should == true
-      c.should == 99
-      d.should == 8
-      e.should == []
-
-      (f,g,h = 99,8).should == true
-      f.should == 99
-      g.should == 8
-      h.should == nil
-    end
+    (f,g,h = 99,8).should == [99,8]
+    f.should == 99
+    g.should == 8
+    h.should == nil
   end
 end
 
@@ -1362,6 +1191,21 @@ describe "A local variable in a #define_method scope" do
       handle.produce_bug.should == 2
     end
   end
-end
 
-language_version __FILE__, "variables"
+  describe "Multiple assignments with splats" do
+    it "* on the LHS has to be applied to any parameter" do
+      a, *b, c = 1, 2, 3
+      a.should == 1
+      b.should == [2]
+      c.should == 3
+    end
+  end
+
+  describe "Chained assignments with method call without parenthesis" do
+    it "assigns the result of the method call" do
+      a = b = VariablesSpecs::Chain.without_parenthesis 1
+      a.should == 1
+      b.should == 1
+    end
+  end
+end

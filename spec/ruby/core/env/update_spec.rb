@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "ENV.update" do
 
-  it "add the parameter hash to ENV" do
+  it "adds the parameter hash to ENV" do
     ENV["foo"].should == nil
     ENV.update "foo" => "bar"
     ENV["foo"].should == "bar"

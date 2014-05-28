@@ -61,5 +61,3 @@ describe "The redo statement" do
     end
   end
 end
-
-language_version __FILE__, "redo"

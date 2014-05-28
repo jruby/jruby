@@ -34,28 +34,23 @@ describe "Kernel.chomp" do
   it_behaves_like :kernel_chomp, "Kernel.chomp"
 end
 
-ruby_version_is ""..."1.9" do
-  describe "Kernel.chomp!" do
-    it_behaves_like :kernel_chomp, "Kernel.chomp!"
-  end
-end
-
 describe "Kernel#chomp" do
   it_behaves_like :kernel_chomp, "chomp"
 
   it_behaves_like :kernel_chomp_private, :chomp
 end
 
-ruby_version_is ""..."1.9" do
-  describe "Kernel#chomp!" do
-    it_behaves_like :kernel_chomp, "chomp!"
-
-    it_behaves_like :kernel_chomp_private, :chomp!
-  end
-end
-
 with_feature :encoding do
   describe :kernel_chomp_encoded, :shared => true do
+    before :each do
+      @external = Encoding.default_external
+      Encoding.default_external = Encoding::UTF_8
+    end
+
+    after :each do
+      Encoding.default_external = @external
+    end
+
     it "removes the final carriage return, newline from a multi-byte $_" do
       script = fixture __FILE__, "#{@method}.rb"
       KernelSpecs.encoded_chomp(script).should == "あれ"

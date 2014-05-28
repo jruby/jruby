@@ -54,3 +54,33 @@ describe "The module keyword" do
     lambda { module ModuleSpecs::Modules::D; end }.should raise_error(TypeError)
   end
 end
+
+describe "Assigning an anonymous module to a constant" do
+  it "sets the name of the module" do
+    mod = Module.new
+    mod.name.should be_nil
+
+    ::ModuleSpecs_CS1 = mod
+    mod.name.should == "ModuleSpecs_CS1"
+  end
+
+  it "does not set the name of a module scoped by an anonymous module" do
+    a, b = Module.new, Module.new
+    a::B = b
+    b.name.should be_nil
+  end
+
+  it "sets the name of contained modules when assigning a toplevel anonymous module" do
+    a, b, c, d = Module.new, Module.new, Module.new, Module.new
+    a::B = b
+    a::B::C = c
+    a::B::C::E = c
+    a::D = d
+
+    ::ModuleSpecs_CS2 = a
+    a.name.should == "ModuleSpecs_CS2"
+    b.name.should == "ModuleSpecs_CS2::B"
+    c.name.should == "ModuleSpecs_CS2::B::C"
+    d.name.should == "ModuleSpecs_CS2::D"
+  end
+end

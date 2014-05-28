@@ -6,29 +6,17 @@ describe "Numeric#div" do
     @obj = NumericSpecs::Subclass.new
   end
 
-  ruby_version_is ""..."1.9" do
-    it "calls self#/ with other, converts the result to a Float (using #to_f) and returns the #floor'ed result" do
-      result = mock("Numeric#div result")
-      result.should_receive(:to_f).and_return(13 - TOLERANCE)
-      @obj.should_receive(:/).with(10).and_return(result)
+  it "calls self#/ with other, then returns the #floor'ed result" do
+    result = mock("Numeric#div result")
+    result.should_receive(:floor).and_return(12)
+    @obj.should_receive(:/).with(10).and_return(result)
 
-      @obj.div(10).should == 12
-    end
+    @obj.div(10).should == 12
   end
 
-  ruby_version_is "1.9" do
-    it "calls self#/ with other, then returns the #floor'ed result" do
-      result = mock("Numeric#div result")
-      result.should_receive(:floor).and_return(12)
-      @obj.should_receive(:/).with(10).and_return(result)
-
-      @obj.div(10).should == 12
-    end
-
-    it "raises ZeroDivisionError for 0" do
-      lambda { @obj.div(0) }.should raise_error(ZeroDivisionError)
-      lambda { @obj.div(0.0) }.should raise_error(ZeroDivisionError)
-      lambda { @obj.div(Complex(0,0)) }.should raise_error(ZeroDivisionError)
-    end
+  it "raises ZeroDivisionError for 0" do
+    lambda { @obj.div(0) }.should raise_error(ZeroDivisionError)
+    lambda { @obj.div(0.0) }.should raise_error(ZeroDivisionError)
+    lambda { @obj.div(Complex(0,0)) }.should raise_error(ZeroDivisionError)
   end
 end

@@ -24,8 +24,8 @@ describe "String#capitalize" do
   end
 
   it "returns subclass instances when called on a subclass" do
-    StringSpecs::MyString.new("hello").capitalize.should be_kind_of(StringSpecs::MyString)
-    StringSpecs::MyString.new("Hello").capitalize.should be_kind_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("hello").capitalize.should be_an_instance_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("Hello").capitalize.should be_an_instance_of(StringSpecs::MyString)
   end
 end
 
@@ -45,21 +45,10 @@ describe "String#capitalize!" do
     "H".capitalize!.should == nil
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError when self is frozen" do
-      ["", "Hello", "hello"].each do |a|
-        a.freeze
-        lambda { a.capitalize! }.should raise_error(TypeError)
-      end
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError when self is frozen" do
-      ["", "Hello", "hello"].each do |a|
-        a.freeze
-        lambda { a.capitalize! }.should raise_error(RuntimeError)
-      end
+  it "raises a RuntimeError when self is frozen" do
+    ["", "Hello", "hello"].each do |a|
+      a.freeze
+      lambda { a.capitalize! }.should raise_error(RuntimeError)
     end
   end
 end

@@ -269,6 +269,17 @@ module ConstantSpecs
   def self.get_const; self; end
 
   def const10; CS_CONST10; end
+
+  class ClassC
+    CS_CONST1 = 1
+
+    class ClassE
+      CS_CONST2 = 2
+    end
+  end
+
+  class ClassD < ClassC
+  end
 end
 
 include ConstantSpecs::ModuleA

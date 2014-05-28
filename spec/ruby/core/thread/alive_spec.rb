@@ -38,23 +38,21 @@ describe "Thread#alive?" do
     ThreadSpecs.status_of_dying_sleeping_thread.alive?.should == true
   end
 
-  ruby_version_is '1.9' do
-    it "return true for a killed but still running thread" do
-      exit = false
-      t = Thread.new do
-        begin
-          sleep
-        ensure
-          Thread.pass until exit # Ruby 1.8 won't switch threads here
-        end
+  it "returns true for a killed but still running thread" do
+    exit = false
+    t = Thread.new do
+      begin
+        sleep
+      ensure
+        Thread.pass until exit # Ruby 1.8 won't switch threads here
       end
-
-      ThreadSpecs.spin_until_sleeping(t)
-
-      t.kill
-      t.alive?.should == true
-      exit = true
-      t.join
     end
+
+    ThreadSpecs.spin_until_sleeping(t)
+
+    t.kill
+    t.alive?.should == true
+    exit = true
+    t.join
   end
 end

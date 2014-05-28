@@ -24,7 +24,7 @@ describe :argf_filename, :shared => true do
   end
 
   # NOTE: this test assumes that fixtures files have two lines each
-  it "it sets the $FILENAME global variable with the current file name on each file" do
+  it "sets the $FILENAME global variable with the current file name on each file" do
     argv [@file1, @file2] do
       result = []
       result << $FILENAME while ARGF.gets

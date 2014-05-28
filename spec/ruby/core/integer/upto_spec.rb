@@ -31,20 +31,12 @@ describe "Integer#upto [stop] when self and stop are Fixnums" do
     lambda { 1.upto(nil) {|x| p x} }.should raise_error(ArgumentError)
   end
 
-  ruby_version_is "" ... "1.8.7" do
-    it "raises a LocalJumpError when no block given" do
-      lambda { 2.upto(5) }.should raise_error(LocalJumpError)
-    end
-  end
+  it "returns an Enumerator" do
+    result = []
 
-  ruby_version_is "1.8.7" do
-    it "returns an Enumerator" do
-      result = []
+    enum = 2.upto(5)
+    enum.each { |i| result << i }
 
-      enum = 2.upto(5)
-      enum.each { |i| result << i }
-
-      result.should == [2, 3, 4, 5]
-    end
+    result.should == [2, 3, 4, 5]
   end
 end

@@ -23,18 +23,16 @@ describe :numeric_arg, :shared => true do
   end
 
   describe "with a Numeric subclass" do
-    ruby_version_is "1.9" do
-      it "returns 0 if self#<(0) returns false" do
-        numeric = mock_numeric('positive')
-        numeric.should_receive(:<).with(0).and_return(false)
-        numeric.send(@method).should == 0
-      end
+    it "returns 0 if self#<(0) returns false" do
+      numeric = mock_numeric('positive')
+      numeric.should_receive(:<).with(0).and_return(false)
+      numeric.send(@method).should == 0
+    end
 
-      it "returns Pi if self#<(0) returns true" do
-        numeric = mock_numeric('positive')
-        numeric.should_receive(:<).with(0).and_return(true)
-        numeric.send(@method).should == Math::PI
-      end
+    it "returns Pi if self#<(0) returns true" do
+      numeric = mock_numeric('positive')
+      numeric.should_receive(:<).with(0).and_return(true)
+      numeric.send(@method).should == Math::PI
     end
   end
 end

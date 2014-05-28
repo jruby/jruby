@@ -1,0 +1,2 @@
+fails:Kernel#private_methods when passed false returns a list of private methods in without its ancestors
+fails:Kernel#private_methods when passed nil returns a list of private methods in without its ancestors

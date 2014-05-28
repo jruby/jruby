@@ -5,34 +5,17 @@ describe "The BEGIN keyword" do
     ScratchPad.record []
   end
 
-  ruby_version_is "".."1.9" do
-    it "runs in a new isolated scope" do
-      lambda do
-        eval "BEGIN { var_in_begin = 'foo' }; var_in_begin"
-      end.should raise_error NameError
-    end
-
-    it "does not access variables outside the eval scope" do
-      lambda do
-        outside_var = 'foo'
-        eval "BEGIN { outside_var }"
-      end.should raise_error NameError
-    end
+  it "runs in a shared scope" do
+    eval("BEGIN { var_in_begin = 'foo' }; var_in_begin").should == "foo"
   end
 
-  ruby_version_is "1.9" do
-    it "runs in a shared scope" do
-      eval("BEGIN { var_in_begin = 'foo' }; var_in_begin").should == "foo"
-    end
+  it "accesses variables outside the eval scope" do
+    outside_var = 'foo'
+    eval("BEGIN { var_in_begin = outside_var }; var_in_begin").should == "foo"
+  end
 
-    it "accesses variables outside the eval scope" do
-      outside_var = 'foo'
-      eval("BEGIN { var_in_begin = outside_var }; var_in_begin").should == "foo"
-    end
-
-    it "must appear in a top-level context" do
-      lambda { eval "1.times { BEGIN { 1 } }" }.should raise_error(SyntaxError)
-    end
+  it "must appear in a top-level context" do
+    lambda { eval "1.times { BEGIN { 1 } }" }.should raise_error(SyntaxError)
   end
 
   it "runs first in a given code unit" do

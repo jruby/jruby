@@ -25,16 +25,8 @@ describe :math_atanh_base, :shared => true do
       @object.send(@method, obj).should be_close(0.549306144334055, TOLERANCE)
     end
 
-    ruby_version_is ""..."1.9" do
-      it "raises an ArgumentError if the argument cannot be coerced with Float()" do
-        lambda { @object.send(@method, "test") }.should raise_error(ArgumentError)
-      end
-    end
-
-    ruby_version_is "1.9" do
-      it "raises a TypeError if the argument cannot be coerced with Float()" do
-        lambda { @object.send(@method, "test") }.should raise_error(TypeError)
-      end
+    it "raises a TypeError if the argument cannot be coerced with Float()" do
+      lambda { @object.send(@method, "test") }.should raise_error(TypeError)
     end
   end
 
@@ -54,60 +46,23 @@ describe :math_atanh_base, :shared => true do
   # is not solely determined by what libc is doing. So, MRI needs to decide
   # what behavior is expected or state that the behavior is undefined.
   quarantine! do
-    ruby_version_is ""..."1.9" do
-      platform_is :darwin, :freebsd, :java do
-        it "returns Infinity for 1.0" do
-          @object.send(@method, 1.0).infinite?.should == 1
-        end
-
-        it "returns -Infinity for -1.0" do
-          @object.send(@method, -1.0).infinite?.should == -1
-        end
+    platform_is_not :linux do
+      it "raises an Errno::EDOM if x == 1.0" do
+        lambda { @object.send(@method, 1.0) }.should raise_error(Errno::EDOM)
       end
 
-      platform_is :windows, :openbsd do
-        # jruby is cross-platform and behaves as :darwin above
-        not_compliant_on :jruby do
-          it "raises an Errno::EDOM if x == 1.0" do
-            lambda { @object.send(@method, 1.0) }.should raise_error(Errno::EDOM)
-          end
-
-          it "raises an Errno::EDOM if x == -1.0" do
-            lambda { @object.send(@method, -1.0) }.should raise_error(Errno::EDOM)
-          end
-        end
-      end
-
-      platform_is :linux do
-        it "raises an Errno::ERANGE if x == 1.0" do
-          lambda { @object.send(@method, 1.0) }.should raise_error(Errno::ERANGE)
-        end
-
-        it "raises an Errno::ERANGE if x == -1.0" do
-          lambda { @object.send(@method, -1.0) }.should raise_error(Errno::ERANGE)
-        end
+      it "raises an Errno::EDOM if x == -1.0" do
+        lambda { @object.send(@method, -1.0) }.should raise_error(Errno::EDOM)
       end
     end
 
-    ruby_version_is "1.9" do
-      platform_is_not :linux do
-        it "raises an Errno::EDOM if x == 1.0" do
-          lambda { @object.send(@method, 1.0) }.should raise_error(Errno::EDOM)
-        end
-
-        it "raises an Errno::EDOM if x == -1.0" do
-          lambda { @object.send(@method, -1.0) }.should raise_error(Errno::EDOM)
-        end
+    platform_is :linux do
+      it "raises an Errno::ERANGE if x == 1.0" do
+        lambda { @object.send(@method, 1.0) }.should raise_error(Errno::ERANGE)
       end
 
-      platform_is :linux do
-        it "raises an Errno::ERANGE if x == 1.0" do
-          lambda { @object.send(@method, 1.0) }.should raise_error(Errno::ERANGE)
-        end
-
-        it "raises an Errno::ERANGE if x == -1.0" do
-          lambda { @object.send(@method, -1.0) }.should raise_error(Errno::ERANGE)
-        end
+      it "raises an Errno::ERANGE if x == -1.0" do
+        lambda { @object.send(@method, -1.0) }.should raise_error(Errno::ERANGE)
       end
     end
   end
@@ -120,23 +75,11 @@ describe :math_atanh_private, :shared => true do
 end
 
 describe :math_atanh_no_complex, :shared => true do
-  ruby_version_is ""..."1.9" do
-    it "raises an Errno::EDOM for arguments greater than 1.0" do
-      lambda { @object.send(@method, 1.0 + Float::EPSILON)  }.should raise_error(Errno::EDOM)
-    end
-
-    it "raises an Errno::EDOM for arguments less than -1.0" do
-      lambda { @object.send(@method, -1.0 - Float::EPSILON) }.should raise_error(Errno::EDOM)
-    end
+  it "raises a Math::DomainError for arguments greater than 1.0" do
+    lambda { @object.send(@method, 1.0 + Float::EPSILON)  }.should raise_error(Math::DomainError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises an Math::DomainError for arguments greater than 1.0" do
-      lambda { @object.send(@method, 1.0 + Float::EPSILON)  }.should raise_error(Math::DomainError)
-    end
-
-    it "raises an Math::DomainError for arguments less than -1.0" do
-      lambda { @object.send(@method, -1.0 - Float::EPSILON) }.should raise_error(Math::DomainError)
-    end
+  it "raises a Math::DomainError for arguments less than -1.0" do
+    lambda { @object.send(@method, -1.0 - Float::EPSILON) }.should raise_error(Math::DomainError)
   end
 end

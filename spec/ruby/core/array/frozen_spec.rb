@@ -9,24 +9,8 @@ describe "Array#frozen?" do
     a.frozen?.should == true
   end
 
-  not_compliant_on :rubinius do
-    ruby_version_is "" .. "1.9" do
-      it "returns true for an array being sorted by #sort!" do
-        a = [1, 2, 3]
-        a.sort! { |x,y| a.frozen?.should == true; x <=> y }
-      end
-    end
-
-    ruby_version_is "1.9" do
-      it "returns false for an array being sorted by #sort!" do
-        a = [1, 2, 3]
-        a.sort! { |x,y| a.frozen?.should == false; x <=> y }
-      end
-    end
-
-    it "returns false for an array being sorted by #sort" do
-      a = [1, 2, 3]
-      a.sort { |x,y| a.frozen?.should == false; x <=> y }
-    end
+  it "returns false for an array being sorted by #sort" do
+    a = [1, 2, 3]
+    a.sort { |x,y| a.frozen?.should == false; x <=> y }
   end
 end

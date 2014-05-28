@@ -371,6 +371,12 @@ static VALUE constants_spec_rb_mWaitWritable(VALUE self) {
 }
 #endif
 
+#ifdef HAVE_RB_CDIR
+static VALUE constants_spec_rb_cDir(VALUE self) {
+  return rb_cDir;
+}
+#endif
+
 void Init_constants_spec() {
   VALUE cls;
   cls = rb_define_class("CApiConstantsSpecs", rb_cObject);
@@ -617,6 +623,10 @@ void Init_constants_spec() {
 
 #ifdef HAVE_RB_MWAITWRITABLE
   rb_define_method(cls, "rb_mWaitWritable", constants_spec_rb_mWaitWritable, 0);
+#endif
+
+#ifdef HAVE_RB_CDIR
+  rb_define_method(cls, "rb_cDir", constants_spec_rb_cDir, 0);
 #endif
 
 }

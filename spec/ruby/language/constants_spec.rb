@@ -1,5 +1,6 @@
 require File.expand_path('../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/constants', __FILE__)
+require File.expand_path('../fixtures/constant_visibility', __FILE__)
 
 # Read the documentation in fixtures/constants.rb for the guidelines and
 # rationale for the structure and organization of these specs.
@@ -347,211 +348,193 @@ describe "Constant resolution within methods" do
   end
 
   describe "with ||=" do
-    ruby_version_is ""..."1.9" do
-      it "raises a NameError if the constant is not defined" do
-        ConstantSpecs.should_not have_constant(:OpAssignUndefined)
-        lambda do
-          module ConstantSpecs
-            OpAssignUndefined ||= 42
-          end
-        end.should raise_error(NameError)
+    it "assignes constant if previously undefined" do
+      ConstantSpecs.should_not have_constant(:OpAssignUndefined)
+      # Literally opening the module is required to avoid content
+      # re-assignment error
+      module ConstantSpecs
+        OpAssignUndefined ||= 42
       end
-    end
-
-    ruby_version_is "1.9" do
-      it "assignes constant if previously undefined" do
-        ConstantSpecs.should_not have_constant(:OpAssignUndefined)
-        # Literally opening the module is required to avoid content
-        # re-assignment error
-        module ConstantSpecs
-          OpAssignUndefined ||= 42
-        end
-        ConstantSpecs::OpAssignUndefined.should == 42
-      end
+      ConstantSpecs::OpAssignUndefined.should == 42
     end
   end
 end
 
-ruby_version_is "1.9.3" do
-  require File.expand_path('../fixtures/constant_visibility', __FILE__)
-  
-  describe "Module#private_constant marked constants" do
-    
-    it "remain private even when updated" do
-      mod = Module.new
-      mod.const_set :Foo, true
-      mod.send :private_constant, :Foo
-      mod.const_set :Foo, false
-      
-      lambda {mod::Foo}.should raise_error(NameError)
-    end
-  
-    describe "in a module" do
-      it "cannot be accessed from outside the module" do
-        lambda do
-          ConstantVisibility::PrivConstModule::PRIVATE_CONSTANT_MODULE
-        end.should raise_error(NameError)
-      end
-      
-      it "cannot be reopened as a module" do
-        lambda do
-          module ConstantVisibility::PrivConstModule::PRIVATE_CONSTANT_MODULE; end
-        end.should raise_error(NameError)
-      end
+describe "Module#private_constant marked constants" do
 
-      it "cannot be reopened as a class" do
-        lambda do
-          class ConstantVisibility::PrivConstModule::PRIVATE_CONSTANT_MODULE; end
-        end.should raise_error(NameError)
-      end
-      
-      it "is not defined? with A::B form" do
-        defined?(ConstantVisibility::PrivConstModule::PRIVATE_CONSTANT_MODULE).should == nil
-      end
-      
-      it "can be accessed from the module itself" do
-        ConstantVisibility::PrivConstModule.private_constant_from_self.should be_true
-      end
-      
-      it "is defined? from the module itself" do
-        ConstantVisibility::PrivConstModule.defined_from_self.should == "constant"
-      end
-      
-      it "can be accessed from lexical scope" do
-        ConstantVisibility::PrivConstModule::Nested.private_constant_from_scope.should be_true
-      end
-      
-      it "is defined? from lexical scope" do
-        ConstantVisibility::PrivConstModule::Nested.defined_from_scope.should == "constant"
-      end
-      
-      it "can be accessed from classes that include the module" do
-        ConstantVisibility::PrivConstModuleChild.new.private_constant_from_include.should be_true
-      end
-      
-      it "is defined? from classes that include the module" do
-        ConstantVisibility::PrivConstModuleChild.new.defined_from_include.should == "constant"
-      end
-    end
-    
-    describe "in a class" do
-      it "cannot be accessed from outside the class" do
-        lambda do
-          ConstantVisibility::PrivConstClass::PRIVATE_CONSTANT_CLASS
-        end.should raise_error(NameError)
-      end
-      
-      it "cannot be reopened as a module" do
-        lambda do
-          module ConstantVisibility::PrivConstClass::PRIVATE_CONSTANT_CLASS; end
-        end.should raise_error(NameError)
-      end
+  it "remain private even when updated" do
+    mod = Module.new
+    mod.const_set :Foo, true
+    mod.send :private_constant, :Foo
+    mod.const_set :Foo, false
 
-      it "cannot be reopened as a class" do
-        lambda do
-          class ConstantVisibility::PrivConstClass::PRIVATE_CONSTANT_CLASS; end
-        end.should raise_error(NameError)
-      end
+    lambda {mod::Foo}.should raise_error(NameError)
+  end
 
-      
-      it "is not defined? with A::B form" do
-        defined?(ConstantVisibility::PrivConstClass::PRIVATE_CONSTANT_CLASS).should == nil
-      end
-      
-      it "can be accessed from the class itself" do
-        ConstantVisibility::PrivConstClass.private_constant_from_self.should be_true
-      end
-      
-      it "is defined? from the class itself" do
-        ConstantVisibility::PrivConstClass.defined_from_self.should == "constant"
-      end
-      
-      it "can be accessed from lexical scope" do
-        ConstantVisibility::PrivConstClass::Nested.private_constant_from_scope.should be_true
-      end
-      
-      it "is defined? from lexical scope" do
-        ConstantVisibility::PrivConstClass::Nested.defined_from_scope.should == "constant"
-      end
-      
-      it "can be accessed from subclasses" do
-        ConstantVisibility::PrivConstClassChild.new.private_constant_from_subclass.should be_true
-      end
-      
-      it "is defined? from subclasses" do
-        ConstantVisibility::PrivConstClassChild.new.defined_from_subclass.should == "constant"
-      end
+  describe "in a module" do
+    it "cannot be accessed from outside the module" do
+      lambda do
+        ConstantVisibility::PrivConstModule::PRIVATE_CONSTANT_MODULE
+      end.should raise_error(NameError)
     end
-    
-    describe "in Object" do
-      it "cannot be accessed using ::Const form" do
-        lambda do
-          ::PRIVATE_CONSTANT_IN_OBJECT
-        end.should raise_error(NameError)
-      end
-      
-      it "is not defined? using ::Const form" do
-        defined?(::PRIVATE_CONSTANT_IN_OBJECT).should == nil
-      end
-      
-      it "can be accessed through the normal search" do
-        PRIVATE_CONSTANT_IN_OBJECT.should == true
-      end
-      
-      it "is defined? through the normal search" do
-        defined?(PRIVATE_CONSTANT_IN_OBJECT).should == "constant"
-      end
+
+    it "cannot be reopened as a module" do
+      lambda do
+        module ConstantVisibility::PrivConstModule::PRIVATE_CONSTANT_MODULE; end
+      end.should raise_error(NameError)
+    end
+
+    it "cannot be reopened as a class" do
+      lambda do
+        class ConstantVisibility::PrivConstModule::PRIVATE_CONSTANT_MODULE; end
+      end.should raise_error(NameError)
+    end
+
+    it "is not defined? with A::B form" do
+      defined?(ConstantVisibility::PrivConstModule::PRIVATE_CONSTANT_MODULE).should == nil
+    end
+
+    it "can be accessed from the module itself" do
+      ConstantVisibility::PrivConstModule.private_constant_from_self.should be_true
+    end
+
+    it "is defined? from the module itself" do
+      ConstantVisibility::PrivConstModule.defined_from_self.should == "constant"
+    end
+
+    it "can be accessed from lexical scope" do
+      ConstantVisibility::PrivConstModule::Nested.private_constant_from_scope.should be_true
+    end
+
+    it "is defined? from lexical scope" do
+      ConstantVisibility::PrivConstModule::Nested.defined_from_scope.should == "constant"
+    end
+
+    it "can be accessed from classes that include the module" do
+      ConstantVisibility::PrivConstModuleChild.new.private_constant_from_include.should be_true
+    end
+
+    it "is defined? from classes that include the module" do
+      ConstantVisibility::PrivConstModuleChild.new.defined_from_include.should == "constant"
     end
   end
-  
-  describe "Module#public_constant marked constants" do
+
+  describe "in a class" do
+    it "cannot be accessed from outside the class" do
+      lambda do
+        ConstantVisibility::PrivConstClass::PRIVATE_CONSTANT_CLASS
+      end.should raise_error(NameError)
+    end
+
+    it "cannot be reopened as a module" do
+      lambda do
+        module ConstantVisibility::PrivConstClass::PRIVATE_CONSTANT_CLASS; end
+      end.should raise_error(NameError)
+    end
+
+    it "cannot be reopened as a class" do
+      lambda do
+        class ConstantVisibility::PrivConstClass::PRIVATE_CONSTANT_CLASS; end
+      end.should raise_error(NameError)
+    end
+
+
+    it "is not defined? with A::B form" do
+      defined?(ConstantVisibility::PrivConstClass::PRIVATE_CONSTANT_CLASS).should == nil
+    end
+
+    it "can be accessed from the class itself" do
+      ConstantVisibility::PrivConstClass.private_constant_from_self.should be_true
+    end
+
+    it "is defined? from the class itself" do
+      ConstantVisibility::PrivConstClass.defined_from_self.should == "constant"
+    end
+
+    it "can be accessed from lexical scope" do
+      ConstantVisibility::PrivConstClass::Nested.private_constant_from_scope.should be_true
+    end
+
+    it "is defined? from lexical scope" do
+      ConstantVisibility::PrivConstClass::Nested.defined_from_scope.should == "constant"
+    end
+
+    it "can be accessed from subclasses" do
+      ConstantVisibility::PrivConstClassChild.new.private_constant_from_subclass.should be_true
+    end
+
+    it "is defined? from subclasses" do
+      ConstantVisibility::PrivConstClassChild.new.defined_from_subclass.should == "constant"
+    end
+  end
+
+  describe "in Object" do
+    it "cannot be accessed using ::Const form" do
+      lambda do
+        ::PRIVATE_CONSTANT_IN_OBJECT
+      end.should raise_error(NameError)
+    end
+
+    it "is not defined? using ::Const form" do
+      defined?(::PRIVATE_CONSTANT_IN_OBJECT).should == nil
+    end
+
+    it "can be accessed through the normal search" do
+      PRIVATE_CONSTANT_IN_OBJECT.should == true
+    end
+
+    it "is defined? through the normal search" do
+      defined?(PRIVATE_CONSTANT_IN_OBJECT).should == "constant"
+    end
+  end
+end
+
+describe "Module#public_constant marked constants" do
+  before :each do
+    @module = ConstantVisibility::PrivConstModule.dup
+  end
+
+  describe "in a module" do
+    it "can be accessed from outside the module" do
+      @module.send :public_constant, :PRIVATE_CONSTANT_MODULE
+      @module::PRIVATE_CONSTANT_MODULE.should == true
+    end
+
+    it "is defined? with A::B form" do
+      @module.send :public_constant, :PRIVATE_CONSTANT_MODULE
+      defined?(@module::PRIVATE_CONSTANT_MODULE).should == "constant"
+    end
+  end
+
+  describe "in a class" do
     before :each do
-      @module = ConstantVisibility::PrivConstModule.dup
+      @class = ConstantVisibility::PrivConstClass.dup
     end
-    
-    describe "in a module" do
-      it "can be accessed from outside the module" do
-        @module.send :public_constant, :PRIVATE_CONSTANT_MODULE
-        @module::PRIVATE_CONSTANT_MODULE.should == true
-      end
-      
-      it "is defined? with A::B form" do
-        @module.send :public_constant, :PRIVATE_CONSTANT_MODULE
-        defined?(@module::PRIVATE_CONSTANT_MODULE).should == "constant"
-      end
+
+    it "can be accessed from outside the class" do
+      @class.send :public_constant, :PRIVATE_CONSTANT_CLASS
+      @class::PRIVATE_CONSTANT_CLASS.should == true
     end
-    
-    describe "in a class" do
-      before :each do
-        @class = ConstantVisibility::PrivConstClass.dup
-      end
-      
-      it "can be accessed from outside the class" do
-        @class.send :public_constant, :PRIVATE_CONSTANT_CLASS
-        @class::PRIVATE_CONSTANT_CLASS.should == true
-      end
-      
-      it "is defined? with A::B form" do
-        @class.send :public_constant, :PRIVATE_CONSTANT_CLASS
-        defined?(@class::PRIVATE_CONSTANT_CLASS).should == "constant"
-      end
-    end
-    
-    describe "in Object" do
-      after :each do
-        ConstantVisibility.reset_private_constants
-      end
-      
-      it "can be accessed using ::Const form" do
-        Object.send :public_constant, :PRIVATE_CONSTANT_IN_OBJECT
-        ::PRIVATE_CONSTANT_IN_OBJECT.should == true
-      end
-      
-      it "is defined? using ::Const form" do
-        Object.send :public_constant, :PRIVATE_CONSTANT_IN_OBJECT
-        defined?(::PRIVATE_CONSTANT_IN_OBJECT).should == "constant"
-      end
+
+    it "is defined? with A::B form" do
+      @class.send :public_constant, :PRIVATE_CONSTANT_CLASS
+      defined?(@class::PRIVATE_CONSTANT_CLASS).should == "constant"
     end
   end
 
+  describe "in Object" do
+    after :each do
+      ConstantVisibility.reset_private_constants
+    end
+
+    it "can be accessed using ::Const form" do
+      Object.send :public_constant, :PRIVATE_CONSTANT_IN_OBJECT
+      ::PRIVATE_CONSTANT_IN_OBJECT.should == true
+    end
+
+    it "is defined? using ::Const form" do
+      Object.send :public_constant, :PRIVATE_CONSTANT_IN_OBJECT
+      defined?(::PRIVATE_CONSTANT_IN_OBJECT).should == "constant"
+    end
+  end
 end

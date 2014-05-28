@@ -37,33 +37,15 @@ describe :hash_replace, :shared => true do
     hash_a.default.should == hash_b.default
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a RuntimeError if called on a frozen instance that is modified" do
-      lambda do
-        HashSpecs.frozen_hash.send(@method, HashSpecs.empty_frozen_hash)
-      end.should raise_error(TypeError)
-    end
-
-    ruby_bug "#1571, [ruby-core:23714]", "1.8.8" do
-      it "raises a RuntimeError if called on a frozen instance that would not be modified" do
-        lambda do
-          HashSpecs.frozen_hash.send(@method, HashSpecs.frozen_hash)
-        end.should raise_error(TypeError)
-      end
-    end
+  it "raises a RuntimeError if called on a frozen instance that is modified" do
+    lambda do
+      HashSpecs.frozen_hash.send(@method, HashSpecs.frozen_hash)
+    end.should raise_error(RuntimeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError if called on a frozen instance that is modified" do
-      lambda do
-        HashSpecs.frozen_hash.send(@method, HashSpecs.frozen_hash)
-      end.should raise_error(RuntimeError)
-    end
-
-    it "raises a RuntimeError if called on a frozen instance that would not be modified" do
-      lambda do
-        HashSpecs.frozen_hash.send(@method, HashSpecs.empty_frozen_hash)
-      end.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError if called on a frozen instance that would not be modified" do
+    lambda do
+      HashSpecs.frozen_hash.send(@method, HashSpecs.empty_frozen_hash)
+    end.should raise_error(RuntimeError)
   end
 end

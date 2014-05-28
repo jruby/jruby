@@ -42,28 +42,15 @@ describe "Kernel.rand" do
     end
   end
 
-  ruby_version_is ""..."1.9" do
-    it "calls to_i on its argument" do
-      l = mock('limit')
-      l.should_receive(:to_i).and_return 7
+  it "calls to_int on its argument" do
+    l = mock('limit')
+    l.should_receive(:to_int).and_return 7
 
-      rand l
-    end
+    rand l
   end
 
-  ruby_version_is "1.9" do
-    it "calls to_int on its argument" do
-      l = mock('limit')
-      l.should_receive(:to_int).and_return 7
-
-      rand l
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "returns a float for an range argument where max is < 1" do
-      rand(0.25..0.75).should be_kind_of(Float)
-    end
+  it "returns a float for an range argument where max is < 1" do
+    rand(0.25..0.75).should be_kind_of(Float)
   end
 end
 

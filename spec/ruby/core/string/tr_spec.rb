@@ -21,24 +21,12 @@ describe "String#tr" do
     "hello".tr("a-z", "A-H.").should == "HE..."
   end
 
-  ruby_version_is '' ... '1.9.2' do
-    it "treats a descending range in the replacement as containing just the start character" do
-      "hello".tr("a-y", "z-b").should == "zzzzz"
-    end
-
-    it "treats a descending range in the source as empty" do
-      "hello".tr("l-a", "z").should == "hello"
-    end
+  it "raises an ArgumentError a descending range in the replacement as containing just the start character" do
+    lambda { "hello".tr("a-y", "z-b") }.should raise_error(ArgumentError)
   end
 
-  ruby_version_is '1.9.2' do
-    it "raises a ArgumentError a descending range in the replacement as containing just the start character" do
-      lambda { "hello".tr("a-y", "z-b") }.should raise_error(ArgumentError)
-    end
-
-    it "raises a ArgumentError a descending range in the source as empty" do
-      lambda { "hello".tr("l-a", "z") }.should raise_error(ArgumentError)
-    end
+  it "raises an ArgumentError a descending range in the source as empty" do
+    lambda { "hello".tr("l-a", "z") }.should raise_error(ArgumentError)
   end
 
   it "translates chars not in from_string when it starts with a ^" do
@@ -70,7 +58,7 @@ describe "String#tr" do
   end
 
   it "returns subclass instances when called on a subclass" do
-    StringSpecs::MyString.new("hello").tr("e", "a").should be_kind_of(StringSpecs::MyString)
+    StringSpecs::MyString.new("hello").tr("e", "a").should be_an_instance_of(StringSpecs::MyString)
   end
 
   it "taints the result when self is tainted" do
@@ -134,21 +122,10 @@ describe "String#tr!" do
     s.should == "hello"
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError if self is frozen" do
-      s = "abcdefghijklmnopqR".freeze
-      lambda { s.tr!("cdefg", "12") }.should raise_error(TypeError)
-      lambda { s.tr!("R", "S")      }.should raise_error(TypeError)
-      lambda { s.tr!("", "")        }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError if self is frozen" do
-      s = "abcdefghijklmnopqR".freeze
-      lambda { s.tr!("cdefg", "12") }.should raise_error(RuntimeError)
-      lambda { s.tr!("R", "S")      }.should raise_error(RuntimeError)
-      lambda { s.tr!("", "")        }.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError if self is frozen" do
+    s = "abcdefghijklmnopqR".freeze
+    lambda { s.tr!("cdefg", "12") }.should raise_error(RuntimeError)
+    lambda { s.tr!("R", "S")      }.should raise_error(RuntimeError)
+    lambda { s.tr!("", "")        }.should raise_error(RuntimeError)
   end
 end

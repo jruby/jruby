@@ -14,3 +14,6 @@ fails(gh-631):Marshal.dump with a Hash dumps an extended Hash
 fails(gh-631):Marshal.dump with a Regexp dumps a binary Regexp
 fails(gh-631):Marshal.dump with an Array dumps an extended Array
 fails:Marshal.dump with a Symbol dumps a big Symbol
+fails:Marshal.dump with a Symbol dumps an encoded Symbol
+fails:Marshal.dump with a Time dumps the zone and the offset
+fails:Marshal.dump with a Time dumps the zone, but not the offset if zone is UTC

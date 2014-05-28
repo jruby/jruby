@@ -34,7 +34,7 @@ describe "File.expand_path" do
   end
 
   not_compliant_on :ironruby do
-    it "converts a pathname to an absolute pathname, Ruby-Talk:18512 " do
+    it "converts a pathname to an absolute pathname, Ruby-Talk:18512" do
       # See Ruby-Talk:18512
       File.expand_path('.a').should == File.join(@base, '.a')
       File.expand_path('..a').should == File.join(@base, '..a')
@@ -88,8 +88,12 @@ describe "File.expand_path" do
   end
 
   platform_is_not :windows do
+    before do
+      @home = ENV['HOME'].chomp('/')
+    end
+
     # FIXME: these are insane!
-    it "expand path with " do
+    it "expand path with" do
       File.expand_path("../../bin", "/tmp/x").should == "/bin"
       File.expand_path("../../bin", "/tmp").should == "/bin"
       File.expand_path("../../bin", "/").should == "/bin"
@@ -104,10 +108,10 @@ describe "File.expand_path" do
       File.expand_path('./////').should == Dir.pwd
       File.expand_path('.').should == Dir.pwd
       File.expand_path(Dir.pwd).should == Dir.pwd
-      File.expand_path('~/').should == ENV['HOME']
-      File.expand_path('~/..badfilename').should == "#{ENV['HOME']}/..badfilename"
+      File.expand_path('~/').should == @home
+      File.expand_path('~/..badfilename').should == "#{@home}/..badfilename"
       File.expand_path('..').should == Dir.pwd.split('/')[0...-1].join("/")
-      File.expand_path('~/a','~/b').should == "#{ENV['HOME']}/a"
+      File.expand_path('~/a','~/b').should == "#{@home}/a"
     end
 
     not_compliant_on :rubinius, :macruby do
@@ -131,8 +135,8 @@ describe "File.expand_path" do
     end
 
     it "expands ~ENV['USER'] to the user's home directory" do
-      File.expand_path("~#{ENV['USER']}").should == ENV['HOME']
-      File.expand_path("~#{ENV['USER']}/a").should == "#{ENV['HOME']}/a"
+      File.expand_path("~#{ENV['USER']}").should == @home
+      File.expand_path("~#{ENV['USER']}/a").should == "#{@home}/a"
     end
 
     it "does not expand ~ENV['USER'] when it's not at the start" do
@@ -140,14 +144,12 @@ describe "File.expand_path" do
     end
 
     it "expands ../foo with ~/dir as base dir to /path/to/user/home/foo" do
-      File.expand_path('../foo', '~/dir').should == "#{ENV['HOME']}/foo"
+      File.expand_path('../foo', '~/dir').should == "#{@home}/foo"
     end
   end
 
-  ruby_version_is "1.9" do
-    it "accepts objects that have a #to_path method" do
-      File.expand_path(mock_to_path("a"), mock_to_path("#{@tmpdir}"))
-    end
+  it "accepts objects that have a #to_path method" do
+    File.expand_path(mock_to_path("a"), mock_to_path("#{@tmpdir}"))
   end
 
   it "raises a TypeError if not passed a String type" do
@@ -169,18 +171,19 @@ describe "File.expand_path" do
   end
 
   with_feature :encoding do
-    ruby_version_is ""..."2.0" do
-      it "produces a String in the default external encoding" do
-        Encoding.default_external = Encoding::SHIFT_JIS
-        File.expand_path("./a").encoding.should equal(Encoding::SHIFT_JIS)
-      end
+    it "returns a String in the same encoding as the argument" do
+      Encoding.default_external = Encoding::SHIFT_JIS
+
+      path = "./a".force_encoding Encoding::CP1251
+      File.expand_path(path).encoding.should equal(Encoding::CP1251)
+
+      weird_path = "\xde\xad\xbe\xaf".force_encoding Encoding::ASCII_8BIT
+      File.expand_path(weird_path).encoding.should equal(Encoding::ASCII_8BIT)
     end
 
-    ruby_version_is "2.0" do
-      it "returns a String in the same encoding as the argument" do
-        path = "./a".force_encoding Encoding::CP1251
-        File.expand_path(path).encoding.should equal(Encoding::CP1251)
-      end
+    it "expands a path when the default external encoding is ASCII-8BIT" do
+      Encoding.default_external = Encoding::ASCII_8BIT
+      File.expand_path("\xde\xad\xbe\xaf", "/").should == "/\xde\xad\xbe\xaf"
     end
 
     it "expands a path with multi-byte characters" do
@@ -201,7 +204,9 @@ describe "File.expand_path" do
 
   it "does not modify a HOME string argument" do
     str = "~/a"
-    File.expand_path(str).should == "#{home_directory.tr('\\', '/')}/a"
+    home = home_directory.tr('\\', '/').chomp('/')
+
+    File.expand_path(str).should == "#{home}/a"
     str.should == "~/a"
   end
 
@@ -233,18 +238,9 @@ platform_is_not :windows do
       lambda { File.expand_path("~/") }.should raise_error(ArgumentError)
     end
 
-    ruby_version_is ""..."1.8.7" do
-      it "returns '/' when passed '~' if HOME == ''" do
-        ENV["HOME"] = ""
-        File.expand_path("~").should == "/"
-      end
-    end
-
-    ruby_version_is "1.8.7" do
-      it "raises an ArgumentError when passed '~' if HOME == ''" do
-        ENV["HOME"] = ""
-        lambda { File.expand_path("~") }.should raise_error(ArgumentError)
-      end
+    it "raises an ArgumentError when passed '~' if HOME == ''" do
+      ENV["HOME"] = ""
+      lambda { File.expand_path("~") }.should raise_error(ArgumentError)
     end
   end
 end

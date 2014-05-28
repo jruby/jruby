@@ -33,29 +33,17 @@ describe "Array#clear" do
     lambda { [1].clear(true) }.should raise_error(ArgumentError)
   end
 
-  ruby_version_is '1.9' do
-    it "keeps untrusted status" do
-      a = [1]
-      a.untrust
-      a.untrusted?.should be_true
-      a.clear
-      a.untrusted?.should be_true
-    end
+  it "keeps untrusted status" do
+    a = [1]
+    a.untrust
+    a.untrusted?.should be_true
+    a.clear
+    a.untrusted?.should be_true
   end
 
-  ruby_version_is '' ... '1.9' do
-    it "raises a TypeError on a frozen array" do
-      a = [1]
-      a.freeze
-      lambda { a.clear }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is '1.9' do
-    it "raises a RuntimeError on a frozen array" do
-      a = [1]
-      a.freeze
-      lambda { a.clear }.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError on a frozen array" do
+    a = [1]
+    a.freeze
+    lambda { a.clear }.should raise_error(RuntimeError)
   end
 end

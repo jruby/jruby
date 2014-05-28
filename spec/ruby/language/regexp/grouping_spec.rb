@@ -6,12 +6,12 @@ describe "Regexps with grouping" do
     /(a)/.match("a").to_a.should == ["a", "a"]
   end
 
-  it "allow groups to be nested" do
+  it "allows groups to be nested" do
     md = /(hay(st)a)ck/.match('haystack')
     md.to_a.should == ['haystack','haysta', 'st']
   end
 
-  it "raise a SyntaxError when parentheses aren't balanced" do
+  it "raises a SyntaxError when parentheses aren't balanced" do
    lambda { eval "/(hay(st)ack/" }.should raise_error(SyntaxError)
   end
 

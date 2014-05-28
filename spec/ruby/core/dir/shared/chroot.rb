@@ -33,11 +33,9 @@ describe :dir_chroot_as_root, :shared => true do
     File.exists?("/#{File.basename(__FILE__)}").should be_false
   end
 
-  ruby_version_is "1.9" do
-    it "calls #to_path on non-String argument" do
-      p = mock('path')
-      p.should_receive(:to_path).and_return(@real_root)
-      Dir.send(@method, p)
-    end
+  it "calls #to_path on non-String argument" do
+    p = mock('path')
+    p.should_receive(:to_path).and_return(@real_root)
+    Dir.send(@method, p)
   end
 end

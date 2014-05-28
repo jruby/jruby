@@ -156,6 +156,10 @@ module IOSpecs
     def read(size, buf=nil)
       @io.read size, buf
     end
+
+    def send(*args)
+      raise "send called"
+    end
   end
 
   class CopyStreamReadPartial
@@ -165,6 +169,10 @@ module IOSpecs
 
     def readpartial(size, buf=nil)
       @io.readpartial size, buf
+    end
+
+    def send(*args)
+      raise "send called"
     end
   end
 end

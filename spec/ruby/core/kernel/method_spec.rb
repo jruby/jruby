@@ -31,12 +31,9 @@ describe "Kernel#method" do
     m.call.should == :defined
   end
 
-  ruby_version_is "1.9" do
-    it "can be called even if we only repond_to_missing? method, true" do
-      m = KernelSpecs::RespondViaMissing.new.method(:handled_privately)
-      m.should be_an_instance_of(Method)
-      m.call(1, 2, 3).should == "Done handled_privately([1, 2, 3])"
-    end
+  it "can be called even if we only repond_to_missing? method, true" do
+    m = KernelSpecs::RespondViaMissing.new.method(:handled_privately)
+    m.should be_an_instance_of(Method)
+    m.call(1, 2, 3).should == "Done handled_privately([1, 2, 3])"
   end
-
 end

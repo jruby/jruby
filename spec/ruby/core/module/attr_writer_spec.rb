@@ -33,23 +33,6 @@ describe "Module#attr_writer" do
     true.instance_variable_get("@spec_attr_writer").should == "a"
   end
 
-  ruby_version_is ""..."1.9" do
-    not_compliant_on :rubinius do
-      it "creates a setter for an attribute name given as a Fixnum" do
-        c = Class.new do
-          attr_writer :test1.to_i
-        end
-
-        o = c.new
-        o.respond_to?("test1").should == false
-        o.respond_to?("test1=").should == true
-
-        o.test1 = "test_1"
-        o.instance_variable_get(:@test1).should == "test_1"
-      end
-    end
-  end
-
   it "converts non string/symbol/fixnum names to strings using to_str" do
     (o = mock('test')).should_receive(:to_str).any_number_of_times.and_return("test")
     c = Class.new do

@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes.rb', __FILE__)
 
@@ -12,6 +14,13 @@ describe "String#reverse" do
     "".taint.reverse.tainted?.should == true
     "m".taint.reverse.tainted?.should == true
   end
+
+  with_feature :encoding do
+    it "reverses a string with multi byte characters" do
+      "微軟正黑體".reverse.should == "體黑正軟微"
+    end
+  end
+
 end
 
 describe "String#reverse!" do
@@ -23,26 +32,21 @@ describe "String#reverse!" do
     "".reverse!.should == ""
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises a TypeError on a frozen instance that is modified" do
-      lambda { "anna".freeze.reverse!  }.should raise_error(TypeError)
-      lambda { "hello".freeze.reverse! }.should raise_error(TypeError)
-    end
-
-    it "does not raise an exception on a frozen instance that would not be modified" do
-      "".freeze.reverse!.should == ""
-    end
+  it "raises a RuntimeError on a frozen instance that is modified" do
+    lambda { "anna".freeze.reverse!  }.should raise_error(RuntimeError)
+    lambda { "hello".freeze.reverse! }.should raise_error(RuntimeError)
   end
 
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError on a frozen instance that is modified" do
-      lambda { "anna".freeze.reverse!  }.should raise_error(RuntimeError)
-      lambda { "hello".freeze.reverse! }.should raise_error(RuntimeError)
-    end
+  # see [ruby-core:23666]
+  it "raises a RuntimeError on a frozen instance that would not be modified" do
+    lambda { "".freeze.reverse! }.should raise_error(RuntimeError)
+  end
 
-    # see [ruby-core:23666]
-    it "raises a RuntimeError on a frozen instance that would not be modified" do
-      lambda { "".freeze.reverse! }.should raise_error(RuntimeError)
+  with_feature :encoding do
+    it "reverses a string with multi byte characters" do
+      str = "微軟正黑體"
+      str.reverse!
+      str.should == "體黑正軟微"
     end
   end
 end

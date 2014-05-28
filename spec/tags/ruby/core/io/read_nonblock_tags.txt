@@ -1,0 +1,2 @@
+fails:IO#read_nonblock allows for reading 0 bytes before any write
+fails:IO#read_nonblock allows for reading 0 bytes after a write

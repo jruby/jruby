@@ -18,44 +18,20 @@ describe "Array#compact" do
     a.compact.should_not equal(a)
   end
 
-  ruby_version_is '' ... '1.9.3' do
-    it "keeps tainted status even if all elements are removed" do
-      a = [nil, nil]
-      a.taint
-      a.compact.tainted?.should be_true
-    end
+  it "does not return subclass instance for Array subclasses" do
+    ArraySpecs::MyArray[1, 2, 3, nil].compact.should be_an_instance_of(Array)
   end
 
-  ruby_version_is '1.9' ... '1.9.3' do
-    it "keeps untrusted status even if all elements are removed" do
-      a = [nil, nil]
-      a.untrust
-      a.compact.untrusted?.should be_true
-    end
+  it "does not keep tainted status even if all elements are removed" do
+    a = [nil, nil]
+    a.taint
+    a.compact.tainted?.should be_false
   end
 
-  ruby_version_is '' ... '1.9.3' do
-    it "returns subclass instance for Array subclasses" do
-      ArraySpecs::MyArray[1, 2, 3, nil].compact.should be_an_instance_of(ArraySpecs::MyArray)
-    end
-  end
-
-  ruby_version_is '1.9.3' do
-    it "does not return subclass instance for Array subclasses" do
-      ArraySpecs::MyArray[1, 2, 3, nil].compact.should be_an_instance_of(Array)
-    end
-
-    it "does not keep tainted status even if all elements are removed" do
-      a = [nil, nil]
-      a.taint
-      a.compact.tainted?.should be_false
-    end
-
-    it "does not keep untrusted status even if all elements are removed" do
-      a = [nil, nil]
-      a.untrust
-      a.compact.untrusted?.should be_false
-    end
+  it "does not keep untrusted status even if all elements are removed" do
+    a = [nil, nil]
+    a.untrust
+    a.compact.untrusted?.should be_false
   end
 end
 
@@ -88,24 +64,14 @@ describe "Array#compact!" do
     a.tainted?.should be_true
   end
 
-  ruby_version_is '1.9' do
-    it "keeps untrusted status even if all elements are removed" do
-      a = [nil, nil]
-      a.untrust
-      a.compact!
-      a.untrusted?.should be_true
-    end
+  it "keeps untrusted status even if all elements are removed" do
+    a = [nil, nil]
+    a.untrust
+    a.compact!
+    a.untrusted?.should be_true
   end
 
-  ruby_version_is '' ... '1.9' do
-    it "raises a TypeError on a frozen array" do
-      lambda { ArraySpecs.frozen_array.compact! }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is '1.9' do
-    it "raises a RuntimeError on a frozen array" do
-      lambda { ArraySpecs.frozen_array.compact! }.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError on a frozen array" do
+    lambda { ArraySpecs.frozen_array.compact! }.should raise_error(RuntimeError)
   end
 end

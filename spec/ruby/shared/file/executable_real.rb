@@ -19,10 +19,8 @@ describe :file_executable_real, :shared => true do
       @object.send(@method, @file2).should == false
     end
 
-    ruby_version_is "1.9" do
-      it "accepts an object that has a #to_path method" do
-        @object.send(@method, mock_to_path(@file1)).should == true
-      end
+    it "accepts an object that has a #to_path method" do
+      @object.send(@method, mock_to_path(@file1)).should == true
     end
   end
 

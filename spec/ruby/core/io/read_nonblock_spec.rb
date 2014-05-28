@@ -15,10 +15,8 @@ describe "IO#read_nonblock" do
     lambda { @read.read_nonblock(5) }.should raise_error(Errno::EAGAIN)
   end
 
-  ruby_version_is "1.9" do
-    it "raises IO::WaitReadable when there is no data" do
-      lambda { @read.read_nonblock(5) }.should raise_error(IO::WaitReadable)
-    end
+  it "raises IO::WaitReadable when there is no data" do
+    lambda { @read.read_nonblock(5) }.should raise_error(IO::WaitReadable)
   end
 
   it "returns at most the number of bytes requested" do
@@ -31,19 +29,19 @@ describe "IO#read_nonblock" do
     @read.read_nonblock(10).should == "hello"
   end
 
+  it "allows for reading 0 bytes before any write" do
+    @read.read_nonblock(0).should == ""
+  end
+
+  it "allows for reading 0 bytes after a write" do
+    @write.write "1"
+    @read.read_nonblock(0).should == ""
+    @read.read_nonblock(1).should == "1"
+  end
+
   not_compliant_on :rubinius, :jruby do
-    ruby_version_is ""..."1.9" do
-      it "changes the behavior of #read to nonblocking" do
-        @write << "hello"
-        @read.read_nonblock(5)
-
-        # Yes, use normal IO#read here. #read_nonblock has changed the internal
-        # flags of @read to be nonblocking, so now any normal read calls raise
-        # EAGAIN if there is no data.
-        lambda { @read.read(5) }.should raise_error(Errno::EAGAIN)
-      end
-    end
-
+    # TODO: Fix this.
+    #
     # This feature was changed in 1.9
     # see also: [ruby-dev:25101] http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-dev/25101
     #   and #2469 http://redmine.ruby-lang.org/issues/show/2469

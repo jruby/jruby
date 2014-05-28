@@ -12,58 +12,28 @@ describe "Kernel.lambda" do
     Kernel.should have_private_instance_method(:lambda)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "does not check the arity of the call when no args are specified" do
-      l = lambda { :called }
-      l.call.should == :called
+  it "checks the arity of the call when no args are specified" do
+    l = lambda { :called }
+    l.call.should == :called
 
-      # Check one and two args because the block argument handling changes
-      # at two arguments.
-      l.call(1).should == :called
-      l.call(1, 2).should == :called
-    end
-
-    it "does not check the arity when 1 arg is specified" do
-      l = lambda { |a| :called }
-
-      l.call.should == :called
-      l.call(1).should == :called
-      l.call(1, 2).should == :called
-    end
-
-    it "checks the arity when passing a Proc with &" do
-      l = lambda { || :called }
-      p = proc { || :called }
-
-      lambda { l.call(1) }.should raise_error(ArgumentError)
-      lambda { p.call(1) }.should raise_error(ArgumentError)
-    end
+    lambda { l.call(1) }.should raise_error(ArgumentError)
+    lambda { l.call(1, 2) }.should raise_error(ArgumentError)
   end
 
-  ruby_version_is "1.9" do
-    it "checks the arity of the call when no args are specified" do
-      l = lambda { :called }
-      l.call.should == :called
+  it "checks the arity when 1 arg is specified" do
+    l = lambda { |a| :called }
+    l.call(1).should == :called
 
-      lambda { l.call(1) }.should raise_error(ArgumentError)
-      lambda { l.call(1, 2) }.should raise_error(ArgumentError)
-    end
+    lambda { l.call }.should raise_error(ArgumentError)
+    lambda { l.call(1, 2) }.should raise_error(ArgumentError)
+  end
 
-    it "checks the arity when 1 arg is specified" do
-      l = lambda { |a| :called }
-      l.call(1).should == :called
+  it "does not check the arity when passing a Proc with &" do
+    l = lambda { || :called }
+    p = proc { || :called }
 
-      lambda { l.call }.should raise_error(ArgumentError)
-      lambda { l.call(1, 2) }.should raise_error(ArgumentError)
-    end
-
-    it "does not check the arity when passing a Proc with &" do
-      l = lambda { || :called }
-      p = proc { || :called }
-
-      lambda { l.call(1) }.should raise_error(ArgumentError)
-      p.call(1).should == :called
-    end
+    lambda { l.call(1) }.should raise_error(ArgumentError)
+    p.call(1).should == :called
   end
 
   it "accepts 0 arguments when used with ||" do

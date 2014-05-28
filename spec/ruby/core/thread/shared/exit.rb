@@ -76,13 +76,18 @@ describe :thread_exit, :shared => true do
     ScratchPad.recorded.should == nil
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "killing dying sleeping thread wakes up thread" do
-      t = ThreadSpecs.dying_thread_ensures { Thread.stop; ScratchPad.record :after_stop }
+  with_feature :fiber do
+    it "kills the entire thread when a fiber is active" do
+      t = Thread.new do
+        Fiber.new do
+          sleep
+        end.resume
+        ScratchPad.record :fiber_resumed
+      end
       Thread.pass while t.status and t.status != "sleep"
       t.send(@method)
       t.join
-      ScratchPad.recorded.should == :after_stop
+      ScratchPad.recorded.should == nil
     end
   end
 

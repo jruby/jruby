@@ -295,6 +295,12 @@ static VALUE array_spec_rb_ary_to_ary(VALUE self, VALUE ary) {
 }
 #endif
 
+#ifdef HAVE_RB_ARY_SUBSEQ
+static VALUE array_spec_rb_ary_subseq(VALUE self, VALUE ary, VALUE begin, VALUE len) {
+  return rb_ary_subseq(ary, FIX2LONG(begin), FIX2LONG(len));
+}
+#endif
+
 void Init_array_spec() {
   VALUE cls;
   cls = rb_define_class("CApiArraySpecs", rb_cObject);
@@ -419,6 +425,10 @@ void Init_array_spec() {
 
 #ifdef HAVE_RB_ARY_TO_ARY
   rb_define_method(cls, "rb_ary_to_ary", array_spec_rb_ary_to_ary, 1);
+#endif
+
+#ifdef HAVE_RB_ARY_SUBSEQ
+  rb_define_method(cls, "rb_ary_subseq", array_spec_rb_ary_subseq, 3);
 #endif
 }
 

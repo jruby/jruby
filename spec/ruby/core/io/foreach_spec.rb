@@ -10,13 +10,6 @@ describe "IO.foreach" do
     ScratchPad.record []
   end
 
-  ruby_version_is "1.8.7" do
-    it "returns an Enumerator when called without a block" do
-      IO.foreach(@name).should be_an_instance_of(enumerator_class)
-      IO.foreach(@name).to_a.should == IOSpecs.lines
-    end
-  end
-
   it "updates $. with each yield" do
     IO.foreach(@name) { $..should == @count += 1 }
   end
@@ -43,39 +36,30 @@ describe "IO.foreach" do
   end
 end
 
-ruby_version_is ""..."1.9" do
-  describe "IO.foreach" do
-    before :each do
-      @name = fixture __FILE__, "lines.txt"
-      ScratchPad.record []
-    end
+describe "IO.foreach" do
+  before :each do
+    @external = Encoding.default_external
+    Encoding.default_external = Encoding::UTF_8
 
-    it_behaves_like :io_readlines, :foreach, IOSpecs.collector
-    it_behaves_like :io_readlines_options_18, :foreach, IOSpecs.collector
+    @name = fixture __FILE__, "lines.txt"
+    ScratchPad.record []
   end
-end
 
-ruby_version_is "1.9" do
-  describe "IO.foreach" do
-    before :each do
-      @external = Encoding.default_external
-      Encoding.default_external = Encoding::UTF_8
-
-      @name = fixture __FILE__, "lines.txt"
-      ScratchPad.record []
-    end
-
-    after :each do
-      Encoding.default_external = @external
-    end
-
-    it "sets $_ to nil" do
-      $_ = "test"
-      IO.foreach(@name) { }
-      $_.should be_nil
-    end
-
-    it_behaves_like :io_readlines, :foreach, IOSpecs.collector
-    it_behaves_like :io_readlines_options_19, :foreach, IOSpecs.collector
+  after :each do
+    Encoding.default_external = @external
   end
+
+  it "sets $_ to nil" do
+    $_ = "test"
+    IO.foreach(@name) { }
+    $_.should be_nil
+  end
+
+  it "returns an Enumerator when called without a block" do
+    IO.foreach(@name).should be_an_instance_of(enumerator_class)
+    IO.foreach(@name).to_a.should == IOSpecs.lines
+  end
+
+  it_behaves_like :io_readlines, :foreach, IOSpecs.collector
+  it_behaves_like :io_readlines_options_19, :foreach, IOSpecs.collector
 end

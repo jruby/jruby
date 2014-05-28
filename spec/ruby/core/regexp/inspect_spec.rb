@@ -17,20 +17,10 @@ describe "Regexp#inspect" do
     //o.inspect.should == "//"
   end
 
-  ruby_version_is ""..."1.9" do
-    it "includes the character set code after other options" do
-      //xu.inspect.should  == "//xu"
-      //six.inspect.should == "//ixs"
-      //ni.inspect.should  == "//in"
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "does not include a character set code" do
-      //u.inspect.should == "//"
-      //s.inspect.should == "//"
-      //e.inspect.should == "//"
-    end
+  it "does not include a character set code" do
+    //u.inspect.should == "//"
+    //s.inspect.should == "//"
+    //e.inspect.should == "//"
   end
 
   it "correctly escapes forward slashes /" do

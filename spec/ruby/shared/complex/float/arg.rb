@@ -8,11 +8,9 @@ describe :float_arg, :shared => true do
     end
   end
 
-  ruby_version_is "1.9" do
-    it "returns self if NaN" do
-      f = nan_value
-      f.send(@method).should equal(f)
-    end
+  it "returns self if NaN" do
+    f = nan_value
+    f.send(@method).should equal(f)
   end
 
   it "returns 0 if positive" do

@@ -9,3 +9,7 @@ fails:Marshal.load for a user Class loads a user-marshaled extended object
 fails:Marshal.load for a user Class loads an extended Object
 fails:Marshal.load for a Regexp loads an extended Regexp
 fails:Marshal.load for a Regexp loads a extended_user_regexp having ivar
+fails:Marshal.load when source is tainted does not taint Bignums
+fails:Marshal.load when source is tainted does not taint Floats
+fails:Marshal.load when a class with the same name as the dumped one exists outside the namespace raises a NameError
+fails:Marshal.load when a class with the same name as the dumped one exists outside the namespace invokes Module#const_missing

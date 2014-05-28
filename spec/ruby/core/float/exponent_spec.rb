@@ -8,11 +8,8 @@ describe "Float#**" do
     (9.5 ** 0xffffffff).to_s.should == 'Infinity'
   end
 
-  ruby_version_is '1.9' do
-    it "returns a complex number when negative and raised to a fractional power" do
-      ((-8.0) ** (1.0/3))      .should be_close(Complex(1, 1.73205), TOLERANCE)
-      ((-8.0) ** Rational(1,3)).should be_close(Complex(1, 1.73205), TOLERANCE)
-    end
+  it "returns a complex number when negative and raised to a fractional power" do
+    ((-8.0) ** (1.0/3))      .should be_close(Complex(1, 1.73205), TOLERANCE)
+    ((-8.0) ** Rational(1,3)).should be_close(Complex(1, 1.73205), TOLERANCE)
   end
-
 end

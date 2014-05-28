@@ -83,86 +83,42 @@ describe :regexp_new_string, :shared => true do
     (r.options & Regexp::EXTENDED).should       == 0
   end
 
-  ruby_version_is ""..."1.9" do
-    it "does not enable multibyte support by default" do
-      r = Regexp.send @method, 'Hi', true
-      r.kcode.should_not == 'euc'
-      r.kcode.should_not == 'sjis'
-      r.kcode.should_not == 'utf8'
-    end
-
-    it "enables EUC encoding if third argument is 'e' or 'euc' (case-insensitive)" do
-      Regexp.send(@method, 'Hi', nil, 'e').kcode.should     == 'euc'
-      Regexp.send(@method, 'Hi', nil, 'E').kcode.should     == 'euc'
-      Regexp.send(@method, 'Hi', nil, 'euc').kcode.should   == 'euc'
-      Regexp.send(@method, 'Hi', nil, 'EUC').kcode.should   == 'euc'
-      Regexp.send(@method, 'Hi', nil, 'EuC').kcode.should   == 'euc'
-    end
-
-    it "enables SJIS encoding if third argument is 's' or 'sjis' (case-insensitive)" do
-      Regexp.send(@method, 'Hi', nil, 's').kcode.should     == 'sjis'
-      Regexp.send(@method, 'Hi', nil, 'S').kcode.should     == 'sjis'
-      Regexp.send(@method, 'Hi', nil, 'sjis').kcode.should  == 'sjis'
-      Regexp.send(@method, 'Hi', nil, 'SJIS').kcode.should  == 'sjis'
-      Regexp.send(@method, 'Hi', nil, 'sJiS').kcode.should  == 'sjis'
-    end
-
-    it "enables UTF-8 encoding if third argument is 'u' or 'utf8' (case-insensitive)" do
-      Regexp.send(@method, 'Hi', nil, 'u').kcode.should     == 'utf8'
-      Regexp.send(@method, 'Hi', nil, 'U').kcode.should     == 'utf8'
-      Regexp.send(@method, 'Hi', nil, 'utf8').kcode.should  == 'utf8'
-      Regexp.send(@method, 'Hi', nil, 'UTF8').kcode.should  == 'utf8'
-      Regexp.send(@method, 'Hi', nil, 'uTf8').kcode.should  == 'utf8'
-    end
-
-    it "disables multibyte support if third argument is 'n' or 'none' (case insensitive)" do
-      Regexp.send(@method, 'Hi', nil, 'N').kcode.should == 'none'
-      Regexp.send(@method, 'Hi', nil, 'n').kcode.should == 'none'
-      Regexp.send(@method, 'Hi', nil, 'nONE').kcode.should == 'none'
-      Regexp.send(@method, '[^\\x0d\\x22\\x5c\\x80-\\xff]', nil, 'n').kcode.should == 'none'
-    end
+  it "ignores the third argument if it is 'e' or 'euc' (case-insensitive)" do
+    Regexp.send(@method, 'Hi', nil, 'e').encoding.should    == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'E').encoding.should    == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'euc').encoding.should  == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'EUC').encoding.should  == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'EuC').encoding.should  == Encoding::US_ASCII
   end
 
-  ruby_version_is "1.9" do
-
-    it "ignores the third argument if it is 'e' or 'euc' (case-insensitive)" do
-      Regexp.send(@method, 'Hi', nil, 'e').encoding.should    == Encoding::US_ASCII
-      Regexp.send(@method, 'Hi', nil, 'E').encoding.should    == Encoding::US_ASCII
-      Regexp.send(@method, 'Hi', nil, 'euc').encoding.should  == Encoding::US_ASCII
-      Regexp.send(@method, 'Hi', nil, 'EUC').encoding.should  == Encoding::US_ASCII
-      Regexp.send(@method, 'Hi', nil, 'EuC').encoding.should  == Encoding::US_ASCII
-    end
-
-    it "ignores the third argument if it is 's' or 'sjis' (case-insensitive)" do
-      Regexp.send(@method, 'Hi', nil, 's').encoding.should     == Encoding::US_ASCII
-      Regexp.send(@method, 'Hi', nil, 'S').encoding.should     == Encoding::US_ASCII
-      Regexp.send(@method, 'Hi', nil, 'sjis').encoding.should  == Encoding::US_ASCII
-      Regexp.send(@method, 'Hi', nil, 'SJIS').encoding.should  == Encoding::US_ASCII
-      Regexp.send(@method, 'Hi', nil, 'sJiS').encoding.should  == Encoding::US_ASCII
-    end
-
-    it "ignores the third argument if it is 'u' or 'utf8' (case-insensitive)" do
-      Regexp.send(@method, 'Hi', nil, 'u').encoding.should     == Encoding::US_ASCII
-      Regexp.send(@method, 'Hi', nil, 'U').encoding.should     == Encoding::US_ASCII
-      Regexp.send(@method, 'Hi', nil, 'utf8').encoding.should  == Encoding::US_ASCII
-      Regexp.send(@method, 'Hi', nil, 'UTF8').encoding.should  == Encoding::US_ASCII
-      Regexp.send(@method, 'Hi', nil, 'uTf8').encoding.should  == Encoding::US_ASCII
-    end
-
-    it "uses US_ASCII encoding if third argument is 'n' or 'none' (case insensitive) and only ascii characters" do
-      Regexp.send(@method, 'Hi', nil, 'N').encoding.should     == Encoding::US_ASCII
-      Regexp.send(@method, 'Hi', nil, 'n').encoding.should     == Encoding::US_ASCII
-      Regexp.send(@method, 'Hi', nil, 'nONE').encoding.should  == Encoding::US_ASCII
-    end
-
-    it "uses ASCII_8BIT encoding if third argument is 'n' or 'none' (case insensitive) and non-ascii characters" do
-      Regexp.send(@method, "\xff", nil, 'N').encoding.should     == Encoding::ASCII_8BIT
-      Regexp.send(@method, "\xff", nil, 'n').encoding.should     == Encoding::ASCII_8BIT
-      Regexp.send(@method, "\xff", nil, 'nONE').encoding.should  == Encoding::ASCII_8BIT
-      Regexp.send(@method, '[^\\x0d\\x22\\x5c\\x80-\\xff]', nil, 'n').encoding.should  == Encoding::ASCII_8BIT
-    end
+  it "ignores the third argument if it is 's' or 'sjis' (case-insensitive)" do
+    Regexp.send(@method, 'Hi', nil, 's').encoding.should     == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'S').encoding.should     == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'sjis').encoding.should  == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'SJIS').encoding.should  == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'sJiS').encoding.should  == Encoding::US_ASCII
   end
 
+  it "ignores the third argument if it is 'u' or 'utf8' (case-insensitive)" do
+    Regexp.send(@method, 'Hi', nil, 'u').encoding.should     == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'U').encoding.should     == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'utf8').encoding.should  == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'UTF8').encoding.should  == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'uTf8').encoding.should  == Encoding::US_ASCII
+  end
+
+  it "uses US_ASCII encoding if third argument is 'n' or 'none' (case insensitive) and only ascii characters" do
+    Regexp.send(@method, 'Hi', nil, 'N').encoding.should     == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'n').encoding.should     == Encoding::US_ASCII
+    Regexp.send(@method, 'Hi', nil, 'nONE').encoding.should  == Encoding::US_ASCII
+  end
+
+  it "uses ASCII_8BIT encoding if third argument is 'n' or 'none' (case insensitive) and non-ascii characters" do
+    Regexp.send(@method, "\xff", nil, 'N').encoding.should     == Encoding::ASCII_8BIT
+    Regexp.send(@method, "\xff", nil, 'n').encoding.should     == Encoding::ASCII_8BIT
+    Regexp.send(@method, "\xff", nil, 'nONE').encoding.should  == Encoding::ASCII_8BIT
+    Regexp.send(@method, '[^\\x0d\\x22\\x5c\\x80-\\xff]', nil, 'n').encoding.should  == Encoding::ASCII_8BIT
+  end
 
   describe "with escaped characters" do
     it "raises a Regexp error if there is a trailing backslash" do
@@ -201,19 +157,8 @@ describe :regexp_new_string, :shared => true do
       Regexp.send(@method, "\x420").should == /#{"\x420"}/
     end
 
-    ruby_version_is ""..."1.9" do
-      # TODO: Add version argument to compliance guards
-      not_supported_on :rubinius do
-        it "raises a RegexpError if \\x is not followed by any hexadecimal digits" do
-          lambda { Regexp.send(@method, "\\" + "xn") }.should raise_error(RegexpError)
-        end
-      end
-    end
-
-    ruby_version_is "1.9" do
-      it "raises a RegexpError if \\x is not followed by any hexadecimal digits" do
-        lambda { Regexp.send(@method, "\\" + "xn") }.should raise_error(RegexpError)
-      end
+    it "raises a RegexpError if \\x is not followed by any hexadecimal digits" do
+      lambda { Regexp.send(@method, "\\" + "xn") }.should raise_error(RegexpError)
     end
 
     it "accepts an escaped string interpolation" do
@@ -412,120 +357,118 @@ describe :regexp_new_string, :shared => true do
       Regexp.send(@method, "\061\x42").should == /#{"\x31\x42"}/
     end
 
-    ruby_version_is "1.9" do
-      it "accepts \\u{H} for a single Unicode codepoint" do
-        Regexp.send(@method, "\u{f}").should == /#{"\x0f"}/
-      end
+    it "accepts \\u{H} for a single Unicode codepoint" do
+      Regexp.send(@method, "\u{f}").should == /#{"\x0f"}/
+    end
 
-      it "accepts \\u{HH} for a single Unicode codepoint" do
-        Regexp.send(@method, "\u{7f}").should == /#{"\x7f"}/
-      end
+    it "accepts \\u{HH} for a single Unicode codepoint" do
+      Regexp.send(@method, "\u{7f}").should == /#{"\x7f"}/
+    end
 
-      it "accepts \\u{HHH} for a single Unicode codepoint" do
-        Regexp.send(@method, "\u{07f}").should == /#{"\x7f"}/
-      end
+    it "accepts \\u{HHH} for a single Unicode codepoint" do
+      Regexp.send(@method, "\u{07f}").should == /#{"\x7f"}/
+    end
 
-      it "accepts \\u{HHHH} for a single Unicode codepoint" do
-        Regexp.send(@method, "\u{0000}").should == /#{"\x00"}/
-      end
+    it "accepts \\u{HHHH} for a single Unicode codepoint" do
+      Regexp.send(@method, "\u{0000}").should == /#{"\x00"}/
+    end
 
-      it "accepts \\u{HHHHH} for a single Unicode codepoint" do
-        Regexp.send(@method, "\u{00001}").should == /#{"\x01"}/
-      end
+    it "accepts \\u{HHHHH} for a single Unicode codepoint" do
+      Regexp.send(@method, "\u{00001}").should == /#{"\x01"}/
+    end
 
-      it "accepts \\u{HHHHHH} for a single Unicode codepoint" do
-        Regexp.send(@method, "\u{000000}").should == /#{"\x00"}/
-      end
+    it "accepts \\u{HHHHHH} for a single Unicode codepoint" do
+      Regexp.send(@method, "\u{000000}").should == /#{"\x00"}/
+    end
 
-      it "accepts characters followed by \\u{HHHH}" do
-        Regexp.send(@method, "abc\u{3042}").should == /#{"abc\u3042"}/
-      end
+    it "accepts characters followed by \\u{HHHH}" do
+      Regexp.send(@method, "abc\u{3042}").should == /#{"abc\u3042"}/
+    end
 
-      it "accepts \\u{HHHH} followed by characters" do
-        Regexp.send(@method, "\u{3042}abc").should == /#{"\u3042abc"}/
-      end
+    it "accepts \\u{HHHH} followed by characters" do
+      Regexp.send(@method, "\u{3042}abc").should == /#{"\u3042abc"}/
+    end
 
-      it "accepts escaped hexadecimal digits followed by \\u{HHHH}" do
-        Regexp.send(@method, "\x42\u{3042}").should == /#{"\x42\u3042"}/
-      end
+    it "accepts escaped hexadecimal digits followed by \\u{HHHH}" do
+      Regexp.send(@method, "\x42\u{3042}").should == /#{"\x42\u3042"}/
+    end
 
-      it "accepts escaped octal digits followed by \\u{HHHH}" do
-        Regexp.send(@method, "\056\u{3042}").should == /#{"\x2e\u3042"}/
-      end
+    it "accepts escaped octal digits followed by \\u{HHHH}" do
+      Regexp.send(@method, "\056\u{3042}").should == /#{"\x2e\u3042"}/
+    end
 
-      it "accepts a combination of escaped octal and hexadecimal digits and \\u{HHHH}" do
-        Regexp.send(@method, "\056\x42\u{3042}\x52\076").should == /#{"\x2e\x42\u3042\x52\x3e"}/
-      end
+    it "accepts a combination of escaped octal and hexadecimal digits and \\u{HHHH}" do
+      Regexp.send(@method, "\056\x42\u{3042}\x52\076").should == /#{"\x2e\x42\u3042\x52\x3e"}/
+    end
 
-      it "accepts \\uHHHH for a single Unicode codepoint" do
-        Regexp.send(@method, "\u3042").should == /#{"\u3042"}/
-      end
+    it "accepts \\uHHHH for a single Unicode codepoint" do
+      Regexp.send(@method, "\u3042").should == /#{"\u3042"}/
+    end
 
-      it "accepts characters followed by \\uHHHH" do
-        Regexp.send(@method, "abc\u3042").should == /#{"abc\u3042"}/
-      end
+    it "accepts characters followed by \\uHHHH" do
+      Regexp.send(@method, "abc\u3042").should == /#{"abc\u3042"}/
+    end
 
-      it "accepts \\uHHHH followed by characters" do
-        Regexp.send(@method, "\u3042abc").should == /#{"\u3042abc"}/
-      end
+    it "accepts \\uHHHH followed by characters" do
+      Regexp.send(@method, "\u3042abc").should == /#{"\u3042abc"}/
+    end
 
-      it "accepts escaped hexadecimal digits followed by \\uHHHH" do
-        Regexp.send(@method, "\x42\u3042").should == /#{"\x42\u3042"}/
-      end
+    it "accepts escaped hexadecimal digits followed by \\uHHHH" do
+      Regexp.send(@method, "\x42\u3042").should == /#{"\x42\u3042"}/
+    end
 
-      it "accepts escaped octal digits followed by \\uHHHH" do
-        Regexp.send(@method, "\056\u3042").should == /#{"\x2e\u3042"}/
-      end
+    it "accepts escaped octal digits followed by \\uHHHH" do
+      Regexp.send(@method, "\056\u3042").should == /#{"\x2e\u3042"}/
+    end
 
-      it "accepts a combination of escaped octal and hexadecimal digits and \\uHHHH" do
-        Regexp.send(@method, "\056\x42\u3042\x52\076").should == /#{"\x2e\x42\u3042\x52\x3e"}/
-      end
+    it "accepts a combination of escaped octal and hexadecimal digits and \\uHHHH" do
+      Regexp.send(@method, "\056\x42\u3042\x52\076").should == /#{"\x2e\x42\u3042\x52\x3e"}/
+    end
 
-      it "raises a RegexpError if less than four digits are given for \\uHHHH" do
-        lambda { Regexp.send(@method, "\\" + "u304") }.should raise_error(RegexpError)
-      end
+    it "raises a RegexpError if less than four digits are given for \\uHHHH" do
+      lambda { Regexp.send(@method, "\\" + "u304") }.should raise_error(RegexpError)
+    end
 
-      it "raises a RegexpError if the \\u{} escape is empty" do
-        lambda { Regexp.send(@method, "\\" + "u{}") }.should raise_error(RegexpError)
-      end
+    it "raises a RegexpError if the \\u{} escape is empty" do
+      lambda { Regexp.send(@method, "\\" + "u{}") }.should raise_error(RegexpError)
+    end
 
-      it "raises a RegexpError if more than six hexadecimal digits are given" do
-        lambda { Regexp.send(@method, "\\" + "u{0ffffff}") }.should raise_error(RegexpError)
-      end
+    it "raises a RegexpError if more than six hexadecimal digits are given" do
+      lambda { Regexp.send(@method, "\\" + "u{0ffffff}") }.should raise_error(RegexpError)
+    end
 
-      it "returns a Regexp with US-ASCII encoding if only 7-bit ASCII characters are present regardless of the input String's encoding" do
-        Regexp.send(@method, "abc").encoding.should == Encoding::US_ASCII
-      end
+    it "returns a Regexp with US-ASCII encoding if only 7-bit ASCII characters are present regardless of the input String's encoding" do
+      Regexp.send(@method, "abc").encoding.should == Encoding::US_ASCII
+    end
 
-      it "returns a Regexp with source String having US-ASCII encoding if only 7-bit ASCII characters are present regardless of the input String's encoding" do
-        Regexp.send(@method, "abc").source.encoding.should == Encoding::US_ASCII
-      end
+    it "returns a Regexp with source String having US-ASCII encoding if only 7-bit ASCII characters are present regardless of the input String's encoding" do
+      Regexp.send(@method, "abc").source.encoding.should == Encoding::US_ASCII
+    end
 
-      it "returns a Regexp with US-ASCII encoding if UTF-8 escape sequences using only 7-bit ASCII are present" do
-        Regexp.send(@method, "\u{61}").encoding.should == Encoding::US_ASCII
-      end
+    it "returns a Regexp with US-ASCII encoding if UTF-8 escape sequences using only 7-bit ASCII are present" do
+      Regexp.send(@method, "\u{61}").encoding.should == Encoding::US_ASCII
+    end
 
-      it "returns a Regexp with source String having US-ASCII encoding if UTF-8 escape sequences using only 7-bit ASCII are present" do
-        Regexp.send(@method, "\u{61}").source.encoding.should == Encoding::US_ASCII
-      end
+    it "returns a Regexp with source String having US-ASCII encoding if UTF-8 escape sequences using only 7-bit ASCII are present" do
+      Regexp.send(@method, "\u{61}").source.encoding.should == Encoding::US_ASCII
+    end
 
-      it "returns a Regexp with UTF-8 encoding if any UTF-8 escape sequences outside 7-bit ASCII are present" do
-        Regexp.send(@method, "\u{ff}").encoding.should == Encoding::UTF_8
-      end
+    it "returns a Regexp with UTF-8 encoding if any UTF-8 escape sequences outside 7-bit ASCII are present" do
+      Regexp.send(@method, "\u{ff}").encoding.should == Encoding::UTF_8
+    end
 
-      it "returns a Regexp with source String having UTF-8 encoding if any UTF-8 escape sequences outside 7-bit ASCII are present" do
-        Regexp.send(@method, "\u{ff}").source.encoding.should == Encoding::UTF_8
-      end
+    it "returns a Regexp with source String having UTF-8 encoding if any UTF-8 escape sequences outside 7-bit ASCII are present" do
+      Regexp.send(@method, "\u{ff}").source.encoding.should == Encoding::UTF_8
+    end
 
-      it "returns a Regexp with the input String's encoding" do
-        str = "\x82\xa0".force_encoding(Encoding::Shift_JIS)
-        Regexp.send(@method, str).encoding.should == Encoding::Shift_JIS
-      end
+    it "returns a Regexp with the input String's encoding" do
+      str = "\x82\xa0".force_encoding(Encoding::Shift_JIS)
+      Regexp.send(@method, str).encoding.should == Encoding::Shift_JIS
+    end
 
-      it "returns a Regexp with source String having the input String's encoding" do
-        str = "\x82\xa0".force_encoding(Encoding::Shift_JIS)
-        Regexp.send(@method, str).source.encoding.should == Encoding::Shift_JIS
-      end
+    it "returns a Regexp with source String having the input String's encoding" do
+      str = "\x82\xa0".force_encoding(Encoding::Shift_JIS)
+      Regexp.send(@method, str).source.encoding.should == Encoding::Shift_JIS
     end
   end
 end
@@ -556,58 +499,23 @@ describe :regexp_new_regexp, :shared => true do
     (r.options & Regexp::IGNORECASE).should == 0
   end
 
-  ruby_version_is ""..."1.9" do
-    it "does not enable multibyte support by default" do
-      r = Regexp.send @method, /Hi/
-      r.kcode.should_not == 'euc'
-      r.kcode.should_not == 'sjis'
-      r.kcode.should_not == 'utf8'
-    end
-
-    it "enables multibyte support if given in the literal" do
-      Regexp.send(@method, /Hi/u).kcode.should == 'utf8'
-      Regexp.send(@method, /Hi/e).kcode.should == 'euc'
-      Regexp.send(@method, /Hi/s).kcode.should == 'sjis'
-      Regexp.send(@method, /Hi/n).kcode.should == 'none'
-    end
-
-    describe "with $KCODE set" do
-
-      before :each do
-        @kcode = $KCODE
-        $KCODE = 'u'
-      end
-
-      after :each do
-        $KCODE = @kcode
-      end
-
-      it "falls back to ASCII for an invalid UTF-8 regexp" do
-        (Regexp.send(@method, /^([\x00-\x7F]|[\xC2-\xDF][\x80-\xBF])*$/) =~ "hellø").should == 0
-      end
-
-    end
+  it "sets the encoding to UTF-8 if the Regexp literal has the 'u' option" do
+    Regexp.send(@method, /Hi/u).encoding.should == Encoding::UTF_8
   end
 
-  ruby_version_is "1.9" do
-    it "sets the encoding to UTF-8 if the Regexp literal has the 'u' option" do
-      Regexp.send(@method, /Hi/u).encoding.should == Encoding::UTF_8
-    end
+  it "sets the encoding to EUC-JP if the Regexp literal has the 'e' option" do
+    Regexp.send(@method, /Hi/e).encoding.should == Encoding::EUC_JP
+  end
 
-    it "sets the encoding to EUC-JP if the Regexp literal has the 'e' option" do
-      Regexp.send(@method, /Hi/e).encoding.should == Encoding::EUC_JP
-    end
+  it "sets the encoding to Windows-31J if the Regexp literal has the 's' option" do
+    Regexp.send(@method, /Hi/s).encoding.should == Encoding::Windows_31J
+  end
 
-    it "sets the encoding to Windows-31J if the Regexp literal has the 's' option" do
-      Regexp.send(@method, /Hi/s).encoding.should == Encoding::Windows_31J
-    end
+  it "sets the encoding to US-ASCII if the Regexp literal has the 'n' option and the source String is ASCII only" do
+    Regexp.send(@method, /Hi/n).encoding.should == Encoding::US_ASCII
+  end
 
-    it "sets the encoding to US-ASCII if the Regexp literal has the 'n' option and the source String is ASCII only" do
-      Regexp.send(@method, /Hi/n).encoding.should == Encoding::US_ASCII
-    end
-
-    it "sets the encoding to source String's encoding if the Regexp literal has the 'n' option and the source String is not ASCII only" do
-      Regexp.send(@method, /\xff/n).encoding.should == Encoding::ASCII_8BIT
-    end
+  it "sets the encoding to source String's encoding if the Regexp literal has the 'n' option and the source String is not ASCII only" do
+    Regexp.send(@method, /\xff/n).encoding.should == Encoding::ASCII_8BIT
   end
 end

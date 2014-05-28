@@ -63,20 +63,10 @@ describe "String#oct" do
     "755_333".oct.should == 0755_333
   end
 
-  ruby_version_is "" ... "1.8.7" do
-    it "accepts a sequence of underscores as part of a number" do
-      "7__3".oct.should == 073
-      "7___3".oct.should == 073
-      "7__5".oct.should == 075
-    end
-  end
-
-  ruby_version_is "1.8.7" do
-    it "does not accept a sequence of underscores as part of a number" do
-      "7__3".oct.should == 07
-      "7___3".oct.should == 07
-      "7__5".oct.should == 07
-    end
+  it "does not accept a sequence of underscores as part of a number" do
+    "7__3".oct.should == 07
+    "7___3".oct.should == 07
+    "7__5".oct.should == 07
   end
 
   it "ignores characters that are incorrect for the base-8 digits" do
@@ -90,19 +80,9 @@ describe "String#oct" do
     "wombat".oct.should == 0
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "accepts strings with leading underscores" do
-      "_7".oct.should == 7
-      "_07".oct.should == 7
-      " _7".oct.should == 7
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "returns 0 for strings with leading underscores" do
-      "_7".oct.should == 0
-      "_07".oct.should == 0
-      " _7".oct.should == 0
-    end
+  it "returns 0 for strings with leading underscores" do
+    "_7".oct.should == 0
+    "_07".oct.should == 0
+    " _7".oct.should == 0
   end
 end

@@ -15,14 +15,12 @@ with_feature :encoding do
       "\u{287}a".ord.should == "\u{287}".ord
     end
 
-    ruby_version_is "1.9" do
-      it "understands multibyte characters" do
-        "\u{9879}".ord.should == 39033
-      end
+    it "understands multibyte characters" do
+      "\u{9879}".ord.should == 39033
+    end
 
-      it "is equivalent to #codepoints.first" do
-        "\u{981}\u{982}".ord.should == "\u{981}\u{982}".codepoints.first
-      end
+    it "is equivalent to #codepoints.first" do
+      "\u{981}\u{982}".ord.should == "\u{981}\u{982}".codepoints.first
     end
 
     it "raises an ArgumentError if called on an empty String" do

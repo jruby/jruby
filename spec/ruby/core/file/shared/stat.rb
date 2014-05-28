@@ -38,10 +38,8 @@ describe :file_stat, :shared => true do
     end
   end
 
-  ruby_version_is "1.9" do
-    it "accepts an object that has a #to_path method" do
-      File.send(@method, mock_to_path(@file))
-    end
+  it "accepts an object that has a #to_path method" do
+    File.send(@method, mock_to_path(@file))
   end
 
   it "raises an Errno::ENOENT if the file does not exist" do

@@ -1,0 +1,2 @@
+fails:Kernel#protected_methods when passed false returns a list of protected methods in without its ancestors
+fails:Kernel#protected_methods when passed nil returns a list of protected methods in without its ancestors

@@ -8,5 +8,27 @@ describe "Kernel#printf" do
 end
 
 describe "Kernel.printf" do
-  it "needs to be reviewed for spec completeness"
+
+  before :each do
+    @stdout = $stdout
+    @name = tmp("kernel_puts.txt")
+    $stdout = new_io @name
+  end
+
+  after :each do
+    $stdout.close
+    $stdout = @stdout
+    rm_r @name
+  end
+
+  it "writes to stdout when a string is the first argument" do
+    $stdout.should_receive(:write).with("string")
+    Kernel.printf("%s", "string")
+  end
+
+  it "calls write on the first argument when it is not a string" do
+    object = mock('io')
+    object.should_receive(:write).with("string")
+    Kernel.printf(object, "%s", "string")
+  end
 end
