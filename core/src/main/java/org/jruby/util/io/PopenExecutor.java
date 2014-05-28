@@ -364,18 +364,6 @@ public class PopenExecutor {
         return argv;
     }
 
-    private int pipe(Channel[] channels) {
-        try {
-            Pipe pipe = Pipe.open();
-            channels[0] = pipe.source();
-            channels[1] = pipe.sink();
-            return 0;
-        } catch (IOException ioe) {
-            errno = Helpers.errnoFromException(ioe);
-            return -1;
-        }
-    }
-
     private Errno errno = null;
 
     // MRI: pipe_open
@@ -387,6 +375,7 @@ public class PopenExecutor {
         IRubyObject port;
         OpenFile write_fptr;
         IRubyObject write_port;
+        PosixShim posix = new PosixShim(runtime.getPosix());
 
         PopenArg arg = new PopenArg();
         Errno e = null;
@@ -411,14 +400,14 @@ public class PopenExecutor {
         }
         switch (fmode & (OpenFile.READABLE|OpenFile.WRITABLE)) {
             case OpenFile.READABLE | OpenFile.WRITABLE:
-                if (pipe(arg.write_pair) < 0)
-                    throw runtime.newErrnoFromErrno(errno, prog.toString());
-                if (pipe(arg.pair) < 0) {
-                    e = errno;
+                if (posix.pipe(arg.write_pair) < 0)
+                    throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
+                if (posix.pipe(arg.pair) < 0) {
+                    e = posix.errno;
                     try {arg.write_pair[0].close();} catch (IOException ioe) {}
                     try {arg.write_pair[1].close();} catch (IOException ioe) {}
-                    errno = e;
-                    throw runtime.newErrnoFromErrno(errno, prog.toString());
+                    posix.errno = e;
+                    throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
                 }
                 if (eargp != null) {
                     execargAddopt(context, runtime, eargp, RubyFixnum.zero(runtime), RubyFixnum.newFixnum(runtime, FilenoUtil.getFilenoFromChannel(arg.write_pair[0])));
@@ -426,19 +415,19 @@ public class PopenExecutor {
                 }
                 break;
             case OpenFile.READABLE:
-                if (pipe(arg.pair) < 0)
-                    throw runtime.newErrnoFromErrno(errno, prog.toString());
+                if (posix.pipe(arg.pair) < 0)
+                    throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
                 if (eargp != null)
                     execargAddopt(context, runtime, eargp, RubyFixnum.one(runtime), RubyFixnum.newFixnum(runtime, FilenoUtil.getFilenoFromChannel(arg.pair[1])));
                 break;
             case OpenFile.WRITABLE:
-                if (pipe(arg.pair) < 0)
-                    throw runtime.newErrnoFromErrno(errno, prog.toString());
+                if (posix.pipe(arg.pair) < 0)
+                    throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
                 if (eargp != null)
                     execargAddopt(context, runtime, eargp, RubyFixnum.zero(runtime), RubyFixnum.newFixnum(runtime, FilenoUtil.getFilenoFromChannel(arg.pair[0])));
                 break;
             default:
-                throw runtime.newErrnoFromErrno(errno, prog.toString());
+                throw runtime.newSystemCallError(prog.toString());
         }
         if (eargp != null) {
             execargFixup(context, runtime, eargp);
@@ -510,7 +499,8 @@ public class PopenExecutor {
             }
         }
         final long finalPid = pid;
-        fptr.process = new Process() {
+        fptr.setPid(pid);
+        fptr.setProcess(new Process() {
             @Override
             public OutputStream getOutputStream() {
                 return null;
@@ -558,7 +548,7 @@ public class PopenExecutor {
             public void destroy() {
                 runtime.getPosix().kill((int)finalPid, Signal.SIGTERM.intValue());
             }
-        };
+        });
 
         if (write_fd != null) {
             write_port = runtime.getIO().allocate();

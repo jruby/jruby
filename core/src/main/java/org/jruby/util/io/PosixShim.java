@@ -5,6 +5,7 @@ import jnr.posix.POSIX;
 import org.jruby.Ruby;
 import org.jruby.runtime.Helpers;
 
+import java.io.Closeable;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -197,10 +198,14 @@ public class PosixShim {
     }
 
     public int close(ChannelFD fd) {
+        return close((Closeable)fd);
+    }
+
+    public int close(Closeable closeable) {
         clear();
 
         try {
-            fd.close();
+            closeable.close();
             return 0;
         } catch (IOException ioe) {
             Errno errno = Helpers.errnoFromException(ioe);
@@ -213,6 +218,7 @@ public class PosixShim {
     }
 
     public int pipe(Channel[] pipes) {
+        clear();
         try {
             Pipe pipe = Pipe.open();
             pipes[0] = pipe.source();

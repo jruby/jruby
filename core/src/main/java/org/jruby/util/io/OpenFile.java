@@ -2,7 +2,6 @@ package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.OpenFlags;
-import jnr.posix.JavaLibCHelper;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
@@ -25,16 +24,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
-import sun.util.logging.resources.logging_ko;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
@@ -81,12 +77,13 @@ public class OpenFile {
     private static final ChannelFD DUMMY_FD = new ChannelFD(null);
     private ChannelFD fd = DUMMY_FD;
     private int mode;
-    public Process process;
+    private long pid = -1;
+    private Process process;
     private int lineno;
     private String pathv;
     private Finalizer finalizer;
-    public InputStream stdioIn;
-    public OutputStream stdioOut;
+    public InputStream stdin;
+    public OutputStream stdout;
     public volatile FileLock currentLock;
 
     public static class Buffer {
@@ -117,8 +114,8 @@ public class OpenFile {
     public final PosixShim posix;
 
     public void clearStdio() {
-        stdioOut = null;
-        stdioIn = null;
+        stdout = null;
+        stdin = null;
     }
 
     public String PREP_STDIO_NAME() {
@@ -677,7 +674,13 @@ public class OpenFile {
     }
 
     public long getPid() {
+        if (pid != -1) return pid;
+
         return ShellLauncher.getPidFromProcess(process);
+    }
+
+    public void setPid(long pid) {
+        this.pid = pid;
     }
 
     public int getLineNumber() {
@@ -728,9 +731,9 @@ public class OpenFile {
 
     public void finalize(Ruby runtime, boolean noraise) {
         IRubyObject err = runtime.getNil();
-
-        // TODO: ???
-//        FILE *stdio_file = fptr->stdio_file;
+        ChannelFD fd = this.fd();
+        InputStream stdin = this.stdin;
+        OutputStream stdout = this.stdout;
 
         if (writeconv != null) {
             if (write_lock != null && !noraise) {
@@ -757,25 +760,21 @@ public class OpenFile {
             }
         }
 
-        fd = null;
-//        stdio_file = 0;
+        this.fd = null;
+        this.clearStdio();
         mode &= ~(READABLE|WRITABLE);
 
         if (IS_PREP_STDIO() || isStdio()) {
 	        /* need to keep FILE objects of stdin, stdout and stderr */
-        }
-        // TODO: ???
-//        else if (stdio_file) {
-//	/* stdio_file is deallocated anyway
-//         * even if fclose failed.  */
-//
-//            if ((maygvl_fclose(stdio_file, noraise) < 0) && NIL_P(err))
-//                err = noraise ? Qtrue : INT2NUM(errno);
-//        }
-        else if (fd != null) {
-	    /* fptr->fd may be closed even if close fails.
-         * POSIX doesn't specify it.
-         * We assumes it is closed.  */
+        } else if (stdin != null || stdout != null) {
+	        /* stdio_file is deallocated anyway
+             * even if fclose failed.  */
+            if (posix.close(stdin != null ? stdin : stdout) < 0 && err.isNil())
+                err = noraise ? runtime.getTrue() : RubyNumeric.int2fix(runtime, posix.errno.intValue());
+        } else if (fd != null) {
+            /* fptr->fd may be closed even if close fails.
+             * POSIX doesn't specify it.
+             * We assumes it is closed.  */
             if ((posix.close(fd) < 0) && err.isNil())
                 err = noraise ? runtime.getTrue() : runtime.newFixnum(posix.errno.intValue());
         }
@@ -2095,7 +2094,7 @@ public class OpenFile {
     // MRI: check_tty
     public void checkTTY() {
         // TODO: native descriptors? Is this only used for stdio?
-        if (stdioIn != null || stdioOut != null) {
+        if (stdin != null || stdout != null) {
             mode |= TTY | DUPLEX;
         }
     }
@@ -2113,7 +2112,7 @@ public class OpenFile {
     }
 
     public boolean isStdio() {
-        return stdioIn != null || stdioOut != null;
+        return stdin != null || stdout != null;
     }
 
     public int readPending() {

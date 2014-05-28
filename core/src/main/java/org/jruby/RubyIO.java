@@ -61,7 +61,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
-import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
@@ -196,9 +195,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fptr = io.getOpenFileChecked();
         prepStdioEcflags(fptr, fmode);
-        fptr.stdioIn = f;
+        fptr.stdin = f;
 
-        // We checkTTY again here because we're using stdioOut/stdioIn to indicate this is stdio
+        // We checkTTY again here because we're using stdout/stdin to indicate this is stdio
         return recheckTTY(runtime, fptr, io);
     }
 
@@ -209,13 +208,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fptr = io.getOpenFileChecked();
         prepStdioEcflags(fptr, fmode);
-        fptr.stdioOut = f;
+        fptr.stdout = f;
 
         return recheckTTY(runtime, fptr, io);
     }
 
     private static RubyIO recheckTTY(Ruby runtime, OpenFile fptr, RubyIO io) {
-        // We checkTTY again here because we're using stdioOut/stdioIn to indicate this is stdio
+        // We checkTTY again here because we're using stdout/stdin to indicate this is stdio
         fptr.checkTTY();
 
         return io;
@@ -336,9 +335,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         if (fptr == orig) return this;
         if (fptr.IS_PREP_STDIO()) {
-            if ((fptr.stdioIn == System.in && !orig.isReadable()) ||
-                    (fptr.stdioOut == System.out && !orig.isWritable()) ||
-                    (fptr.stdioOut == System.err && !orig.isWritable())) {
+            if ((fptr.stdin == System.in && !orig.isReadable()) ||
+                    (fptr.stdout == System.out && !orig.isWritable()) ||
+                    (fptr.stdout == System.err && !orig.isWritable())) {
                 throw runtime.newArgumentError(fptr.PREP_STDIO_NAME() + " can't change access mode from \"" + fptr.getModeAsString(runtime) + "\" to \"" + orig.getModeAsString(runtime) + "\"");
             }
         }
@@ -382,8 +381,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 fptr.setFD(fd);
             }
             else {
-                if (fptr.stdioIn != null) try {fptr.stdioIn.close();}catch(IOException ioe){}
-                if (fptr.stdioOut != null) try {fptr.stdioOut.close();}catch(IOException ioe){}
+                if (fptr.stdin != null) try {fptr.stdin.close();}catch(IOException ioe){}
+                if (fptr.stdout != null) try {fptr.stdout.close();}catch(IOException ioe){}
                 fptr.clearStdio();
                 fptr.setFD(null);
                 // TODO: need dup2(into) again
@@ -1839,6 +1838,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     
     // rb_io_close  
     protected IRubyObject ioClose(Ruby runtime) {
+        ThreadContext context = runtime.getCurrentContext();
         OpenFile fptr;
         ChannelFD fd;
         RubyIO write_io;
@@ -1854,6 +1854,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fptr = openFile;
         if (fptr == null) return runtime.getNil();
+        if (fptr.fd() == null) return runtime.getNil();
 
         // TODO: mark this closed for all threads waiting for it
         // see interruptBlockingThreads()
@@ -1862,7 +1863,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         fptr.cleanup(runtime, false);
 
         if (fptr.getProcess() != null) {
-            runtime.getCurrentContext().setLastExitStatus(runtime.getNil());
+            context.setLastExitStatus(context.nil);
 
             // If this is not a popen3/popen4 stream and it has a process, attempt to shut down that process
             if (!popenSpecial) {

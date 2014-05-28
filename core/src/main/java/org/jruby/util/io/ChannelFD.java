@@ -2,6 +2,7 @@ package org.jruby.util.io;
 
 import jnr.posix.POSIX;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.Channel;
 import java.nio.channels.ClosedChannelException;
@@ -16,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
 * Created by headius on 5/24/14.
 */
-public class ChannelFD {
+public class ChannelFD implements Closeable {
     public ChannelFD(Channel fd) {
         this.ch = fd;
 
