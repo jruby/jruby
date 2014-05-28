@@ -3063,7 +3063,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (!(cmd = PopenExecutor.checkPipeCommand(context, filename)).isNil()) {
             // FIXME: not passing convconfig for transcoding
             return PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(runtime, oflags_p[0]), fmode_p[0], convconfig);
-//            return (RubyIO) RubyKernel.open19(context, context.runtime.getIO(), new IRubyObject[]{filename, vmode, opt}, Block.NULL_BLOCK);
             // TODO: lots of missing logic for pipe opening
         } else {
             return ((RubyFile)context.runtime.getFile().allocate()).fileOpenGeneric(context, filename, oflags_p[0], fmode_p[0], convconfig, perm);

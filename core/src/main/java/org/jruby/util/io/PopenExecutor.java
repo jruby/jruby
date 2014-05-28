@@ -325,27 +325,73 @@ public class PopenExecutor {
         }
     }
 
-    static boolean isPopenFork(Ruby runtime, RubyString prog)
-    {
+    // MRI: is_popen_fork
+    static boolean isPopenFork(Ruby runtime, RubyString prog) {
         if (prog.size() == 1 && prog.getByteList().get(0) == '-') {
             throw runtime.newNotImplementedError("fork() function is unimplemented on JRuby");
         }
         return false;
     }
 
-    private static long DO_SPAWN(Ruby runtime, ExecArg eargp, String cmd, String[] args, String[] envp) {
+    // MRI: DO_SPAWN macro in pipe_open
+    private long DO_SPAWN(Ruby runtime, ExecArg eargp, String cmd, String[] args, String[] envp) {
 //        System.out.println("fd_dup2: " + eargp.fd_dup2);
 //        System.out.println("fd_close: " + eargp.fd_close);
 //        System.out.println("fd_dup2_child: " + eargp.fd_dup2_child);
 //        System.out.println("fd_open: " + eargp.fd_open);
 //        if (envp != null) System.out.println(Arrays.asList(envp));
 //        if (args != null) System.out.println(Arrays.asList(args));
+        if (eargp.use_shell) {
+            return procSpawnSh(runtime, eargp, cmd, envp);
+        }
+
         return runtime.getPosix().posix_spawnp(
                 cmd,
                 eargp.fileActions,
                 eargp.attributes,
                 args == null ? Collections.EMPTY_LIST : Arrays.asList(args),
                 envp == null ? Collections.EMPTY_LIST : Arrays.asList(envp));
+    }
+
+    // MRI: Basically doing sh processing from proc_exec_sh but for non-fork path
+    private long procSpawnSh(Ruby runtime, ExecArg eargp, String str, String[] envp) {
+        char[] sChars;
+        int s = 0;
+
+        sChars = str.toCharArray();
+        while (sChars[s] == ' ' || sChars[s] == '\t' || sChars[s] == '\n')
+            s++;
+
+        if (s >= sChars.length) {
+            errno = Errno.ENOENT;
+            return -1;
+        }
+
+        // TODO: Windows
+        if (Platform.IS_WINDOWS) { // #ifdef _WIN32
+//            rb_w32_uspawn(P_OVERLAY, (char *)str, 0);
+            return -1;
+        } else {
+//            #if defined(__CYGWIN32__) || defined(__EMX__)
+//            {
+//                char fbuf[MAXPATHLEN];
+//                char *shell = dln_find_exe_r("sh", 0, fbuf, sizeof(fbuf));
+//                int status = -1;
+//                if (shell)
+//                    execl(shell, "sh", "-c", str, (char *) NULL);
+//                else
+//                status = system(str);
+//                if (status != -1)
+//                    exit(status);
+//            }
+//            #else
+            return runtime.getPosix().posix_spawnp(
+                    "/bin/sh",
+                    eargp.fileActions,
+                    eargp.attributes,
+                    Arrays.asList("sh", "-c", str),
+                    envp == null ? Collections.EMPTY_LIST : Arrays.asList(envp));
+        }
     }
 
     private static class PopenArg {
@@ -389,7 +435,7 @@ public class PopenExecutor {
         Channel write_fd = null;
         String cmd = null;
 
-        if (prog.isTrue())
+        if (prog != null)
             cmd = StringSupport.checkEmbeddedNulls(runtime, prog).toString();
 
         arg.eargp = eargp;
@@ -483,7 +529,7 @@ public class PopenExecutor {
         fptr.setMode(fmode | (OpenFile.SYNC|OpenFile.DUPLEX));
         if (convconfig != null) {
             fptr.encs.copy(convconfig);
-            if (Platform.IS_WINDOWS) {
+            if (Platform.IS_WINDOWS) { // #if defined(RUBY_TEST_CRLF_ENVIRONMENT) || defined(_WIN32)
                 if ((fptr.encs.ecflags & EncodingUtils.ECONV_DEFAULT_NEWLINE_DECORATOR) != 0) {
                     fptr.encs.ecflags |= EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
                 }
@@ -561,7 +607,7 @@ public class PopenExecutor {
             ((RubyIO)port).setInstanceVariable("@tied_io_for_writing", write_port);
         }
 
-        // TODO?
+        // TODO
 //        fptr.setFinalizer(pipe_finalize);
 //        pipeAddFptr(fptr);
         return port;
@@ -1701,20 +1747,20 @@ public class PopenExecutor {
                  */
                 ByteList progByteList = prog.getByteList();
                 pBytes = progByteList.unsafeBytes();
-                for (p = progByteList.begin();p < progByteList.begin() + progByteList.length();p++){
-                    if (pBytes[p] == ' ' || pBytes[p] == '\t'){
+                for (p = 0; p < progByteList.length(); p++){
+                    if (progByteList.get(p) == ' ' || progByteList.get(p) == '\t'){
                         if (first.unsafeBytes() != DUMMY_ARRAY && first.length() == 0) first.setRealSize(p - first.begin());
                     }
                     else{
-                        if (first.unsafeBytes() == DUMMY_ARRAY) { first.setUnsafeBytes(pBytes); first.setBegin(p); }
+                        if (first.unsafeBytes() == DUMMY_ARRAY) { first.setUnsafeBytes(pBytes); first.setBegin(p + progByteList.begin()); }
                     }
-                    if (!has_meta && "*?{}[]<>()~&|\\$;'`\"\n#".indexOf(pBytes[p]) != -1)
+                    if (!has_meta && "*?{}[]<>()~&|\\$;'`\"\n#".indexOf(progByteList.get(p) & 0xFF) != -1)
                         has_meta = true;
                     if (first.length() == 0) {
-                        if (first.get(p) == '='){
+                        if (progByteList.get(p) == '='){
                             has_meta = true;
                         }
-                        else if (first.get(p) == '/'){
+                        else if (progByteList.get(p) == '/'){
                             first.setRealSize(0x100); /* longer than any posix_sh_cmds */
                         }
                     }
@@ -1724,7 +1770,14 @@ public class PopenExecutor {
                 if (!has_meta && first.getUnsafeBytes() != DUMMY_ARRAY) {
                     if (first.length() == 0) first.setRealSize(p - first.getBegin());
                     if (first.length() > 0 && first.length() <= posix_sh_cmds[0].length() &&
-                            Arrays.binarySearch(posix_sh_cmds, first.toString()) != -1)
+                            Arrays.binarySearch(posix_sh_cmds, first.toString(), new Comparator<String>() {
+                                @Override
+                                public int compare(String o1, String o2) {
+                                    int ret = o1.compareTo(o2);
+                                    if (ret == 0 && o1.length() > o2.length()) return -1;
+                                    return ret;
+                                }
+                            }) != -1)
                         has_meta = true;
                 }
                 if (!has_meta) {
