@@ -1960,6 +1960,18 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return rbIoClose(runtime);
     }
 
+    @JRubyMethod(name = "close_on_exec=", notImplemented = true)
+    public IRubyObject close_on_exec_set(ThreadContext context, IRubyObject arg) {
+        // TODO: rb_io_set_close_on_exec
+        throw context.runtime.newNotImplementedError("close_on_exec=");
+    }
+
+    @JRubyMethod(name = "close_on_exec?", notImplemented = true)
+    public IRubyObject close_on_exec_p(ThreadContext context) {
+        // TODO: rb_io_close_on_exec_p
+        throw context.runtime.newNotImplementedError("close_on_exec=");
+    }
+
     /** Flushes the IO output stream.
      *
      * MRI: rb_io_flush
