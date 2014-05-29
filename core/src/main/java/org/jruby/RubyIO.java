@@ -3967,8 +3967,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         try {
             long size = 0;
-            if (io1.openFile.seekChannel() == null) {
-                if (io2.openFile.seekChannel() == null) {
+            if (io1.openFile.fileChannel() == null) {
+                if (io2.openFile.fileChannel() == null) {
                     ReadableByteChannel from = io1.openFile.readChannel();
                     WritableByteChannel to = io2.openFile.writeChannel();
 
