@@ -1224,12 +1224,18 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
     }
 
+    // MRI: rb_io_autoclose_p
     public boolean isAutoclose() {
-        return openFile.isAutoclose();
+        OpenFile fptr;
+        fptr = getOpenFileChecked();
+        return fptr.isAutoclose();
     }
 
+    // MRI: rb_io_set_autoclose
     public void setAutoclose(boolean autoclose) {
-        openFile.setAutoclose(autoclose);
+        OpenFile fptr;
+        fptr = getOpenFileChecked();
+        fptr.setAutoclose(autoclose);
     }
 
     @JRubyMethod(name = "autoclose?")

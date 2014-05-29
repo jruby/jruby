@@ -723,17 +723,14 @@ public class OpenFile {
     }
 
     public boolean isAutoclose() {
-        boolean autoclose = true;
-        Stream myMain, myPipe;
-        if ((myMain = mainStream) != null) autoclose &= myMain.isAutoclose();
-        if ((myPipe = pipeStream) != null) autoclose &= myPipe.isAutoclose();
-        return autoclose;
+        return (mode & PREP) == 0;
     }
 
     public void setAutoclose(boolean autoclose) {
-        Stream myMain, myPipe;
-        if ((myMain = mainStream) != null) myMain.setAutoclose(autoclose);
-        if ((myPipe = pipeStream) != null) myPipe.setAutoclose(autoclose);
+        if (!autoclose)
+            mode |= PREP;
+        else
+            mode &= ~PREP;
     }
 
     public Finalizer getFinalizer() {
