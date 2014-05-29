@@ -1745,7 +1745,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         ThreadContext context = runtime.getCurrentContext();
 
         OpenFile fptr, orig;
-        Channel fd;
+        ChannelFD fd;
         RubyIO write_io;
         long pos;
 
@@ -1770,8 +1770,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //        #endif
 
         // FIXME: This must do a dup of some kind
-        fd = orig.channel();
-        fptr.setChannel(fd);
+        fd = orig.fd().dup(runtime.getPosix());
+        fptr.setFD(fd);
         pos = orig.tell(context);
         if (0 <= pos)
             fptr.seek(context, pos, PosixShim.SEEK_SET);

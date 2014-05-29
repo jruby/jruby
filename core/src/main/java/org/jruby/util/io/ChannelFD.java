@@ -1,5 +1,6 @@
 package org.jruby.util.io;
 
+import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.POSIX;
 
 import java.io.Closeable;
@@ -35,6 +36,23 @@ public class ChannelFD implements Closeable {
 
         FilenoUtil.registerWrapper(realFileno, this);
         FilenoUtil.registerWrapper(fakeFileno, this);
+    }
+
+    public ChannelFD dup(POSIX posix) {
+        if (realFileno != -1) {
+            // real file descriptors, so we can dup directly
+            // TODO: investigate how badly this might damage JVM streams (prediction: not badly)
+            return new ChannelFD(new NativeDeviceChannel(posix.dup(realFileno)));
+        }
+
+        // TODO: not sure how well this combines native and non-native streams
+        // simulate dup by copying our channel into a new ChannelFD and incrementing ref count
+        Channel ch = this.ch;
+        ChannelFD fd = new ChannelFD(ch);
+        fd.refs = refs;
+        refs.incrementAndGet();
+
+        return fd;
     }
 
     public int dup2From(POSIX posix, ChannelFD dup2Source) {
