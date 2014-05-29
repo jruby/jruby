@@ -1243,6 +1243,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return context.nil;
     }
 
+    // MRI: rb_io_binmode_m
     @JRubyMethod(name = "binmode")
     public IRubyObject binmode() {
         setAscii8bitBinmode();
@@ -1254,9 +1255,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return this;
     }
 
+    // MRI: rb_io_binmode_p
     @JRubyMethod(name = "binmode?")
     public IRubyObject op_binmode(ThreadContext context) {
-        return RubyBoolean.newBoolean(context.runtime, openFile.isBinmode());
+        return RubyBoolean.newBoolean(context.runtime, getOpenFileChecked().isBinmode());
     }
 
     // rb_io_syswrite
@@ -4372,22 +4374,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
 
     // MRI: rb_io_ascii8bit_binmode
-    protected void setAscii8bitBinmode() {
-        Encoding ascii8bit = getRuntime().getEncodingService().getAscii8bitEncoding();
+    protected RubyIO setAscii8bitBinmode() {
+        OpenFile fptr;
 
-        if (openFile.readconv != null) {
-            openFile.readconv = null;
-        }
-        if (openFile.writeconv != null) {
-            openFile.writeconv = null;
-        }
-        openFile.setBinmode();
-        openFile.clearTextMode();
-        openFile.encs.enc = ascii8bit;
-        openFile.encs.enc2 = null;
-        openFile.encs.ecflags = 0;
-        openFile.encs.ecopts = getRuntime().getNil();
-        openFile.clearCodeConversion();
+        fptr = getOpenFileChecked();
+        fptr.ascii8bitBinmode(getRuntime());
+
+        return this;
     }
     
     public OpenFile MakeOpenFile() {

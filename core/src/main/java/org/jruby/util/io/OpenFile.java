@@ -63,6 +63,28 @@ public class OpenFile {
     public static final int PIPE_BUF = 512; // value of _POSIX_PIPE_BUF from Mac OS X 10.9
     public static final int BUFSIZ = 1024; // value of BUFSIZ from Mac OS X 10.9 stdio.h
 
+    public void ascii8bitBinmode(Ruby runtime) {
+        Encoding ascii8bit = runtime.getEncodingService().getAscii8bitEncoding();
+
+        if (readconv != null) {
+            readconv.close();
+            readconv = null;
+        }
+        if (writeconv != null) {
+            writeconv.close();
+            writeconv = null;
+        }
+        setBinmode();
+        clearTextMode();
+        // TODO: Windows
+        //SET_BINARY_MODE_WITH_SEEK_CUR()
+        encs.enc = EncodingUtils.ascii8bitEncoding(runtime);
+        encs.enc2 = null;
+        encs.ecflags = 0;
+        encs.ecopts = runtime.getNil();
+        clearCodeConversion();
+    }
+
     public static interface Finalizer {
 
         public void finalize(Ruby runtime, boolean raise);
