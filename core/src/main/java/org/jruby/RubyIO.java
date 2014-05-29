@@ -3003,6 +3003,59 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public static IRubyObject select_static(ThreadContext context, Ruby runtime, IRubyObject[] args) {
         return new SelectBlob().goForIt(context, runtime, args);
     }
+
+    // MRI: rb_io_advise
+    @JRubyMethod(required = 1, optional = 2)
+    public IRubyObject advise(ThreadContext context, IRubyObject[] argv) {
+        IRubyObject advice, offset, len;
+        advice = offset = len = context.nil;
+        int off, l;
+        OpenFile fptr;
+
+        switch (argv.length) {
+            case 3:
+                len = argv[2];
+            case 2:
+                offset = argv[1];
+            case 1:
+                advice = argv[0];
+        }
+        adviceArgCheck(context, advice);
+
+        RubyIO io = GetWriteIO();
+        fptr = io.getOpenFileChecked();
+
+        off = offset.isNil() ? 0 : offset.convertToInteger().getIntValue();
+        l   = len.isNil()    ? 0 : len.convertToInteger().getIntValue();
+
+        // TODO: implement advise
+//        #ifdef HAVE_POSIX_FADVISE
+//        return do_io_advise(fptr, advice, off, l);
+//        #else
+//        ((void)off, (void)l);	/* Ignore all hint */
+        return context.nil;
+//        #endif
+    }
+
+    // MRI: advice_arg_check
+    static void adviceArgCheck(ThreadContext context, IRubyObject advice) {
+        if (!(advice instanceof RubySymbol))
+            throw context.runtime.newTypeError("advise must be a symbol");
+
+        String adviceStr = advice.asJavaString();
+        switch (adviceStr) {
+            default:
+                throw context.runtime.newNotImplementedError(adviceStr);
+
+            case "normal":
+            case "sequential":
+            case "random":
+            case "willneed":
+            case "dontneed":
+            case "noreuse":
+                // ok
+        }
+    }
    
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return read19(context, recv, args, Block.NULL_BLOCK);
