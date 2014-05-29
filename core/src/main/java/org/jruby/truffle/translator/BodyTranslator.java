@@ -27,6 +27,7 @@ import org.jruby.truffle.nodes.constants.ReadConstantNode;
 import org.jruby.truffle.nodes.constants.WriteConstantNode;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.globals.CheckMatchVariableTypeNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.literal.array.UninitialisedArrayLiteralNode;
 import org.jruby.truffle.nodes.methods.AddMethodNode;
@@ -961,12 +962,12 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
 
         final String name = node.getName();
-        final RubyNode rhs = node.getValueNode().accept(this);
+        RubyNode rhs = node.getValueNode().accept(this);
 
-        if (FRAME_LOCAL_GLOBAL_VARIABLES.contains(name)) {
-            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), "assigning to frame local global variables not implemented");
-
+        if (name.equals("$~")) {
+            rhs = new CheckMatchVariableTypeNode(context, sourceSection, rhs);
         }
+
         final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
         return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true);
     }

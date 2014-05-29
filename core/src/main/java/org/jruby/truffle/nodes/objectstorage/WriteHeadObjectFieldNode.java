@@ -14,7 +14,7 @@ import org.jruby.truffle.runtime.objectstorage.ObjectStorage;
 
 public class WriteHeadObjectFieldNode extends Node {
 
-    private String name;
+    private final String name;
     @Child protected WriteObjectFieldNode first;
 
     public WriteHeadObjectFieldNode(String name, RespecializeHook hook) {

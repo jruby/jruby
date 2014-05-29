@@ -108,15 +108,9 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
     @Override
     public Object execute(VirtualFrame frame) {
         final RubyBasicObject object = receiver.executeRubyBasicObject(frame);
-
         final Object value = rhs.execute(frame);
-        if(writeNode.getName().equals("$~") && !(value instanceof RubyMatchData || value instanceof NilPlaceholder)) {
-            throw new RaiseException(getContext().getCoreLibrary().typeError("wrong argument type (expected MatchData)"));
-        } else {
-            writeNode.execute(object, value);
-            return value;
-        }
-
+        writeNode.execute(object, value);
+        return value;
     }
 
     @Override
