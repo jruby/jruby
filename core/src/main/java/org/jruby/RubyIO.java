@@ -1941,10 +1941,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
         write_io = GetWriteIO();
         if (this != write_io) {
             OpenFile wfptr;
-            wfptr = getOpenFileChecked();
+            wfptr = write_io.getOpenFileChecked();
             wfptr.setProcess(fptr.getProcess());
+            wfptr.setPid(fptr.getPid());
             fptr.setProcess(null);
-            openFile = wfptr;
+            fptr.setPid(-1);
+            this.openFile = wfptr;
 	        /* bind to write_io temporarily to get rid of memory/fd leak */
             fptr.tiedIOForWriting = null;
             fptr.setMode(fptr.getMode() & ~OpenFile.DUPLEX);
