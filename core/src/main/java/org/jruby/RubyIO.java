@@ -1855,7 +1855,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         write_io = GetWriteIO();
         if (this != write_io) {
             write_fptr = write_io.openFile;
-            if (write_fptr != null) {// && 0 <= write_fptr.fd) {
+            if (write_fptr != null && write_fptr.fd() != null) {
                 write_fptr.cleanup(runtime, true);
             }
         }

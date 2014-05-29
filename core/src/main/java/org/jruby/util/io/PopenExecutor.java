@@ -708,7 +708,6 @@ public class PopenExecutor {
         int extra_fd = -1;
         run_exec_dup2_fd_pair[] pairs = eargp.dup2_tmpbuf;
 
-
         n = ary.size();
 
         /* initialize oldfd and newfd: O(n) */
