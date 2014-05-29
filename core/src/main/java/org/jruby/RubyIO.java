@@ -64,6 +64,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
@@ -1874,10 +1875,17 @@ public class RubyIO extends RubyObject implements IOEncodable {
             context.setLastExitStatus(context.nil);
 
             // If this is not a popen3/popen4 stream and it has a process, attempt to shut down that process
-            if (!popenSpecial) {
-                obliterateProcess(openFile.getProcess());
-                IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, openFile.getProcess().exitValue(), openFile.getPid());
-                runtime.getCurrentContext().setLastExitStatus(processResult);
+            if (runtime.getPosix().isNative()) {
+                // We do not need to nuke native-launched child process, since we now have full control
+                // over child process pipes.
+                IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, fptr.getProcess().exitValue(), fptr.getPid());
+                context.setLastExitStatus(processResult);
+            } else {
+                if (!popenSpecial) {
+                    obliterateProcess(fptr.getProcess());
+                    IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, fptr.getProcess().exitValue(), fptr.getPid());
+                    context.setLastExitStatus(processResult);
+                }
             }
             fptr.setProcess(null);
         }
@@ -3768,7 +3776,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @JRubyMethod(name = "pipe", optional = 3, meta = true)
     public static IRubyObject pipe19(ThreadContext context, IRubyObject klass, IRubyObject[] argv, Block block) {
         Ruby runtime = context.runtime;
-        Channel[] pipes = new Channel[2];
         int state;
         RubyIO r, w;
 //        IRubyObject args[] = new IRubyObject[3]
@@ -3806,7 +3813,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         PosixShim posix = new PosixShim(runtime.getPosix());
-        if (posix.pipe(pipes) == -1)
+        Pipe pipe;
+        if ((pipe = posix.pipe()) == null)
             throw runtime.newErrnoFromErrno(posix.errno, "opening pipe");
 
 //        args[0] = klass;
@@ -3819,7 +3827,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //            rb_jump_tag(state);
 //        }
         r = new RubyIO(runtime, (RubyClass)klass);
-        r.initializeCommon(context, new ChannelFD(pipes[0]), runtime.newFixnum(OpenFlags.O_RDONLY), context.nil);
+        r.initializeCommon(context, new ChannelFD(pipe.source()), runtime.newFixnum(OpenFlags.O_RDONLY), context.nil);
         fptr = r.getOpenFileChecked();
 
         r.setEncoding(context, v1, v2, opt);
@@ -3833,7 +3841,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //            rb_jump_tag(state);
 //        }
         w = new RubyIO(runtime, (RubyClass)klass);
-        w.initializeCommon(context, new ChannelFD(pipes[1]), runtime.newFixnum(OpenFlags.O_WRONLY), context.nil);
+        w.initializeCommon(context, new ChannelFD(pipe.sink()), runtime.newFixnum(OpenFlags.O_WRONLY), context.nil);
         fptr2 = w.getOpenFileChecked();
         fptr2.setSync(true);
 

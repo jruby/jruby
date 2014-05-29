@@ -3,6 +3,7 @@ package org.jruby.util.io;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.OpenFlags;
 import jnr.constants.platform.Signal;
+import jnr.constants.platform.WaitFlags;
 import jnr.posix.SpawnAttribute;
 import jnr.posix.SpawnFileAction;
 import org.jcodings.transcode.EConvFlags;
@@ -40,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -296,33 +298,38 @@ public class PopenExecutor {
         return env;
     }
 
+    // MRI: execarg_extract_options
     static IRubyObject execargExtractOptions(ThreadContext context, Ruby runtime, ExecArg eargp, RubyHash opthash) {
-        if (opthash.isEmpty())
-            return context.nil;
-        IRubyObject nonopts = context.nil;
-        for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)opthash.directEntrySet()) {
-            IRubyObject key = entry.getKey();
-            IRubyObject val = entry.getValue();
-            if (execargAddopt(context, runtime, eargp, key, val) != ST_CONTINUE) {
-                if (nonopts.isNil()) nonopts = RubyHash.newHash(runtime);
-                ((RubyHash)nonopts).op_aset(context, key, val);
-            }
-        }
-        return nonopts;
+        return handleOptionsCommon(context, runtime, eargp, opthash, false);
     }
 
+    // MRI: check_exec_options
     static void checkExecOptions(ThreadContext context, Ruby runtime, RubyHash opthash, ExecArg eargp) {
+        handleOptionsCommon(context, runtime, eargp, opthash, true);
+    }
+
+    static IRubyObject handleOptionsCommon(ThreadContext context, Ruby runtime, ExecArg eargp, RubyHash opthash, boolean raise) {
         if (opthash.isEmpty())
-            return;
+            return null;
+
+        RubyHash nonopts = null;
+
         for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)opthash.directEntrySet()) {
             IRubyObject key = entry.getKey();
             IRubyObject val = entry.getValue();
+
             if (execargAddopt(context, runtime, eargp, key, val) != ST_CONTINUE) {
-                if (key instanceof RubySymbol)
-                    throw runtime.newArgumentError("wrong exec option symbol: " + key);
-                throw runtime.newArgumentError("wrong exec option");
+                if (raise) {
+                    if (key instanceof RubySymbol)
+                        throw runtime.newArgumentError("wrong exec option symbol: " + key);
+                    throw runtime.newArgumentError("wrong exec option");
+                }
+
+                if (nonopts == null) nonopts = RubyHash.newHash(runtime);
+                nonopts.op_aset(context, key, val);
             }
         }
+        return nonopts != null ? nonopts : context.nil;
     }
 
     // MRI: is_popen_fork
@@ -397,8 +404,6 @@ public class PopenExecutor {
     private static class PopenArg {
         ExecArg eargp;
         int modef;
-        Channel[] pair = {null, null};
-        Channel[] write_pair = {null, null};
     }
 
     private static String[] ARGVSTR2ARGV(byte[][] argv_str) {
@@ -424,7 +429,6 @@ public class PopenExecutor {
         IRubyObject write_port;
         PosixShim posix = new PosixShim(runtime.getPosix());
 
-        PopenArg arg = new PopenArg();
         Errno e = null;
 
         String[] args = null;
@@ -438,40 +442,38 @@ public class PopenExecutor {
         if (prog != null)
             cmd = StringSupport.checkEmbeddedNulls(runtime, prog).toString();
 
-        arg.eargp = eargp;
-        arg.modef = fmode;
-        arg.pair[0] = arg.pair[1] = null;
-        arg.write_pair[0] = arg.write_pair[1] = null;
         if (eargp != null && !eargp.use_shell) {
             args = ARGVSTR2ARGV(eargp.argv_str.argv);
         }
+        Pipe mainPipe = null, secondPipe = null;
         switch (fmode & (OpenFile.READABLE|OpenFile.WRITABLE)) {
             case OpenFile.READABLE | OpenFile.WRITABLE:
-                if (posix.pipe(arg.write_pair) < 0)
+                if ((secondPipe = posix.pipe()) == null)
                     throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
-                if (posix.pipe(arg.pair) < 0) {
+                if ((mainPipe = posix.pipe()) == null) {
                     e = posix.errno;
-                    try {arg.write_pair[0].close();} catch (IOException ioe) {}
-                    try {arg.write_pair[1].close();} catch (IOException ioe) {}
+                    try {secondPipe.sink().close();} catch (IOException ioe) {}
+                    try {secondPipe.source().close();} catch (IOException ioe) {}
                     posix.errno = e;
                     throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
                 }
-                if (eargp != null) {
-                    execargAddopt(context, runtime, eargp, RubyFixnum.zero(runtime), RubyFixnum.newFixnum(runtime, FilenoUtil.getFilenoFromChannel(arg.write_pair[0])));
-                    execargAddopt(context, runtime, eargp, RubyFixnum.one(runtime), RubyFixnum.newFixnum(runtime, FilenoUtil.getFilenoFromChannel(arg.pair[1])));
-                }
+
+                if (eargp != null) prepareStdioRedirects(mainPipe, secondPipe, eargp);
+
                 break;
             case OpenFile.READABLE:
-                if (posix.pipe(arg.pair) < 0)
+                if ((mainPipe = posix.pipe()) == null)
                     throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
-                if (eargp != null)
-                    execargAddopt(context, runtime, eargp, RubyFixnum.one(runtime), RubyFixnum.newFixnum(runtime, FilenoUtil.getFilenoFromChannel(arg.pair[1])));
+
+                if (eargp != null) prepareStdioRedirects(mainPipe, null, eargp);
+
                 break;
             case OpenFile.WRITABLE:
-                if (posix.pipe(arg.pair) < 0)
+                if ((mainPipe = posix.pipe()) == null)
                     throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
-                if (eargp != null)
-                    execargAddopt(context, runtime, eargp, RubyFixnum.zero(runtime), RubyFixnum.newFixnum(runtime, FilenoUtil.getFilenoFromChannel(arg.pair[0])));
+
+                if (eargp != null) prepareStdioRedirects(null, mainPipe, eargp);
+
                 break;
             default:
                 throw runtime.newSystemCallError(prog.toString());
@@ -490,8 +492,9 @@ public class PopenExecutor {
                 }
                 break;
             }
-            if (eargp != null)
-                execargRunOptions(context, runtime, sargp, null, null);
+            // We don't modify parent, so nothing to fix up
+//            if (eargp != null)
+//                execargRunOptions(context, runtime, sargp, null, null);
         }
         else {
             throw runtime.newNotImplementedError("spawn without exec args (probably a bug)");
@@ -499,28 +502,28 @@ public class PopenExecutor {
 
         /* parent */
         if (pid == -1) {
-            try {arg.pair[0].close();} catch (IOException ioe) {}
-            try {arg.pair[1].close();} catch (IOException ioe) {}
+            try {mainPipe.sink().close();} catch (IOException ioe) {}
+            try {mainPipe.source().close();} catch (IOException ioe) {}
             if ((fmode & (OpenFile.READABLE|OpenFile.WRITABLE)) == (OpenFile.READABLE|OpenFile.WRITABLE)) {
-                try {arg.write_pair[0].close();} catch (IOException ioe) {}
-                try {arg.write_pair[1].close();} catch (IOException ioe) {}
+                try {mainPipe.sink().close();} catch (IOException ioe) {}
+                try {mainPipe.source().close();} catch (IOException ioe) {}
             }
             errno = e;
             throw runtime.newErrnoFromErrno(errno, prog.toString());
         }
         if ((fmode & OpenFile.READABLE) != 0 && (fmode & OpenFile.WRITABLE) != 0) {
-            try {arg.pair[1].close();} catch (IOException ioe) {}
-            fd = arg.pair[0];
-            try {arg.write_pair[0].close();} catch (IOException ioe) {}
-            write_fd = arg.write_pair[1];
+            try {mainPipe.sink().close();} catch (IOException ioe) {}
+            fd = mainPipe.source();
+            try {secondPipe.source().close();} catch (IOException ioe) {}
+            write_fd = secondPipe.sink();
         }
         else if ((fmode & OpenFile.READABLE) != 0) {
-            try {arg.pair[1].close();} catch (IOException ioe) {}
-            fd = arg.pair[0];
+            try {mainPipe.sink().close();} catch (IOException ioe) {}
+            fd = mainPipe.source();
         }
         else {
-            try {arg.pair[0].close();} catch (IOException ioe) {}
-            fd = arg.pair[1];
+            try {mainPipe.source().close();} catch (IOException ioe) {}
+            fd = mainPipe.sink();
         }
 
         port = runtime.getIO().allocate();
@@ -548,6 +551,7 @@ public class PopenExecutor {
         final long finalPid = pid;
         fptr.setPid(pid);
         fptr.setProcess(new Process() {
+            volatile Integer exitValue = null;
             @Override
             public OutputStream getOutputStream() {
                 return null;
@@ -564,22 +568,43 @@ public class PopenExecutor {
             }
 
             @Override
-            public int waitFor() throws InterruptedException {
-                int[] stat_loc = {0};
-                // TODO: investigate WNOHANG
-                int result = runtime.getPosix().waitpid((int)finalPid, stat_loc, 0);
-                if (result == -1) {
-                    switch (Errno.valueOf(runtime.getPosix().errno())) {
-                        case EINTR:
-                            throw new InterruptedException();
-                        case ECHILD:
-                            // ignore?
-                            break;
-                        default:
-                            throw new RuntimeException("unexpected waitpid errno: " + Errno.valueOf(runtime.getPosix().errno()));
+            public synchronized int waitFor() throws InterruptedException {
+                errno = null;
+
+                if (exitValue == null) {
+                    int[] stat_loc = {0};
+                    retry: while (true) {
+                        stat_loc[0] = 0;
+                        // TODO: investigate WNOHANG
+                        int result = runtime.getPosix().waitpid((int)finalPid, stat_loc, 0);
+                        if (result == -1) {
+                            Errno errno = Errno.valueOf(runtime.getPosix().errno());
+                            switch (errno) {
+                                case EINTR:
+                                    runtime.getCurrentContext().pollThreadEvents();
+                                    continue retry;
+                                case ECHILD:
+                                    PopenExecutor.this.errno = errno;
+                                    return -1;
+                                default:
+                                    throw new RuntimeException("unexpected waitpid errno: " + Errno.valueOf(runtime.getPosix().errno()));
+                            }
+                        }
+                        break;
+                    }
+                    // FIXME: Is this different across platforms? Got it all from Darwin's wait.h
+
+                    int status = stat_loc[0];
+                    if (WIFEXITED(status)) {
+                        exitValue = WEXITSTATUS(status);
+                    } else if (WIFSIGNALED(status)) {
+                        exitValue = WTERMSIG(status);
+                    } else if (WIFSTOPPED(status)) {
+                        exitValue = WSTOPSIG(status);
                     }
                 }
-                return stat_loc[0];
+
+                return exitValue;
             }
 
             @Override
@@ -607,11 +632,44 @@ public class PopenExecutor {
             ((RubyIO)port).setInstanceVariable("@tied_io_for_writing", write_port);
         }
 
-        fptr.setFinalizer(fptr.PIPE_FINALIZE);
+//        fptr.setFinalizer(fptr.PIPE_FINALIZE);
 
         // TODO?
 //        pipeAddFptr(fptr);
         return port;
+    }
+
+    // FIXME: This are all from Darwin; other platforms may differ
+    static int _WSTATUS(int x)          { return x & 0177; }
+    static final int _WSTOPPED = 0177;
+    static int WEXITSTATUS(int x)       { return ((x) >> 8) & 0x000000ff; }
+    static int WSTOPSIG(int x)          { return x >> 8; }
+    static boolean WIFCONTINUED(int x)  { return _WSTATUS(x) == _WSTOPPED && WSTOPSIG(x) == 0x13; }
+    static boolean WIFSTOPPED(int x)    { return _WSTATUS(x) == _WSTOPPED && WSTOPSIG(x) != 0x13; }
+    static boolean WIFEXITED(int x)     { return _WSTATUS(x) == 0; }
+    static boolean WIFSIGNALED(int x)   { return _WSTATUS(x) != _WSTOPPED && _WSTATUS(x) != 0; }
+    static int WTERMSIG(int x)          { return _WSTATUS(x); }
+
+    private void prepareStdioRedirects(Pipe readPipe, Pipe writePipe, ExecArg eargp) {
+        if (readPipe != null) {
+            // dup our read pipe's write end into stdout
+            int readPipeWriteFD = FilenoUtil.getFilenoFromChannel(readPipe.sink());
+            eargp.fileActions.add(SpawnFileAction.dup(readPipeWriteFD, 1));
+
+            // close the other end of the pipe in the child
+            int readPipeReadFD = FilenoUtil.getFilenoFromChannel(readPipe.source());
+            eargp.fileActions.add(SpawnFileAction.close(readPipeReadFD));
+        }
+
+        if (writePipe != null) {
+            // dup our write pipe's read end into stdin
+            int writePipeReadFD = FilenoUtil.getFilenoFromChannel(writePipe.source());
+            eargp.fileActions.add(SpawnFileAction.dup(writePipeReadFD, 0));
+
+            // close the other end of the pipe in the child
+            int writePipeWriteFD = FilenoUtil.getFilenoFromChannel(writePipe.sink());
+            eargp.fileActions.add(SpawnFileAction.close(writePipeWriteFD));
+        }
     }
 
     static int run_exec_pgroup(Ruby runtime, ExecArg eargp, ExecArg sargp, String[] errmsg) {
@@ -1005,10 +1063,11 @@ public class PopenExecutor {
 //        }
 
         // Additional logic to clear all hooked signals
-        eargp.attributes.add(SpawnAttribute.sigdef(Long.MAX_VALUE));
+        eargp.attributes.add(SpawnAttribute.sigdef(0xFFFFFFFFFFFFFFFFL));
 
         return 0;
     }
+
     /* This function should be async-signal-safe.  Actually it is. */
     static int run_exec_close(Ruby runtime, RubyArray ary, ExecArg eargp, String[] errmsg) {
         long i;

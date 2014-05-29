@@ -217,16 +217,13 @@ public class PosixShim {
         }
     }
 
-    public int pipe(Channel[] pipes) {
+    public Pipe pipe() {
         clear();
         try {
-            Pipe pipe = Pipe.open();
-            pipes[0] = pipe.source();
-            pipes[1] = pipe.sink();
-            return 0;
+            return Pipe.open();
         } catch (IOException ioe) {
             errno = Helpers.errnoFromException(ioe);
-            return -1;
+            return null;
         }
     }
 
