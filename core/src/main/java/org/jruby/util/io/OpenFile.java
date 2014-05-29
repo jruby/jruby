@@ -25,6 +25,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -105,8 +106,7 @@ public class OpenFile {
     private int lineno;
     private String pathv;
     private Finalizer finalizer;
-    public InputStream stdin;
-    public OutputStream stdout;
+    public Closeable stdio_file;
     public volatile FileLock currentLock;
 
     public static class Buffer {
@@ -137,8 +137,7 @@ public class OpenFile {
     public final PosixShim posix;
 
     public void clearStdio() {
-        stdout = null;
-        stdin = null;
+        stdio_file = null;
     }
 
     public String PREP_STDIO_NAME() {
@@ -752,8 +751,7 @@ public class OpenFile {
     public void finalize(Ruby runtime, boolean noraise) {
         IRubyObject err = runtime.getNil();
         ChannelFD fd = this.fd();
-        InputStream stdin = this.stdin;
-        OutputStream stdout = this.stdout;
+        Closeable stdio_file = this.stdio_file;
 
         if (writeconv != null) {
             if (write_lock != null && !noraise) {
@@ -786,10 +784,10 @@ public class OpenFile {
 
         if (IS_PREP_STDIO() || isStdio()) {
 	        /* need to keep FILE objects of stdin, stdout and stderr */
-        } else if (stdin != null || stdout != null) {
+        } else if (stdio_file != null) {
 	        /* stdio_file is deallocated anyway
              * even if fclose failed.  */
-            if (posix.close(stdin != null ? stdin : stdout) < 0 && err.isNil())
+            if (posix.close(stdio_file) < 0 && err.isNil())
                 err = noraise ? runtime.getTrue() : RubyNumeric.int2fix(runtime, posix.errno.intValue());
         } else if (fd != null) {
             /* fptr->fd may be closed even if close fails.
@@ -2118,7 +2116,7 @@ public class OpenFile {
     // MRI: check_tty
     public void checkTTY() {
         // TODO: native descriptors? Is this only used for stdio?
-        if (stdin != null || stdout != null) {
+        if (stdio_file != null) {
             mode |= TTY | DUPLEX;
         }
     }
@@ -2136,7 +2134,7 @@ public class OpenFile {
     }
 
     public boolean isStdio() {
-        return stdin != null || stdout != null;
+        return stdio_file != null;
     }
 
     public int readPending() {

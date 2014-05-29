@@ -197,7 +197,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fptr = io.getOpenFileChecked();
         prepStdioEcflags(fptr, fmode);
-        fptr.stdin = f;
+        fptr.stdio_file = f;
 
         // We checkTTY again here because we're using stdout/stdin to indicate this is stdio
         return recheckTTY(runtime, fptr, io);
@@ -210,7 +210,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fptr = io.getOpenFileChecked();
         prepStdioEcflags(fptr, fmode);
-        fptr.stdout = f;
+        fptr.stdio_file = f;
 
         return recheckTTY(runtime, fptr, io);
     }
@@ -337,9 +337,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         if (fptr == orig) return this;
         if (fptr.IS_PREP_STDIO()) {
-            if ((fptr.stdin == System.in && !orig.isReadable()) ||
-                    (fptr.stdout == System.out && !orig.isWritable()) ||
-                    (fptr.stdout == System.err && !orig.isWritable())) {
+            if ((fptr.stdio_file == System.in && !orig.isReadable()) ||
+                    (fptr.stdio_file == System.out && !orig.isWritable()) ||
+                    (fptr.stdio_file == System.err && !orig.isWritable())) {
                 throw runtime.newArgumentError(fptr.PREP_STDIO_NAME() + " can't change access mode from \"" + fptr.getModeAsString(runtime) + "\" to \"" + orig.getModeAsString(runtime) + "\"");
             }
         }
@@ -383,8 +383,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 fptr.setFD(fd);
             }
             else {
-                if (fptr.stdin != null) try {fptr.stdin.close();}catch(IOException ioe){}
-                if (fptr.stdout != null) try {fptr.stdout.close();}catch(IOException ioe){}
+                if (fptr.stdio_file != null) try {fptr.stdio_file.close();}catch(IOException ioe){}
                 fptr.clearStdio();
                 fptr.setFD(null);
                 // TODO: need dup2(into) again
