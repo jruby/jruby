@@ -1893,6 +1893,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return runtime.getNil();
     }
 
+    // MRI: rb_io_close_write
     @JRubyMethod
     public IRubyObject close_write(ThreadContext context) {
         Ruby runtime = context.runtime;
@@ -1909,7 +1910,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
             fptr.setMode(fptr.getMode() & ~OpenFile.WRITABLE);
             if (!fptr.isReadable())
-                return rbIoClose(runtime);
+                return write_io.rbIoClose(runtime);
             return context.nil;
         }
 
@@ -1922,7 +1923,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             fptr.tiedIOForWriting = null;
             fptr.setMode(fptr.getMode() & ~OpenFile.DUPLEX);
         }
-        rbIoClose(runtime);
+        write_io.rbIoClose(runtime);
         return context.nil;
     }
 
