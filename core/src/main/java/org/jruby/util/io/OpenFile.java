@@ -87,8 +87,7 @@ public class OpenFile {
     }
 
     public static interface Finalizer {
-
-        public void finalize(Ruby runtime, boolean raise);
+        public void finalize(Ruby runtime, OpenFile fptr, boolean noraise);
     }
 
     // RB_IO_FPTR_NEW, minus fields that Java already initializes the same way
@@ -742,11 +741,32 @@ public class OpenFile {
 
     public void cleanup(Ruby runtime, boolean noraise) {
         if (finalizer != null) {
-            finalizer.finalize(runtime, noraise);
+            finalizer.finalize(runtime, this, noraise);
         } else {
             finalize(runtime, noraise);
         }
     }
+
+    public static final Finalizer PIPE_FINALIZE = new Finalizer() {
+        @Override
+        public void finalize(Ruby runtime, OpenFile fptr, boolean noraise) {
+            if (!Platform.IS_WINDOWS) { // #if !defined(HAVE_FORK) && !defined(_WIN32)
+                int status = 0;
+                if (fptr.stdio_file != null) {
+                    // unsure how to do this
+//                    status = pclose(fptr->stdio_file);
+                    fptr.posix.close(fptr.stdio_file);
+                }
+                fptr.setFD(null);
+                fptr.stdio_file = null;
+                // no status from above, so can't really do this
+//                runtime.getCurrentContext().setLastExitStatus();
+            } else {
+                fptr.finalize(runtime, noraise);
+            }
+//            pipe_del_fptr(fptr);
+        }
+    };
 
     public void finalize(Ruby runtime, boolean noraise) {
         IRubyObject err = runtime.getNil();

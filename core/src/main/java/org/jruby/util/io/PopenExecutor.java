@@ -607,8 +607,9 @@ public class PopenExecutor {
             ((RubyIO)port).setInstanceVariable("@tied_io_for_writing", write_port);
         }
 
-        // TODO
-//        fptr.setFinalizer(pipe_finalize);
+        fptr.setFinalizer(fptr.PIPE_FINALIZE);
+
+        // TODO?
 //        pipeAddFptr(fptr);
         return port;
     }
