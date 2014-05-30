@@ -448,21 +448,21 @@ public class PopenExecutor {
                     throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
                 }
 
-                if (eargp != null) prepareStdioRedirects(mainPipe, secondPipe, eargp);
+                if (eargp != null) prepareStdioRedirects(runtime, mainPipe, secondPipe, eargp);
 
                 break;
             case OpenFile.READABLE:
                 if ((mainPipe = posix.pipe()) == null)
                     throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
 
-                if (eargp != null) prepareStdioRedirects(mainPipe, null, eargp);
+                if (eargp != null) prepareStdioRedirects(runtime, mainPipe, null, eargp);
 
                 break;
             case OpenFile.WRITABLE:
                 if ((mainPipe = posix.pipe()) == null)
                     throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
 
-                if (eargp != null) prepareStdioRedirects(null, mainPipe, eargp);
+                if (eargp != null) prepareStdioRedirects(runtime, null, mainPipe, eargp);
 
                 break;
             default:
@@ -640,11 +640,16 @@ public class PopenExecutor {
     static boolean WIFSIGNALED(int x)   { return _WSTATUS(x) != _WSTOPPED && _WSTATUS(x) != 0; }
     static int WTERMSIG(int x)          { return _WSTATUS(x); }
 
-    private void prepareStdioRedirects(Pipe readPipe, Pipe writePipe, ExecArg eargp) {
+    private void prepareStdioRedirects(Ruby runtime, Pipe readPipe, Pipe writePipe, ExecArg eargp) {
+        // We insert these redirects directly into fd_dup2 so that chained redirection can be
+        // validated and set up properly by the execargFixup logic.
+        // The closes do not appear to be part of MRI's logic (they close the fd before exec/spawn),
+        // so rather than using execargAddopt we do them directly here.
+
         if (readPipe != null) {
             // dup our read pipe's write end into stdout
             int readPipeWriteFD = FilenoUtil.filenoFrom(readPipe.sink());
-            eargp.fileActions.add(SpawnFileAction.dup(readPipeWriteFD, 1));
+            eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, runtime.newFixnum(1), runtime.newFixnum(readPipeWriteFD));
 
             // close the other end of the pipe in the child
             int readPipeReadFD = FilenoUtil.filenoFrom(readPipe.source());
@@ -654,7 +659,7 @@ public class PopenExecutor {
         if (writePipe != null) {
             // dup our write pipe's read end into stdin
             int writePipeReadFD = FilenoUtil.filenoFrom(writePipe.source());
-            eargp.fileActions.add(SpawnFileAction.dup(writePipeReadFD, 0));
+            eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, runtime.newFixnum(0), runtime.newFixnum(writePipeReadFD));
 
             // close the other end of the pipe in the child
             int writePipeWriteFD = FilenoUtil.filenoFrom(writePipe.sink());
