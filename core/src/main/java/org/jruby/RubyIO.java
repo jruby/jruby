@@ -178,7 +178,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         ThreadContext context = runtime.getCurrentContext();
-        initializeCommon(context, new ChannelFD(channel), runtime.newFixnum(ModeFlags.getModesFromChannel(channel).getFlags()), context.nil);
+        initializeCommon(context, new ChannelFD(channel), runtime.newFixnum(ModeFlags.oflagsFrom(runtime.getPosix(), channel)), context.nil);
     }
 
     public RubyIO(Ruby runtime, ShellLauncher.POpenProcess process, IOOptions ioOptions) {
@@ -826,7 +826,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private IRubyObject initializeCommon(ThreadContext context, ChannelFD fd, IRubyObject vmodeArg, IRubyObject opt) {
         Ruby runtime = context.runtime;
 
-//        int ofmode;
+        int ofmode;
         int[] oflags_p = {ModeFlags.RDONLY};
 
         if(opt != null && !opt.isNil() && !(opt instanceof RubyHash) && !(opt.respondsTo("to_hash"))) {
@@ -846,14 +846,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
         ConvConfig convconfig = new ConvConfig();
         EncodingUtils.extractModeEncoding(context, convconfig, pm, opt, oflags_p, fmode_p);
 
-//            oflags_p[0] = descriptor.getOriginalModes().getFlags();
-//
-//            ofmode = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
-//            if (pm[EncodingUtils.VMODE] == null || pm[EncodingUtils.VMODE].isNil()) {
-//                fmode_p[0] = ofmode;
-//            } else if (((~ofmode & fmode_p[0]) & OpenFile.READWRITE) != 0) {
-//                throw runtime.newErrnoEINVALError();
-//            }
+        { // normally done with fcntl...which we *could* do too...but this is just checking read/write
+            oflags_p[0] = ModeFlags.oflagsFrom(runtime.getPosix(), fd.ch);
+
+            ofmode = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
+            if (EncodingUtils.vmode(pm) == null || EncodingUtils.vmode(pm).isNil()) {
+                fmode_p[0] = ofmode;
+            } else if (((~ofmode & fmode_p[0]) & OpenFile.READWRITE) != 0) {
+                throw runtime.newErrnoEINVALError();
+            }
+        }
 
         if (opt != null && !opt.isNil() && ((RubyHash)opt).op_aref(context, runtime.newSymbol("autoclose")) == runtime.getFalse()) {
             fmode_p[0] |= OpenFile.PREP;

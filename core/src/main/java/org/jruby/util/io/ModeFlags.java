@@ -32,10 +32,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.io;
 
+import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
+import jnr.posix.POSIX;
 import org.jruby.Ruby;
 
 import java.nio.channels.Channel;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
@@ -166,9 +169,43 @@ public class ModeFlags implements Cloneable {
      * @param channel the channel to examine for capabilities
      * @return the mode flags
      */
+    public static int oflagsFrom(POSIX posix, Channel channel) {
+        int mode;
+
+        int fileno = FilenoUtil.filenoFrom(channel);
+        if (FilenoUtil.isFake(fileno) || !posix.isNative()) {
+            // channel doesn't have a real fileno; best we can do is go off the Java type
+            if (channel instanceof ReadableByteChannel) {
+                if (channel instanceof WritableByteChannel) {
+                    mode = RDWR;
+                } else {
+                    mode = RDONLY;
+                }
+            } else if (channel instanceof WritableByteChannel) {
+                mode = WRONLY;
+            } else {
+                // FIXME: I don't like this
+                mode = RDWR;
+            }
+        } else {
+            // real fileno, we can use fcntl
+            mode = posix.fcntl(fileno, Fcntl.F_GETFL);
+        }
+
+        return mode;
+    }
+
+    /**
+     * Build a set of mode flags using the specified channel's actual capabilities.
+     *
+     * @param channel the channel to examine for capabilities
+     * @return the mode flags
+     */
+    @Deprecated
     public static ModeFlags getModesFromChannel(Channel channel) {
         try {
             ModeFlags modes;
+
             if (channel instanceof ReadableByteChannel) {
                 if (channel instanceof WritableByteChannel) {
                     modes = new ModeFlags(RDWR);
