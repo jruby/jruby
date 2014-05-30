@@ -3529,7 +3529,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
             // new native popen logic
-            return PopenExecutor.popen(context, args, runtime.getIO(), block);
+            return PopenExecutor.popen(context, args, (RubyClass)recv, block);
         }
 
         // old JDK popen logic
