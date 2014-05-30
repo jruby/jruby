@@ -2,15 +2,12 @@ package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIX;
-import org.jruby.Ruby;
 import org.jruby.runtime.Helpers;
 
 import java.io.Closeable;
-import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
-import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.Pipe;
