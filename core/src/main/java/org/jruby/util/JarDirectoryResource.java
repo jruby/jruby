@@ -4,6 +4,7 @@ import jnr.posix.POSIX;
 import org.jruby.Ruby;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
+import java.io.InputStream;
 
 /**
  * Represents a directory in a jar.
@@ -57,6 +58,11 @@ class JarDirectoryResource extends JarResource {
 
     public boolean isRoot() {
         return "/".equals(path);
+    }
+
+    @Override
+    public InputStream getInputStream() {
+      return null;
     }
 
     @Override
