@@ -2613,24 +2613,30 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 if (nonblock) {
                     fptr.setNonblock(runtime);
                 }
-                str = EncodingUtils.setStrBuf(runtime, str, len);
-                strByteList = ((RubyString)str).getByteList();
-//                arg.fd = fptr->fd;
-//                arg.str_ptr = RSTRING_PTR(str);
-//                arg.len = len;
-//                rb_str_locktmp_ensure(str, read_internal_call, (VALUE)&arg);
-//                n = arg.len;
-                n = OpenFile.readInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), len);
-                if (n < 0) {
-                    if (!nonblock && fptr.waitReadable(runtime))
-                        continue again;
-                    if (nonblock && (fptr.errno() == Errno.EWOULDBLOCK || fptr.errno() == Errno.EAGAIN)) {
-                        if (noException)
-                            return runtime.newSymbol("wait_readable");
-                        else
-                            throw runtime.newErrnoEAGAINReadableError("read would block");
+                try {
+                    str = EncodingUtils.setStrBuf(runtime, str, len);
+                    strByteList = ((RubyString)str).getByteList();
+    //                arg.fd = fptr->fd;
+    //                arg.str_ptr = RSTRING_PTR(str);
+    //                arg.len = len;
+    //                rb_str_locktmp_ensure(str, read_internal_call, (VALUE)&arg);
+    //                n = arg.len;
+                    n = OpenFile.readInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), len);
+                    if (n < 0) {
+                        if (!nonblock && fptr.waitReadable(runtime))
+                            continue again;
+                        if (nonblock && (fptr.errno() == Errno.EWOULDBLOCK || fptr.errno() == Errno.EAGAIN)) {
+                            if (noException)
+                                return runtime.newSymbol("wait_readable");
+                            else
+                                throw runtime.newErrnoEAGAINReadableError("read would block");
+                        }
+                        throw runtime.newSystemCallError(fptr.getPath());
                     }
-                    throw runtime.newSystemCallError(fptr.getPath());
+                } finally {
+                    if (nonblock) {
+                        fptr.setBlock(runtime);
+                    }
                 }
                 break;
             }
