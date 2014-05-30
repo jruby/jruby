@@ -1300,44 +1300,63 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return runtime.newFixnum(n);
     }
 
-    @JRubyMethod(name = "write_nonblock", required = 1)
-    public IRubyObject write_nonblock(ThreadContext context, IRubyObject obj) {
-        return doWriteNonblock(context, obj, true);
-    }
-    
-    public IRubyObject doWriteNonblock(ThreadContext context, IRubyObject obj, boolean useException) {
+    @JRubyMethod(name = "write_nonblock", required = 1, optional = 1)
+    public IRubyObject write_nonblock(ThreadContext context, IRubyObject[] argv) {
         Ruby runtime = context.runtime;
+        IRubyObject str;
+        IRubyObject opts = context.nil;
+        boolean no_exceptions = false;
 
-        OpenFile myOpenFile = getOpenFileChecked();
+        int argc = Arity.checkArgumentCount(context, argv, 1, 2);
+        if (argc == 2) {
+            opts = argv[1].convertToHash();
+        }
+        str = argv[0];
 
+        if (!opts.isNil() && runtime.getFalse() == ((RubyHash)opts).op_aref(context, runtime.newSymbol("exception")))
+            no_exceptions = true;
+
+        return ioWriteNonblock(context, runtime, str, no_exceptions);
+    }
+
+    private IRubyObject ioWriteNonblock(ThreadContext context, Ruby runtime, IRubyObject str, boolean no_exception) {
+        OpenFile fptr;
+        long n;
+
+        if (!(str instanceof RubyString))
+            str = str.asString();
+
+        RubyIO io = GetWriteIO();
+        fptr = io.getOpenFileChecked();
+        fptr.checkWritable(context);
+
+        if (fptr.io_fflush(runtime) < 0)
+            throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
+
+        fptr.setNonblock(runtime);
         try {
-            myOpenFile.checkWritable(context);
-            RubyString str = obj.asString();
-            if (str.getByteList().length() == 0) {
-                return context.runtime.newFixnum(0);
-            }
+            ByteList strByteList = ((RubyString)str).getByteList();
+            n = fptr.posix.write(fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize(), true);
+        } finally {
+            fptr.setBlock(runtime);
+        }
 
-            if (myOpenFile.isWriteBuffered()) {
-                context.runtime.getWarnings().warn(ID.SYSWRITE_BUFFERED_IO, "write_nonblock for buffered IO");
-            }
-
-            ChannelStream stream = (ChannelStream)myOpenFile.getWriteStream();
-
-            int written = stream.writenonblock(str.getByteList());
-            if (written == 0) {
-                if (useException) {
-                    throw runtime.newErrnoEAGAINWritableError("");
+        if (n == -1) {
+            if (fptr.posix.errno == Errno.EWOULDBLOCK || fptr.posix.errno == Errno.EAGAIN) {
+                if (no_exception) {
+                    return runtime.newSymbol("wait_writable");
                 } else {
-                    return runtime.fastNewSymbol("wait_writable");
+                    throw runtime.newErrnoEAGAINWritableError("write would block");
                 }
             }
-
-            return context.runtime.newFixnum(written);
-        } catch (IOException ex) {
-            throw context.runtime.newIOErrorFromException(ex);
-        } catch (BadDescriptorException ex) {
-            throw context.runtime.newErrnoEBADFError();
+            throw runtime.newErrnoFromErrno(fptr.posix.errno, fptr.getPath());
         }
+
+        return runtime.newFixnum(n);
+    }
+
+    public IRubyObject doWriteNonblock(ThreadContext context, IRubyObject[] argv, boolean useException) {
+        return write_nonblock(context, argv);
     }
 
     public RubyIO GetWriteIO() {

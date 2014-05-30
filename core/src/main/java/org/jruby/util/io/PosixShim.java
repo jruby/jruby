@@ -72,13 +72,28 @@ public class PosixShim {
         // FIXME: don't allocate every time
         ByteBuffer tmp = ByteBuffer.wrap(bytes, offset, length);
         try {
-            return fd.chWrite.write(tmp);
+            if (nonblock) {
+                // TODO: figure out what nonblocking writes against atypical streams (files?) actually do
+                // Ff we can't set the channel nonblocking, I'm not sure what we can do to
+                // pretend the channel is blocking.
+            }
+
+            int written = fd.chWrite.write(tmp);
+
+            if (written == 0) {
+                // if it's a nonblocking write against a file and we've hit EOF, do EAGAIN
+                if (nonblock) {
+                    errno = Errno.EAGAIN;
+                    return -1;
+                }
+            }
+
+            return written;
         } catch (IOException ioe) {
             errno = Helpers.errnoFromException(ioe);
             error = ioe;
             return -1;
         }
-
     }
 
     public int read(ChannelFD fd, byte[] target, int offset, int length, boolean nonblock) {
