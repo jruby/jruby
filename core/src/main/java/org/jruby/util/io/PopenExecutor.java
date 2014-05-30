@@ -262,8 +262,7 @@ public class PopenExecutor {
 //            return Qnil;
 //        }
         ((RubyBasicObject)port).setMetaClass(klass);
-        RubyIO.ensureYieldClose(context, port, block);
-        return port;
+        return RubyIO.ensureYieldClose(context, port, block);
     }
 
     static void execargSetenv(ThreadContext context, Ruby runtime, ExecArg eargp, IRubyObject env) {
