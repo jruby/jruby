@@ -838,6 +838,6 @@ public class ChannelDescriptor {
 
     @Deprecated
     public static int getFilenoFromChannel(Channel channel) {
-        return FilenoUtil.getFilenoFromChannel(channel);
+        return FilenoUtil.filenoFrom(channel);
     }
 }

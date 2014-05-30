@@ -653,21 +653,21 @@ public class PopenExecutor {
     private void prepareStdioRedirects(Pipe readPipe, Pipe writePipe, ExecArg eargp) {
         if (readPipe != null) {
             // dup our read pipe's write end into stdout
-            int readPipeWriteFD = FilenoUtil.getFilenoFromChannel(readPipe.sink());
+            int readPipeWriteFD = FilenoUtil.filenoFrom(readPipe.sink());
             eargp.fileActions.add(SpawnFileAction.dup(readPipeWriteFD, 1));
 
             // close the other end of the pipe in the child
-            int readPipeReadFD = FilenoUtil.getFilenoFromChannel(readPipe.source());
+            int readPipeReadFD = FilenoUtil.filenoFrom(readPipe.source());
             eargp.fileActions.add(SpawnFileAction.close(readPipeReadFD));
         }
 
         if (writePipe != null) {
             // dup our write pipe's read end into stdin
-            int writePipeReadFD = FilenoUtil.getFilenoFromChannel(writePipe.source());
+            int writePipeReadFD = FilenoUtil.filenoFrom(writePipe.source());
             eargp.fileActions.add(SpawnFileAction.dup(writePipeReadFD, 0));
 
             // close the other end of the pipe in the child
-            int writePipeWriteFD = FilenoUtil.getFilenoFromChannel(writePipe.sink());
+            int writePipeWriteFD = FilenoUtil.filenoFrom(writePipe.sink());
             eargp.fileActions.add(SpawnFileAction.close(writePipeWriteFD));
         }
     }

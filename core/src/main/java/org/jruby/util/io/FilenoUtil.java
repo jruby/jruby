@@ -73,7 +73,7 @@ public class FilenoUtil {
         return fileno >= FIRST_FAKE_FD;
     }
 
-    public static int getFilenoFromChannel(Channel channel) {
+    public static int filenoFrom(Channel channel) {
         if (channel instanceof NativeDeviceChannel) {
             return ((NativeDeviceChannel)channel).getFD();
         }

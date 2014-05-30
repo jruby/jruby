@@ -25,7 +25,7 @@ public class ChannelFD implements Closeable {
 
         initChannelTypes();
 
-        realFileno = FilenoUtil.getFilenoFromChannel(ch);
+        realFileno = FilenoUtil.filenoFrom(ch);
         if (realFileno == -1) {
             fakeFileno = FilenoUtil.getNewFileno();
         } else {

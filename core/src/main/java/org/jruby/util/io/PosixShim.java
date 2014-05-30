@@ -140,7 +140,7 @@ public class PosixShim {
         Channel channel = fd.ch;
         clear();
 
-        int real_fd = FilenoUtil.getFilenoFromChannel(channel);
+        int real_fd = FilenoUtil.filenoFrom(channel);
 
         if (real_fd != -1 && real_fd < FilenoUtil.FIRST_FAKE_FD) {
             int result = posix.flock(real_fd, lockMode);
