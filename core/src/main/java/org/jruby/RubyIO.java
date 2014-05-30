@@ -295,11 +295,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         ioClass.includeModule(runtime.getEnumerable());
         
-        // TODO: Implement tty? and isatty.  We have no real capability to
-        // determine this from java, but if we could set tty status, then
-        // we could invoke jruby differently to allow stdin to return true
-        // on this.  This would allow things like cgi.rb to work properly.
-        
         ioClass.defineAnnotatedMethods(RubyIO.class);
 
         // Constants for seek
@@ -1053,16 +1048,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         IRubyObject io = ((RubyClass)recv).newInstance(context, args, Block.NULL_BLOCK);
 
-        ensureYieldClose(context, io, block);
-
-        return io;
+        return ensureYieldClose(context, io, block);
     }
 
-    public static void ensureYieldClose(ThreadContext context, IRubyObject port, Block block) {
+    public static IRubyObject ensureYieldClose(ThreadContext context, IRubyObject port, Block block) {
         if (block.isGiven()) {
             Ruby runtime = context.runtime;
             try {
-                block.yield(context, port);
+                return block.yield(context, port);
             } finally {
                 IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
                 try {
@@ -1078,6 +1071,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 }
             }
         }
+        return port;
     }
 
     public static IRubyObject sysopen(IRubyObject recv, IRubyObject[] args, Block block) {
