@@ -126,15 +126,18 @@ public class PosixShim {
             ByteBuffer buffer = ByteBuffer.wrap(target, offset, length);
             int read = fd.chRead.read(buffer);
 
-            // NIO channels will always raise for errors, so -1 only means EOF.
-            if (read == -1) read = 0;
-
-            if (read == 0) {
-                // if it's a nonblocking read against a file and we've hit EOF, do EAGAIN
-                if (nonblock) {
+            if (nonblock) {
+                if (read == -1) {
+                    read = 0; // still treat EOF as EOF
+                } else if (read == 0) {
                     errno = Errno.EAGAIN;
                     return -1;
+                } else {
+                    return read;
                 }
+            } else {
+                // NIO channels will always raise for errors, so -1 only means EOF.
+                if (read == -1) read = 0;
             }
 
             return read;
