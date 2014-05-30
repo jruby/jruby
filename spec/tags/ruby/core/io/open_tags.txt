@@ -1,3 +1,2 @@
 fails:IO.open raises an error if passed binary/text mode two ways
-fails:IO.open accepts an :autoclose option
 fails:IO.open coerces :external_encoding option with #to_str
