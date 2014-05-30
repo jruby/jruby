@@ -339,12 +339,6 @@ public class PopenExecutor {
 
     // MRI: DO_SPAWN macro in pipe_open
     private long DO_SPAWN(Ruby runtime, ExecArg eargp, String cmd, String[] args, String[] envp) {
-//        System.out.println("fd_dup2: " + eargp.fd_dup2);
-//        System.out.println("fd_close: " + eargp.fd_close);
-//        System.out.println("fd_dup2_child: " + eargp.fd_dup2_child);
-//        System.out.println("fd_open: " + eargp.fd_open);
-//        if (envp != null) System.out.println(Arrays.asList(envp));
-//        if (args != null) System.out.println(Arrays.asList(args));
         if (eargp.use_shell) {
             return procSpawnSh(runtime, eargp, cmd, envp);
         }
