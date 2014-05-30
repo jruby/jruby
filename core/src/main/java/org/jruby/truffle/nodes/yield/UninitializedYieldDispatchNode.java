@@ -37,7 +37,18 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
         final YieldDispatchHeadNode dispatchHead = (YieldDispatchHeadNode) NodeUtil.getNthParent(this, depth);
 
         if (depth > MAX_DEPTH) {
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "resorting to a general yield node");
+            final String sourceName;
+            final int sourceLine;
+
+            if (getEncapsulatingSourceSection().getSource() == null) {
+                sourceName = "(unknown)";
+                sourceLine = 0;
+            } else {
+                sourceName = getEncapsulatingSourceSection().getSource().getName();
+                sourceLine = getEncapsulatingSourceSection().getStartLine();
+            }
+
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, sourceName, sourceLine, "resorting to a general yield node");
 
             final GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext());
             dispatchHead.getDispatch().replace(newGeneralYield);

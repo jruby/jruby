@@ -84,4 +84,19 @@ public final class CoreSource implements Source {
         return 0;
     }
 
+    @Override
+    public SourceSection createSection(String s, int i, int i2) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public SourceSection createSection(String s, int i, int i2, int i3) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public SourceSection createSection(String s, int i, int i2, int i3, int i4) {
+        throw new UnsupportedOperationException();
+    }
+
 }

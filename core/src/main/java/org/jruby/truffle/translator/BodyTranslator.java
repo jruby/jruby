@@ -110,7 +110,7 @@ public class BodyTranslator extends Translator {
     public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$~", "$+"));
 
     public BodyTranslator(RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source) {
-        super(context, source);
+        super(context, source, environment.getSharedMethodInfo().getName());
         this.parent = parent;
         this.environment = environment;
     }

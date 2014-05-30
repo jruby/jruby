@@ -11,8 +11,8 @@ package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.impl.DefaultSourceSection;
 import com.oracle.truffle.api.nodes.*;
+import com.oracle.truffle.api.source.SourceFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.control.*;
@@ -42,9 +42,7 @@ public class TranslatorDriver {
     }
 
     public MethodDefinitionNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
-        final SourceSection sourceSection = new DefaultSourceSection(
-                context.getSourceManager().get(bodyNode.getPosition().getFile()),
-                "(unknown)", bodyNode.getPosition().getStartLine() + 1, -1, -1, -1);
+        final SourceSection sourceSection = SourceSection.NULL;
 
         final SharedMethodInfo sharedMethod = new SharedMethodInfo(sourceSection, "(unknown)", false, parseTree);
 
@@ -57,7 +55,7 @@ public class TranslatorDriver {
 
         // Translate to Ruby Truffle nodes
 
-        final MethodTranslator translator = new MethodTranslator(context, null, environment, false, false, context.getSourceManager().get(bodyNode.getPosition().getFile()));
+        final MethodTranslator translator = new MethodTranslator(context, null, environment, false, false, SourceFactory.fromFile(bodyNode.getPosition().getFile()));
 
         return translator.compileFunctionNode(sourceSection, "(unknown)", argsNode, bodyNode, false);
     }
@@ -112,7 +110,7 @@ public class TranslatorDriver {
     }
 
     public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(new DefaultSourceSection(source, "(root)", 0, 0, 0, 0), "(root)", false, rootNode);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(SourceSection.NULL, "(root)", false, rootNode);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName());
 

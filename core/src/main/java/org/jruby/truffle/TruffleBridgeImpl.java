@@ -10,8 +10,10 @@
 package org.jruby.truffle;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.Source;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.source.SourceFactory;
 import org.jruby.*;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.Node;
@@ -89,7 +91,8 @@ public class TruffleBridgeImpl implements TruffleBridge {
     @Override
     public Object execute(TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
         try {
-            final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, truffleContext.getSourceManager().get(rootNode.getPosition().getFile()), parserContext, parentFrame, rootNode);
+            final Source source = SourceFactory.fromFile(rootNode.getPosition().getFile());
+            final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, source, parserContext, parentFrame, rootNode);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
             return callTarget.call(RubyArguments.pack(parentFrame, self, null));
         } catch (ThrowException e) {

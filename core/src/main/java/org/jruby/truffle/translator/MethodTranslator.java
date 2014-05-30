@@ -11,14 +11,12 @@ package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 import org.jruby.ast.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.control.IfNode;
-import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.literal.NilNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.arguments.*;

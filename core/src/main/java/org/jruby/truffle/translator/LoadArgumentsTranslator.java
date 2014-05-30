@@ -14,20 +14,15 @@ import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.call.RubyCallNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.ArrayGetTailNodeFactory;
 import org.jruby.truffle.nodes.core.ArrayIndexNodeFactory;
-import org.jruby.truffle.nodes.literal.NilNode;
 import org.jruby.truffle.nodes.methods.arguments.*;
-import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNodeFactory;
-import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNode;
 import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeFactory;
-import org.jruby.truffle.nodes.respondto.RespondToNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -54,7 +49,7 @@ public class LoadArgumentsTranslator extends Translator {
     private org.jruby.ast.ArgsNode argsNode;
 
     public LoadArgumentsTranslator(RubyContext context, Source source, boolean isBlock, BodyTranslator methodBodyTranslator) {
-        super(context, source);
+        super(context, source, methodBodyTranslator.getEnvironment().getSharedMethodInfo().getName());
         this.isBlock = isBlock;
         this.methodBodyTranslator = methodBodyTranslator;
     }

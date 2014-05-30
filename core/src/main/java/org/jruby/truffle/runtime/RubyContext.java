@@ -14,6 +14,7 @@ import java.math.*;
 import java.util.Arrays;
 import java.util.concurrent.atomic.*;
 
+import com.oracle.truffle.api.instrument.SourceCallback;
 import org.jruby.Ruby;
 import org.jruby.*;
 import com.oracle.truffle.api.*;
@@ -39,7 +40,7 @@ import org.jruby.util.ByteList;
 /**
  * The global state of a running Ruby system.
  */
-public class RubyContext {
+public class RubyContext extends ExecutionContext {
 
     private final Ruby runtime;
     private final TranslatorDriver translator;
@@ -51,8 +52,9 @@ public class RubyContext {
     private final FiberManager fiberManager;
     private final AtExitManager atExitManager;
     private final RubyDebugManager rubyDebugManager;
-    private final SourceManager sourceManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
+
+    private SourceCallback sourceCallback = null;
 
     private AtomicLong nextObjectID = new AtomicLong(0);
 
@@ -71,7 +73,6 @@ public class RubyContext {
 
         featureManager = new FeatureManager(this);
         atExitManager = new AtExitManager();
-        sourceManager = new SourceManager();
 
         rubyDebugManager = new RubyDebugManager();
 
@@ -94,7 +95,7 @@ public class RubyContext {
     }
 
     private void loadFileAbsolute(String fileName) {
-        final Source source = sourceManager.get(fileName);
+        final Source source = SourceFactory.fromFile(fileName);
         final String code = source.getCode();
         if (code == null) {
             throw new RuntimeException("Can't read file " + fileName);
@@ -116,17 +117,17 @@ public class RubyContext {
     }
 
     public Object eval(String code) {
-        final Source source = sourceManager.get("(eval)", code);
+        final Source source = SourceFactory.fromText(code, "(eval)");
         return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
     }
 
     public Object eval(String code, RubyModule module) {
-        final Source source = sourceManager.get("(eval)", code);
+        final Source source = SourceFactory.fromText(code, "(eval)");
         return execute(this, source, TranslatorDriver.ParserContext.MODULE, module, null);
     }
 
     public Object eval(String code, RubyBinding binding) {
-        final Source source = sourceManager.get("(eval)", code);
+        final Source source = SourceFactory.fromText(code, "(eval)");
         return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame());
     }
 
@@ -164,7 +165,7 @@ public class RubyContext {
     }
 
     public ShellResult evalShell(String code, MaterializedFrame existingLocals) {
-        final Source source = sourceManager.get("(shell)", code);
+        final Source source = SourceFactory.fromText(code, "(shell)");
         return (ShellResult) execute(this, source, TranslatorDriver.ParserContext.SHELL, coreLibrary.getMainObject(), existingLocals);
     }
 
@@ -358,8 +359,18 @@ public class RubyContext {
         return atExitManager;
     }
 
-    public SourceManager getSourceManager() {
-        return sourceManager;
+    @Override
+    public String getLanguageShortName() {
+        return "ruby";
+    }
+
+    @Override
+    public void setSourceCallback(SourceCallback sourceCallback) {
+        this.sourceCallback = sourceCallback;
+    }
+
+    public SourceCallback getSourceCallback() {
+        return sourceCallback;
     }
 
     public TruffleHooks getHooks() {
