@@ -619,6 +619,7 @@ public class IRRuntimeHelpers {
 
         RubyModule module = (object instanceof RubyModule) ? (RubyModule) object : object.getMetaClass();
         module.defineAlias(newNameString, oldNameString);
+        module.callMethod(context, "method_added", context.runtime.newSymbol(newNameString));
     }
 
     public static RubyModule getModuleFromScope(ThreadContext context, StaticScope scope, IRubyObject arg) {
