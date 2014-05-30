@@ -2220,118 +2220,102 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return puts(context, this, args);
     }
 
-    // rb_io_puts, arity-split
-    public static IRubyObject puts0(ThreadContext context, IRubyObject out) {
-        IRubyObject defaultRS = context.runtime.getGlobalVariables().getDefaultSeparator();
-        write(context, out, defaultRS);
-        return context.nil;
+    public static IRubyObject puts0(ThreadContext context, IRubyObject maybeIO) {
+        return writeSeparator(context, maybeIO);
     }
 
-    // rb_io_puts, arity-split
-    public static IRubyObject puts1(ThreadContext context, IRubyObject out, IRubyObject arg0) {
+    public static IRubyObject puts1(ThreadContext context, IRubyObject maybeIO, IRubyObject arg0) {
         Ruby runtime = context.runtime;
-        IRubyObject separator = runtime.getGlobalVariables().getDefaultSeparator();
+        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
+        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
 
-        putsSingle(context, runtime, out, arg0, separator);
+        putsSingle(context, runtime, maybeIO, arg0, separator);
 
         return context.nil;
     }
 
-    // rb_io_puts, arity-split
-    public static IRubyObject puts2(ThreadContext context, IRubyObject out, IRubyObject arg0, IRubyObject arg1) {
+    public static IRubyObject puts2(ThreadContext context, IRubyObject maybeIO, IRubyObject arg0, IRubyObject arg1) {
         Ruby runtime = context.runtime;
-        IRubyObject separator = runtime.getGlobalVariables().getDefaultSeparator();
-        
-        putsSingle(context, runtime, out, arg0, separator);
-        putsSingle(context, runtime, out, arg1, separator);
-        
+        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
+        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
+
+        putsSingle(context, runtime, maybeIO, arg0, separator);
+        putsSingle(context, runtime, maybeIO, arg1, separator);
+
         return context.nil;
     }
 
-    // rb_io_puts, arity-split
-    public static IRubyObject puts3(ThreadContext context, IRubyObject out, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+    public static IRubyObject puts3(ThreadContext context, IRubyObject maybeIO, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.runtime;
-        IRubyObject separator = runtime.getGlobalVariables().getDefaultSeparator();
-        
-        putsSingle(context, runtime, out, arg0, separator);
-        putsSingle(context, runtime, out, arg1, separator);
-        putsSingle(context, runtime, out, arg2, separator);
-        
+        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
+        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
+
+        putsSingle(context, runtime, maybeIO, arg0, separator);
+        putsSingle(context, runtime, maybeIO, arg1, separator);
+        putsSingle(context, runtime, maybeIO, arg2, separator);
+
         return context.nil;
     }
 
-    // rb_io_puts
-    public static IRubyObject puts(final ThreadContext context, final IRubyObject out, final IRubyObject... args) {
-        final Ruby runtime = context.runtime;
-        final IRubyObject defaultRS = runtime.getGlobalVariables().getDefaultSeparator();
-        final int argc = 0;
-        int i;
-
-        /* if no argument given, print newline. */
-        if (argc == 0) {
-            write(context, out, defaultRS);
-            return context.nil;
+    public static IRubyObject puts(ThreadContext context, IRubyObject maybeIO, IRubyObject... args) {
+        if (args.length == 0) {
+            return writeSeparator(context, maybeIO);
         }
-        for (i=0; i<argc; i++) {
-            putsSingle(context, runtime, out, args[i], defaultRS);
-        }
-        return context.nil;
+
+        return putsArray(context, maybeIO, args);
     }
 
-    /**
-     * MRI: loop body from rb_io_puts
-     *
-     * Must not be called unless within runtime.recursiveListOperation.
-     */
-    private static void putsSingle(final ThreadContext context, final Ruby runtime, final IRubyObject out, final IRubyObject arg, IRubyObject defaultRS) {
-        IRubyObject line;
-        if (arg instanceof RubyString) {
-            line = arg;
+    private static IRubyObject writeSeparator(ThreadContext context, IRubyObject maybeIO) {
+        Ruby runtime = context.runtime;
+        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
+        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
+
+        write(context, maybeIO, separator);
+        return runtime.getNil();
+    }
+
+    private static IRubyObject putsArray(ThreadContext context, IRubyObject maybeIO, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
+        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
+
+        for (int i = 0; i < args.length; i++) {
+            putsSingle(context, runtime, maybeIO, args[i], separator);
+        }
+
+        return runtime.getNil();
+    }
+
+    private static final ByteList RECURSIVE_BYTELIST = ByteList.create("[...]");
+
+    private static void putsSingle(ThreadContext context, Ruby runtime, IRubyObject maybeIO, IRubyObject arg, RubyString separator) {
+        ByteList line;
+
+        if (arg.isNil()) {
+            line = getNilByteList(runtime);
+        } else if (runtime.isInspecting(arg)) {
+            line = RECURSIVE_BYTELIST;
+        } else if (arg instanceof RubyArray) {
+            inspectPuts(context, maybeIO, (RubyArray) arg);
+            return;
         } else {
-            IRubyObject result = runtime.recursiveListOperation(new Callable<IRubyObject>() {
-                @Override
-                public IRubyObject call() throws Exception {
-                    return putsAry(context, runtime, out, arg, false);
-                }
-            });
-            if (result.isTrue()) {
-                return;
-            }
-            line = arg.asString();
+            line = arg.asString().getByteList();
         }
-        write(context, out, line);
-        RubyString lineStr = (RubyString)line;
-        ByteList lineByteList = lineStr.getByteList();
-        if (lineByteList.getRealSize() == 0 ||
-                lineByteList.get(lineByteList.getRealSize() - 1) != '\n') {
-            write(context, out, defaultRS);
+
+        write(context, maybeIO, line);
+
+        if (line.length() == 0 || !line.endsWith(separator.getByteList())) {
+            write(context, maybeIO, separator.getByteList());
         }
     }
 
-    // io_puts_ary
-    private static IRubyObject putsAry(final ThreadContext context, final Ruby runtime, final IRubyObject out, IRubyObject ary, boolean recur) {
-        if (recur) {
-            IRubyObject tmp = RubyString.newString(runtime, "[...]");
-            puts(context, out, new IRubyObject[]{tmp});
-            return runtime.getTrue();
+    private static IRubyObject inspectPuts(ThreadContext context, IRubyObject maybeIO, RubyArray array) {
+        try {
+            context.runtime.registerInspecting(array);
+            return putsArray(context, maybeIO, array.toJavaArray());
+        } finally {
+            context.runtime.unregisterInspecting(array);
         }
-
-        ary = TypeConverter.checkArrayType(runtime, ary);
-        if (ary.isNil()) return runtime.getFalse();
-
-        return runtime.execRecursive(new Ruby.RecursiveFunction() {
-            @Override
-            public IRubyObject call(IRubyObject ary, boolean recur) {
-                RubyArray aryCast = (RubyArray)ary;
-                IRubyObject tmp;
-                int i;
-                for (i=0; i<aryCast.size(); i++) {
-                    tmp = aryCast.eltOk(i);
-                    putsAry(context, runtime, out, tmp, recur);
-                }
-                return runtime.getTrue();
-            }
-        }, ary);
     }
 
     protected IRubyObject write(ThreadContext context, ByteList byteList) {
