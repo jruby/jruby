@@ -785,7 +785,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // IO class methods.
 
-    @JRubyMethod(name = {"new", "for_fd"}, rest = true, meta = true)
+    @JRubyMethod(name = "new", rest = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyClass klass = (RubyClass)recv;
         
@@ -796,6 +796,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     className + "::new() does not take block; use " + className + "::open() instead");
         }
         
+        return klass.newInstance(context, args, block);
+    }
+
+    @JRubyMethod(rest = true, meta = true)
+    public static IRubyObject for_fd(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        RubyClass klass = (RubyClass)recv;
+
         return klass.newInstance(context, args, block);
     }
 
@@ -853,14 +860,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //                throw runtime.newErrnoEINVALError();
 //            }
 
-        if (!opt.isNil() && ((RubyHash)opt).op_aref(context, runtime.newSymbol("autoclose")) == runtime.getFalse()) {
-            setAutoclose(false);
+        if (opt != null && !opt.isNil() && ((RubyHash)opt).op_aref(context, runtime.newSymbol("autoclose")) == runtime.getFalse()) {
+            fmode_p[0] |= OpenFile.PREP;
         }
 
         // JRUBY-4650: Make sure we clean up the old data, if it's present.
         MakeOpenFile();
-
-//            ModeFlags modes = ModeFlags.createModeFlags(oflags_p[0]);
 
         openFile.setFD(fd);
         openFile.setMode(fmode_p[0]);
@@ -868,12 +873,17 @@ public class RubyIO extends RubyObject implements IOEncodable {
         openFile.clearCodeConversion();
 
         openFile.checkTTY();
-//            if (fileno(stdin) == fd)
-//                fp - > stdio_file = stdin;
-//            else if (fileno(stdout) == fd)
-//                fp - > stdio_file = stdout;
-//            else if (fileno(stderr) == fd)
-//                fp - >stdio_file = stderr;
+        switch (fd.bestFileno()) {
+            case 0:
+                openFile.stdio_file = System.in;
+                break;
+            case 1:
+                openFile.stdio_file = System.out;
+                break;
+            case 2:
+                openFile.stdio_file = System.err;
+                break;
+        }
 
         if (openFile.isBOM()) {
             EncodingUtils.ioSetEncodingByBOM(context, this);

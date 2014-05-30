@@ -279,6 +279,8 @@ public class OpenFile {
         char[] mChars = modestr.toCharArray(), pChars = null;
         int m = 0, p = 0;
 
+        if (mChars.length == 0) throw runtime.newArgumentError("invalid access mode " + modestr);
+
         switch (mChars[m++]) {
             case 'r':
                 fmode |= OpenFile.READABLE;
