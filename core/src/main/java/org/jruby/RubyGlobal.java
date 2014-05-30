@@ -789,18 +789,7 @@ public class RubyGlobal {
                 return value;
             }
 
-            // TODO: need this magic for stderr? MRI does not have anything similar
-//            RubyIO io = (RubyIO)value;
-//
-//            // HACK: in order to have stdout/err act like ttys and flush always,
-//            // we set anything assigned to stdout/stderr to sync
-//            try {
-//                io.getOpenFile().getWriteStreamSafe().setSync(true);
-//            } catch (BadDescriptorException e) {
-//                throw runtime.newErrnoEBADFError();
-//            }
-
-            if (!(value instanceof RubyIO) ||!value.respondsTo("write")) {
+            if (!value.respondsTo("write") && !value.respondsToMissing("write")) {
                 throw runtime.newTypeError(name() + " must have write method, " +
                                     value.getType().getName() + " given");
             }
