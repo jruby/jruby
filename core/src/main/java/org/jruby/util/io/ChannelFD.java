@@ -127,7 +127,7 @@ public class ChannelFD implements Closeable {
         if (ch instanceof FileChannel) chFile = (FileChannel)ch;
         else chFile = null;
         if (ch instanceof SocketChannel) chSock = (SocketChannel)ch;
-        else chFile = null;
+        else chSock = null;
     }
 
     public Channel ch;
