@@ -62,11 +62,22 @@ public class RubyRootNode extends RootNode {
         for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
             final RootNode rootNode = frame.getCallNode().getRootNode();
 
-            rootNode.reportLoopCount(count);
-
-            if (rootNode instanceof RubyRootNode && !((RubyRootNode) rootNode).getSharedMethodInfo().isBlock()) {
+            if (!(rootNode instanceof RubyRootNode)) {
                 break;
             }
+
+            final RubyRootNode rubyRootNode = (RubyRootNode) rootNode;
+
+            // TODO(CS): would be better if we weren't detecting this with a string comparision
+            if (rubyRootNode.getSharedMethodInfo().getName().equals("(root)")) {
+                break;
+            }
+
+            if (rubyRootNode.getSharedMethodInfo().isBlock()) {
+                break;
+            }
+
+            rootNode.reportLoopCount(count);
         }
 
         reportLoopCount(count);
