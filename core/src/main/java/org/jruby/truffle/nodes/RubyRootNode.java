@@ -68,16 +68,11 @@ public class RubyRootNode extends RootNode {
 
             final RubyRootNode rubyRootNode = (RubyRootNode) rootNode;
 
-            // TODO(CS): would be better if we weren't detecting this with a string comparision
-            if (rubyRootNode.getSharedMethodInfo().getName().equals("(root)")) {
-                break;
-            }
-
-            if (rubyRootNode.getSharedMethodInfo().isBlock()) {
-                break;
-            }
-
             rootNode.reportLoopCount(count);
+
+            if (!rubyRootNode.getSharedMethodInfo().isBlock()) {
+                break;
+            }
         }
 
         reportLoopCount(count);
