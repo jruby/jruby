@@ -83,15 +83,17 @@ public abstract class ArrayBuilderNode extends Node {
         public Object finish(Object store) {
             if (couldUseInteger) {
                 replace(new IntegerArrayBuilderNode(getContext(), isMaxLengthKnown()));
+                return ArrayUtils.unboxInteger((Object[]) store);
             } else if (couldUseLong) {
                 replace(new LongArrayBuilderNode(getContext(), isMaxLengthKnown()));
+                return ArrayUtils.unboxLong((Object[]) store);
             } else if (couldUseDouble) {
                 replace(new DoubleArrayBuilderNode(getContext(), isMaxLengthKnown()));
+                return ArrayUtils.unboxDouble((Object[]) store);
             } else {
                 replace(new ObjectArrayBuilderNode(getContext(), isMaxLengthKnown()));
+                return store;
             }
-
-            return store;
         }
 
     }
