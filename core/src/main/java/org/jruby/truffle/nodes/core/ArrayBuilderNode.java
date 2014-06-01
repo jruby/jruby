@@ -29,11 +29,8 @@ public abstract class ArrayBuilderNode extends Node {
     }
 
     public abstract Object length(int length);
-
     public abstract Object append(Object store, int index, Object value);
-
-    public void finish() {
-    }
+    public abstract Object finish(Object store);
 
     protected RubyContext getContext() {
         return context;
@@ -83,7 +80,7 @@ public abstract class ArrayBuilderNode extends Node {
         }
 
         @Override
-        public void finish() {
+        public Object finish(Object store) {
             if (couldUseInteger) {
                 replace(new IntegerArrayBuilderNode(getContext(), isMaxLengthKnown()));
             } else if (couldUseLong) {
@@ -93,6 +90,8 @@ public abstract class ArrayBuilderNode extends Node {
             } else {
                 replace(new ObjectArrayBuilderNode(getContext(), isMaxLengthKnown()));
             }
+
+            return store;
         }
 
     }
@@ -123,6 +122,10 @@ public abstract class ArrayBuilderNode extends Node {
                 newStore[index] = value;
                 return newStore;
             }
+        }
+
+        public Object finish(Object store) {
+            return store;
         }
 
     }
@@ -158,6 +161,10 @@ public abstract class ArrayBuilderNode extends Node {
             }
         }
 
+        public Object finish(Object store) {
+            return store;
+        }
+
     }
 
     public static class DoubleArrayBuilderNode extends ArrayBuilderNode {
@@ -188,6 +195,10 @@ public abstract class ArrayBuilderNode extends Node {
             }
         }
 
+        public Object finish(Object store) {
+            return store;
+        }
+
     }
 
     public static class ObjectArrayBuilderNode extends ArrayBuilderNode {
@@ -204,6 +215,10 @@ public abstract class ArrayBuilderNode extends Node {
         @Override
         public Object append(Object store, int index, Object value) {
             ((Object[]) store)[index] = value;
+            return store;
+        }
+
+        public Object finish(Object store) {
             return store;
         }
 

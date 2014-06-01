@@ -82,9 +82,7 @@ public abstract class RangeNodes {
                 }
             }
 
-            arrayBuilder.finish();
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, length);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(store), length);
         }
 
     }
