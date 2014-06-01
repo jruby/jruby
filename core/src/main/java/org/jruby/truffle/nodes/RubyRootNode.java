@@ -62,9 +62,15 @@ public class RubyRootNode extends RootNode {
         for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
             final RootNode rootNode = frame.getCallNode().getRootNode();
 
+            if (!(rootNode instanceof RubyRootNode)) {
+                break;
+            }
+
+            final RubyRootNode rubyRootNode = (RubyRootNode) rootNode;
+
             rootNode.reportLoopCount(count);
 
-            if (rootNode instanceof RubyRootNode && !((RubyRootNode) rootNode).getSharedMethodInfo().isBlock()) {
+            if (!rubyRootNode.getSharedMethodInfo().isBlock()) {
                 break;
             }
         }

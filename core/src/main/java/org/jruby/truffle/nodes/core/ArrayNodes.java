@@ -2018,9 +2018,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            arrayBuilder.finish();
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), mappedStore, array.getSize());
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore), array.getSize());
         }
 
         @Specialization(guards = "isObject", order = 3)
@@ -2045,9 +2043,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            arrayBuilder.finish();
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), mappedStore, array.getSize());
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore), array.getSize());
         }
     }
 
@@ -2087,8 +2083,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            arrayBuilder.finish();
-            array.setStore(mappedStore, array.getSize());
+            array.setStore(arrayBuilder.finish(mappedStore), array.getSize());
 
             return array;
         }
@@ -2114,8 +2109,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            arrayBuilder.finish();
-            array.setStore(mappedStore, array.getSize());
+            array.setStore(arrayBuilder.finish(mappedStore), array.getSize());
 
             return array;
         }
@@ -2521,9 +2515,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            arrayBuilder.finish();
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), selectedStore, selectedSize);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(selectedStore), selectedSize);
         }
 
         @Specialization(guards = "isIntegerFixnum", order = 3)
@@ -2557,9 +2549,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            arrayBuilder.finish();
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), selectedStore, selectedSize);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(selectedStore), selectedSize);
         }
 
     }
