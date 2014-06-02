@@ -1726,15 +1726,7 @@ public class OpenFile {
 
     // io_tell
     public long tell(ThreadContext context) {
-        if (fd.chSeek != null) {
-            try {
-                return fd.chSeek.position();
-            } catch (IOException ioe) {
-                throw context.runtime.newIOErrorFromException(ioe);
-            }
-        }
-
-        return -1;
+        return posix.lseek(fd, 0, PosixShim.SEEK_CUR);
     }
 
     // io_unread
