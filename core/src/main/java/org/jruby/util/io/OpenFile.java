@@ -1726,6 +1726,7 @@ public class OpenFile {
 
     // io_tell
     public long tell(ThreadContext context) {
+        flushBeforeSeek(context);
         return posix.lseek(fd, 0, PosixShim.SEEK_CUR);
     }
 
