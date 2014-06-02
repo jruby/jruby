@@ -1820,6 +1820,7 @@ public class OpenFile {
 
     // io_fwrite
     public long fwrite(ThreadContext context, IRubyObject str, boolean nosync) {
+        // TODO: Windows
 //        #ifdef _WIN32
 //        if (fptr->mode & FMODE_TTY) {
 //            long len = rb_w32_write_console(str, fptr->fd);
@@ -1893,16 +1894,14 @@ public class OpenFile {
     }
 
     // io_binwrite
-    public long binwrite(ThreadContext context, IRubyObject str, byte[] ptrBytes, int ptr, int len, boolean nosync)
-    {
+    public long binwrite(ThreadContext context, IRubyObject str, byte[] ptrBytes, int ptr, int len, boolean nosync) {
         int n, r, offset = 0;
-        boolean isSync = !nosync && (mode & (SYNC|TTY)) != 0;
 
-    /* don't write anything if current thread has a pending interrupt. */
+        /* don't write anything if current thread has a pending interrupt. */
         context.pollThreadEvents();
 
         if ((n = len) <= 0) return n;
-        if (wbuf.ptr == null && !isSync) {
+        if (wbuf.ptr == null && !(!nosync && (mode & SYNC) != 0)) {
             wbuf.off = 0;
             wbuf.len = 0;
             wbuf.capa = IO_WBUF_CAPA_MIN;
@@ -1911,16 +1910,13 @@ public class OpenFile {
             // ???
 //            rb_mutex_allow_trap(fptr->write_lock, 1);
         }
-        if (isSync ||
+
+        // Translation: If we are not nosync (if we can do sync write) and sync or tty mode are set, OR
+        //              if the write buffer does not have enough capacity to store all incoming data...unbuffered write
+        if ((!nosync && (mode & (SYNC|TTY)) != 0) ||
                 (wbuf.ptr != null && wbuf.capa <= wbuf.len + len)) {
             BinwriteArg arg = new BinwriteArg();
 
-	/*
-	 * xxx: use writev to avoid double write if available
-	 * writev may help avoid context switch between "a" and "\n" in
-	 * STDERR.puts "a" [ruby-dev:25080] (rebroken since native threads
-	 * introduced in 1.9)
-	 */
             if (wbuf.len != 0 && wbuf.len+len <= wbuf.capa) {
                 if (wbuf.capa < wbuf.off+wbuf.len+len) {
                     System.arraycopy(wbuf.ptr, wbuf.off, wbuf.ptr, 0, wbuf.len);

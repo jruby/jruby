@@ -1,6 +1,7 @@
 package org.jruby.util.io;
 
 import jnr.enxio.channels.NativeDeviceChannel;
+import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.posix.POSIX;
 import org.jruby.Ruby;
 
@@ -51,18 +52,17 @@ public class ChannelFD implements Closeable {
         Channel ch = this.ch;
         ChannelFD fd = new ChannelFD(ch);
         fd.refs = refs;
-        refs.incrementAndGet();
+        fd.refs.incrementAndGet();
 
         return fd;
     }
 
     public int dup2From(POSIX posix, ChannelFD dup2Source) {
-        if (dup2Source.realFileno != -1) {
-            if (realFileno != -1) {
-                // real file descriptors, so we can dup2 directly
-                // TODO: investigate how badly this might damage JVM streams (prediction: not badly)
-                return posix.dup2(dup2Source.realFileno, realFileno);
-            }
+        if (dup2Source.realFileno != -1 && realFileno != -1 && chFile == null) {
+            // real file descriptors, so we can dup2 directly
+            // ...but FileChannel tracks mode on its own, so we can't dup2 into it
+            // TODO: investigate how badly this might damage JVM streams (prediction: not badly)
+            return posix.dup2(dup2Source.realFileno, realFileno);
         }
 
         // TODO: not sure how well this combines native and non-native streams
@@ -129,6 +129,8 @@ public class ChannelFD implements Closeable {
         else chFile = null;
         if (ch instanceof SocketChannel) chSock = (SocketChannel)ch;
         else chSock = null;
+        if (ch instanceof NativeSelectableChannel) chNative = (NativeSelectableChannel)ch;
+        else chNative = null;
     }
 
     public Channel ch;
@@ -138,6 +140,7 @@ public class ChannelFD implements Closeable {
     public SelectableChannel chSelect;
     public FileChannel chFile;
     public SocketChannel chSock;
+    public NativeSelectableChannel chNative;
     public final int realFileno;
     public final int fakeFileno;
     private AtomicInteger refs;

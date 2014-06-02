@@ -54,16 +54,17 @@ public class PosixShim {
                 errno = Helpers.errnoFromException(ioe);
                 return -1;
             }
-        } else if (fd.chSelect != null) {
-            // TODO: It's perhaps just a coincidence that all the channels for
-            // which we should raise are instanceof SelectableChannel, since
-            // stdio is not...so this bothers me slightly. -CON
-            errno = Errno.EPIPE;
-            return -1;
-        } else {
-            errno = Errno.EPIPE;
-            return -1;
+        } else if (fd.chNative != null) {
+            // native channel, use native lseek
+            int ret = posix.lseek(fd.chNative.getFD(), offset, type);
+            if (ret < 0) errno = Errno.valueOf(posix.errno());
+            return ret;
         }
+
+        // For other channel types, we can't get at a native descriptor to lseek, and we can't use FileChannel
+        // .position, so we have to treat them as unseekable and raise EPIPE
+        errno = Errno.EPIPE;
+        return -1;
     }
 
     public int write(ChannelFD fd, byte[] bytes, int offset, int length, boolean nonblock) {

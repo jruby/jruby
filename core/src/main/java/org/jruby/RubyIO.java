@@ -193,7 +193,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // MRI: prep_stdio
     public static RubyIO prepStdio(Ruby runtime, InputStream f, Channel c, int fmode, RubyClass klass, String path) {
         OpenFile fptr;
-        RubyIO io = prepIO(runtime, Channels.newChannel(f), fmode | OpenFile.PREP | EncodingUtils.DEFAULT_TEXTMODE, klass, path);
+        RubyIO io = prepIO(runtime, c, fmode | OpenFile.PREP | EncodingUtils.DEFAULT_TEXTMODE, klass, path);
 
         fptr = io.getOpenFileChecked();
         prepStdioEcflags(fptr, fmode);
@@ -354,7 +354,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         /* copy rb_io_t structure */
-        fptr.setMode(orig.getMode() | (fptr.getMode() & OpenFile.PREP));
+        // NOTE: MRI does not copy sync here, but I can find no way to make stdout/stderr stay sync through a reopen
+        fptr.setMode(orig.getMode() | (fptr.getMode() & (OpenFile.PREP | OpenFile.SYNC)));
         fptr.setProcess(orig.getProcess());
         fptr.setLineNumber(orig.getLineNumber());
         if (orig.getPath() != null) fptr.setPath(orig.getPath());
@@ -369,18 +370,22 @@ public class RubyIO extends RubyObject implements IOEncodable {
         fd = fptr.fd();
         fd2 = orig.fd();
         if (fd != fd2) {
-            if (fptr.IS_PREP_STDIO() /*|| fd <= 2*/ || !fptr.isStdio()) {
+            if (fptr.IS_PREP_STDIO() || fd.bestFileno() <= 2 || fptr.stdio_file == null) {
 	            /* need to keep FILE objects of stdin, stdout and stderr */
-                // TODO: need dup2(into) again
                 checkReopenCloexecDup2(runtime, orig, fd2, fd);
 //                rb_update_max_fd(fd);
                 fptr.setFD(fd);
+
+//                // MRI does not do this, but we seem to need to set some types of channels to sync if they
+//                // are reopened as stdout/stderr.
+//                if (fptr.stdio_file == System.out || fptr.stdio_file == System.err) {
+//                    fd.chFile.force();
+//                }
             }
             else {
                 if (fptr.stdio_file != null) try {fptr.stdio_file.close();}catch(IOException ioe){}
                 fptr.clearStdio();
                 fptr.setFD(null);
-                // TODO: need dup2(into) again
                 checkReopenCloexecDup2(runtime, orig, fd2, fd);
 //                rb_update_max_fd(fd);
                 fptr.setFD(fd);
@@ -4015,6 +4020,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         while ((bytes = to.transferFrom(from, startPosition+transferred, 4196)) > 0) {
             transferred += bytes;
         }
+        // transforFrom does not change position of target
+        to.position(startPosition + transferred);
 
         return transferred;
     }

@@ -196,14 +196,14 @@ public class RubyGlobal {
             stdout = RubyIO.prepStdio(
                     runtime, runtime.getOut(), new NativeDeviceChannel(1), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
             stderr = RubyIO.prepStdio(
-                    runtime, runtime.getErr(), new NativeDeviceChannel(2), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDOUT>");
+                    runtime, runtime.getErr(), new NativeDeviceChannel(2), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
         } else {
             stdin = RubyIO.prepStdio(
                     runtime, runtime.getIn(), Channels.newChannel(runtime.getIn()), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
             stdout = RubyIO.prepStdio(
                     runtime, runtime.getOut(), Channels.newChannel(runtime.getOut()), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
             stderr = RubyIO.prepStdio(
-                    runtime, runtime.getErr(), Channels.newChannel(runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDOUT>");
+                    runtime, runtime.getErr(), Channels.newChannel(runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
         }
 
         runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin), GLOBAL);
