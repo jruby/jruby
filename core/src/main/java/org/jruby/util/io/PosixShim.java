@@ -96,6 +96,9 @@ public class PosixShim {
         }
     }
 
+    private static final int NATIVE_EOF = 0;
+    private static final int JAVA_EOF = -1;
+
     public int read(ChannelFD fd, byte[] target, int offset, int length, boolean nonblock) {
         clear();
 
@@ -127,8 +130,8 @@ public class PosixShim {
             int read = fd.chRead.read(buffer);
 
             if (nonblock) {
-                if (read == -1) {
-                    read = 0; // still treat EOF as EOF
+                if (read == JAVA_EOF) {
+                    read = NATIVE_EOF; // still treat EOF as EOF
                 } else if (read == 0) {
                     errno = Errno.EAGAIN;
                     return -1;

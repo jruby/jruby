@@ -1064,11 +1064,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             flushRaw(context, false);
         }
 
-
         // if it's a FileChannel, just get size directly
-        if (fptr.fileChannel() != null) {
+        if (fptr.seekChannel() != null) {
             try {
-                size = fptr.fileChannel().size();
+                size = fptr.seekChannel().size();
             } catch (IOException ioe) {
                 throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), fptr.getPath());
             }

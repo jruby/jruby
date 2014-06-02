@@ -2,6 +2,7 @@ package org.jruby.util.io;
 
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.POSIX;
+import org.jruby.Ruby;
 
 import java.io.Closeable;
 import java.io.IOException;

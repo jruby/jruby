@@ -73,7 +73,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 import org.jcodings.Encoding;
 import org.jruby.anno.FrameField;
@@ -373,8 +372,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (fptr.IS_PREP_STDIO() /*|| fd <= 2*/ || !fptr.isStdio()) {
 	            /* need to keep FILE objects of stdin, stdout and stderr */
                 // TODO: need dup2(into) again
-                fd = fd2;
-                checkReopenCloexecDup2(runtime, orig, fd, fd2);
+                checkReopenCloexecDup2(runtime, orig, fd2, fd);
 //                rb_update_max_fd(fd);
                 fptr.setFD(fd);
             }
@@ -383,8 +381,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 fptr.clearStdio();
                 fptr.setFD(null);
                 // TODO: need dup2(into) again
-                fd = fd2;
-                checkReopenCloexecDup2(runtime, orig, fd, fd2);
+                checkReopenCloexecDup2(runtime, orig, fd2, fd);
 //                rb_update_max_fd(fd);
                 fptr.setFD(fd);
             }
@@ -411,8 +408,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
     }
 
-    private void checkReopenCloexecDup2(Ruby runtime, OpenFile orig, ChannelFD fd, ChannelFD fd2) {
-        orig.cloexecDup2(runtime, fd2, fd);
+    private void checkReopenCloexecDup2(Ruby runtime, OpenFile orig, ChannelFD oldfd, ChannelFD newfd) {
+        orig.cloexecDup2(runtime, oldfd, newfd);
     }
 
     // rb_io_binmode
@@ -1788,13 +1785,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
         fptr.setLineNumber(orig.getLineNumber());
         if (orig.getPath() != null) fptr.setPath(orig.getPath());
         fptr.setFinalizer(orig.getFinalizer());
-        // TODO: unsure what to do with this
+        // TODO: not using pipe_finalize yet
 //        #if defined (__CYGWIN__) || !defined(HAVE_FORK)
 //        if (fptr.finalize == pipe_finalize)
 //            pipe_add_fptr(fptr);
 //        #endif
 
-        // FIXME: This must do a dup of some kind
         fd = orig.fd().dup(runtime.getPosix());
         fptr.setFD(fd);
         pos = orig.tell(context);
@@ -2032,7 +2028,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         if ((fptr.getMode() & OpenFile.WRITABLE) != 0) {
             if (fptr.io_fflush(context.runtime) < 0)
-                throw context.runtime.newSystemCallError("");
+                throw context.runtime.newErrnoFromErrno(fptr.errno(), "");
 //            #ifdef _WIN32
 //            if (sync && GetFileType((HANDLE)rb_w32_get_osfhandle(fptr->fd)) == FILE_TYPE_DISK) {
 //                rb_thread_io_blocking_region(nogvl_fsync, fptr, fptr->fd);
@@ -2936,7 +2932,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         ByteListCache cache = new ByteListCache();
         for (IRubyObject line = getline(context, separator); !line.isNil(); 
-		line = getline(context, separator, cache)) {
+		        line = getline(context, separator, cache)) {
             block.yield(context, line);
         }
         
@@ -4007,6 +4003,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
             return context.runtime.newFixnum(size);
         } catch (IOException ioe) {
+            ioe.printStackTrace();
             throw runtime.newIOErrorFromException(ioe);
         }
     }

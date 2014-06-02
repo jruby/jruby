@@ -417,12 +417,22 @@ public class OpenFile {
 
     // rb_io_wait_writable
     public boolean waitWritable(Ruby runtime, long timeout) {
-        // errno logic checking here appeared to be mostly to release
-        // gvl when a read would block or retry if it was interrupted
+        if (posix.errno == null) return false;
 
-        // TODO: evaluate whether errno checking here is useful
+        if (fd == null) throw runtime.newIOError("closed stream");
 
-        return ready(runtime, SelectBlob.WRITE_CONNECT_OPS, timeout);
+        switch (posix.errno) {
+            case EINTR:
+//            case ERESTART: // not defined in jnr-constants
+                runtime.getCurrentContext().pollThreadEvents();
+                return true;
+            case EAGAIN:
+            case EWOULDBLOCK:
+                ready(runtime, SelectBlob.WRITE_CONNECT_OPS, timeout);
+                return true;
+            default:
+                return false;
+        }
     }
 
     // rb_io_wait_writable
@@ -432,12 +442,22 @@ public class OpenFile {
 
     // rb_io_wait_readable
     public boolean waitReadable(Ruby runtime, long timeout) {
-        // errno logic checking here appeared to be mostly to release
-        // gvl when a read would block or retry if it was interrupted
+        if (posix.errno == null) return false;
 
-        // TODO: evaluate whether errno checking here is useful
+        if (fd == null) throw runtime.newIOError("closed stream");
 
-        return ready(runtime, SelectBlob.READ_ACCEPT_OPS, timeout);
+        switch (posix.errno) {
+            case EINTR:
+//            case ERESTART: // not defined in jnr-constants
+                runtime.getCurrentContext().pollThreadEvents();
+                return true;
+            case EAGAIN:
+            case EWOULDBLOCK:
+                ready(runtime, SelectBlob.READ_ACCEPT_OPS, timeout);
+                return true;
+            default:
+                return false;
+        }
     }
 
     // rb_io_wait_readable
@@ -482,7 +502,9 @@ public class OpenFile {
                 return ready_stat == 1;
             } else {
                 if (fd.chSeek != null) {
-                    return fd.chSeek.position() < fd.chSeek.size();
+                    return fd.chSeek.position() != -1
+                            && fd.chSeek.size() != -1
+                            && fd.chSeek.position() < fd.chSeek.size();
                 }
                 return false;
             }
@@ -506,42 +528,24 @@ public class OpenFile {
     }
 
     // io_flush_buffer_async2
-    public int flushBufferAsync2(Ruby runtime)
-    {
-        int ret;
+    public int flushBufferAsync2(Ruby runtime) {
+        // GVL-free call to io_flush_buffer_sync2 here in MRI
 
+        return flushBufferSync2(runtime);
 
-        // GVL-free call to io_flush_buffer_sync2 here
-
-//        ret = (VALUE)rb_thread_call_without_gvl2(io_flush_buffer_sync2, fptr,
-//                RUBY_UBF_IO, NULL);
-        ret = flushBufferSync2(runtime);
-
-        if (ret == 0) {
-            // TODO
-	        /* pending async interrupt is there. */
-            posix.errno = Errno.EAGAIN;
-            return -1;
-        } else if (ret == 1) {
-            return 0;
-        } else
-            return ret;
+        // logic after here was to interpret the retval of rb_thread_call_without_gvl2
     }
 
     // io_flush_buffer_sync2
-    public int flushBufferSync2(Ruby runtime)
-    {
-        int result = flushBufferSync(runtime);
+    public int flushBufferSync2(Ruby runtime) {
+        int result = flushBufferSync();
 
-        /*
-         * rb_thread_call_without_gvl2 uses 0 as interrupted.
-         * So, we need to avoid to use 0.
-         */
-        return result == 0 ? 1 : result;
+        return result;
+//        return result == 0 ? 1 : result;
     }
 
     // io_flush_buffer_sync
-    public int flushBufferSync(Ruby runtime)
+    public int flushBufferSync()
     {
         int l = writableLength(wbuf.len);
         int r = posix.write(fd, wbuf.ptr, wbuf.off, l, nonblock);
@@ -562,36 +566,46 @@ public class OpenFile {
     // io_writable_length
     public int writableLength(int l)
     {
-        // we should always assume other threads, so we don't use rb_thread_alone
-        if (PIPE_BUF < l &&
-//                !rb_thread_alone() &&
-                wsplit()) {
-            l = PIPE_BUF;
-        }
+        // We don't use wsplit mode, so we just pass length back directly.
+//        if (PIPE_BUF < l &&
+//                // we should always assume other threads, so we don't use rb_thread_alone
+////                !rb_thread_alone() &&
+//                wsplit()) {
+//            l = PIPE_BUF;
+//        }
         return l;
     }
 
+    /**
+     * wsplit mode selects a smaller write size based on the internal buffer of
+     * things like pipes, in order to help guarantee it will not block when
+     * emptying our write buffer. This must be guaranteed to allow MRI to re-try
+     * flushing the rest of the buffer with the GVL released, which happens when
+     * flushBufferSync above produces EAGAIN.
+     *
+     * In JRuby, where we don't have to release a lock, we skip this logic and
+     * always just let writes do what writes do.
+     *
+     * MRI: wsplit_p
+     * @return
+     */
     // wsplit_p
     boolean wsplit()
     {
         int r;
 
-        if ((mode & WSPLIT_INITIALIZED) == 0) {
-            // Unsure what wsplit mode is, but only appears to be active for
-            // regular files that are doing blocking reads. Since we can't do
-            // nonblocking file reads, we just check if the write channel is
-            // selectable and set flags accordingly.
-//            struct stat buf;
-            if (fd.chFile != null
-//            if (fstat(fptr->fd, &buf) == 0 &&
-//                    !S_ISREG(buf.st_mode)
-//                    && (r = fcntl(fptr->fd, F_GETFL)) != -1 &&
-//                    !(r & O_NONBLOCK)
-            ) {
-                mode |= WSPLIT;
-            }
-            mode |= WSPLIT_INITIALIZED;
-        }
+//        if ((mode & WSPLIT_INITIALIZED) == 0) {
+////            struct stat buf;
+//            if (fd.chFile == null
+////            if (fstat(fptr->fd, &buf) == 0 &&
+////                    !S_ISREG(buf.st_mode)
+////                    && (r = fcntl(fptr->fd, F_GETFL)) != -1 &&
+////                    !(r & O_NONBLOCK)
+//            ) {
+//                mode |= WSPLIT;
+//            }
+//            mode |= WSPLIT_INITIALIZED;
+//        }
         return (mode & WSPLIT) != 0;
     }
 
@@ -790,7 +804,7 @@ public class OpenFile {
         }
         if (wbuf.len != 0) {
             if (noraise) {
-                if ((int)flushBufferSync(runtime) < 0 && err.isNil())
+                if (flushBufferSync() < 0 && err.isNil())
                     err = runtime.getTrue();
             }
             else {
@@ -2288,8 +2302,8 @@ public class OpenFile {
 
     public int cloexecDup2(Ruby runtime, ChannelFD oldfd, ChannelFD newfd) {
         int ret;
-    /* When oldfd == newfd, dup2 succeeds but dup3 fails with EINVAL.
-     * rb_cloexec_dup2 succeeds as dup2.  */
+        /* When oldfd == newfd, dup2 succeeds but dup3 fails with EINVAL.
+         * rb_cloexec_dup2 succeeds as dup2.  */
         if (oldfd == newfd) {
             ret = 0;
         }
