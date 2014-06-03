@@ -234,7 +234,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // MRI's logic differs here. For a nonblocking flock that produces EAGAIN, EACCES, or EWOULBLOCK, MRI
         // just returns false immediately. For the same errnos in blocking mode, MRI waits for 0.1s and then
         // attempts the lock again, indefinitely.
-        while (fptr.threadFlock(op1) < 0) {
+        while (fptr.threadFlock(context, op1) < 0) {
             switch (fptr.errno()) {
                 case EAGAIN:
                 case EACCES:

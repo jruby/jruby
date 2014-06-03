@@ -2266,11 +2266,27 @@ public class OpenFile {
     }
 
     // rb_thread_flock
-    public int threadFlock(int lockMode) {
+    public int threadFlock(ThreadContext context, final int lockMode) {
 //        #ifdef __CYGWIN__
 //        int old_errno = errno;
 //        #endif
-        int ret = posix.flock(fd, lockMode);
+        int ret = 0;
+        try {
+            ret = context.getThread().executeTask(context, this, new RubyThread.Task<OpenFile, Integer>() {
+                @Override
+                public Integer run(ThreadContext context, OpenFile openFile) throws InterruptedException {
+                    return posix.flock(fd, lockMode);
+                }
+
+                @Override
+                public void wakeup(RubyThread thread, OpenFile openFile) {
+                    // unlikely to help a native downcall, but we'll try it
+                    thread.getNativeThread().interrupt();
+                }
+            });
+        } catch (InterruptedException ie) {
+            // ignore?
+        }
 
 //        #ifdef __CYGWIN__
 //        if (GetLastError() == ERROR_NOT_LOCKED) {
