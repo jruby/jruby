@@ -1180,7 +1180,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //            flags |= O_NOINHERIT;
 //        #endif
         try {
-            ret = ChannelDescriptor.open(runtime.getCurrentDirectory(), data.fname, new ModeFlags(data.oflags), data.perm, runtime.getPosix()).getChannel();
+            ret = PosixShim.open(runtime.getCurrentDirectory(), data.fname, new ModeFlags(data.oflags), data.perm, runtime.getPosix());
         } catch (FileExistsException e) {
             data.errno = Errno.ENOENT;
         } catch (ResourceException.FileExists e) {
@@ -1204,32 +1204,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         // TODO, if we need it?
 //        rb_maygvl_fd_fix_cloexec(ret);
         return new ChannelFD(ret);
-    }
-
-    private ChannelDescriptor sysopen(String path, ModeFlags modes, int perm) {
-        try {
-            ChannelDescriptor descriptor = ChannelDescriptor.open(
-                    getRuntime().getCurrentDirectory(),
-                    path,
-                    modes,
-                    perm,
-                    getRuntime().getPosix(),
-                    getRuntime().getJRubyClassLoader());
-
-            // TODO: check if too many open files, GC and try again
-
-            return descriptor;
-        } catch (ResourceException resourceException) {
-            throw resourceException.newRaiseException(getRuntime());
-        } catch (FileNotFoundException ignored) {
-            throw new IllegalStateException("For compile compatibility only");
-        } catch (DirectoryAsFileException ignored) {
-            throw new IllegalStateException("For compile compatibility only");
-        } catch (FileExistsException ignored) {
-            throw new IllegalStateException("For compile compatibility only");
-        } catch (IOException ignored) {
-            throw new IllegalStateException("For compile compatibility only");
-        }
     }
 
     // MRI: rb_io_autoclose_p

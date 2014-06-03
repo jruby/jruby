@@ -1,5 +1,7 @@
 package org.jruby.util;
 
+import jnr.constants.platform.Errno;
+import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
@@ -11,6 +13,7 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 
 import org.jruby.Ruby;
@@ -20,6 +23,8 @@ import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 
 import jnr.posix.JavaSecuredFile;
+import org.jruby.util.io.PosixShim;
+
 import java.util.jar.JarFile;
 import java.util.jar.JarEntry;
 import java.util.zip.ZipEntry;
@@ -130,6 +135,125 @@ class RegularFileResource implements FileResource {
     }
 
     @Override
+    public Channel openChannel(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
+//        if (posix.isNative()) {
+//            int fd = posix.open(absolutePath(), flags.getFlags(), perm);
+//            if (fd < 0) {
+//                Errno errno = Errno.valueOf(posix.errno());
+//                switch (errno) {
+//                    case EACCES:
+//                        throw new ResourceException.PermissionDenied(absolutePath());
+//                    case EEXIST:
+//                        throw new ResourceException.FileExists(absolutePath());
+//                    case EINVAL:
+//                        throw new ResourceException.InvalidArguments(absolutePath());
+//                    case ENOENT:
+//                        throw new ResourceException.NotFound(absolutePath());
+//                    default:
+//                        throw new ResourceException.IOError(new IOException("unhandled errno: " + errno));
+//
+//                }
+//            }
+//            return new NativeDeviceChannel(fd);
+//        }
+
+        if (flags.isCreate()) {
+            boolean fileCreated;
+            try {
+                fileCreated = file.createNewFile();
+            } catch (IOException ioe) {
+                // See JRUBY-4380.
+                // when the directory for the file doesn't exist.
+                // Java in such cases just throws IOException.
+                File parent = file.getParentFile();
+                if (parent != null && parent != file && !parent.exists()) {
+                    throw new ResourceException.NotFound(absolutePath());
+                } else if (!file.canWrite()) {
+                    throw new ResourceException.PermissionDenied(absolutePath());
+                } else {
+                    // for all other IO errors, we report it as general IO error
+                    throw new ResourceException.IOError(ioe);
+                }
+            }
+
+            if (!fileCreated && flags.isExclusive()) {
+                throw new ResourceException.FileExists(absolutePath());
+            }
+
+            Channel channel = createChannel(flags);
+
+            // attempt to set the permissions, if we have been passed a POSIX instance,
+            // perm is > 0, and only if the file was created in this call.
+            if (fileCreated && posix != null) {
+                perm = perm & ~PosixShim.umask(posix);
+                if (posix != null && perm > 0) {
+                    posix.chmod(file.getPath(), perm);
+                }
+            }
+
+            return channel;
+        }
+
+        if (file.isDirectory() && flags.isWritable()) {
+            throw new ResourceException.FileIsDirectory(absolutePath());
+        }
+
+        if (!file.exists()) {
+            throw new ResourceException.NotFound(absolutePath());
+        }
+
+        return createChannel(flags);
+    }
+
+    private Channel createChannel(ModeFlags flags) throws ResourceException {
+        FileChannel fileChannel;
+
+        /* Because RandomAccessFile does not provide a way to pass append
+         * mode, we must manually seek if using RAF. FileOutputStream,
+         * however, does properly honor append mode at the lowest levels,
+         * reducing append write costs when we're only doing writes.
+         *
+         * The code here will use a FileOutputStream if we're only writing,
+         * setting isInAppendMode to true to disable our manual seeking.
+         *
+         * RandomAccessFile does not handle append for us, so if we must
+         * also be readable we pass false for isInAppendMode to indicate
+         * we need manual seeking.
+         */
+        try{
+            if (flags.isWritable() && !flags.isReadable()) {
+                FileOutputStream fos = new FileOutputStream(file, flags.isAppendable());
+                fileChannel = fos.getChannel();
+            } else {
+                RandomAccessFile raf = new RandomAccessFile(file, flags.toJavaModeString());
+                fileChannel = raf.getChannel();
+            }
+        } catch (FileNotFoundException fnfe) {
+            // Jave throws FileNotFoundException both if the file doesn't exist or there were
+            // permission issues, but Ruby needs to disambiguate those two cases
+            throw file.exists() ?
+                    new ResourceException.PermissionDenied(absolutePath()) :
+                    new ResourceException.NotFound(absolutePath());
+        } catch (IOException ioe) {
+            throw new ResourceException.IOError(ioe);
+        }
+
+        try {
+            if (flags.isTruncate()) fileChannel.truncate(0);
+        } catch (IOException ioe) {
+            if (ioe.getMessage().equals("Illegal seek")) {
+                // ignore; it's a pipe or fifo that can't be truncated
+                // ignore; it's a pipe or fifo that can't be truncated
+            } else {
+                throw new ResourceException.IOError(ioe);
+            }
+        }
+
+        return fileChannel;
+    }
+
+    @Override
+    @Deprecated
     public ChannelDescriptor openDescriptor(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
         if (flags.isCreate()) {
             boolean fileCreated;
@@ -176,8 +300,9 @@ class RegularFileResource implements FileResource {
         }
 
         return createDescriptor(flags);
-     }
+    }
 
+    @Deprecated
     private ChannelDescriptor createDescriptor(ModeFlags flags) throws ResourceException {
         FileDescriptor fileDescriptor;
         FileChannel fileChannel;

@@ -3,11 +3,14 @@ package org.jruby.util.io;
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIX;
 import org.jruby.runtime.Helpers;
+import org.jruby.util.JRubyFile;
 
 import java.io.Closeable;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
+import java.nio.channels.Channels;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.Pipe;
@@ -246,6 +249,51 @@ public class PosixShim {
         }
     }
 
+    public static Channel open(String cwd, String path, ModeFlags flags, int perm, POSIX posix) throws FileExistsException, IOException {
+        return open(cwd, path, flags, perm, posix, null);
+    }
+
+    public static Channel open(String cwd, String path, ModeFlags flags, int perm, POSIX posix, ClassLoader classLoader) throws FileExistsException, IOException {
+        if (path.equals("/dev/null") || path.equalsIgnoreCase("nul:") || path.equalsIgnoreCase("nul")) {
+            return new NullChannel();
+        }
+
+        if (path.startsWith("classpath:/") && classLoader != null) {
+            path = path.substring("classpath:/".length());
+            return Channels.newChannel(classLoader.getResourceAsStream(path));
+        }
+
+        return JRubyFile.createResource(cwd, path).openChannel(flags, posix, perm);
+    }
+
+    /**
+     * Joy of POSIX, only way to get the umask is to set the umask,
+     * then set it back. That's unsafe in a threaded program. We
+     * minimize but may not totally remove this race by caching the
+     * obtained or previously set (see umask() above) umask and using
+     * that as the initial set value which, cross fingers, is a
+     * no-op. The cache access is then synchronized. TODO: Better?
+     */
+    public static int umask(POSIX posix) {
+        synchronized (_umaskLock) {
+            final int umask = posix.umask(_cachedUmask);
+            if (_cachedUmask != umask ) {
+                posix.umask(umask);
+                _cachedUmask = umask;
+            }
+            return umask;
+        }
+    }
+
+    public static int umask(POSIX posix, int newMask) {
+        int oldMask;
+        synchronized (_umaskLock) {
+            oldMask = posix.umask(newMask);
+            _cachedUmask = newMask;
+        }
+        return oldMask;
+    }
+
     private void clear() {
         errno = null;
         errmsg = null;
@@ -363,4 +411,14 @@ public class PosixShim {
      * The POSIX instance to use for native calls
      */
     private final POSIX posix;
+
+    /**
+     * An object to synchronize calls to umask
+     */
+    private static final Object _umaskLock = new Object();
+
+    /**
+     * The last umask we set
+     */
+    private static int _cachedUmask = 0;
 }

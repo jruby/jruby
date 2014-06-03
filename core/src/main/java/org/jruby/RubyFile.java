@@ -947,13 +947,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Ruby runtime = context.runtime;
         int oldMask = 0;
         if (args.length == 0) {
-            oldMask = getUmaskSafe( runtime );
+            oldMask = PosixShim.umask(runtime.getPosix());
         } else if (args.length == 1) {
             int newMask = (int) args[0].convertToInteger().getLongValue();
-            synchronized (_umaskLock) {
-                oldMask = runtime.getPosix().umask(newMask);
-                _cachedUmask = newMask;
-            }
+            oldMask = PosixShim.umask(runtime.getPosix(), newMask);
         } else {
             runtime.newArgumentError("wrong number of arguments");
         }
@@ -1344,25 +1341,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         return path;
-    }
-
-    /**
-     * Joy of POSIX, only way to get the umask is to set the umask,
-     * then set it back. That's unsafe in a threaded program. We
-     * minimize but may not totally remove this race by caching the
-     * obtained or previously set (see umask() above) umask and using
-     * that as the initial set value which, cross fingers, is a
-     * no-op. The cache access is then synchronized. TODO: Better?
-     */
-    private static int getUmaskSafe( Ruby runtime ) {
-        synchronized (_umaskLock) {
-            final int umask = runtime.getPosix().umask(_cachedUmask);
-            if (_cachedUmask != umask ) {
-                runtime.getPosix().umask(umask);
-                _cachedUmask = umask;
-            }
-            return umask;
-        }
     }
 
     /**
@@ -1819,8 +1797,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static final int FNM_CASEFOLD = 8;
     private static final int FNM_SYSCASE = Platform.IS_WINDOWS ? FNM_CASEFOLD : 0;
 
-    private static int _cachedUmask = 0;
-    private static final Object _umaskLock = new Object();
     private static final String[] SLASHES = {"", "/", "//"};
     private static Pattern URI_PREFIX = Pattern.compile("^(jar:)?[a-z]{2,}:(.*)");
 

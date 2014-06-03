@@ -1,5 +1,6 @@
 package org.jruby.util;
 
+import jnr.constants.platform.Errno;
 import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;
 import java.io.IOException;
@@ -36,6 +37,10 @@ public abstract class ResourceException extends IOException {
 
     public static class PermissionDenied extends ErrnoException {
         public PermissionDenied(String path) { super("EACCES", path); }
+    }
+
+    public static class InvalidArguments extends ErrnoException {
+        public InvalidArguments(String path) { super("EINVAL", path); }
     }
 
     public static class IOError extends ResourceException {
