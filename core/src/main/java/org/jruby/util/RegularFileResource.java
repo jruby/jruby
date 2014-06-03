@@ -136,26 +136,26 @@ class RegularFileResource implements FileResource {
 
     @Override
     public Channel openChannel(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
-//        if (posix.isNative()) {
-//            int fd = posix.open(absolutePath(), flags.getFlags(), perm);
-//            if (fd < 0) {
-//                Errno errno = Errno.valueOf(posix.errno());
-//                switch (errno) {
-//                    case EACCES:
-//                        throw new ResourceException.PermissionDenied(absolutePath());
-//                    case EEXIST:
-//                        throw new ResourceException.FileExists(absolutePath());
-//                    case EINVAL:
-//                        throw new ResourceException.InvalidArguments(absolutePath());
-//                    case ENOENT:
-//                        throw new ResourceException.NotFound(absolutePath());
-//                    default:
-//                        throw new ResourceException.IOError(new IOException("unhandled errno: " + errno));
-//
-//                }
-//            }
-//            return new NativeDeviceChannel(fd);
-//        }
+        if (posix.isNative()) {
+            int fd = posix.open(absolutePath(), flags.getFlags(), perm);
+            if (fd < 0) {
+                Errno errno = Errno.valueOf(posix.errno());
+                switch (errno) {
+                    case EACCES:
+                        throw new ResourceException.PermissionDenied(absolutePath());
+                    case EEXIST:
+                        throw new ResourceException.FileExists(absolutePath());
+                    case EINVAL:
+                        throw new ResourceException.InvalidArguments(absolutePath());
+                    case ENOENT:
+                        throw new ResourceException.NotFound(absolutePath());
+                    default:
+                        throw new ResourceException.IOError(new IOException("unhandled errno: " + errno));
+
+                }
+            }
+            return new NativeDeviceChannel(fd);
+        }
 
         if (flags.isCreate()) {
             boolean fileCreated;

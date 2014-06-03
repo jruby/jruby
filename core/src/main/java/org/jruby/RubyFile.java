@@ -391,22 +391,26 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     @JRubyMethod(required = 1)
-    public IRubyObject truncate(ThreadContext context, IRubyObject arg) {
+    public IRubyObject truncate(ThreadContext context, IRubyObject len) {
         Ruby runtime = context.runtime;
-        long newLength = arg.convertToInteger().getLongValue();
-        if (newLength < 0) {
+        OpenFile fptr;
+        long pos;
+
+        pos = RubyNumeric.num2int(len);
+        fptr = getOpenFileChecked();
+        if (!fptr.isWritable()) {
+            throw runtime.newIOError("not opened for writing");
+        }
+        flushRaw(context, false);
+
+        if (pos < 0) {
             throw runtime.newErrnoEINVALError(openFile.getPath());
         }
 
-        if (openFile.fileChannel() != null) {
-            try {
-                openFile.fileChannel().truncate(newLength);
-            } catch (IOException ioe) {
-                throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), openFile.getPath());
-            }
-        } else {
-            throw runtime.newSystemCallError(openFile.getPath());
+        if (fptr.posix.ftruncate(fptr.fd(), pos) < 0) {
+            throw runtime.newErrnoFromErrno(fptr.posix.errno, fptr.getPath());
         }
+
         return RubyFixnum.zero(runtime);
     }
 
@@ -1061,17 +1065,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             flushRaw(context, false);
         }
 
-        // if it's a FileChannel, just get size directly
-        if (fptr.seekChannel() != null) {
-            try {
-                size = fptr.seekChannel().size();
-            } catch (IOException ioe) {
-                throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), fptr.getPath());
-            }
-        } else {
-            // otherwise just return -1 (should be rare, since size is only defined on File
-            size = -1;
-        }
+        size = fptr.posix.size(fptr.fd());
 
         return RubyFixnum.newFixnum(runtime, size);
     }

@@ -43,7 +43,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.util.ResourceException;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.ChannelFD;
-import org.jruby.util.io.DirectoryAsFileException;
 import org.jruby.util.io.EncodingUtils;
 import static org.jruby.util.io.EncodingUtils.vmodeVperm;
 import static org.jruby.util.io.EncodingUtils.vmode;
@@ -57,7 +56,6 @@ import org.jruby.util.io.SelectBlob;
 import jnr.constants.platform.Fcntl;
 
 import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
@@ -1190,7 +1188,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         } catch (ResourceException.NotFound e) {
             data.errno = Errno.ENOENT;
         } catch (ResourceException.PermissionDenied e) {
-            data.errno = Errno.EPERM;
+            data.errno = Errno.EACCES;
         } catch (IOException e) {
             if (runtime.isDebug()) {
                 System.err.println("Unhandled IOException: ");

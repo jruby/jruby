@@ -1,6 +1,7 @@
 package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
+import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.JRubyFile;
@@ -162,7 +163,7 @@ public class PosixShim {
         Channel channel = fd.ch;
         clear();
 
-        int real_fd = FilenoUtil.filenoFrom(channel);
+        int real_fd = fd.realFileno;
 
         if (real_fd != -1 && real_fd < FilenoUtil.FIRST_FAKE_FD) {
             int result = posix.flock(real_fd, lockMode);
@@ -292,6 +293,48 @@ public class PosixShim {
             _cachedUmask = newMask;
         }
         return oldMask;
+    }
+
+    public int ftruncate(ChannelFD fd, long pos) {
+        if (fd.chNative != null) {
+            int ret = posix.ftruncate(fd.chNative.getFD(), pos);
+            if (ret == -1) errno = Errno.valueOf(posix.errno());
+            return ret;
+        } else if (fd.chFile != null) {
+            try {
+                fd.chFile.truncate(pos);
+            } catch (IOException ioe) {
+                errno = Helpers.errnoFromException(ioe);
+                return -1;
+            }
+        } else {
+            errno = Errno.EINVAL;
+            return -1;
+        }
+        return 0;
+    }
+
+    public long size(ChannelFD fd) {
+        if (fd.chNative != null) { // native fd, use fstat
+            FileStat stat = posix.allocateStat();
+            int ret = posix.fstat(fd.chNative.getFD(), stat);
+            if (ret == -1) {
+                errno = Errno.valueOf(posix.errno());
+                return -1;
+            }
+            return stat.st_size();
+        } else if (fd.chSeek != null) { // if it is seekable, get size directly
+            try {
+                return fd.chSeek.size();
+            } catch (IOException ioe) {
+                errno = Helpers.errnoFromException(ioe);
+                return -1;
+            }
+        } else {
+            // otherwise just return -1 (should be rare, since size is only defined on File
+            errno = Errno.EINVAL;
+            return -1;
+        }
     }
 
     private void clear() {
