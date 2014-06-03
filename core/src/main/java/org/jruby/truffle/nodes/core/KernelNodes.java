@@ -629,10 +629,9 @@ public abstract class
             super(prev);
         }
 
+        @SlowPath
         @Specialization
         public NilPlaceholder puts(Object[] args) {
-            notDesignedForCompilation();
-
             final ThreadManager threadManager = getContext().getThreadManager();
             final PrintStream standardOut = getContext().getRuntime().getInstanceConfig().getOutput();
 
@@ -653,7 +652,6 @@ public abstract class
             return NilPlaceholder.INSTANCE;
         }
 
-        @SlowPath
         private void puts(RubyContext context, PrintStream standardOut, Object value) {
             if (value instanceof RubyArray) {
                 final RubyArray array = (RubyArray) value;
