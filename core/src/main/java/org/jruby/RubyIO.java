@@ -3261,77 +3261,78 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
     }
 
+    // rb_io_s_binwrite
     @JRubyMethod(meta = true, required = 2, optional = 2)
     public static IRubyObject binwrite(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        IRubyObject path = args[0];
-        IRubyObject str = args[1];
-        RubyInteger offset = null;
-        RubyHash options = null;
+        return ioStaticWrite(context, recv, args, true);
+    }
+
+    // MRI: rb_io_s_write
+    @JRubyMethod(name = "write", meta = true, required = 2, optional = 2)
+    public static IRubyObject write(ThreadContext context, IRubyObject recv, IRubyObject[] argv) {
+        return (ioStaticWrite(context, recv, argv, false));
+    }
+
+    // MRI: io_s_write
+    public static IRubyObject ioStaticWrite(ThreadContext context, IRubyObject recv, IRubyObject[] argv, boolean binary) {
         Ruby runtime = context.runtime;
+        IRubyObject string, offset, opt;
+        string = offset = opt = context.nil;
 
-        if (args.length > 2) {
-            if (args[2] instanceof RubyHash) {
-                options = args[2].convertToHash();
-            } else {
-                offset = args[2].convertToInteger();
-            }
+        switch (argv.length) {
+            case 4:
+                opt = argv[3].convertToHash();
+                offset = argv[2];
+                string = argv[1];
+                break;
+            case 3:
+                opt = TypeConverter.checkHashType(runtime, argv[2]);
+                if (opt.isNil()) offset = argv[2];
+                string = argv[1];
+                break;
+            case 2:
+                string = argv[1];
+                break;
+            default:
+                Arity.raiseArgumentError(runtime, argv.length, 2, 4);
         }
 
-        if (args.length > 3) {
-            options = args[3].convertToHash();
+        if (opt.isNil()) opt = RubyHash.newHash(runtime);
+        else opt = ((RubyHash)opt).dupFast(context);
+
+        if (((RubyHash)opt).op_aref(context, runtime.newSymbol("mode")).isNil()) {
+            int mode = OpenFlags.O_WRONLY.intValue()|OpenFlags.O_CREAT.intValue();
+//            #ifdef O_BINARY
+//            if (binary) mode |= O_BINARY;
+//            #endif
+            if (offset.isNil()) mode |= OpenFlags.O_TRUNC.intValue();
+            ((RubyHash)opt).op_aset(runtime.newSymbol("mode"), runtime.newFixnum(mode));
         }
+        IRubyObject _io = openKeyArgs(context, recv, argv, opt);
 
-        RubyIO file;
+        if (_io.isNil()) return context.nil;
 
-        long mode = ModeFlags.CREAT | ModeFlags.BINARY;
-        if (options == null || options.isEmpty()) {
+        RubyIO io = (RubyIO)_io;
 
-            if (offset == null) {
-                mode |= ModeFlags.WRONLY;
-            } else {
-                mode |= ModeFlags.RDWR;
-            }
+//        #ifndef O_BINARY
+        if (binary) io.binmode();
+//        #endif
 
-            file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode));
-        } else if (!options.containsKey(runtime.newSymbol("mode"))) {
-            mode |= ModeFlags.WRONLY;
-            file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, RubyFixnum.newFixnum(runtime, mode), options);
-        } else {
-            file = (RubyIO) Helpers.invoke(context, runtime.getFile(), "new", path, options);
+        if (!offset.isNil()) {
+            seekBeforeAccess(context, io, offset, PosixShim.SEEK_SET);
         }
 
         try {
-            if (offset != null) file.seek(context, offset);
-            return file.write(context, str);
-        } finally  {
-            file.close();
+            return io.write(context, string, false);
+        } finally {
+            ioClose(runtime, io);
         }
     }
 
-    @JRubyMethod(name = "write", meta = true, required = 2, optional = 2)
-    public static IRubyObject writeStatic(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        IRubyObject nil = context.nil;
-        IRubyObject path = args[0];
-        IRubyObject str = args[1];
-        IRubyObject offset = nil;
-        RubyHash options = null;
-        if (args.length > 3) {
-            if (!(args[3] instanceof RubyHash)) {
-                throw context.runtime.newTypeError("Must be a hash");
-            }
-            options = (RubyHash) args[3];
-            offset = args[2];
-        } else if (args.length > 2) {
-            if (args[2] instanceof RubyHash) {
-                options = (RubyHash) args[2];
-            } else {
-                offset = args[2];
-            }
-        }
-
-        return write19(context, recv, path, str, offset, (RubyHash) options);
+    static IRubyObject seekBeforeAccess(ThreadContext context, RubyIO io, IRubyObject offset, int mode) {
+        io.setBinmode();
+        return io.doSeek(context, offset, mode);
     }
-    
 
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         return readlines19(context, recv, args, unusedBlock);
@@ -4586,6 +4587,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 throw runtime.newErrnoEINVALError();
             }
         }
+    }
+
+    @Deprecated
+    public static IRubyObject writeStatic(ThreadContext context, IRubyObject recv, IRubyObject[] argv, Block unusedBlock) {
+        return write(context, recv, argv);
     }
     
     protected OpenFile openFile;
