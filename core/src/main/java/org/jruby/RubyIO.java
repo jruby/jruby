@@ -65,6 +65,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,6 +90,7 @@ import org.jruby.runtime.Visibility;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.SelectExecutor;
 import org.jruby.util.io.Stream;
 import org.jruby.util.io.IOOptions;
 import org.jruby.util.SafePropertyAccessor;
@@ -3013,8 +3015,33 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
    
     @JRubyMethod(name = "select", required = 1, optional = 3, meta = true)
-    public static IRubyObject select(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return select_static(context, context.runtime, args);
+    public static IRubyObject select(ThreadContext context, IRubyObject recv, IRubyObject[] argv) {
+        IRubyObject read, write, except, _timeout;
+        Long timeout;
+        read = write = except = _timeout = context.nil;
+
+        switch (argv.length) {
+            case 4:
+                _timeout = argv[3];
+            case 3:
+                except = argv[2];
+            case 2:
+                write = argv[1];
+            case 1:
+                read = argv[0];
+        }
+        if (_timeout.isNil()) {
+            timeout = null;
+        }
+        else {
+            double tmp = _timeout.convertToFloat().getDoubleValue();
+            if (tmp < 0) throw context.runtime.newArgumentError("negative timeout");
+            timeout = (long)(tmp * 1000); // ms
+        }
+
+        SelectExecutor args = new SelectExecutor(read, write, except, timeout);
+
+        return args.go(context);
     }
 
     public static IRubyObject select_static(ThreadContext context, Ruby runtime, IRubyObject[] args) {

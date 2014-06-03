@@ -3621,6 +3621,10 @@ public final class Ruby {
         return newRaiseException(getKeyError(), message);
     }
 
+    public RaiseException newErrnoEINTRError() {
+        return newRaiseException(getErrno().getClass("EINTR"), "Interrupted");
+    }
+
     public RaiseException newErrnoFromLastPOSIXErrno() {
         RubyClass errnoClass = getErrno(getPosix().errno());
         if (errnoClass == null) errnoClass = systemCallError;

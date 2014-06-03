@@ -25,19 +25,22 @@ public class ChannelFD implements Closeable {
     public ChannelFD(Channel fd) {
         this.ch = fd;
 
+        initFileno();
         initChannelTypes();
 
+        refs = new AtomicInteger(1);
+
+        FilenoUtil.registerWrapper(realFileno, this);
+        FilenoUtil.registerWrapper(fakeFileno, this);
+    }
+
+    private void initFileno() {
         realFileno = FilenoUtil.filenoFrom(ch);
         if (realFileno == -1) {
             fakeFileno = FilenoUtil.getNewFileno();
         } else {
             fakeFileno = -1;
         }
-
-        refs = new AtomicInteger(1);
-
-        FilenoUtil.registerWrapper(realFileno, this);
-        FilenoUtil.registerWrapper(fakeFileno, this);
     }
 
     public ChannelFD dup(POSIX posix) {
@@ -68,6 +71,7 @@ public class ChannelFD implements Closeable {
         // TODO: not sure how well this combines native and non-native streams
         // simulate dup2 by forcing filedes's channel into filedes2
         this.ch = dup2Source.ch;
+        initFileno();
         initChannelTypes();
 
         this.refs = dup2Source.refs;
@@ -117,6 +121,7 @@ public class ChannelFD implements Closeable {
     }
 
     private void initChannelTypes() {
+        assert realFileno != -1 || fakeFileno != -1 : "initialize filenos before initChannelTypes";
         if (ch instanceof ReadableByteChannel) chRead = (ReadableByteChannel)ch;
         else chRead = null;
         if (ch instanceof WritableByteChannel) chWrite = (WritableByteChannel)ch;
@@ -124,6 +129,7 @@ public class ChannelFD implements Closeable {
         if (ch instanceof SeekableByteChannel) chSeek = (SeekableByteChannel)ch;
         else chSeek = null;
         if (ch instanceof SelectableChannel) chSelect = (SelectableChannel)ch;
+        else if (realFileno != -1) chSelect = new NativeDeviceChannel(realFileno);
         else chSelect = null;
         if (ch instanceof FileChannel) chFile = (FileChannel)ch;
         else chFile = null;
@@ -141,8 +147,8 @@ public class ChannelFD implements Closeable {
     public FileChannel chFile;
     public SocketChannel chSock;
     public NativeSelectableChannel chNative;
-    public final int realFileno;
-    public final int fakeFileno;
+    public int realFileno;
+    public int fakeFileno;
     private AtomicInteger refs;
     public FileLock currentLock;
 

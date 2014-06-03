@@ -34,6 +34,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyIO;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -242,8 +243,8 @@ public class TypeConverter {
     }
 
     // rb_io_get_io
-    public static IRubyObject ioGetIO(Ruby runtime, IRubyObject obj) {
-        return convertToType(obj, runtime.getIO(), "to_io");
+    public static RubyIO ioGetIO(Ruby runtime, IRubyObject obj) {
+        return (RubyIO)convertToType(obj, runtime.getIO(), "to_io");
     }
 
     public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) throws RaiseException {

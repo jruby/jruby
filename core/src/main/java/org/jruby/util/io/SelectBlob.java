@@ -26,6 +26,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.io;
 
+import com.oracle.truffle.api.dsl.TypeCheck;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
@@ -34,6 +35,7 @@ import org.jruby.RubyIO;
 import org.jruby.RubyThread;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.TypeConverter;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -57,6 +59,8 @@ import java.util.concurrent.Future;
  * as much as possible.
  */
 public class SelectBlob {
+    public SelectBlob() {}
+
     public IRubyObject goForIt(ThreadContext context, Ruby runtime, IRubyObject[] args) {
         this.runtime = runtime;
         try {
@@ -161,7 +165,7 @@ public class SelectBlob {
     }
 
     private void trySelectRead(ThreadContext context, Map<Character,Integer> attachment, OpenFile fptr) throws IOException {
-        if (fptr.selectChannel() != null && registerSelect(getSelector(context, fptr.selectChannel()), attachment, fptr.selectChannel(), SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) {
+        if (fptr.selectChannel() != null && registerSelect(getSelector(context, fptr.selectChannel()), attachment, fptr.selectChannel(), READ_ACCEPT_OPS)) {
             selectedReads++;
             if (fptr.READ_CHAR_PENDING() || fptr.READ_DATA_PENDING()) {
                 getPendingReads()[attachment.get('r')] = true;
@@ -222,7 +226,7 @@ public class SelectBlob {
 
     private void trySelectWrite(ThreadContext context, Map<Character,Integer> attachment, OpenFile fptr) throws IOException {
         if (fptr.selectChannel() == null
-                || false == registerSelect(getSelector(context, fptr.selectChannel()), attachment, fptr.selectChannel(), SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT)) {
+                || false == registerSelect(getSelector(context, fptr.selectChannel()), attachment, fptr.selectChannel(), WRITE_CONNECT_OPS)) {
             selectedReads++;
             if (fptr.isWritable()) {
                 getUnselectableWrites()[attachment.get('w')] = true;
@@ -244,47 +248,47 @@ public class SelectBlob {
             throw runtime.newArgumentError("negative timeout given");
         }
         return timeout;
-    }
+}
 
-    private void doSelect(Ruby runtime, final boolean has_timeout, long timeout) throws IOException {
-        if (mainSelector != null) {
-            if (pendingReads == null && unselectableReads == null && unselectableWrites == null) {
-                if (has_timeout && timeout == 0) {
-                    for (Selector selector : selectors.values()) selector.selectNow();
-                } else {
-                    List<Future> futures = new ArrayList<Future>(enxioSelectors.size());
-                    for (ENXIOSelector enxioSelector : enxioSelectors) {
-                        futures.add(runtime.getExecutor().submit(enxioSelector));
-                    }
+private void doSelect(Ruby runtime, final boolean has_timeout, long timeout) throws IOException {
+    if (mainSelector != null) {
+        if (pendingReads == null && unselectableReads == null && unselectableWrites == null) {
+            if (has_timeout && timeout == 0) {
+                for (Selector selector : selectors.values()) selector.selectNow();
+            } else {
+                List<Future> futures = new ArrayList<Future>(enxioSelectors.size());
+                for (ENXIOSelector enxioSelector : enxioSelectors) {
+                    futures.add(runtime.getExecutor().submit(enxioSelector));
+                }
 
-                    mainSelector.select(has_timeout ? timeout : 0);
-                    for (ENXIOSelector enxioSelector : enxioSelectors) enxioSelector.selector.wakeup();
-                    // ensure all the enxio threads have finished
-                    for (Future f : futures) try {
-                        f.get();
-                    } catch (InterruptedException iex) {
-                    } catch (ExecutionException eex) {
-                        if (eex.getCause() instanceof IOException) {
-                            throw (IOException) eex.getCause();
-                        }
+                mainSelector.select(has_timeout ? timeout : 0);
+                for (ENXIOSelector enxioSelector : enxioSelectors) enxioSelector.selector.wakeup();
+                // ensure all the enxio threads have finished
+                for (Future f : futures) try {
+                    f.get();
+                } catch (InterruptedException iex) {
+                } catch (ExecutionException eex) {
+                    if (eex.getCause() instanceof IOException) {
+                        throw (IOException) eex.getCause();
                     }
                 }
-            } else {
-                for (Selector selector : selectors.values()) selector.selectNow();
             }
-        }
-
-        // If any enxio selectors woke up, remove them from the selected key set of the main selector
-        for (ENXIOSelector enxioSelector : enxioSelectors) {
-            Pipe.SourceChannel source = enxioSelector.pipe.source();
-            SelectionKey key = source.keyFor(mainSelector);
-            if (key != null && mainSelector.selectedKeys().contains(key)) {
-                mainSelector.selectedKeys().remove(key);
-                ByteBuffer buf = ByteBuffer.allocate(1);
-                source.read(buf);
-            }
+        } else {
+            for (Selector selector : selectors.values()) selector.selectNow();
         }
     }
+
+    // If any enxio selectors woke up, remove them from the selected key set of the main selector
+    for (ENXIOSelector enxioSelector : enxioSelectors) {
+        Pipe.SourceChannel source = enxioSelector.pipe.source();
+        SelectionKey key = source.keyFor(mainSelector);
+        if (key != null && mainSelector.selectedKeys().contains(key)) {
+            mainSelector.selectedKeys().remove(key);
+            ByteBuffer buf = ByteBuffer.allocate(1);
+            source.read(buf);
+        }
+    }
+}
     
     public static final int READ_ACCEPT_OPS = SelectionKey.OP_READ | SelectionKey.OP_ACCEPT;
     public static final int WRITE_CONNECT_OPS = SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT;
