@@ -38,6 +38,7 @@ package org.jruby;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.OpenFlags;
 import jnr.enxio.channels.NativeDeviceChannel;
+import jnr.enxio.channels.NativeSelectableChannel;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.ResourceException;
@@ -3886,8 +3887,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     @JRubyMethod(name = "copy_stream", required = 2, optional = 2, meta = true)
-    public static IRubyObject copy_stream(ThreadContext context, IRubyObject recv, 
-            IRubyObject[] args) {
+    public static IRubyObject copy_stream(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
         IRubyObject arg1 = args[0];
@@ -3954,19 +3954,25 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (!io1.openFile.isReadable()) throw runtime.newIOError("from IO is not readable");
         if (!io2.openFile.isWritable()) throw runtime.newIOError("to IO is not writable");
 
+        // attempt to preserve position of original
+        OpenFile fptr = io1.getOpenFileChecked();
+        long pos = fptr.tell(context);
+        long size = 0;
+
         try {
-            long size = 0;
             if (io1.openFile.fileChannel() == null) {
+                long remaining = length == null ? -1 : length.getLongValue();
+                long position = offset == null? -1 : offset.getLongValue();
                 if (io2.openFile.fileChannel() == null) {
                     ReadableByteChannel from = io1.openFile.readChannel();
                     WritableByteChannel to = io2.openFile.writeChannel();
 
-                    size = transfer(context, from, to);
+                    size = transfer(context, from, to, remaining, position);
                 } else {
                     ReadableByteChannel from = io1.openFile.readChannel();
                     FileChannel to = io2.openFile.fileChannel();
 
-                    size = transfer(from, to);
+                    size = transfer(context, from, to, remaining, position);
                 }
             } else {
                 FileChannel from = io1.openFile.fileChannel();
@@ -3975,23 +3981,45 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 long position = offset == null? from.position() : offset.getLongValue();
 
                 size = transfer(from, to, remaining, position);
-
-                if (offset == null) from.position(from.position() + size);
             }
 
             return context.runtime.newFixnum(size);
         } catch (IOException ioe) {
             ioe.printStackTrace();
             throw runtime.newIOErrorFromException(ioe);
+        } finally {
+            if (offset != null) {
+                fptr.seek(context, pos, PosixShim.SEEK_SET);
+            } else {
+                fptr.seek(context, pos + size, PosixShim.SEEK_SET);
+            }
         }
     }
 
-    private static long transfer(ReadableByteChannel from, FileChannel to) throws IOException {
+    private static long transfer(ThreadContext context, ReadableByteChannel from, FileChannel to, long length, long position) throws IOException {
+        // handle large files on 32-bit JVMs
+        long chunkSize = 128 * 1024 * 1024;
         long transferred = 0;
         long bytes;
         long startPosition = to.position();
-        while ((bytes = to.transferFrom(from, startPosition+transferred, 4196)) > 0) {
-            transferred += bytes;
+
+        if (position != -1) {
+            if (from instanceof NativeSelectableChannel) {
+                int ret = context.runtime.getPosix().lseek(((NativeSelectableChannel)from).getFD(), position, PosixShim.SEEK_SET);
+                if (ret == -1) {
+                    throw context.runtime.newErrnoFromErrno(Errno.valueOf(context.runtime.getPosix().errno()), from.toString());
+                }
+            }
+        }
+        if (length > 0) {
+            while ((bytes = to.transferFrom(from, startPosition+transferred, Math.min(chunkSize, length))) > 0) {
+                transferred += bytes;
+                length -= bytes;
+            }
+        } else {
+            while ((bytes = to.transferFrom(from, startPosition+transferred, chunkSize)) > 0) {
+                transferred += bytes;
+            }
         }
         // transforFrom does not change position of target
         to.position(startPosition + transferred);
@@ -4003,7 +4031,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         // handle large files on 32-bit JVMs
         long chunkSize = 128 * 1024 * 1024;
         long transferred = 0;
-        
+
+        if (remaining < 0) remaining = from.size();
         while (remaining > 0) {
             long count = Math.min(remaining, chunkSize);
             long n = from.transferTo(position, count, to);
@@ -4019,13 +4048,27 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return transferred;
     }
 
-    private static long transfer(ThreadContext context, ReadableByteChannel from, WritableByteChannel to) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocateDirect(8 * 1024);
+    private static long transfer(ThreadContext context, ReadableByteChannel from, WritableByteChannel to, long length, long position) throws IOException {
+        int chunkSize = 8 * 1024;
+        ByteBuffer buffer = ByteBuffer.allocateDirect(chunkSize);
         long transferred = 0;
 
-        while (from.isOpen()) {
+        if (position != -1) {
+            if (from instanceof NativeSelectableChannel) {
+                int ret = context.runtime.getPosix().lseek(((NativeSelectableChannel)from).getFD(), position, PosixShim.SEEK_SET);
+                if (ret == -1) {
+                    throw context.runtime.newErrnoFromErrno(Errno.valueOf(context.runtime.getPosix().errno()), from.toString());
+                }
+            }
+        }
+
+        while (true) {
             context.pollThreadEvents();
 
+            if (length > 0 && length < chunkSize) {
+                // last read should limit to remaining length
+                buffer.limit((int)length);
+            }
             long n = from.read(buffer);
 
             if (n == -1) break;
@@ -4035,6 +4078,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
             buffer.clear();
 
             transferred += n;
+            if (length > 0) {
+                length -= n;
+                if (length <= 0) break;
+            }
+
+            if (!from.isOpen()) break;
         }
 
         return transferred;
