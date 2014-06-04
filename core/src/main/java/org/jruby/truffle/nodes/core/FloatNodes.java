@@ -432,24 +432,6 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "inspect", maxArgs = 0)
-    public abstract static class InpsectNode extends CoreMethodNode {
-
-        public InpsectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public InpsectNode(InpsectNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString inspect(double n) {
-            return getContext().makeString(Double.toString(n));
-        }
-
-    }
-
     @CoreMethod(names = "nonzero?", maxArgs = 0)
     public abstract static class NonZeroNode extends CoreMethodNode {
 
@@ -490,7 +472,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "to_s", maxArgs = 0)
+    @CoreMethod(names = {"to_s", "inspect"}, maxArgs = 0)
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -501,6 +483,7 @@ public abstract class FloatNodes {
             super(prev);
         }
 
+        @CompilerDirectives.SlowPath
         @Specialization
         public RubyString toS(double value) {
             return getContext().makeString(Double.toString(value));

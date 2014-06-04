@@ -1298,11 +1298,13 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
+        @CompilerDirectives.SlowPath
         @Specialization
         public RubyString toS(int n) {
             return getContext().makeString(Integer.toString(n));
         }
 
+        @CompilerDirectives.SlowPath
         @Specialization
         public RubyString toS(long n) {
             return getContext().makeString(Long.toString(n));

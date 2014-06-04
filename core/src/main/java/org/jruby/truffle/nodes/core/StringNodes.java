@@ -830,9 +830,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString toF(RubyString string) {
-            notDesignedForCompilation();
-
+        public RubyString toS(RubyString string) {
             return string;
         }
     }

@@ -48,6 +48,7 @@ public abstract class TimeNodes {
             super(prev);
         }
 
+        @CompilerDirectives.SlowPath
         @Specialization
         public RubyTime now() {
             return RubyTime.fromDate(getContext().getCoreLibrary().getTimeClass(), System.currentTimeMillis());
@@ -66,6 +67,7 @@ public abstract class TimeNodes {
             super(prev);
         }
 
+        @CompilerDirectives.SlowPath
         @Specialization
         public RubyString toS(RubyTime time) {
             return getContext().makeString(new SimpleDateFormat("Y-MM-d H:m:ss Z").format(time.toDate()));

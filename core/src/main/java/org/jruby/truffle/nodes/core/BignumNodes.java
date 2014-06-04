@@ -668,24 +668,6 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "inspect", maxArgs = 0)
-    public abstract static class InpsectNode extends CoreMethodNode {
-
-        public InpsectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public InpsectNode(InpsectNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString inspect(BigInteger n) {
-            return getContext().makeString(n.toString());
-        }
-
-    }
-
     @CoreMethod(names = "nonzero?", maxArgs = 0)
     public abstract static class NonZeroNode extends CoreMethodNode {
 
@@ -749,7 +731,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "to_s", maxArgs = 0)
+    @CoreMethod(names = {"to_s", "inspect"}, maxArgs = 0)
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -760,6 +742,7 @@ public abstract class BignumNodes {
             super(prev);
         }
 
+        @CompilerDirectives.SlowPath
         @Specialization
         public RubyString toS(BigInteger value) {
             return getContext().makeString(value.toString());

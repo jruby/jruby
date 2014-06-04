@@ -56,7 +56,7 @@ public class RubyContext extends ExecutionContext {
 
     private SourceCallback sourceCallback = null;
 
-    private AtomicLong nextObjectID = new AtomicLong(0);
+    private final AtomicLong nextObjectID = new AtomicLong(0);
 
     public RubyContext(Ruby runtime, TranslatorDriver translator) {
         assert runtime != null;
