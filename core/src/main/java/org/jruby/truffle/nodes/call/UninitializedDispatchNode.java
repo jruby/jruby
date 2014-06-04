@@ -53,8 +53,6 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
              * GeneralDispatchNode.
              */
 
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "resorting to a general call node");
-
             final GeneralDispatchNode newGeneralDispatch = new GeneralDispatchNode(getContext(), name);
             final BoxingDispatchNode newBoxing = new BoxingDispatchNode(getContext(), newGeneralDispatch);
 

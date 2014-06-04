@@ -63,8 +63,6 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name, "no such method"));
         }
 
-        getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getSourceSection().getSource().getName(), getSourceSection().getStartLine(), "lookup for super call is " + method.getSharedMethodInfo().getSourceSection());
-
         final DirectCallNode newCallNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
 
         if (callNode == null) {
