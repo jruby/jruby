@@ -22,7 +22,7 @@ import java.math.BigInteger;
 
 public class RawBoxingNode extends Node {
 
-    private RubyContext context;
+    private final RubyContext context;
 
     @CompilerDirectives.CompilationFinal private boolean seenBoxed = false;
     @CompilerDirectives.CompilationFinal private boolean seenNil = false;
