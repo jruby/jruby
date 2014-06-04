@@ -131,10 +131,10 @@ public class Mutex extends RubyObject {
     @JRubyMethod
     public IRubyObject sleep(ThreadContext context, IRubyObject timeout) {
         long beg = System.currentTimeMillis();
+        double t = timeout.convertToFloat().getDoubleValue();
+        if (t < 0) throw context.runtime.newArgumentError("negative sleep timeout");
+        unlock(context);
         try {
-            unlock(context);
-            double t = timeout.convertToFloat().getDoubleValue();
-            if (t < 0) throw context.runtime.newArgumentError("negative sleep timeout");
             context.getThread().sleep((long) (t * 1000));
         } catch (InterruptedException ex) {
             // ignore interrupted
