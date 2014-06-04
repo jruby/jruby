@@ -13,6 +13,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.util.SlowPathBigInteger;
 
 import java.math.BigInteger;
 
@@ -20,7 +21,8 @@ public class GeneralDivModNode extends Node {
 
     private final RubyContext context;
 
-    @Child protected FixnumOrBignumNode fixnumOrBignum;
+    @Child protected FixnumOrBignumNode fixnumOrBignumQuotient;
+    @Child protected FixnumOrBignumNode fixnumOrBignumRemainder;
 
     private final BranchProfile bZeroProfile = new BranchProfile();
     private final BranchProfile bMinusOneProfile = new BranchProfile();
@@ -31,7 +33,8 @@ public class GeneralDivModNode extends Node {
     public GeneralDivModNode(RubyContext context) {
         assert context != null;
         this.context = context;
-        fixnumOrBignum = new FixnumOrBignumNode();
+        fixnumOrBignumQuotient = new FixnumOrBignumNode();
+        fixnumOrBignumRemainder = new FixnumOrBignumNode();
     }
 
     public RubyArray execute(int a, int b) {
@@ -87,7 +90,7 @@ public class GeneralDivModNode extends Node {
             bMinusOneProfile.enter();
 
             if (a == Long.MIN_VALUE) {
-                integerDiv = BigInteger.valueOf(a).negate();
+                integerDiv = SlowPathBigInteger.negate(BigInteger.valueOf(a));
             } else {
                 integerDiv = -a;
             }
@@ -117,15 +120,17 @@ public class GeneralDivModNode extends Node {
             throw new ArithmeticException("divide by zero");
         }
 
-        final BigInteger[] bigIntegerResults = a.divideAndRemainder(b);
+        final BigInteger[] bigIntegerResults = SlowPathBigInteger.divideAndRemainder(a, b);
 
         if ((a.signum() * b.signum()) == -1 && bigIntegerResults[1].signum() != 0) {
             bigIntegerFixnumProfile.enter();
-            bigIntegerResults[0] = bigIntegerResults[0].subtract(BigInteger.ONE);
-            bigIntegerResults[1] = b.add(bigIntegerResults[1]);
+            bigIntegerResults[0] = SlowPathBigInteger.subtract(bigIntegerResults[0], BigInteger.ONE);
+            bigIntegerResults[1] = SlowPathBigInteger.add(b, bigIntegerResults[1]);
         }
 
-        return new RubyArray(context.getCoreLibrary().getArrayClass(), new Object[]{fixnumOrBignum.fixnumOrBignum(bigIntegerResults[0]), fixnumOrBignum.fixnumOrBignum(bigIntegerResults[1])}, 2);
+        return new RubyArray(context.getCoreLibrary().getArrayClass(), new Object[]{
+                fixnumOrBignumQuotient.fixnumOrBignum(bigIntegerResults[0]),
+                fixnumOrBignumRemainder.fixnumOrBignum(bigIntegerResults[1])}, 2);
     }
 
 }
