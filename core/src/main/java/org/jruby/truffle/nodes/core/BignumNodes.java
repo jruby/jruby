@@ -177,6 +177,7 @@ public abstract class BignumNodes {
             super(prev);
         }
 
+        @CompilerDirectives.SlowPath
         @Specialization
         public BigInteger pow(BigInteger a, int b) {
             return a.pow(b);

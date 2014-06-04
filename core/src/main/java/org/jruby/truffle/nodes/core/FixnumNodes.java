@@ -308,9 +308,15 @@ public abstract class FixnumNodes {
             fixnumOrBignum = prev.fixnumOrBignum;
         }
 
-        @Specialization
+        @Specialization(guards = "canShiftIntoInt", order = 1)
+        public int pow2(int a, int b) {
+            return 1 << b;
+        }
+
+        @Specialization(order = 2)
         public Object pow(int a, int b) {
-            // TODO(CS): I'd like to use CompilerDirectives.isConstant here - see if a is 2 or b is 2 for example (binary-trees.rb)
+            notDesignedForCompilation();
+
             return fixnumOrBignum.fixnumOrBignum(BigInteger.valueOf(a).pow(b));
         }
 
@@ -332,6 +338,11 @@ public abstract class FixnumNodes {
             }
 
             return result;
+        }
+
+        protected static boolean canShiftIntoInt(int a, int b) {
+            // Highest bit we can set is the 30th due to sign
+            return a == 2 && b <= 30;
         }
 
     }
