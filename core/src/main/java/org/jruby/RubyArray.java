@@ -1985,6 +1985,9 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      */
     @JRubyMethod(name = "eql?", required = 1)
     public IRubyObject eql(ThreadContext context, IRubyObject obj) {
+        if(!(obj instanceof RubyArray)) {
+            return runtime.getFalse();
+        }
         return RecursiveComparator.compare(context, MethodNames.EQL, this, obj);
     }
 
