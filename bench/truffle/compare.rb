@@ -91,7 +91,7 @@ disable_splitting = [
 ]
 
 time_budget_per_run = time_budget / benchmarks.length
-puts time_budget_per_run.to_s + "s for each benchmark"
+puts time_budget_per_run.to_s + "s for each benchmark" if reference
 
 scores = {}
 
@@ -102,7 +102,7 @@ benchmarks.each do |benchmark|
     splitting = ""
   end
 
-  output = `../../bin/jruby -J-server #{splitting} -X+T -Xtruffle.printRuntime=true harness.rb -s #{time_budget_per_run} #{benchmark}.rb`
+  output = `../../bin/jruby -J-server #{splitting} -X+T harness.rb -s #{time_budget_per_run} #{benchmark}.rb`
   score_match = /[a-z\-]+: (\d+\.\d+)/.match(output)
   if score_match.nil?
     score = 0

@@ -21,6 +21,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.methods.*;
+import org.jruby.util.cli.Options;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -66,7 +67,9 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
 
             cache.put(receiverObject.getLookupNode(), entry);
 
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "general call node cache has grown to " + cache.size());
+            if (cache.size() > Options.TRUFFLE_GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD.load()) {
+                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "general call node cache has " + cache.size() + " entries");
+            }
         }
 
         final Object[] argumentsToUse;
