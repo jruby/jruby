@@ -605,7 +605,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     // RUBY_VM_INTERRUPTED_ANY
     private boolean anyInterrupted() {
-        return (interruptFlag & ~interruptMask) != 0;
+        return Thread.interrupted() || (interruptFlag & ~interruptMask) != 0;
     }
     
     private static void throwThreadKill() {
@@ -1139,9 +1139,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     /**
+     * Sleep the current thread for millis, waking up on any thread interrupts.
+     *
      * We can never be sure if a wait will finish because of a Java "spurious wakeup".  So if we
      * explicitly wakeup and we wait less than requested amount we will return false.  We will
      * return true if we sleep right amount or less than right amount via spurious wakeup.
+     *
+     * @param millis Number of milliseconds to sleep. Zero sleeps forever.
      */
     public boolean sleep(long millis) throws InterruptedException {
         assert this == getRuntime().getCurrentContext().getThread();
@@ -1252,13 +1256,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         try {
             this.unblockFunc = task;
             this.unblockArg = data;
-            pollThreadEvents();
+            pollThreadEvents(context);
             return task.run(context, data);
         } finally {
             exitSleep();
             this.unblockFunc = null;
             this.unblockArg = null;
-            pollThreadEvents();
+            pollThreadEvents(context);
         }
     }
 

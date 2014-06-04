@@ -119,7 +119,7 @@ public class Mutex extends RubyObject {
         long beg = System.currentTimeMillis();
         try {
             unlock(context);
-            context.getThread().sleep(-1);
+            context.getThread().sleep(0);
         } catch (InterruptedException ex) {
             // ignore interrupted
         } finally {
@@ -133,7 +133,9 @@ public class Mutex extends RubyObject {
         long beg = System.currentTimeMillis();
         try {
             unlock(context);
-            context.getThread().sleep((long) (timeout.convertToFloat().getDoubleValue() * 1000));
+            double t = timeout.convertToFloat().getDoubleValue();
+            if (t < 0) throw context.runtime.newArgumentError("negative sleep timeout");
+            context.getThread().sleep((long) (t * 1000));
         } catch (InterruptedException ex) {
             // ignore interrupted
         } finally {
