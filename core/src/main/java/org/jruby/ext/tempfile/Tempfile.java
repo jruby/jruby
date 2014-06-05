@@ -171,6 +171,9 @@ public class Tempfile extends org.jruby.RubyFile {
         Ruby runtime = context.runtime;
         if (!isClosed()) rbIoClose(runtime);
 
+        // MRI doesn't do this, but we need to reset to blank slate
+        openFile = null;
+
         Tempfile.super.initialize(context, new IRubyObject[]{tmpname, mode, opts}, Block.NULL_BLOCK);
 
         return this;

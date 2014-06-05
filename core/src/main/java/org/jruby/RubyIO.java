@@ -1184,7 +1184,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //        #endif
         PosixShim shim = new PosixShim(runtime.getPosix());
         ret = shim.open(runtime.getCurrentDirectory(), data.fname, ModeFlags.createModeFlags(data.oflags), data.perm);
-        if (ret == null) return null;
+        if (ret == null) {
+            data.errno = shim.errno;
+            return null;
+        }
         // TODO, if we need it?
 //        rb_maygvl_fd_fix_cloexec(ret);
         return new ChannelFD(ret);
@@ -1369,7 +1372,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         fptr.checkWritable(context);
 
         n = fptr.fwrite(context, str, nosync);
-        if (n == -1L) throw runtime.newSystemCallError(fptr.getPath());
+        if (n == -1) throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
 
         return RubyFixnum.newFixnum(runtime, n);
     }

@@ -1274,7 +1274,7 @@ public class OpenFile implements Finalizable {
 
     // rb_io_wait_readable
     boolean waitReadable(ThreadContext context, ChannelFD fd) {
-        if (!fd.ch.isOpen()) {
+        if (fd == null || !fd.ch.isOpen()) {
             throw context.runtime.newIOError("closed stream");
         }
 
