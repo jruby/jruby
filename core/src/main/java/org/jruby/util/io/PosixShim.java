@@ -5,6 +5,7 @@ import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.ResourceException;
 
 import java.io.Closeable;
 import java.io.FileNotFoundException;
@@ -250,11 +251,11 @@ public class PosixShim {
         }
     }
 
-    public static Channel open(String cwd, String path, ModeFlags flags, int perm, POSIX posix) throws FileExistsException, IOException {
-        return open(cwd, path, flags, perm, posix, null);
+    public Channel open(String cwd, String path, ModeFlags flags, int perm) {
+        return open(cwd, path, flags, perm, null);
     }
 
-    public static Channel open(String cwd, String path, ModeFlags flags, int perm, POSIX posix, ClassLoader classLoader) throws FileExistsException, IOException {
+    public Channel open(String cwd, String path, ModeFlags flags, int perm, ClassLoader classLoader) {
         if (path.equals("/dev/null") || path.equalsIgnoreCase("nul:") || path.equalsIgnoreCase("nul")) {
             return new NullChannel();
         }
@@ -264,7 +265,20 @@ public class PosixShim {
             return Channels.newChannel(classLoader.getResourceAsStream(path));
         }
 
-        return JRubyFile.createResource(cwd, path).openChannel(flags, posix, perm);
+        try {
+            return JRubyFile.createResource(cwd, path).openChannel(flags, posix, perm);
+        } catch (ResourceException.FileExists e) {
+            errno = Errno.EEXIST;
+        } catch (ResourceException.FileIsDirectory e) {
+            errno = Errno.EISDIR;
+        } catch (ResourceException.NotFound e) {
+            errno = Errno.ENOENT;
+        } catch (ResourceException.PermissionDenied e) {
+            errno = Errno.EACCES;
+        } catch (IOException e) {
+            throw new RuntimeException("Unhandled IOException", e);
+        }
+        return null;
     }
 
     /**

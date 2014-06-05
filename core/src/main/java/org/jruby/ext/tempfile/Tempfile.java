@@ -29,11 +29,14 @@
 package org.jruby.ext.tempfile;
 
 import jnr.constants.platform.Errno;
+import jnr.constants.platform.OpenFlags;
 import jnr.posix.POSIX;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyFile;
+import org.jruby.RubyFileStat;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubySystemCallError;
 import org.jruby.anno.JRubyClass;
@@ -46,9 +49,11 @@ import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOOptions;
 import org.jruby.util.io.ModeFlags;
+import org.jruby.util.io.OpenFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -78,8 +83,9 @@ public class Tempfile extends org.jruby.RubyFile {
     }
 
     private File tmpFile = null;
-    protected IRubyObject opts;
-    protected int mode;
+    private IRubyObject tmpname;
+    private IRubyObject opts;
+    private IRubyObject mode;
 
     // This should only be called by this and RubyFile.
     // It allows this object to be created without a IOHandler.
@@ -108,56 +114,56 @@ public class Tempfile extends org.jruby.RubyFile {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
             Ruby runtime = context.runtime;
-            
-            IRubyObject tmpname = args[0];
-            IOOptions ioOptions = newIOOptions(runtime, ModeFlags.RDWR | ModeFlags.EXCL);
-            
-            // check for trailing hash
-            if (args.length > 1) {
-                if (args[args.length - 1] instanceof RubyHash) {
-                    // TODO: encoding options do not appear to actually get passed through to file init logic
-                    RubyHash options = (RubyHash)args[args.length - 1];
-                    ioOptions = updateIOOptionsFromOptions(context, options, ioOptions);
-                    EncodingUtils.ioExtractEncodingOption(context, Tempfile.this, options, null);
+            IRubyObject tmpname = args[0], opts = args.length > 2 ? args[2] : context.nil;
+
+            // MRI uses CREAT also, but we create the file ourselves before opening it
+            int mode = OpenFlags.O_RDWR.intValue() /*| OpenFlags.O_CREAT.intValue()*/ | OpenFlags.O_EXCL.intValue();
+            IRubyObject perm = runtime.newFixnum(0600);
+
+            // check for trailing options hash and prepare it
+            if (!opts.isNil()) {
+                RubyHash options = (RubyHash)opts;
+                IRubyObject optsMode = options.delete(context, runtime.newSymbol("mode"), Block.NULL_BLOCK);
+                if (!optsMode.isNil()) {
+                    mode |= optsMode.convertToInteger().getIntValue();
                 }
+                options.op_aset(context, runtime.newSymbol("perm"), perm);
+            } else {
+                opts = perm;
             }
 
             try {
+                // This is our logic for creating a delete-on-exit tmpfile using JDK features
+
                 File tmp = new File(tmpname.convertToString().toString());
                 if (tmp.createNewFile()) {
+                    runtime.getPosix().chmod(tmp.getAbsolutePath(), 0600);
                     tmpFile = tmp;
-                    path = tmp.getPath();
                     try {
                         tmpFile.deleteOnExit();
                     } catch (NullPointerException npe) {
-                        // See JRUBY-4624.
-                        // Due to JDK bug, NPE could be thrown
-                        // when shutdown is in progress.
-                        // Do nothing.
+                        // See JRUBY-4624. Due to JDK bug, NPE could be thrown when shutdown is in progress.
                     } catch (IllegalStateException ise) {
                         // do nothing, shutdown in progress
                     }
-                    initializeOpen(ioOptions);
                 } else {
-                    throw context.runtime.newErrnoEEXISTError(path);
+                    throw context.runtime.newErrnoEEXISTError(openFile.getPath());
                 }
             } catch (IOException e) {
                 throw context.runtime.newIOErrorFromException(e);
             }
-            mode = ioOptions.getModeFlags().getFlags();
 
-            return context.nil;
+            // Logic from tempfile.rb starts again here
+
+            // let RubyFile do its init logic to open the channel
+            Tempfile.super.initialize(context, new IRubyObject[]{tmpname, runtime.newFixnum(mode), opts}, Block.NULL_BLOCK);
+            Tempfile.this.tmpname = tmpname;
+
+            Tempfile.this.mode = runtime.newFixnum(mode & ~(OpenFlags.O_CREAT.intValue() | OpenFlags.O_EXCL.intValue()));
+            Tempfile.this.opts = opts;
+
+            return opts;
         }
-    }
-
-    private void initializeOpen(IOOptions ioOptions) {
-        getRuntime().getPosix().chmod(path, 0600);
-        MakeOpenFile();
-        
-        openFile.setMode(ioOptions.getModeFlags().getOpenFileFlags());
-        openFile.setPath(path);
-            
-        sysopen(getRuntime(), path, ioOptions.getModeFlags().getOpenFileFlags(), 0600);
     }
 
     @JRubyMethod(visibility = PUBLIC)
@@ -165,14 +171,14 @@ public class Tempfile extends org.jruby.RubyFile {
         Ruby runtime = context.runtime;
         if (!isClosed()) rbIoClose(runtime);
 
-        openFile(context, new IRubyObject[]{runtime.newString(path), runtime.newFixnum(mode), opts});
+        Tempfile.super.initialize(context, new IRubyObject[]{tmpname, mode, opts}, Block.NULL_BLOCK);
 
         return this;
     }
 
     @JRubyMethod(visibility = PROTECTED)
     public IRubyObject _close(ThreadContext context) {
-        return !isClosed() ? super.close() : context.runtime.getNil();
+        return !isClosed() ? super.close() : context.nil;
     }
 
     @JRubyMethod(optional = 1, visibility = PUBLIC)
@@ -184,13 +190,13 @@ public class Tempfile extends org.jruby.RubyFile {
     @JRubyMethod(name = "close!", visibility = PUBLIC)
     public IRubyObject close_bang(ThreadContext context) {
         _close(context);
-        tmpFile.delete();
-        return context.runtime.getNil();
+        unlink(context);
+        return context.nil;
     }
 
     @JRubyMethod(name = {"unlink", "delete"})
     public IRubyObject unlink(ThreadContext context) {
-        if (path == null) return context.nil;
+        if (openFile.getPath() == null) return context.nil;
         
         Ruby runtime = context.runtime;
         POSIX posix = runtime.getPosix();
@@ -208,33 +214,37 @@ public class Tempfile extends org.jruby.RubyFile {
                     throw re;
                 }
             }
-            path = null;
+            openFile.setPath(null);
+            tmpname = context.nil;
         } else {
             // JRUBY-6688: delete when closed, warn otherwise
             if (isClosed()) {
                 // the user intends to delete the file immediately, so do it
                 if (!tmpFile.exists() || tmpFile.delete()) {
-                    path = null;
+                    openFile.setPath(null);
+                    tmpname = context.nil;
                 }
             } else {
                 // else, no-op, since we can't unlink the file without breaking stat et al
                 runtime.getWarnings().warn("Tempfile#unlink or delete called on open file; ignoring");
             }
         }
-        return runtime.getNil();
-    }
-
-    @Override
-    public IRubyObject size(ThreadContext context) {
-        return size19(context);
+        return context.nil;
     }
 
     @JRubyMethod(name = {"size", "length"})
-    public IRubyObject size19(ThreadContext context) {
+    @Override
+    public IRubyObject size(ThreadContext context) {
         if (!isClosed()) {
             flush(context);
+            RubyFileStat stat = (RubyFileStat)stat(context);
+            return stat.size();
+        } else if (tmpname != null && !tmpname.isNil()) {
+            RubyFileStat stat = (RubyFileStat)stat(context, getMetaClass(), tmpname);
+            return stat.size();
+        } else {
+            return RubyFixnum.zero(context.runtime);
         }
-        return context.runtime.newFileStat(path, false).size();
     }
 
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -243,7 +253,6 @@ public class Tempfile extends org.jruby.RubyFile {
 
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
         RubyClass klass = (RubyClass) recv;
         Tempfile tempfile = (Tempfile) klass.newInstance(context, args, block);
 
@@ -262,7 +271,7 @@ public class Tempfile extends org.jruby.RubyFile {
     @Override
     public IRubyObject inspect() {
         StringBuilder val = new StringBuilder();
-        val.append("#<Tempfile:").append(path);
+        val.append("#<Tempfile:").append(openFile.getPath());
         if(!openFile.isOpen()) {
             val.append(" (closed)");
         }
@@ -282,5 +291,10 @@ public class Tempfile extends org.jruby.RubyFile {
     @Deprecated
     public IRubyObject initialize19(IRubyObject[] args, Block block) {
         return initialize(getRuntime().getCurrentContext(), args, block);
+    }
+
+    @Deprecated
+    public IRubyObject size19(ThreadContext context) {
+        return size(context);
     }
 }

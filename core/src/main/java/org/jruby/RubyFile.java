@@ -123,19 +123,65 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyModule constants = fileClass.defineModuleUnder("Constants");
 
         // open flags
-        for (OpenFlags f : OpenFlags.values()) {
-            // Strip off the O_ prefix, so they become File::RDONLY, and so on
-            final String name = f.name();
-            if (name.startsWith("O_")) {
-                final String cname = name.substring(2);
-                // Special case for handling ACCMODE, since constantine will generate
-                // an invalid value if it is not defined by the platform.
-                final RubyFixnum cvalue = f == OpenFlags.O_ACCMODE
-                        ? runtime.newFixnum(ModeFlags.ACCMODE)
-                        : runtime.newFixnum(f.intValue());
-                constants.setConstant(cname, cvalue);
+        /* open for reading only */
+        constants.setConstant("RDONLY", runtime.newFixnum(OpenFlags.O_RDONLY.intValue()));
+        /* open for writing only */
+        constants.setConstant("WRONLY", runtime.newFixnum(OpenFlags.O_WRONLY.intValue()));
+        /* open for reading and writing */
+        constants.setConstant("RDWR", runtime.newFixnum(OpenFlags.O_RDWR.intValue()));
+        /* append on each write */
+        constants.setConstant("APPEND", runtime.newFixnum(OpenFlags.O_APPEND.intValue()));
+        /* create file if it does not exist */
+        constants.setConstant("CREAT", runtime.newFixnum(OpenFlags.O_CREAT.intValue()));
+        /* error if CREAT and the file exists */
+        constants.setConstant("EXCL", runtime.newFixnum(OpenFlags.O_EXCL.intValue()));
+        if (    // O_NDELAY not defined in OpenFlags
+                //OpenFlags.O_NDELAY.defined() ||
+                OpenFlags.O_NONBLOCK.defined()) {
+            if (!OpenFlags.O_NONBLOCK.defined()) {
+//                #   define O_NONBLOCK O_NDELAY
             }
+            /* do not block on open or for data to become available */
+            constants.setConstant("NONBLOCK", runtime.newFixnum(OpenFlags.O_NONBLOCK.intValue()));
         }
+        /* truncate size to 0 */
+        constants.setConstant("TRUNC", runtime.newFixnum(OpenFlags.O_TRUNC.intValue()));
+        if (OpenFlags.O_NOCTTY.defined()) {
+            /* not to make opened IO the controlling terminal device */
+            constants.setConstant("NOCTTY", runtime.newFixnum(OpenFlags.O_NOCTTY.intValue()));
+        }
+        if (!OpenFlags.O_BINARY.defined()) {
+            constants.setConstant("BINARY", runtime.newFixnum(0));
+        } else {
+            /* disable line code conversion */
+            constants.setConstant("BINARY", runtime.newFixnum(OpenFlags.O_BINARY.intValue()));
+        }
+        if (OpenFlags.O_SYNC.defined()) {
+            /* any write operation perform synchronously */
+            constants.setConstant("SYNC", runtime.newFixnum(OpenFlags.O_SYNC.intValue()));
+        }
+        // O_DSYNC and O_RSYNC are not in OpenFlags
+//        #ifdef O_DSYNC
+//        /* any write operation perform synchronously except some meta data */
+//        constants.setConstant("DSYNC", runtime.newFixnum(OpenFlags.O_DSYNC.intValue()));
+//        #endif
+//        #ifdef O_RSYNC
+//        /* any read operation perform synchronously. used with SYNC or DSYNC. */
+//        constants.setConstant("RSYNC", runtime.newFixnum(OpenFlags.O_RSYNC.intValue()));
+//        #endif
+        if (OpenFlags.O_NOFOLLOW.defined()) {
+            /* do not follow symlinks */
+            constants.setConstant("NOFOLLOW", runtime.newFixnum(OpenFlags.O_NOFOLLOW.intValue()));     /* FreeBSD, Linux */
+        }
+        // O_NOATIME and O_DIRECT are not in OpenFlags
+//        #ifdef O_NOATIME
+//        /* do not change atime */
+//        constants.setConstant("NOATIME", runtime.newFixnum(OpenFlags.O_NOATIME.intValue()));     /* Linux */
+//        #endif
+//        #ifdef O_DIRECT
+//        /*  Try to minimize cache effects of the I/O to and from this file. */
+//        constants.setConstant("DIRECT", runtime.newFixnum(OpenFlags.O_DIRECT.intValue()));
+//        #endif
 
         // case handling, escaping, path and dot matching
         constants.setConstant("FNM_NOESCAPE", runtime.newFixnum(FNM_NOESCAPE));
@@ -381,13 +427,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             newPath.setTaint(true);
         }
         return newPath;
-    }
-
-    @JRubyMethod
-    @Override
-    public IRubyObject stat(ThreadContext context) {
-        checkClosed(context);
-        return context.runtime.newFileStat(getPath(), false);
     }
 
     @JRubyMethod(required = 1)

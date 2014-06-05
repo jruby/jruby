@@ -246,6 +246,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //        if (Platform.IS_CYGWIN) {
 //            if (!runtime.getPosix().isatty(fd)) {
 //                fmode |= OpenFile.BINMODE;
+                // TODO: setmode O_BINARY means what via NIO?
 //                setmode(fd, OpenFlags.O_BINARY);
 //            }
 //        }
@@ -431,11 +432,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
         fptr.clearTextMode();
         fptr.writeconvPreEcflags &= ~EConvFlags.NEWLINE_DECORATOR_MASK;
         if (OpenFlags.O_BINARY.defined()) {
-            // TODO: win32 stuff
+            // TODO: Windows
 //            if (fptr.readconv == null) {
 //                SET_BINARY_MODE_WITH_SEEK_CUR(fptr);
 //            }
 //            else {
+                // TODO: setmode O_BINARY means what via NIO?
 //                setmode(fptr->fd, O_BINARY);
 //            }
         }
@@ -1180,27 +1182,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //        #elif defined O_NOINHERIT
 //            flags |= O_NOINHERIT;
 //        #endif
-        try {
-            ret = PosixShim.open(runtime.getCurrentDirectory(), data.fname, new ModeFlags(data.oflags), data.perm, runtime.getPosix());
-        } catch (FileExistsException e) {
-            data.errno = Errno.ENOENT;
-        } catch (ResourceException.FileExists e) {
-            data.errno = Errno.EEXIST;
-        } catch (ResourceException.FileIsDirectory e) {
-            data.errno = Errno.EISDIR;
-        } catch (ResourceException.NotFound e) {
-            data.errno = Errno.ENOENT;
-        } catch (ResourceException.PermissionDenied e) {
-            data.errno = Errno.EACCES;
-        } catch (IOException e) {
-            if (runtime.isDebug()) {
-                System.err.println("Unhandled IOException: ");
-                e.printStackTrace();
-            }
-            data.errno = Helpers.errnoFromException(e);
-        } catch (InvalidValueException e) {
-            data.errno = Errno.EINVAL;
-        }
+        PosixShim shim = new PosixShim(runtime.getPosix());
+        ret = shim.open(runtime.getCurrentDirectory(), data.fname, ModeFlags.createModeFlags(data.oflags), data.perm);
         if (ret == null) return null;
         // TODO, if we need it?
 //        rb_maygvl_fd_fix_cloexec(ret);
@@ -2746,7 +2729,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
         OpenFile fptr = getOpenFileChecked();
         fptr.checkClosed(runtime);
-        return RubyFileStat.newFileStat(runtime, fptr.fd().bestFileno());
+        if (runtime.getPosix().isNative() && fptr.fd().realFileno != -1) {
+            return RubyFileStat.newFileStat(runtime, fptr.fd().bestFileno());
+        } else {
+            // no real fd, stat the path
+            return context.runtime.newFileStat(fptr.getPath(), false);
+        }
     }
 
     /** 
@@ -3330,9 +3318,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         if (((RubyHash)opt).op_aref(context, runtime.newSymbol("mode")).isNil()) {
             int mode = OpenFlags.O_WRONLY.intValue()|OpenFlags.O_CREAT.intValue();
-//            #ifdef O_BINARY
-//            if (binary) mode |= O_BINARY;
-//            #endif
+            if (OpenFlags.O_BINARY.defined()) {
+                if (binary) mode |= OpenFlags.O_BINARY.intValue();
+            }
             if (offset.isNil()) mode |= OpenFlags.O_TRUNC.intValue();
             ((RubyHash)opt).op_aset(runtime.newSymbol("mode"), runtime.newFixnum(mode));
         }
@@ -3342,9 +3330,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         RubyIO io = (RubyIO)_io;
 
-//        #ifndef O_BINARY
-        if (binary) io.binmode();
-//        #endif
+        if (!OpenFlags.O_BINARY.defined()) {
+            if (binary) io.binmode();
+        }
 
         if (!offset.isNil()) {
             seekBeforeAccess(context, io, offset, PosixShim.SEEK_SET);
@@ -4536,12 +4524,28 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = getRuntime();
         if (openFile != null) {
             rbIoClose(runtime);
-            openFile.finalize(runtime, false);
+            rb_io_fptr_finalize(runtime, openFile);
             openFile = null;
         }
         openFile = new OpenFile(runtime.getNil());
         runtime.addInternalFinalizer(openFile);
         return openFile;
+    }
+
+    private static int rb_io_fptr_finalize(Ruby runtime, OpenFile fptr) {
+        if (fptr == null) return 0;
+        fptr.setPath(null);;
+        if (fptr.fd() != null)
+            fptr.cleanup(runtime, true);
+        fptr.write_lock = null;
+        if (fptr.rbuf.ptr != null) {
+            fptr.rbuf.ptr = null;
+        }
+        if (fptr.wbuf.ptr != null) {
+            fptr.wbuf.ptr = null;
+        }
+        fptr.clearCodeConversion();
+        return 1;
     }
 
     @Deprecated

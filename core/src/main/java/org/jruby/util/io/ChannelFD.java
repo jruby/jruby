@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 */
 public class ChannelFD implements Closeable {
     public ChannelFD(Channel fd) {
+        assert fd != null;
         this.ch = fd;
 
         initFileno();

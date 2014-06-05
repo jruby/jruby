@@ -99,8 +99,8 @@ public class OpenFile implements Finalizable {
     public static interface Finalizer {
         public void finalize(Ruby runtime, OpenFile fptr, boolean noraise);
     }
-    private static final ChannelFD DUMMY_FD = new ChannelFD(null);
-    private ChannelFD fd = DUMMY_FD;
+
+    private ChannelFD fd = null;
     private int mode;
     private long pid = -1;
     private Process process;
@@ -340,7 +340,7 @@ public class OpenFile implements Finalizable {
     }
 
     private static String MODE_BINARY(int oflags, String a, String b) {
-        if (OpenFlags.O_BINARY.intValue() != -1 && (oflags & OpenFlags.O_BINARY.intValue()) != 0) {
+        if (OpenFlags.O_BINARY.defined() && (oflags & OpenFlags.O_BINARY.intValue()) != 0) {
             return b;
         }
         return a;
