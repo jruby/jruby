@@ -146,7 +146,7 @@ public class PosixShim {
                 }
             } else {
                 // NIO channels will always raise for errors, so -1 only means EOF.
-                if (read == -1) read = 0;
+                if (read == JAVA_EOF) read = NATIVE_EOF;
             }
 
             return read;
