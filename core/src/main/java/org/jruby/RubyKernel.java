@@ -467,14 +467,15 @@ public class RubyKernel {
         IRubyObject ret = context.nil;
         IRubyObject defout = runtime.getGlobalVariables().get("$>");
         IRubyObject defaultRS = context.runtime.getGlobalVariables().getDefaultSeparator();
+        boolean defoutWriteBuiltin = defout instanceof RubyIO &&
+                defout.getMetaClass().isMethodBuiltin("write");
 
         for (i=0; i<argc; i++) {
             // pulled out as rb_p in MRI
 //            rb_p(argv[i]);
             IRubyObject obj = args[i];
-            IRubyObject str = obj.inspect().asString();
-            if (defout instanceof RubyIO &&
-                    defout.getMetaClass().searchMethod("write").isBuiltin()) {
+            IRubyObject str = RubyBasicObject.rbInspect(context, obj);
+            if (defoutWriteBuiltin) {
                 ((RubyIO)defout).write(context, str, true);
                 ((RubyIO)defout).write(context, defaultRS, true);
             }
@@ -517,7 +518,7 @@ public class RubyKernel {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
         if (recv == defout) {
-            return RubyIO.puts0(context, defout);
+            return RubyIO.puts0(context, recv);
         }
 
         return defout.callMethod(context, "puts");
@@ -528,7 +529,7 @@ public class RubyKernel {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
         if (recv == defout) {
-            return RubyIO.puts1(context, defout, arg0);
+            return RubyIO.puts1(context, recv, arg0);
         }
 
         return defout.callMethod(context, "puts", arg0);
@@ -539,7 +540,7 @@ public class RubyKernel {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
         if (recv == defout) {
-            return RubyIO.puts2(context, defout, arg0, arg1);
+            return RubyIO.puts2(context, recv, arg0, arg1);
         }
 
         return defout.callMethod(context, "puts", new IRubyObject[]{arg0, arg1});
@@ -550,7 +551,7 @@ public class RubyKernel {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
         if (recv == defout) {
-            return RubyIO.puts3(context, defout, arg0, arg1, arg2);
+            return RubyIO.puts3(context, recv, arg0, arg1, arg2);
         }
 
         return defout.callMethod(context, "puts", new IRubyObject[]{arg0, arg1, arg2});
@@ -561,7 +562,7 @@ public class RubyKernel {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
         if (recv == defout) {
-            return RubyIO.puts(context, defout, args);
+            return RubyIO.puts(context, recv, args);
         }
 
         return defout.callMethod(context, "puts", args);

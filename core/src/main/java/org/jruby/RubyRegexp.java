@@ -2068,13 +2068,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return RubyString.newString(str.getRuntime(), val);
     }
 
+    // MRI: ASCGET macro from rb_reg_regsub
     private static final int ASCGET(boolean acompat, byte[] sBytes, int s, int e, int[] cl, Encoding strEnc) {
         if (acompat) {
             cl[0] = 1;
-            // BUG: MRI returns -1 here but if do then preciseLength fails to find rest of character
-            // when string is too short, and subsequence ASCGET tries to access sBytes[-2]
-//            return Encoding.isAscii(sBytes[s]) ? sBytes[s] & 0xFF : -1;
-            return sBytes[s] & 0xFF;
+            return Encoding.isAscii(sBytes[s]) ? sBytes[s] & 0xFF : -1;
         } else {
             return EncodingUtils.encAscget(sBytes, s, e, cl, strEnc);
         }
@@ -2086,7 +2084,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         RubyString val = null;
         int p, s, e;
-        int no, clen[] = {0};
+        int no = 0, clen[] = {0};
         Encoding strEnc = EncodingUtils.encGet(context, str);
         Encoding srcEnc = EncodingUtils.encGet(context, src);
         boolean acompat = EncodingUtils.encAsciicompat(strEnc);
@@ -2103,7 +2101,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             int c = ASCGET(acompat, sBytes, s, e, clen, strEnc);
 
             if (c == -1) {
-                s += StringSupport.preciseLength(strEnc, sBytes, s, e);
+                s += StringSupport.length(strEnc, sBytes, s, e);
                 continue;
             }
             int ss = s;
@@ -2114,12 +2112,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             if (val == null) {
                 val = RubyString.newString(str.getRuntime(), new ByteList(ss - p));
             }
-            EncodingUtils.encStrBufCat(runtime, val, bs, strEnc);
+            EncodingUtils.encStrBufCat(runtime, val, sBytes, p, ss - p, strEnc);
 
             c = ASCGET(acompat, sBytes, s, e, clen, strEnc);
 
             if (c == -1) {
-                s += StringSupport.preciseLength(strEnc, sBytes, s, e);
+                s += StringSupport.length(strEnc, sBytes, s, e);
                 EncodingUtils.encStrBufCat(runtime, val, sBytes, ss, s - ss, strEnc);
                 p = s;
                 continue;
@@ -2141,9 +2139,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                     int name = s + clen[0];
                     int nameEnd = name;
                     while (nameEnd < e) {
-                        c = ASCGET(acompat, sBytes, s, e, clen, strEnc);
+                        c = ASCGET(acompat, sBytes, nameEnd, e, clen, strEnc);
                         if (c == '>') break;
-                        nameEnd += (!Encoding.isAscii(c)) ? StringSupport.length(strEnc, sBytes, nameEnd, e) : clen[0];
+                        nameEnd += c == -1 ? StringSupport.length(strEnc, sBytes, nameEnd, e) : clen[0];
                     }
                     if (nameEnd < e) {
                         try {
@@ -2170,8 +2168,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 EncodingUtils.encStrBufCat(runtime, val, srcbs.getUnsafeBytes(), srcbs.getBegin() + matcher.getEnd(), srcbs.getRealSize() - matcher.getEnd(), srcEnc);
                 continue;
             case '+':
-                no = regs.numRegs - 1;
-                while (regs.beg[no] == -1 && no > 0) no--;
+                if (regs != null) {
+                    no = regs.numRegs - 1;
+                    while (regs.beg[no] == -1 && no > 0) no--;
+                }
                 if (no == 0) continue;
                 break;
             case '\\':
@@ -2184,7 +2184,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
             if (regs != null) {
                 if (no >= 0) {
-                    if (no >= regs.numRegs || regs.beg[no] == -1) continue;
+                    if (no >= regs.numRegs) continue;
+                    if (regs.beg[no] == -1) continue;
                     EncodingUtils.encStrBufCat(runtime, val, srcbs.getUnsafeBytes(), srcbs.getBegin() + regs.beg[no], regs.end[no] - regs.beg[no], srcEnc);
                 }
             } else {

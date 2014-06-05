@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jcodings.Encoding;
 import org.jruby.runtime.ivars.VariableAccessor;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -63,6 +64,7 @@ import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.CoreObjectType;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -1054,6 +1056,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
     }
 
+    // MRI: rb_inspect, which does dispatch
+    public static IRubyObject rbInspect(ThreadContext context, IRubyObject obj) {
+        Ruby runtime = context.runtime;
+        RubyString str = obj.callMethod(context, "inspect").asString();
+        Encoding ext = EncodingUtils.defaultExternalEncoding(runtime);
+        if (!ext.isAsciiCompatible()) {
+            if (!str.isAsciiOnly())
+                throw runtime.newEncodingCompatibilityError("inspected result must be ASCII only if default external encoding is ASCII incompatible");
+            return str;
+        }
+        if (str.getEncoding() != ext && !str.isAsciiOnly())
+            throw runtime.newEncodingCompatibilityError("inspected result must be ASCII only or use the default external encoding");
+        return str;
+    }
     /**
      * For most objects, the hash used in the default #inspect is just the
      * identity hashcode of the actual object.

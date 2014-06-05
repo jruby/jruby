@@ -7,6 +7,7 @@ import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.EConvFlags;
 import org.jcodings.transcode.EConvResult;
+import org.jruby.Finalizable;
 import org.jruby.Ruby;
 import org.jruby.RubyArgsFile;
 import org.jruby.RubyBasicObject;
@@ -40,7 +41,16 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class OpenFile {
+public class OpenFile implements Finalizable {
+
+    // RB_IO_FPTR_NEW, minus fields that Java already initializes the same way
+    public OpenFile(IRubyObject nil) {
+        runtime = nil.getRuntime();
+        writeconvAsciicompat = nil;
+        writeconvPreEcopts = nil;
+        encs.ecopts = nil;
+        posix = new PosixShim(runtime.getPosix());
+    }
 
     // IO Mode flags
     public static final int READABLE           = 0x00000001;
@@ -89,14 +99,6 @@ public class OpenFile {
     public static interface Finalizer {
         public void finalize(Ruby runtime, OpenFile fptr, boolean noraise);
     }
-
-    // RB_IO_FPTR_NEW, minus fields that Java already initializes the same way
-    public OpenFile(IRubyObject nil) {
-        writeconvAsciicompat = nil;
-        writeconvPreEcopts = nil;
-        encs.ecopts = nil;
-        posix = new PosixShim(nil.getRuntime().getPosix());
-    }
     private static final ChannelFD DUMMY_FD = new ChannelFD(null);
     private ChannelFD fd = DUMMY_FD;
     private int mode;
@@ -134,6 +136,8 @@ public class OpenFile {
     private boolean nonblock = false;
 
     public final PosixShim posix;
+
+    private final Ruby runtime;
 
     public void clearStdio() {
         stdio_file = null;
@@ -783,6 +787,10 @@ public class OpenFile {
 //            pipe_del_fptr(fptr);
         }
     };
+
+    public void finalize() {
+        if (fd != null) finalize(runtime, true);
+    }
 
     public void finalize(Ruby runtime, boolean noraise) {
         IRubyObject err = runtime.getNil();

@@ -2734,6 +2734,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return gsubCommon19(context, block, repl, hash, arg0, bang, tuFlags, true);
     }
 
+    // MRI: str_gsub, roughly
     private IRubyObject gsubCommon19(ThreadContext context, Block block, RubyString repl,
             RubyHash hash, IRubyObject arg0, final boolean bang, int tuFlags, boolean useBackref) {
         Ruby runtime = context.runtime;

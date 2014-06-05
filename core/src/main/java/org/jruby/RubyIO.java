@@ -136,7 +136,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             throw runtime.newRuntimeError("Opening null stream");
         }
         
-        openFile = new OpenFile(runtime.getNil());
+        openFile = MakeOpenFile();
         
         try {
             openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(outputStream)), autoclose));
@@ -154,7 +154,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             throw runtime.newRuntimeError("Opening null stream");
         }
         
-        openFile = new OpenFile(runtime.getNil());
+        openFile = MakeOpenFile();
         
         try {
             openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(inputStream))));
@@ -186,7 +186,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         ioOptions = updateIOOptionsFromOptions(runtime.getCurrentContext(), null, ioOptions);
 
-        openFile = new OpenFile(runtime.getNil());
+        openFile = MakeOpenFile();
 
         setupPopen(ioOptions.getModeFlags(), process);
     }
@@ -479,7 +479,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //        fname.checkTaint();
         fptr = file.openFile;
         if (fptr == null) {
-            fptr = file.openFile = new OpenFile(context.nil);
+            fptr = file.openFile = MakeOpenFile();
         }
 
         if (!nmode.isNil() || !opt.isNil()) {
@@ -1652,10 +1652,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fptr = getOpenFileChecked();
         if (fptr.seek(context, 0L, 0) < 0 && fptr.errno() != null) throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
-        // TODO: ARGF
-//        if (this == ARGF.current_file) {
-//            ARGF.lineno -= fptr->lineno;
-//        }
+        RubyArgsFile.ArgsFileData data = RubyArgsFile.ArgsFileData.getDataFrom(runtime.getArgsFile());
+        if (this == data.currentFile) {
+            data.currentLineNumber -= fptr.getLineNumber();
+        }
         fptr.setLineNumber(0);
         if (fptr.readconv != null) {
             fptr.clearReadConversion();
@@ -3089,7 +3089,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         String adviceStr = advice.asJavaString();
         switch (adviceStr) {
             default:
-                throw context.runtime.newNotImplementedError(adviceStr);
+                throw context.runtime.newNotImplementedError(rbInspect(context, advice).toString());
 
             case "normal":
             case "sequential":
@@ -4539,7 +4539,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
             openFile.finalize(runtime, false);
             openFile = null;
         }
-        return openFile = new OpenFile(runtime.getNil());
+        openFile = new OpenFile(runtime.getNil());
+        runtime.addInternalFinalizer(openFile);
+        return openFile;
     }
 
     @Deprecated
@@ -4597,9 +4599,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public RubyIO(Ruby runtime, RubyClass cls, ShellLauncher.POpenProcess process, RubyHash options, IOOptions ioOptions) {
         super(runtime, cls);
 
-        ioOptions = updateIOOptionsFromOptions(runtime.getCurrentContext(), (RubyHash) options, ioOptions);
+        ioOptions = updateIOOptionsFromOptions(runtime.getCurrentContext(), options, ioOptions);
 
-        openFile = new OpenFile(runtime.getNil());
+        openFile = MakeOpenFile();
 
         setupPopen(ioOptions.getModeFlags(), process);
     }
