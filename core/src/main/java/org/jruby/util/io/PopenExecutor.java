@@ -1179,12 +1179,10 @@ public class PopenExecutor {
             eargp.dup2_tmpbuf = tmpbuf;
         }
 
+        IRubyObject envtbl;
         unsetenv_others = eargp.unsetenv_others_given() && eargp.unsetenv_others_do();
         envopts = eargp.env_modification;
         if (unsetenv_others || envopts != null) {
-            IRubyObject envtbl;
-            String[] envp_str;
-            List<String> envp_buf;
             if (unsetenv_others) {
                 envtbl = RubyHash.newHash(runtime);
             }
@@ -1208,29 +1206,32 @@ public class PopenExecutor {
                     }
                 }
             }
-            envp_buf = new ArrayList();
-            for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)((RubyHash)envtbl).directEntrySet()) {
-                IRubyObject key = entry.getKey();
-                IRubyObject val = entry.getValue();
-
-                envp_buf.add(StringSupport.checkEmbeddedNulls(runtime, key).toString()
-                        + "="
-                        + StringSupport.checkEmbeddedNulls(runtime, val));
-            }
-            envp_str = new String[envp_buf.size()];
-            envp_buf.toArray(envp_str);
-            eargp.envp_str = envp_str;
-            eargp.envp_buf = envp_buf;
-
-        /*
-        char **tmp_envp = (char **)RSTRING_PTR(envp_str);
-        while (*tmp_envp) {
-            printf("%s\n", *tmp_envp);
-            tmp_envp++;
+        } else {
+            // In MRI, they use the current env as the baseline because they fork+exec. We can't do that,
+            // and posix_spawn needs a full env, so we pass even unmodified env through.
+            envtbl = runtime.getObject().getConstant("ENV");
+            envtbl = TypeConverter.convertToType(envtbl, runtime.getHash(), "to_hash");
         }
-        */
-        }
+        buildEnvp(runtime, eargp, envtbl);
 //        RB_GC_GUARD(execarg_obj);
+    }
+
+    private static void buildEnvp(Ruby runtime, ExecArg eargp, IRubyObject envtbl) {
+        String[] envp_str;
+        List<String> envp_buf;
+        envp_buf = new ArrayList();
+        for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)((RubyHash)envtbl).directEntrySet()) {
+            IRubyObject key = entry.getKey();
+            IRubyObject val = entry.getValue();
+
+            envp_buf.add(StringSupport.checkEmbeddedNulls(runtime, key).toString()
+                    + "="
+                    + StringSupport.checkEmbeddedNulls(runtime, val));
+        }
+        envp_str = new String[envp_buf.size()];
+        envp_buf.toArray(envp_str);
+        eargp.envp_str = envp_str;
+        eargp.envp_buf = envp_buf;
     }
 
     static int checkExecFds1(ThreadContext context, Ruby runtime, ExecArg eargp, RubyHash h, int maxhint, IRubyObject ary) {
