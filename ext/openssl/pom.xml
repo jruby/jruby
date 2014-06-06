@@ -9,11 +9,25 @@
   <name>JRuby OpenSSL</name>
   <description>JRuby-OpenSSL is an add-on gem for JRuby that emulates the Ruby OpenSSL native library.</description>
   <url>https://github.com/jruby/jruby</url>
+  <developers>
+    <developer>
+      <name>Ola Bini</name>
+      <email>ola.bini@gmail.com</email>
+    </developer>
+    <developer>
+      <name>JRuby contributors</name>
+    </developer>
+  </developers>
+  <scm>
+    <connection>https://github.com/jruby/jruby.git</connection>
+    <url>https://github.com/jruby/jruby</url>
+  </scm>
   <properties>
+    <jruby.version>1.7.12</jruby.version>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <gem.path>${gem.home}</gem.path>
     <gem.home>../target/rubygems</gem.home>
-    <jruby.plugins.version>1.0.0-rc4</jruby.plugins.version>
+    <jruby.plugins.version>1.0.2</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
   </properties>
@@ -31,8 +45,20 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
-      <version>1.6.8</version>
+      <version>${jruby.version}</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-stdlib</artifactId>
+      <version>${jruby.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
   <repositories>
@@ -45,42 +71,12 @@
     <extensions>
       <extension>
         <groupId>de.saumya.mojo</groupId>
-        <artifactId>gem-extension</artifactId>
+        <artifactId>gem-with-jar-extension</artifactId>
         <version>${jruby.plugins.version}</version>
       </extension>
     </extensions>
     <directory>${basedir}/pkg</directory>
     <plugins>
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>2.4</version>
-        <executions>
-          <execution>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <outputDirectory>lib</outputDirectory>
-          <finalName>jopenssl</finalName>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-clean-plugin</artifactId>
-        <version>2.4</version>
-        <configuration>
-          <filesets>
-            <fileset>
-              <directory>lib</directory>
-              <includes>
-                <include>jopenssl.jar</include>
-              </includes>
-            </fileset>
-          </filesets>
-        </configuration>
-      </plugin>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
         <artifactId>gem-maven-plugin</artifactId>
