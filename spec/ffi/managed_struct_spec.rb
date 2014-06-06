@@ -28,6 +28,16 @@ describe "Managed Struct" do
     WhatClassAmI.new(ManagedStructTestLib.ptr_from_address(0x12345678)).class.should == WhatClassAmI
   end
 
+  it "should build with self reference" do
+    class ClassWithSelfRef < FFI::ManagedStruct
+      layout :data, self.ptr
+      def self.release
+      end
+    end
+
+    ClassWithSelfRef.new(ManagedStructTestLib.ptr_from_address(0x12345678)).class.should == ClassWithSelfRef
+  end
+
   it "should release memory properly" do
     class PleaseReleaseMe < FFI::ManagedStruct
       layout :i, :int
