@@ -17,7 +17,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="FFI::StructByReference", parent="Object")
 public final class StructByReference extends RubyObject {
-    private final StructLayout structLayout;
+    private StructLayout structLayout;
     private final RubyClass structClass;
 
     public static RubyClass createStructByReferenceClass(Ruby runtime, RubyModule ffiModule) {
@@ -45,7 +45,7 @@ public final class StructByReference extends RubyObject {
         }
 
         return new StructByReference(context.runtime, (RubyClass) klass,
-                (RubyClass) structClass, Struct.getStructLayout(context.runtime, structClass));
+	         (RubyClass) structClass, null);
     }
 
     private StructByReference(Ruby runtime, RubyClass klass, RubyClass structClass, StructLayout layout) {
@@ -61,6 +61,11 @@ public final class StructByReference extends RubyObject {
 
     @JRubyMethod(name = "layout")
     public final IRubyObject layout(ThreadContext context) {
+        // getStructLayout gets the @layout from the structClass
+        // which should be OK during concurrent access of this method
+        if (structLayout == null) {
+            structLayout = Struct.getStructLayout(context.runtime, structClass);
+        }
         return structLayout;
     }
 
