@@ -337,16 +337,10 @@ public class ArgumentProcessor {
                         config.setObjectSpaceEnabled(false);
                     } else if (extendedOption.equals("+O")) {
                         config.setObjectSpaceEnabled(true);
-                    } else if (extendedOption.equals("-C")) {
+                    } else if (extendedOption.equals("-C") || extendedOption.equals("-CIR")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
-                    } else if (extendedOption.equals("-CIR")) {
-                        config.setCompileMode(RubyInstanceConfig.CompileMode.OFFIR);
-                    } else if (extendedOption.equals("+C")) {
+                    } else if (extendedOption.equals("+C") || extendedOption.equals("+CIR")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
-                    } else if (extendedOption.equals("+CIR")) {
-                        config.setCompileMode(RubyInstanceConfig.CompileMode.FORCEIR);
-                    } else if (extendedOption.equals("+JIR")) {
-                        config.setCompileMode(RubyInstanceConfig.CompileMode.JITIR);
                     } else if (extendedOption.equals("+T")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
                         Options.WARN_USELESSS_USE_OF.force(Boolean.toString(false));

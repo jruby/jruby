@@ -171,7 +171,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             Ruby runtime = context.runtime;
             RubyInstanceConfig config = runtime.getInstanceConfig();
 
-            if (config.getCompileMode() == RubyInstanceConfig.CompileMode.JITIR) {
+            if (config.getCompileMode() == RubyInstanceConfig.CompileMode.JIT) {
 
                 ensureInstrsReady();
 
