@@ -24,7 +24,6 @@ namespace :spec do
     :int => ["-X-C"],
     :jit => ["-Xjit.threshold=0", "-J-XX:MaxPermSize=256M"],
     :aot => ["-X+C", "-J-XX:MaxPermSize=256M"],
-    :ir_int => ["-X-CIR"],
     :all => [:int, :jit, :aot]
   }
 
@@ -51,11 +50,6 @@ namespace :spec do
   permute_specs "java_signature_parser", compile_flags do |t|
     t.rspec_opts = "--options spec/java_integration/spec.quiet.opts"
     t.pattern = 'spec/grammar/**/*_spec.rb'
-  end
-
-  permute_specs "ir", compile_flags do |t|
-    t.rspec_opts = "--options spec/java_integration/spec.opts"
-    t.pattern = 'spec/ir/**/*_spec.rb'
   end
 
   permute_specs "regression", compile_flags do |t|
