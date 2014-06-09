@@ -178,7 +178,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         ThreadContext context = runtime.getCurrentContext();
-        initializeCommon(context, new ChannelFD(channel), runtime.newFixnum(ModeFlags.oflagsFrom(runtime.getPosix(), channel)), context.nil);
+        initializeCommon(context, new ChannelFD(channel, runtime.getPosix()), runtime.newFixnum(ModeFlags.oflagsFrom(runtime.getPosix(), channel)), context.nil);
     }
 
     public RubyIO(Ruby runtime, ShellLauncher.POpenProcess process, IOOptions ioOptions) {
@@ -812,7 +812,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         ChannelFD fd;
 
         if (FilenoUtil.isFake(fileno)) {
-            fd = new ChannelFD(new NativeDeviceChannel(fileno));
+            fd = new ChannelFD(new NativeDeviceChannel(fileno), runtime.getPosix());
         } else {
             ChannelFD descriptor = FilenoUtil.getWrapperFromFileno(fileno);
 
@@ -1190,7 +1190,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
         // TODO, if we need it?
 //        rb_maygvl_fd_fix_cloexec(ret);
-        return new ChannelFD(ret);
+        return new ChannelFD(ret, runtime.getPosix());
     }
 
     // MRI: rb_io_autoclose_p
@@ -1757,7 +1757,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //            pipe_add_fptr(fptr);
 //        #endif
 
-        fd = orig.fd().dup(runtime.getPosix());
+        fd = orig.fd().dup();
         fptr.setFD(fd);
         pos = orig.tell(context);
         if (0 <= pos)
@@ -1783,6 +1783,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     /**
      * Is this IO closed
+     *
+     * MRI: rb_io_closed
      * 
      * @return true if closed
      */
@@ -3412,7 +3414,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 inChannel = Channels.newChannel(process.getInputStream());
             }
 
-            ChannelFD main = new ChannelFD(inChannel);
+            ChannelFD main = new ChannelFD(inChannel, runtime.getPosix());
 
             openFile.setFD(main);
             openFile.setMode(OpenFile.READABLE);
@@ -3427,7 +3429,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 outChannel = Channels.newChannel(process.getOutputStream());
             }
 
-            ChannelFD pipe = new ChannelFD(outChannel);
+            ChannelFD pipe = new ChannelFD(outChannel, runtime.getPosix());
 
             RubyIO writeIO = new RubyIO(runtime, runtime.getIO());
             writeIO.initializeCommon(runtime.getCurrentContext(), pipe, runtime.newFixnum(OpenFlags.O_WRONLY), runtime.getNil());
@@ -3822,8 +3824,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         PosixShim posix = new PosixShim(runtime.getPosix());
-        Pipe pipe;
-        if ((pipe = posix.pipe()) == null)
+        Channel[] fds = posix.pipe();
+        if (fds == null)
             throw runtime.newErrnoFromErrno(posix.errno, "opening pipe");
 
 //        args[0] = klass;
@@ -3836,7 +3838,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //            rb_jump_tag(state);
 //        }
         r = new RubyIO(runtime, (RubyClass)klass);
-        r.initializeCommon(context, new ChannelFD(pipe.source()), runtime.newFixnum(OpenFlags.O_RDONLY), context.nil);
+        r.initializeCommon(context, new ChannelFD(fds[0], runtime.getPosix()), runtime.newFixnum(OpenFlags.O_RDONLY), context.nil);
         fptr = r.getOpenFileChecked();
 
         r.setEncoding(context, v1, v2, opt);
@@ -3850,7 +3852,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //            rb_jump_tag(state);
 //        }
         w = new RubyIO(runtime, (RubyClass)klass);
-        w.initializeCommon(context, new ChannelFD(pipe.sink()), runtime.newFixnum(OpenFlags.O_WRONLY), context.nil);
+        w.initializeCommon(context, new ChannelFD(fds[1], runtime.getPosix()), runtime.newFixnum(OpenFlags.O_WRONLY), context.nil);
         fptr2 = w.getOpenFileChecked();
         fptr2.setSync(true);
 

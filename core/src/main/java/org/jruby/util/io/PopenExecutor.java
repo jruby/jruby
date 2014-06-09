@@ -435,15 +435,15 @@ public class PopenExecutor {
         if (eargp != null && !eargp.use_shell) {
             args = ARGVSTR2ARGV(eargp.argv_str.argv);
         }
-        Pipe mainPipe = null, secondPipe = null;
+        Channel[] mainPipe = null, secondPipe = null;
         switch (fmode & (OpenFile.READABLE|OpenFile.WRITABLE)) {
             case OpenFile.READABLE | OpenFile.WRITABLE:
                 if ((secondPipe = posix.pipe()) == null)
                     throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
                 if ((mainPipe = posix.pipe()) == null) {
                     e = posix.errno;
-                    try {secondPipe.sink().close();} catch (IOException ioe) {}
-                    try {secondPipe.source().close();} catch (IOException ioe) {}
+                    try {secondPipe[1].close();} catch (IOException ioe) {}
+                    try {secondPipe[0].close();} catch (IOException ioe) {}
                     posix.errno = e;
                     throw runtime.newErrnoFromErrno(posix.errno, prog.toString());
                 }
@@ -492,28 +492,28 @@ public class PopenExecutor {
 
         /* parent */
         if (pid == -1) {
-            try {mainPipe.sink().close();} catch (IOException ioe) {}
-            try {mainPipe.source().close();} catch (IOException ioe) {}
+            try {mainPipe[1].close();} catch (IOException ioe) {}
+            try {mainPipe[0].close();} catch (IOException ioe) {}
             if ((fmode & (OpenFile.READABLE|OpenFile.WRITABLE)) == (OpenFile.READABLE|OpenFile.WRITABLE)) {
-                try {mainPipe.sink().close();} catch (IOException ioe) {}
-                try {mainPipe.source().close();} catch (IOException ioe) {}
+                try {mainPipe[1].close();} catch (IOException ioe) {}
+                try {mainPipe[0].close();} catch (IOException ioe) {}
             }
             errno = e;
             throw runtime.newErrnoFromErrno(errno, prog.toString());
         }
         if ((fmode & OpenFile.READABLE) != 0 && (fmode & OpenFile.WRITABLE) != 0) {
-            try {mainPipe.sink().close();} catch (IOException ioe) {}
-            fd = mainPipe.source();
-            try {secondPipe.source().close();} catch (IOException ioe) {}
-            write_fd = secondPipe.sink();
+            try {mainPipe[1].close();} catch (IOException ioe) {}
+            fd = mainPipe[0];
+            try {secondPipe[0].close();} catch (IOException ioe) {}
+            write_fd = secondPipe[1];
         }
         else if ((fmode & OpenFile.READABLE) != 0) {
-            try {mainPipe.sink().close();} catch (IOException ioe) {}
-            fd = mainPipe.source();
+            try {mainPipe[1].close();} catch (IOException ioe) {}
+            fd = mainPipe[0];
         }
         else {
-            try {mainPipe.source().close();} catch (IOException ioe) {}
-            fd = mainPipe.sink();
+            try {mainPipe[0].close();} catch (IOException ioe) {}
+            fd = mainPipe[1];
         }
 
         port = runtime.getIO().allocate();
@@ -640,7 +640,7 @@ public class PopenExecutor {
     static boolean WIFSIGNALED(int x)   { return _WSTATUS(x) != _WSTOPPED && _WSTATUS(x) != 0; }
     static int WTERMSIG(int x)          { return _WSTATUS(x); }
 
-    private void prepareStdioRedirects(Ruby runtime, Pipe readPipe, Pipe writePipe, ExecArg eargp) {
+    private void prepareStdioRedirects(Ruby runtime, Channel[] readPipe, Channel[] writePipe, ExecArg eargp) {
         // We insert these redirects directly into fd_dup2 so that chained redirection can be
         // validated and set up properly by the execargFixup logic.
         // The closes do not appear to be part of MRI's logic (they close the fd before exec/spawn),
@@ -648,21 +648,21 @@ public class PopenExecutor {
 
         if (readPipe != null) {
             // dup our read pipe's write end into stdout
-            int readPipeWriteFD = FilenoUtil.filenoFrom(readPipe.sink());
+            int readPipeWriteFD = FilenoUtil.filenoFrom(readPipe[1]);
             eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, runtime.newFixnum(1), runtime.newFixnum(readPipeWriteFD));
 
             // close the other end of the pipe in the child
-            int readPipeReadFD = FilenoUtil.filenoFrom(readPipe.source());
+            int readPipeReadFD = FilenoUtil.filenoFrom(readPipe[0]);
             eargp.fileActions.add(SpawnFileAction.close(readPipeReadFD));
         }
 
         if (writePipe != null) {
             // dup our write pipe's read end into stdin
-            int writePipeReadFD = FilenoUtil.filenoFrom(writePipe.source());
+            int writePipeReadFD = FilenoUtil.filenoFrom(writePipe[0]);
             eargp.fd_dup2 = checkExecRedirect1(runtime, eargp.fd_dup2, runtime.newFixnum(0), runtime.newFixnum(writePipeReadFD));
 
             // close the other end of the pipe in the child
-            int writePipeWriteFD = FilenoUtil.filenoFrom(writePipe.sink());
+            int writePipeWriteFD = FilenoUtil.filenoFrom(writePipe[1]);
             eargp.fileActions.add(SpawnFileAction.close(writePipeWriteFD));
         }
     }

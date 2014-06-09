@@ -2,6 +2,7 @@ package org.jruby.util.io;
 
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.enxio.channels.NativeSelectableChannel;
+import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 import org.jruby.Ruby;
 
@@ -22,9 +23,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 * Created by headius on 5/24/14.
 */
 public class ChannelFD implements Closeable {
-    public ChannelFD(Channel fd) {
+    public ChannelFD(Channel fd, POSIX posix) {
         assert fd != null;
         this.ch = fd;
+        this.posix = posix;
 
         initFileno();
         initChannelTypes();
@@ -44,17 +46,17 @@ public class ChannelFD implements Closeable {
         }
     }
 
-    public ChannelFD dup(POSIX posix) {
+    public ChannelFD dup() {
         if (realFileno != -1) {
             // real file descriptors, so we can dup directly
             // TODO: investigate how badly this might damage JVM streams (prediction: not badly)
-            return new ChannelFD(new NativeDeviceChannel(posix.dup(realFileno)));
+            return new ChannelFD(new NativeDeviceChannel(posix.dup(realFileno)), posix);
         }
 
         // TODO: not sure how well this combines native and non-native streams
         // simulate dup by copying our channel into a new ChannelFD and incrementing ref count
         Channel ch = this.ch;
-        ChannelFD fd = new ChannelFD(ch);
+        ChannelFD fd = new ChannelFD(ch, posix);
         fd.refs = refs;
         fd.refs.incrementAndGet();
 
@@ -130,7 +132,7 @@ public class ChannelFD implements Closeable {
         if (ch instanceof SeekableByteChannel) chSeek = (SeekableByteChannel)ch;
         else chSeek = null;
         if (ch instanceof SelectableChannel) chSelect = (SelectableChannel)ch;
-        else if (realFileno != -1) chSelect = new NativeDeviceChannel(realFileno);
+//        else if (realFileno != -1) chSelect = new NativeDeviceChannel(realFileno);
         else chSelect = null;
         if (ch instanceof FileChannel) chFile = (FileChannel)ch;
         else chFile = null;
@@ -138,6 +140,12 @@ public class ChannelFD implements Closeable {
         else chSock = null;
         if (ch instanceof NativeSelectableChannel) chNative = (NativeSelectableChannel)ch;
         else chNative = null;
+
+        if (chNative != null) {
+            // we have an ENXIO channel, but need to know if it's a regular file to skip selection
+            FileStat stat = posix.fstat(chNative.getFD());
+            if (stat.isFile()) chSelect = null;
+        }
     }
 
     public Channel ch;
@@ -152,6 +160,7 @@ public class ChannelFD implements Closeable {
     public int fakeFileno;
     private AtomicInteger refs;
     public FileLock currentLock;
+    private POSIX posix;
 
     // FIXME shouldn't use static; would interfere with other runtimes in the same JVM
     public static int FIRST_FAKE_FD = 100000;

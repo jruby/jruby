@@ -1256,7 +1256,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         try {
             this.unblockFunc = task;
             this.unblockArg = data;
-            pollThreadEvents(context);
             return task.run(context, data);
         } finally {
             exitSleep();
@@ -1421,10 +1420,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @Deprecated
     public boolean selectForAccept(RubyIO io) {
         return select(io, SelectionKey.OP_ACCEPT);
-    }
-
-    private synchronized Selector getSelector(SelectableChannel channel) throws IOException {
-        return SelectorFactory.openWithRetryFrom(getRuntime(), channel.provider());
     }
     
     public boolean select(RubyIO io, int ops) {

@@ -20,6 +20,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -37,6 +38,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -177,7 +179,7 @@ public class OpenFile implements Finalizable {
     }
 
     public void setChannel(Channel fd) {
-        this.fd = new ChannelFD(fd);
+        this.fd = new ChannelFD(fd, runtime.getPosix());
     }
 
     public int getMode() {
@@ -1233,18 +1235,46 @@ public class OpenFile implements Finalizable {
         public byte[] bufBytes;
         public int buf;
         public int capa;
+        public Selector selector;
     }
 
     final static RubyThread.Task<InternalReadStruct, Integer> readTask = new RubyThread.Task<InternalReadStruct, Integer>() {
         @Override
         public Integer run(ThreadContext context, InternalReadStruct iis) throws InterruptedException {
-            return iis.fptr.posix.read(iis.fd, iis.bufBytes, iis.buf, iis.capa, iis.fptr.nonblock);
+            ChannelFD fd = iis.fd;
+            try {
+                if (fd.chSelect != null && !iis.fptr.nonblock) {
+                    iis.selector = context.runtime.getSelectorPool().get(fd.chSelect.provider());
+                    synchronized (fd.chSelect.blockingLock()) {
+                        boolean blocking = fd.chSelect.isBlocking();
+                        try {
+                            fd.chSelect.configureBlocking(false);
+                            fd.chSelect.register(iis.selector, SelectionKey.OP_READ);
+                            while (iis.selector.select() != 1) {
+                                // keep selecting until ready or there's a thread event
+                                context.pollThreadEvents();
+                            }
+                        } finally {
+                            iis.selector.close();
+                            fd.chSelect.configureBlocking(blocking);
+                        }
+                    }
+                }
+            } catch (IOException ioe) {
+                throw context.runtime.newIOErrorFromException(ioe);
+            }
+
+            // if we can select, we should have data to read; if not, we'll interrupt below
+            return iis.fptr.posix.read(fd, iis.bufBytes, iis.buf, iis.capa, iis.fptr.nonblock);
         }
 
         @Override
         public void wakeup(RubyThread thread, InternalReadStruct data) {
-            // FIXME: NO! This will kill many native channels. Must be nonblocking to interrupt.
-            thread.getNativeThread().interrupt();
+            if (data.selector != null && data.selector.isOpen()) {
+                data.selector.wakeup();
+            } else {
+                thread.getNativeThread().interrupt();
+            }
         }
     };
 

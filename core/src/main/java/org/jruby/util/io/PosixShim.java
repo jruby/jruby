@@ -1,8 +1,11 @@
 package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
+import jnr.constants.platform.Signal;
+import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
+import org.jruby.RubyThread;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.ResourceException;
@@ -16,6 +19,8 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.Pipe;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 
 /**
  * Representations of as many native posix functions as possible applied to an NIO channel
@@ -241,10 +246,22 @@ public class PosixShim {
         }
     }
 
-    public Pipe pipe() {
+    public Channel[] pipe() {
         clear();
+        if (posix.isNative()) {
+            int[] fds = new int[2];
+            int ret = posix.pipe(fds);
+            if (ret == -1) {
+                errno = Errno.valueOf(posix.errno());
+                return null;
+            }
+            return new Channel[]{new NativeDeviceChannel(fds[0]), new NativeDeviceChannel(fds[1])};
+        }
+
+        // otherwise, Java pipe
         try {
-            return Pipe.open();
+            Pipe pipe = Pipe.open();
+            return new Channel[]{pipe.source(), pipe.sink()};
         } catch (IOException ioe) {
             errno = Helpers.errnoFromException(ioe);
             return null;
