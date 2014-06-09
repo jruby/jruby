@@ -113,4 +113,16 @@ public abstract class RubyCallStack {
         return getCurrentMethod().getDeclaringModule();
     }
 
+    public static String getRubyStacktrace(){
+        return String.format("%s at %s:%s", getCurrentMethod().getName(), getFilename(), getLineNumber());
+    }
+
+    public static String getFilename(){
+        return getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName();
+    }
+
+    public static int getLineNumber(){
+        return getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine();
+    }
+
 }

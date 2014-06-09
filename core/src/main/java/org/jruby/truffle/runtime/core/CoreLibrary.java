@@ -17,6 +17,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.cli.OutputStrings;
 
@@ -452,7 +453,7 @@ public class CoreLibrary {
     }
 
     public RubyException noMethodError(String name, String object) {
-        return noMethodError(String.format("undefined method `%s' for %s", name, object));
+        return noMethodError(String.format("NameError: undefined method `%s' for %s \n %s", name, object, RubyCallStack.getRubyStacktrace()));
     }
 
     public RubyException loadError(String message) {
