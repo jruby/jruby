@@ -309,7 +309,7 @@
                     <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
                       <arg value="-X+T" />
                       <arg value="-J-ea" />
-                      <arg value="spec/truffle/mspec/bin/mspec" />
+                      <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
                       <arg value="-t" />
                       <arg value="bin/jruby" />

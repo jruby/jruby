@@ -1,7 +1,7 @@
 class MSpecScript
 
   set :language, [
-    "spec/truffle/ruby/language"
+    "spec/ruby/language"
   ]
 
   set :tags_patterns, [
