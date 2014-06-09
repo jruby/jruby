@@ -78,9 +78,4 @@ public class BignumNode extends Node implements ILiteralNode {
     public void setValue(BigInteger value) {
         this.value = value;
     }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return RubyBignum.newBignum(runtime, value);
-    }
 }

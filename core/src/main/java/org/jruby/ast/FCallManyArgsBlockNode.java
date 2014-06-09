@@ -20,12 +20,4 @@ public class FCallManyArgsBlockNode extends FCallNode {
     public FCallManyArgsBlockNode(ISourcePosition position, String name, Node args, IterNode iter) {
         super(position, name, args, iter);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject[] args = ((ArrayNode) getArgsNode()).interpretPrimitive(runtime, context, self, aBlock);
-        Block block = Helpers.getBlock(context, self, iterNode);
-
-        return callAdapter.callIter(context, self, self, args, block);
-    }
 }

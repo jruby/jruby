@@ -117,28 +117,4 @@ public class OpAsgnNode extends Node {
     public List<Node> childNodes() {
         return Node.createList(receiverNode, valueNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
-        IRubyObject value = variableCallAdapter.call(context, self, receiver);
-   
-        if (getOperatorName() == "||") {
-            if (value.isTrue()) {
-                return ASTInterpreter.pollAndReturn(context, value);
-            }
-            value = valueNode.interpret(runtime, context, self, aBlock);
-        } else if (getOperatorName() == "&&") {
-            if (!value.isTrue()) {
-                return ASTInterpreter.pollAndReturn(context, value);
-            }
-            value = valueNode.interpret(runtime,context, self, aBlock);
-        } else {
-            value = operatorCallAdapter.call(context, self, value, valueNode.interpret(runtime, context, self, aBlock));
-        }
-   
-        variableAsgnCallAdapter.call(context, self, receiver, value);
-   
-        return ASTInterpreter.pollAndReturn(context, value);
-    }
 }

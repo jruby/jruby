@@ -188,24 +188,11 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
         String nodeType = name.substring(i + 1);
         return nodeType;
     }
-
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
-    }
     
     public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
         throw new RuntimeException("Invalid node encountered in interpreter: \"" + getClass().getName() + "\", please report this at www.jruby.org");
     }
-    
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        try {
-            interpret(runtime, context, self, aBlock);
-            return runtime.getDefinedMessage(DefinedMessage.EXPRESSION);
-        } catch (JumpException jumpExcptn) {
-        }
-        
-        return null;
-    }
+
 
     /**
      * @return the nodeId

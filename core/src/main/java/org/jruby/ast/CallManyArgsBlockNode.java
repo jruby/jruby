@@ -48,19 +48,4 @@ public final class CallManyArgsBlockNode extends CallNode {
     public CallManyArgsBlockNode(ISourcePosition position, Node receiverNode, String name, Node args, IterNode iter) {
         super(position, receiverNode, name, args, iter);
     }
-        
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
-        IRubyObject[] args = ((ArrayNode) getArgsNode()).interpretPrimitive(runtime, context, self, aBlock);
-        Block block = Helpers.getBlock(context, self, iterNode);
-        
-        try {
-            return callAdapter.callIter(context, self, receiver, args, block);
-        } catch (JumpException.RetryJump rj) {
-            throw runtime.newLocalJumpError(Reason.RETRY, self, "retry is not supported outside rescue");
-        } finally {
-            block.escape();
-        }
-    }
 }

@@ -80,10 +80,4 @@ public class DefinedNode extends Node {
     public List<Node> childNodes() {
         return createList(expressionNode);
     }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-			RubyString definition = expressionNode.definition(runtime, context, self, aBlock);
-			return definition != null ? definition : runtime.getNil();
-    }
 }

@@ -66,9 +66,4 @@ public class DXStrNode extends DNode implements ILiteralNode {
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitDXStrNode(this);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return self.callMethod(context, "`", super.interpret(runtime, context, self, aBlock));
-    }
 }

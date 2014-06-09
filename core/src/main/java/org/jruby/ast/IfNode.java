@@ -100,22 +100,4 @@ public class IfNode extends Node {
     public List<Node> childNodes() {
         return Node.createList(condition, thenBody, elseBody);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        ISourcePosition position = getPosition();
-
-        context.setFileAndLine(position.getFile(), position.getStartLine());
-
-        IRubyObject result = condition.interpret(runtime, context, self, aBlock);
-        
-        // TODO: put these nil guards into tree (bigger than I want to do right now)
-
-        // FIXME: JRUBY-3188 ends up with condition returning null...quick fix until I can dig into it
-        if (result.isTrue()) {
-            return thenBody == null ? runtime.getNil() : thenBody.interpret(runtime, context, self, aBlock);
-        } else {
-            return elseBody == null ? runtime.getNil() : elseBody.interpret(runtime, context, self, aBlock);
-        }
-    }
 }

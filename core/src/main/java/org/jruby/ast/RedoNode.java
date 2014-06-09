@@ -72,12 +72,4 @@ public class RedoNode extends Node implements NonLocalControlFlowNode {
     public List<Node> childNodes() {
         return EMPTY_LIST;
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        context.pollThreadEvents();
-   
-        // now used as an interpreter event
-        throw JumpException.REDO_JUMP;
-    }
 }

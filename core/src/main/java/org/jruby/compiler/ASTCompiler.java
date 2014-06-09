@@ -318,9 +318,6 @@ public class ASTCompiler {
             case SYMBOLNODE:
                 compileSymbol(node, context, expr);
                 break;
-            case TOARYNODE:
-                compileToAry(node, context, expr);
-                break;
             case TRUENODE:
                 compileTrue(node, context, expr);
                 break;
@@ -2845,27 +2842,6 @@ public class ASTCompiler {
                 }
             }
         } else {
-            // special case for x, *y = whatever
-            if (multipleAsgnNode.getHeadNode() != null &&
-                    multipleAsgnNode.getHeadNode().size() == 1 &&
-                    multipleAsgnNode.getValueNode() instanceof ToAryNode &&
-                    multipleAsgnNode.getArgsNode() != null) {
-                // emit the value
-                compile(multipleAsgnNode.getValueNode().childNodes().get(0), context, true);
-                if (multipleAsgnNode.getArgsNode() instanceof StarNode) {
-                    // slice puts on stack in reverse order
-                    context.preMultiAssign(1, false);
-                    // assign
-                    compileAssignment(multipleAsgnNode.getHeadNode().childNodes().get(0), context);
-                } else {
-                    // slice puts on stack in reverse order
-                    context.preMultiAssign(1, true);
-                    // assign
-                    compileAssignment(multipleAsgnNode.getHeadNode().childNodes().get(0), context);
-                    compileAssignment(multipleAsgnNode.getArgsNode(), context);
-                }
-                return;
-            }
         }
 
         // if we get here, no optz cases work; fall back on unoptz.
@@ -3711,16 +3687,6 @@ public class ASTCompiler {
 
     public void compileSymbol(Node node, BodyCompiler context, boolean expr) {
         context.createNewSymbol(((SymbolNode) node).getName());
-        // TODO: don't require pop
-        if (!expr) context.consumeCurrentValue();
-    }    
-    
-    public void compileToAry(Node node, BodyCompiler context, boolean expr) {
-        ToAryNode toAryNode = (ToAryNode) node;
-
-        compile(toAryNode.getValue(), context,true);
-
-        context.aryToAry();
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }

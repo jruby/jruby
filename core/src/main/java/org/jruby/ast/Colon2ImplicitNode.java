@@ -30,12 +30,10 @@ package org.jruby.ast;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
-import org.jruby.RubyString;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 /**
  * Represents a bare class declaration (e.g. class Foo/module Foo).  This is slightly misnamed
@@ -53,25 +51,5 @@ public class Colon2ImplicitNode extends Colon2Node {
     @Override
     public RubyModule getEnclosingModule(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return context.getCurrentScope().getStaticScope().getModule();
-    }
-
-    /**
-     * This type of node will never get interpreted since it only gets created via class/module
-     * declaration time.  Those node types interact with this node in a different way.
-     */
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        assert false: "interpret cannot ever happen for Colon2ImplicitNode";
-        return null;
-    }
-
-    /**
-     * This type of node will never get created as part of a defined? call since it will then
-     * appear to be a ConstNode.
-     */
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        assert false: "definition should not ever happen for Colon2ImplicitNode";
-        return null;
     }
 }

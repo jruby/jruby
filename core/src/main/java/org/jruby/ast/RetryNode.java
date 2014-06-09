@@ -71,11 +71,4 @@ public class RetryNode extends Node implements NonLocalControlFlowNode {
     public List<Node> childNodes() {
         return EMPTY_LIST;
     }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        context.pollThreadEvents();
-   
-        throw JumpException.RETRY_JUMP;
-    }
 }

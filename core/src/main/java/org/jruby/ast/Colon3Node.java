@@ -56,8 +56,7 @@ import org.jruby.util.DefinedMessage;
  */
 public class Colon3Node extends Node implements INameNode {
     protected String name;
-    protected ConstantCache cache;
-    
+
     public Colon3Node(ISourcePosition position, String name) {
         super(position);
         this.name = name;
@@ -89,52 +88,10 @@ public class Colon3Node extends Node implements INameNode {
 
     public void setName(String name) {
         this.name = name;
-        this.cache = null;
     }
     
    /** Get parent module/class that this module represents */
     public RubyModule getEnclosingModule(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return runtime.getObject();
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject value = getValue(context);
-
-        // We can callsite cache const_missing if we want
-        return value != null ? value : runtime.getObject().getConstantFromConstMissing(name);
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        try {
-            RubyModule left = runtime.getObject();
-
-            return Helpers.getDefinedConstantOrBoundMethod(left, name);
-        } catch (JumpException excptn) {
-        }
-            
-        return null;
-    }
-
-    public IRubyObject getValue(ThreadContext context) {
-        ConstantCache cache = this.cache;
-
-        return ConstantCache.isCached(cache) ? cache.value : reCache(context, name);
-    }
-
-    public IRubyObject reCache(ThreadContext context, String name) {
-        Ruby runtime = context.runtime;
-        Invalidator invalidator = runtime.getConstantInvalidator(name);
-        Object newGeneration = invalidator.getData();
-        IRubyObject value = runtime.getObject().getConstantFromNoConstMissing(name, false);
-
-        if (value != null) {
-            cache = new ConstantCache(value, newGeneration, invalidator);
-        } else {
-            cache = null;
-        }
-
-        return value;
     }
 }

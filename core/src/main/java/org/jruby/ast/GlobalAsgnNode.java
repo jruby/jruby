@@ -78,15 +78,6 @@ public class GlobalAsgnNode extends AssignableNode implements INameNode {
     public List<Node> childNodes() {
         return createList(getValueNode());
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject result = getValueNode().interpret(runtime,context, self, aBlock);
-   
-        runtime.getGlobalVariables().set(name, result);
-   
-        return result;
-    }
 
     @Override
     public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {

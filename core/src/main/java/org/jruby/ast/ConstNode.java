@@ -52,8 +52,7 @@ import org.jruby.util.DefinedMessage;
  */
 public class ConstNode extends Node implements INameNode {
     private String name;
-    private ConstantCache cache;
-    
+
     public ConstNode(ISourcePosition position, String name) {
         super(position);
         this.name = name;
@@ -85,41 +84,5 @@ public class ConstNode extends Node implements INameNode {
     
     public void setName(String name) {
         this.name = name;
-        this.cache = null;
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject value = getValue(context);
-
-        // We can callsite cache const_missing if we want
-        return value != null ? value :
-            context.getCurrentScope().getStaticScope().getModule().callMethod(context, "const_missing", runtime.fastNewSymbol(name));
-    }
-
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return context.getCurrentStaticScope().isConstantDefined(name) ? runtime.getDefinedMessage(DefinedMessage.CONSTANT) : null;
-    }
-    
-    public IRubyObject getValue(ThreadContext context) {
-        ConstantCache cache = this.cache;
-
-        return ConstantCache.isCached(cache) ? cache.value : reCache(context, name);
-    }
-    
-    public IRubyObject reCache(ThreadContext context, String name) {
-        Invalidator invalidator = context.runtime.getConstantInvalidator(name);
-        Object newGeneration = invalidator.getData();
-        IRubyObject value = context.getCurrentStaticScope().getConstant(name);
-        this.name = name;
-        
-        if (value != null) {
-            cache = new ConstantCache(value, newGeneration, invalidator);
-        } else {
-            cache = null;
-        }
-        
-        return value;
     }
 }

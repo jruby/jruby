@@ -91,33 +91,4 @@ public class BackRefNode extends Node {
     public List<Node> childNodes() {
         return EMPTY_LIST;
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject backref = context.getBackRef();
-        
-        switch (type) {
-        case '&':
-            return RubyRegexp.last_match(backref);
-        case '`':
-            return RubyRegexp.match_pre(backref);
-        case '\'':
-            return RubyRegexp.match_post(backref);
-        case '+':
-            return RubyRegexp.match_last(backref);
-        default:
-            assert false: "backref with invalid type";
-            return null;
-        }        
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject backref = context.getBackRef();
-
-        if (backref instanceof RubyMatchData) {
-            return runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE);
-        }
-        return null;
-    }
 }

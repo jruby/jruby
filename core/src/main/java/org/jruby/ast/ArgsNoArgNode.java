@@ -41,9 +41,4 @@ public class ArgsNoArgNode extends ArgsNode {
     public ArgsNoArgNode(ISourcePosition position) {
         super(position, null, null, null, null, null);
     }
-
-    @Override
-    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args, Block block) {
-        // Do nothing
-    }
 }

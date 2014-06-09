@@ -90,33 +90,4 @@ public class OpAsgnOrNode extends Node implements BinaryOperatorNode {
     public List<Node> childNodes() {
         return Node.createList(firstNode, secondNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject result = runtime.getNil();
-
-        if (defined(runtime, context, firstNode, self, aBlock)) {
-            result = firstNode.interpret(runtime, context, self, aBlock);
-        }
-        if (!result.isTrue()) {
-            result = secondNode.interpret(runtime,context, self, aBlock);
-        }
-   
-        return ASTInterpreter.pollAndReturn(context, result);
-    }
-
-    private boolean defined(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        return node.definition(runtime, context, self, aBlock) != null;
-    }
-
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        try {
-            interpret(runtime, context, self, aBlock);
-            return runtime.getDefinedMessage(DefinedMessage.ASSIGNMENT);
-        } catch (JumpException jumpExcptn) {
-        }
-
-        return null;
-    }
 }

@@ -132,30 +132,4 @@ public class OpElementAsgnNode extends Node {
     public List<Node> childNodes() {
         return Node.createList(receiverNode, argsNode, valueNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
-        IRubyObject[] args = ASTInterpreter.setupArgs(runtime, context, argsNode, self, aBlock);
-        IRubyObject value = elementAdapter.call(context, self, receiver, args);
-        
-        if (isOr()) {
-            if (value.isTrue()) return value;
-
-            value = valueNode.interpret(runtime, context, self, aBlock);
-        } else if (isAnd()) {
-            if (!value.isTrue()) return value;
-
-            value = valueNode.interpret(runtime,context, self, aBlock);
-        } else {
-            value = callAdapter.call(context, self, value, valueNode.interpret(runtime,context, self, aBlock));
-        }
-   
-        IRubyObject[] expandedArgs = new IRubyObject[args.length + 1];
-        System.arraycopy(args, 0, expandedArgs, 0, args.length);
-        expandedArgs[expandedArgs.length - 1] = value;
-        elementAsgnAdapter.call(context, self, receiver, expandedArgs);
-        
-        return value;
-    }
 }

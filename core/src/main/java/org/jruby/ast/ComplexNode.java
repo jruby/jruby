@@ -22,8 +22,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class ComplexNode extends Node {
     private Node y;
-    RubyComplex complex = null;
-    
+
     public ComplexNode(ISourcePosition position, Node y) {
         super(position);
 
@@ -43,17 +42,5 @@ public class ComplexNode extends Node {
     @Override
     public NodeType getNodeType() {
         return NodeType.COMPLEXNODE;
-    }
-    
-    public RubyComplex getComplex(Ruby runtime, IRubyObject y) {
-        if (complex == null) {
-            return complex = RubyComplex.newComplexRaw(runtime, runtime.newFixnum(0), y);
-        }
-        return complex;        
-    }    
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return getComplex(runtime, y.interpret(runtime, context, self, aBlock));
     }
 }

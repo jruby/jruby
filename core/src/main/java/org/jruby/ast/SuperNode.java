@@ -53,7 +53,6 @@ import org.jruby.util.DefinedMessage;
 public class SuperNode extends Node implements BlockAcceptingNode {
     private final Node argsNode;
     private Node iterNode;
-    private final CallSite callSite;
 
     public SuperNode(ISourcePosition position, Node argsNode) {
         this(position, argsNode, null);
@@ -66,7 +65,6 @@ public class SuperNode extends Node implements BlockAcceptingNode {
         if (argsNode instanceof ArrayNode) {
             ((ArrayNode)argsNode).setLightweight(true);
         }
-        this.callSite = MethodIndex.getSuperCallSite();
     }
 
     public NodeType getNodeType() {
@@ -101,31 +99,5 @@ public class SuperNode extends Node implements BlockAcceptingNode {
         this.iterNode = iterNode;
         
         return this;
-    }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject[] args = ASTInterpreter.setupArgs(runtime, context, argsNode, self, aBlock);
-        Block block = ASTInterpreter.getBlock(runtime, context, self, aBlock, iterNode);
-        
-        // If no explicit block passed to super, then use the one passed in, unless it's explicitly cleared with nil
-        if (iterNode == null && !block.isGiven()) block = aBlock;
-
-        // dispatch as varargs, so incoming args are used to decide arity path
-        return callSite.callVarargs(context, self, self, args, block);
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        String name = context.getFrameName();
-        RubyModule klazz = context.getFrameKlazz();
-
-        if (name != null &&
-                klazz != null &&
-                Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass().isMethodBound(name, false)) {
-            return ASTInterpreter.getArgumentDefinition(runtime, context, argsNode, runtime.getDefinedMessage(DefinedMessage.SUPER), self, aBlock);
-        }
-            
-        return null;
     }
 }

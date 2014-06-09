@@ -104,12 +104,6 @@ public class DAsgnNode extends AssignableNode implements INameNode, IScopedNode 
     public void setName(String name) {
         this.name = name;
     }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return context.getCurrentScope().setValue(getIndex(), 
-                getValueNode().interpret(runtime, context, self, aBlock), getDepth());
-    }
     
     @Override
     public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {

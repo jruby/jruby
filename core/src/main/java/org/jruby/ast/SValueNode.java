@@ -68,9 +68,4 @@ public class SValueNode extends Node {
     public List<Node> childNodes() {
         return createList(node);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return Helpers.aValueSplat19(node.interpret(runtime, context, self, aBlock));
-    }
 }

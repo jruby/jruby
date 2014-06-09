@@ -110,14 +110,4 @@ public class SClassNode extends Node {
     public List<Node> childNodes() {
         return Node.createList(receiverNode, bodyNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
-
-        RubyClass singletonClass = Helpers.getSingletonClass(runtime, receiver);
-        scope.setModule(singletonClass);
-        
-        return ASTInterpreter.evalClassDefinitionBody(runtime, context, scope, bodyNode, singletonClass, self, aBlock);
-    }
 }

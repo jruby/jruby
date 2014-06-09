@@ -25,11 +25,4 @@ public class YieldTwoNode extends YieldNode {
         argument1 = args.get(0);
         argument2 = args.get(1);
     }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return context.getCurrentFrame().getBlock().yieldSpecific(context,
-                argument1.interpret(runtime, context, self, aBlock),
-                argument2.interpret(runtime, context, self, aBlock));
-    }
 }

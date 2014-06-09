@@ -90,22 +90,4 @@ public class NewlineNode extends Node {
     public List<Node> childNodes() {
         return createList(nextNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        ISourcePosition position = getPosition();
-        // something in here is used to build up ruby stack trace...
-        context.setLine(position.getLine());
-
-        if (runtime.hasEventHooks()) {
-            ASTInterpreter.callTraceFunction(runtime, context, RubyEvent.LINE);
-        }
-
-        // TODO: do above but not below for additional newline nodes
-        return nextNode.interpret(runtime, context, self, aBlock);
-    }
-
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return nextNode.definition(runtime, context, self, aBlock);
-    }
 }

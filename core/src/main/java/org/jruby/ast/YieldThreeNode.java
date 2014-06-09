@@ -27,12 +27,4 @@ public class YieldThreeNode extends YieldNode {
         argument2 = args.get(1);
         argument3 = args.get(2);
     }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return context.getCurrentFrame().getBlock().yieldSpecific(context,
-                argument1.interpret(runtime, context, self, aBlock),
-                argument2.interpret(runtime, context, self, aBlock),
-                argument3.interpret(runtime, context, self, aBlock));
-    }
 }

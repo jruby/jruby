@@ -89,17 +89,4 @@ public class Match2Node extends Node {
     public List<Node> childNodes() {
         return Node.createList(receiverNode, valueNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject recv = receiverNode.interpret(runtime, context, self, aBlock);
-        IRubyObject value = valueNode.interpret(runtime, context, self, aBlock);
-   
-        return ((RubyRegexp) recv).op_match19(context, value);
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.getDefinedMessage(DefinedMessage.METHOD);
-    }
 }

@@ -67,9 +67,4 @@ public class EncodingNode extends Node {
     public NodeType getNodeType() {
         return NodeType.ENCODINGNODE;
     }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.getEncodingService().getEncoding(encoding);
-    }
 }

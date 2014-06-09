@@ -50,7 +50,6 @@ import org.jruby.util.RegexpOptions;
  */
 public class DRegexpNode extends DNode implements ILiteralNode {
     private final RegexpOptions options;
-    private RubyRegexp onceRegexp;
 
     // 1.8 constructor
     public DRegexpNode(ISourcePosition position, RegexpOptions options) {
@@ -90,36 +89,5 @@ public class DRegexpNode extends DNode implements ILiteralNode {
      */
     public RegexpOptions getOptions() {
         return options;
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        if (getOnce() && onceRegexp != null) return onceRegexp;
-
-        RubyString string;
-        
-        string = buildDRegexpString19(runtime, context, self, aBlock);
-
-        RubyRegexp regexp = RubyRegexp.newDRegexp(runtime, string, options);
-        
-        if (getOnce() && onceRegexp == null) onceRegexp = regexp;
-
-        return regexp;
-    }
-
-    private RubyString buildDRegexpString19(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RubyString string = null;
-
-        int size = size();
-        RubyString[] strings = new RubyString[size];
-        for (int i = 0; i < size; i++) {
-            strings[i] = getString(runtime, context, self, aBlock, string, get(i));
-        }
-        
-        return RubyRegexp.preprocessDRegexp(runtime, strings, options);
-    }
-
-    public RubyString getString(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, RubyString string, Node node) {
-        return node.interpret(runtime, context, self, aBlock).convertToString();
     }
 }

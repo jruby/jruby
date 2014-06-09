@@ -22,13 +22,4 @@ public class Match2CaptureNode extends Match2Node {
     public int[] getScopeOffsets() {
         return scopeOffsets;
     }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject result = super.interpret(runtime, context, self, aBlock);
-
-        Helpers.updateScopeWithCaptures(context, scopeOffsets, result);
-
-        return result;
-    }
 }

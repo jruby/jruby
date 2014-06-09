@@ -51,13 +51,6 @@ public final class CallOneArgFixnumNode extends CallNode {
         assert args.size() == 1 : "args.size() is 1";
 
         arg1 = ((FixnumNode) args.get(0)).getValue();
-        callAdapter = MethodIndex.getCallSite(name);
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return callAdapter.call(context, self,
-                getReceiverNode().interpret(runtime, context, self, aBlock), arg1);
     }
     
     @Override

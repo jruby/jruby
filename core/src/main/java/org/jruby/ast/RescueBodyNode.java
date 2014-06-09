@@ -102,9 +102,4 @@ public class RescueBodyNode extends Node {
     	
     	return Node.createList(exceptionNodes, bodyNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return bodyNode.interpret(runtime, context, self, aBlock);
-    }
 }

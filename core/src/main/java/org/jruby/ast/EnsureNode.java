@@ -87,18 +87,4 @@ public class EnsureNode extends Node {
     public List<Node> childNodes() {
         return Node.createList(bodyNode, ensureNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        // save entering the try if there's nothing to ensure
-        if (ensureNode != null) {
-            try {
-                return bodyNode.interpret(runtime,context, self, aBlock);
-            } finally {
-                ensureNode.interpret(runtime,context, self, aBlock);
-            }
-        }
-
-        return bodyNode.interpret(runtime, context, self, aBlock);
-    }
 }

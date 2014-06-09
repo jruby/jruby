@@ -83,21 +83,4 @@ public class NthRefNode extends Node {
     public List<Node> childNodes() {
         return EMPTY_LIST;
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return RubyRegexp.nth_match(matchNumber, context.getBackRef());
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject backref = context.getBackRef();
-        if (backref instanceof RubyMatchData) {
-            if (!((RubyMatchData) backref).group(matchNumber).isNil()) {
-                return runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE);
-            }
-        }
-        
-        return null;
-    }
 }

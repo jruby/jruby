@@ -101,9 +101,4 @@ public class BlockPassNode extends Node {
     public List<Node> childNodes() {
         return Node.createList(argsNode, bodyNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block block) {
-        return bodyNode == null ? runtime.getNil() : bodyNode.interpret(runtime, context, self, block);
-    }
 }

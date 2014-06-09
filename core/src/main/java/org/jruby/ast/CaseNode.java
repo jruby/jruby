@@ -101,40 +101,9 @@ public class CaseNode extends Node {
     public Node getElseNode() {
         return elseNode;
     }
-
-    /**
-     * Gets the first whenNode.
-	 * the body of the case statement, the first of a list of WhenNodes
-     * @return whenNode
-     */
-    @Deprecated
-    public Node getFirstWhenNode() {
-        return cases;
-    }
     
     public List<Node> childNodes() {
         return Node.createList(caseNode, cases);
     }
 
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject expression = caseNode == null ? null : caseNode.interpret(runtime, context, self, aBlock);
-
-        context.pollThreadEvents();
-
-        for (int i = 0; i < cases.size(); i++) {
-            Node child = cases.get(i);
-            WhenNode when = (WhenNode) child;
-            ISourcePosition position = child.getPosition();
-
-            context.setFileAndLine(position.getFile(), position.getStartLine());
-
-            if (runtime.hasEventHooks()) ASTInterpreter.callTraceFunction(runtime, context, RubyEvent.LINE);
-            IRubyObject result = when.when(expression, context, runtime, self, aBlock);
-            if (result != null) return result;
-            context.pollThreadEvents();
-        }
-
-        return elseNode != null ? elseNode.interpret(runtime, context, self, aBlock) : runtime.getNil();
-    }
 }

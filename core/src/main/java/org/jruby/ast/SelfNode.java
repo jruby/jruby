@@ -75,14 +75,4 @@ public class SelfNode extends Node implements INameNode {
     public List<Node> childNodes() {
         return EMPTY_LIST;
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return ASTInterpreter.pollAndReturn(context, self);
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.getDefinedMessage(DefinedMessage.SELF);
-    }
 }

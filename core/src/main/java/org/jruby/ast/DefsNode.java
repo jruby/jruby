@@ -94,26 +94,4 @@ public class DefsNode extends MethodDefNode implements INameNode {
     public List<Node> childNodes() {
         return Node.createList(receiverNode, nameNode, argsNode, bodyNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = receiverNode.interpret(runtime,context, self, aBlock);
-        String name = getName();
-
-        RubyClass rubyClass = Helpers.performSingletonMethodChecks(runtime, receiver, name);
-
-        scope.determineModule();
-      
-        // Make a nil node if no body.  Notice this is not part of AST.
-        Node body = bodyNode == null ? new NilNode(getPosition()) : bodyNode;
-        
-        DynamicMethod newMethod = DynamicMethodFactory.newDefaultMethod(
-                runtime, rubyClass, name, scope, body, argsNode,
-                Visibility.PUBLIC, getPosition());
-   
-        rubyClass.addMethod(name, newMethod);
-        receiver.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
-   
-        return runtime.newSymbol(name);
-    }
 }

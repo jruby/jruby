@@ -68,9 +68,4 @@ public class SplatNode extends Node {
     public List<Node> childNodes() {
         return createList(node);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return Helpers.splatValue19(node.interpret(runtime, context, self, aBlock));
-    }
 }

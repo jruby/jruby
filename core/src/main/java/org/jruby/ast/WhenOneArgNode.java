@@ -20,35 +20,4 @@ public class WhenOneArgNode extends WhenNode {
     public WhenOneArgNode(ISourcePosition position, Node expressionNode, Node bodyNode, Node nextCase) {
         super(position, expressionNode, bodyNode, nextCase);
     }
-
-    // FIXME: Can get optimized for IEqlNode
-    private IRubyObject whenNoTest(ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        if (expressionNodes.interpret(runtime, context, self, aBlock).isTrue()) {
-            return bodyNode.interpret(runtime, context, self, aBlock);
-        }
-
-        return null;
-    }
-
-    private IRubyObject whenSlowTest(IRubyObject test, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        IRubyObject expression = expressionNodes.interpret(runtime, context, self, aBlock);
-        if (eqq.call(context, self, expression, test).isTrue()) {
-                return bodyNode.interpret(runtime, context, self, aBlock);
-        }
-
-        return null;
-    }
-
-    @Override
-    public IRubyObject when(IRubyObject test, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        // No actual test, so do 'when' if when expression is not nil
-        if (test == null) return whenNoTest(context, runtime, self, aBlock);
-        if (!(expressionNodes instanceof IEqlNode)) return whenSlowTest(test, context, runtime, self, aBlock);
-
-        if (((IEqlNode) expressionNodes).eql(test, context, runtime, self, aBlock)) {
-            return bodyNode.interpret(runtime, context, self, aBlock);
-        }
-
-        return null;
-    }
 }

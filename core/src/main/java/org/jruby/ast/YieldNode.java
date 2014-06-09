@@ -106,22 +106,4 @@ public class YieldNode extends Node {
     public List<Node> childNodes() {
         return createList(argsNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject argsResult = argsNode.interpret(runtime, context, self, aBlock);
-        
-        if (expandedArguments) {
-            if (argsNode instanceof SplatNode) argsResult = Helpers.unsplatValue19(argsResult);
-
-            return context.getCurrentFrame().getBlock().yieldArray(context, argsResult, null, null);
-        } 
-
-        return context.getCurrentFrame().getBlock().yield(context, argsResult);
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return aBlock.isGiven() ? runtime.getDefinedMessage(DefinedMessage.YIELD) : null;
-    }
 }

@@ -7,9 +7,13 @@ import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFloat;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
+import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRClosure;
@@ -692,5 +696,43 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     private static void methodPostTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
         if (runtime.hasEventHooks()) context.trace(RubyEvent.RETURN, name, implClass);
+    }
+
+    /**
+     * Evaluate the given string.
+     * @param context the current thread's context
+     * @param self the self to evaluate under
+     * @param src The string containing the text to be evaluated
+     * @param file The filename to use when reporting errors during the evaluation
+     * @param lineNumber that the eval supposedly starts from
+     * @return An IRubyObject result from the evaluation
+     */
+    public static IRubyObject evalSimple(ThreadContext context, IRubyObject self, RubyString src, String file, int lineNumber) {
+        // this is ensured by the caller
+        assert file != null;
+
+        Ruby runtime = src.getRuntime();
+
+        // no binding, just eval in "current" frame (caller's frame)
+        RubyString source = src.convertToString();
+
+        DynamicScope evalScope = context.getCurrentScope().getEvalScope(runtime);
+        evalScope.getStaticScope().determineModule();
+
+        try {
+            Node node = runtime.parseEval(source.getByteList(), file, evalScope, lineNumber);
+
+            if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) {
+                throw new UnsupportedOperationException();
+            }
+
+            // SSS FIXME: AST interpreter passed both a runtime (which comes from the source string)
+            // and the thread-context rather than fetch one from the other.  Why is that?
+            return Interpreter.interpretSimpleEval(runtime, file, lineNumber, "(eval)", node, self);
+        } catch (JumpException.BreakJump bj) {
+            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
+        } catch (StackOverflowError soe) {
+            throw runtime.newSystemStackError("stack level too deep", soe);
+        }
     }
 }

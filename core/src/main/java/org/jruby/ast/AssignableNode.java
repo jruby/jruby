@@ -81,9 +81,4 @@ public abstract class AssignableNode extends Node implements IArityNode {
     public Arity getArity() {
         return Arity.singleArgument();
     }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.getDefinedMessage(DefinedMessage.ASSIGNMENT);
-    }
 }

@@ -112,29 +112,6 @@ public class MultipleAsgnNode extends AssignableNode {
     }
     
     @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        switch (getValueNode().getNodeType()) {
-        case ARRAYNODE: {
-            ArrayNode iVisited2 = (ArrayNode) getValueNode();
-            return ASTInterpreter.multipleAsgnArrayNode(runtime, context, this, iVisited2, self, aBlock);
-        }
-        case SPLATNODE: {
-            SplatNode splatNode = (SplatNode) getValueNode();
-            RubyArray rubyArray = (RubyArray) splatNode.interpret(runtime, context, self, aBlock);
-            return AssignmentVisitor.multiAssign(runtime, context, self, this, rubyArray, false);
-        }
-        default:
-            IRubyObject value = getValueNode().interpret(runtime, context, self, aBlock);
-
-            if (!(value instanceof RubyArray)) {
-                value = RubyArray.newArray(runtime, value);
-            }
-            
-            return AssignmentVisitor.multiAssign(runtime, context, self, this, (RubyArray)value, false);
-        }
-    }
-    
-    @Override
     public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
         if (!(value instanceof RubyArray)) {
             value = ArgsUtil.convertToRubyArray(runtime, value, pre != null);

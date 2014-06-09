@@ -84,12 +84,4 @@ public class AliasNode extends Node {
     public List<Node> childNodes() {
         return Node.createList(newName, oldName);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        String newerName = Helpers.interpretAliasUndefName(newName, runtime, context, self, aBlock);
-        String olderName = Helpers.interpretAliasUndefName(oldName, runtime, context, self, aBlock);
-
-        return Helpers.defineAlias(context, self, newerName, olderName);
-    }
 }

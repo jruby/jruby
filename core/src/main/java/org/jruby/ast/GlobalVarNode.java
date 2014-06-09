@@ -78,14 +78,4 @@ public class GlobalVarNode extends Node implements INameNode {
     public List<Node> childNodes() {
         return EMPTY_LIST;
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.getGlobalVariables().get(name);
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.getGlobalVariables().isDefined(name) ? runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE) : null;
-    }
 }

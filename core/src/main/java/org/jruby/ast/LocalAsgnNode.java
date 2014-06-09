@@ -114,15 +114,6 @@ public class LocalAsgnNode extends AssignableNode implements INameNode, IScopedN
     public List<Node> childNodes() {
         return createList(getValueNode());
     }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        // ignore compiler pragmas
-        if (location == 0xFFFFFFFF) return runtime.getNil();
-        
-        return context.getCurrentScope().setValue(getIndex(),
-                getValueNode().interpret(runtime,context, self, aBlock), getDepth());
-    }
     
     @Override
     public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {

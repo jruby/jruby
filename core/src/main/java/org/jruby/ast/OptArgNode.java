@@ -57,11 +57,6 @@ public class OptArgNode extends Node implements INameNode {
     }
 
     @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return value.interpret(runtime, context, self, aBlock);
-    }
-
-    @Override
     public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject assignValue, Block block, boolean checkArity) {
         return value.assign(runtime, context, self, assignValue, block, checkArity);
     }

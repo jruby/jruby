@@ -440,11 +440,11 @@ public final class Ruby {
      */
     public IRubyObject evalScriptlet(String script, DynamicScope scope) {
         ThreadContext context = getCurrentContext();
-        Node node = parseEval(script, "<script>", scope, 0);
+        Node rootNode = parseEval(script, "<script>", scope, 0);
 
         try {
             context.preEvalScriptlet(scope);
-            return ASTInterpreter.INTERPRET_ROOT(this, context, node, context.getFrameSelf(), Block.NULL_BLOCK);
+            return Interpreter.getInstance().execute(this, rootNode, context.getFrameSelf());
         } catch (JumpException.ReturnJump rj) {
             throw newLocalJumpError(RubyLocalJumpError.Reason.RETURN, (IRubyObject)rj.getValue(), "unexpected return");
         } catch (JumpException.BreakJump bj) {

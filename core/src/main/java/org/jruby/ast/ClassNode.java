@@ -115,28 +115,4 @@ public class ClassNode extends Node implements IScopingNode {
     public List<Node> childNodes() {
         return Node.createList(cpath, bodyNode, superNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RubyModule enclosingClass = cpath.getEnclosingModule(runtime, context, self, aBlock);
-
-        // TODO: Figure out how this can happen and possibly remove
-        if (enclosingClass == null) throw runtime.newTypeError("no outer class/module");
-
-        RubyClass superClass = null;
-
-        if (superNode != null) {
-            IRubyObject superObj = superNode.interpret(runtime, context, self, aBlock);
-            RubyClass.checkInheritable(superObj);
-            superClass = (RubyClass)superObj;
-        }
-        
-        RubyClass clazz = enclosingClass.defineOrGetClassUnder(cpath.getName(), superClass);
-
-        scope.setModule(clazz);
-
-        IRubyObject classBodyResult = ASTInterpreter.evalClassDefinitionBody(runtime, context, scope, bodyNode, clazz, self, aBlock);
-
-        return classBodyResult;
-    }
 }

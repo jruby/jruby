@@ -75,10 +75,4 @@ public class MatchNode extends Node {
     public List<Node> childNodes() {
         return createList(regexpNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-       RubyRegexp pattern = ((RubyRegexp) regexpNode.interpret(runtime, context, self, aBlock));
-        return pattern.op_match2_19(context);
-    }
 }

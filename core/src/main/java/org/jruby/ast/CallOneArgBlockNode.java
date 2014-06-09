@@ -52,13 +52,4 @@ public final class CallOneArgBlockNode extends CallNode {
         
         arg1 = args.get(0);        
     }
-        
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
-            
-        return callAdapter.callIter(context, self, receiver,
-                arg1.interpret(runtime, context, self, aBlock),
-                Helpers.getBlock(context, self, iterNode));
-    }
 }

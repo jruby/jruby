@@ -56,15 +56,4 @@ public final class CallThreeArgBlockNode extends CallNode {
         arg2 = args.get(1);
         arg3 = args.get(2);
     }
-        
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
-            
-        return callAdapter.callIter(context, self, receiver,
-                arg1.interpret(runtime, context, self, aBlock),
-                arg2.interpret(runtime, context, self, aBlock),
-                arg3.interpret(runtime, context, self, aBlock),
-                Helpers.getBlock(context, self, iterNode));
-    }
 }

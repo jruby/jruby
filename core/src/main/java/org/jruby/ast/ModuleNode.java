@@ -104,19 +104,4 @@ public class ModuleNode extends Node implements IScopingNode {
     public List<Node> childNodes() {
         return Node.createList(cpath, bodyNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RubyModule enclosingModule = cpath.getEnclosingModule(runtime, context, self, aBlock);
-
-        if (enclosingModule == null) throw runtime.newTypeError("no outer class/module");
-
-        String name = cpath.getName();        
-
-        RubyModule module = enclosingModule.defineOrGetModuleUnder(name);
-
-        scope.setModule(module);        
-
-        return ASTInterpreter.evalClassDefinitionBody(runtime, context, scope, bodyNode, module, self, aBlock);
-    }
 }

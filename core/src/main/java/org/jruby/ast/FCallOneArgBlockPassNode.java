@@ -26,11 +26,4 @@ public class FCallOneArgBlockPassNode extends FCallNode {
         
         arg1 = args.get(0);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return callAdapter.call(context, self, self,
-                arg1.interpret(runtime, context, self, aBlock),
-                Helpers.getBlock(runtime, context, self, iterNode, aBlock));
-    }
 }

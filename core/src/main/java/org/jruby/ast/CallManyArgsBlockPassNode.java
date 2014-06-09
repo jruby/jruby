@@ -47,13 +47,4 @@ public final class CallManyArgsBlockPassNode extends CallNode {
     public CallManyArgsBlockPassNode(ISourcePosition position, Node receiverNode, String name, Node args, BlockPassNode iter) {
         super(position, receiverNode, name, args, iter);
     }
-        
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
-        IRubyObject[] args = ((ArrayNode) getArgsNode()).interpretPrimitive(runtime, context, self, aBlock);
-        Block block = Helpers.getBlock(runtime, context, self, iterNode, aBlock);
-        
-        return callAdapter.call(context, self, receiver, args, block);
-    }
 }

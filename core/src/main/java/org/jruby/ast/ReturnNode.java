@@ -45,7 +45,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class ReturnNode extends Node implements NonLocalControlFlowNode {
     private final Node valueNode;
-    private Object target;
 
     public ReturnNode(ISourcePosition position, Node valueNode) {
         super(position);
@@ -74,21 +73,8 @@ public class ReturnNode extends Node implements NonLocalControlFlowNode {
     public boolean hasValue() {
         return valueNode != NilImplicitNode.NIL;
     }
-
-    public Object getTarget() {
-        return target;
-    }
-
-    public void setTarget(Object target) {
-        this.target = target;
-    }
     
     public List<Node> childNodes() {
         return createList(valueNode);
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        throw context.returnJump(valueNode.interpret(runtime, context, self, aBlock));
     }
 }

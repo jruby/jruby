@@ -49,7 +49,7 @@ import org.jruby.util.DefinedMessage;
 /**
  * represents 'nil'
  */
-public class NilNode extends Node implements INameNode, IEqlNode {
+public class NilNode extends Node implements INameNode {
     public NilNode(ISourcePosition position) {
         super(position);
     }
@@ -75,20 +75,6 @@ public class NilNode extends Node implements INameNode, IEqlNode {
     
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return ASTInterpreter.pollAndReturn(context, runtime.getNil());
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.getDefinedMessage(DefinedMessage.NIL);
-    }
-
-    public boolean eql(IRubyObject otherValue, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        return otherValue == interpret(runtime, context, self, aBlock);
     }
 
     public boolean isNil() {

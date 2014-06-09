@@ -54,11 +54,9 @@ import org.jruby.util.DefinedMessage;
  */
 public class ZSuperNode extends Node implements IArityNode, BlockAcceptingNode {
     private Node iterNode;
-    private CallSite callSite;
 
     public ZSuperNode(ISourcePosition position) {
         super(position);
-        this.callSite = MethodIndex.getSuperCallSite();
     }
 
     public NodeType getNodeType() {
@@ -92,28 +90,5 @@ public class ZSuperNode extends Node implements IArityNode, BlockAcceptingNode {
         this.iterNode = iterNode;
         
         return this;
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        Block block = ASTInterpreter.getBlock(runtime, context, self, aBlock, iterNode);
-        if (block == null || !block.isGiven()) block = context.getFrameBlock();
-
-        // dispatch as varargs, so incoming args are used to decide arity path
-        return callSite.callVarargs(context, self, self, context.getCurrentScope().getArgValues(), block);
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        String name = context.getFrameName();
-        RubyModule klazz = context.getFrameKlazz();
-
-        if (name != null &&
-                klazz != null &&
-                Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass().isMethodBound(name, false)) {
-            return runtime.getDefinedMessage(DefinedMessage.SUPER);
-        }
-
-        return null;
     }
 }

@@ -228,14 +228,14 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
     }
 
     /**
-     * @see Helpers#restructureBlockArgs19(IRubyObject, boolean, boolean)
+     * @see Helpers#restructureBlockArgs19(org.jruby.runtime.builtin.IRubyObject, Arity, org.jruby.runtime.Block.Type, boolean, boolean)
      */
     private void setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type, boolean alreadyArray) {
         IRubyObject[] parameters = Helpers.restructureBlockArgs19(value, arity(), type, needsSplat, alreadyArray);
 
         Ruby runtime = context.runtime;
         if (type == Block.Type.LAMBDA) args.checkArgCount(runtime, parameters.length);
-        if (!(args instanceof ArgsNoArgNode)) args.prepare(context, runtime, self, parameters, block);
+//        if (!(args instanceof ArgsNoArgNode)) args.prepare(context, runtime, self, parameters, block);
     }
 
     public ArgsNode getArgs() {

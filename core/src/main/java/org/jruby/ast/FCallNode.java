@@ -127,26 +127,4 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     public List<Node> childNodes() {
         return createList(argsNode, iterNode);
     }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        assert false : "Should not happen anymore";
-
-        return null;
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        if (self.getMetaClass().isMethodBound(getName(), false)) {
-            return ASTInterpreter.getArgumentDefinition(
-                    runtime,
-                    context,
-                    getArgsNode(),
-                    runtime.getDefinedMessage(DefinedMessage.METHOD),
-                    self,
-                    aBlock);
-        }
-            
-        return null;
-    }
 }

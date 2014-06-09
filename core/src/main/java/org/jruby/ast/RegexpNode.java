@@ -49,7 +49,6 @@ import org.jruby.util.RegexpOptions;
  * Represents a simple regular expression literal.
  */
 public class RegexpNode extends Node implements ILiteralNode {
-    private RubyRegexp pattern;
     private final ByteList value;
     private final RegexpOptions options;
 
@@ -86,31 +85,8 @@ public class RegexpNode extends Node implements ILiteralNode {
     public ByteList getValue() {
         return value;
     }
-
-    public RubyRegexp loadPattern(Ruby runtime) {
-        // FIXME: 1.9 should care about internal or external encoding and not kcode.
-        if (pattern == null || runtime.getKCode() != pattern.getKCode()) {
-            setPattern(RubyRegexp.newRegexp(runtime, value, options));
-        }
-
-        return pattern;
-    }
-
-    public void setPattern(RubyRegexp p) {
-        this.pattern = p;
-        this.pattern.setLiteral();
-    }
-
-    public RubyRegexp getPattern() {
-        return pattern;
-    }
     
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return loadPattern(runtime);
     }
 }

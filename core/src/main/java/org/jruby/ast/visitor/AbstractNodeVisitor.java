@@ -515,11 +515,6 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
-    public T visitToAryNode(ToAryNode node) {
-        return defaultVisit(node);
-    }
-
-    @Override
     public T visitTrueNode(TrueNode node) {
         return defaultVisit(node);
     }

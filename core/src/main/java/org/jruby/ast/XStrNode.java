@@ -78,9 +78,4 @@ public class XStrNode extends Node implements ILiteralNode {
     public List<Node> childNodes() {
         return EMPTY_LIST;
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return self.callMethod(context, "`", RubyString.newStringShared(runtime, value));
-    }
 }

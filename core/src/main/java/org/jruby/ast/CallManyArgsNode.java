@@ -50,12 +50,4 @@ public final class CallManyArgsNode extends CallNode {
     public Node setIterNode(Node iterNode) {
         return new CallManyArgsBlockNode(getPosition(), getReceiverNode(), getName(), getArgsNode(), (IterNode) iterNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
-        IRubyObject[] args = ((ArrayNode) getArgsNode()).interpretPrimitive(runtime, context, self, aBlock);
-        
-        return callAdapter.call(context, self, receiver, args);
-    }
 }

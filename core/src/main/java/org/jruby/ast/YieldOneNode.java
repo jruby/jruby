@@ -23,16 +23,4 @@ public class YieldOneNode extends YieldNode {
 
         argument1 = args.get(0);
     }
-
-    public YieldOneNode(ISourcePosition position, FixnumNode arg) {
-        super(position, arg, true);
-
-        argument1 = arg;
-    }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return context.getCurrentFrame().getBlock().yieldSpecific(context,
-                argument1.interpret(runtime, context, self, aBlock));
-    }
 }

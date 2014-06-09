@@ -61,31 +61,7 @@ public final class CallNoArgNode extends CallNode {
     }
     
     @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        if (literalStringFreeze) {
-            if (literalFrozenString != null) return literalFrozenString;
-
-            return literalFrozenString = runtime.freezeAndDedupString((RubyString) getReceiverNode().interpret(runtime, context, self, aBlock));
-        }
-
-        return callAdapter.call(context, self, getReceiverNode().interpret(runtime, context, self, aBlock));
-    }
-    
-    @Override
     public Node setIterNode(Node iterNode) {
         return new CallNoArgBlockNode(getPosition(), getReceiverNode(), getName(), getArgsNode(), (IterNode) iterNode);
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        if (getReceiverNode().definition(runtime, context, self, aBlock) != null) {
-            try {
-                IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
-                return Helpers.getDefinedCall(context, self, receiver, getName());
-            } catch (JumpException je) {
-            }
-        }
-
-        return null;
     }
 }

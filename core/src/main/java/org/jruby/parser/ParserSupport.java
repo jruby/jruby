@@ -1443,7 +1443,9 @@ public class ParserSupport {
         RubyRegexp.preprocessCheck(configuration.getRuntime(), value);
     }        // 1.9 mode overrides to do extra checking...
     private List<Integer> allocateNamedLocals(RegexpNode regexpNode) {
-        String[] names = regexpNode.loadPattern(configuration.getRuntime()).getNames();
+        RubyRegexp pattern = RubyRegexp.newRegexp(configuration.getRuntime(), regexpNode.getValue(), regexpNode.getOptions());
+        pattern.setLiteral();
+        String[] names = pattern.getNames();
         int length = names.length;
         List<Integer> locals = new ArrayList<Integer>();
         StaticScope scope = getCurrentScope();

@@ -46,9 +46,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 /** 
  * Represents an integer literal.
  */
-public class FixnumNode extends Node implements ILiteralNode, IEqlNode {
+public class FixnumNode extends Node implements ILiteralNode {
     private long value;
-    private RubyFixnum fixnum;
 
     public FixnumNode(ISourcePosition position, long value) {
         super(position);
@@ -70,34 +69,12 @@ public class FixnumNode extends Node implements ILiteralNode, IEqlNode {
     public long getValue() {
         return value;
     }
-    
+
     public void setValue(long value) {
-        // This should never happen past parse, but just bulletproof this just in case
-        if (fixnum != null) {
-            fixnum = null;
-        }
         this.value = value;
     }
-    
-    public RubyFixnum getFixnum(Ruby runtime) {
-        if (fixnum == null) {
-            return fixnum = RubyFixnum.newFixnum(runtime, value);
-        }
-        return fixnum;
-    }
-    
+
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return getFixnum(runtime);
-    }
-    
-    public boolean eql(IRubyObject otherValue, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        if (otherValue instanceof RubyFixnum) return value == ((RubyFixnum)otherValue).getLongValue();
-
-        return getFixnum(runtime).op_equal(context, otherValue).isTrue();
     }
 }

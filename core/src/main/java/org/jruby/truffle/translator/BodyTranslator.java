@@ -1645,13 +1645,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitRegexpNode(org.jruby.ast.RegexpNode node) {
-        Regex regex;
-
-        if (node.getPattern() != null) {
-            regex = node.getPattern().getPattern();
-        } else {
-            regex = RubyRegexp.compile(context, node.getValue().bytes(), node.getEncoding(), node.getOptions().toOptions());
-        }
+        Regex regex = RubyRegexp.compile(context, node.getValue().bytes(), node.getEncoding(), node.getOptions().toOptions());
 
         final RubyRegexp regexp = new RubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, node.getValue().toString());
         final ObjectLiteralNode literalNode = new ObjectLiteralNode(context, translate(node.getPosition()), regexp);

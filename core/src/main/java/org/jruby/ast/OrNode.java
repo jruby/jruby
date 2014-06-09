@@ -91,20 +91,4 @@ public class OrNode extends Node implements BinaryOperatorNode {
     public List<Node> childNodes() {
         return Node.createList(firstNode, secondNode);
     }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject result = firstNode.interpret(runtime, context, self, aBlock);
-   
-        if (!result.isTrue()) {
-            result = secondNode.interpret(runtime,context, self, aBlock);
-        }
-   
-        return result;    
-    }
-
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.getDefinedMessage(DefinedMessage.EXPRESSION);
-    }
 }

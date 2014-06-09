@@ -61,16 +61,4 @@ public class BlockNode extends ListNode {
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitBlockNode(this);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject result = runtime.getNil();
-        int size = size();
-        
-        for (int i = 0; i < size; i++) {
-            result = get(i).interpret(runtime,context, self, aBlock);
-        }
-   
-        return result;
-    }
 }

@@ -66,10 +66,4 @@ public class ZArrayNode extends Node implements ILiteralNode {
     public List<Node> childNodes() {
         return EMPTY_LIST;
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.newArray();
-    }
-
 }

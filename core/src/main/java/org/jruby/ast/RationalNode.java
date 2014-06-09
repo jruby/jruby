@@ -21,8 +21,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RationalNode extends Node {
     long numerator;
-    RubyRational rational;
-    
+
     public RationalNode(ISourcePosition position, long numerator) {
         super(position);
         
@@ -43,16 +42,4 @@ public class RationalNode extends Node {
     public NodeType getNodeType() {
         return NodeType.RATIONALNODE;
     }
-    
-    public RubyRational getRational(Ruby runtime) {
-        if (rational == null) {
-            return rational = runtime.newRational(numerator, 1);
-        }
-        return rational;        
-    }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return getRational(runtime);
-    } 
 }

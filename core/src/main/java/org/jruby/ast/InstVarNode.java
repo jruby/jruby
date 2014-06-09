@@ -95,41 +95,4 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
     public void setName(String name){
         this.name = name;
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return getVariable(runtime, self, true);
-    }
-
-    private IRubyObject getVariable(Ruby runtime, IRubyObject self, boolean warn) {
-        IRubyObject value = getValue(runtime, self);
-        if (value != null) return value;
-        if (warn && runtime.isVerbose()) warnAboutUninitializedIvar(runtime);
-        return runtime.getNil();
-    }
-
-    private IRubyObject getValue(Ruby runtime, IRubyObject self) {
-        RubyClass cls = self.getMetaClass().getRealClass();
-        VariableAccessor localAccessor = accessor;
-        IRubyObject value;
-        if (localAccessor.getClassId() != cls.hashCode()) {
-            localAccessor = cls.getVariableAccessorForRead(name);
-            if (localAccessor == null) return runtime.getNil();
-            value = (IRubyObject)localAccessor.get(self);
-            accessor = localAccessor;
-        } else {
-            value = (IRubyObject)localAccessor.get(self);
-        }
-        return value;
-    }
-
-    private void warnAboutUninitializedIvar(Ruby runtime) {
-        runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, getPosition(), 
-                "instance variable " + name + " not initialized");
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return getValue(runtime, self) == null ? null : runtime.getDefinedMessage(DefinedMessage.INSTANCE_VARIABLE);
-    }
 }

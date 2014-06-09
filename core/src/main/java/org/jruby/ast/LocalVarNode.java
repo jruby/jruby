@@ -59,9 +59,6 @@ public class LocalVarNode extends Node implements INameNode, IScopedNode {
         super(position);
         this.location = location;
         this.name = name;
-        long blah;
-        
-        blah = System.currentTimeMillis();
     }
 
     public NodeType getNodeType() {
@@ -114,18 +111,5 @@ public class LocalVarNode extends Node implements INameNode, IScopedNode {
     
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        //        System.out.println("DGetting: " + iVisited.getName() + " at index " + iVisited.getIndex() + " and at depth " + iVisited.getDepth());
-        IRubyObject result = context.getCurrentScope().getValue(getIndex(), getDepth());
-
-        return result == null ? runtime.getNil() : result;
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.getDefinedMessage(DefinedMessage.LOCAL_VARIABLE);
     }
 }

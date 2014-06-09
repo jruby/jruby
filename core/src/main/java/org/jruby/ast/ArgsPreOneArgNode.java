@@ -41,31 +41,4 @@ public class ArgsPreOneArgNode extends ArgsNode {
         super(position, pre, null, null, null, null);
     }
 
-    @Override
-    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args, Block block) {
-        super.prepare(context, runtime, self, args, block);
-    }
-
-    @Override
-    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0, Block block) {
-        context.getCurrentScope().setArgValues(arg0);
-    }
-
-    @Override
-    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0,
-            IRubyObject arg1, Block block) {
-        throw runtime.newArgumentError(2, 1);
-    }
-
-    @Override
-    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0,
-            IRubyObject arg1, IRubyObject arg2, Block block) {
-        throw runtime.newArgumentError(3, 1);
-    }
-
-    @Override
-    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0,
-            IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-        throw runtime.newArgumentError(4, 1);
-    }
 }

@@ -53,11 +53,4 @@ public class PreExe19Node extends PreExeNode {
     public <T> T accept(NodeVisitor<T> iVisitor) {
         return iVisitor.visitPreExeNode(this);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        getBodyNode().interpret(runtime, context, self, aBlock);
-        
-        return runtime.getNil();
-    }
 }

@@ -111,19 +111,4 @@ public class DVarNode extends Node implements INameNode, IScopedNode {
     public List<Node> childNodes() {
         return EMPTY_LIST;
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        // System.out.println("DGetting: " + iVisited.getName() + " at index " + iVisited.getIndex() + " and at depth " + iVisited.getDepth());
-        IRubyObject obj = context.getCurrentScope().getValue(getIndex(), getDepth());
-
-        // FIXME: null check is removable once we figure out how to assign to unset named block args
-        return obj == null ? runtime.getNil() : obj;
-    }
-
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RubyString definition = runtime.getDefinedMessage(DefinedMessage.LOCAL_VARIABLE);
-        return definition;
-    }
 }

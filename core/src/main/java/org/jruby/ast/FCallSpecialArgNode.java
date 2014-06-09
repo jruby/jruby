@@ -24,28 +24,4 @@ public class FCallSpecialArgNode extends FCallNode implements SpecialArgs {
     public Node setIterNode(Node iterNode) {
         return new FCallSpecialArgBlockNode(getPosition(), getName(), getArgsNode(), (IterNode) iterNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject arg = getArgsNode().interpret(runtime, context, self, aBlock);
-        
-        if (arg instanceof RubyArray) {
-            RubyArray nodes = (RubyArray) arg;
-            
-            switch (nodes.size()) {
-                case 0:
-                    return callAdapter.call(context, self, self);
-                case 1:
-                    return callAdapter.call(context, self, self, nodes.eltInternal(0));
-                case 2:
-                    return callAdapter.call(context, self, self, nodes.eltInternal(0), nodes.eltInternal(1));
-                case 3:
-                    return callAdapter.call(context, self, self, nodes.eltInternal(0), nodes.eltInternal(1), nodes.eltInternal(2));
-                default:
-                    return callAdapter.call(context, self, self, nodes.toJavaArrayMaybeUnsafe());
-            }
-        }
-        
-        return callAdapter.call(context, self, self, arg);
-    }
 }

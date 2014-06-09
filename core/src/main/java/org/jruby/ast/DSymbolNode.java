@@ -67,10 +67,4 @@ public class DSymbolNode extends DNode {
     public Object accept(NodeVisitor visitor) {
         return visitor.visitDSymbolNode(this);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RubyString str = (RubyString)super.interpret(runtime, context, self, aBlock);
-        return str.intern19();
-    }
 }

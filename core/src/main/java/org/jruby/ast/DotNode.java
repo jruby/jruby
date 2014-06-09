@@ -114,12 +114,4 @@ public class DotNode extends Node {
     public List<Node> childNodes() {
         return Node.createList(beginNode, endNode);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return RubyRange.newRange(runtime, context,
-                beginNode.interpret(runtime,context, self, aBlock), 
-                endNode.interpret(runtime,context, self, aBlock), 
-                exclusive);
-    }
 }

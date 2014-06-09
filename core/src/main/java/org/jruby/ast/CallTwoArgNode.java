@@ -53,13 +53,6 @@ public final class CallTwoArgNode extends CallNode {
         arg1 = args.get(0);
         arg2 = args.get(1);
     }
-        
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return callAdapter.call(context, self, getReceiverNode().interpret(runtime, context, self, aBlock),
-                arg1.interpret(runtime, context, self, aBlock),
-                arg2.interpret(runtime, context, self, aBlock));
-    }
     
     @Override
     public Node setIterNode(Node iterNode) {
