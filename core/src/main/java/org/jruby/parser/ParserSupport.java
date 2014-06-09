@@ -292,7 +292,7 @@ public class ParserSupport {
     public Node getOperatorCallNode(Node firstNode, String operator) {
         checkExpression(firstNode);
 
-        return new CallNoArgNode(firstNode.getPosition(), firstNode, operator);
+        return new CallNode(firstNode.getPosition(), firstNode, operator, null, null);
     }
     
     public Node getOperatorCallNode(Node firstNode, String operator, Node secondNode) {
@@ -308,8 +308,7 @@ public class ParserSupport {
         checkExpression(firstNode);
         checkExpression(secondNode);
 
-        return new_call_one_arg(firstNode.getPosition(), firstNode, operator, secondNode);
-//        return new CallOneArgNode(firstNode.getPosition(), firstNode, operator, new ArrayNode(secondNode.getPosition(), secondNode));
+        return new CallNode(firstNode.getPosition(), firstNode, operator, new ArrayNode(secondNode.getPosition(), secondNode), null);
     }
 
     public Node getMatchNode(Node firstNode, Node secondNode) {
@@ -844,54 +843,6 @@ public class ParserSupport {
         }
     }
     
-    private Node new_call_noargs(Node receiver, Token name, IterNode iter) {
-        ISourcePosition position = position(receiver, name);
-        
-        if (receiver == null) receiver = NilImplicitNode.NIL;
-        
-        if (iter != null) return new CallNoArgBlockNode(position, receiver, (String) name.getValue(), iter);
-        
-        return new CallNoArgNode(position, receiver, (String) name.getValue());
-    }
-    
-    private Node new_call_complexargs(Node receiver, Token name, Node args, Node iter) {
-        if (args instanceof BlockPassNode) {
-            // Block and block pass passed in at same time....uh oh
-            if (iter != null) {
-                throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, iter.getPosition(),
-                        lexer.getCurrentLine(), "Both block arg and actual block given.");
-            }
-
-            return new_call_blockpass(receiver, name, (BlockPassNode) args);
-        }
-
-        if (iter != null) return new CallSpecialArgBlockNode(position(receiver, args), receiver,(String) name.getValue(), args, (IterNode) iter);
-
-        return new CallSpecialArgNode(position(receiver, args), receiver, (String) name.getValue(), args);
-    }
-    
-    private Node new_call_blockpass(Node receiver, Token operation, BlockPassNode blockPass) {
-        ISourcePosition position = position(receiver, blockPass);
-        String name = (String) operation.getValue();
-        Node args = blockPass.getArgsNode();
-        
-        if (args == null) return new CallNoArgBlockPassNode(position, receiver, name, args, blockPass);
-        if (!(args instanceof ArrayNode)) return new CallSpecialArgBlockPassNode(position, receiver, name, args, blockPass);
-        
-        switch (((ArrayNode) args).size()) {
-            case 0:  // foo()
-                return new CallNoArgBlockPassNode(position, receiver, name, args, blockPass);
-            case 1:
-                return new CallOneArgBlockPassNode(position, receiver, name, (ArrayNode) args, blockPass);
-            case 2:
-                return new CallTwoArgBlockPassNode(position, receiver, name, (ArrayNode) args, blockPass);
-            case 3:
-                return new CallThreeArgBlockPassNode(position, receiver, name, (ArrayNode) args, blockPass);
-            default:
-                return new CallManyArgsBlockPassNode(position, receiver, name, args, blockPass);
-        } 
-    }
-    
     private boolean isNumericOperator(String name) {
         if (name.length() == 1) {
             switch (name.charAt(0)) {
@@ -911,42 +862,8 @@ public class ParserSupport {
         return false;
     }
 
-    private Node new_call_one_arg(ISourcePosition position, Node receiver, String name, Node first) {
-        if (first instanceof FixnumNode && isNumericOperator(name)) {
-            return new CallOneArgFixnumNode(position, receiver, name, new ArrayNode(position, first));
-        }
-
-        return new CallOneArgNode(position, receiver, name, new ArrayNode(position, first));
-    }
-
     public Node new_call(Node receiver, Token name, Node argsNode, Node iter) {
-        if (argsNode == null) return new_call_noargs(receiver, name, (IterNode) iter);
-        if (!(argsNode instanceof ArrayNode)) return new_call_complexargs(receiver, name, argsNode, iter);
-        
-        ArrayNode args = (ArrayNode) argsNode;
-
-        switch (args.size()) {
-            case 0:
-                if (iter != null) return new CallNoArgBlockNode(position(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
-                    
-                return new CallNoArgNode(position(receiver, args), receiver, args, (String) name.getValue());
-            case 1:
-                if (iter != null) return new CallOneArgBlockNode(position(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
-
-                return new CallOneArgNode(position(receiver, args), receiver, (String) name.getValue(), args);
-            case 2:
-                if (iter != null) return new CallTwoArgBlockNode(position(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
-                
-                return new CallTwoArgNode(position(receiver, args), receiver, (String) name.getValue(), args);
-            case 3:
-                if (iter != null) return new CallThreeArgBlockNode(position(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
-                
-                return new CallThreeArgNode(position(receiver, args), receiver, (String) name.getValue(), args);
-            default:
-                if (iter != null) return new CallManyArgsBlockNode(position(receiver, args), receiver, (String) name.getValue(), args, (IterNode) iter);
-
-                return new CallManyArgsNode(position(receiver, args), receiver, (String) name.getValue(), args);
-        }
+        return new CallNode(position(receiver, argsNode), receiver, (String) name.getValue(), argsNode, iter);
     }
 
     public Colon2Node new_colon2(ISourcePosition position, Node leftNode, String name) {
