@@ -34,21 +34,10 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.MetaClass;
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.DynamicMethodFactory;
-import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * method definition node.

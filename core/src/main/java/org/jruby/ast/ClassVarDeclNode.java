@@ -34,16 +34,9 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Class variable declaration.

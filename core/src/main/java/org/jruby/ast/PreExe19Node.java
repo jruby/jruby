@@ -28,13 +28,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A pre-execution construction (BEGIN { ... }).

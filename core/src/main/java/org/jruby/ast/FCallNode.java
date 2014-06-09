@@ -33,19 +33,9 @@
 package org.jruby.ast;
 
 import java.util.List;
-import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.MethodIndex;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
-import org.jruby.util.DefinedMessage;
 
 /** 
  * Represents a method call with self as an implicit receiver.

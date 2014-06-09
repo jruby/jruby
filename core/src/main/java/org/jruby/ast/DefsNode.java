@@ -33,21 +33,10 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.DynamicMethodFactory;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents a singleton method definition.

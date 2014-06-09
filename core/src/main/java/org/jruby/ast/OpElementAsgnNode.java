@@ -33,15 +33,8 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.MethodIndex;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /** Represents an operator assignment to an element.
  * 
@@ -56,9 +49,7 @@ public class OpElementAsgnNode extends Node {
     private final Node receiverNode;
     private final Node argsNode;
     private final Node valueNode;
-    public final CallSite callAdapter;
-    public final CallSite elementAdapter;
-    public final CallSite elementAsgnAdapter;
+    private final String operatorName;
 
     public OpElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
         super(position);
@@ -72,9 +63,7 @@ public class OpElementAsgnNode extends Node {
             ((ArrayNode)argsNode).setLightweight(true);
         }
         this.valueNode = valueNode;
-        callAdapter = MethodIndex.getCallSite(operatorName);
-        elementAdapter = MethodIndex.getFunctionalCallSite("[]");
-        elementAsgnAdapter = MethodIndex.getFunctionalCallSite("[]=");
+        this.operatorName = operatorName;
     }
 
     public NodeType getNodeType() {
@@ -102,7 +91,7 @@ public class OpElementAsgnNode extends Node {
      * @return Returns a String
      */
     public String getOperatorName() {
-        return callAdapter.methodName;
+        return operatorName;
     }
 
     /**

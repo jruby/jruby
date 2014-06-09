@@ -33,14 +33,8 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyHash;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.TypeConverter;
 
 /**
  * A Literal Hash that can represent either a {a=&amp;b, c=&amp;d} type expression or the list 

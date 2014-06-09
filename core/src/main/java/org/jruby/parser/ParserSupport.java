@@ -1056,21 +1056,6 @@ public class ParserSupport {
                     lexer.getCurrentLine(), "Block argument should not be given.");
         }
 
-        if (node instanceof ArrayNode) {
-            ArrayNode args = (ArrayNode) node;
-
-            switch (args.size()) {
-                case 0:
-                    return new ZYieldNode(position);
-                case 1:
-                    return new YieldOneNode(position, args);
-                case 2:
-                    return new YieldTwoNode(position, args);
-                case 3:
-                    return new YieldThreeNode(position, args);
-            }
-        }
-
         return new Yield19Node(position, node); 
     }
     

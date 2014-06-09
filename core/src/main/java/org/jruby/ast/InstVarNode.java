@@ -34,27 +34,17 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyString;
 import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.ivars.VariableAccessor;
-import org.jruby.util.DefinedMessage;
 
 /** 
  * Represents an instance variable accessor.
  */
 public class InstVarNode extends Node implements IArityNode, INameNode {
     private String name;
-    private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
 
     public InstVarNode(ISourcePosition position, String name) {
         super(position);

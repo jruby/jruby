@@ -30,14 +30,10 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Represents the top of the AST.  This is a node not present in MRI.  It was created to

@@ -754,16 +754,10 @@ public class ASTCompiler {
             }
         }
         
-        if (callNode instanceof SpecialArgs) {
-            context.getInvocationCompiler().invokeDynamicVarargs(
-                    name, receiverCallback, argsCallback,
-                    callType, closureArg, callNode.getIterNode() instanceof IterNode);
-        } else {
-            context.getInvocationCompiler().invokeDynamic(
-                    name, receiverCallback, argsCallback,
-                    callType, closureArg, callNode.getIterNode() instanceof IterNode);
-        }
-        
+        context.getInvocationCompiler().invokeDynamic(
+                name, receiverCallback, argsCallback,
+                callType, closureArg, callNode.getIterNode() instanceof IterNode);
+
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -2134,12 +2128,8 @@ public class ASTCompiler {
         
         CompilerCallback closureArg = getBlock(fcallNode.getIterNode());
 
-        if (fcallNode instanceof SpecialArgs) {
-            context.getInvocationCompiler().invokeDynamicVarargs(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, fcallNode.getIterNode() instanceof IterNode);
-        } else {
-            context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, fcallNode.getIterNode() instanceof IterNode);
-        }
-        
+        context.getInvocationCompiler().invokeDynamic(fcallNode.getName(), null, argsCallback, CallType.FUNCTIONAL, closureArg, fcallNode.getIterNode() instanceof IterNode);
+
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }

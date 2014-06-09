@@ -28,12 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Represents a bare class declaration (e.g. class Foo/module Foo).  This is slightly misnamed
@@ -43,13 +38,5 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class Colon2ImplicitNode extends Colon2Node {
     public Colon2ImplicitNode(ISourcePosition position, String name) {
         super(position, null, name);
-    }
-
-   /** 
-    * Get parent module/class that this module represents
-    */
-    @Override
-    public RubyModule getEnclosingModule(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return context.getCurrentScope().getStaticScope().getModule();
     }
 }

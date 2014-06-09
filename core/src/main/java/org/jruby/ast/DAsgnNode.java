@@ -33,13 +33,9 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * An assignment to a dynamic variable (e.g. block scope local variable).
@@ -103,12 +99,5 @@ public class DAsgnNode extends AssignableNode implements INameNode, IScopedNode 
 
     public void setName(String name) {
         this.name = name;
-    }
-    
-    @Override
-    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
-        context.getCurrentScope().setValue(getIndex(), value, getDepth());
-        
-        return runtime.getNil();
     }
 }
