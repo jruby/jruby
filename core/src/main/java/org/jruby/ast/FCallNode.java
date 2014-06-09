@@ -51,20 +51,15 @@ import org.jruby.util.DefinedMessage;
  * Represents a method call with self as an implicit receiver.
  */
 public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAcceptingNode {
+    private String name;
     protected Node argsNode;
     protected Node iterNode;
-    public CallSite callAdapter;
 
-    @Deprecated
-    public FCallNode(ISourcePosition position, String name, Node argsNode) {
-        this(position, name, argsNode, null);
-    }
-    
-    protected FCallNode(ISourcePosition position, String name, Node argsNode, Node iterNode) {
+    public FCallNode(ISourcePosition position, String name, Node argsNode, Node iterNode) {
         super(position);
+        this.name = name;
         setArgsNode(argsNode);
         this.iterNode = iterNode;
-        this.callAdapter = MethodIndex.getFunctionalCallSite(name);
     }
 
     public NodeType getNodeType() {
@@ -88,8 +83,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     
     public Node setIterNode(Node iterNode) {
         this.iterNode = iterNode;
-        callAdapter = MethodIndex.getFunctionalCallSite(callAdapter.methodName);
-        
+
         return this;
     }
 
@@ -121,7 +115,7 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
      * @return Returns a String
      */
     public String getName() {
-        return callAdapter.methodName;
+        return name;
     }
     
     public List<Node> childNodes() {

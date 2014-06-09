@@ -863,6 +863,16 @@ public class ParserSupport {
     }
 
     public Node new_call(Node receiver, Token name, Node argsNode, Node iter) {
+        if (argsNode instanceof BlockPassNode) {
+            if (iter != null) {
+                throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, iter.getPosition(),
+                        lexer.getCurrentLine(), "Both block arg and actual block given.");
+            }
+
+            BlockPassNode blockPass = (BlockPassNode) argsNode;
+            return new CallNode(position(receiver, argsNode), receiver, (String) name.getValue(), blockPass.getArgsNode(), blockPass);
+        }
+
         return new CallNode(position(receiver, argsNode), receiver, (String) name.getValue(), argsNode, iter);
     }
 
@@ -875,73 +885,19 @@ public class ParserSupport {
     public Colon3Node new_colon3(ISourcePosition position, String name) {
         return new Colon3Node(position, name);
     }
-
-    private Node new_fcall_noargs(Token operation, IterNode iter) {
-        if (iter != null) return new FCallNoArgBlockNode(operation.getPosition(), (String) operation.getValue(), iter);
-        return new FCallNoArgNode(operation.getPosition(), (String) operation.getValue());
-    }
-    
-    private Node new_fcall_simpleargs(Token operation, ArrayNode args, Node iter) {
-        String name = (String) operation.getValue();
-        ISourcePosition position = position(operation, args);
-            
-        switch (args.size()) {
-            case 0:  // foo()
-                if (iter != null) return new FCallNoArgBlockNode(position, name, args, (IterNode) iter);
-                    
-                return new FCallNoArgNode(position, args, name);
-            case 1:
-                if (iter != null) return new FCallOneArgBlockNode(position, name, args, (IterNode) iter);
-                
-                return new FCallOneArgNode(position, name, args);
-            case 2:
-                if (iter != null) return new FCallTwoArgBlockNode(position, name, args, (IterNode) iter);
-                
-                return new FCallTwoArgNode(position, name, args);
-            case 3:
-                if (iter != null) return new FCallThreeArgBlockNode(position, name, args, (IterNode) iter);
-                
-                return new FCallThreeArgNode(position, name, args);
-            default:
-                if (iter != null) return new FCallManyArgsBlockNode(position, name, args, (IterNode) iter);
-
-                return new FCallManyArgsNode(position, name, args);
-        }
-    }
-    
-    private Node new_fcall_blockpass(Token operation, BlockPassNode blockPass) {
-        ISourcePosition position = position(operation, blockPass);
-        String name = (String) operation.getValue();
-        Node args = blockPass.getArgsNode();
-        
-        if (args == null) return new FCallNoArgBlockPassNode(position, name, args, blockPass);
-        if (!(args instanceof ArrayNode)) return new FCallSpecialArgBlockPassNode(position, name, args, blockPass);
-        
-        switch (((ArrayNode) args).size()) {
-            case 0:  // foo()
-                return new FCallNoArgBlockPassNode(position, name, args, blockPass);
-            case 1:
-                return new FCallOneArgBlockPassNode(position, name, (ArrayNode) args, blockPass);
-            case 2:
-                return new FCallTwoArgBlockPassNode(position, name, (ArrayNode) args, blockPass);
-            case 3:
-                return new FCallThreeArgBlockPassNode(position, name, (ArrayNode) args, blockPass);
-            default:
-                return new FCallManyArgsBlockPassNode(position, name, args, blockPass);
-        }        
-    }
     
     public Node new_fcall(Token operation, Node args, Node iter) {
-        if (args == null) return new_fcall_noargs(operation, (IterNode) iter);
-        if (args instanceof ArrayNode) return new_fcall_simpleargs(operation, (ArrayNode) args, iter);
         if (args instanceof BlockPassNode) {
-            if (iter == null) return new_fcall_blockpass(operation, (BlockPassNode) args);
+            if (iter != null) {
+                throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, iter.getPosition(),
+                        lexer.getCurrentLine(), "Both block arg and actual block given.");
+            }
 
-            throw new SyntaxException(PID.BLOCK_ARG_AND_BLOCK_GIVEN, iter.getPosition(),
-                    lexer.getCurrentLine(), "Both block arg and actual block given.");
+            BlockPassNode blockPass = (BlockPassNode) args;
+            return new FCallNode(position(operation, args), (String) operation.getValue(), blockPass.getArgsNode(), blockPass);
         }
 
-        return new FCallSpecialArgNode(position(operation, args), (String) operation.getValue(), args);
+        return new FCallNode(position(operation, args), (String) operation.getValue(), args, iter);
     }
 
     public Node new_super(Node args, Token operation) {
