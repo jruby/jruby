@@ -32,22 +32,10 @@
 package org.jruby.ast;
 
 import java.util.List;
-
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
 import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.MethodIndex;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.DefinedMessage;
 
 /**
  * a call to 'super' with no arguments in a method.

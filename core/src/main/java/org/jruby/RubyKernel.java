@@ -47,12 +47,12 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
+import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
@@ -914,7 +914,7 @@ public class RubyKernel {
 
         if (bindingGiven) recv = binding.getSelf();
 
-        return ASTInterpreter.evalWithBinding(context, recv, src, binding);
+        return Interpreter.evalWithBinding(context, recv, src, binding);
     }
 
     private static abstract class EvalBinding {

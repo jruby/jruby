@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.ir.interpreter.Interpreter;
 
 public enum FrameType {
@@ -14,7 +13,6 @@ public enum FrameType {
     public static final Map<String, FrameType> INTERPRETED_FRAMES = new HashMap<String, FrameType>();
 
     static {
-        INTERPRETED_CLASSES.add(ASTInterpreter.class.getName());
         INTERPRETED_CLASSES.add(Interpreter.class.getName());
 
         INTERPRETED_FRAMES.put("INTERPRET_METHOD", FrameType.METHOD);
