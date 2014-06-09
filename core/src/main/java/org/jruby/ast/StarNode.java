@@ -33,18 +33,11 @@
 package org.jruby.ast;
 
 import java.util.List;
-
-import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents the unassignable star in a multiple assignent (e.g. a,b,* = arr).
- * 
- * AssignmentVisitor.multiAssign checks for this (this is never visited directly)
  */
 public class StarNode extends Node {
     /**
@@ -67,10 +60,5 @@ public class StarNode extends Node {
     
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-
-    @Override
-    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
-        return null;
     }
 }

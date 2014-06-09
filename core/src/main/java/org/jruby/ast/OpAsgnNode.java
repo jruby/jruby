@@ -33,15 +33,8 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.MethodIndex;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -49,9 +42,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class OpAsgnNode extends Node {
     private final Node receiverNode;
     private final Node valueNode;
-    public final CallSite variableCallAdapter;
-    public final CallSite operatorCallAdapter;
-    public final CallSite variableAsgnCallAdapter;
+    private final String variableName;
+    private final String operatorName;
+    private final String variableNameAsgn;
 
     public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String operatorName) {
         super(position);
@@ -61,9 +54,9 @@ public class OpAsgnNode extends Node {
         
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;
-        this.variableCallAdapter = MethodIndex.getCallSite(variableName);
-        this.operatorCallAdapter = MethodIndex.getCallSite(operatorName);
-        this.variableAsgnCallAdapter = MethodIndex.getCallSite((variableName + "=").intern());
+        this.variableName = variableName;
+        this.operatorName = operatorName;
+        this.variableNameAsgn = (variableName + "=").intern();
     }
 
     public NodeType getNodeType() {
@@ -83,7 +76,7 @@ public class OpAsgnNode extends Node {
      * @return Returns a String
      */
     public String getOperatorName() {
-        return operatorCallAdapter.methodName;
+        return operatorName;
     }
 
     /**
@@ -107,11 +100,11 @@ public class OpAsgnNode extends Node {
      * @return Returns a String
      */
     public String getVariableName() {
-        return variableCallAdapter.methodName;
+        return variableName;
     }
     
     public String getVariableNameAsgn() {
-        return variableAsgnCallAdapter.methodName;
+        return variableNameAsgn;
     }
     
     public List<Node> childNodes() {

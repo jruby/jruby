@@ -34,21 +34,8 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.NativeException;
-import org.jruby.Ruby;
-import org.jruby.RubyException;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.Unrescuable;
-import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Represents a rescue statement

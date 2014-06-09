@@ -35,13 +35,9 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Represents an assignment to a global variable.
@@ -77,12 +73,5 @@ public class GlobalAsgnNode extends AssignableNode implements INameNode {
     
     public List<Node> childNodes() {
         return createList(getValueNode());
-    }
-
-    @Override
-    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
-        runtime.getGlobalVariables().set(name, value);
-        
-        return runtime.getNil();
     }
 }

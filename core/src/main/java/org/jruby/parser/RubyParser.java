@@ -56,8 +56,6 @@ import org.jruby.ast.DefsNode;
 import org.jruby.ast.DotNode;
 import org.jruby.ast.EnsureNode;
 import org.jruby.ast.EvStrNode;
-import org.jruby.ast.FCallNoArgBlockNode;
-import org.jruby.ast.FCallNoArgNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.ForNode;
@@ -138,7 +136,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 142 "-"
+					// line 140 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -2875,7 +2873,7 @@ states[280] = new ParserState() {
 };
 states[283] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new FCallNoArgNode(((Token)yyVals[0+yyTop]).getPosition(), (String) ((Token)yyVals[0+yyTop]).getValue());
+                    yyVal = support.new_fcall(((Token)yyVals[0+yyTop]), null, null);
     return yyVal;
   }
 };
@@ -2996,7 +2994,7 @@ states[300] = new ParserState() {
 };
 states[301] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new FCallNoArgBlockNode(((Token)yyVals[-1+yyTop]).getPosition(), (String) ((Token)yyVals[-1+yyTop]).getValue(), ((IterNode)yyVals[0+yyTop]));
+                    yyVal = support.new_fcall(((Token)yyVals[-1+yyTop]), null, ((IterNode)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -4668,7 +4666,7 @@ states[602] = new ParserState() {
   }
 };
 }
-					// line 2239 "RubyParser.y"
+					// line 2237 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4687,4 +4685,4 @@ states[602] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 8694 "-"
+					// line 8692 "-"

@@ -46,7 +46,7 @@ public class ListNode extends Node {
     /**
      * Create a new ListNode.
      * 
-     * @param id type of listnode
+     * @param position where list is
      * @param firstNode first element of the list
      */
     public ListNode(ISourcePosition position, Node firstNode) {

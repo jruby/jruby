@@ -1,12 +1,6 @@
 package org.jruby.ast;
 
-import org.jruby.Ruby;
-import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class Match2CaptureNode extends Match2Node {
     // Allocated locals that the regexp will assign after performing a match

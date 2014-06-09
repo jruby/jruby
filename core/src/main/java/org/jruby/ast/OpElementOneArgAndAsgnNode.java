@@ -31,11 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import org.jruby.Ruby;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /** Represents an operator assignment to an element.
  * 
@@ -47,13 +43,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * </pre>
  */
 public class OpElementOneArgAndAsgnNode extends OpElementAsgnNode {
-    private Node arg1;
-    
     public OpElementOneArgAndAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, ArrayNode args, Node valueNode) {
         super(position, receiverNode, operatorName, args, valueNode);
         
         assert args.size() == 1 : "args.size() is 1";
-        
-        arg1 = args.get(0);
     }
 }

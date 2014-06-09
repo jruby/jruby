@@ -37,8 +37,6 @@ import java.util.List;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.MethodIndex;
 
 /**
  * A method or operator call.

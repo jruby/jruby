@@ -33,22 +33,9 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
-import org.jruby.runtime.opto.ConstantCache;
-import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.opto.Invalidator;
-import org.jruby.util.ByteList;
-import org.jruby.util.DefinedMessage;
 
 /**
  * Global scope node (::FooBar).  This is used to gain access to the global scope (that of the 
@@ -88,10 +75,5 @@ public class Colon3Node extends Node implements INameNode {
 
     public void setName(String name) {
         this.name = name;
-    }
-    
-   /** Get parent module/class that this module represents */
-    public RubyModule getEnclosingModule(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.getObject();
     }
 }

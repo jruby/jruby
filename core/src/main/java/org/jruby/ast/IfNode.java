@@ -34,12 +34,8 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * an 'if' statement.
@@ -53,9 +49,7 @@ public class IfNode extends Node {
         super(position);
         
         assert condition != null : "condition is not null";
-//        assert thenBody != null : "thenBody is not null";
-//        assert elseBody != null : "elseBody is not null";
-        
+
         this.condition = condition;
         this.thenBody = thenBody;
         this.elseBody = elseBody;

@@ -37,17 +37,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jruby.ParseResult;
-import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.DefinedMessage;
 
 /**
  * Base class for all Nodes in the AST
@@ -188,11 +181,6 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
         String nodeType = name.substring(i + 1);
         return nodeType;
     }
-    
-    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
-        throw new RuntimeException("Invalid node encountered in interpreter: \"" + getClass().getName() + "\", please report this at www.jruby.org");
-    }
-
 
     /**
      * @return the nodeId

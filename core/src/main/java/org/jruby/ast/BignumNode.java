@@ -35,14 +35,9 @@ package org.jruby.ast;
 import java.math.BigInteger;
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyBignum;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents a big integer literal.

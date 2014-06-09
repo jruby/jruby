@@ -33,19 +33,9 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyString;
-import org.jruby.runtime.opto.ConstantCache;
-import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.opto.Invalidator;
-import org.jruby.util.ByteList;
-import org.jruby.util.DefinedMessage;
 
 /**
  * The access to a Constant.
