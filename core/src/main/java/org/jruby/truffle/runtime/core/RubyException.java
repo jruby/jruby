@@ -59,7 +59,7 @@ public class RubyException extends RubyObject {
 
     @Override
     public String toString() {
-        return message.toString();
+        // Giving some space between the java stacktrace and the ruby stacktrace
+        return String.format("\n\n %s \n", message.toString());
     }
-
 }

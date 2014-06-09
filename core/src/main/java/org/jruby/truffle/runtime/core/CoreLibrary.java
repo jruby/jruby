@@ -373,27 +373,27 @@ public class CoreLibrary {
     }
 
     public RubyException runtimeError(String message) {
-        return new RubyException(runtimeErrorClass, message);
+        return new RubyException(runtimeErrorClass, String.format("RuntimeError: %s \n %s", message, RubyCallStack.getRubyStacktrace()));
     }
 
     public RubyException frozenError(String className) {
-        return runtimeError(String.format("can't modify frozen %s", className));
+        return runtimeError(String.format("FrozenError: can't modify frozen %s \n %s", className, RubyCallStack.getRubyStacktrace()));
     }
 
     public RubyException argumentError(String message) {
-        return new RubyException(argumentErrorClass, message);
+        return new RubyException(argumentErrorClass, String.format("ArgumentError: %s \n %s", message, RubyCallStack.getRubyStacktrace()));
     }
 
     public RubyException argumentError(int passed, int required) {
-        return argumentError(String.format("wrong number of arguments (%d for %d)", passed, required));
+        return argumentError(String.format("ArgumentError: wrong number of arguments (%d for %d)", passed, required));
     }
 
     public RubyException argumentErrorUncaughtThrow(Object tag) {
-        return argumentError(String.format("uncaught throw `%s'", tag));
+        return argumentError(String.format("ArgumentError: uncaught throw `%s'", tag));
     }
 
     public RubyException localJumpError(String message) {
-        return new RubyException(localJumpErrorClass, message);
+        return new RubyException(localJumpErrorClass, String.format("LocalJumpError: %s \n %s", message, RubyCallStack.getRubyStacktrace()));
     }
 
     public RubyException unexpectedReturn() {
@@ -405,23 +405,23 @@ public class CoreLibrary {
     }
 
     public RubyException typeError(String message) {
-        return new RubyException(typeErrorClass, message);
+        return new RubyException(typeErrorClass, String.format("%s \n %s", message, RubyCallStack.getRubyStacktrace()));
     }
 
     public RubyException typeErrorShouldReturn(String object, String method, String expectedType) {
-        return typeError(String.format("%s#%s should return %s", object, method, expectedType));
+        return typeError(String.format("TypeError: %s#%s should return %s", object, method, expectedType));
     }
 
     public RubyException typeError(String from, String to) {
-        return typeError(String.format("can't convert %s to %s", from, to));
+        return typeError(String.format("TypeError: can't convert %s to %s", from, to));
     }
 
     public RubyException typeErrorIsNotA(String value, String expectedType) {
-        return typeError(String.format("%s is not a %s", value, expectedType));
+        return typeError(String.format("TypeError: %s is not a %s", value, expectedType));
     }
 
     public RubyException typeErrorNeedsToBe(String name, String expectedType) {
-        return typeError(String.format("%s needs to be %s", name, expectedType));
+        return typeError(String.format("TypeError: %s needs to be %s", name, expectedType));
     }
 
     public RubyException rangeError(String message) {
@@ -429,15 +429,15 @@ public class CoreLibrary {
     }
 
     public RubyException nameError(String message) {
-        return new RubyException(nameErrorClass, message);
+        return new RubyException(nameErrorClass, String.format("%s \n %s", message, RubyCallStack.getRubyStacktrace()));
     }
 
     public RubyException nameErrorUninitializedConstant(String name) {
-        return nameError(String.format("uninitialized constant %s", name));
+        return nameError(String.format("NameError: uninitialized constant %s", name));
     }
 
     public RubyException nameErrorNoMethod(String name, String object) {
-        return nameError(String.format("undefined local variable or method `%s' for %s", name, object));
+        return nameError(String.format("NameError: undefined local variable or method `%s' for %s", name, object));
     }
 
     public RubyException nameErrorInstanceNameNotAllowable(String name) {
@@ -445,31 +445,31 @@ public class CoreLibrary {
     }
 
     public RubyException nameErrorUncaughtThrow(Object tag) {
-        return nameError(String.format("uncaught throw `%s'", tag));
+        return nameError(String.format("NameError: uncaught throw `%s'", tag));
     }
 
     public RubyException noMethodError(String message) {
-        return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), message);
+        return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), String.format("%s \n %s", message, RubyCallStack.getRubyStacktrace()));
     }
 
     public RubyException noMethodError(String name, String object) {
-        return noMethodError(String.format("NameError: undefined method `%s' for %s \n %s", name, object, RubyCallStack.getRubyStacktrace()));
+        return noMethodError(String.format("NameError: undefined method `%s' for %s", name, object));
     }
 
     public RubyException loadError(String message) {
-        return new RubyException(context.getCoreLibrary().getLoadErrorClass(), message);
+        return new RubyException(context.getCoreLibrary().getLoadErrorClass(), String.format("%s \n %s", message, RubyCallStack.getRubyStacktrace()));
     }
 
     public RubyException loadErrorCannotLoad(String name) {
-        return loadError(String.format("cannot load such file -- %s", name));
+        return loadError(String.format("LoadError: cannot load such file -- %s", name));
     }
 
     public RubyException zeroDivisionError() {
-        return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), "divided by 0");
+        return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), String.format("divided by 0 \n %s", RubyCallStack.getRubyStacktrace()));
     }
 
     public RubyException syntaxError(String message) {
-        return new RubyException(syntaxErrorClass, message);
+        return new RubyException(syntaxErrorClass, String.format("SyntaxError: %s \n %s", message, RubyCallStack.getRubyStacktrace()));
     }
 
     public RubyContext getContext() {
