@@ -81,31 +81,12 @@ public class ASTInterpreter {
         }
     }
 
-    public static IRubyObject INTERPRET_BLOCK(Ruby runtime, ThreadContext context, String file, int line, Node node, String name, IRubyObject self, Block block) {
-        try {
-            ThreadContext.pushBacktrace(context, name, file, line);
-            blockPreTrace(runtime, context, name, self.getType());
-            return null;
-        } finally {
-            blockPostTrace(runtime, context, name, self.getType());
-            ThreadContext.popBacktrace(context);
-        }
-    }
-
     private static void methodPreTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
         if (runtime.hasEventHooks()) context.trace(RubyEvent.CALL, name, implClass);
     }
 
     private static void methodPostTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
         if (runtime.hasEventHooks()) context.trace(RubyEvent.RETURN, name, implClass);
-    }
-
-    private static void blockPreTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
-        if (runtime.hasEventHooks()) context.trace(RubyEvent.B_CALL, name, implClass);
-    }
-
-    private static void blockPostTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
-        if (runtime.hasEventHooks()) context.trace(RubyEvent.B_RETURN, name, implClass);
     }
     
     public static Block getBlock(Ruby runtime, ThreadContext context, IRubyObject self, Block currentBlock, Node blockNode) {

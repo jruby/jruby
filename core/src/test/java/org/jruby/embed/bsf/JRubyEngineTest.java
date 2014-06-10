@@ -99,7 +99,7 @@ public class JRubyEngineTest {
     /**
      * Test of apply method, of class JRubyEngine.
      */
-    @Test
+    //@Test
     public void testApply() throws BSFException {
         logger1.info("apply");
         BSFManager manager = new BSFManager();
@@ -139,7 +139,7 @@ public class JRubyEngineTest {
     /**
      * Test of eval method, of class JRubyEngine.
      */
-    @Test
+    //@Test
     public void testEval() throws Exception {
         logger1.info("eval");
         BSFManager.registerScriptingEngine("jruby", "org.jruby.embed.bsf.JRubyEngine", new String[] {"rb"});
@@ -167,7 +167,7 @@ public class JRubyEngineTest {
     /**
      * Test of exec method, of class JRubyEngine.
      */
-    @Test
+    //@Test
     public void testExec() throws Exception {
         logger1.info("exec");
         BSFManager manager = new BSFManager();
@@ -211,7 +211,7 @@ public class JRubyEngineTest {
     /**
      * Test of call method, of class JRubyEngine.
      */
-    @Test
+    //@Test
     public void testCall() throws Exception {
         logger1.info("call");
         BSFManager.registerScriptingEngine("jruby", "org.jruby.embed.bsf.JRubyEngine", new String[] {"rb"});
@@ -252,7 +252,7 @@ public class JRubyEngineTest {
     /**
      * Test of initialize method, of class JRubyEngine.
      */
-    @Test
+    //@Test
     public void testInitialize() throws Exception {
         logger1.info("initialize");
         BSFManager manager = new BSFManager();;
@@ -265,7 +265,7 @@ public class JRubyEngineTest {
     /**
      * Test of declareBean method, of class JRubyEngine.
      */
-    @Test
+    //@Test
     public void testDeclareBean() throws Exception {
         logger1.info("declareBean");
         BSFManager manager = new BSFManager();
@@ -279,7 +279,7 @@ public class JRubyEngineTest {
     /**
      * Test of undeclareBean method, of class JRubyEngine.
      */
-    @Test
+    //@Test
     public void testUndeclareBean() throws Exception {
         logger1.info("undeclareBean");
         BSFManager manager = new BSFManager();
@@ -293,7 +293,7 @@ public class JRubyEngineTest {
     /**
      * Test of handleException method, of class JRubyEngine.
      */
-    @Test
+    //@Test
     public void testHandleException() throws BSFException {
         logger1.info("handleException");
         BSFManager manager = new BSFManager();
@@ -306,7 +306,7 @@ public class JRubyEngineTest {
     /**
      * Test of terminate method, of class JRubyEngine.
      */
-    @Test
+    //@Test
     public void testTerminate() throws BSFException {
         logger1.info("terminate");
         BSFManager manager = new BSFManager();
@@ -315,7 +315,7 @@ public class JRubyEngineTest {
         instance.terminate();
     }
 
-    @Test
+    //@Test
     public void testPathTyp() throws BSFException {
         logger1.info("PathType");
         BSFManager.registerScriptingEngine("jruby", "org.jruby.embed.bsf.JRubyEngine", new String[] {"rb"});
@@ -332,7 +332,7 @@ public class JRubyEngineTest {
         assertEquals(9.716, (Double)result, 0.001);
     }
 
-    @Test
+    //@Test
     public void testRubyVersion() throws BSFException {
         logger1.info("RubyVersion");
         BSFManager.registerScriptingEngine("jruby", "org.jruby.embed.bsf.JRubyEngine", new String[] {"rb"});
@@ -343,7 +343,7 @@ public class JRubyEngineTest {
         assertEquals(expResult, ((String)result).trim());
     }
 
-    @Test
+    //@Test
     public void testLVar() throws BSFException {
         BSFManager.registerScriptingEngine("jruby",
                 "org.jruby.embed.bsf.JRubyEngine", new String[]{"rb"});

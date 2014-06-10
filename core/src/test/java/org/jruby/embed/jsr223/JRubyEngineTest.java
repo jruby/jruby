@@ -108,7 +108,7 @@ public class JRubyEngineTest {
     /**
      * Test of compile method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testCompile_String() throws Exception {
         logger1.info("[compile string]");
         ScriptEngine instance;
@@ -141,7 +141,7 @@ public class JRubyEngineTest {
     /**
      * Test of compile method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testCompile_Reader() throws Exception {
         logger1.info("[compile reader]");
         ScriptEngine instance;
@@ -174,7 +174,7 @@ public class JRubyEngineTest {
     /**
      * Test of eval method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testEval_String_ScriptContext() throws Exception {
         logger1.info("[eval String with ScriptContext]");
         ScriptEngine instance;
@@ -221,7 +221,7 @@ public class JRubyEngineTest {
     /**
      * Test of eval method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testEval_String_ScriptContext2() throws Exception {
         logger1.info("[eval String with ScriptContext 2]");       
         ScriptEngine instance = null;
@@ -251,7 +251,7 @@ public class JRubyEngineTest {
     /**
      * Test of eval method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testEval_Reader_ScriptContext() throws Exception {
         logger1.info("[eval Reader with ScriptContext]");
         ScriptEngine instance;
@@ -280,7 +280,7 @@ public class JRubyEngineTest {
     /**
      * Test of eval method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testEval_String() throws Exception {
         logger1.info("eval String");
         ScriptEngine instance;
@@ -305,7 +305,7 @@ public class JRubyEngineTest {
     /**
      * Test of eval method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testEval_Reader() throws Exception {
         logger1.info("eval Reader");
         ScriptEngine instance;
@@ -336,7 +336,7 @@ public class JRubyEngineTest {
     /**
      * Test of eval method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testEval_String_Bindings() throws Exception {
         logger1.info("eval String with Bindings");
         ScriptEngine instance;
@@ -364,7 +364,7 @@ public class JRubyEngineTest {
     /**
      * Test of eval method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testEval_Reader_Bindings() throws Exception {
         logger1.info("eval Reader with Bindings");
         ScriptEngine instance;
@@ -391,7 +391,7 @@ public class JRubyEngineTest {
     /**
      * Test of get method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testGet() {
         logger1.info("get");
         ScriptEngine instance;
@@ -427,7 +427,7 @@ public class JRubyEngineTest {
     /**
      * Test of put method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testPut() {
         logger1.info("put");
         String key = "";
@@ -448,7 +448,7 @@ public class JRubyEngineTest {
     /**
      * Test of getBindings method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testGetBindings() throws ScriptException {
         logger1.info("getBindings");
         ScriptEngine instance;
@@ -486,7 +486,7 @@ public class JRubyEngineTest {
     /**
      * Test of setBindings method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testSetBindings() throws ScriptException {
         logger1.info("setBindings");
         ScriptEngine instance;
@@ -516,7 +516,7 @@ public class JRubyEngineTest {
     /**
      * Test of createBindings method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testCreateBindings() {
         logger1.info("createBindings");
         ScriptEngineManager manager = new ScriptEngineManager();
@@ -532,7 +532,7 @@ public class JRubyEngineTest {
     /**
      * Test of getContext method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testGetContext() {
         logger1.info("getContext");
         ScriptEngineManager manager = new ScriptEngineManager();
@@ -547,7 +547,7 @@ public class JRubyEngineTest {
     /**
      * Test of setContext method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testSetContext() {
         logger1.info("setContext");
         ScriptEngineManager manager = new ScriptEngineManager();
@@ -570,7 +570,7 @@ public class JRubyEngineTest {
     /**
      * Test of getFactory method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testGetFactory() {
         logger1.info("getFactory");
         ScriptEngineManager manager = new ScriptEngineManager();
@@ -588,7 +588,7 @@ public class JRubyEngineTest {
     /**
      * Test of invokeMethod method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testInvokeMethod() throws Exception {
         logger1.info("invokeMethod");
         ScriptEngine instance;
@@ -628,7 +628,7 @@ public class JRubyEngineTest {
     /**
      * Test of invokeFunction method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testInvokeFunction() throws Exception {
         logger1.info("invokeFunction");
         ScriptEngine instance;
@@ -661,7 +661,7 @@ public class JRubyEngineTest {
     /**
      * Test of getInterface method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testGetInterface_Class() throws FileNotFoundException, ScriptException {
         logger1.info("getInterface (no receiver)");
         ScriptEngine instance;
@@ -690,7 +690,7 @@ public class JRubyEngineTest {
     /**
      * Test of getInterface method, of class Jsr223JRubyEngine.
      */
-    @Test
+    //@Test
     public void testGetInterface_Object_Class() throws FileNotFoundException, ScriptException {
         logger1.info("getInterface (with receiver)");
         ScriptEngine instance;
@@ -724,7 +724,7 @@ public class JRubyEngineTest {
     /*
      * Test of ScriptEngine.ARGV, JRUBY-4090
      */
-    @Test
+    //@Test
     public void testARGV() throws ScriptException {
         logger1.info("ScriptEngine.ARGV");
         ScriptEngine instance;
@@ -749,7 +749,7 @@ public class JRubyEngineTest {
     /*
      * Test of ScriptEngine.ARGV, JRUBY-4090
      */
-    @Test
+    //@Test
     public void testARGV_2() throws ScriptException {
         logger1.info("ScriptEngine.ARGV before initialization");
         ScriptEngine instance;
@@ -804,7 +804,7 @@ public class JRubyEngineTest {
         engine2 = null;
     }
 
-    @Test
+    //@Test
     public void testTermination() throws ScriptException {
         logger1.info("Termination Test");
         ScriptEngineManager manager = new ScriptEngineManager();
@@ -825,7 +825,7 @@ public class JRubyEngineTest {
         instance = null;
     }
     
-    @Test
+    //@Test
     public void testClearVariables() throws ScriptException {
         logger1.info("Clear Variables Test");
         ScriptEngine instance = null;
