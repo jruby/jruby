@@ -44,6 +44,10 @@ public class RubyException extends RubyObject {
         this(rubyClass, rubyClass.getContext().makeString(message), stacktrace);
     }
 
+    public RubyException(RubyClass rubyClass, String message) {
+        this(rubyClass, message, null);
+    }
+
     public RubyException(RubyClass rubyClass, RubyString message, String stacktrace) {
         this(rubyClass);
         this.stacktrace = stacktrace;
