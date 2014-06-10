@@ -10,9 +10,7 @@
 package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.utilities.*;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.RawBoxingNode;
+import org.jruby.truffle.nodes.cast.BoxingNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -25,12 +23,12 @@ import org.jruby.truffle.runtime.core.*;
 public class BoxingDispatchNode extends UnboxedDispatchNode {
 
     @Child protected BoxedDispatchNode next;
-    @Child protected RawBoxingNode boxing;
+    @Child protected BoxingNode boxing;
 
     public BoxingDispatchNode(RubyContext context, BoxedDispatchNode next) {
         super(context);
         this.next = next;
-        boxing = new RawBoxingNode(context);
+        boxing = new BoxingNode(context, null, null);
     }
 
     @Override
