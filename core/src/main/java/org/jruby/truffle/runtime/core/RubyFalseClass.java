@@ -36,4 +36,9 @@ public class RubyFalseClass extends RubyObject implements Unboxable {
         return Boolean.FALSE.hashCode();
     }
 
+    @Override
+    public boolean isTrue() {
+        return false;
+    }
+
 }
