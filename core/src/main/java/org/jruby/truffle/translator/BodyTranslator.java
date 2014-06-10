@@ -145,7 +145,7 @@ public class BodyTranslator extends Translator {
             y = node.getSecondNode().accept(this);
         }
 
-        return AndNodeFactory.create(context, sourceSection, x, y);
+        return new AndNode(context, sourceSection, x, y);
     }
 
     @Override
@@ -446,7 +446,7 @@ public class BodyTranslator extends Translator {
                 // As with the if nodes, we work backwards to make it left associative
 
                 for (int i = comparisons.size() - 2; i >= 0; i--) {
-                    conditionNode = OrNodeFactory.create(context, sourceSection, comparisons.get(i), conditionNode);
+                    conditionNode = new OrNode(context, sourceSection, comparisons.get(i), conditionNode);
                 }
 
                 // Create the if node
@@ -499,7 +499,7 @@ public class BodyTranslator extends Translator {
                 // As with the if nodes, we work backwards to make it left associative
 
                 for (int i = tests.size() - 2; i >= 0; i--) {
-                    conditionNode = OrNodeFactory.create(context, sourceSection, tests.get(i), conditionNode);
+                    conditionNode = new OrNode(context, sourceSection, tests.get(i), conditionNode);
                 }
 
                 // Create the if node
@@ -1516,7 +1516,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.Node lhs = node.getFirstNode();
         final org.jruby.ast.Node rhs = node.getSecondNode();
 
-        return AndNodeFactory.create(context, translate(node.getPosition()), lhs.accept(this), rhs.accept(this));
+        return new AndNode(context, translate(node.getPosition()), lhs.accept(this), rhs.accept(this));
     }
 
     @Override
@@ -1555,7 +1555,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.Node lhs = node.getFirstNode();
         final org.jruby.ast.Node rhs = node.getSecondNode();
 
-        return OrNodeFactory.create(context, translate(node.getPosition()), lhs.accept(this), rhs.accept(this));
+        return new OrNode(context, translate(node.getPosition()), lhs.accept(this), rhs.accept(this));
     }
 
     @Override
@@ -1636,7 +1636,7 @@ public class BodyTranslator extends Translator {
             y = node.getSecondNode().accept(this);
         }
 
-        return OrNodeFactory.create(context, sourceSection, x, y);
+        return new OrNode(context, sourceSection, x, y);
     }
 
     @Override

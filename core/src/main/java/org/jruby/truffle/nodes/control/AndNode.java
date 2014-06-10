@@ -11,8 +11,11 @@ package org.jruby.truffle.nodes.control;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -20,51 +23,28 @@ import org.jruby.truffle.runtime.core.*;
  * Represents a Ruby {@code and} or {@code &&} expression.
  */
 @NodeInfo(shortName = "and")
-@NodeChildren({@NodeChild("left"), @NodeChild("right")})
-public abstract class AndNode extends RubyNode {
+public class AndNode extends RubyNode {
 
-    public AndNode(RubyContext context, SourceSection sourceSection) {
+    @Child protected RubyNode left;
+    @Child protected BooleanCastNode leftCast;
+    @Child protected RubyNode right;
+
+    public AndNode(RubyContext context, SourceSection sourceSection, RubyNode left, RubyNode right) {
         super(context, sourceSection);
+        this.left = left;
+        leftCast = BooleanCastNodeFactory.create(context, sourceSection, null);
+        this.right = right;
     }
 
-    public AndNode(AndNode copy) {
-        super(copy.getContext(), copy.getSourceSection());
-    }
+    @Override
+    public Object execute(VirtualFrame frame) {
+        final Object leftValue = left.execute(frame);
 
-    @ShortCircuit("right")
-    public boolean needsRightNode(boolean a) {
-        return a;
-    }
-
-    @ShortCircuit("right")
-    public boolean needsRightNode(Object a) {
-        if (a instanceof Boolean) {
-            return (boolean) a;
+        if (!leftCast.executeBoolean(frame, leftValue)) {
+            return leftValue;
         }
 
-        if (a instanceof RubyFalseClass) {
-            return false;
-        }
-
-        if (a == NilPlaceholder.INSTANCE) {
-            return false;
-        }
-
-        return true;
+        return right.execute(frame);
     }
 
-    @Specialization
-    public boolean doBoolean(boolean a, boolean hasB, boolean b) {
-        return hasB ? b : a;
-    }
-
-    @Specialization
-    public Object doObject(boolean a, boolean hasB, Object b) {
-        return hasB ? b : a;
-    }
-
-    @Generic
-    public Object doGeneric(Object a, boolean hasB, Object b) {
-        return hasB ? b : a;
-    }
 }

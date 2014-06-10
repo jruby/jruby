@@ -73,4 +73,6 @@ public abstract class BooleanCastNode extends RubyNode {
     @Override
     public abstract boolean executeBoolean(VirtualFrame frame);
 
+    public abstract boolean executeBoolean(VirtualFrame frame, Object value);
+
 }

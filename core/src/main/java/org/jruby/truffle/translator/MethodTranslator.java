@@ -17,6 +17,7 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.*;
+import org.jruby.truffle.nodes.control.AndNode;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.literal.NilNode;
@@ -107,7 +108,7 @@ class MethodTranslator extends BodyTranslator {
 
                 preludeBuilder = new IfNode(context, sourceSection,
                         BooleanCastNodeFactory.create(context, sourceSection,
-                                AndNodeFactory.create(context, sourceSection,
+                                new AndNode(context, sourceSection,
                                     new BehaveAsBlockNode(context, sourceSection, true),
                                     new ShouldDestructureNode(context, sourceSection, arity,
                                             new RespondToNode(context, sourceSection, readArrayNode, "to_ary")))),
