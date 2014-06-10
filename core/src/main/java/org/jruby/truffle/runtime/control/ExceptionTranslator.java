@@ -35,7 +35,7 @@ public final class ExceptionTranslator {
         // Translate divide by zero into ZeroDivisionError
 
         if (exception instanceof ArithmeticException && (exception.getMessage().endsWith("divide by zero") || exception.getMessage().endsWith("/ by zero"))) {
-            return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), "divided by 0");
+            return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), "divided by 0", RubyCallStack.getRubyStacktrace());
         }
 
         /*
@@ -56,7 +56,7 @@ public final class ExceptionTranslator {
             message = exception.getClass().getSimpleName() + ": " + exception.getMessage();
         }
 
-        return new RubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), message);
+        return new RubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), message, RubyCallStack.getRubyStacktrace());
     }
 
 }
