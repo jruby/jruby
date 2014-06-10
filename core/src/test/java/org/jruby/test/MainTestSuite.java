@@ -80,7 +80,6 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestRubyBigDecimal.class);
         suite.addTestSuite(JRubyThreadContextTest.class);
         suite.addTestSuite(JavaFileStatTest.class);
-        suite.addTestSuite(TestCodeCache.class);
         suite.addTestSuite(TestJavaReentrantExceptions.class);
         suite.addTestSuite(EventHookTest.class);
         suite.addTestSuite(TestMethodFactories.class);
