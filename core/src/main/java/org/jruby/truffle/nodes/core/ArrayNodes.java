@@ -2640,7 +2640,29 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         }
 
-        @Specialization(guards = "isIntegerFixnum", order = 2)
+        @Specialization(guards = {"isIntegerFixnum", "isVeryShort"}, order = 2)
+        public RubyArray sortVeryShortIntegerFixnum(VirtualFrame frame, RubyArray array) {
+            final int[] store = (int[]) array.getStore();
+
+            // Insertion sort
+
+            final int size = array.getSize();
+
+            for (int i = 1; i < size; i++) {
+                final int x = store[i];
+                int j = i;
+                // TODO(CS): node for this cast
+                while (j > 0 && (int) compareDispatchNode.dispatch(frame, store[j - 1], null, x) > 0) {
+                    store[j] = store[j - 1];
+                    j--;
+                }
+                store[j] = x;
+            }
+
+            return array;
+        }
+
+        @Specialization(guards = "isIntegerFixnum", order = 3)
         public RubyArray sortIntegerFixnum(VirtualFrame frame, RubyArray array) {
             notDesignedForCompilation();
 
@@ -2650,7 +2672,7 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), unboxed, array.getSize());
         }
 
-        @Specialization(guards = "isLongFixnum", order = 3)
+        @Specialization(guards = "isLongFixnum", order = 4)
         public RubyArray sortLongFixnum(VirtualFrame frame, RubyArray array) {
             notDesignedForCompilation();
 
@@ -2660,7 +2682,7 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), unboxed, array.getSize());
         }
 
-        @Specialization(guards = "isFloat", order = 4)
+        @Specialization(guards = "isFloat", order = 5)
         public RubyArray sortDouble(VirtualFrame frame, RubyArray array) {
             notDesignedForCompilation();
 
@@ -2670,7 +2692,7 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), unboxed, array.getSize());
         }
 
-        @Specialization(guards = "isObject", order = 5)
+        @Specialization(guards = "isObject", order = 6)
         public RubyArray sortObject(VirtualFrame frame, RubyArray array) {
             notDesignedForCompilation();
 
@@ -2691,6 +2713,10 @@ public abstract class ArrayNodes {
                 }
 
             });
+        }
+
+        protected static boolean isVeryShort(RubyArray array) {
+            return array.getSize() <= 3;
         }
 
     }
