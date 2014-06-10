@@ -1406,7 +1406,8 @@ public class BodyTranslator extends Translator {
 
             return restRead.makeWriteNode(rhsTranslated);
         } else {
-            throw new RuntimeException("Unknown form of multiple assignment " + node + " at " + node.getPosition());
+            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), node + " unknown form of multiple assignment");
+            return new NilNode(context, sourceSection);
         }
     }
 
