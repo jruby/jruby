@@ -33,18 +33,20 @@ public class RubyException extends RubyObject {
     }
 
     private RubyString message;
+    private String stacktrace;
 
     public RubyException(RubyClass rubyClass) {
         super(rubyClass);
         message = rubyClass.getContext().makeString("(object uninitialized)");
     }
 
-    public RubyException(RubyClass rubyClass, String message) {
-        this(rubyClass, rubyClass.getContext().makeString(message));
+    public RubyException(RubyClass rubyClass, String message, String stacktrace) {
+        this(rubyClass, rubyClass.getContext().makeString(message), stacktrace);
     }
 
-    public RubyException(RubyClass rubyClass, RubyString message) {
+    public RubyException(RubyClass rubyClass, RubyString message, String stacktrace) {
         this(rubyClass);
+        this.stacktrace = stacktrace;
         initialize(message);
     }
 
@@ -60,6 +62,6 @@ public class RubyException extends RubyObject {
     @Override
     public String toString() {
         // Giving some space between the java stacktrace and the ruby stacktrace
-        return String.format("\n\n %s \n", message.toString());
+        return String.format("\n\n %s \n %s \n", message.toString(), stacktrace);
     }
 }

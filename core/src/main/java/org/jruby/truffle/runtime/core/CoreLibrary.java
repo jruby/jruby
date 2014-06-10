@@ -373,7 +373,7 @@ public class CoreLibrary {
     }
 
     public RubyException runtimeError(String message) {
-        return new RubyException(runtimeErrorClass, String.format("RuntimeError: %s \n %s", message, RubyCallStack.getRubyStacktrace()));
+        return new RubyException(runtimeErrorClass, String.format("RuntimeError: %s", message), RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException frozenError(String className) {
@@ -381,7 +381,7 @@ public class CoreLibrary {
     }
 
     public RubyException argumentError(String message) {
-        return new RubyException(argumentErrorClass, String.format("ArgumentError: %s \n %s", message, RubyCallStack.getRubyStacktrace()));
+        return new RubyException(argumentErrorClass, String.format("ArgumentError: %s", message), RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException argumentError(int passed, int required) {
@@ -393,7 +393,7 @@ public class CoreLibrary {
     }
 
     public RubyException localJumpError(String message) {
-        return new RubyException(localJumpErrorClass, String.format("LocalJumpError: %s \n %s", message, RubyCallStack.getRubyStacktrace()));
+        return new RubyException(localJumpErrorClass, String.format("LocalJumpError: %s", message), RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException unexpectedReturn() {
@@ -405,7 +405,7 @@ public class CoreLibrary {
     }
 
     public RubyException typeError(String message) {
-        return new RubyException(typeErrorClass, String.format("%s \n %s", message, RubyCallStack.getRubyStacktrace()));
+        return new RubyException(typeErrorClass, String.format("%s ", message), RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException typeErrorShouldReturn(String object, String method, String expectedType) {
@@ -425,11 +425,11 @@ public class CoreLibrary {
     }
 
     public RubyException rangeError(String message) {
-        return new RubyException(rangeErrorClass, message);
+        return new RubyException(rangeErrorClass, message, RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException nameError(String message) {
-        return new RubyException(nameErrorClass, String.format("%s \n %s", message, RubyCallStack.getRubyStacktrace()));
+        return new RubyException(nameErrorClass, String.format("%s ", message), RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException nameErrorUninitializedConstant(String name) {
@@ -449,7 +449,7 @@ public class CoreLibrary {
     }
 
     public RubyException noMethodError(String message) {
-        return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), String.format("%s \n %s", message, RubyCallStack.getRubyStacktrace()));
+        return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), message, RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException noMethodError(String name, String object) {
@@ -457,7 +457,7 @@ public class CoreLibrary {
     }
 
     public RubyException loadError(String message) {
-        return new RubyException(context.getCoreLibrary().getLoadErrorClass(), String.format("%s \n %s", message, RubyCallStack.getRubyStacktrace()));
+        return new RubyException(context.getCoreLibrary().getLoadErrorClass(), message, RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException loadErrorCannotLoad(String name) {
@@ -465,11 +465,11 @@ public class CoreLibrary {
     }
 
     public RubyException zeroDivisionError() {
-        return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), String.format("divided by 0 \n %s", RubyCallStack.getRubyStacktrace()));
+        return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(),"divided by 0", RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException syntaxError(String message) {
-        return new RubyException(syntaxErrorClass, String.format("SyntaxError: %s \n %s", message, RubyCallStack.getRubyStacktrace()));
+        return new RubyException(syntaxErrorClass, String.format("SyntaxError: %s ", message), RubyCallStack.getRubyStacktrace());
     }
 
     public RubyContext getContext() {
