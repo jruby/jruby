@@ -22,3 +22,4 @@ fails:a method definition that sets more than one default parameter all to the s
 fails(inherited):The def keyword within a closure looks outside the closure for the visibility
 fails:An instance method with a default argument does not evaluate the default when passed a value and a * argument
 fails:An instance method with a default argument prefers to assign to a default argument when there are no required arguments
+fails:Defining a method returns a symbol of the method name

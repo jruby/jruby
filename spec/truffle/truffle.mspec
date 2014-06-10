@@ -1,7 +1,8 @@
 class MSpecScript
 
   set :language, [
-    "spec/ruby/language"
+    "spec/ruby/language",
+    "^spec/ruby/language/regexp/anchors_spec.rb"
   ]
 
   set :tags_patterns, [
