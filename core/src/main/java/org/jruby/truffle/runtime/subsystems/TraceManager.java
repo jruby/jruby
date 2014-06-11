@@ -1,6 +1,8 @@
 package org.jruby.truffle.runtime.subsystems;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.utilities.AssumedValue;
+import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.truffle.runtime.core.RubyProc;
 
 /*
@@ -14,15 +16,21 @@ import org.jruby.truffle.runtime.core.RubyProc;
  */
 public class TraceManager {
 
-    private final AssumedValue<RubyProc> traceFunc = new AssumedValue<>("trace-func", null);
+    private CyclicAssumption traceAssumption = new CyclicAssumption("trace-func");
+    private RubyProc traceFunc = null;
     private boolean isInTraceFunc = false;
 
     public void setTraceFunc(RubyProc traceFunc) {
-        this.traceFunc.set(traceFunc);
+        this.traceFunc = traceFunc;
+        traceAssumption.invalidate();
     }
 
     public RubyProc getTraceFunc() {
-        return traceFunc.get();
+        return traceFunc;
+    }
+
+    public Assumption getTraceAssumption() {
+        return traceAssumption.getAssumption();
     }
 
     public boolean isInTraceFunc() {
