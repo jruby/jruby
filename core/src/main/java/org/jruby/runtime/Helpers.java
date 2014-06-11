@@ -2463,20 +2463,11 @@ public class Helpers {
     }
 
     public static Block getBlock(ThreadContext context, IRubyObject self, Node node) {
-        IterNode iter = (IterNode)node;
-        iter.getScope().determineModule();
-
-        // Create block for this iter node
-        // FIXME: We shouldn't use the current scope if it's not actually from the same hierarchy of static scopes
-        if (iter.getBlockBody() instanceof InterpretedBlock) {
-            return InterpretedBlock.newInterpretedClosure(context, iter.getBlockBody(), self);
-        } else {
-            return Interpreted19Block.newInterpretedClosure(context, iter.getBlockBody(), self);
-        }
+        throw new RuntimeException("Should not be called");
     }
 
     public static Block getBlock(Ruby runtime, ThreadContext context, IRubyObject self, Node node, Block aBlock) {
-        return Helpers.getBlockFromBlockPassBody(runtime, node.interpret(runtime, context, self, aBlock), aBlock);
+        throw new RuntimeException("Should not be called");
     }
 
     /**
@@ -2525,26 +2516,6 @@ public class Helpers {
         String name = context.getFrameName();
         RubyModule type = context.getFrameKlazz();
         context.runtime.callEventHooks(context, RubyEvent.END, context.getFile(), context.getLine(), name, type);
-    }
-
-    /**
-     * Some of this code looks scary.  All names for an alias or undef is a
-     * fitem in 1.8/1.9 grammars.  This means it is guaranteed to be either
-     * a LiteralNode of a DSymbolNode.  Nothing else is possible.  Also
-     * Interpreting a DSymbolNode will always yield a RubySymbol.
-     */
-    public static String interpretAliasUndefName(Node nameNode, Ruby runtime,
-            ThreadContext context, IRubyObject self, Block aBlock) {
-        String name;
-
-        if (nameNode instanceof LiteralNode) {
-            name = ((LiteralNode) nameNode).getName();
-        } else {
-            assert nameNode instanceof DSymbolNode: "Alias or Undef not literal or dsym";
-            name = ((RubySymbol) nameNode.interpret(runtime, context, self, aBlock)).asJavaString();
-        }
-
-        return name;
     }
 
     /**
@@ -3019,13 +2990,17 @@ public class Helpers {
         if (value instanceof RubyArray) {
             return value;
         } else {
-            IRubyObject ary = Helpers.aryToAry(value);
-            if (ary instanceof RubyArray) {
-                return ary;
-            } else {
-                String valueType = value.getType().getName();
-                throw context.runtime.newTypeError("can't convert " + valueType + " to Array (" + valueType + "#to_ary gives " + ary.getType().getName() + ")");
+            IRubyObject newValue = TypeConverter.convertToType19(value, context.runtime.getArray(), "to_ary", false);
+            if (newValue.isNil()) {
+                return RubyArray.newArrayLight(context.runtime, value);
             }
+
+            // must be array by now, or error
+            if (!(newValue instanceof RubyArray)) {
+                throw context.runtime.newTypeError(newValue.getMetaClass() + "#" + "to_ary" + " should return Array");
+            }
+
+            return (RubyArray)newValue;
         }
     }
 

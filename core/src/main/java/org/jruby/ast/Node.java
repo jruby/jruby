@@ -37,17 +37,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jruby.ParseResult;
-import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.DefinedMessage;
 
 /**
  * Base class for all Nodes in the AST
@@ -187,24 +180,6 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
         int i = name.lastIndexOf('.');
         String nodeType = name.substring(i + 1);
         return nodeType;
-    }
-
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
-    }
-    
-    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
-        throw new RuntimeException("Invalid node encountered in interpreter: \"" + getClass().getName() + "\", please report this at www.jruby.org");
-    }
-    
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        try {
-            interpret(runtime, context, self, aBlock);
-            return runtime.getDefinedMessage(DefinedMessage.EXPRESSION);
-        } catch (JumpException jumpExcptn) {
-        }
-        
-        return null;
     }
 
     /**

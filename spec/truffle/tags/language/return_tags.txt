@@ -1,0 +1,2 @@
+fails:The return keyword invoked with a method call without parentheses with a block returns the value returned from the method call
+fails:The return keyword in a Thread raises a LocalJumpError if used to exit a thread

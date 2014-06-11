@@ -12,10 +12,6 @@ namespace :spec do
   task :'ruby:jit' => :ci_compiled
   desc "Run rubyspecs expected to pass in precompiled mode"
   task :'ruby:aot' => :ci_precompiled
-  desc "Run rubyspecs expected to pass in interpreted IR mode"
-  task :'ruby:int_ir' => :ci_interpreted_ir
-  desc "Run rubyspecs expected to pass in interpreted IR mode"
-  task :'ruby:jit_ir' => :ci_compiled_ir
 
   desc "Run rubyspecs expected to pass"
   task :ci => ['spec:tagged']
@@ -23,8 +19,6 @@ namespace :spec do
   task :ci_interpreted => ['spec:interpreted']
   task :ci_compiled => ['spec:compiled']
   task :ci_precompiled => ['spec:precompiled']
-  task :ci_interpreted_ir => ['spec:interpreted_ir']
-  task :ci_compiled_ir => ['spec:compiled_ir']
 
   desc "Run all the specs including failures"
   task :ci_all => ['spec:all']
@@ -54,23 +48,11 @@ namespace :spec do
        :format => 'd'
   end
 
-  desc "Tagged specs in interpreted (IR) mode only"
-  task :interpreted_ir do
-    mspec :compile_mode => "OFFIR",
-       :format => 'd'
-  end
-
   desc "Tagged specs in JIT mode only (threshold=0)"
   task :compiled do
     mspec :compile_mode => "JIT",
        :jit_threshold => 0, 
        :format => 'd'
-  end
-
-  desc "Tagged specs in JIT (IR) mode only"
-  task :compiled_ir do
-    mspec :compile_mode => "JITIR",
-          :format => 'd'
   end
 
   desc "Tagged specs in AOT mode only"
@@ -83,12 +65,6 @@ namespace :spec do
   desc "All specs in interpreted mode only"
   task :all_interpreted do
     mspec :compile_mode => "OFF", 
-       :format => 'd'
-  end
-
-  desc "All specs in interpreted IR mode only"
-  task :all_interpreted_ir do
-    mspec :compile_mode => "OFFIR", 
        :format => 'd'
   end
 
@@ -111,12 +87,6 @@ namespace :spec do
      :format => 's'
   end
 
-  desc "Run RubySpec on Travis in interpreted_ir mode"
-  task :ci_interpreted_ir_travis do
-    mspec :compile_mode => 'OFFIR',
-          :format => 's'
-  end
-  
   # Complimentary tasks for running specs
 
   task :fetch_latest_specs => [:install_build_gems, :fetch_latest_rubyspec_repo, :fetch_latest_mspec_repo]

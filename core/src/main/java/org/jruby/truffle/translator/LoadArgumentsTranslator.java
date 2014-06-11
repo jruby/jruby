@@ -26,10 +26,7 @@ import org.jruby.truffle.nodes.methods.locals.WriteLocalVariableNodeFactory;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
 
 public class LoadArgumentsTranslator extends Translator {
 
@@ -221,7 +218,13 @@ public class LoadArgumentsTranslator extends Translator {
 
         pushArraySlot(arraySlot);
 
-        final List<org.jruby.ast.Node> childNodes = node.childNodes().get(0).childNodes();
+        final List<org.jruby.ast.Node> childNodes;
+
+        if (node.childNodes() == null || node.childNodes().get(0) == null) {
+            childNodes = Collections.emptyList();
+        } else {
+            childNodes = node.childNodes().get(0).childNodes();
+        }
 
         final List<RubyNode> notNilSequence = new ArrayList<>();
 

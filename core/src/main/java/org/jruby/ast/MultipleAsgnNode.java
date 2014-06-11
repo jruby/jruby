@@ -33,17 +33,9 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class MultipleAsgnNode extends AssignableNode {
     private final ListNode pre;
@@ -109,37 +101,5 @@ public class MultipleAsgnNode extends AssignableNode {
     
     public List<Node> childNodes() {
         return Node.createList(pre, rest, getValueNode());
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        switch (getValueNode().getNodeType()) {
-        case ARRAYNODE: {
-            ArrayNode iVisited2 = (ArrayNode) getValueNode();
-            return ASTInterpreter.multipleAsgnArrayNode(runtime, context, this, iVisited2, self, aBlock);
-        }
-        case SPLATNODE: {
-            SplatNode splatNode = (SplatNode) getValueNode();
-            RubyArray rubyArray = (RubyArray) splatNode.interpret(runtime, context, self, aBlock);
-            return AssignmentVisitor.multiAssign(runtime, context, self, this, rubyArray, false);
-        }
-        default:
-            IRubyObject value = getValueNode().interpret(runtime, context, self, aBlock);
-
-            if (!(value instanceof RubyArray)) {
-                value = RubyArray.newArray(runtime, value);
-            }
-            
-            return AssignmentVisitor.multiAssign(runtime, context, self, this, (RubyArray)value, false);
-        }
-    }
-    
-    @Override
-    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
-        if (!(value instanceof RubyArray)) {
-            value = ArgsUtil.convertToRubyArray(runtime, value, pre != null);
-        }
-        
-        return AssignmentVisitor.multiAssign(runtime, context, self, this, (RubyArray) value, checkArity);
     }
 }

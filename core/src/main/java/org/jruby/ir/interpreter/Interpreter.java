@@ -7,9 +7,13 @@ import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFloat;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
+import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRClosure;
@@ -61,8 +65,10 @@ import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
@@ -692,5 +698,87 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     private static void methodPostTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
         if (runtime.hasEventHooks()) context.trace(RubyEvent.RETURN, name, implClass);
+    }
+
+    /**
+     * Evaluate the given string.
+     * @param context the current thread's context
+     * @param self the self to evaluate under
+     * @param src The string containing the text to be evaluated
+     * @param file The filename to use when reporting errors during the evaluation
+     * @param lineNumber that the eval supposedly starts from
+     * @return An IRubyObject result from the evaluation
+     */
+    public static IRubyObject evalSimple(ThreadContext context, IRubyObject self, RubyString src, String file, int lineNumber) {
+        // this is ensured by the caller
+        assert file != null;
+
+        Ruby runtime = src.getRuntime();
+
+        // no binding, just eval in "current" frame (caller's frame)
+        RubyString source = src.convertToString();
+
+        DynamicScope evalScope = context.getCurrentScope().getEvalScope(runtime);
+        evalScope.getStaticScope().determineModule();
+
+        try {
+            Node node = runtime.parseEval(source.getByteList(), file, evalScope, lineNumber);
+
+            if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) {
+                throw new UnsupportedOperationException();
+            }
+
+            // SSS FIXME: AST interpreter passed both a runtime (which comes from the source string)
+            // and the thread-context rather than fetch one from the other.  Why is that?
+            return Interpreter.interpretSimpleEval(runtime, file, lineNumber, "(eval)", node, self);
+        } catch (JumpException.BreakJump bj) {
+            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
+        } catch (StackOverflowError soe) {
+            throw runtime.newSystemStackError("stack level too deep", soe);
+        }
+    }
+
+    /**
+     * Evaluate the given string under the specified binding object. If the binding is not a Proc or Binding object
+     * (RubyProc or RubyBinding) throw an appropriate type error.
+     * @param context the thread context for the current thread
+     * @param self the self against which eval was called; used as self in the eval in 1.9 mode
+     * @param src The string containing the text to be evaluated
+     * @param binding The binding object under which to perform the evaluation
+     * @return An IRubyObject result from the evaluation
+     */
+    public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject self, IRubyObject src, Binding binding) {
+        Ruby runtime = src.getRuntime();
+        DynamicScope evalScope;
+
+        // in 1.9, eval scopes are local to the binding
+        evalScope = binding.getEvalScope(runtime);
+
+        // FIXME:  This determine module is in a strange location and should somehow be in block
+        evalScope.getStaticScope().determineModule();
+
+        Frame lastFrame = context.preEvalWithBinding(binding);
+        try {
+            // Binding provided for scope, use it
+            RubyString source = src.convertToString();
+            Node node = runtime.parseEval(source.getByteList(), binding.getFile(), evalScope, binding.getLine());
+            Block block = binding.getFrame().getBlock();
+
+            if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) {
+                throw new UnsupportedOperationException();
+            }
+
+            // SSS FIXME: AST interpreter passed both a runtime (which comes from the source string)
+            // and the thread-context rather than fetch one from the other.  Why is that?
+            return Interpreter.interpretBindingEval(runtime, binding.getFile(), binding.getLine(), binding.getMethod(), node, self, block);
+        } catch (JumpException.BreakJump bj) {
+            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
+        } catch (JumpException.RedoJump rj) {
+            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, (IRubyObject)rj.getValue(), "unexpected redo");
+        } catch (StackOverflowError soe) {
+            throw runtime.newSystemStackError("stack level too deep", soe);
+        } finally {
+            context.postEvalWithBinding(binding, lastFrame);
+        }
     }
 }

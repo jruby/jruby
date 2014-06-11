@@ -34,14 +34,8 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 /**
  * a defined statement.
@@ -79,11 +73,5 @@ public class DefinedNode extends Node {
     
     public List<Node> childNodes() {
         return createList(expressionNode);
-    }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-			RubyString definition = expressionNode.definition(runtime, context, self, aBlock);
-			return definition != null ? definition : runtime.getNil();
     }
 }

@@ -34,27 +34,17 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyString;
 import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.ivars.VariableAccessor;
-import org.jruby.util.DefinedMessage;
 
 /** 
  * Represents an instance variable accessor.
  */
 public class InstVarNode extends Node implements IArityNode, INameNode {
     private String name;
-    private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
 
     public InstVarNode(ISourcePosition position, String name) {
         super(position);
@@ -94,42 +84,5 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
     
     public void setName(String name){
         this.name = name;
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return getVariable(runtime, self, true);
-    }
-
-    private IRubyObject getVariable(Ruby runtime, IRubyObject self, boolean warn) {
-        IRubyObject value = getValue(runtime, self);
-        if (value != null) return value;
-        if (warn && runtime.isVerbose()) warnAboutUninitializedIvar(runtime);
-        return runtime.getNil();
-    }
-
-    private IRubyObject getValue(Ruby runtime, IRubyObject self) {
-        RubyClass cls = self.getMetaClass().getRealClass();
-        VariableAccessor localAccessor = accessor;
-        IRubyObject value;
-        if (localAccessor.getClassId() != cls.hashCode()) {
-            localAccessor = cls.getVariableAccessorForRead(name);
-            if (localAccessor == null) return runtime.getNil();
-            value = (IRubyObject)localAccessor.get(self);
-            accessor = localAccessor;
-        } else {
-            value = (IRubyObject)localAccessor.get(self);
-        }
-        return value;
-    }
-
-    private void warnAboutUninitializedIvar(Ruby runtime) {
-        runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, getPosition(), 
-                "instance variable " + name + " not initialized");
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return getValue(runtime, self) == null ? null : runtime.getDefinedMessage(DefinedMessage.INSTANCE_VARIABLE);
     }
 }

@@ -34,8 +34,35 @@ public final class ExceptionTranslator {
 
         // Translate divide by zero into ZeroDivisionError
 
+        // TODO(CS): both of these error strings seem to be used in different places, but can't remember where...
+
         if (exception instanceof ArithmeticException && (exception.getMessage().endsWith("divide by zero") || exception.getMessage().endsWith("/ by zero"))) {
-            return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), "divided by 0");
+            return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), "divided by 0", RubyCallStack.getRubyStacktrace());
+        }
+
+        // Translate the UnsupportedSpecializationException
+
+        if (exception instanceof UnsupportedSpecializationException) {
+            final UnsupportedSpecializationException specialization = (UnsupportedSpecializationException) exception;
+
+            final StringBuilder builder = new StringBuilder();
+            builder.append("Truffle doesn't have a case for the ");
+            builder.append(specialization.getNode().getClass().getSimpleName());
+            builder.append(" node with values of class");
+
+            for (Object value : specialization.getSuppliedValues()) {
+                builder.append(" ");
+
+                if (value instanceof RubyBasicObject) {
+                    builder.append(((RubyBasicObject) value).getRubyClass().getName());
+                } else {
+                    builder.append(value.getClass().getSimpleName());
+                }
+            }
+
+            builder.append(" - this is either a feature we haven't implemented for Truffle yet, or it might be disallowed in Ruby anyway");
+
+            return new RubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), builder.toString());
         }
 
         /*
@@ -56,7 +83,7 @@ public final class ExceptionTranslator {
             message = exception.getClass().getSimpleName() + ": " + exception.getMessage();
         }
 
-        return new RubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), message);
+        return new RubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), message, RubyCallStack.getRubyStacktrace());
     }
 
 }

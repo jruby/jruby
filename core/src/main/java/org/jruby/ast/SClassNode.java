@@ -33,16 +33,9 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Singleton class definition.
@@ -109,15 +102,5 @@ public class SClassNode extends Node {
     
     public List<Node> childNodes() {
         return Node.createList(receiverNode, bodyNode);
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
-
-        RubyClass singletonClass = Helpers.getSingletonClass(runtime, receiver);
-        scope.setModule(singletonClass);
-        
-        return ASTInterpreter.evalClassDefinitionBody(runtime, context, scope, bodyNode, singletonClass, self, aBlock);
     }
 }

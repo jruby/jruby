@@ -33,12 +33,8 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *	An 'ensure' statement.
@@ -86,19 +82,5 @@ public class EnsureNode extends Node {
     
     public List<Node> childNodes() {
         return Node.createList(bodyNode, ensureNode);
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        // save entering the try if there's nothing to ensure
-        if (ensureNode != null) {
-            try {
-                return bodyNode.interpret(runtime,context, self, aBlock);
-            } finally {
-                ensureNode.interpret(runtime,context, self, aBlock);
-            }
-        }
-
-        return bodyNode.interpret(runtime, context, self, aBlock);
     }
 }

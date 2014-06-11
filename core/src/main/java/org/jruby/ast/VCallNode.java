@@ -33,30 +33,21 @@
 package org.jruby.ast;
 
 import java.util.List;
-import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.MethodIndex;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
-import org.jruby.util.DefinedMessage;
 
 /**
  * RubyMethod call without any arguments
  *
  */
 public class VCallNode extends Node implements INameNode {
-    public final CallSite callAdapter;
+    private String name;
 
     public VCallNode(ISourcePosition position, String name) {
         super(position);
 
-        this.callAdapter = MethodIndex.getVariableCallSite(name);
+        this.name = name;
     }
 
     public NodeType getNodeType() {
@@ -76,20 +67,10 @@ public class VCallNode extends Node implements INameNode {
      * @return Returns a String
      */
     public String getName() {
-        return callAdapter.methodName;
+        return name;
     }
     
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return callAdapter.call(context, self, self);
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return self.getMetaClass().isMethodBound(getName(), false) ? runtime.getDefinedMessage(DefinedMessage.METHOD) : null;
     }
 }

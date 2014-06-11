@@ -33,23 +33,14 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyString;
-import org.jruby.ast.types.IEqlNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
-import org.jruby.util.DefinedMessage;
 
 /** 
  * Represents a false literal.
  */
-public class FalseNode extends Node implements INameNode, IEqlNode {
+public class FalseNode extends Node implements INameNode {
     public FalseNode(ISourcePosition position) {
         super(position);
     }
@@ -75,19 +66,5 @@ public class FalseNode extends Node implements INameNode, IEqlNode {
     
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return ASTInterpreter.pollAndReturn(context, runtime.getFalse());
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.getDefinedMessage(DefinedMessage.FALSE);
-    }
-
-    public boolean eql(IRubyObject otherValue, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        return otherValue == interpret(runtime, context, self, aBlock);
     }
 }

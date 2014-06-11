@@ -33,17 +33,8 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
-import org.jruby.util.DefinedMessage;
 
 public class OpAsgnOrNode extends Node implements BinaryOperatorNode {
     private final Node firstNode;
@@ -89,34 +80,5 @@ public class OpAsgnOrNode extends Node implements BinaryOperatorNode {
     
     public List<Node> childNodes() {
         return Node.createList(firstNode, secondNode);
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject result = runtime.getNil();
-
-        if (defined(runtime, context, firstNode, self, aBlock)) {
-            result = firstNode.interpret(runtime, context, self, aBlock);
-        }
-        if (!result.isTrue()) {
-            result = secondNode.interpret(runtime,context, self, aBlock);
-        }
-   
-        return ASTInterpreter.pollAndReturn(context, result);
-    }
-
-    private boolean defined(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        return node.definition(runtime, context, self, aBlock) != null;
-    }
-
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        try {
-            interpret(runtime, context, self, aBlock);
-            return runtime.getDefinedMessage(DefinedMessage.ASSIGNMENT);
-        } catch (JumpException jumpExcptn) {
-        }
-
-        return null;
     }
 }

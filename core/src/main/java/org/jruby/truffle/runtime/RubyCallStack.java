@@ -87,6 +87,10 @@ public abstract class RubyCallStack {
     private static RubyMethod getMethod(FrameInstance frame) {
         CompilerAsserts.neverPartOfCompilation();
 
+        if (frame == null) {
+            return null;
+        }
+
         final CallTarget callTarget = frame.getCallTarget();
 
         if (!(callTarget instanceof RootCallTarget)) {
@@ -111,6 +115,22 @@ public abstract class RubyCallStack {
         CompilerAsserts.neverPartOfCompilation();
 
         return getCurrentMethod().getDeclaringModule();
+    }
+
+    public static String getRubyStacktrace(){
+        try {
+            return String.format("%s at %s:%s", getCurrentMethod().getName(), getFilename(), getLineNumber());
+        } catch(UnsupportedOperationException ex) {
+            return String.format("(root) at %s:%s", getFilename(), getLineNumber());
+        }
+    }
+
+    public static String getFilename(){
+        return getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName();
+    }
+
+    public static int getLineNumber(){
+        return getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine();
     }
 
 }

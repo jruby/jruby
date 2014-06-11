@@ -53,8 +53,6 @@ import org.jruby.ast.DefsNode;
 import org.jruby.ast.DotNode;
 import org.jruby.ast.EnsureNode;
 import org.jruby.ast.EvStrNode;
-import org.jruby.ast.FCallNoArgBlockNode;
-import org.jruby.ast.FCallNoArgNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.ForNode;
@@ -1098,7 +1096,7 @@ primary         : literal
                 | var_ref
                 | backref
                 | tFID {
-                    $$ = new FCallNoArgNode($1.getPosition(), (String) $1.getValue());
+                    $$ = support.new_fcall($1, null, null);
                 }
                 | kBEGIN bodystmt kEND {
                     $$ = new BeginNode(support.getPosition($1), $2 == null ? NilImplicitNode.NIL : $2);
@@ -1163,7 +1161,7 @@ primary         : literal
                     $$ = support.getOperatorCallNode(NilImplicitNode.NIL, "!");
                 }
                 | operation brace_block {
-                    $$ = new FCallNoArgBlockNode($1.getPosition(), (String) $1.getValue(), $2);
+                    $$ = support.new_fcall($1, null, $2);
                 }
                 | method_call
                 | method_call brace_block {

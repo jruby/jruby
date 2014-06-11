@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.runtime.ivars.VariableAccessor;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -41,7 +42,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.JavaObject;
@@ -1795,8 +1795,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         context.setCurrentVisibility(PUBLIC);
         context.preExecuteUnder(under, Block.NULL_BLOCK);
         try {
-            return ASTInterpreter.evalSimple(context, this, src,
-                    file, line);
+            return Interpreter.evalSimple(context, this, src, file, line);
         } finally {
             context.postExecuteUnder();
             context.setCurrentVisibility(savedVisibility);

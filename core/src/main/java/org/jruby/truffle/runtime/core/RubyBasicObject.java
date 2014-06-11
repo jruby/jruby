@@ -169,4 +169,8 @@ public class RubyBasicObject extends ObjectStorage {
         return hasPrivateLayout;
     }
 
+    public boolean isTrue() {
+        return true;
+    }
+
 }

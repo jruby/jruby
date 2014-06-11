@@ -721,9 +721,6 @@ public class ASTInspector {
             break;
         case SYMBOLNODE:
             break;
-        case TOARYNODE:
-            inspect(((ToAryNode)node).getValue());
-            break;
         case TRUENODE:
             break;
         case UNDEFNODE:

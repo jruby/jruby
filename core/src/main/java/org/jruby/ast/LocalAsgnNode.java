@@ -34,14 +34,9 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.compiler.ASTInspector;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * An assignment to a local variable.
@@ -57,12 +52,7 @@ public class LocalAsgnNode extends AssignableNode implements INameNode, IScopedN
     public LocalAsgnNode(ISourcePosition position, String name, int location, Node valueNode) {
         super(position, valueNode);
         this.name = name;
-        // in order to make pragma's noops we set location to a special value
-        if (ASTInspector.PRAGMAS.contains(name)) {
-            this.location = 0xFFFFFFFF;
-        } else {
-            this.location = location;
-        }
+        this.location = location;
     }
 
     public NodeType getNodeType() {
@@ -113,21 +103,5 @@ public class LocalAsgnNode extends AssignableNode implements INameNode, IScopedN
     
     public List<Node> childNodes() {
         return createList(getValueNode());
-    }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        // ignore compiler pragmas
-        if (location == 0xFFFFFFFF) return runtime.getNil();
-        
-        return context.getCurrentScope().setValue(getIndex(),
-                getValueNode().interpret(runtime,context, self, aBlock), getDepth());
-    }
-    
-    @Override
-    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
-        context.getCurrentScope().setValue(getIndex(), value, getDepth());
-        
-        return runtime.getNil();
     }
 }

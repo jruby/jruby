@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyCallStack;
@@ -235,7 +236,7 @@ public class RubyModule extends RubyObject implements LookupNode {
 
         if (method == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getRubyClass().getContext().getCoreLibrary().noMethodError(oldName, toString()));
+            throw new RaiseException(getRubyClass().getContext().getCoreLibrary().noMethodError(oldName, getName()));
         }
 
         addMethod(method.withNewName(newName));

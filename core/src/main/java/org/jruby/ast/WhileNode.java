@@ -32,18 +32,8 @@
 package org.jruby.ast;
 
 import java.util.List;
-
-import org.jruby.Ruby;
-import org.jruby.RubyLocalJumpError;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents a while statement. This could be the both versions:
@@ -117,50 +107,5 @@ public class WhileNode extends Node {
 
     public List<Node> childNodes() {
         return Node.createList(conditionNode, bodyNode);
-    }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject result = null;
-        boolean firstTest = evaluateAtStart;
-        
-        outerLoop: while (!firstTest || conditionNode.interpret(runtime,context,self, aBlock).isTrue()) {
-            firstTest = true;
-            loop: while (true) { // Used for the 'redo' command
-                try {
-                    bodyNode.interpret(runtime,context, self, aBlock);
-                    break loop;
-                } catch (RaiseException re) {
-                    if (runtime.getLocalJumpError().isInstance(re.getException())) {
-                        RubyLocalJumpError jumpError = (RubyLocalJumpError)re.getException();
-                        
-                        IRubyObject reason = jumpError.reason();
-                        
-                        // admittedly inefficient
-                        if (reason.asJavaString().equals("break")) {
-                            return jumpError.exit_value();
-                        } else if (reason.asJavaString().equals("next")) {
-                            break loop;
-                        } else if (reason.asJavaString().equals("redo")) {
-                            continue;
-                        }
-                    }
-                    
-                    throw re;
-                } catch (JumpException.RedoJump rj) {
-                    continue;
-                } catch (JumpException.NextJump nj) {
-                    break loop;
-                } catch (JumpException.BreakJump bj) {
-                    // JRUBY-530, while case
-                    result = Helpers.breakJumpInWhile(bj, context);
-                    break outerLoop;
-                }
-            }
-        }
-        if (result == null) {
-            result = runtime.getNil();
-        }
-        return ASTInterpreter.pollAndReturn(context, result);
     }
 }

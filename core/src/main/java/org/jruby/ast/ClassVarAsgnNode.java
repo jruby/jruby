@@ -33,15 +33,9 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Class variable assignment node.
@@ -81,21 +75,5 @@ public class ClassVarAsgnNode extends AssignableNode implements INameNode {
     
     public List<Node> childNodes() {
         return createList(getValueNode());
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, runtime);
-   
-        if (rubyClass == null) rubyClass = self.getMetaClass();
-
-        return rubyClass.setClassVar(name, getValueNode().interpret(runtime, context, self, aBlock));
-    }
-    
-    @Override
-    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
-        ASTInterpreter.getClassVariableBase(context, runtime).setClassVar(name, value);
-        
-        return runtime.getNil();
     }
 }

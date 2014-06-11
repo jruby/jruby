@@ -33,25 +33,16 @@
 package org.jruby.ast;
 
 import java.util.List;
-
-import org.jruby.Ruby;
-import org.jruby.RubySymbol;
-
-import org.jruby.ast.types.IEqlNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents a symbol (:symbol_name).
  */
-public class SymbolNode extends Node implements ILiteralNode, INameNode, IEqlNode {
+public class SymbolNode extends Node implements ILiteralNode, INameNode {
     private String name;
-    private RubySymbol symbol;
 
     public SymbolNode(ISourcePosition position, String name) {
 	    super(position);
@@ -76,20 +67,5 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode, IEqlNod
     
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-
-    public RubySymbol getSymbol(Ruby runtime) {
-        RubySymbol sym;
-        if ((sym = symbol) != null) return sym;
-        return symbol = runtime.fastNewSymbol(name);
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return getSymbol(runtime);
-    }
-
-    public boolean eql(IRubyObject otherValue, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-       return otherValue instanceof RubySymbol && ((RubySymbol) otherValue).asJavaString() == name;
     }
 }

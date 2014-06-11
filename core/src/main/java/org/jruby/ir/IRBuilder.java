@@ -412,7 +412,6 @@ public class IRBuilder {
             case SUPERNODE: return buildSuper((SuperNode) node, s);
             case SVALUENODE: return buildSValue((SValueNode) node, s);
             case SYMBOLNODE: return buildSymbol((SymbolNode) node, s);
-            case TOARYNODE: return buildToAry((ToAryNode) node, s);
             case TRUENODE: return buildTrue(node, s);
             case UNDEFNODE: return buildUndef(node, s);
             case UNTILNODE: return buildUntil((UntilNode) node, s);
@@ -3309,14 +3308,6 @@ public class IRBuilder {
     public Operand buildSymbol(SymbolNode node, IRScope s) {
         // SSS: Since symbols are interned objects, no need to copyAndReturnValue(...)
         return new Symbol(node.getName());
-    }
-
-    // ENEBO: This is it's own instruction, but an older note pointed out we
-    // could make this an ordinary method and then depend on inlining.
-    public Operand buildToAry(ToAryNode node, IRScope s) {
-        Operand array = build(node.getValue(), s);
-
-        return addResultInstr(s, new ToAryInstr(s.createTemporaryVariable(), array));
     }
 
     public Operand buildTrue(Node node, IRScope s) {
