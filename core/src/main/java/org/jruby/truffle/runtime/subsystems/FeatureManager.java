@@ -13,7 +13,7 @@ import java.io.*;
 import java.net.*;
 import java.util.Arrays;
 
-import com.oracle.truffle.api.source.SourceFactory;
+import com.oracle.truffle.api.source.Source;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
@@ -151,7 +151,9 @@ public class FeatureManager {
                 return false;
             }
 
-            context.load(SourceFactory.fromReader(new InputStreamReader(inputStream), url.toString()));
+            // TODO(CS): can probably simplify this with the new Source API in Truffle
+
+            context.load(Source.fromReader(new InputStreamReader(inputStream), url.toString()));
             context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(fileName));
             ((RubyArray) context.getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$LOADED_FEATURES")).slowPush(context.makeString(fileName));
             return true;

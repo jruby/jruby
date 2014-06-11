@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.control;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.UnsupportedSpecializationException;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;

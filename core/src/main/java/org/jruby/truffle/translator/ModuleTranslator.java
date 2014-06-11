@@ -10,6 +10,7 @@
 package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.ast.*;
 import org.jruby.lexer.yacc.ISourcePosition;

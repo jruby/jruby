@@ -15,6 +15,7 @@ import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives.SlowPath;
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 
@@ -730,35 +731,6 @@ public abstract class
 
             return true;
         }
-    }
-
-    @CoreMethod(names = "set_trace_func", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
-    public abstract static class SetTraceFuncNode extends CoreMethodNode {
-
-        public SetTraceFuncNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SetTraceFuncNode(SetTraceFuncNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public NilPlaceholder setTraceFunc(NilPlaceholder proc) {
-            notDesignedForCompilation();
-
-            getContext().getTraceManager().setTraceProc(null);
-            return proc;
-        }
-
-        @Specialization
-        public RubyProc setTraceFunc(RubyProc proc) {
-            notDesignedForCompilation();
-
-            getContext().getTraceManager().setTraceProc(proc);
-            return proc;
-        }
-
     }
 
     @CoreMethod(names = "String", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)

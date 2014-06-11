@@ -18,9 +18,9 @@ import com.oracle.truffle.api.instrument.SourceCallback;
 import org.jruby.Ruby;
 import org.jruby.*;
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
-import com.oracle.truffle.api.source.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
@@ -33,7 +33,6 @@ import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.subsystems.*;
-import org.jruby.truffle.runtime.debug.RubyDebugManager;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
 
@@ -47,11 +46,9 @@ public class RubyContext extends ExecutionContext {
     private final CoreLibrary coreLibrary;
     private final FeatureManager featureManager;
     private final ObjectSpaceManager objectSpaceManager;
-    private final TraceManager traceManager;
     private final ThreadManager threadManager;
     private final FiberManager fiberManager;
     private final AtExitManager atExitManager;
-    private final RubyDebugManager rubyDebugManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
 
     private SourceCallback sourceCallback = null;
@@ -65,7 +62,6 @@ public class RubyContext extends ExecutionContext {
         this.translator = translator;
 
         objectSpaceManager = new ObjectSpaceManager(this);
-        traceManager = new TraceManager(this);
 
         // See note in CoreLibrary#initialize to see why we need to break this into two statements
         coreLibrary = new CoreLibrary(this);
@@ -73,8 +69,6 @@ public class RubyContext extends ExecutionContext {
 
         featureManager = new FeatureManager(this);
         atExitManager = new AtExitManager();
-
-        rubyDebugManager = new RubyDebugManager();
 
         // Must initialize threads before fibers
 
@@ -95,7 +89,14 @@ public class RubyContext extends ExecutionContext {
     }
 
     private void loadFileAbsolute(String fileName) {
-        final Source source = SourceFactory.fromFile(fileName);
+        final Source source;
+
+        try {
+            source = Source.fromFileName(fileName);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         final String code = source.getCode();
         if (code == null) {
             throw new RuntimeException("Can't read file " + fileName);
@@ -117,17 +118,17 @@ public class RubyContext extends ExecutionContext {
     }
 
     public Object eval(String code) {
-        final Source source = SourceFactory.fromText(code, "(eval)");
+        final Source source = Source.fromText(code, "(eval)");
         return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
     }
 
     public Object eval(String code, RubyModule module) {
-        final Source source = SourceFactory.fromText(code, "(eval)");
+        final Source source = Source.fromText(code, "(eval)");
         return execute(this, source, TranslatorDriver.ParserContext.MODULE, module, null);
     }
 
     public Object eval(String code, RubyBinding binding) {
-        final Source source = SourceFactory.fromText(code, "(eval)");
+        final Source source = Source.fromText(code, "(eval)");
         return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame());
     }
 
@@ -165,7 +166,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public ShellResult evalShell(String code, MaterializedFrame existingLocals) {
-        final Source source = SourceFactory.fromText(code, "(shell)");
+        final Source source = Source.fromText(code, "(shell)");
         return (ShellResult) execute(this, source, TranslatorDriver.ParserContext.SHELL, coreLibrary.getMainObject(), existingLocals);
     }
 
@@ -307,10 +308,6 @@ public class RubyContext extends ExecutionContext {
 
     public ObjectSpaceManager getObjectSpaceManager() {
         return objectSpaceManager;
-    }
-
-    public TraceManager getTraceManager() {
-        return traceManager;
     }
 
     public FiberManager getFiberManager() {

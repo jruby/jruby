@@ -87,6 +87,21 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer.toString()));
     }
 
+    /**
+     * Prints a warning, unless $VERBOSE is nil.
+     */
+    @Override
+    public void warn(ID id, String fileName, String message) {
+        if (!runtime.warningsEnabled()) return;
+
+        StringBuilder buffer = new StringBuilder(100);
+
+        buffer.append(fileName).append(' ');
+        buffer.append("warning: ").append(message).append('\n');
+        IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
+        errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer.toString()));
+    }
+
     @Override
     public void warn(ID id, String message) {
         if (!runtime.warningsEnabled()) return;

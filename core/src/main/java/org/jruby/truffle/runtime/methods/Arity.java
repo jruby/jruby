@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.methods;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 

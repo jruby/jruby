@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.lookup;
 import java.util.*;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.utilities.*;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.*;

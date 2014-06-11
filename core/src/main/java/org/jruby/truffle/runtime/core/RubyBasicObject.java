@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.Map.Entry;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;

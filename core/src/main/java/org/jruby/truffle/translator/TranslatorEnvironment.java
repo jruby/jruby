@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.methods.locals.*;

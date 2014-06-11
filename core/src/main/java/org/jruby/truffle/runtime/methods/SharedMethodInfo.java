@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.runtime.methods;
 
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 
 /**
  * {@link RubyMethod} objects are copied as properties such as visibility are changed. {@link SharedMethodInfo} stores

@@ -10,6 +10,7 @@
 package org.jruby.truffle;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 
 import org.jruby.RubyModule;
 import org.jruby.TruffleBridge;

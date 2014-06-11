@@ -10,10 +10,10 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.NodeUtil;
-import com.oracle.truffle.api.source.SourceFactory;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -239,7 +239,7 @@ public abstract class ModuleNodes {
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            final Source source = SourceFactory.fromText(code.toString(), "(eval)");
+            final Source source = Source.fromText(code.toString(), "(eval)");
             return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize());
         }
 
@@ -247,7 +247,7 @@ public abstract class ModuleNodes {
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            final Source source = SourceFactory.asFakeFile(code.toString(), file.toString());
+            final Source source = Source.asPseudoFile(code.toString(), file.toString());
             return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize());
         }
 
@@ -255,7 +255,7 @@ public abstract class ModuleNodes {
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") int line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            final Source source = SourceFactory.asFakeFile(code.toString(), file.toString());
+            final Source source = Source.asPseudoFile(code.toString(), file.toString());
             return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize());
         }
 

@@ -10,7 +10,7 @@
 package org.jruby.truffle.nodes.respondto;
 
 import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.RubyNode;

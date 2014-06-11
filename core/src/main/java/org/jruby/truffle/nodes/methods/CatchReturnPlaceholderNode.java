@@ -10,7 +10,7 @@
 package org.jruby.truffle.nodes.methods;
 
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;

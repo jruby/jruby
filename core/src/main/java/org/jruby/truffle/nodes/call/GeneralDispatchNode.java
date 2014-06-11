@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.NodeCost;
@@ -68,7 +69,15 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
             cache.put(receiverObject.getLookupNode(), entry);
 
             if (cache.size() > Options.TRUFFLE_GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD.load()) {
-                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "general call node cache has " + cache.size() + " entries");
+                final String message = "general call node cache has " + cache.size() + " entries";
+
+                final SourceSection sourceSection = getEncapsulatingSourceSection();
+
+                if (sourceSection instanceof NullSourceSection) {
+                    getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, sourceSection.getIdentifier(), message);
+                } else {
+                    getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, sourceSection.getSource().getName(), sourceSection.getStartLine(), message);
+                }
             }
         }
 

@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.objectstorage;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.nodes.*;
 
 /**

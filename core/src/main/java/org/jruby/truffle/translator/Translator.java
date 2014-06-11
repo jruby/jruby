@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.translator;
 
-import com.oracle.truffle.api.Source;
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -34,13 +34,13 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         try {
             if (sourcePosition.getStartLine() == -1) {
                 // TODO(CS): why on earth is the line -1?
-                return SourceSection.NULL;
+                return source.createSection(sourceIdentifier, 0, source.getCode().length());
             } else {
                 // TODO(CS): can we not get column info?
-                return source.createSection(sourceIdentifier, sourcePosition.getStartLine() + 1, 0, 0);
+                return source.createSection(sourceIdentifier, sourcePosition.getStartLine() + 1);
             }
         } catch (UnsupportedOperationException e) {
-            return SourceSection.NULL;
+            return source.createSection(sourceIdentifier, 0, source.getCode().length());
         }
     }
 

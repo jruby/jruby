@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.common.IRubyWarnings;

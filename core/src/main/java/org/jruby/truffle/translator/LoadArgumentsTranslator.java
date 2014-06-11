@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.translator;
 
-import com.oracle.truffle.api.Source;
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.nodes.RubyNode;

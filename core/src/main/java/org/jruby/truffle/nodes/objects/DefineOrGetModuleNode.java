@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.objects;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.*;

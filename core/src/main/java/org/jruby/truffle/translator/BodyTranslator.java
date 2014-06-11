@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.translator;
 
-import com.oracle.truffle.api.Source;
-import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.source.Source;
+import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import org.joni.Regex;
