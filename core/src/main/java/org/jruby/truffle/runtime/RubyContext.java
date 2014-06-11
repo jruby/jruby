@@ -24,6 +24,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.debug.RubyASTProber;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -43,8 +44,10 @@ public class RubyContext extends ExecutionContext {
 
     private final Ruby runtime;
     private final TranslatorDriver translator;
+    private final RubyASTProber astProber;
     private final CoreLibrary coreLibrary;
     private final FeatureManager featureManager;
+    private final TraceManager traceManager;
     private final ObjectSpaceManager objectSpaceManager;
     private final ThreadManager threadManager;
     private final FiberManager fiberManager;
@@ -55,12 +58,14 @@ public class RubyContext extends ExecutionContext {
 
     private final AtomicLong nextObjectID = new AtomicLong(0);
 
-    public RubyContext(Ruby runtime, TranslatorDriver translator) {
+    public RubyContext(Ruby runtime) {
         assert runtime != null;
 
         this.runtime = runtime;
-        this.translator = translator;
+        translator = new TranslatorDriver(this);
+        astProber = new RubyASTProber();
 
+        // Object space manager needs to come early before we create any objects
         objectSpaceManager = new ObjectSpaceManager(this);
 
         // See note in CoreLibrary#initialize to see why we need to break this into two statements
@@ -68,6 +73,7 @@ public class RubyContext extends ExecutionContext {
         coreLibrary.initialize();
 
         featureManager = new FeatureManager(this);
+        traceManager = new TraceManager();
         atExitManager = new AtExitManager();
 
         // Must initialize threads before fibers
@@ -372,6 +378,14 @@ public class RubyContext extends ExecutionContext {
 
     public TruffleHooks getHooks() {
         return (TruffleHooks) runtime.getInstanceConfig().getTruffleHooks();
+    }
+
+    public RubyASTProber getASTProber() {
+        return astProber;
+    }
+
+    public TraceManager getTraceManager() {
+        return traceManager;
     }
 
 }

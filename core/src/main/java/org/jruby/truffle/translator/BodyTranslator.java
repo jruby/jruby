@@ -1467,9 +1467,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitNewlineNode(org.jruby.ast.NewlineNode node) {
-        final RubyNode translated = node.getNextNode().accept(this);
-        // return instrumenter.instrumentAsStatement(translated);
-        return translated;
+        return context.getASTProber().probeAsStatement(node.getNextNode().accept(this));
     }
 
     @Override

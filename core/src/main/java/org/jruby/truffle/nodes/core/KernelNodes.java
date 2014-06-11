@@ -733,6 +733,32 @@ public abstract class
         }
     }
 
+    @CoreMethod(names = "set_trace_func", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    public abstract static class SetTraceFuncNode extends CoreMethodNode {
+
+        public SetTraceFuncNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SetTraceFuncNode(SetTraceFuncNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public NilPlaceholder setTraceFunc(NilPlaceholder nil) {
+            notDesignedForCompilation();
+            getContext().getTraceManager().setTraceFunc(null);
+            return nil;
+        }
+
+        @Specialization
+        public RubyProc setTraceFunc(RubyProc traceFunc) {
+            notDesignedForCompilation();
+            getContext().getTraceManager().setTraceFunc(traceFunc);
+            return traceFunc;
+        }
+    }
+
     @CoreMethod(names = "String", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
     public abstract static class StringNode extends CoreMethodNode {
 
