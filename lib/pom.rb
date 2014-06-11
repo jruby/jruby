@@ -45,6 +45,7 @@ default_gems =
    ImportedGem.new( 'krypt-core', KRYPT_VERSION, true ),
    ImportedGem.new( 'krypt-provider-jdk', KRYPT_VERSION, true ),
    ImportedGem.new( 'ffi', '1.9.3', true )
+   ImportedGem.new( 'jar-dependencies', '0.0.3', true ),
   ]
 
 project 'JRuby Lib Setup' do
@@ -205,6 +206,10 @@ project 'JRuby Lib Setup' do
     # patch jruby-openssl - remove file which should be only inside gem
     # use this instead of FileUtils.rm_f - issue #1698
     f = File.join( ruby_dir, 'shared', 'jruby-openssl.rb' )
+    File.delete( f ) if File.exists?( f )
+
+    # we do not want rubygems_plugin.rb within jruby
+    f = File.join( ruby_dir, 'shared', 'rubygems_plugin.rb' )
     File.delete( f ) if File.exists?( f )
   end
 end
