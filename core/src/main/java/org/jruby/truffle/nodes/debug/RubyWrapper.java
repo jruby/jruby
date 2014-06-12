@@ -28,14 +28,13 @@ import java.math.BigInteger;
 public class RubyWrapper extends RubyNode implements Wrapper {
 
     @Child protected RubyNode child;
-
-    private final Probe probe;
+    @Child protected Probe probe;
 
     public RubyWrapper(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
         assert !(child instanceof RubyWrapper);
         this.child = child;
-        this.probe = context.getProbe(child.getSourceSection());
+        probe = context.getProbe(child.getSourceSection());
     }
 
     @Override

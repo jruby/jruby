@@ -21,7 +21,7 @@ public class TraceProber implements RubyNodeProber {
         final RubyWrapper wrapper;
 
         if (node instanceof RubyWrapper) {
-            wrapper = (RubyWrapper) node;
+            throw new UnsupportedOperationException();
         } else {
             wrapper = new RubyWrapper(node.getContext(), node.getEncapsulatingSourceSection(), node);
             wrapper.tagAs(StandardTag.STATEMENT);

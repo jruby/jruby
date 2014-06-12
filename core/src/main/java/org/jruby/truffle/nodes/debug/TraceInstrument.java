@@ -51,28 +51,8 @@ public class TraceInstrument extends Instrument {
     public void enter(Node node, VirtualFrame frame) {
         try {
             traceAssumption.check();
-
-            if (traceFunc != null) {
-                if (!context.getTraceManager().isInTraceFunc()) {
-                    context.getTraceManager().setInTraceFunc(true);
-
-                    try {
-                        final Object[] args = new Object[] {
-                                event,
-                                file,
-                                line,
-                                NilPlaceholder.INSTANCE,
-                                new RubyBinding(context.getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize()),
-                                NilPlaceholder.INSTANCE
-                        };
-
-                        callNode.call(frame, RubyArguments.pack(traceFunc.getMethod().getDeclarationFrame(), traceFunc.getSelfCapturedInScope(), traceFunc.getBlockCapturedInScope(), args));
-                    } finally {
-                        context.getTraceManager().setInTraceFunc(false);
-                    }
-                }
-            }
         } catch (InvalidAssumptionException e) {
+
             traceAssumption = context.getTraceManager().getTraceAssumption();
             traceFunc = context.getTraceManager().getTraceFunc();
 
@@ -80,6 +60,27 @@ public class TraceInstrument extends Instrument {
                 callNode = insert(Truffle.getRuntime().createDirectCallNode(traceFunc.getMethod().getCallTarget()));
             } else {
                 callNode = null;
+            }
+        }
+
+        if (traceFunc != null) {
+            if (!context.getTraceManager().isInTraceFunc()) {
+                context.getTraceManager().setInTraceFunc(true);
+
+                final Object[] args = new Object[]{
+                        event,
+                        file,
+                        line,
+                        NilPlaceholder.INSTANCE,
+                        new RubyBinding(context.getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize()),
+                        NilPlaceholder.INSTANCE
+                };
+
+                try {
+                    callNode.call(frame, RubyArguments.pack(traceFunc.getMethod().getDeclarationFrame(), traceFunc.getSelfCapturedInScope(), traceFunc.getBlockCapturedInScope(), args));
+                } finally {
+                    context.getTraceManager().setInTraceFunc(false);
+                }
             }
         }
     }

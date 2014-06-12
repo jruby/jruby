@@ -42,6 +42,7 @@ public class RubyASTProber implements ASTProber {
         for (RubyNodeProber nodeProber : probers) {
             result = nodeProber.probeAsStatement(result);
         }
+
         return result;
     }
 
