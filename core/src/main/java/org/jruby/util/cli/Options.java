@@ -122,8 +122,7 @@ public class Options {
 
     public static final Option<Boolean> TRUFFLE_PRINT_RUNTIME = bool(TRUFFLE, "truffle.printRuntime", false, "Print the name of the Truffle runtime on startup.");
     public static final Option<Integer> TRUFFLE_GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD = integer(TRUFFLE, "truffle.generalDispatchSizeWarningThreshold", 64, "Warn when a general dispatch cache grows larger than this many methods.");
-    public static final Option<Boolean> TRUFFLE_DEBUG_NODES = bool(TRUFFLE, "truffle.debugNodes", true, "Add debug nodes.");
-    public static final Option<Boolean> TRUFFLE_TRACE_NODES = bool(TRUFFLE, "truffle.traceNodes", true, "Add trace nodes.");
+    public static final Option<Boolean> TRUFFLE_TRACE = bool(TRUFFLE, "truffle.before", true, "Install before probes needed for set_trace_func.");
     public static final Option<Boolean> TRUFFLE_PRINT_JAVA_EXCEPTIONS = bool(TRUFFLE, "truffle.printJavaExceptions", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
@@ -176,7 +175,7 @@ public class Options {
     public static final Option<Boolean> LOG_WARNINGS = bool(DEBUG, "log.warnings", false, "Log every time a built-in warning backtrace is generated.");
     public static final Option<String> LOGGER_CLASS = string(DEBUG, "logger.class", new String[] {"class name"}, "org.jruby.util.log.StandardErrorLogger", "Use specified class for logging.");
     public static final Option<Boolean> DUMP_INSTANCE_VARS = bool(DEBUG, "dump.variables", false, "Dump class + instance var names on first new of Object subclasses.");
-    public static final Option<Boolean> REWRITE_JAVA_TRACE = bool(DEBUG, "rewrite.java.trace", true, "Rewrite stack traces from exceptions raised in Java calls.");
+    public static final Option<Boolean> REWRITE_JAVA_TRACE = bool(DEBUG, "rewrite.java.before", true, "Rewrite stack traces from exceptions raised in Java calls.");
 
     public static final Option<Boolean> JI_SETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.setAccessible", true, "Try to set inaccessible Java methods to be accessible.");
     public static final Option<Boolean> JI_LOGCANSETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.logCanSetAccessible", false, "Log whether setAccessible is working.");

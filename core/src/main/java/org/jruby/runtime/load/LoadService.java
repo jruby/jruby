@@ -1345,7 +1345,7 @@ public class LoadService {
                 jarFiles.put(jarFileName, jarFile);
             } catch (ZipException ignored) {
                 if (runtime.getInstanceConfig().isDebug()) {
-                    LOG.info("ZipException trying to access " + jarFileName + ", stack trace follows:");
+                    LOG.info("ZipException trying to access " + jarFileName + ", stack before follows:");
                     ignored.printStackTrace(runtime.getErr());
                 }
             } catch (FileNotFoundException ignored) {

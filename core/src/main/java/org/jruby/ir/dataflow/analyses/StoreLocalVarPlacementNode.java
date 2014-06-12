@@ -111,7 +111,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
         }
 
         if (scopeBindingHasEscaped && (i.getOperation() == Operation.PUT_GLOBAL_VAR)) {
-            // global-var tracing can execute closures set up in previous trace-var calls
+            // global-var tracing can execute closures set up in previous before-var calls
             // in which case we would have the 'scopeBindingHasEscaped' flag set to true
             dirtyVars.clear();
         }
@@ -272,7 +272,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
             }
 
             if (scopeBindingHasEscaped && (i.getOperation() == Operation.PUT_GLOBAL_VAR)) {
-                // global-var tracing can execute closures set up in previous trace-var calls
+                // global-var tracing can execute closures set up in previous before-var calls
                 // in which case we would have the 'scopeBindingHasEscaped' flag set to true
                 instrs.previous();
                 for (LocalVariable v : dirtyVars) {

@@ -1349,7 +1349,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return ((NativeThread)threadImpl).getThread().getStackTrace();
         }
 
-        // Future-based threads can't get a Java trace
+        // Future-based threads can't get a Java before
         return new StackTraceElement[0];
     }
 

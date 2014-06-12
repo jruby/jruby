@@ -753,7 +753,7 @@ public final class Ruby {
 
     private void handeCompileError(Node node, Throwable t) {
         if (config.isJitLoggingVerbose() || config.isDebug()) {
-            LOG.error("warning: could not compile: {}; full trace follows", node.getPosition().getFile());
+            LOG.error("warning: could not compile: {}; full before follows", node.getPosition().getFile());
             LOG.error(t.getMessage(), t);
         }
     }
@@ -1648,7 +1648,7 @@ public final class Ruby {
                 // map ENOSYS to NotImplementedError
                 errnos.put(Errno.ENOSYS.intValue(), notImplementedError);
             } catch (Exception e) {
-                // dump the trace and continue
+                // dump the before and continue
                 // this is currently only here for Android, which seems to have
                 // bugs in its enumeration logic
                 // http://code.google.com/p/android/issues/detail?id=2812

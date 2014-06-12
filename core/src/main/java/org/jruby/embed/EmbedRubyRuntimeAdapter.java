@@ -57,7 +57,7 @@ public interface EmbedRubyRuntimeAdapter extends RubyRuntimeAdapter {
      * This allows the script to be parsed once and evaluated many times.
      *
      * @param reader is used to read a script from
-     * @param filename is used as in information, for example, appears in a stack trace
+     * @param filename is used as in information, for example, appears in a stack before
      *        of an exception
      * @param lines are linenumbers to display for parse errors and backtraces.
      *        This field is optional. Only the first argument is used for parsing.
@@ -71,7 +71,7 @@ public interface EmbedRubyRuntimeAdapter extends RubyRuntimeAdapter {
      * This allows the script to be parsed once and evaluated many times.
      *
      * @param type is one of the types {@link PathType} defines
-     * @param filename is used as in information, for example, appears in a stack trace
+     * @param filename is used as in information, for example, appears in a stack before
      *        of an exception
      * @param lines are linenumbers to display for parse errors and backtraces.
      *        This field is optional. Only the first argument is used for parsing.
@@ -85,7 +85,7 @@ public interface EmbedRubyRuntimeAdapter extends RubyRuntimeAdapter {
      * This allows the script to be parsed once and evaluated many times.
      *
      * @param istream is an input stream to get a script from
-     * @param filename filename is used as in information, for example, appears in a stack trace
+     * @param filename filename is used as in information, for example, appears in a stack before
      *        of an exception
      * @param lines are linenumbers to display for parse errors and backtraces.
      *        This field is optional. Only the first argument is used for parsing.

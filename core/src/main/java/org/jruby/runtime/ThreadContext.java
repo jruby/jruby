@@ -90,7 +90,7 @@ public final class ThreadContext {
     public final IRubyObject nil;
     public final RuntimeCache runtimeCache;
 
-    // Is this thread currently with in a function trace?
+    // Is this thread currently with in a function before?
     private boolean isWithinTrace;
     
     private RubyThread thread;
@@ -800,10 +800,10 @@ public final class ThreadContext {
 
     /**
      * Create an array containing Thread::Backtrace::Location objects for the
-     * requested caller trace level and length.
+     * requested caller before level and length.
      * 
-     * @param level the level at which the trace should start
-     * @param length the length of the trace
+     * @param level the level at which the before should start
+     * @param length the length of the before
      * @return an Array with the backtrace locations
      */
     public IRubyObject createCallerLocations(int level, Integer length, StackTraceElement[] stacktrace) {

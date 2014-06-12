@@ -747,7 +747,7 @@ public abstract class
         public NilPlaceholder setTraceFunc(NilPlaceholder proc) {
             notDesignedForCompilation();
 
-            getContext().getTraceManager().setTraceProc(null);
+            getContext().getTraceManager().setTraceFunc(null);
             return proc;
         }
 
@@ -755,7 +755,7 @@ public abstract class
         public RubyProc setTraceFunc(RubyProc proc) {
             notDesignedForCompilation();
 
-            getContext().getTraceManager().setTraceProc(proc);
+            getContext().getTraceManager().setTraceFunc(proc);
             return proc;
         }
 

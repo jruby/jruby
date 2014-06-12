@@ -53,7 +53,7 @@ public class BacktraceData implements Serializable {
         // interpreter frame we encounter in the Java backtrace.
         int rubyFrameIndex = rubyTrace == null ? -1 : rubyTrace.length - 1;
 
-        // loop over all elements in the Java stack trace
+        // loop over all elements in the Java stack before
         for (int i = 0; i < javaTrace.length; i++) {
 
             StackTraceElement element = javaTrace[i];
@@ -112,7 +112,7 @@ public class BacktraceData implements Serializable {
                     // root body gets named (root)
                     if (methodName.equals("__file__")) methodName = "(root)";
 
-                    // construct Ruby trace element
+                    // construct Ruby before element
                     RubyStackTraceElement rubyElement = new RubyStackTraceElement(className, methodName, filename, line, false);
 
                     // add duplicate if masking native and previous frame was native (Kernel#caller)
@@ -146,16 +146,16 @@ public class BacktraceData implements Serializable {
 
                 // mask .java frames out for e.g. Kernel#caller
                 if (maskNative) {
-                    // for Kernel#caller, don't show .java frames in the trace
+                    // for Kernel#caller, don't show .java frames in the before
                     dupFrame = true;
                     dupFrameName = rubyName;
                     continue;
                 }
 
-                // construct Ruby trace element
+                // construct Ruby before element
                 trace.add(new RubyStackTraceElement(className, rubyName, filename, line, false));
 
-                // if not full trace, we're done; don't check interpreted marker
+                // if not full before, we're done; don't check interpreted marker
                 if (!fullTrace) {
                     continue;
                 }
@@ -169,7 +169,7 @@ public class BacktraceData implements Serializable {
                 // pop interpreter frame
                 BacktraceElement rubyFrame = rubyTrace[rubyFrameIndex--];
 
-                // construct Ruby trace element
+                // construct Ruby before element
                 RubyStackTraceElement rubyElement = new RubyStackTraceElement("RUBY", rubyFrame.method, rubyFrame.filename, rubyFrame.line + 1, false);
 
                 // dup if masking native and previous frame was native
