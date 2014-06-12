@@ -54,7 +54,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
-import org.jruby.IncludedModuleWrapper;
+import org.jruby.IncludedModule;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -456,7 +456,7 @@ public class MarshalStream extends FilterOutputStream {
         }
         while(type.isIncluded()) {
             write('e');
-            writeAndRegisterSymbol(((IncludedModuleWrapper)type).getNonIncludedClass().getName());
+            writeAndRegisterSymbol(((IncludedModule)type).getNonIncludedClass().getName());
             type = type.getSuperClass();
         }
         return type;

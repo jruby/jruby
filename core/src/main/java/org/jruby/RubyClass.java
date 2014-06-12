@@ -108,6 +108,7 @@ public class RubyClass extends RubyModule {
         
         classClass.undefineMethod("module_function");
         classClass.undefineMethod("append_features");
+        classClass.undefineMethod("prepend_features");
         classClass.undefineMethod("extend_object");
         
         classClass.defineAnnotatedMethods(RubyClass.class);

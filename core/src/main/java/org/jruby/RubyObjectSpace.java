@@ -136,7 +136,7 @@ public class RubyObjectSpace {
             runtime.eachModule(new Function1<Object, IRubyObject>() {
                 public Object apply(IRubyObject arg1) {
                     if (rubyClass.isInstance(arg1)) {
-                        if (arg1 instanceof IncludedModuleWrapper ||
+                        if (arg1 instanceof IncludedModule ||
                                 (arg1 instanceof RubyClass && ((RubyClass)arg1).isSingleton())) {
                             // do nothing for included wrappers or singleton classes
                         } else {
