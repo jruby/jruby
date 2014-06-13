@@ -984,16 +984,17 @@ public class LoadService {
     }
 
     private Library findLibraryBySearchState(SearchState state) {
-      if (librarySearcher.findBySearchState(state) != null) {
-        // findBySearchState should fill the state already
-        return state.library;
-      }
+        if (librarySearcher.findBySearchState(state) != null) {
+            // findBySearchState should fill the state already
+            return state.library;
+        }
 
-      Library library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
-      if (library != null) {
-        state.library = library;
-      }
-      return library;
+        // TODO(ratnikov): Remove the special classpath case by introducing a classpath file resource
+        Library library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
+        if (library != null) {
+            state.library = library;
+        }
+        return library;
     }
 
     protected Library findBuiltinLibrary(SearchState state, String baseName, SuffixType suffixType) {
