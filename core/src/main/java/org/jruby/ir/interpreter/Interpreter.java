@@ -414,9 +414,11 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         case TRACE: {
             if (context.runtime.hasEventHooks()) {
                 TraceInstr trace = (TraceInstr) instr;
+                // FIXME: Try and statically generate END linenumber instead of hacking it.
+                int linenumber = trace.getLinenumber() == -1 ? context.getLine()+1 : trace.getLinenumber();
 
                 context.trace(trace.getEvent(), trace.getName(), context.getFrameKlazz(),
-                        trace.getFilename(), trace.getLinenumber());
+                        trace.getFilename(), linenumber);
             }
             break;
         }

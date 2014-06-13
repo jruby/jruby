@@ -2500,24 +2500,6 @@ public class Helpers {
         return runtime.newBoolean(res.isTrue());
     }
 
-    public static void traceLine(ThreadContext context) {
-        String name = context.getFrameName();
-        RubyModule type = context.getFrameKlazz();
-        context.runtime.callEventHooks(context, RubyEvent.LINE, context.getFile(), context.getLine(), name, type);
-    }
-
-    public static void traceClass(ThreadContext context) {
-        String name = context.getFrameName();
-        RubyModule type = context.getFrameKlazz();
-        context.runtime.callEventHooks(context, RubyEvent.CLASS, context.getFile(), context.getLine(), name, type);
-    }
-
-    public static void traceEnd(ThreadContext context) {
-        String name = context.getFrameName();
-        RubyModule type = context.getFrameKlazz();
-        context.runtime.callEventHooks(context, RubyEvent.END, context.getFile(), context.getLine(), name, type);
-    }
-
     /**
      * Used by the compiler to simplify arg checking in variable-arity paths
      *

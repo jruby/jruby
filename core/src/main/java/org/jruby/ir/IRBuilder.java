@@ -444,7 +444,7 @@ public class IRBuilder {
             int currLineNum = n.getPosition().getStartLine();
             if (currLineNum != _lastProcessedLineNum) {
                 if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                    addInstr(s, new TraceInstr(RubyEvent.LINE, s.getName(), s.getFileName(), currLineNum));
+                    addInstr(s, new TraceInstr(RubyEvent.LINE, null, s.getFileName(), currLineNum));
                 }
                addInstr(s, new LineNumberInstr(s, currLineNum));
                _lastProcessedLineNum = currLineNum;
@@ -900,7 +900,11 @@ public class IRBuilder {
     }
 
     // Wrap call in a rescue handler that catches the IRBreakJump
-    private void receiveBreakException(IRScope s, Operand block, CallInstr callInstr) {
+    private void receiveBreakException(IRScope s, Operand block, CallInstr callInstr, int linenumber) {
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(s, new TraceInstr(RubyEvent.CALL, callInstr.getMethodAddr().getName(), s.getFileName(), linenumber));
+        }
+
         // Check if we have to handle a break
         if (block == null ||
             !(block instanceof WrappedIRClosure) ||
@@ -946,7 +950,7 @@ public class IRBuilder {
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.createTemporaryVariable();
         CallInstr     callInstr    = CallInstr.create(callResult, new MethAddr(callNode.getName()), receiver, args.toArray(new Operand[args.size()]), block);
-        receiveBreakException(s, block, callInstr);
+        receiveBreakException(s, block, callInstr, callNode.getPosition().getStartLine());
         return callResult;
     }
 
@@ -1060,56 +1064,21 @@ public class IRBuilder {
         Operand superClass = (superNode == null) ? null : build(superNode, s);
         String className = cpath.getName();
         Operand container = getContainerFromCPath(cpath, s);
+        IRClassBody body = new IRClassBody(manager, s, className, classNode.getPosition().getLine(), classNode.getScope());
+        Variable tmpVar = addResultInstr(s, new DefineClassInstr(s.createTemporaryVariable(), body, container, superClass));
 
-        IRClassBody classBody = new IRClassBody(manager, s, className, classNode.getPosition().getLine(), classNode.getScope());
-        Variable tmpVar = s.createTemporaryVariable();
-        addInstr(s, new DefineClassInstr(tmpVar, classBody, container, superClass));
-        Variable ret = s.createTemporaryVariable();
-        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar, getImplicitBlockArg(s)));
-
-        addInstr(classBody, new ReceiveSelfInstr(classBody.getSelf()));
-        // Set %current_scope = <c>
-        // Set %current_module = module<c>
-        addInstr(classBody, new CopyInstr(classBody.getCurrentScopeVariable(), new CurrentScope(classBody)));
-        addInstr(classBody, new CopyInstr(classBody.getCurrentModuleVariable(), new ScopeModule(classBody)));
-        // Create a new nested builder to ensure this gets its own IR builder state
-        Operand rv = newIRBuilder(manager).build(classNode.getBodyNode(), classBody);
-        if (rv != null) addInstr(classBody, new ReturnInstr(rv));
-
-        return ret;
+        return buildModuleOrClassBody(s, tmpVar, body, classNode.getBodyNode(), classNode.getPosition().getStartLine());
     }
 
+    // class Foo; class << self; end; end
+    // Here, the class << self declaration is in Foo's body.
+    // Foo is the class in whose context this is being defined.
     public Operand buildSClass(SClassNode sclassNode, IRScope s) {
-        //  class Foo
-        //  ...
-        //    class << self
-        //    ...
-        //    end
-        //  ...
-        //  end
-        //
-        // Here, the class << self declaration is in Foo's body.
-        // Foo is the class in whose context this is being defined.
         Operand receiver = build(sclassNode.getReceiverNode(), s);
+        IRModuleBody body = new IRMetaClassBody(manager, s, manager.getMetaClassName(), sclassNode.getPosition().getLine(), sclassNode.getScope());
+        Variable tmpVar = addResultInstr(s, new DefineMetaClassInstr(s.createTemporaryVariable(), receiver, body));
 
-        // Create a dummy meta class and record it as being lexically defined in scope s
-        IRModuleBody metaClassBody = new IRMetaClassBody(manager, s, manager.getMetaClassName(), sclassNode.getPosition().getLine(), sclassNode.getScope());
-        Variable tmpVar = s.createTemporaryVariable();
-        addInstr(s, new DefineMetaClassInstr(tmpVar, receiver, metaClassBody));
-        Variable ret = s.createTemporaryVariable();
-        addInstr(s, new ProcessModuleBodyInstr(ret, tmpVar, getImplicitBlockArg(s)));
-
-        addInstr(metaClassBody, new ReceiveSelfInstr(metaClassBody.getSelf()));
-        // Set %current_scope = <current-scope>
-        // Set %current_module = <current-module>
-        addInstr(metaClassBody, new ReceiveClosureInstr((Variable)getImplicitBlockArg(metaClassBody)));
-        addInstr(metaClassBody, new CopyInstr(metaClassBody.getCurrentScopeVariable(), new CurrentScope(metaClassBody)));
-        addInstr(metaClassBody, new CopyInstr(metaClassBody.getCurrentModuleVariable(), new ScopeModule(metaClassBody)));
-        // Create a new nested builder to ensure this gets its own IR builder state
-        Operand rv = newIRBuilder(manager).build(sclassNode.getBodyNode(), metaClassBody);
-        if (rv != null) addInstr(metaClassBody, new ReturnInstr(rv));
-
-        return ret;
+        return buildModuleOrClassBody(s, tmpVar, body, sclassNode.getBodyNode(), sclassNode.getPosition().getStartLine());
     }
 
     // @@c
@@ -2218,7 +2187,7 @@ public class IRBuilder {
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.createTemporaryVariable();
         CallInstr     callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, new MethAddr(fcallNode.getName()), s.getSelf(), args.toArray(new Operand[args.size()]), block);
-        receiveBreakException(s, block, callInstr);
+        receiveBreakException(s, block, callInstr, fcallNode.getPosition().getStartLine());
         return callResult;
     }
 
@@ -2335,7 +2304,7 @@ public class IRBuilder {
         Operand  receiver = build(forNode.getIterNode(), s);
         Operand  forBlock = buildForIter(forNode, s);
         CallInstr callInstr = new CallInstr(CallType.NORMAL, result, new MethAddr("each"), receiver, NO_ARGS, forBlock);
-        receiveBreakException(s, forBlock, callInstr);
+        receiveBreakException(s, forBlock, callInstr, forNode.getPosition().getStartLine());
 
         return result;
     }
@@ -2610,22 +2579,10 @@ public class IRBuilder {
         Colon3Node cpath = moduleNode.getCPath();
         String moduleName = cpath.getName();
         Operand container = getContainerFromCPath(cpath, s);
+        IRModuleBody body = new IRModuleBody(manager, s, moduleName, moduleNode.getPosition().getLine(), moduleNode.getScope());
+        Variable tmpVar = addResultInstr(s, new DefineModuleInstr(s.createTemporaryVariable(), body, container));
 
-        // Build the new module
-        IRModuleBody moduleBody = new IRModuleBody(manager, s, moduleName, moduleNode.getPosition().getLine(), moduleNode.getScope());
-        Variable tmpVar = addResultInstr(s, new DefineModuleInstr(s.createTemporaryVariable(), moduleBody, container));
-        Variable ret = addResultInstr(s, new ProcessModuleBodyInstr(s.createTemporaryVariable(), tmpVar, getImplicitBlockArg(s)));
-
-        addInstr(moduleBody, new ReceiveSelfInstr(moduleBody.getSelf()));
-        // Set %current_scope = <c>
-        // Set %current_module = module<c>
-        addInstr(moduleBody, new CopyInstr(moduleBody.getCurrentScopeVariable(), new CurrentScope(moduleBody)));
-        addInstr(moduleBody, new CopyInstr(moduleBody.getCurrentModuleVariable(), new ScopeModule(moduleBody)));
-        // Create a new nested builder to ensure this gets its own IR builder state
-        Operand rv = newIRBuilder(manager).build(moduleNode.getBodyNode(), moduleBody);
-        if (rv != null) addInstr(moduleBody, new ReturnInstr(rv));
-
-        return ret;
+        return buildModuleOrClassBody(s, tmpVar, body, moduleNode.getBodyNode(), moduleNode.getPosition().getStartLine());
     }
 
     public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode, IRScope s) {
@@ -3271,7 +3228,7 @@ public class IRBuilder {
         return copyAndReturnValue(s, new StringLiteral(strNode.getValue()));
     }
 
-    private Operand buildSuperInstr(IRScope s, Operand block, Operand[] args) {
+    private Operand buildSuperInstr(IRScope s, Operand block, Operand[] args, int linenumber) {
         CallInstr superInstr;
         Variable ret = s.createTemporaryVariable();
         if ((s instanceof IRMethod) && (s.getLexicalParent() instanceof IRClassBody)) {
@@ -3289,7 +3246,7 @@ public class IRBuilder {
             superInstr = new UnresolvedSuperInstr(ret, s.getSelf(), args, block);
         }
 
-        receiveBreakException(s, block, superInstr);
+        receiveBreakException(s, block, superInstr, linenumber);
         return ret;
     }
 
@@ -3299,7 +3256,7 @@ public class IRBuilder {
         List<Operand> args = setupCallArgs(superNode.getArgsNode(), s);
         Operand block = setupCallClosure(superNode.getIterNode(), s);
         if (block == null) block = getImplicitBlockArg(s);
-        return buildSuperInstr(s, block, args.toArray(new Operand[args.size()]));
+        return buildSuperInstr(s, block, args.toArray(new Operand[args.size()]), superNode.getPosition().getStartLine());
     }
 
     private Operand buildSuperInScriptBody(IRScope s) {
@@ -3392,6 +3349,9 @@ public class IRBuilder {
     }
 
     public Operand buildVCall(VCallNode node, IRScope s) {
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(s, new TraceInstr(RubyEvent.CALL, node.getName(), s.getFileName(), node.getPosition().getStartLine()));
+        }
         Variable callResult = s.createTemporaryVariable();
         Instr    callInstr  = CallInstr.create(CallType.VARIABLE, callResult, new MethAddr(node.getName()), s.getSelf(), NO_ARGS, null);
         addInstr(s, callInstr);
@@ -3449,11 +3409,13 @@ public class IRBuilder {
         Operand block = setupCallClosure(zsuperNode.getIterNode(), s);
         if (block == null) block = getImplicitBlockArg(s);
 
+        int linenumber = zsuperNode.getPosition().getStartLine();
+
         // Enebo:ZSuper in for (or nested for) can be statically resolved like method but it needs
         // to fixup depth.
         if (s instanceof IRMethod) {
             Operand[] args = ((IRMethod)s).getCallArgs();
-            return buildSuperInstr(s, block, args);
+            return buildSuperInstr(s, block, args, linenumber);
         } else {
             // If we are in a block, we cannot make any assumptions about what args
             // the super instr is going to get -- if there were no 'define_method'
@@ -3494,7 +3456,7 @@ public class IRBuilder {
 
             receiveBreakException(s, block, new ZSuperInstr(ret, s.getSelf(), block,
                     allPossibleArgs.toArray(new Operand[allPossibleArgs.size()]),
-                    argsCount.toArray(new Integer[argsCount.size()])));
+                    argsCount.toArray(new Integer[argsCount.size()])), linenumber);
             return ret;
         }
     }
@@ -3517,5 +3479,32 @@ public class IRBuilder {
         }
 
         return newArgs;
+    }
+
+    private Operand buildModuleOrClassBody(IRScope parent, Variable tmpVar, IRModuleBody body, Node bodyNode, int linenumber) {
+        Variable returnValue = addResultInstr(parent, new ProcessModuleBodyInstr(parent.createTemporaryVariable(), tmpVar, getImplicitBlockArg(parent)));
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(body, new TraceInstr(RubyEvent.CLASS, null, body.getFileName(), linenumber));
+        }
+
+        addInstr(body, new ReceiveSelfInstr(body.getSelf()));                                  // %self
+
+        if (body instanceof IRMetaClassBody) {
+            addInstr(body, new ReceiveClosureInstr((Variable)getImplicitBlockArg(body)));      // %closure - SClass
+        }
+
+        addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), new CurrentScope(body))); // %scope
+        addInstr(body, new CopyInstr(body.getCurrentModuleVariable(), new ScopeModule(body))); // %module
+        // Create a new nested builder to ensure this gets its own IR builder state
+        Operand rv = newIRBuilder(manager).build(bodyNode, body);
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(body, new TraceInstr(RubyEvent.END, null, body.getFileName(), -1));
+        }
+
+        if (rv != null) addInstr(body, new ReturnInstr(rv));
+
+        return returnValue;
     }
 }
