@@ -16,7 +16,6 @@ import org.jruby.ir.transformations.inlining.CloneMode;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
@@ -28,7 +27,6 @@ import java.io.IOException;
 import java.util.*;
 
 import org.jruby.ir.listeners.IRScopeListener;
-import org.jruby.util.cli.Options;
 
 // This class converts an AST into a bunch of IR instructions
 
@@ -444,7 +442,7 @@ public class IRBuilder {
             int currLineNum = n.getPosition().getStartLine();
             if (currLineNum != _lastProcessedLineNum) {
                 if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                    addInstr(s, new TraceInstr(RubyEvent.LINE, null, s.getFileName(), currLineNum));
+                    addInstr(s, new TraceInstr(RubyEvent.LINE, methodNameFor(s), s.getFileName(), currLineNum));
                 }
                addInstr(s, new LineNumberInstr(s, currLineNum));
                _lastProcessedLineNum = currLineNum;
@@ -889,6 +887,10 @@ public class IRBuilder {
         Variable exc = s.createTemporaryVariable();
         addInstr(s, new ReceiveJRubyExceptionInstr(exc));
 
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(s, new TraceInstr(RubyEvent.RETURN, s.getName(), s.getFileName(), -1));
+        }
+
         // Handle break using runtime helper
         // --> IRRuntimeHelpers.handleNonlocalReturn(scope, bj, blockType)
         Variable ret = s.createTemporaryVariable();
@@ -901,10 +903,6 @@ public class IRBuilder {
 
     // Wrap call in a rescue handler that catches the IRBreakJump
     private void receiveBreakException(IRScope s, Operand block, CallInstr callInstr, int linenumber) {
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(s, new TraceInstr(RubyEvent.CALL, callInstr.getMethodAddr().getName(), s.getFileName(), linenumber));
-        }
-
         // Check if we have to handle a break
         if (block == null ||
             !(block instanceof WrappedIRClosure) ||
@@ -1605,6 +1603,9 @@ public class IRBuilder {
 
     private IRMethod defineNewMethod(MethodDefNode defNode, IRScope s, boolean isInstanceMethod) {
         IRMethod method = new IRMethod(manager, s, defNode.getName(), isInstanceMethod, defNode.getPosition().getLine(), defNode.getScope());
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(method, new TraceInstr(RubyEvent.CALL, defNode.getName(), s.getFileName(), defNode.getPosition().getStartLine()));
+        }
 
         addInstr(method, new ReceiveSelfInstr(s.getSelf()));
 
@@ -1621,10 +1622,12 @@ public class IRBuilder {
         addInstr(method, new ThreadPollInstr());
 
         // Build IR for body
-        Node bodyNode = defNode.getBodyNode();
+        Operand rv = newIRBuilder(manager).build(defNode.getBodyNode(), method);
 
-        // Create a new nested builder to ensure this gets its own IR builder state
-        Operand rv = newIRBuilder(manager).build(bodyNode, method);
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(method, new TraceInstr(RubyEvent.RETURN, defNode.getName(), s.getFileName(), -1));
+        }
+
         if (rv != null) addInstr(method, new ReturnInstr(rv));
 
         // If the method can receive non-local returns
@@ -3316,9 +3319,6 @@ public class IRBuilder {
     }
 
     public Operand buildVCall(VCallNode node, IRScope s) {
-        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(s, new TraceInstr(RubyEvent.CALL, node.getName(), s.getFileName(), node.getPosition().getStartLine()));
-        }
         Variable callResult = s.createTemporaryVariable();
         Instr    callInstr  = CallInstr.create(CallType.VARIABLE, callResult, new MethAddr(node.getName()), s.getSelf(), NO_ARGS, null);
         addInstr(s, callInstr);
@@ -3473,5 +3473,11 @@ public class IRBuilder {
         if (rv != null) addInstr(body, new ReturnInstr(rv));
 
         return returnValue;
+    }
+
+    private String methodNameFor(IRScope s) {
+        IRScope method = s.getNearestMethod();
+
+        return method == null ? null : method.getName();
     }
 }
