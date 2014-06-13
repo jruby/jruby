@@ -43,9 +43,9 @@ public abstract class ArrayBuilderNode extends Node {
 
     public static class UninitializedArrayBuilderNode extends ArrayBuilderNode {
 
-        private boolean couldUseInteger = Options.TRUFFLE_INT_ARRAYS.load();
-        private boolean couldUseLong = Options.TRUFFLE_LONG_ARRAYS.load();
-        private boolean couldUseDouble = Options.TRUFFLE_DOUBLE_ARRAYS.load();
+        private boolean couldUseInteger = Options.TRUFFLE_ARRAYS_INT.load();
+        private boolean couldUseLong = Options.TRUFFLE_ARRAYS_LONG.load();
+        private boolean couldUseDouble = Options.TRUFFLE_ARRAYS_DOUBLE.load();
 
         public UninitializedArrayBuilderNode(RubyContext context, boolean maxLengthKnown) {
             super(context, maxLengthKnown);
