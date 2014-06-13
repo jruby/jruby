@@ -1182,7 +1182,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * This allows the script to be parsed once and evaluated many times.
      * 
      * @param reader is used to read a script from
-     * @param filename is used as in information, for example, appears in a stack before
+     * @param filename is used as in information, for example, appears in a stack trace
      *        of an exception
      * @param lines are linenumbers to display for parse errors and backtraces.
      *        This field is optional. Only the first argument is used for parsing.
@@ -1198,7 +1198,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * This allows the script to be parsed once and evaluated many times.
      * 
      * @param type is one of the types {@link PathType} defines
-     * @param filename is used as in information, for example, appears in a stack before
+     * @param filename is used as in information, for example, appears in a stack trace
      *        of an exception
      * @param lines are linenumbers to display for parse errors and backtraces.
      *        This field is optional. Only the first argument is used for parsing.
@@ -1214,7 +1214,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * This allows the script to be parsed once and evaluated many times.
      * 
      * @param istream is an input stream to get a script from
-     * @param filename filename is used as in information, for example, appears in a stack before
+     * @param filename filename is used as in information, for example, appears in a stack trace
      *        of an exception
      * @param lines are linenumbers to display for parse errors and backtraces.
      *        This field is optional. Only the first argument is used for parsing.
@@ -1252,7 +1252,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * returns a value. Right after the parsing, the script is evaluated once.
      * 
      * @param reader is used to read a script from
-     * @param filename is used as in information, for example, appears in a stack before
+     * @param filename is used as in information, for example, appears in a stack trace
      *        of an exception
      * @return an evaluated result converted to a Java object
      */
@@ -1267,7 +1267,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * returns a value. Right after the parsing, the script is evaluated once.
      *
      * @param istream is used to input a script from
-     * @param filename is used as in information, for example, appears in a stack before
+     * @param filename is used as in information, for example, appears in a stack trace
      *        of an exception
      * @return an evaluated result converted to a Java object
      */

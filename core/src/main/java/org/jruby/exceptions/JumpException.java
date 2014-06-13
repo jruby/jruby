@@ -38,7 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * This class should be used for performance reasons if the
- * Exception don't need a stack before.
+ * Exception don't need a stack trace.
  *
  * @author jpetersen
  */

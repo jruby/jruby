@@ -27,7 +27,6 @@ import org.jruby.truffle.nodes.constants.ReadConstantNode;
 import org.jruby.truffle.nodes.constants.WriteConstantNode;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.nodes.debug.TraceNode;
 import org.jruby.truffle.nodes.globals.CheckMatchVariableTypeNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.literal.array.UninitialisedArrayLiteralNode;
@@ -43,7 +42,6 @@ import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
-import org.jruby.util.cli.Options;
 
 import java.util.*;
 
@@ -1470,12 +1468,8 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitNewlineNode(org.jruby.ast.NewlineNode node) {
         final RubyNode translated = node.getNextNode().accept(this);
-
-        if (Options.TRUFFLE_TRACE.load()) {
-            return new TraceNode(context, translated.getEncapsulatingSourceSection(), translated);
-        } else {
-            return translated;
-        }
+        // return instrumenter.instrumentAsStatement(translated);
+        return translated;
     }
 
     @Override

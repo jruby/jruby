@@ -165,7 +165,7 @@ public class TraceType {
         };
 
         /**
-         * Gather backtrace data for a normal Ruby before.
+         * Gather backtrace data for a normal Ruby trace.
          *
          * @param context
          * @param nativeException
@@ -181,7 +181,7 @@ public class TraceType {
         }
 
         /**
-         * Gather backtrace data for an integrated before if the current gather type is "NORMAL", otherwise use the
+         * Gather backtrace data for an integrated trace if the current gather type is "NORMAL", otherwise use the
          * current gather type.
          * 
          * @param context

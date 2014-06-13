@@ -23,6 +23,7 @@ import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
 
+import org.jruby.Ruby;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 import java.io.InputStreamReader;
@@ -33,11 +34,11 @@ public class TranslatorDriver {
         TOP_LEVEL, SHELL, MODULE
     }
 
-    private final RubyContext context;
+    private final Ruby jruby;
     private long nextReturnID = 0;
 
-    public TranslatorDriver(RubyContext context) {
-        this.context = context;
+    public TranslatorDriver(Ruby jruby) {
+        this.jruby = jruby;
     }
 
     public MethodDefinitionNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
@@ -64,7 +65,7 @@ public class TranslatorDriver {
     public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame) {
         // Set up the JRuby parser
 
-        final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getRuntime());
+        final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(jruby);
 
         final org.jruby.parser.LocalStaticScope staticScope = new org.jruby.parser.LocalStaticScope(null);
 
@@ -89,7 +90,7 @@ public class TranslatorDriver {
             }
         }
 
-        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(context.getRuntime(), 0, false, false, parserContext == ParserContext.TOP_LEVEL, true);
+        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(jruby, 0, false, false, parserContext == ParserContext.TOP_LEVEL, true);
 
         // Parse to the JRuby AST
 

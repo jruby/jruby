@@ -728,7 +728,7 @@ public class RubyModule extends RubyObject {
         
         if (RubyInstanceConfig.FULL_TRACE_ENABLED || RubyInstanceConfig.REFLECTED_HANDLES) {
             // we want reflected invokers or need full traces, use default (slow) populator
-            if (DEBUG) LOG.info("before mode, using default populator");
+            if (DEBUG) LOG.info("trace mode, using default populator");
             populator = TypePopulator.DEFAULT;
         } else {
             try {

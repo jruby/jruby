@@ -169,7 +169,7 @@ public class InvokeDynamicMethodFactory extends InvocationMethodFactory {
 
             // TODO: tracing
 
-            // pre-call before
+            // pre-call trace
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             }
             

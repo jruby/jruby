@@ -1,12 +1,5 @@
-package org.jruby.truffle.runtime.subsystems;
-
-import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.utilities.AssumedValue;
-import com.oracle.truffle.api.utilities.CyclicAssumption;
-import org.jruby.truffle.runtime.core.RubyProc;
-
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -14,31 +7,50 @@ import org.jruby.truffle.runtime.core.RubyProc;
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-public class TraceManager {
+package org.jruby.truffle.runtime.subsystems;
 
-    private CyclicAssumption traceAssumption = new CyclicAssumption("before-func");
-    private RubyProc traceFunc = null;
-    private boolean isInTraceFunc = false;
+import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.utilities.*;
+import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.core.*;
+import org.jruby.util.cli.Options;
 
-    public void setTraceFunc(RubyProc traceFunc) {
-        this.traceFunc = traceFunc;
-        traceAssumption.invalidate();
+public final class TraceManager {
+
+    private RubyContext context;
+
+    private RubyProc traceProc;
+    private boolean suspended;
+
+    private final CyclicAssumption tracingAssumption = new CyclicAssumption("tracing");
+
+    public TraceManager(RubyContext context) {
+        this.context = context;
     }
 
-    public RubyProc getTraceFunc() {
-        return traceFunc;
+    public void setTraceProc(RubyProc newTraceProc) {
+        if (!Options.TRUFFLE_TRACE_NODES.load()) {
+            throw new RuntimeException("You need truffle.traceNodes to use tracing");
+        }
+
+        traceProc = newTraceProc;
+        tracingAssumption.invalidate();
     }
 
-    public Assumption getTraceAssumption() {
-        return traceAssumption.getAssumption();
+    public RubyProc getTraceProc() {
+        return traceProc;
     }
 
-    public boolean isInTraceFunc() {
-        return isInTraceFunc;
+    public boolean isSuspended() {
+        return suspended;
     }
 
-    public void setInTraceFunc(boolean isInTraceFunc) {
-        this.isInTraceFunc = isInTraceFunc;
+    public void setSuspended(boolean suspended) {
+        this.suspended = suspended;
+    }
+
+    public CyclicAssumption getTracingAssumption() {
+        return tracingAssumption;
     }
 
 }

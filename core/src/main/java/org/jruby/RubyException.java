@@ -225,7 +225,7 @@ public class RubyException extends RubyObject {
     }
 
     /**
-     * Prepare an "integrated" backtrace that includes the normal Ruby before plus non-filtered Java frames. Used by
+     * Prepare an "integrated" backtrace that includes the normal Ruby trace plus non-filtered Java frames. Used by
      * Java integration to show the Java frames for a JI-called method.
      *
      * @param context

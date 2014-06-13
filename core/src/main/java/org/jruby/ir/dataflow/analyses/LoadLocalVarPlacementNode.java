@@ -100,7 +100,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                 reqdLoads = newReqdLoads;
             }
         } else if (scopeBindingHasEscaped && (i.getOperation() == Operation.PUT_GLOBAL_VAR)) {
-            // global-var tracing can execute closures set up in previous before-var calls
+            // global-var tracing can execute closures set up in previous trace-var calls
             // in which case we would have the 'scopeBindingHasEscaped' flag set to true
             reqdLoads.clear();
         }
@@ -217,7 +217,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                     reqdLoads = newReqdLoads;
                 }
             } else if (scopeBindingHasEscaped && (i.getOperation() == Operation.PUT_GLOBAL_VAR)) {
-                // global-var tracing can execute closures set up in previous before-var calls
+                // global-var tracing can execute closures set up in previous trace-var calls
                 // in which case we would have the 'scopeBindingHasEscaped' flag set to true
                 it.next();
                 for (LocalVariable v : reqdLoads) {

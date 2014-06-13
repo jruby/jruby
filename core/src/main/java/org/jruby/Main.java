@@ -302,10 +302,10 @@ public class Main {
         config.getError().println("Error: Some library (perhaps JRuby) was built with a later JVM version.");
         config.getError().println("Please use libraries built with the version you intend to use or an earlier one.");
         if (config.isVerbose()) {
-            config.getError().println("Exception before follows:");
+            config.getError().println("Exception trace follows:");
             ucve.printStackTrace();
         } else {
-            config.getError().println("Specify -w for full UnsupportedClassVersionError stack before");
+            config.getError().println("Specify -w for full UnsupportedClassVersionError stack trace");
         }
         return new Status(1);
     }
@@ -324,10 +324,10 @@ public class Main {
         config.getError().println("Specify -J-Xss####k to increase it (#### = cap size in KB).");
 
         if (config.isVerbose()) {
-            config.getError().println("Exception before follows:");
+            config.getError().println("Exception trace follows:");
             soe.printStackTrace(config.getError());
         } else {
-            config.getError().println("Specify -w for full StackOverflowError stack before");
+            config.getError().println("Specify -w for full StackOverflowError stack trace");
         }
 
         return new Status(1);
@@ -358,10 +358,10 @@ public class Main {
         }
         
         if (config.isVerbose()) {
-            config.getError().println("Exception before follows:");
+            config.getError().println("Exception trace follows:");
             oome.printStackTrace(config.getError());
         } else {
-            config.getError().println("Specify -w for full OutOfMemoryError stack before");
+            config.getError().println("Specify -w for full OutOfMemoryError stack trace");
         }
 
         return new Status(1);

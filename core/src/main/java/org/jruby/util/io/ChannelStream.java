@@ -92,7 +92,7 @@ public class ChannelStream implements Stream, Finalizable {
 
     /**
      * A cached EOFException. Since EOFException is only used by us internally,
-     * we create a single instance to avoid stack before generation. Comment out
+     * we create a single instance to avoid stack trace generation. Comment out
      * the initialization of this field to cause a new one each time.
      */
     private static EOFException eofException = new EOFException();

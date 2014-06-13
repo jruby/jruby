@@ -336,7 +336,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String signature = null;
         boolean specificArity = false;
 
-        // if before, need to at least populate a backtrace frame
+        // if trace, need to at least populate a backtrace frame
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             switch (callConfig) {
             case FrameNoneScopeDummy:
@@ -474,10 +474,10 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             }
         }
 
-        // pre-call before
+        // pre-call trace
         int traceBoolIndex = -1;
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // load and store before enabled flag
+            // load and store trace enabled flag
             if (specificArity) {
                 switch (scope.getRequiredArgs()) {
                 case -1:
@@ -1550,7 +1550,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
         int traceBoolIndex = -1;
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // load and store before enabled flag
+            // load and store trace enabled flag
             switch (specificArity) {
             case -1:
                 traceBoolIndex = ARGS_INDEX + (block ? 1 : 0) + 1;
@@ -1567,7 +1567,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             method.invokevirtual(p(Ruby.class), "hasEventHooks", sig(boolean.class));
             method.istore(traceBoolIndex);
 
-            // call before
+            // call trace
             invokeCCallTrace(method, traceBoolIndex);
         }
 

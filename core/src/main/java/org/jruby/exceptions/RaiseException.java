@@ -64,7 +64,7 @@ public class RaiseException extends JumpException {
      * throwing purposes.
      *
      * This constructor will generate a backtrace using the Java
-     * stack before and the interpreted Ruby frames for the current thread.
+     * stack trace and the interpreted Ruby frames for the current thread.
      *
      * @param actException The Ruby exception to wrap
      */
@@ -216,9 +216,9 @@ public class RaiseException extends JumpException {
         }
 
         // call Throwable.setStackTrace so that when RaiseException appears nested inside another exception,
-        // Ruby stack before gets displayed
+        // Ruby stack trace gets displayed
 
-        // JRUBY-2673: if wrapping a NativeException, use the actual Java exception's before as our Java before
+        // JRUBY-2673: if wrapping a NativeException, use the actual Java exception's trace as our Java trace
         if (exception instanceof NativeException) {
             setStackTrace(((NativeException)exception).getCause().getStackTrace());
         } else {

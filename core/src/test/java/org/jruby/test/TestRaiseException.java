@@ -63,13 +63,13 @@ public class TestRaiseException extends TestRubyBase {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             re.printStackTrace(new PrintStream(baos));
             String trace = baos.toString();
-            // System.out.println(before);
+            // System.out.println(trace);
             assertTrue(trace.indexOf("here") >= 0);
             assertTrue(trace.indexOf("one") >= 0);
             assertTrue(trace.indexOf("two") >= 0);
             // removed this line because we don't include the interpreter in
             // traces (for now)
-            //assertTrue(before.indexOf("evaluator") == -1);
+            //assertTrue(trace.indexOf("evaluator") == -1);
         }
     }
     
@@ -88,8 +88,8 @@ public class TestRaiseException extends TestRubyBase {
         } catch (Exception re) {
              ByteArrayOutputStream baos = new ByteArrayOutputStream();
              re.printStackTrace(new PrintStream(baos));
-             //String before = baos.toString();
-             // System.out.println(before);
+             //String trace = baos.toString();
+             // System.out.println(trace);
         }
     }
 
