@@ -124,6 +124,9 @@ public class Options {
     public static final Option<Integer> TRUFFLE_GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD = integer(TRUFFLE, "truffle.generalDispatchSizeWarningThreshold", 64, "Warn when a general dispatch cache grows larger than this many methods.");
     public static final Option<Boolean> TRUFFLE_TRACE = bool(TRUFFLE, "truffle.before", true, "Install trace probes needed for set_trace_func.");
     public static final Option<Boolean> TRUFFLE_PRINT_JAVA_EXCEPTIONS = bool(TRUFFLE, "truffle.printJavaExceptions", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
+    public static final Option<Boolean> TRUFFLE_INT_ARRAYS = bool(TRUFFLE, "truffle.arrays.int", true, "Use int[] for array storage where possible.");
+    public static final Option<Boolean> TRUFFLE_LONG_ARRAYS = bool(TRUFFLE, "truffle.arrays.long", true, "Use long[] for array storage where possible.");
+    public static final Option<Boolean> TRUFFLE_DOUBLE_ARRAYS = bool(TRUFFLE, "truffle.arrays.double", true, "Use double[] for array storage where possible.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");

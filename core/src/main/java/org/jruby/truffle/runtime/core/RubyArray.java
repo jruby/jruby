@@ -15,6 +15,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.ArrayUtils;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
 
@@ -69,17 +70,17 @@ public final class RubyArray extends RubyObject {
 
         final Object store;
 
-        if (object instanceof Integer) {
+        if (object instanceof Integer && Options.TRUFFLE_INT_ARRAYS.load()) {
             store = new int[]{(int) object};
-        } else if (object instanceof RubyFixnum.IntegerFixnum) {
+        } else if (object instanceof RubyFixnum.IntegerFixnum && Options.TRUFFLE_INT_ARRAYS.load()) {
             store = new int[]{((RubyFixnum.IntegerFixnum) object).getValue()};
-        } else if (object instanceof Long) {
+        } else if (object instanceof Long && Options.TRUFFLE_LONG_ARRAYS.load()) {
             store = new long[]{(long) object};
-        } else if (object instanceof RubyFixnum.LongFixnum) {
+        } else if (object instanceof RubyFixnum.LongFixnum && Options.TRUFFLE_LONG_ARRAYS.load()) {
             store = new long[]{((RubyFixnum.LongFixnum) object).getValue()};
-        } else if (object instanceof Double) {
+        } else if (object instanceof Double && Options.TRUFFLE_DOUBLE_ARRAYS.load()) {
             store = new double[]{(double) object};
-        } else if (object instanceof RubyFloat) {
+        } else if (object instanceof RubyFloat && Options.TRUFFLE_DOUBLE_ARRAYS.load()) {
             store = new double[]{((RubyFloat) object).getValue()};
         } else {
             store = new Object[]{object};
@@ -99,9 +100,9 @@ public final class RubyArray extends RubyObject {
             return fromObject(arrayClass, objects[0]);
         }
 
-        boolean canUseInteger = true;
-        boolean canUseLong = true;
-        boolean canUseDouble = true;
+        boolean canUseInteger = Options.TRUFFLE_INT_ARRAYS.load();
+        boolean canUseLong = Options.TRUFFLE_LONG_ARRAYS.load();
+        boolean canUseDouble = Options.TRUFFLE_DOUBLE_ARRAYS.load();
 
         for (Object object : objects) {
             if (object instanceof Integer) {
@@ -236,6 +237,9 @@ public final class RubyArray extends RubyObject {
         assert !(store instanceof int[]) || size <= ((int[]) store).length;
         assert !(store instanceof long[]) || size <= ((long[]) store).length;
         assert !(store instanceof double[]) || size <= ((double[]) store).length;
+        assert !(store instanceof int[]) || Options.TRUFFLE_INT_ARRAYS.load();
+        assert !(store instanceof long[]) || Options.TRUFFLE_LONG_ARRAYS.load();
+        assert !(store instanceof double[]) || Options.TRUFFLE_DOUBLE_ARRAYS.load();
 
         // TODO: assert that an object array doesn't contain all primitives - performance warning?
     }

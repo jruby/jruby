@@ -170,6 +170,16 @@ public abstract class ArrayUtils {
         }
     }
 
+    public static long[] longCopyOf(int[] ints) {
+        final long[] longs = new long[ints.length];
+
+        for (int n = 0; n < ints.length; n++) {
+            longs[n] = ints[n];
+        }
+
+        return longs;
+    }
+
     public static int capacity(int current, int needed) {
         if (needed < 16) {
             return 16;

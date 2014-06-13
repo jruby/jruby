@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.util.cli.Options;
 
 @NodeInfo(shortName = "uninit-array-literal")
 public class UninitialisedArrayLiteralNode extends ArrayLiteralNode {
