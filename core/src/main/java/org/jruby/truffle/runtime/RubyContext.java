@@ -14,12 +14,12 @@ import java.math.*;
 import java.util.Arrays;
 import java.util.concurrent.atomic.*;
 
+import com.oracle.truffle.api.source.SourceManager;
 import org.jruby.Ruby;
 import org.jruby.*;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
-import com.oracle.truffle.api.source.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
@@ -32,7 +32,6 @@ import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.subsystems.*;
-import org.jruby.truffle.runtime.debug.RubyDebugManager;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
 
@@ -44,36 +43,34 @@ public class RubyContext {
     private final Ruby runtime;
     private final TranslatorDriver translator;
     private final CoreLibrary coreLibrary;
+    private final SourceManager sourceManager;
     private final FeatureManager featureManager;
-    private final ObjectSpaceManager objectSpaceManager;
     private final TraceManager traceManager;
+    private final ObjectSpaceManager objectSpaceManager;
     private final ThreadManager threadManager;
     private final FiberManager fiberManager;
     private final AtExitManager atExitManager;
-    private final RubyDebugManager rubyDebugManager;
-    private final SourceManager sourceManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
 
     private final AtomicLong nextObjectID = new AtomicLong(0);
 
-    public RubyContext(Ruby runtime, TranslatorDriver translator) {
+    public RubyContext(Ruby runtime) {
         assert runtime != null;
 
         this.runtime = runtime;
-        this.translator = translator;
+        translator = new TranslatorDriver(this);
 
+        // Object space manager needs to come early before we create any objects
         objectSpaceManager = new ObjectSpaceManager(this);
-        traceManager = new TraceManager(this);
 
         // See note in CoreLibrary#initialize to see why we need to break this into two statements
         coreLibrary = new CoreLibrary(this);
         coreLibrary.initialize();
 
-        featureManager = new FeatureManager(this);
-        atExitManager = new AtExitManager();
         sourceManager = new SourceManager();
-
-        rubyDebugManager = new RubyDebugManager();
+        featureManager = new FeatureManager(this);
+        traceManager = new TraceManager();
+        atExitManager = new AtExitManager();
 
         // Must initialize threads before fibers
 
@@ -95,6 +92,7 @@ public class RubyContext {
 
     private void loadFileAbsolute(String fileName) {
         final Source source = sourceManager.get(fileName);
+
         final String code = source.getCode();
         if (code == null) {
             throw new RuntimeException("Can't read file " + fileName);
@@ -308,10 +306,6 @@ public class RubyContext {
         return objectSpaceManager;
     }
 
-    public TraceManager getTraceManager() {
-        return traceManager;
-    }
-
     public FiberManager getFiberManager() {
         return fiberManager;
     }
@@ -331,13 +325,13 @@ public class RubyContext {
      */
     public static boolean shouldObjectBeVisible(Object object) {
         return object instanceof UndefinedPlaceholder || //
-                        object instanceof Boolean || //
-                        object instanceof Integer || //
-                        object instanceof Long || //
-                        object instanceof BigInteger || //
-                        object instanceof Double || //
-                        object instanceof RubyBasicObject || //
-                        object instanceof NilPlaceholder;
+                object instanceof Boolean || //
+                object instanceof Integer || //
+                object instanceof Long || //
+                object instanceof BigInteger || //
+                object instanceof Double || //
+                object instanceof RubyBasicObject || //
+                object instanceof NilPlaceholder;
     }
 
     public static boolean shouldObjectsBeVisible(Object... objects) {
@@ -358,12 +352,15 @@ public class RubyContext {
         return atExitManager;
     }
 
-    public SourceManager getSourceManager() {
-        return sourceManager;
-    }
-
     public TruffleHooks getHooks() {
         return (TruffleHooks) runtime.getInstanceConfig().getTruffleHooks();
     }
 
+    public TraceManager getTraceManager() {
+        return traceManager;
+    }
+
+    public SourceManager getSourceManager() {
+        return sourceManager;
+    }
 }
