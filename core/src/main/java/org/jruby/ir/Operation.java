@@ -129,6 +129,7 @@ public enum Operation {
 
     /** debugging ops **/
     LINE_NUM(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op),
+    TRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
 
     /** JRuby-impl instructions **/
     // FIXME: BUILD_COMPOUND_ARRAY is marked side-effecting since it *can* call to_a methods

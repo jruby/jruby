@@ -1,6 +1,7 @@
 package org.jruby.ir;
 
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
@@ -18,6 +19,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.util.ByteList;
 
 import java.io.File;
@@ -26,6 +28,7 @@ import java.io.IOException;
 import java.util.*;
 
 import org.jruby.ir.listeners.IRScopeListener;
+import org.jruby.util.cli.Options;
 
 // This class converts an AST into a bunch of IR instructions
 
@@ -440,6 +443,9 @@ public class IRBuilder {
             // Do not emit multiple line number instrs for the same line
             int currLineNum = n.getPosition().getStartLine();
             if (currLineNum != _lastProcessedLineNum) {
+                if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+                    addInstr(s, new TraceInstr(RubyEvent.LINE, s.getName(), s.getFileName(), currLineNum));
+                }
                addInstr(s, new LineNumberInstr(s, currLineNum));
                _lastProcessedLineNum = currLineNum;
             }

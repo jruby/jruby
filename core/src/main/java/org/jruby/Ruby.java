@@ -2993,8 +2993,8 @@ public final class Ruby {
         public void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
             if (!context.isWithinTrace()) {
                 if (file == null) file = "(ruby)";
-                if (type == null) type = is1_8() ? getFalse() : getNil();
-                
+                if (type == null) type = getNil();
+
                 RubyBinding binding = RubyBinding.newBinding(Ruby.this, context.currentBinding());
 
                 context.preTrace();
