@@ -73,4 +73,9 @@ public class ClassVarDeclNode extends AssignableNode implements INameNode {
     public List<Node> childNodes() {
         return createList(getValueNode());
     }
+
+    @Override
+    public boolean needsDefinitionCheck() {
+        return false;
+    }
 }

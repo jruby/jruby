@@ -71,4 +71,9 @@ public class NilNode extends Node implements INameNode {
     public boolean isNil() {
         return true;
     }
+
+    @Override
+    public boolean needsDefinitionCheck() {
+        return false;
+    }
 }

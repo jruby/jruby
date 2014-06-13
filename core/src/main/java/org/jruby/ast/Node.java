@@ -195,4 +195,14 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
     public boolean isNil() {
         return false;
     }
+
+    /**
+     * Check whether the given node is considered always "defined" or whether it
+     * has some form of definition check.
+     *
+     * @return Whether the type of node represents a possibly undefined construct
+     */
+    public boolean needsDefinitionCheck() {
+        return true;
+    }
 }

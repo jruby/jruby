@@ -102,4 +102,9 @@ public class MultipleAsgnNode extends AssignableNode {
     public List<Node> childNodes() {
         return Node.createList(pre, rest, getValueNode());
     }
+
+    @Override
+    public boolean needsDefinitionCheck() {
+        return false;
+    }
 }

@@ -105,4 +105,9 @@ public class LocalVarNode extends Node implements INameNode, IScopedNode {
     public List<Node> childNodes() {
         return EMPTY_LIST;
     }
+
+    @Override
+    public boolean needsDefinitionCheck() {
+        return false;
+    }
 }

@@ -84,4 +84,9 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
     public List<Node> childNodes() {
         return createList(getConstNode(), getValueNode());
     }
+
+    @Override
+    public boolean needsDefinitionCheck() {
+        return false;
+    }
 }

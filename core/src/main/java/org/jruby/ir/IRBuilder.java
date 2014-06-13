@@ -2742,7 +2742,7 @@ public class IRBuilder {
         Label    l2 = null;
         Variable flag = s.createTemporaryVariable();
         Operand  v1;
-        boolean  needsDefnCheck = needsDefinitionCheck(orNode.getFirstNode());
+        boolean  needsDefnCheck = orNode.getFirstNode().needsDefinitionCheck();
         if (needsDefnCheck) {
             l2 = s.getNewLabel();
             v1 = buildGetDefinition(orNode.getFirstNode(), s);
@@ -2762,39 +2762,6 @@ public class IRBuilder {
 
         // Return value of x ||= y is always 'x'
         return result;
-    }
-
-    /**
-     * Check whether the given node is considered always "defined" or whether it
-     * has some form of definition check.
-     *
-     * @param node Then node to check
-     * @return Whether the type of node represents a possibly undefined construct
-     */
-    private boolean needsDefinitionCheck(Node node) {
-        switch (node.getNodeType()) {
-        case CLASSVARASGNNODE:
-        case CLASSVARDECLNODE:
-        case CONSTDECLNODE:
-        case DASGNNODE:
-        case GLOBALASGNNODE:
-        case LOCALASGNNODE:
-        case MULTIPLEASGNNODE:
-        case OPASGNNODE:
-        case OPELEMENTASGNNODE:
-        case DVARNODE:
-        case FALSENODE:
-        case TRUENODE:
-        case LOCALVARNODE:
-        case MATCH2NODE:
-        case MATCH3NODE:
-        case NILNODE:
-        case SELFNODE:
-            // all these types are immediately considered "defined"
-            return false;
-        default:
-            return true;
-        }
     }
 
     public Operand buildOpElementAsgn(OpElementAsgnNode node, IRScope s) {

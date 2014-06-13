@@ -81,4 +81,9 @@ public class Match2Node extends Node {
     public List<Node> childNodes() {
         return Node.createList(receiverNode, valueNode);
     }
+
+    @Override
+    public boolean needsDefinitionCheck() {
+        return false;
+    }
 }
