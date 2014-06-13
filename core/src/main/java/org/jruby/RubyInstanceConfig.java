@@ -503,91 +503,91 @@ public class RubyInstanceConfig {
     }
 
     /**
-     * @see Options.JIT_LOGGING
+     * @see Options#JIT_LOGGING
      */
     public boolean isJitLogging() {
         return jitLogging;
     }
 
     /**
-     * @see Options.JIT_DUMPING
+     * @see Options#JIT_DUMPING
      */
     public boolean isJitDumping() {
         return jitDumping;
     }
 
     /**
-     * @see Options.JIT_LOGGING_VERBOSE
+     * @see Options#JIT_LOGGING_VERBOSE
      */
     public boolean isJitLoggingVerbose() {
         return jitLoggingVerbose;
     }
 
     /**
-     * @see Options.JIT_LOGEVERY
+     * @see Options#JIT_LOGEVERY
      */
     public int getJitLogEvery() {
         return jitLogEvery;
     }
 
     /**
-     * @see Options.JIT_LOGEVERY
+     * @see Options#JIT_LOGEVERY
      */
     public void setJitLogEvery(int jitLogEvery) {
         this.jitLogEvery = jitLogEvery;
     }
 
     /**
-     * @see Options.JIT_THRESHOLD
+     * @see Options#JIT_THRESHOLD
      */
     public int getJitThreshold() {
         return jitThreshold;
     }
 
     /**
-     * @see Options.JIT_THRESHOLD
+     * @see Options#JIT_THRESHOLD
      */
     public void setJitThreshold(int jitThreshold) {
         this.jitThreshold = jitThreshold;
     }
 
     /**
-     * @see Options.JIT_MAX
+     * @see Options#JIT_MAX
      */
     public int getJitMax() {
         return jitMax;
     }
 
     /**
-     * @see Options.JIT_MAX
+     * @see Options#JIT_MAX
      */
     public void setJitMax(int jitMax) {
         this.jitMax = jitMax;
     }
 
     /**
-     * @see Options.JIT_MAXSIZE
+     * @see Options#JIT_MAXSIZE
      */
     public int getJitMaxSize() {
         return jitMaxSize;
     }
 
     /**
-     * @see Options.JIT_MAXSIZE
+     * @see Options#JIT_MAXSIZE
      */
     public void setJitMaxSize(int jitMaxSize) {
         this.jitMaxSize = jitMaxSize;
     }
 
     /**
-     * @see Options.LAUNCH_INPROC
+     * @see Options#LAUNCH_INPROC
      */
     public boolean isRunRubyInProcess() {
         return runRubyInProcess;
     }
 
     /**
-     * @see Options.LAUNCH_INPROC
+     * @see Options#LAUNCH_INPROC
      */
     public void setRunRubyInProcess(boolean flag) {
         this.runRubyInProcess = flag;
@@ -643,28 +643,28 @@ public class RubyInstanceConfig {
     }
 
     /**
-     * @see Options.OBJECTSPACE_ENABLED
+     * @see Options#OBJECTSPACE_ENABLED
      */
     public void setObjectSpaceEnabled(boolean newObjectSpaceEnabled) {
         objectSpaceEnabled = newObjectSpaceEnabled;
     }
 
     /**
-     * @see Options.OBJECTSPACE_ENABLED
+     * @see Options#OBJECTSPACE_ENABLED
      */
     public boolean isObjectSpaceEnabled() {
         return objectSpaceEnabled;
     }
     
     /**
-     * @see Options.SIPHASH_ENABLED
+     * @see Options#SIPHASH_ENABLED
      */
     public void setSiphashEnabled(boolean newSiphashEnabled) {
         siphashEnabled = newSiphashEnabled;
     }
     
     /**
-     * @see Options.SIPHASH_ENABLED
+     * @see Options#SIPHASH_ENABLED
      */
     public boolean isSiphashEnabled() {
         return siphashEnabled;
@@ -725,28 +725,28 @@ public class RubyInstanceConfig {
     }
     
     /**
-     * @see Options.CLI_HELP
+     * @see Options#CLI_HELP
      */
     public void setShouldPrintUsage(boolean shouldPrintUsage) {
         this.shouldPrintUsage = shouldPrintUsage;
     }
     
     /**
-     * @see Options.CLI_HELP
+     * @see Options#CLI_HELP
      */
     public boolean getShouldPrintUsage() {
         return shouldPrintUsage;
     }
     
     /**
-     * @see Options.CLI_PROPERTIES
+     * @see Options#CLI_PROPERTIES
      */
     public void setShouldPrintProperties(boolean shouldPrintProperties) {
         this.shouldPrintProperties = shouldPrintProperties;
     }
     
     /**
-     * @see Options.CLI_PROPERTIES
+     * @see Options#CLI_PROPERTIES
      */
     public boolean getShouldPrintProperties() {
         return shouldPrintProperties;
@@ -770,154 +770,154 @@ public class RubyInstanceConfig {
     }
     
     /**
-     * @see Options.CLI_ASSUME_LOOP
+     * @see Options#CLI_ASSUME_LOOP
      */
     public void setAssumeLoop(boolean assumeLoop) {
         this.assumeLoop = assumeLoop;
     }
 
     /**
-     * @see Options.CLI_ASSUME_LOOP
+     * @see Options#CLI_ASSUME_LOOP
      */
     public boolean isAssumeLoop() {
         return assumeLoop;
     }
     
     /**
-     * @see Options.CLI_ASSUME_PRINT
+     * @see Options#CLI_ASSUME_PRINT
      */
     public void setAssumePrinting(boolean assumePrinting) {
         this.assumePrinting = assumePrinting;
     }
 
     /**
-     * @see Options.CLI_ASSUME_PRINT
+     * @see Options#CLI_ASSUME_PRINT
      */
     public boolean isAssumePrinting() {
         return assumePrinting;
     }
     
     /**
-     * @see Options.CLI_PROCESS_LINE_ENDS
+     * @see Options#CLI_PROCESS_LINE_ENDS
      */
     public void setProcessLineEnds(boolean processLineEnds) {
         this.processLineEnds = processLineEnds;
     }
 
     /**
-     * @see Options.CLI_PROCESS_LINE_ENDS
+     * @see Options#CLI_PROCESS_LINE_ENDS
      */
     public boolean isProcessLineEnds() {
         return processLineEnds;
     }
     
     /**
-     * @see Options.CLI_AUTOSPLIT
+     * @see Options#CLI_AUTOSPLIT
      */
     public void setSplit(boolean split) {
         this.split = split;
     }
 
     /**
-     * @see Options.CLI_AUTOSPLIT
+     * @see Options#CLI_AUTOSPLIT
      */
     public boolean isSplit() {
         return split;
     }
     
     /**
-     * @see Options.CLI_WARNING_LEVEL
+     * @see Options#CLI_WARNING_LEVEL
      */
     public Verbosity getVerbosity() {
         return verbosity;
     }
     
     /**
-     * @see Options.CLI_WARNING_LEVEL
+     * @see Options#CLI_WARNING_LEVEL
      */
     public void setVerbosity(Verbosity verbosity) {
         this.verbosity = verbosity;
     }
 
     /**
-     * @see Options.CLI_VERBOSE
+     * @see Options#CLI_VERBOSE
      */
     public boolean isVerbose() {
         return verbosity == Verbosity.TRUE;
     }
 
     /**
-     * @see Options.CLI_DEBUG
+     * @see Options#CLI_DEBUG
      */
     public boolean isDebug() {
         return debug;
     }
 
     /**
-     * @see Options.CLI_DEBUG
+     * @see Options#CLI_DEBUG
      */
     public void setDebug(boolean debug) {
         this.debug = debug;
     }
     
     /**
-     * @see Options.CLI_PARSER_DEBUG
+     * @see Options#CLI_PARSER_DEBUG
      */
     public boolean isParserDebug() {
         return parserDebug;
     }
     
     /**
-     * @see Options.CLI_PARSER_DEBUG
+     * @see Options#CLI_PARSER_DEBUG
      */
     public void setParserDebug(boolean parserDebug) {
         this.parserDebug = parserDebug;
     }
     
     /**
-     * @see Options.CLI_PARSER_DEBUG
+     * @see Options#CLI_PARSER_DEBUG
      */
     public boolean getParserDebug() {
         return parserDebug;
     }
 
     /**
-     * @see Options.CLI_VERSION
+     * @see Options#CLI_VERSION
      */
     public void setShowVersion(boolean showVersion) {
         this.showVersion = showVersion;
     }
 
     /**
-     * @see Options.CLI_VERSION
+     * @see Options#CLI_VERSION
      */
     public boolean isShowVersion() {
         return showVersion;
     }
     
     /**
-     * @see Options.CLI_BYTECODE
+     * @see Options#CLI_BYTECODE
      */
     public void setShowBytecode(boolean showBytecode) {
         this.showBytecode = showBytecode;
     }
     
     /**
-     * @see Options.CLI_BYTECODE
+     * @see Options#CLI_BYTECODE
      */
     public boolean isShowBytecode() {
         return showBytecode;
     }
 
     /**
-     * @see Options.CLI_COPYRIGHT
+     * @see Options#CLI_COPYRIGHT
      */
     public void setShowCopyright(boolean showCopyright) {
         this.showCopyright = showCopyright;
     }
 
     /**
-     * @see Options.CLI_COPYRIGHT
+     * @see Options#CLI_COPYRIGHT
      */
     public boolean isShowCopyright() {
         return showCopyright;
@@ -932,98 +932,98 @@ public class RubyInstanceConfig {
     }
     
     /**
-     * @see Options.CLI_CHECK_SYNTAX
+     * @see Options#CLI_CHECK_SYNTAX
      */
     public void setShouldCheckSyntax(boolean shouldSetSyntax) {
         this.shouldCheckSyntax = shouldSetSyntax;
     }
 
     /**
-     * @see Options.CLI_CHECK_SYNTAX
+     * @see Options#CLI_CHECK_SYNTAX
      */
     public boolean getShouldCheckSyntax() {
         return shouldCheckSyntax;
     }
     
     /**
-     * @see Options.CLI_AUTOSPLIT_SEPARATOR
+     * @see Options#CLI_AUTOSPLIT_SEPARATOR
      */
     public void setInputFieldSeparator(String inputFieldSeparator) {
         this.inputFieldSeparator = inputFieldSeparator;
     }
 
     /**
-     * @see Options.CLI_AUTOSPLIT_SEPARATOR
+     * @see Options#CLI_AUTOSPLIT_SEPARATOR
      */
     public String getInputFieldSeparator() {
         return inputFieldSeparator;
     }
 
     /**
-     * @see Options.CLI_KCODE
+     * @see Options#CLI_KCODE
      */
     public KCode getKCode() {
         return kcode;
     }
 
     /**
-     * @see Options.CLI_KCODE
+     * @see Options#CLI_KCODE
      */
     public void setKCode(KCode kcode) {
         this.kcode = kcode;
     }
     
     /**
-     * @see Options.CLI_ENCODING_INTERNAL
+     * @see Options#CLI_ENCODING_INTERNAL
      */
     public void setInternalEncoding(String internalEncoding) {
         this.internalEncoding = internalEncoding;
     }
 
     /**
-     * @see Options.CLI_ENCODING_INTERNAL
+     * @see Options#CLI_ENCODING_INTERNAL
      */
     public String getInternalEncoding() {
         return internalEncoding;
     }
     
     /**
-     * @see Options.CLI_ENCODING_EXTERNAL
+     * @see Options#CLI_ENCODING_EXTERNAL
      */
     public void setExternalEncoding(String externalEncoding) {
         this.externalEncoding = externalEncoding;
     }
 
     /**
-     * @see Options.CLI_ENCODING_EXTERNAL
+     * @see Options#CLI_ENCODING_EXTERNAL
      */
     public String getExternalEncoding() {
         return externalEncoding;
     }
 
     /**
-     * @see Options.CLI_ENCODING_SOURCE
+     * @see Options#CLI_ENCODING_SOURCE
      */
     public void setSourceEncoding(String sourceEncoding) {
         this.sourceEncoding = sourceEncoding;
     }
 
     /**
-     * @see Options.CLI_ENCODING_SOURCE
+     * @see Options#CLI_ENCODING_SOURCE
      */
     public String getSourceEncoding() {
         return sourceEncoding;
     }
     
     /**
-     * @see Options.CLI_RECORD_SEPARATOR
+     * @see Options#CLI_RECORD_SEPARATOR
      */
     public void setRecordSeparator(String recordSeparator) {
         this.recordSeparator = recordSeparator;
     }
 
     /**
-     * @see Options.CLI_RECORD_SEPARATOR
+     * @see Options#CLI_RECORD_SEPARATOR
      */
     public String getRecordSeparator() {
         return recordSeparator;
@@ -1038,14 +1038,14 @@ public class RubyInstanceConfig {
     }
     
     /**
-     * @see Options.CLI_BACKUP_EXTENSION
+     * @see Options#CLI_BACKUP_EXTENSION
      */
     public void setInPlaceBackupExtension(String inPlaceBackupExtension) {
         this.inPlaceBackupExtension = inPlaceBackupExtension;
     }
 
     /**
-     * @see Options.CLI_BACKUP_EXTENSION
+     * @see Options#CLI_BACKUP_EXTENSION
      */
     public String getInPlaceBackupExtension() {
         return inPlaceBackupExtension;
@@ -1088,28 +1088,28 @@ public class RubyInstanceConfig {
     }
 
     /**
-     * @see Options.CLI_PROFILING_MODE
+     * @see Options#CLI_PROFILING_MODE
      */
     public boolean isProfiling() {
         return profilingMode != ProfilingMode.OFF;
     }
     
     /**
-     * @see Options.CLI_PROFILING_MODE
+     * @see Options#CLI_PROFILING_MODE
      */
     public boolean isProfilingEntireRun() {
         return profilingMode != ProfilingMode.OFF && profilingMode != ProfilingMode.API;
     }
     
     /**
-     * @see Options.CLI_PROFILING_MODE
+     * @see Options#CLI_PROFILING_MODE
      */
     public void setProfilingMode(ProfilingMode profilingMode) {
         this.profilingMode = profilingMode;
     }
 
     /**
-     * @see Options.CLI_PROFILING_MODE
+     * @see Options#CLI_PROFILING_MODE
      */
     public ProfilingMode getProfilingMode() {
         return profilingMode;
@@ -1132,7 +1132,7 @@ public class RubyInstanceConfig {
     }
 
     /**
-     * @see Options.CLI_RUBYGEMS_ENABLE
+     * @see Options#CLI_RUBYGEMS_ENABLE
      */
     public boolean isDisableGems() {
         return disableGems;
@@ -1146,21 +1146,21 @@ public class RubyInstanceConfig {
     }
 
     /**
-     * @see Options.CLI_RUBYGEMS_ENABLE
+     * @see Options#CLI_RUBYGEMS_ENABLE
      */
     public void setDisableGems(boolean dg) {
         this.disableGems = dg;
     }
 
     /**
-     * @see Options.BACKTRACE_STYLE
+     * @see Options#BACKTRACE_STYLE
      */
     public TraceType getTraceType() {
         return traceType;
     }
 
     /**
-     * @see Options.BACKTRACE_STYLE
+     * @see Options#BACKTRACE_STYLE
      */
     public void setTraceType(TraceType traceType) {
         this.traceType = traceType;
@@ -1177,7 +1177,7 @@ public class RubyInstanceConfig {
     /**
      * Whether to mask .java lines in the Ruby backtrace, as MRI does for C calls.
      *
-     * @see Options.BACKTRACE_MASK
+     * @see Options#BACKTRACE_MASK
      * 
      * @return true if masking; false otherwise
      */
@@ -1188,7 +1188,7 @@ public class RubyInstanceConfig {
     /**
      * Set whether to mask .java lines in the Ruby backtrace.
      *
-     * @see Options.BACKTRACE_MASK
+     * @see Options#BACKTRACE_MASK
      * 
      * @param backtraceMask true to mask; false otherwise
      */
@@ -1199,7 +1199,7 @@ public class RubyInstanceConfig {
     /**
      * Set whether native code is enabled for this config.
      * 
-     * @see Options.NATIVE_ENABLED
+     * @see Options#NATIVE_ENABLED
      * 
      * @param b new value indicating whether native code is enabled
      */
@@ -1210,7 +1210,7 @@ public class RubyInstanceConfig {
     /**
      * Get whether native code is enabled for this config.
      * 
-     * @see Options.NATIVE_ENABLED
+     * @see Options#NATIVE_ENABLED
      * 
      * @return true if native code is enabled; false otherwise.
      */
@@ -1219,14 +1219,14 @@ public class RubyInstanceConfig {
     }
     
     /**
-     * @see Options.CLI_STRIP_HEADER
+     * @see Options#CLI_STRIP_HEADER
      */
     public void setXFlag(boolean xFlag) {
         this.xFlag = xFlag;
     }
 
     /**
-     * @see Options.CLI_STRIP_HEADER
+     * @see Options#CLI_STRIP_HEADER
      */
     public boolean isXFlag() {
         return xFlag;
@@ -1235,7 +1235,7 @@ public class RubyInstanceConfig {
     /**
      * True if colorized backtraces are enabled. False otherwise.
      * 
-     * @see Options.BACKTRACE_COLOR
+     * @see Options#BACKTRACE_COLOR
      */
     public boolean getBacktraceColor() {
         return backtraceColor;
@@ -1244,7 +1244,7 @@ public class RubyInstanceConfig {
     /**
      * Set to true to enable colorized backtraces.
      * 
-     * @see Options.BACKTRACE_COLORR
+     * @see Options#BACKTRACE_COLOR
      */
     public void setBacktraceColor(boolean backtraceColor) {
         this.backtraceColor = backtraceColor;
@@ -1253,7 +1253,7 @@ public class RubyInstanceConfig {
     /**
      * Whether to use a single global lock for requires.
      * 
-     * @see Options.GLOBAL_REQUIRE_LOCK
+     * @see Options#GLOBAL_REQUIRE_LOCK
      */
     public boolean isGlobalRequireLock() {
         return globalRequireLock;
@@ -1262,7 +1262,7 @@ public class RubyInstanceConfig {
     /**
      * Set whether to use a single global lock for requires.
      * 
-     * @see Options.GLOBAL_REQUIRE_LOCK
+     * @see Options#GLOBAL_REQUIRE_LOCK
      */
     public void setGlobalRequireLock(boolean globalRequireLock) {
         this.globalRequireLock = globalRequireLock;
@@ -1271,7 +1271,7 @@ public class RubyInstanceConfig {
     /**
      * Set whether the JIT compiler should run in a background thread (Executor-based).
      * 
-     * @see Options.JIT_BACKGROUND
+     * @see Options#JIT_BACKGROUND
      *
      * @param jitBackground whether to run the JIT compiler in a background thread
      */
@@ -1282,7 +1282,7 @@ public class RubyInstanceConfig {
     /**
      * Get whether the JIT compiler will run in a background thread.
      * 
-     * @see Options.JIT_BACKGROUND
+     * @see Options#JIT_BACKGROUND
      *
      * @return whether the JIT compiler will run in a background thread
      */
@@ -1293,7 +1293,7 @@ public class RubyInstanceConfig {
     /**
      * Set whether to load and setup bundler on startup.
      * 
-     * @see Options.CLI_LOAD_GEMFILE
+     * @see Options#CLI_LOAD_GEMFILE
      */
     public void setLoadGemfile(boolean loadGemfile) {
         this.loadGemfile = loadGemfile;
@@ -1302,7 +1302,7 @@ public class RubyInstanceConfig {
     /**
      * Whether to load and setup bundler on startup.
      * 
-     * @see Options.CLI_LOAD_GEMFILE
+     * @see Options#CLI_LOAD_GEMFILE
      */
     public boolean getLoadGemfile() {
         return loadGemfile;
@@ -1311,7 +1311,7 @@ public class RubyInstanceConfig {
     /**
      * Set the maximum number of methods to consider when profiling.
      * 
-     * @see Options.PROFILE_MAX_METHODS
+     * @see Options#PROFILE_MAX_METHODS
      */
     public void setProfileMaxMethods(int profileMaxMethods) {
         this.profileMaxMethods = profileMaxMethods;
@@ -1320,7 +1320,7 @@ public class RubyInstanceConfig {
     /**
      * Get the maximum number of methods to consider when profiling.
      * 
-     * @see Options.PROFILE_MAX_METHODS
+     * @see Options#PROFILE_MAX_METHODS
      */
     public int getProfileMaxMethods() {
         return profileMaxMethods;
@@ -1343,7 +1343,7 @@ public class RubyInstanceConfig {
     /**
      * getService whether IPv4 is preferred
      * 
-     * @see Options.PREFER_IPV4
+     * @see Options#PREFER_IPV4
      */
     public boolean getIPv4Preferred() {
         return preferIPv4;
@@ -1391,7 +1391,7 @@ public class RubyInstanceConfig {
     private boolean objectSpaceEnabled = Options.OBJECTSPACE_ENABLED.load();
     private boolean siphashEnabled     = Options.SIPHASH_ENABLED.load();
 
-    private CompileMode compileMode = CompileMode.JIT;
+    private CompileMode compileMode = CompileMode.OFF;
     private boolean runRubyInProcess   = true;
     private String currentDirectory;
 
@@ -1505,33 +1505,18 @@ public class RubyInstanceConfig {
 	}
 
     public enum CompileMode {
-        JIT, FORCE, FORCEIR, OFF, OFFIR, TRUFFLE, JITIR;
+        JIT, FORCE, OFF, TRUFFLE;
 
         public boolean shouldPrecompileCLI() {
-            switch (this) {
-            case JIT: case FORCE: case FORCEIR:
-                return true;
-            }
-            return false;
+            return this == JIT || this == FORCE;
         }
 
         public boolean shouldJIT() {
-            switch (this) {
-            case JIT: case FORCE: case FORCEIR: case JITIR:
-                return true;
-            }
-            return false;
+            return this == JIT || this == FORCE;
         }
 
         public boolean shouldPrecompileAll() {
-            return this == FORCE || this == FORCEIR;
-        }
-
-        /**
-         * Whether to use the JRuby 9000+ IR runtime instead of the earlier AST runtime.
-         */
-        public boolean isIR() {
-            return this == OFFIR || this == FORCEIR || this == JITIR;
+            return this == FORCE;
         }
     }
     

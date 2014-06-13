@@ -50,7 +50,6 @@ namespace :test do
     :int => ["-X-C"],
     :jit => ["-Xjit.threshold=0", "-J-XX:MaxPermSize=256M"],
     :aot => ["-X+C", "-J-XX:MaxPermSize=256M"],
-    :ir_int => ["-X-CIR"],
     :all => [:int, :jit, :aot]
   }
   

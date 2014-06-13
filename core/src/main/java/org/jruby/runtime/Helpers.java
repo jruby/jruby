@@ -3063,13 +3063,17 @@ public class Helpers {
         if (value instanceof RubyArray) {
             return value;
         } else {
-            IRubyObject ary = Helpers.aryToAry(value);
-            if (ary instanceof RubyArray) {
-                return ary;
-            } else {
-                String valueType = value.getType().getName();
-                throw context.runtime.newTypeError("can't convert " + valueType + " to Array (" + valueType + "#to_ary gives " + ary.getType().getName() + ")");
+            IRubyObject newValue = TypeConverter.convertToType19(value, context.runtime.getArray(), "to_ary", false);
+            if (newValue.isNil()) {
+                return RubyArray.newArrayLight(context.runtime, value);
             }
+
+            // must be array by now, or error
+            if (!(newValue instanceof RubyArray)) {
+                throw context.runtime.newTypeError(newValue.getMetaClass() + "#" + "to_ary" + " should return Array");
+            }
+
+            return (RubyArray)newValue;
         }
     }
 

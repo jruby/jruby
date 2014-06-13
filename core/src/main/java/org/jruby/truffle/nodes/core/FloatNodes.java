@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.util.SlowPathBigInteger;
 
 @CoreClass(name = "Float")
 public abstract class FloatNodes {
@@ -79,7 +80,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double add(double a, BigInteger b) {
-            return a + b.doubleValue();
+            return a + SlowPathBigInteger.doubleValue(b);
         }
 
     }
@@ -107,7 +108,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double sub(double a, BigInteger b) {
-            return a - b.doubleValue();
+            return a - SlowPathBigInteger.doubleValue(b);
         }
 
     }
@@ -135,7 +136,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double mul(double a, BigInteger b) {
-            return a * b.doubleValue();
+            return a * SlowPathBigInteger.doubleValue(b);
         }
 
     }
@@ -163,7 +164,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double mul(double a, BigInteger b) {
-            return Math.pow(a, b.doubleValue());
+            return Math.pow(a, SlowPathBigInteger.doubleValue(b));
         }
 
     }
@@ -191,7 +192,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double div(double a, BigInteger b) {
-            return a / b.doubleValue();
+            return a / SlowPathBigInteger.doubleValue(b);
         }
 
     }
@@ -275,7 +276,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean less(double a, BigInteger b) {
-            return BigInteger.valueOf((long) a).compareTo(b) < 0;
+            return SlowPathBigInteger.compareTo(BigInteger.valueOf((long) a), b) < 0;
         }
     }
 
@@ -302,7 +303,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean lessEqual(double a, BigInteger b) {
-            return BigInteger.valueOf((long) a).compareTo(b) <= 0;
+            return SlowPathBigInteger.compareTo(BigInteger.valueOf((long) a), b) <= 0;
         }
     }
 
@@ -329,7 +330,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean equal(double a, BigInteger b) {
-            return BigInteger.valueOf((long) a).compareTo(b) == 0;
+            return SlowPathBigInteger.compareTo(BigInteger.valueOf((long) a), b) == 0;
         }
     }
 
@@ -356,7 +357,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean notEqual(double a, BigInteger b) {
-            return BigInteger.valueOf((long) a).compareTo(b) != 0;
+            return SlowPathBigInteger.compareTo(BigInteger.valueOf((long) a), b) != 0;
         }
     }
 
@@ -383,7 +384,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean greaterEqual(double a, BigInteger b) {
-            return BigInteger.valueOf((long) a).compareTo(b) >= 0;
+            return SlowPathBigInteger.compareTo(BigInteger.valueOf((long) a), b) >= 0;
         }
     }
 
@@ -410,7 +411,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean equal(double a, BigInteger b) {
-            return BigInteger.valueOf((long) a).compareTo(b) > 0;
+            return SlowPathBigInteger.compareTo(BigInteger.valueOf((long) a), b) > 0;
         }
     }
 
@@ -428,24 +429,6 @@ public abstract class FloatNodes {
         @Specialization
         public double abs(double n) {
             return Math.abs(n);
-        }
-
-    }
-
-    @CoreMethod(names = "inspect", maxArgs = 0)
-    public abstract static class InpsectNode extends CoreMethodNode {
-
-        public InpsectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public InpsectNode(InpsectNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString inspect(double n) {
-            return getContext().makeString(Double.toString(n));
         }
 
     }
@@ -490,7 +473,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "to_s", maxArgs = 0)
+    @CoreMethod(names = {"to_s", "inspect"}, maxArgs = 0)
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -501,6 +484,7 @@ public abstract class FloatNodes {
             super(prev);
         }
 
+        @CompilerDirectives.SlowPath
         @Specialization
         public RubyString toS(double value) {
             return getContext().makeString(Double.toString(value));

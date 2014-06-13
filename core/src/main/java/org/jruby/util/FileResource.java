@@ -24,7 +24,7 @@ public interface FileResource {
     boolean canWrite();
 
     /**
-     * @see java.io.File.list
+     * @see java.io.File#list()
      */
     String[] list();
 

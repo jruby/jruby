@@ -1,1 +1,3 @@
 fails:Kernel#eval raises a LocalJumpError if there is no lambda-style closure in the chain
+fails:Kernel#eval allows a binding to be captured inside an eval
+

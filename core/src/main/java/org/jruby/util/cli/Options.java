@@ -58,7 +58,7 @@ public class Options {
 
     public static final Option<Boolean> WARN_USELESSS_USE_OF = bool(PARSER, "parser.warnuselessuseof", true, "Print warnings about potentially useless expressions in void contents.");
 
-    public static final Option<CompileMode> COMPILE_MODE = enumeration(COMPILER, "compile.mode", CompileMode.class, CompileMode.JIT, "Set compilation mode. JIT = at runtime; FORCE = before execution.");
+    public static final Option<CompileMode> COMPILE_MODE = enumeration(COMPILER, "compile.mode", CompileMode.class, CompileMode.OFF, "Set compilation mode. JIT = at runtime; FORCE = before execution.");
     public static final Option<Boolean> COMPILE_DUMP = bool(COMPILER, "compile.dump", false, "Dump to console all bytecode generated at runtime.");
     public static final Option<Boolean> COMPILE_THREADLESS = bool(COMPILER, "compile.threadless", false, "(EXPERIMENTAL) Turn on compilation without polling for \"unsafe\" thread events.");
     public static final Option<Boolean> COMPILE_FASTOPS = bool(COMPILER, "compile.fastops", true, "Turn on fast operators for Fixnum and Float.");
@@ -120,7 +120,8 @@ public class Options {
     public static final Option<Boolean> IR_WRITING_DEBUG     = bool(IR, "ir.writing.debug", false, "Debug writing JRuby IR file.");
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
 
-    public static final Option<Boolean> TRUFFLE_PRINT_RUNTIME = bool(TRUFFLE, "truffle.printRuntime", false, "Print the Truffle runtime class on startup.");
+    public static final Option<Boolean> TRUFFLE_PRINT_RUNTIME = bool(TRUFFLE, "truffle.printRuntime", false, "Print the name of the Truffle runtime on startup.");
+    public static final Option<Integer> TRUFFLE_GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD = integer(TRUFFLE, "truffle.generalDispatchSizeWarningThreshold", 64, "Warn when a general dispatch cache grows larger than this many methods.");
     public static final Option<Boolean> TRUFFLE_DEBUG_NODES = bool(TRUFFLE, "truffle.debugNodes", true, "Add debug nodes.");
     public static final Option<Boolean> TRUFFLE_TRACE_NODES = bool(TRUFFLE, "truffle.traceNodes", true, "Add trace nodes.");
     public static final Option<Boolean> TRUFFLE_PRINT_JAVA_EXCEPTIONS = bool(TRUFFLE, "truffle.printJavaExceptions", true, "Print Java exceptions at the point of translating them to Ruby exceptions.");

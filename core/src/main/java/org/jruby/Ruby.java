@@ -226,13 +226,8 @@ public final class Ruby {
         }
         
         getJRubyClassLoader(); // force JRubyClassLoader to init if possible
-        
-        if (config.getCompileMode().isIR()) {
-            this.staticScopeFactory = new IRStaticScopeFactory(this);
-        } else {
-            this.staticScopeFactory = new StaticScopeFactory(this);
-        }
 
+        this.staticScopeFactory = new IRStaticScopeFactory(this);
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
         this.jitCompiler        = new JITCompiler(this);
         this.parserStats        = new ParserStats(this);
@@ -275,13 +270,7 @@ public final class Ruby {
 
     void reinitialize(boolean reinitCore) {
         this.doNotReverseLookupEnabled = true;
-
-        if (config.getCompileMode().isIR()) {
-            this.staticScopeFactory = new IRStaticScopeFactory(this);
-        } else {
-            this.staticScopeFactory = new StaticScopeFactory(this);
-        }
-
+        this.staticScopeFactory = new IRStaticScopeFactory(this);
         this.in                 = config.getInput();
         this.out                = config.getOutput();
         this.err                = config.getError();
@@ -772,13 +761,7 @@ public final class Ruby {
     }
 
     private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, boolean dump) {
-        if (config.getCompileMode() == CompileMode.FORCEIR) {
-            return Compiler.getInstance().execute(this, node, classLoader);
-        }
-        ASTInspector inspector = new ASTInspector();
-        inspector.inspect(node);
-
-        return tryCompile(node, cachedClassName, classLoader, inspector, dump);
+        return Compiler.getInstance().execute(this, node, classLoader);
     }
 
     private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, ASTInspector inspector, boolean dump) {
@@ -857,13 +840,9 @@ public final class Ruby {
            if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
                assert parseResult instanceof RootNode;
                return getTruffleBridge().toJRuby(getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) parseResult));
-           } else if (getInstanceConfig().getCompileMode().isIR()) {
-               return Interpreter.getInstance().execute(this, parseResult, self);
-           } else {
-               assert parseResult instanceof RootNode;
-
-               return ASTInterpreter.INTERPRET_ROOT(this, context, (RootNode) parseResult, getTopSelf(), Block.NULL_BLOCK);
            }
+
+           return Interpreter.getInstance().execute(this, parseResult, self);
        } catch (JumpException.ReturnJump rj) {
            return (IRubyObject) rj.getValue();
        }
@@ -876,12 +855,10 @@ public final class Ruby {
             if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
                 assert rootNode instanceof RootNode;
                 return getTruffleBridge().toJRuby(getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) rootNode));
-            } else if (getInstanceConfig().getCompileMode().isIR()) {
-                // FIXME: retrieve from IRManager unless lifus does it later
-                return Interpreter.getInstance().execute(this, rootNode, self);
-            } else {
-                return ASTInterpreter.INTERPRET_ROOT(this, context, rootNode, getTopSelf(), Block.NULL_BLOCK);
             }
+
+            // FIXME: retrieve from IRManager unless lifus does it later
+            return Interpreter.getInstance().execute(this, rootNode, self);
         } catch (JumpException.ReturnJump rj) {
             return (IRubyObject) rj.getValue();
         }

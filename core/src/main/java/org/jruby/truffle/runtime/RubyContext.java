@@ -54,7 +54,7 @@ public class RubyContext {
     private final SourceManager sourceManager;
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
 
-    private AtomicLong nextObjectID = new AtomicLong(0);
+    private final AtomicLong nextObjectID = new AtomicLong(0);
 
     public RubyContext(Ruby runtime, TranslatorDriver translator) {
         assert runtime != null;

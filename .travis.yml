@@ -16,8 +16,6 @@ env:
     - TARGET='-Ptest'
     - TARGET='-Prake -Dtask=test:extended'
     - TARGET='-Prake -Dtask=spec:ci_interpreted_travis'
-    - TARGET='-Prake -Dtask=spec:ci_interpreted_ir_travis'
-    - TARGET='-Prake -Dtask=spec:ir'
     - TARGET='-Ptruffle'
 
 matrix:

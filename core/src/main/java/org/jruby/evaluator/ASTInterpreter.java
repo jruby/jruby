@@ -173,13 +173,11 @@ public class ASTInterpreter {
 
             if (runtime.getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
                 throw new UnsupportedOperationException();
-            } else if (runtime.getInstanceConfig().getCompileMode().isIR()) {
-                // SSS FIXME: AST interpreter passed both a runtime (which comes from the source string)
-                // and the thread-context rather than fetch one from the other.  Why is that?
-                return Interpreter.interpretBindingEval(runtime, binding.getFile(), binding.getLine(), binding.getMethod(), node, self, block);
-            } else {
-                return INTERPRET_EVAL(runtime, context, binding.getFile(), binding.getLine(), node, binding.getMethod(), self, block);
             }
+
+            // SSS FIXME: AST interpreter passed both a runtime (which comes from the source string)
+            // and the thread-context rather than fetch one from the other.  Why is that?
+            return Interpreter.interpretBindingEval(runtime, binding.getFile(), binding.getLine(), binding.getMethod(), node, self, block);
         } catch (JumpException.BreakJump bj) {
             throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
         } catch (JumpException.RedoJump rj) {
@@ -217,13 +215,11 @@ public class ASTInterpreter {
 
             if (runtime.getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
                 throw new UnsupportedOperationException();
-            } else if (runtime.getInstanceConfig().getCompileMode().isIR()) {
-                // SSS FIXME: AST interpreter passed both a runtime (which comes from the source string)
-                // and the thread-context rather than fetch one from the other.  Why is that?
-                return Interpreter.interpretSimpleEval(runtime, file, lineNumber, "(eval)", node, self);
-            } else {
-                return INTERPRET_EVAL(runtime, context, file, lineNumber, node, "(eval)", self, Block.NULL_BLOCK);
             }
+
+            // SSS FIXME: AST interpreter passed both a runtime (which comes from the source string)
+            // and the thread-context rather than fetch one from the other.  Why is that?
+            return Interpreter.interpretSimpleEval(runtime, file, lineNumber, "(eval)", node, self);
         } catch (JumpException.BreakJump bj) {
             throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
         } catch (StackOverflowError soe) {

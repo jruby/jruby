@@ -89,7 +89,7 @@ public class LocalStaticScope extends StaticScope {
         
         // We know this is a block scope because a local scope cannot be within a local scope
         // If topScope was itself it would have created a LocalAsgnNode above.
-        return ((BlockStaticScope) topScope).addAssign(position, name, value);
+        return ((IRStaticScope) topScope).addAssign(position, name, value);
     }
 
     public Node declare(ISourcePosition position, String name, int depth) {

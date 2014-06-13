@@ -17,14 +17,13 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.util.ByteList;
 
 /**
  * A list of expressions to build up into a string.
  */
 @NodeInfo(shortName = "interpolated-string")
 public final class InterpolatedStringNode extends RubyNode {
-
-    @CompilationFinal private int expectedLength = 64;
 
     @Children protected final RubyNode[] children;
     @Child protected DispatchHeadNode toS;
@@ -38,22 +37,32 @@ public final class InterpolatedStringNode extends RubyNode {
     @ExplodeLoop
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
-
-        final StringBuilder builder = new StringBuilder(expectedLength);
+        final RubyString[] strings = new RubyString[children.length];
 
         for (int n = 0; n < children.length; n++) {
-            // TODO(CS): what about this cast?
-            final RubyString string = (RubyString) toS.dispatch(frame, children[n].execute(frame), null);
-            builder.append(string.toString());
+            strings[n] = (RubyString) toS.dispatch(frame, children[n].execute(frame), null);
         }
 
-        if (builder.length() > expectedLength) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            expectedLength = builder.length() * 2;
+        return concat(strings);
+    }
+
+    @CompilerDirectives.SlowPath
+    private RubyString concat(RubyString[] strings) {
+        // TODO(CS): what happens to encoding here
+
+        int length = 0;
+
+        for (RubyString string : strings) {
+            length += string.getBytes().length();
         }
 
-        return getContext().makeString(builder.toString());
+        final ByteList bytes = new ByteList(length);
+
+        for (RubyString string : strings) {
+            bytes.append(string.getBytes());
+        }
+
+        return new RubyString(getContext().getCoreLibrary().getStringClass(), bytes);
     }
 
     @ExplodeLoop
