@@ -2928,13 +2928,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int p = value.getBegin();
         int end = p + value.getRealSize();
 
-        byte[]sbytes = sub.value.getUnsafeBytes();
-        int sp = sub.value.getBegin();
+        byte[]sbytes = sub.value.bytes();
         slen = sub.value.getRealSize();
 
         int s = StringSupport.nth(enc, bytes, p, end, pos);
         while (s >= 0) {
-            if (ByteList.memcmp(bytes, s, sbytes, sp, slen) == 0) return pos;
+            if (ByteList.memcmp(bytes, s, sbytes, 0, slen) == 0) return pos;
 
             if (pos == 0) break;
             pos--;
