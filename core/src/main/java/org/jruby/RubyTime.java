@@ -243,6 +243,32 @@ public class RubyTime extends RubyObject {
         return dtz;
     }
     
+    public static DateTimeZone getTimeZoneFromUtcOffset(Ruby runtime, String utcOffset) {
+        DateTimeZone cachedZone = runtime.getTimezoneCache().get(utcOffset);
+        
+        if (cachedZone != null) return cachedZone;
+        
+        Matcher offsetMatcher = TIME_OFFSET_PATTERN.matcher(utcOffset);
+        if (offsetMatcher.matches()) {
+            String sign = offsetMatcher.group(1);
+            String hours = offsetMatcher.group(2);
+            String minutes = offsetMatcher.group(3);
+            
+            if (Integer.parseInt(hours) > 23 ||
+                    (minutes != null && Integer.parseInt(minutes) > 59)) {
+                throw runtime.newArgumentError("utc_offset out of range");
+            }
+            long seconds = Integer.parseInt(hours) * 3600 + Integer.parseInt(minutes) * 60;
+            seconds = "-".equals(sign) ? (-1) * seconds : seconds;
+            DateTimeZone dtz = DateTimeZone.forOffsetMillis((int) (seconds * 1000));
+            //DateTimeZone dtz = DateTimeZone.forTimeZone(tz);
+            runtime.getTimezoneCache().put(utcOffset, dtz);
+            return dtz;
+        } else {
+            throw runtime.newArgumentError("\"+HH:MM\" or \"-HH:MM\" expected for utc_offset");
+        }
+    }
+    
     public RubyTime(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
@@ -644,7 +670,7 @@ public class RubyTime extends RubyObject {
             // display format needs to invert the UTC offset if this object was
             // created with a specific offset in the 7-arg form of #new
             DateTimeZone dtz = dt.getZone();
-            int offset = (-1) * dtz.toTimeZone().getOffset(dt.getMillis());
+            int offset = dtz.toTimeZone().getOffset(dt.getMillis());
             DateTimeZone invertedDTZ = DateTimeZone.forOffsetMillis(offset);
             DateTime invertedDT = dt.withZone(invertedDTZ);
             result = simpleDateFormat.print(invertedDT);
@@ -764,7 +790,6 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = {"gmt_offset", "gmtoff", "utc_offset"})
     public RubyInteger gmt_offset() {
         int offset = dt.getZone().getOffset(dt.getMillis());
-        if (isTzRelative) offset = -offset;
         
         return getRuntime().newFixnum((int)(offset/1000));
     }
@@ -1028,7 +1053,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"local", "mktime"}, required = 1, optional = 9, meta = true)
     public static RubyTime new_local(IRubyObject recv, IRubyObject[] args) {
-        return createTime(recv, args, false);
+        return createTime(recv, args, false, false);
     }
 
     @JRubyMethod(name = "new", optional = 7, meta = true)
@@ -1056,12 +1081,12 @@ public class RubyTime extends RubyObject {
                                      isDst,            // is DST?
                                      args[6] };        // UTC offset
         }
-        return createTime(recv, args, false);
+        return createTime(recv, args, false, true);
     }
 
     @JRubyMethod(name = {"utc", "gm"}, required = 1, optional = 9, meta = true)
     public static RubyTime new_utc(IRubyObject recv, IRubyObject[] args) {
-        return createTime(recv, args, true);
+        return createTime(recv, args, true, false);
     }
 
     @JRubyMethod(name = "_load", meta = true)
@@ -1162,7 +1187,7 @@ public class RubyTime extends RubyObject {
 
     private static final int ARG_SIZE = 7;
 
-    private static RubyTime createTime(IRubyObject recv, IRubyObject[] args, boolean gmt) {
+    private static RubyTime createTime(IRubyObject recv, IRubyObject[] args, boolean gmt, boolean utcOffset) {
         Ruby runtime = recv.getRuntime();
         int len = ARG_SIZE;
         boolean isDst = false;
@@ -1173,8 +1198,12 @@ public class RubyTime extends RubyObject {
         if (gmt) {
             dtz = DateTimeZone.UTC;
         } else if (args.length == 10 && args[9] instanceof RubyString) {
-            dtz = getTimeZone(runtime, ((RubyString) args[9]).toString());
-            setTzRelative = true;
+            if (utcOffset) {
+                dtz = getTimeZoneFromUtcOffset(runtime, ((RubyString) args[9]).toString());
+                setTzRelative = true;
+            } else {
+                dtz = getTimeZone(runtime, ((RubyString) args[9]).toString());
+            }
         } else if (args.length == 10 && args[9].respondsTo("to_int")) {
             IRubyObject offsetInt = args[9].callMethod(runtime.getCurrentContext(), "to_int");
             dtz = getTimeZone(runtime, ((RubyNumeric) offsetInt).getLongValue());
