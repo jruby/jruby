@@ -3823,7 +3823,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
         IRubyObject cmd;
         
         IRubyObject[] pm = {vperm, vmode};
-        
+
+        if (filename instanceof RubyString && ((RubyString) filename).isEmpty()){
+            throw context.getRuntime().newErrnoENOENTError();
+        }
+
         RubyFile file = (RubyFile)context.runtime.getFile().allocate();
         EncodingUtils.extractModeEncoding(context, file, pm, opt, oflags_p, fmode_p);
         perm = (pm[EncodingUtils.PERM] == null || pm[EncodingUtils.PERM].isNil()) ? 0666 : RubyNumeric.num2int(pm[EncodingUtils.PERM]);
