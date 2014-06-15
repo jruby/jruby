@@ -1,5 +1,6 @@
 package org.jruby.util.io;
 
+import com.sun.org.apache.bcel.internal.generic.Select;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyIO;
@@ -204,7 +205,9 @@ public class SelectExecutor {
     private boolean fdIsSet(List[] fds, int offset, ChannelFD fd) {
         if ((List<SelectionKey>)fds[offset] == null) return false;
 
-        for (SelectionKey key : (List<SelectionKey>)fds[offset]) {
+        for (Object obj : fds[offset]) {
+            if (obj == fd) return true; // not selectable, treat as always selected
+            SelectionKey key = (SelectionKey)obj;
             if (key.isValid() && key.readyOps() != 0 && key.attachment() == fd) return true;
         }
         return false;
