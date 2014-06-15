@@ -58,7 +58,7 @@ public class IOWaitLibrary implements Library {
         RubyIO io = (RubyIO)_io;
 
         fptr = io.getOpenFileChecked();
-        fptr.checkReadable(runtime);
+        fptr.checkReadable(context);
         len = fptr.readPending();
         if (len > 0) return runtime.newFixnum(len);
         // TODO: better effort to get available bytes from our channel
@@ -79,7 +79,7 @@ public class IOWaitLibrary implements Library {
 //        ioctl_arg n;
 
         fptr = io.getOpenFileChecked();
-        fptr.checkReadable(runtime);
+        fptr.checkReadable(context);
         if (fptr.readPending() != 0) return runtime.getTrue();
         // TODO: better effort to get available bytes from our channel
 //        if (!FIONREAD_POSSIBLE_P(fptr->fd)) return Qnil;
@@ -101,7 +101,7 @@ public class IOWaitLibrary implements Library {
 //        struct timeval *tv;
 
         fptr = io.getOpenFileChecked();
-        fptr.checkReadable(runtime);
+        fptr.checkReadable(context);
 
         switch (argv.length) {
             case 1:
@@ -122,8 +122,8 @@ public class IOWaitLibrary implements Library {
         // TODO: better effort to get available bytes from our channel
 //        if (!FIONREAD_POSSIBLE_P(fptr->fd)) return Qfalse;
         // TODO: actually use timeout
-        i = fptr.waitReadable(runtime, tv);
-        fptr.checkClosed(runtime);
+        i = fptr.waitReadable(context, tv);
+        fptr.checkClosed();
 //        if (ioctl(fptr->fd, FIONREAD, &n)) rb_sys_fail(0);
 //        if (n > 0) return io;
         if (i) return io;
@@ -159,8 +159,8 @@ public class IOWaitLibrary implements Library {
             tv = timeout.convertToInteger().getLongValue() * 1000;
         }
 
-        i = fptr.waitWritable(runtime, tv);
-        fptr.checkClosed(runtime);
+        i = fptr.waitWritable(context, tv);
+        fptr.checkClosed();
         if (i)
             return io;
         return context.nil;

@@ -24,7 +24,7 @@ public class IOJavaAddons {
         RubyIO io = (RubyIO)self;
         Ruby runtime = context.runtime;
 
-        io.getOpenFile().checkReadable(context.runtime);
+        io.getOpenFile().checkReadable(context);
 
         return JavaUtil.convertJavaToUsableRubyObject(context.runtime, io.getInStream());
     }

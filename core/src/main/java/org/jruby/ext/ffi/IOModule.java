@@ -64,8 +64,8 @@ public class IOModule {
         Ruby runtime = context.runtime;
         try {
             OpenFile openFile = ((RubyIO) src).getOpenFile();
-            openFile.checkClosed(runtime);
-            openFile.checkReadable(runtime);
+            openFile.checkClosed();
+            openFile.checkReadable(context);
 
 
             ByteBuffer buffer = ((AbstractMemory) dst).getMemoryIO().asByteBuffer();

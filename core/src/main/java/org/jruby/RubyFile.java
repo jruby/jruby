@@ -292,7 +292,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     } catch (InterruptedException ie) {
                         context.pollThreadEvents();
                     }
-                    fptr.checkClosed(runtime);
+                    fptr.checkClosed();
                     continue;
 
                 case EINTR:
@@ -1405,7 +1405,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private void checkClosed(ThreadContext context) {
-        openFile.checkClosed(context.runtime);
+        openFile.checkClosed();
     }
 
     private static boolean isWindowsDriveLetter(char c) {

@@ -267,7 +267,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
     
     public OpenFile getOpenFileChecked() {
-        openFile.checkClosed(getRuntime());
+        openFile.checkClosed();
         return openFile;
     }
     
@@ -328,7 +328,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         ChannelFD fd, fd2;
         long pos = 0;
 
-        nfile = (RubyIO)TypeConverter.ioGetIO(runtime, nfile);
+        nfile = TypeConverter.ioGetIO(runtime, nfile);
         fptr = getOpenFileChecked();
         orig = nfile.getOpenFileChecked();
 
@@ -341,7 +341,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
         }
         if (fptr.isWritable()) {
-            if (fptr.io_fflush(runtime) < 0)
+            if (fptr.io_fflush(context) < 0)
                 throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
         }
         else {
@@ -351,7 +351,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             pos = orig.tell(context);
         }
         if (orig.isWritable()) {
-            if (orig.io_fflush(runtime) < 0)
+            if (orig.io_fflush(context) < 0)
                 throw runtime.newErrnoFromErrno(orig.errno(), fptr.getPath());
         }
 
@@ -510,7 +510,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
 
         if (fptr.isWritable()) {
-            if (fptr.io_fflush(runtime) < 0)
+            if (fptr.io_fflush(context) < 0)
                 throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
         }
         fptr.rbuf.off = fptr.rbuf.len = 0;
@@ -579,8 +579,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (encIO != encRS
                     && (
                             ((RubyString)separatorValue).scanForCodeRange() != StringSupport.CR_7BIT
-                            || (
-                                    separator.getRealSize() > 0 && !EncodingUtils.encAsciicompat(encIO)))) {
+                            || (separator.getRealSize() > 0 && !EncodingUtils.encAsciicompat(encIO)))) {
                 if (separatorValue == runtime.getGlobalVariables().getDefaultSeparator()) {
                     separator = new ByteList(new byte[]{'\n'}, encIO);
                 } else {
@@ -638,7 +637,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         
         OpenFile fptr = getOpenFileChecked();
 
-        fptr.checkCharReadable(runtime);
+        fptr.checkCharReadable(context);
 
         if (rs == null && _limit < 0) {
             str = fptr.readAll(context, 0, context.nil);
@@ -1295,7 +1294,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         fptr = io.getOpenFileChecked();
         fptr.checkWritable(context);
 
-        if (fptr.io_fflush(runtime) < 0)
+        if (fptr.io_fflush(context) < 0)
             throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
 
         fptr.setNonblock(runtime);
@@ -1659,7 +1658,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyIO io = GetWriteIO();
         fptr = io.getOpenFileChecked();
 
-        if (fptr.io_fflush(runtime) < 0)
+        if (fptr.io_fflush(context) < 0)
             throw runtime.newSystemCallError("");
 
 //        # ifndef _WIN32	/* already called in io_fflush() */
@@ -1696,7 +1695,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         OpenFile fptr;
 
         fptr = getOpenFileChecked();
-        fptr.checkCharReadable(runtime);
+        fptr.checkCharReadable(context);
 
         if (fptr.READ_CHAR_PENDING()) return runtime.getFalse();
         if (fptr.READ_DATA_PENDING()) return runtime.getFalse();
@@ -1818,7 +1817,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public IRubyObject close() {
         Ruby runtime = getRuntime();
 
-        openFile.checkClosed(runtime);
+        openFile.checkClosed();
         return rbIoClose(runtime);
     }
 
@@ -1854,10 +1853,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (fptr == null) return runtime.getNil();
         if (fptr.fd() == null) return runtime.getNil();
 
-        // TODO: mark this closed for all threads waiting for it
-        // see interruptBlockingThreads()
-//        fd = fptr.fd();
-//        rb_thread_fd_close(fd);
+        // interrupt waiting threads
+        fptr.interruptBlockingThreads();
         fptr.cleanup(runtime, false);
 
         if (fptr.getProcess() != null) {
@@ -1884,7 +1881,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // MRI: rb_io_close_write
     @JRubyMethod
-    public IRubyObject close_write(ThreadContext context) {
+    public synchronized IRubyObject close_write(ThreadContext context) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
         RubyIO write_io;
@@ -1917,7 +1914,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     @JRubyMethod
-    public IRubyObject close_read(ThreadContext context) {
+    public synchronized IRubyObject close_read(ThreadContext context) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
         RubyIO write_io;
@@ -1995,7 +1992,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         fptr = getOpenFileChecked();
 
         if ((fptr.getMode() & OpenFile.WRITABLE) != 0) {
-            if (fptr.io_fflush(context.runtime) < 0)
+            if (fptr.io_fflush(context) < 0)
                 throw context.runtime.newErrnoFromErrno(fptr.errno(), "");
 //            #ifdef _WIN32
 //            if (sync && GetFileType((HANDLE)rb_w32_get_osfhandle(fptr->fd)) == FILE_TYPE_DISK) {
@@ -2369,7 +2366,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         int c;
 
         OpenFile fptr = getOpenFileChecked();
-        fptr.checkByteReadable(context.runtime);
+        fptr.checkByteReadable(context);
         fptr.READ_CHECK(context);
         // TODO: tty flushing
 //        if (fptr->fd == 0 && (fptr->mode & FMODE_TTY) && RB_TYPE_P(rb_stdout, T_FILE)) {
@@ -2407,7 +2404,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         OpenFile fptr = getOpenFileChecked();
 
-        fptr.checkCharReadable(runtime);
+        fptr.checkCharReadable(context);
 
         enc = fptr.inputEncoding(runtime);
         fptr.READ_CHECK(context);
@@ -2418,7 +2415,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @JRubyMethod
     public IRubyObject ungetbyte(ThreadContext context, IRubyObject b) {
         OpenFile fptr = getOpenFileChecked();
-        fptr.checkByteReadable(context.runtime);
+        fptr.checkByteReadable(context);
         if (b.isNil()) return context.nil;
         if (b instanceof RubyFixnum) {
             byte cc = (byte)RubyNumeric.fix2int(b);
@@ -2439,7 +2436,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         int len;
 
         fptr = getOpenFileChecked();
-        fptr.checkCharReadable(runtime);
+        fptr.checkCharReadable(context);
         if (c.isNil()) return c;
         if (c instanceof RubyFixnum) {
             c = EncodingUtils.encUintChr(context, (int)((RubyFixnum)c).getLongValue(), fptr.readEncoding(runtime));
@@ -2549,7 +2546,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         str.setTaint(true);
 
         fptr = getOpenFileChecked();
-        fptr.checkByteReadable(runtime);
+        fptr.checkByteReadable(context);
 
         if (len == 0)
             return str;
@@ -2573,7 +2570,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     //                n = arg.len;
                     n = OpenFile.readInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), len);
                     if (n < 0) {
-                        if (!nonblock && fptr.waitReadable(runtime))
+                        if (!nonblock && fptr.waitReadable(context))
                             continue again;
                         if (nonblock && (fptr.errno() == Errno.EWOULDBLOCK || fptr.errno() == Errno.EAGAIN)) {
                             if (noException)
@@ -2615,7 +2612,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (ilen == 0) return str;
 
         fptr = getOpenFileChecked();
-        fptr.checkByteReadable(runtime);
+        fptr.checkByteReadable(context);
 
         if (fptr.READ_DATA_BUFFERED()) {
             throw runtime.newIOError("sysread for buffered IO");
@@ -2633,7 +2630,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
      */
 //        rb_thread_wait_fd(fptr->fd);
 
-        fptr.checkClosed(runtime);
+        fptr.checkClosed();
 
         str = EncodingUtils.setStrBuf(runtime, str, ilen);
 //        rb_str_locktmp(str);
@@ -2690,7 +2687,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         
         if (length.isNil()) {
             fptr = getOpenFileChecked();
-            fptr.checkReadable(context.runtime);
+            fptr.checkReadable(context);
             return fptr.readAll(context, 0, str);
         }
         
@@ -2702,7 +2699,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         str = EncodingUtils.setStrBuf(runtime, str, len);
 
         fptr = getOpenFileChecked();
-        fptr.checkByteReadable(runtime);
+        fptr.checkByteReadable(context);
         if (len == 0) return str;
 
         fptr.READ_CHECK(context);
@@ -2733,7 +2730,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     public IRubyObject stat(ThreadContext context) {
         Ruby runtime = context.runtime;
         OpenFile fptr = getOpenFileChecked();
-        fptr.checkClosed(runtime);
+        fptr.checkClosed();
         if (runtime.getPosix().isNative() && fptr.fd().realFileno != -1) {
             return RubyFileStat.newFileStat(runtime, fptr.fd().bestFileno());
         } else {
@@ -2762,7 +2759,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 block.yield(context, runtime.newFixnum(pBytes[p] & 0xFF));
                 fptr.errno(null);
             }
-            fptr.checkByteReadable(runtime);
+            fptr.checkByteReadable(context);
             fptr.READ_CHECK(context);
         } while (fptr.fillbuf(context) >= 0);
         return this;
@@ -2789,7 +2786,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_char");
         fptr = getOpenFileChecked();
-        fptr.checkCharReadable(runtime);
+        fptr.checkCharReadable(context);
 
         enc = fptr.inputEncoding(runtime);
         fptr.READ_CHECK(context);
@@ -2831,7 +2828,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         if (!block.isGiven()) return enumeratorize(context.runtime, this, methodName);
         fptr = getOpenFileChecked();
-        fptr.checkCharReadable(runtime);
+        fptr.checkCharReadable(context);
 
         fptr.READ_CHECK(context);
         if (fptr.needsReadConversion()) {
@@ -4124,10 +4121,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * @param thread A thread blocking on this IO
      */
     public synchronized void addBlockingThread(RubyThread thread) {
-        if (blockingThreads == null) {
-            blockingThreads = new ArrayList<RubyThread>(1);
-        }
-        blockingThreads.add(thread);
+        if (openFile != null) openFile.addBlockingThread(thread);
     }
     
     /**
@@ -4135,31 +4129,15 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * 
      * @param thread A thread blocking on this IO
      */
-    public synchronized void removeBlockingThread(RubyThread thread) {
-        if (blockingThreads == null) {
-            return;
-        }
-        for (int i = 0; i < blockingThreads.size(); i++) {
-            if (blockingThreads.get(i) == thread) {
-                // not using remove(Object) here to avoid the equals() call
-                blockingThreads.remove(i);
-            }
-        }
+    public void removeBlockingThread(RubyThread thread) {
+        if (openFile != null) openFile.removeBlockingThread(thread);
     }
     
     /**
      * Fire an IOError in all threads blocking on this IO object
      */
-    protected synchronized void interruptBlockingThreads() {
-        if (blockingThreads == null) {
-            return;
-        }
-        for (int i = 0; i < blockingThreads.size(); i++) {
-            RubyThread thread = blockingThreads.get(i);
-            
-            // raise will also wake the thread from selection
-            thread.raise(new IRubyObject[] {getRuntime().newIOError("stream closed").getException()}, Block.NULL_BLOCK);
-        }
+    protected void interruptBlockingThreads() {
+        if (openFile != null) openFile.interruptBlockingThreads();
     }
 
     /**
@@ -4682,7 +4660,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
     
     protected OpenFile openFile;
-    protected List<RubyThread> blockingThreads;
 
     /**
      * If the stream is being used for popen, we don't want to destroy the process

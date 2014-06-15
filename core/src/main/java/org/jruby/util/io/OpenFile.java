@@ -20,6 +20,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -32,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channel;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.ReadableByteChannel;
@@ -41,6 +43,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class OpenFile implements Finalizable {
@@ -141,6 +145,8 @@ public class OpenFile implements Finalizable {
 
     private final Ruby runtime;
 
+    protected List<RubyThread> blockingThreads;
+
     public void clearStdio() {
         stdio_file = null;
     }
@@ -166,7 +172,7 @@ public class OpenFile implements Finalizable {
 
     public void READ_CHECK(ThreadContext context) {
         if (!READ_DATA_PENDING()) {
-            checkClosed(context.runtime);
+            checkClosed();
         }
     }
 
@@ -370,59 +376,59 @@ public class OpenFile implements Finalizable {
     }
 
     // rb_io_check_char_readable
-    public void checkCharReadable(Ruby runtime) {
-        checkClosed(runtime);
+    public void checkCharReadable(ThreadContext context) {
+        checkClosed();
 
         if ((mode & READABLE) == 0) {
             throw runtime.newIOError("not opened for reading");
         }
 
         if (wbuf.len != 0) {
-            if (io_fflush(runtime) < 0) {
+            if (io_fflush(context) < 0) {
                 throw runtime.newErrnoFromErrno(posix.errno, "error flushing");
             }
         }
         if (tiedIOForWriting != null) {
             OpenFile wfptr;
             wfptr = tiedIOForWriting.getOpenFileChecked();
-            if (wfptr.io_fflush(runtime) < 0)
+            if (wfptr.io_fflush(context) < 0)
                 throw runtime.newErrnoFromErrno(wfptr.posix.errno, wfptr.getPath());
         }
     }
 
     // rb_io_check_byte_readable
-    public void checkByteReadable(Ruby runtime) {
-        checkCharReadable(runtime);
+    public void checkByteReadable(ThreadContext context) {
+        checkCharReadable(context);
         if (READ_CHAR_PENDING()) {
             throw runtime.newIOError("byte oriented read for character buffered IO");
         }
     }
 
     // rb_io_check_readable
-    public void checkReadable(Ruby runtime) {
-        checkByteReadable(runtime);
+    public void checkReadable(ThreadContext context) {
+        checkByteReadable(context);
     }
 
     // io_fflush
-    public int io_fflush(Ruby runtime) {
-        checkClosed(runtime);
+    public int io_fflush(ThreadContext context) {
+        checkClosed();
 
         if (wbuf.len == 0) return 0;
 
-        checkClosed(runtime);
+        checkClosed();
 
-        while (wbuf.len > 0 && flushBuffer(runtime) != 0) {
-            if (!waitWritable(runtime)) {
+        while (wbuf.len > 0 && flushBuffer() != 0) {
+            if (!waitWritable(context)) {
                 return -1;
             }
-            checkClosed(runtime);
+            checkClosed();
         }
 
         return 0;
     }
 
     // rb_io_wait_writable
-    public boolean waitWritable(Ruby runtime, long timeout) {
+    public boolean waitWritable(ThreadContext context, long timeout) {
         if (posix.errno == null) return false;
 
         if (fd == null) throw runtime.newIOError("closed stream");
@@ -434,7 +440,7 @@ public class OpenFile implements Finalizable {
                 return true;
             case EAGAIN:
             case EWOULDBLOCK:
-                ready(runtime, SelectBlob.WRITE_CONNECT_OPS, timeout);
+                ready(runtime, context.getThread(), SelectBlob.WRITE_CONNECT_OPS, timeout);
                 return true;
             default:
                 return false;
@@ -442,12 +448,12 @@ public class OpenFile implements Finalizable {
     }
 
     // rb_io_wait_writable
-    public boolean waitWritable(Ruby runtime) {
-        return waitWritable(runtime, 0);
+    public boolean waitWritable(ThreadContext context) {
+        return waitWritable(context, 0);
     }
 
     // rb_io_wait_readable
-    public boolean waitReadable(Ruby runtime, long timeout) {
+    public boolean waitReadable(ThreadContext context, long timeout) {
         if (posix.errno == null) return false;
 
         if (fd == null) throw runtime.newIOError("closed stream");
@@ -459,7 +465,7 @@ public class OpenFile implements Finalizable {
                 return true;
             case EAGAIN:
             case EWOULDBLOCK:
-                ready(runtime, SelectBlob.READ_ACCEPT_OPS, timeout);
+                ready(runtime, context.getThread(), SelectBlob.READ_ACCEPT_OPS, timeout);
                 return true;
             default:
                 return false;
@@ -467,12 +473,12 @@ public class OpenFile implements Finalizable {
     }
 
     // rb_io_wait_readable
-    public boolean waitReadable(Ruby runtime) {
-        return waitReadable(runtime, 0);
+    public boolean waitReadable(ThreadContext context) {
+        return waitReadable(context, 0);
     }
 
-    public boolean ready(Ruby runtime, int ops) {
-        return ready(runtime, ops, 0);
+    public boolean ready(ThreadContext context, int ops) {
+        return ready(runtime, context.getThread(), ops, 0);
     }
 
     /**
@@ -483,19 +489,26 @@ public class OpenFile implements Finalizable {
      * @param timeout
      * @return
      */
-    public boolean ready(Ruby runtime, int ops, long timeout) {
+    public boolean ready(Ruby runtime, RubyThread thread, int ops, long timeout) {
         try {
             if (fd.chSelect != null) {
                 int ready_stat = 0;
                 java.nio.channels.Selector sel = SelectorFactory.openWithRetryFrom(null, fd.chSelect.provider());
                 synchronized (fd.chSelect.blockingLock()) {
                     boolean is_block = fd.chSelect.isBlocking();
+                    boolean addedThread = false;
                     try {
                         fd.chSelect.configureBlocking(false);
                         fd.chSelect.register(sel, ops);
-                        ready_stat = timeout == -1 ? sel.selectNow() : sel.select(timeout);
+                        if (timeout == -1) {
+                            ready_stat = sel.selectNow();
+                        } else {
+                            addedThread = true;
+                            addBlockingThread(thread);
+                        }
                         sel.close();
                     } finally {
+                        if (addedThread) removeBlockingThread(thread);
                         if (sel != null) {
                             try {
                                 sel.close();
@@ -521,29 +534,29 @@ public class OpenFile implements Finalizable {
     }
 
     // io_flush_buffer
-    public int flushBuffer(Ruby runtime) {
+    public int flushBuffer() {
         if (write_lock != null) {
             write_lock.writeLock().lock();
             try {
-                return flushBufferAsync2(runtime);
+                return flushBufferAsync2();
             } finally {
                 write_lock.writeLock().unlock();
             }
         }
-        return flushBufferAsync2(runtime);
+        return flushBufferAsync2();
     }
 
     // io_flush_buffer_async2
-    public int flushBufferAsync2(Ruby runtime) {
+    public int flushBufferAsync2() {
         // GVL-free call to io_flush_buffer_sync2 here in MRI
 
-        return flushBufferSync2(runtime);
+        return flushBufferSync2();
 
         // logic after here was to interpret the retval of rb_thread_call_without_gvl2
     }
 
     // io_flush_buffer_sync2
-    public int flushBufferSync2(Ruby runtime) {
+    public int flushBufferSync2() {
         int result = flushBufferSync();
 
         return result;
@@ -624,14 +637,14 @@ public class OpenFile implements Finalizable {
     // flush_before_seek
     void flushBeforeSeek(ThreadContext context)
     {
-        if (io_fflush(context.runtime) < 0)
+        if (io_fflush(context) < 0)
             throw context.runtime.newErrnoFromErrno(posix.errno, "");
         unread(context);
         posix.errno = null;
     }
 
     public void checkWritable(ThreadContext context) {
-        checkClosed(context.runtime);
+        checkClosed();
         if ((mode & WRITABLE) == 0) {
             throw context.runtime.newIOError("not opened for writing");
         }
@@ -640,7 +653,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    public void checkClosed(Ruby runtime) {
+    public void checkClosed() {
         if (fd == null) {
             throw runtime.newIOError("closed stream");
         }
@@ -765,7 +778,7 @@ public class OpenFile implements Finalizable {
         if (finalizer != null) {
             finalizer.finalize(runtime, this, noraise);
         } else {
-            finalize(runtime, noraise);
+            finalize(runtime.getCurrentContext(), noraise);
         }
     }
 
@@ -784,17 +797,17 @@ public class OpenFile implements Finalizable {
                 // no status from above, so can't really do this
 //                runtime.getCurrentContext().setLastExitStatus();
             } else {
-                fptr.finalize(runtime, noraise);
+                fptr.finalize(runtime.getCurrentContext(), noraise);
             }
 //            pipe_del_fptr(fptr);
         }
     };
 
     public void finalize() {
-        if (fd != null) finalize(runtime, true);
+        if (fd != null) finalize(runtime.getCurrentContext(), true);
     }
 
-    public void finalize(Ruby runtime, boolean noraise) {
+    public void finalize(ThreadContext context, boolean noraise) {
         IRubyObject err = runtime.getNil();
         ChannelFD fd = this.fd();
         Closeable stdio_file = this.stdio_file;
@@ -806,10 +819,10 @@ public class OpenFile implements Finalizable {
 //                arg.noalloc = noraise;
 //                err = rb_mutex_synchronize(fptr->write_lock, finish_writeconv_sync, (VALUE)&arg);
                 // TODO: interruptible version
-                finishWriteconv(runtime, noraise);
+                finishWriteconv(context, noraise);
             }
             else {
-                err = finishWriteconv(runtime, noraise);
+                err = finishWriteconv(context, noraise);
             }
         }
         if (wbuf.len != 0) {
@@ -818,7 +831,7 @@ public class OpenFile implements Finalizable {
                     err = runtime.getTrue();
             }
             else {
-                if (io_fflush(runtime) < 0 && err.isNil()) {
+                if (io_fflush(runtime.getCurrentContext()) < 0 && err.isNil()) {
                     err = RubyFixnum.newFixnum(runtime, posix.errno == null ? 0 :posix.errno.longValue());
                 }
             }
@@ -1250,17 +1263,24 @@ public class OpenFile implements Finalizable {
                         try {
                             fd.chSelect.configureBlocking(false);
                             fd.chSelect.register(iis.selector, SelectionKey.OP_READ);
+                            iis.fptr.addBlockingThread(context.getThread());
                             while (iis.selector.select() != 1) {
                                 // keep selecting until ready or there's a thread event
                                 context.pollThreadEvents();
                             }
                         } finally {
+                            iis.fptr.removeBlockingThread(context.getThread());
                             iis.selector.close();
                             fd.chSelect.configureBlocking(blocking);
                         }
                     }
                 }
+            } catch (ClosedChannelException ioe) {
+                // if it's a closed channel exception, we raise IOError, since it should have been
+                // open up to this point
+                throw context.runtime.newIOError("closed stream");
             } catch (IOException ioe) {
+                ioe.printStackTrace();
                 throw context.runtime.newIOErrorFromException(ioe);
             }
 
@@ -1586,7 +1606,7 @@ public class OpenFile implements Finalizable {
                 offset += c;
                 if ((n -= c) <= 0) break;
             }
-            checkClosed(runtime);
+            checkClosed();
             if (fillbuf(context) < 0) {
                 break;
             }
@@ -1782,7 +1802,7 @@ public class OpenFile implements Finalizable {
         byte[] bufBytes;
         int buf = 0;
 
-        checkClosed(runtime);
+        checkClosed();
         if (rbuf.len == 0 || (mode & DUPLEX) != 0) {
             return;
         }
@@ -1957,12 +1977,12 @@ public class OpenFile implements Finalizable {
                 wbuf.len += (int)len;
                 n = 0;
             }
-            if (io_fflush(context.runtime) < 0)
+            if (io_fflush(context) < 0)
                 return -1L;
             if (n == 0)
                 return len;
 
-            checkClosed(context.runtime);
+            checkClosed();
             arg.fptr = this;
             arg.str = str;
             retry: while (true) {
@@ -1990,8 +2010,8 @@ public class OpenFile implements Finalizable {
                     n -= r;
                     posix.errno = Errno.EAGAIN;
                 }
-                if (waitWritable(context.runtime)) {
-                    checkClosed(context.runtime);
+                if (waitWritable(context)) {
+                    checkClosed();
                     if (offset < len)
                     continue retry;
                 }
@@ -2080,7 +2100,7 @@ public class OpenFile implements Finalizable {
         return fd.chSock;
     }
 
-    IRubyObject finishWriteconv(Ruby runtime, boolean noalloc) {
+    IRubyObject finishWriteconv(ThreadContext context, boolean noalloc) {
         byte[] dsBytes;
         int ds, de;
         Ptr dpPtr = new Ptr();
@@ -2108,7 +2128,7 @@ public class OpenFile implements Finalizable {
                         if (0 <= r) {
                             ds += r;
                         }
-                        if (waitWritable(runtime)) {
+                        if (waitWritable(context)) {
                             if (fd == null)
                                 return noalloc ? runtime.getTrue() : runtime.newIOError("closed stream").getException();
                             continue retry;
@@ -2130,7 +2150,7 @@ public class OpenFile implements Finalizable {
         res = EConvResult.DestinationBufferFull;
         while (res == EConvResult.DestinationBufferFull) {
             if (wbuf.len == wbuf.capa) {
-                if (io_fflush(runtime) < 0)
+                if (io_fflush(context) < 0)
                     return noalloc ? runtime.getTrue() : runtime.newFixnum(posix.errno == null ? 0 : posix.errno.longValue());
             }
 
@@ -2374,6 +2394,50 @@ public class OpenFile implements Finalizable {
         // TODO?
 //        rb_maygvl_fd_fix_cloexec(ret);
         return ret;
+    }
+
+    /**
+     * Add a thread to the list of blocking threads for this IO.
+     *
+     * @param thread A thread blocking on this IO
+     */
+    public synchronized void addBlockingThread(RubyThread thread) {
+        if (blockingThreads == null) {
+            blockingThreads = new ArrayList<RubyThread>(1);
+        }
+        blockingThreads.add(thread);
+    }
+
+    /**
+     * Remove a thread from the list of blocking threads for this IO.
+     *
+     * @param thread A thread blocking on this IO
+     */
+    public synchronized void removeBlockingThread(RubyThread thread) {
+        if (blockingThreads == null) {
+            return;
+        }
+        for (int i = 0; i < blockingThreads.size(); i++) {
+            if (blockingThreads.get(i) == thread) {
+                // not using remove(Object) here to avoid the equals() call
+                blockingThreads.remove(i);
+            }
+        }
+    }
+
+    /**
+     * Fire an IOError in all threads blocking on this IO object
+     */
+    public synchronized void interruptBlockingThreads() {
+        if (blockingThreads == null) {
+            return;
+        }
+        for (int i = 0; i < blockingThreads.size(); i++) {
+            RubyThread thread = blockingThreads.get(i);
+
+            // raise will also wake the thread from selection
+            thread.raise(new IRubyObject[] {runtime.newIOError("stream closed").getException()}, Block.NULL_BLOCK);
+        }
     }
 
     @Deprecated
