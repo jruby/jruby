@@ -47,16 +47,19 @@ public final class ExceptionTranslator {
 
             final StringBuilder builder = new StringBuilder();
             builder.append("Truffle doesn't have a case for the ");
-            builder.append(specialization.getNode().getClass().getSimpleName());
-            builder.append(" node with values of class");
+            builder.append(specialization.getNode().getClass().getName());
+            builder.append(" node with values of type ");
 
             for (Object value : specialization.getSuppliedValues()) {
                 builder.append(" ");
 
                 if (value instanceof RubyBasicObject) {
                     builder.append(((RubyBasicObject) value).getRubyClass().getName());
+                    builder.append(" (");
+                    builder.append(value.getClass().getName());
+                    builder.append(")");
                 } else {
-                    builder.append(value.getClass().getSimpleName());
+                    builder.append(value.getClass().getName());
                 }
             }
 

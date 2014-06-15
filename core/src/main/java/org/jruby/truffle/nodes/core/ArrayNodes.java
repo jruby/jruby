@@ -27,6 +27,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.Memo;
 
 import java.util.Arrays;
@@ -200,7 +201,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "*", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "*", minArgs = 1, maxArgs = 1, fixnumLower = 0)
     public abstract static class MulNode extends ArrayCoreMethodNode {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
@@ -458,7 +459,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"[]", "at"}, minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = {"[]", "at"}, minArgs = 1, maxArgs = 2, fixnumLower = {0, 1})
     public abstract static class IndexNode extends ArrayCoreMethodNode {
 
         public IndexNode(RubyContext context, SourceSection sourceSection) {
@@ -581,7 +582,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "[]=", minArgs = 2, maxArgs = 3)
+    @CoreMethod(names = "[]=", minArgs = 2, maxArgs = 3, fixnumLower = 0)
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
         private final BranchProfile tooSmallBranch = new BranchProfile();
@@ -643,6 +644,7 @@ public abstract class ArrayNodes {
             final int normalisedIndex = array.normaliseIndex(index);
 
             long[] store = ArrayUtils.longCopyOf((int[]) array.getStore());
+            array.setStore(store, array.getSize());
 
             if (normalisedIndex < 0) {
                 tooSmallBranch.enter();
@@ -673,6 +675,8 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isLongFixnum", order = 4)
         public long setLongFixnum(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
+            System.err.println("setting " + index);
+
             final int normalisedIndex = array.normaliseIndex(index);
             long[] store = (long[]) array.getStore();
 
@@ -2048,7 +2052,32 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore), array.getSize());
         }
 
-        @Specialization(guards = "isObject", order = 3)
+        @Specialization(guards = "isLongFixnum", order = 3)
+        public RubyArray mapLongFixnum(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final long[] store = (long[]) array.getStore();
+
+            Object mappedStore = arrayBuilder.length(array.getSize());
+
+            int count = 0;
+
+            try {
+                for (int n = 0; n < array.getSize(); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore), array.getSize());
+        }
+
+        @Specialization(guards = "isObject", order = 4)
         public RubyArray mapObject(VirtualFrame frame, RubyArray array, RubyProc block) {
             final Object[] store = (Object[]) array.getStore();
 

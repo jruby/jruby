@@ -15,8 +15,54 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
-@CoreClass(name = "Debug")
+@CoreClass(name = "TruffleDebug")
 public abstract class TruffleDebugNodes {
+
+    @CoreMethod(names = "java_class_of", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    public abstract static class JavaClassOf extends CoreMethodNode {
+
+        public JavaClassOf(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public JavaClassOf(JavaClassOf prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString javaClassOf(Object value) {
+            notDesignedForCompilation();
+
+            return getContext().makeString(value.getClass().getName());
+        }
+
+    }
+
+    @CoreMethod(names = "parse_tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    public abstract static class ParseTreeNode extends CoreMethodNode {
+
+        public ParseTreeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ParseTreeNode(ParseTreeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object parseTree() {
+            notDesignedForCompilation();
+
+            final org.jruby.ast.Node parseTree = RubyCallStack.getCurrentMethod().getSharedMethodInfo().getParseTree();
+
+            if (parseTree == null) {
+                return NilPlaceholder.INSTANCE;
+            } else {
+                return getContext().makeString(parseTree.toString(true, 0));
+            }
+        }
+
+    }
 
     @CoreMethod(names = "tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
     public abstract static class TreeNode extends CoreMethodNode {
@@ -54,32 +100,6 @@ public abstract class TruffleDebugNodes {
             notDesignedForCompilation();
 
             return getContext().makeString(NodeUtil.printTreeToString(RubyCallStack.getCallerFrame().getCallNode().getRootNode()));
-        }
-
-    }
-
-    @CoreMethod(names = "parse_tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
-    public abstract static class ParseTreeNode extends CoreMethodNode {
-
-        public ParseTreeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ParseTreeNode(ParseTreeNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object parseTree() {
-            notDesignedForCompilation();
-
-            final org.jruby.ast.Node parseTree = RubyCallStack.getCurrentMethod().getSharedMethodInfo().getParseTree();
-
-            if (parseTree == null) {
-                return NilPlaceholder.INSTANCE;
-            } else {
-                return getContext().makeString(parseTree.toString(true, 0));
-            }
         }
 
     }

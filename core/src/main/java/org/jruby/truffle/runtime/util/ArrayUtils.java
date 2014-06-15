@@ -1,4 +1,4 @@
-package org.jruby.truffle.runtime;
+package org.jruby.truffle.runtime.util;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;

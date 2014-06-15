@@ -11,7 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.runtime.ArrayUtils;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.cli.Options;
 

@@ -77,13 +77,13 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass zeroDivisionErrorClass;
     @CompilerDirectives.CompilationFinal private RubyModule comparableModule;
     @CompilerDirectives.CompilationFinal private RubyModule configModule;
-    @CompilerDirectives.CompilationFinal private RubyModule debugModule;
     @CompilerDirectives.CompilationFinal private RubyModule enumerableModule;
     @CompilerDirectives.CompilationFinal private RubyModule errnoModule;
     @CompilerDirectives.CompilationFinal private RubyModule kernelModule;
     @CompilerDirectives.CompilationFinal private RubyModule mathModule;
     @CompilerDirectives.CompilationFinal private RubyModule objectSpaceModule;
     @CompilerDirectives.CompilationFinal private RubyModule signalModule;
+    @CompilerDirectives.CompilationFinal private RubyModule truffleDebugModule;
 
     @CompilerDirectives.CompilationFinal private RubyArray argv;
     @CompilerDirectives.CompilationFinal private RubyBasicObject globalVariablesObject;
@@ -128,7 +128,6 @@ public class CoreLibrary {
         comparableModule = new RubyModule(moduleClass, null, "Comparable");
         configModule = new RubyModule(moduleClass, null, "Config");
         continuationClass = new RubyClass(null, objectClass, "Continuation");
-        debugModule = new RubyModule(moduleClass, null, "Debug");
         dirClass = new RubyClass(null, objectClass, "Dir");
         encodingClass = new RubyEncoding.RubyEncodingClass(objectClass);
         errnoModule = new RubyModule(moduleClass, null, "Errno");
@@ -165,6 +164,7 @@ public class CoreLibrary {
         threadClass = new RubyThread.RubyThreadClass(objectClass);
         timeClass = new RubyTime.RubyTimeClass(objectClass);
         trueClass = new RubyClass(null, objectClass, "TrueClass");
+        truffleDebugModule = new RubyModule(moduleClass, null, "TruffleDebug");
         typeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "TypeError");
         zeroDivisionErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "ZeroDivisionError");
 
@@ -221,7 +221,6 @@ public class CoreLibrary {
                         continuationClass, //
                         comparableModule, //
                         configModule, //
-                        debugModule, //
                         dirClass, //
                         enumerableModule, //
                         errnoModule, //
@@ -265,6 +264,7 @@ public class CoreLibrary {
                         threadClass, //
                         timeClass, //
                         trueClass, //
+                        truffleDebugModule, //
                         typeErrorClass, //
                         zeroDivisionErrorClass};
 

@@ -39,6 +39,7 @@ import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
@@ -751,12 +752,6 @@ public class BodyTranslator extends Translator {
         final RubyNode end = node.getEndNode().accept(this);
         SourceSection sourceSection = translate(node.getPosition());
 
-        if (begin instanceof IntegerFixnumLiteralNode && end instanceof IntegerFixnumLiteralNode) {
-            final int beginValue = ((IntegerFixnumLiteralNode) begin).getValue();
-            final int endValue = ((IntegerFixnumLiteralNode) end).getValue();
-
-            return new ObjectLiteralNode(context, sourceSection, new RubyRange.IntegerFixnumRange(context.getCoreLibrary().getRangeClass(), beginValue, endValue, node.isExclusive()));
-        }
         // See RangeNode for why there is a node specifically for creating this one type
         return RangeLiteralNodeFactory.create(context, sourceSection, node.isExclusive(), begin, end);
     }
@@ -796,7 +791,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitFixnumNode(org.jruby.ast.FixnumNode node) {
         final long value = node.getValue();
 
-        if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
+        if (RubyFixnum.fitsIntoInteger(value) && Options.TRUFFLE_LITERALS_INT.load()) {
             return new IntegerFixnumLiteralNode(context, translate(node.getPosition()), (int) value);
         } else {
             return new LongFixnumLiteralNode(context, translate(node.getPosition()), value);

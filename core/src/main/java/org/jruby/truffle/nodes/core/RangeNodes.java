@@ -34,8 +34,29 @@ public abstract class RangeNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public boolean equal(RubyRange.IntegerFixnumRange a, RubyRange.IntegerFixnumRange b) {
+            notDesignedForCompilation();
+
+            return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
+        }
+
+        @Specialization(order = 2)
+        public boolean equal(RubyRange.IntegerFixnumRange a, RubyRange.LongFixnumRange b) {
+            notDesignedForCompilation();
+
+            return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
+        }
+
+        @Specialization(order = 3)
+        public boolean equal(RubyRange.LongFixnumRange a, RubyRange.LongFixnumRange b) {
+            notDesignedForCompilation();
+
+            return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
+        }
+
+        @Specialization(order = 4)
+        public boolean equal(RubyRange.LongFixnumRange a, RubyRange.IntegerFixnumRange b) {
             notDesignedForCompilation();
 
             return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
@@ -43,7 +64,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = {"collect", "map"}, needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = {"collect", "map"}, needsBlock = true, maxArgs = 0, fixnumLower = -1)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
 
         @Child protected ArrayBuilderNode arrayBuilder;
@@ -87,7 +108,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "each", needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "each", needsBlock = true, maxArgs = 0, fixnumLower = -1)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = new BranchProfile();
@@ -182,7 +203,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = {"include?", "==="}, maxArgs = 1)
+    @CoreMethod(names = {"include?", "==="}, maxArgs = 1, fixnumLower = {-1, 0})
     public abstract static class IncludeNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode callLess;
@@ -307,7 +328,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "to_a", maxArgs = 0)
+    @CoreMethod(names = "to_a", maxArgs = 0, fixnumLower = -1)
     public abstract static class ToANode extends CoreMethodNode {
 
         public ToANode(RubyContext context, SourceSection sourceSection) {

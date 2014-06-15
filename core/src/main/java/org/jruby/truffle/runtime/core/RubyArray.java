@@ -12,7 +12,7 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.ArrayUtils;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.cli.Options;

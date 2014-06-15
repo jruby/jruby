@@ -55,6 +55,13 @@ public abstract class SymbolNodes {
             return a.toString().equals(Integer.toString(b));
         }
 
+        @Specialization
+        public boolean equal(RubySymbol a, long b) {
+            notDesignedForCompilation();
+
+            return a.toString().equals(Long.toString(b));
+        }
+
     }
 
     @CoreMethod(names = "all_symbols", isModuleMethod = true, needsSelf = false, maxArgs = 0)

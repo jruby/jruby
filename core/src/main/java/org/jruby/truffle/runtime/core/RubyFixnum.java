@@ -50,6 +50,10 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
             return (int) value;
         }
 
+        if (value instanceof Long && fitsIntoInteger((long) value)) {
+            return (int) (long) value;
+        }
+
         if (value instanceof LongFixnum) {
             CompilerDirectives.transferToInterpreter();
             throw new UnsupportedOperationException();
@@ -132,14 +136,10 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
     }
 
     public static boolean fitsIntoInteger(long value) {
-        RubyNode.notDesignedForCompilation();
-
-        return value >= Integer.MAX_VALUE && value <= Integer.MAX_VALUE;
+        return value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE;
     }
 
     public static int toUnsignedInt(byte x) {
-        RubyNode.notDesignedForCompilation();
-
         return ((int) x) & 0xff;
     }
 
