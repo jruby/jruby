@@ -305,7 +305,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "**", minArgs = 1, maxArgs = 1, fixnumLower = {-1, 0})
+    @CoreMethod(names = "**", minArgs = 1, maxArgs = 1, lowerFixnumSelf = true, lowerFixnumParameters = 0)
     public abstract static class PowNode extends CoreMethodNode {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
@@ -1012,7 +1012,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "<<", minArgs = 1, maxArgs = 1, fixnumLower = 0)
+    @CoreMethod(names = "<<", minArgs = 1, maxArgs = 1, lowerFixnumParameters = 0)
     public abstract static class LeftShiftNode extends CoreMethodNode {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
@@ -1077,7 +1077,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = ">>", minArgs = 1, maxArgs = 1, fixnumLower = 0)
+    @CoreMethod(names = ">>", minArgs = 1, maxArgs = 1, lowerFixnumParameters = 0)
     public abstract static class RightShiftNode extends CoreMethodNode {
 
         public RightShiftNode(RubyContext context, SourceSection sourceSection) {

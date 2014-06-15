@@ -18,7 +18,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 @CoreClass(name = "MatchData")
 public abstract class MatchDataNodes {
 
-    @CoreMethod(names = "[]", minArgs = 1, maxArgs = 1, fixnumLower = 0)
+    @CoreMethod(names = "[]", minArgs = 1, maxArgs = 1, lowerFixnumParameters = 0)
     public abstract static class GetIndexNode extends CoreMethodNode {
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {

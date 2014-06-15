@@ -174,7 +174,7 @@ public abstract class CoreMethodNodeManager {
         if (methodDetails.getMethodAnnotation().needsSelf()) {
             RubyNode readSelfNode = new SelfNode(context, sourceSection);
 
-            if (ArrayUtils.contains(methodDetails.getMethodAnnotation().fixnumLower(), -1)) {
+            if (methodDetails.getMethodAnnotation().lowerFixnumSelf()) {
                 readSelfNode = new FixnumLowerNode(readSelfNode);
             }
 
@@ -189,7 +189,7 @@ public abstract class CoreMethodNodeManager {
             for (int n = 0; n < arity.getMaximum(); n++) {
                 RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
 
-                if (ArrayUtils.contains(methodDetails.getMethodAnnotation().fixnumLower(), n)) {
+                if (ArrayUtils.contains(methodDetails.getMethodAnnotation().lowerFixnumParameters(), n)) {
                     readArgumentNode = new FixnumLowerNode(readArgumentNode);
                 }
 

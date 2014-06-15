@@ -64,7 +64,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = {"collect", "map"}, needsBlock = true, maxArgs = 0, fixnumLower = -1)
+    @CoreMethod(names = {"collect", "map"}, needsBlock = true, maxArgs = 0, lowerFixnumSelf = true)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
 
         @Child protected ArrayBuilderNode arrayBuilder;
@@ -108,7 +108,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "each", needsBlock = true, maxArgs = 0, fixnumLower = -1)
+    @CoreMethod(names = "each", needsBlock = true, maxArgs = 0, lowerFixnumSelf = true)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = new BranchProfile();
@@ -203,7 +203,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = {"include?", "==="}, maxArgs = 1, fixnumLower = {-1, 0})
+    @CoreMethod(names = {"include?", "==="}, maxArgs = 1, lowerFixnumSelf = true, lowerFixnumParameters = 0)
     public abstract static class IncludeNode extends CoreMethodNode {
 
         @Child protected DispatchHeadNode callLess;
@@ -328,7 +328,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "to_a", maxArgs = 0, fixnumLower = -1)
+    @CoreMethod(names = "to_a", maxArgs = 0, lowerFixnumSelf = true)
     public abstract static class ToANode extends CoreMethodNode {
 
         public ToANode(RubyContext context, SourceSection sourceSection) {

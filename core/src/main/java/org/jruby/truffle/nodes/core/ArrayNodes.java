@@ -201,7 +201,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "*", minArgs = 1, maxArgs = 1, fixnumLower = 0)
+    @CoreMethod(names = "*", minArgs = 1, maxArgs = 1, lowerFixnumParameters = 0)
     public abstract static class MulNode extends ArrayCoreMethodNode {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
@@ -459,7 +459,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"[]", "at"}, minArgs = 1, maxArgs = 2, fixnumLower = {0, 1})
+    @CoreMethod(names = {"[]", "at"}, minArgs = 1, maxArgs = 2, lowerFixnumParameters = {0, 1})
     public abstract static class IndexNode extends ArrayCoreMethodNode {
 
         public IndexNode(RubyContext context, SourceSection sourceSection) {
@@ -582,7 +582,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "[]=", minArgs = 2, maxArgs = 3, fixnumLower = 0)
+    @CoreMethod(names = "[]=", minArgs = 2, maxArgs = 3, lowerFixnumParameters = 0)
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
         private final BranchProfile tooSmallBranch = new BranchProfile();

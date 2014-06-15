@@ -265,7 +265,7 @@ public abstract class
 
     }
 
-    @CoreMethod(names = "exit", isModuleMethod = true, needsSelf = false, minArgs = 0, maxArgs = 1, fixnumLower = 0)
+    @CoreMethod(names = "exit", isModuleMethod = true, needsSelf = false, minArgs = 0, maxArgs = 1, lowerFixnumParameters = 0)
     public abstract static class ExitNode extends CoreMethodNode {
 
         public ExitNode(RubyContext context, SourceSection sourceSection) {

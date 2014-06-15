@@ -12,11 +12,9 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.joni.Option;
 import org.jruby.truffle.runtime.NilPlaceholder;
-import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
@@ -50,7 +48,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "*", minArgs = 1, maxArgs = 1, fixnumLower = 0)
+    @CoreMethod(names = "*", minArgs = 1, maxArgs = 1, lowerFixnumParameters = 0)
     public abstract static class MulNode extends CoreMethodNode {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
@@ -206,7 +204,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = {"[]", "slice"}, minArgs = 1, maxArgs = 2, fixnumLower = {0, 1})
+    @CoreMethod(names = {"[]", "slice"}, minArgs = 1, maxArgs = 2, lowerFixnumParameters = {0, 1})
     public abstract static class GetIndexNode extends CoreMethodNode {
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
@@ -563,7 +561,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "ljust", minArgs = 1, maxArgs = 2, fixnumLower = 0)
+    @CoreMethod(names = "ljust", minArgs = 1, maxArgs = 2, lowerFixnumParameters = 0)
     public abstract static class LjustNode extends CoreMethodNode {
 
         public LjustNode(RubyContext context, SourceSection sourceSection) {
@@ -617,7 +615,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "rjust", minArgs = 1, maxArgs = 2, fixnumLower = 0)
+    @CoreMethod(names = "rjust", minArgs = 1, maxArgs = 2, lowerFixnumParameters = 0)
     public abstract static class RjustNode extends CoreMethodNode {
 
         public RjustNode(RubyContext context, SourceSection sourceSection) {
