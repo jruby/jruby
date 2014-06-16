@@ -7,6 +7,7 @@ import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.DebugLog;
 import org.jruby.runtime.load.LoadService.SuffixType;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
@@ -88,7 +89,10 @@ class LibrarySearcher {
 
     private FoundLibrary findBuiltinLibrary(String name, String suffix) {
         String namePlusSuffix = name + suffix;
+
+        DebugLog.Builtin.logTry(namePlusSuffix);
         if (builtinLibraries.containsKey(namePlusSuffix)) {
+            DebugLog.Builtin.logFound(namePlusSuffix);
             return new FoundLibrary(
                     builtinLibraries.get(namePlusSuffix),
                     namePlusSuffix);
@@ -97,8 +101,14 @@ class LibrarySearcher {
     }
 
     private FoundLibrary findServiceLibrary(String name, String ignored) {
+        DebugLog.JarExtension.logTry(name);
         Library extensionLibrary = ClassExtensionLibrary.tryFind(runtime, name);
-        return extensionLibrary != null ? new FoundLibrary(extensionLibrary, name) : null;
+        if (extensionLibrary != null) {
+            DebugLog.JarExtension.logFound(name);
+            return new FoundLibrary(extensionLibrary, name);
+        } else {
+            return null;
+        }
     }
 
     private FoundLibrary findResourceLibrary(String baseName, String suffix) {
@@ -158,8 +168,10 @@ class LibrarySearcher {
         String fullPath = loadPath != null ? loadPath + "/" + searchName : searchName;
         String pathWithSuffix = fullPath + suffix;
 
+        DebugLog.Resource.logTry(pathWithSuffix);
         FileResource resource = JRubyFile.createResource(runtime, pathWithSuffix);
         if (resource.exists()) {
+            DebugLog.Resource.logFound(pathWithSuffix);
             String scriptName = resolveLoadName(resource, pathWithSuffix);
 
             return new FoundLibrary(
