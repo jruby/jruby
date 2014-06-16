@@ -692,6 +692,7 @@ public class LoadService {
         }
     }
 
+    @Deprecated
     public interface LoadSearcher {
         /**
          * @param state
@@ -706,6 +707,7 @@ public class LoadService {
         public boolean trySearch(SearchState state);
     }
 
+    @Deprecated
     public class BailoutSearcher implements LoadSearcher {
         public boolean shouldTrySearch(SearchState state) {
             return state.library == null;
@@ -726,6 +728,7 @@ public class LoadService {
         }
     }
 
+    @Deprecated
     public class SourceBailoutSearcher extends BailoutSearcher {
         public boolean shouldTrySearch(SearchState state) {
             // JRUBY-5032: Load extension files if they are required
@@ -742,6 +745,7 @@ public class LoadService {
         }
     }
 
+    @Deprecated
     public class NormalSearcher implements LoadSearcher {
         public boolean shouldTrySearch(SearchState state) {
             return state.library == null;
@@ -753,6 +757,7 @@ public class LoadService {
         }
     }
 
+    @Deprecated
     public class ClassLoaderSearcher implements LoadSearcher {
         public boolean shouldTrySearch(SearchState state) {
             return state.library == null;
@@ -764,6 +769,7 @@ public class LoadService {
         }
     }
 
+    @Deprecated
     public class ExtensionSearcher implements LoadSearcher {
         public boolean shouldTrySearch(SearchState state) {
             return (state.library == null || state.library instanceof JarredScript) && !state.searchFile.equalsIgnoreCase("");
@@ -786,6 +792,7 @@ public class LoadService {
         }
     }
 
+    @Deprecated
     public class ScriptClassSearcher implements LoadSearcher {
         public class ScriptClassLibrary implements Library {
             private Script script;
@@ -959,18 +966,21 @@ public class LoadService {
         }
     }
 
+    @Deprecated
     protected void debugLogTry(String what, String msg) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
             LOG.info( "trying " + what + ": " + msg );
         }
     }
 
+    @Deprecated
     protected void debugLogFound(String what, String msg) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
             LOG.info( "found " + what + ": " + msg );
         }
     }
 
+    @Deprecated
     protected void debugLogFound( LoadServiceResource resource ) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
             String resourceUrl;
@@ -997,6 +1007,7 @@ public class LoadService {
         return library;
     }
 
+    @Deprecated
     protected Library findBuiltinLibrary(SearchState state, String baseName, SuffixType suffixType) {
         for (String suffix : suffixType.getSuffixes()) {
             String namePlusSuffix = baseName + suffix;
@@ -1011,6 +1022,7 @@ public class LoadService {
         return null;
     }
 
+    @Deprecated
     protected Library findLibraryWithoutCWD(SearchState state, String baseName, SuffixType suffixType) {
         Library library = null;
 
@@ -1053,6 +1065,7 @@ public class LoadService {
         return null;
     }
 
+    @Deprecated
     protected Library createLibrary(SearchState state, LoadServiceResource resource) {
         if (resource == null) {
             return null;
@@ -1074,6 +1087,7 @@ public class LoadService {
         }
     }
 
+    @Deprecated
     protected LoadServiceResource tryResourceFromCWD(SearchState state, String baseName,SuffixType suffixType) throws RaiseException {
         LoadServiceResource foundResource = null;
 
@@ -1102,6 +1116,7 @@ public class LoadService {
      * Try loading the resource from the current dir by appending suffixes and
      * passing it to tryResourceAsIs to have the ./ replaced by CWD.
      */
+    @Deprecated
     protected LoadServiceResource tryResourceFromDotSlash(SearchState state, String baseName, SuffixType suffixType) throws RaiseException {
         if (!runtime.is1_9()) return tryResourceFromCWD(state, baseName, suffixType);
         
@@ -1118,6 +1133,7 @@ public class LoadService {
         return foundResource;
     }
 
+    @Deprecated
     protected LoadServiceResource tryResourceFromHome(SearchState state, String baseName, SuffixType suffixType) throws RaiseException {
         LoadServiceResource foundResource = null;
 
@@ -1151,6 +1167,7 @@ public class LoadService {
         return foundResource;
     }
 
+    @Deprecated
     protected LoadServiceResource tryResourceFromJarURL(SearchState state, String baseName, SuffixType suffixType) {
         // if a jar or file URL, return load service resource directly without further searching
         LoadServiceResource foundResource = null;
@@ -1209,6 +1226,7 @@ public class LoadService {
         return foundResource;
     }
 
+    @Deprecated
     protected LoadServiceResource tryResourceFromLoadPathOrURL(SearchState state, String baseName, SuffixType suffixType) {
         LoadServiceResource foundResource = null;
 
@@ -1301,6 +1319,7 @@ public class LoadService {
         return entryString.asJavaString();
     }
 
+    @Deprecated
     protected LoadServiceResource tryResourceFromJarURLWithLoadPath(String namePlusSuffix, String loadPathEntry) {
         LoadServiceResource foundResource = null;
 
@@ -1383,6 +1402,7 @@ public class LoadService {
         return new String[]{filename, entry};
     }
 
+    @Deprecated
     protected LoadServiceResource tryResourceFromLoadPath( String namePlusSuffix,String loadPathEntry) throws RaiseException {
         LoadServiceResource foundResource = null;
 
@@ -1414,10 +1434,12 @@ public class LoadService {
         return foundResource;
     }
 
+    @Deprecated
     protected LoadServiceResource tryResourceAsIs(String namePlusSuffix) throws RaiseException {
         return tryResourceAsIs(namePlusSuffix, "resourceAsIs");
     }
 
+    @Deprecated
     protected LoadServiceResource tryResourceAsIs(String namePlusSuffix, String debugName) throws RaiseException {
         LoadServiceResource foundResource = null;
 
