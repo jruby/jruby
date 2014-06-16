@@ -59,38 +59,45 @@ public class SSL {
     public static final long OP_NETSCAPE_CA_DN_BUG =                        0x20000000L;
     public static final long OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG =           0x40000000L;
 
-    public static void createSSL(Ruby runtime, RubyModule ossl) {
-        RubyModule mSSL = ossl.defineModuleUnder("SSL");
-        RubyClass openSSLError = ossl.getClass("OpenSSLError");
-        RubyClass sslError = mSSL.defineClassUnder("SSLError",openSSLError,openSSLError.getAllocator());
-        RubyClass sslErrorWaitReadable = mSSL.defineClassUnder("SSLErrorWaitReadable",sslError,openSSLError.getAllocator());
-        sslErrorWaitReadable.include(new IRubyObject[]{runtime.getIO().getConstant("WaitReadable")});
-        RubyClass sslErrorWaitWritable = mSSL.defineClassUnder("SSLErrorWaitWritable",sslError,openSSLError.getAllocator());
-        sslErrorWaitWritable.include(new IRubyObject[]{runtime.getIO().getConstant("WaitWritable")});
+    public static void createSSL(final Ruby runtime, final RubyModule ossl) {
+        final RubyModule _SSL = ossl.defineModuleUnder("SSL");
+        final RubyClass _OpenSSLError = ossl.getClass("OpenSSLError");
+        RubyClass _SSLError = _SSL.defineClassUnder("SSLError", _OpenSSLError, _OpenSSLError.getAllocator());
 
-        SSLContext.createSSLContext(runtime,mSSL);
-        SSLSocket.createSSLSocket(runtime,mSSL);
+        final IRubyObject _WaitReadable = runtime.getIO().getConstant("WaitReadable");
+        if ( _WaitReadable != null ) { // since 2.0 (do not exist in 1.8 / 1.9)
+            _SSL.defineClassUnder("SSLErrorWaitReadable", _SSLError, _OpenSSLError.getAllocator()).
+                include(new IRubyObject[]{ _WaitReadable });
+        }
+        final IRubyObject _WaitWritable = runtime.getIO().getConstant("WaitWritable");
+        if ( _WaitWritable != null ) { // since 2.0 (do not exist in 1.8 / 1.9)
+            _SSL.defineClassUnder("SSLErrorWaitWritable", _SSLError, _OpenSSLError.getAllocator()).
+                include(new IRubyObject[]{ _WaitWritable });
+        }
 
-        mSSL.setConstant("VERIFY_NONE", runtime.newFixnum(VERIFY_NONE));
-        mSSL.setConstant("VERIFY_PEER", runtime.newFixnum(VERIFY_PEER));
-        mSSL.setConstant("VERIFY_FAIL_IF_NO_PEER_CERT", runtime.newFixnum(VERIFY_FAIL_IF_NO_PEER_CERT));
-        mSSL.setConstant("VERIFY_CLIENT_ONCE", runtime.newFixnum(VERIFY_CLIENT_ONCE));
+        SSLContext.createSSLContext(runtime, _SSL);
+        SSLSocket.createSSLSocket(runtime, _SSL);
 
-        mSSL.setConstant("OP_ALL", runtime.newFixnum(OP_ALL));
-        mSSL.setConstant("OP_NO_TICKET", runtime.newFixnum(OP_NO_TICKET));
-        mSSL.setConstant("OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION", runtime.newFixnum(OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION));
-        mSSL.setConstant("OP_SINGLE_ECDH_USE", runtime.newFixnum(OP_SINGLE_ECDH_USE));
-        mSSL.setConstant("OP_SINGLE_DH_USE", runtime.newFixnum(OP_SINGLE_DH_USE));
-        mSSL.setConstant("OP_EPHEMERAL_RSA", runtime.newFixnum(OP_EPHEMERAL_RSA));
-        mSSL.setConstant("OP_CIPHER_SERVER_PREFERENCE", runtime.newFixnum(OP_CIPHER_SERVER_PREFERENCE));
-        mSSL.setConstant("OP_TLS_ROLLBACK_BUG", runtime.newFixnum(OP_TLS_ROLLBACK_BUG));
-        mSSL.setConstant("OP_NO_SSLv2", runtime.newFixnum(OP_NO_SSLv2));
-        mSSL.setConstant("OP_NO_SSLv3", runtime.newFixnum(OP_NO_SSLv3));
-        mSSL.setConstant("OP_NO_TLSv1", runtime.newFixnum(OP_NO_TLSv1));
-        mSSL.setConstant("OP_PKCS1_CHECK_1", runtime.newFixnum(OP_PKCS1_CHECK_1));
-        mSSL.setConstant("OP_PKCS1_CHECK_2", runtime.newFixnum(OP_PKCS1_CHECK_2));
-        mSSL.setConstant("OP_NETSCAPE_CA_DN_BUG", runtime.newFixnum(OP_NETSCAPE_CA_DN_BUG));
-        mSSL.setConstant("OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG", runtime.newFixnum(OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG));
+        _SSL.setConstant("VERIFY_NONE", runtime.newFixnum(VERIFY_NONE));
+        _SSL.setConstant("VERIFY_PEER", runtime.newFixnum(VERIFY_PEER));
+        _SSL.setConstant("VERIFY_FAIL_IF_NO_PEER_CERT", runtime.newFixnum(VERIFY_FAIL_IF_NO_PEER_CERT));
+        _SSL.setConstant("VERIFY_CLIENT_ONCE", runtime.newFixnum(VERIFY_CLIENT_ONCE));
+
+        _SSL.setConstant("OP_ALL", runtime.newFixnum(OP_ALL));
+        _SSL.setConstant("OP_NO_TICKET", runtime.newFixnum(OP_NO_TICKET));
+        _SSL.setConstant("OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION", runtime.newFixnum(OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION));
+        _SSL.setConstant("OP_SINGLE_ECDH_USE", runtime.newFixnum(OP_SINGLE_ECDH_USE));
+        _SSL.setConstant("OP_SINGLE_DH_USE", runtime.newFixnum(OP_SINGLE_DH_USE));
+        _SSL.setConstant("OP_EPHEMERAL_RSA", runtime.newFixnum(OP_EPHEMERAL_RSA));
+        _SSL.setConstant("OP_CIPHER_SERVER_PREFERENCE", runtime.newFixnum(OP_CIPHER_SERVER_PREFERENCE));
+        _SSL.setConstant("OP_TLS_ROLLBACK_BUG", runtime.newFixnum(OP_TLS_ROLLBACK_BUG));
+        _SSL.setConstant("OP_NO_SSLv2", runtime.newFixnum(OP_NO_SSLv2));
+        _SSL.setConstant("OP_NO_SSLv3", runtime.newFixnum(OP_NO_SSLv3));
+        _SSL.setConstant("OP_NO_TLSv1", runtime.newFixnum(OP_NO_TLSv1));
+        _SSL.setConstant("OP_PKCS1_CHECK_1", runtime.newFixnum(OP_PKCS1_CHECK_1));
+        _SSL.setConstant("OP_PKCS1_CHECK_2", runtime.newFixnum(OP_PKCS1_CHECK_2));
+        _SSL.setConstant("OP_NETSCAPE_CA_DN_BUG", runtime.newFixnum(OP_NETSCAPE_CA_DN_BUG));
+        _SSL.setConstant("OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG", runtime.newFixnum(OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG));
     }
 
     @Deprecated // confusing since it throws instead of returning
@@ -107,11 +114,19 @@ public class SSL {
     }
 
     public static RaiseException newSSLErrorWaitReadable(Ruby runtime, String message) {
-        return Utils.newError(runtime, _SSL(runtime).getClass("SSLErrorWaitReadable"), message, false);
+        return newCustomSSLError(runtime, "SSLErrorWaitReadable", message);
     }
 
     public static RaiseException newSSLErrorWaitWritable(Ruby runtime, String message) {
-        return Utils.newError(runtime, _SSL(runtime).getClass("SSLErrorWaitWritable"), message, false);
+        return newCustomSSLError(runtime, "SSLErrorWaitWritable", message);
+    }
+
+    private static RaiseException newCustomSSLError(final Ruby runtime, final String name, final String message) {
+        RubyClass errorClass = _SSL(runtime).getClass(name);
+        if ( errorClass == null ) { // < Ruby 2.0
+            errorClass = _SSL(runtime).getClass("SSLError"); // fallback
+        }
+        return Utils.newError(runtime, errorClass, message, false);
     }
 
     static RubyModule _SSL(final Ruby runtime) {
