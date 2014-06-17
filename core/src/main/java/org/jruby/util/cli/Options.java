@@ -128,6 +128,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_ARRAYS_INT = bool(TRUFFLE, "truffle.arrays.int", true, "Use int[] for Fixnum array storage where possible.");
     public static final Option<Boolean> TRUFFLE_ARRAYS_LONG = bool(TRUFFLE, "truffle.arrays.long", true, "Use long[] for Fixnum array storage where possible.");
     public static final Option<Boolean> TRUFFLE_ARRAYS_DOUBLE = bool(TRUFFLE, "truffle.arrays.double", true, "Use double[] Float for array storage where possible.");
+    public static final Option<Boolean> TRUFFLE_ARRAYS_OPTIMISTIC_LONG = bool(TRUFFLE, "truffle.arrays.optimistic.long", true, "If we allocate an int[] and it has been converted to a long[], directly allocate a long[] next time.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");
