@@ -44,6 +44,11 @@ public abstract class FixnumNodes {
             return value;
         }
 
+        @Specialization
+        public long pos(long value) {
+            return value;
+        }
+
     }
 
     @CoreMethod(names = "-@", maxArgs = 0)
@@ -62,8 +67,14 @@ public abstract class FixnumNodes {
             return ExactMath.subtractExact(0, value);
         }
 
+        @Specialization(rewriteOn = ArithmeticException.class)
+        public long neg(long value) {
+            return ExactMath.subtractExact(0, value);
+        }
+
         @Specialization
         public BigInteger negWithOverflow(int value) {
+            notDesignedForCompilation();
             return BigInteger.valueOf(value).negate();
         }
 
@@ -295,7 +306,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "**", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "**", minArgs = 1, maxArgs = 1, lowerFixnumSelf = true, lowerFixnumParameters = 0)
     public abstract static class PowNode extends CoreMethodNode {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
@@ -707,18 +718,43 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(order = 1)
         public boolean notEqual(int a, int b) {
             return a != b;
         }
 
-        @Specialization
+        @Specialization(order = 2)
+        public boolean notEqual(int a, long b) {
+            return a != b;
+        }
+
+        @Specialization(order = 3)
         public boolean notEqual(int a, double b) {
             return a != b;
         }
 
-        @Specialization
+        @Specialization(order = 4)
         public boolean notEqual(int a, BigInteger b) {
+            return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) != 0;
+        }
+
+        @Specialization(order = 5)
+        public boolean notEqual(long a, int b) {
+            return a != b;
+        }
+
+        @Specialization(order = 6)
+        public boolean notEqual(long a, long b) {
+            return a != b;
+        }
+
+        @Specialization(order = 7)
+        public boolean notEqual(long a, double b) {
+            return a != b;
+        }
+
+        @Specialization(order = 8)
+        public boolean notEqual(long a, BigInteger b) {
             return SlowPathBigInteger.compareTo(BigInteger.valueOf(a), b) != 0;
         }
     }
@@ -841,6 +877,11 @@ public abstract class FixnumNodes {
 
         @Specialization
         public int complement(int n) {
+            return ~n;
+        }
+
+        @Specialization
+        public long complement(long n) {
             return ~n;
         }
 
@@ -972,7 +1013,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = "<<", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "<<", minArgs = 1, maxArgs = 1, lowerFixnumParameters = 0)
     public abstract static class LeftShiftNode extends CoreMethodNode {
 
         @Child protected FixnumOrBignumNode fixnumOrBignum;
@@ -1037,7 +1078,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = ">>", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = ">>", minArgs = 1, maxArgs = 1, lowerFixnumParameters = 0)
     public abstract static class RightShiftNode extends CoreMethodNode {
 
         public RightShiftNode(RubyContext context, SourceSection sourceSection) {
@@ -1255,6 +1296,40 @@ public abstract class FixnumNodes {
             return n;
         }
 
+        @Specialization
+        public Object times(VirtualFrame frame, long n, RubyProc block) {
+            int count = 0;
+
+            try {
+                outer: for (long i = 0; i < n; i++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, i);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            return n;
+        }
+
     }
 
     @CoreMethod(names = {"to_i", "to_int"}, maxArgs = 0)
@@ -1270,6 +1345,11 @@ public abstract class FixnumNodes {
 
         @Specialization
         public int toI(int n) {
+            return n;
+        }
+
+        @Specialization
+        public long toI(long n) {
             return n;
         }
 
@@ -1347,6 +1427,43 @@ public abstract class FixnumNodes {
             try {
                 outer:
                 for (int i = from; i <= to; i++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, i);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            return NilPlaceholder.INSTANCE;
+        }
+
+        @Specialization
+        public Object upto(VirtualFrame frame, long from, long to, RubyProc block) {
+            notDesignedForCompilation();
+
+            int count = 0;
+
+            try {
+                outer:
+                for (long i = from; i <= to; i++) {
                     while (true) {
                         if (CompilerDirectives.inInterpreter()) {
                             count++;

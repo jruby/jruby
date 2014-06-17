@@ -33,6 +33,7 @@ import java.math.BigInteger;
                 double.class, //
                 BigInteger.class, //
                 RubyRange.IntegerFixnumRange.class, //
+                RubyRange.LongFixnumRange.class, //
                 RubyRange.ObjectRange.class, //
                 RubyArray.class, //
                 RubyBignum.class, //

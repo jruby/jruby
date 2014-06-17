@@ -110,4 +110,9 @@ public class OpAsgnNode extends Node {
     public List<Node> childNodes() {
         return Node.createList(receiverNode, valueNode);
     }
+
+    @Override
+    public boolean needsDefinitionCheck() {
+        return false;
+    }
 }

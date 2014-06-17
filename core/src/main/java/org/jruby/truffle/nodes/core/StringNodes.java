@@ -48,7 +48,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "*", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "*", minArgs = 1, maxArgs = 1, lowerFixnumParameters = 0)
     public abstract static class MulNode extends CoreMethodNode {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
@@ -204,7 +204,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = {"[]", "slice"}, minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = {"[]", "slice"}, minArgs = 1, maxArgs = 2, lowerFixnumParameters = {0, 1})
     public abstract static class GetIndexNode extends CoreMethodNode {
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
@@ -561,7 +561,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "ljust", minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = "ljust", minArgs = 1, maxArgs = 2, lowerFixnumParameters = 0)
     public abstract static class LjustNode extends CoreMethodNode {
 
         public LjustNode(RubyContext context, SourceSection sourceSection) {
@@ -615,7 +615,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "rjust", minArgs = 1, maxArgs = 2)
+    @CoreMethod(names = "rjust", minArgs = 1, maxArgs = 2, lowerFixnumParameters = 0)
     public abstract static class RjustNode extends CoreMethodNode {
 
         public RjustNode(RubyContext context, SourceSection sourceSection) {

@@ -1,4 +1,4 @@
-package org.jruby.truffle.runtime;
+package org.jruby.truffle.runtime.util;
 
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -168,6 +168,16 @@ public abstract class ArrayUtils {
         } else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    public static long[] longCopyOf(int[] ints) {
+        final long[] longs = new long[ints.length];
+
+        for (int n = 0; n < ints.length; n++) {
+            longs[n] = ints[n];
+        }
+
+        return longs;
     }
 
     public static int capacity(int current, int needed) {

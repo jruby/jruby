@@ -57,14 +57,47 @@ public abstract class RubyRange extends RubyObject {
             }
         }
 
-        @Override
-        public boolean doesExcludeEnd() {
-            return excludeEnd;
+    }
+
+    public static class LongFixnumRange extends RubyRange {
+
+        private final long begin;
+        private final long end;
+
+        public LongFixnumRange(RubyClass rangeClass, long begin, long end, boolean excludeEnd) {
+            super(rangeClass, excludeEnd);
+            this.begin = begin;
+            this.end = end;
+        }
+
+        public final long getBegin() {
+            return begin;
+        }
+
+        public final long getEnd() {
+            return end;
+        }
+
+        public final long getInclusiveEnd() {
+            if (excludeEnd) {
+                return end - 1;
+            } else {
+                return end;
+            }
+        }
+
+        public final long getExclusiveEnd() {
+            if (excludeEnd) {
+                return end;
+            } else {
+                return end + 1;
+            }
         }
 
     }
 
     public static class ObjectRange extends RubyRange {
+
         private final Object begin;
         private final Object end;
 
@@ -80,11 +113,6 @@ public abstract class RubyRange extends RubyObject {
 
         public Object getEnd() {
             return end;
-        }
-
-        @Override
-        public boolean doesExcludeEnd() {
-            return excludeEnd;
         }
 
     }

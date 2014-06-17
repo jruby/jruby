@@ -335,13 +335,13 @@ public class RubyContext extends ExecutionContext {
      */
     public static boolean shouldObjectBeVisible(Object object) {
         return object instanceof UndefinedPlaceholder || //
-                        object instanceof Boolean || //
-                        object instanceof Integer || //
-                        object instanceof Long || //
-                        object instanceof BigInteger || //
-                        object instanceof Double || //
-                        object instanceof RubyBasicObject || //
-                        object instanceof NilPlaceholder;
+                object instanceof Boolean || //
+                object instanceof Integer || //
+                object instanceof Long || //
+                object instanceof BigInteger || //
+                object instanceof Double || //
+                object instanceof RubyBasicObject || //
+                object instanceof NilPlaceholder;
     }
 
     public static boolean shouldObjectsBeVisible(Object... objects) {
@@ -387,5 +387,4 @@ public class RubyContext extends ExecutionContext {
     public TraceManager getTraceManager() {
         return traceManager;
     }
-
 }

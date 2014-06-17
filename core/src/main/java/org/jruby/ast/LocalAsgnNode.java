@@ -104,4 +104,9 @@ public class LocalAsgnNode extends AssignableNode implements INameNode, IScopedN
     public List<Node> childNodes() {
         return createList(getValueNode());
     }
+
+    @Override
+    public boolean needsDefinitionCheck() {
+        return false;
+    }
 }

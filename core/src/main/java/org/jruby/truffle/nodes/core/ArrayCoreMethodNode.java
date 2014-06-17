@@ -13,6 +13,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.util.cli.Options;
 
 public abstract class ArrayCoreMethodNode extends CoreMethodNode {
 
@@ -82,6 +83,10 @@ public abstract class ArrayCoreMethodNode extends CoreMethodNode {
 
     protected boolean areBothObject(RubyArray a, RubyArray b) {
         return a.getStore() instanceof Object[] && b.getStore() instanceof Object[];
+    }
+
+    protected boolean areIntArraysEnabled() {
+        return Options.TRUFFLE_ARRAYS_INT.load();
     }
 
 }

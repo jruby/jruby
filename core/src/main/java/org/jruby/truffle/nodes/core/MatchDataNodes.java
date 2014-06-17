@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 @CoreClass(name = "MatchData")
 public abstract class MatchDataNodes {
 
-    @CoreMethod(names = "[]", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = "[]", minArgs = 1, maxArgs = 1, lowerFixnumParameters = 0)
     public abstract static class GetIndexNode extends CoreMethodNode {
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
@@ -81,7 +81,7 @@ public abstract class MatchDataNodes {
             final int[] indicies = new int[args.length];
 
             for (int n = 0; n < args.length; n++) {
-                indicies[n] = (int) args[n];
+                indicies[n] = RubyFixnum.toInt(args[n]);
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.valuesAt(indicies));

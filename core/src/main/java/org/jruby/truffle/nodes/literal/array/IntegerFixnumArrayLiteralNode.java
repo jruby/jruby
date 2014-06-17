@@ -14,10 +14,13 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.core.ArrayAllocationSite;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 
 public class IntegerFixnumArrayLiteralNode extends ArrayLiteralNode {
+
+    private final ArrayAllocationSite arrayAllocationSite = new ArrayAllocationSite();
 
     public IntegerFixnumArrayLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] values) {
         super(context, sourceSection, values);
@@ -26,23 +29,43 @@ public class IntegerFixnumArrayLiteralNode extends ArrayLiteralNode {
     @ExplodeLoop
     @Override
     public RubyArray executeArray(VirtualFrame frame) {
-        final int[] executedValues = new int[values.length];
+        if (arrayAllocationSite.hasConvertedIntToLong()) {
+            final long[] executedValues = new long[values.length];
 
-        for (int n = 0; n < values.length; n++) {
-            try {
-                executedValues[n] = values[n].executeIntegerFixnum(frame);
-            } catch (UnexpectedResultException e) {
-                final Object[] executedObjects = new Object[n];
+            for (int n = 0; n < values.length; n++) {
+                try {
+                    executedValues[n] = values[n].executeLongFixnum(frame);
+                } catch (UnexpectedResultException e) {
+                    final Object[] executedObjects = new Object[n];
 
-                for (int i = 0; i < n; i++) {
-                    executedObjects[i] = executedValues[i];
+                    for (int i = 0; i < n; i++) {
+                        executedObjects[i] = executedValues[i];
+                    }
+
+                    return makeGeneric(frame, executedObjects);
                 }
-
-                return makeGeneric(frame, executedObjects);
             }
-        }
 
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), executedValues, values.length);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayAllocationSite, executedValues, values.length);
+        } else {
+            final int[] executedValues = new int[values.length];
+
+            for (int n = 0; n < values.length; n++) {
+                try {
+                    executedValues[n] = values[n].executeIntegerFixnum(frame);
+                } catch (UnexpectedResultException e) {
+                    final Object[] executedObjects = new Object[n];
+
+                    for (int i = 0; i < n; i++) {
+                        executedObjects[i] = executedValues[i];
+                    }
+
+                    return makeGeneric(frame, executedObjects);
+                }
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayAllocationSite, executedValues, values.length);
+        }
     }
 
 }

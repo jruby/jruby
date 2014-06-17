@@ -66,4 +66,9 @@ public class TrueNode extends Node implements INameNode {
     public List<Node> childNodes() {
         return EMPTY_LIST;
     }
+
+    @Override
+    public boolean needsDefinitionCheck() {
+        return false;
+    }
 }

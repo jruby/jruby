@@ -266,7 +266,7 @@ public abstract class
 
     }
 
-    @CoreMethod(names = "exit", isModuleMethod = true, needsSelf = false, minArgs = 0, maxArgs = 1)
+    @CoreMethod(names = "exit", isModuleMethod = true, needsSelf = false, minArgs = 0, maxArgs = 1, lowerFixnumParameters = 0)
     public abstract static class ExitNode extends CoreMethodNode {
 
         public ExitNode(RubyContext context, SourceSection sourceSection) {
@@ -747,6 +747,7 @@ public abstract class
         @Specialization
         public NilPlaceholder setTraceFunc(NilPlaceholder nil) {
             notDesignedForCompilation();
+
             getContext().getTraceManager().setTraceFunc(null);
             return nil;
         }
@@ -754,6 +755,7 @@ public abstract class
         @Specialization
         public RubyProc setTraceFunc(RubyProc traceFunc) {
             notDesignedForCompilation();
+
             getContext().getTraceManager().setTraceFunc(traceFunc);
             return traceFunc;
         }

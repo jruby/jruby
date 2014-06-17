@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -171,7 +172,13 @@ public abstract class CoreMethodNodeManager {
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 
         if (methodDetails.getMethodAnnotation().needsSelf()) {
-            argumentsNodes.add(new SelfNode(context, sourceSection));
+            RubyNode readSelfNode = new SelfNode(context, sourceSection);
+
+            if (methodDetails.getMethodAnnotation().lowerFixnumSelf()) {
+                readSelfNode = new FixnumLowerNode(readSelfNode);
+            }
+
+            argumentsNodes.add(readSelfNode);
         }
 
         if (methodDetails.getMethodAnnotation().isSplatted()) {
@@ -180,7 +187,13 @@ public abstract class CoreMethodNodeManager {
             assert arity.getMaximum() != Arity.NO_MAXIMUM;
 
             for (int n = 0; n < arity.getMaximum(); n++) {
-                argumentsNodes.add(new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED));
+                RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
+
+                if (ArrayUtils.contains(methodDetails.getMethodAnnotation().lowerFixnumParameters(), n)) {
+                    readArgumentNode = new FixnumLowerNode(readArgumentNode);
+                }
+
+                argumentsNodes.add(readArgumentNode);
             }
         }
 
@@ -225,7 +238,6 @@ public abstract class CoreMethodNodeManager {
         public String getIndicativeName() {
             return classAnnotation.name() + "#" + methodAnnotation.names()[0] + "(core)";
         }
-
     }
 
 }

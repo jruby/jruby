@@ -23,6 +23,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.IRTranslator;
 import org.jruby.ir.Operation;
+import org.jruby.ir.instructions.TraceInstr;
 import org.jruby.ir.instructions.boxing.AluInstr;
 import org.jruby.ir.instructions.boxing.BoxBooleanInstr;
 import org.jruby.ir.instructions.boxing.BoxFixnumInstr;
@@ -382,8 +383,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation, IRScope scope, String name, IRubyObject[] args, IRubyObject self, Block block, RubyModule implClass, Visibility visibility)
-    {
+    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation, IRScope scope,
+                                             String name, IRubyObject[] args, IRubyObject self, Block block,
+                                             RubyModule implClass, Visibility visibility, Object[] temp, DynamicScope currDynamicScope) {
         switch(operation) {
         case PUSH_FRAME:
             context.preMethodFrameAndClass(implClass, name, self, block, scope.getStaticScope());
@@ -409,6 +411,17 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         case RECORD_END_BLOCK:
             ((RecordEndBlockInstr)instr).interpret();
             break;
+        case TRACE: {
+            if (context.runtime.hasEventHooks()) {
+                TraceInstr trace = (TraceInstr) instr;
+                // FIXME: Try and statically generate END linenumber instead of hacking it.
+                int linenumber = trace.getLinenumber() == -1 ? context.getLine()+1 : trace.getLinenumber();
+
+                context.trace(trace.getEvent(), trace.getName(), context.getFrameKlazz(),
+                        trace.getFilename(), linenumber);
+            }
+            break;
+        }
         }
     }
 
@@ -615,7 +628,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                         }
                         context.pushScope(currDynScope);
                     } else {
-                        processBookKeepingOp(context, instr, operation, scope, name, args, self, block, implClass, visibility);
+                        processBookKeepingOp(context, instr, operation, scope, name, args, self, block, implClass, visibility, temp, currDynScope);
                     }
                     break;
                 case OTHER_OP:

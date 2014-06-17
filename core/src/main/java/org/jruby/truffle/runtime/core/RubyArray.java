@@ -12,9 +12,11 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.ArrayUtils;
+import org.jruby.truffle.nodes.core.ArrayAllocationSite;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
 
@@ -36,6 +38,7 @@ public final class RubyArray extends RubyObject {
 
     }
 
+    private final ArrayAllocationSite allocationSite;
     private Object store;
     private int size;
 
@@ -44,7 +47,13 @@ public final class RubyArray extends RubyObject {
     }
 
     public RubyArray(RubyClass arrayClass, Object store, int size) {
+        this(arrayClass, null, store, size);
+    }
+
+    public RubyArray(RubyClass arrayClass, ArrayAllocationSite allocationSite, Object store, int size) {
         super(arrayClass);
+
+        this.allocationSite = allocationSite;
 
         assert store == null
                 || store instanceof Object[]
@@ -69,17 +78,17 @@ public final class RubyArray extends RubyObject {
 
         final Object store;
 
-        if (object instanceof Integer) {
+        if (object instanceof Integer && Options.TRUFFLE_ARRAYS_INT.load()) {
             store = new int[]{(int) object};
-        } else if (object instanceof RubyFixnum.IntegerFixnum) {
+        } else if (object instanceof RubyFixnum.IntegerFixnum && Options.TRUFFLE_ARRAYS_INT.load()) {
             store = new int[]{((RubyFixnum.IntegerFixnum) object).getValue()};
-        } else if (object instanceof Long) {
+        } else if (object instanceof Long && Options.TRUFFLE_ARRAYS_LONG.load()) {
             store = new long[]{(long) object};
-        } else if (object instanceof RubyFixnum.LongFixnum) {
+        } else if (object instanceof RubyFixnum.LongFixnum && Options.TRUFFLE_ARRAYS_LONG.load()) {
             store = new long[]{((RubyFixnum.LongFixnum) object).getValue()};
-        } else if (object instanceof Double) {
+        } else if (object instanceof Double && Options.TRUFFLE_ARRAYS_DOUBLE.load()) {
             store = new double[]{(double) object};
-        } else if (object instanceof RubyFloat) {
+        } else if (object instanceof RubyFloat && Options.TRUFFLE_ARRAYS_DOUBLE.load()) {
             store = new double[]{((RubyFloat) object).getValue()};
         } else {
             store = new Object[]{object};
@@ -99,9 +108,9 @@ public final class RubyArray extends RubyObject {
             return fromObject(arrayClass, objects[0]);
         }
 
-        boolean canUseInteger = true;
-        boolean canUseLong = true;
-        boolean canUseDouble = true;
+        boolean canUseInteger = Options.TRUFFLE_ARRAYS_INT.load();
+        boolean canUseLong = Options.TRUFFLE_ARRAYS_LONG.load();
+        boolean canUseDouble = Options.TRUFFLE_ARRAYS_DOUBLE.load();
 
         for (Object object : objects) {
             if (object instanceof Integer) {
@@ -236,6 +245,9 @@ public final class RubyArray extends RubyObject {
         assert !(store instanceof int[]) || size <= ((int[]) store).length;
         assert !(store instanceof long[]) || size <= ((long[]) store).length;
         assert !(store instanceof double[]) || size <= ((double[]) store).length;
+        assert !(store instanceof int[]) || Options.TRUFFLE_ARRAYS_INT.load();
+        assert !(store instanceof long[]) || Options.TRUFFLE_ARRAYS_LONG.load();
+        assert !(store instanceof double[]) || Options.TRUFFLE_ARRAYS_DOUBLE.load();
 
         // TODO: assert that an object array doesn't contain all primitives - performance warning?
     }
@@ -258,6 +270,10 @@ public final class RubyArray extends RubyObject {
         assert !(store instanceof int[]) || size <= ((int[]) store).length;
         assert !(store instanceof long[]) || size <= ((long[]) store).length;
         assert !(store instanceof double[]) || size <= ((double[]) store).length;
+    }
+
+    public ArrayAllocationSite getAllocationSite() {
+        return allocationSite;
     }
 
 

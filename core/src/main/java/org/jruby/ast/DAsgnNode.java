@@ -100,4 +100,9 @@ public class DAsgnNode extends AssignableNode implements INameNode, IScopedNode 
     public void setName(String name) {
         this.name = name;
     }
+
+    @Override
+    public boolean needsDefinitionCheck() {
+        return false;
+    }
 }

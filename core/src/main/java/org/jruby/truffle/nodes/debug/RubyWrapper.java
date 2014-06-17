@@ -152,13 +152,13 @@ public class RubyWrapper extends RubyNode implements Wrapper {
     }
 
     @Override
-    public RubyRange.IntegerFixnumRange executeFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
+    public RubyRange.IntegerFixnumRange executeIntegerFixnumRange(VirtualFrame frame) throws UnexpectedResultException {
         probe.enter(child, frame);
 
         final RubyRange.IntegerFixnumRange result;
 
         try {
-            result = child.executeFixnumRange(frame);
+            result = child.executeIntegerFixnumRange(frame);
             probe.leave(child, frame, result);
         } catch (KillException e) {
             throw (e);
@@ -658,6 +658,11 @@ public class RubyWrapper extends RubyNode implements Wrapper {
             probe.leaveExceptional(child, frame, e);
             throw e;
         }
+    }
+
+    @Override
+    public Object isDefined(VirtualFrame frame) {
+        return child.isDefined(frame);
     }
 
     @Override

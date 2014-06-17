@@ -121,4 +121,9 @@ public class OpElementAsgnNode extends Node {
     public List<Node> childNodes() {
         return Node.createList(receiverNode, argsNode, valueNode);
     }
+
+    @Override
+    public boolean needsDefinitionCheck() {
+        return false;
+    }
 }
