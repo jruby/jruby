@@ -10,6 +10,10 @@ module JRuby
     java_import org.jruby.runtime.profile.builtin.JsonProfilePrinter
     
     def self.profile(&block)
+      unless runtime.instance_config.is_profiling
+        raise RuntimeError.new "Profiling not enabled in runtime"
+      end
+
       start
       profiled_code(&block)
       stop
