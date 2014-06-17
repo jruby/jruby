@@ -675,8 +675,6 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isLongFixnum", order = 4)
         public long setLongFixnum(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
-            System.err.println("setting " + index);
-
             final int normalisedIndex = array.normaliseIndex(index);
             long[] store = (long[]) array.getStore();
 
@@ -773,72 +771,22 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnum", order = 7)
         public RubyArray setIntegerFixnumRange(RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
-            // TODO(CS): why can't this be a guard?
-            if (other.getStore() instanceof int[]) {
-                if (range.doesExcludeEnd()) {
-                    CompilerDirectives.transferToInterpreter();
-                    throw new UnsupportedOperationException();
-                } else {
-                    int normalisedBegin = array.normaliseIndex(range.getBegin());
-                    int normalisedEnd = array.normaliseIndex(range.getEnd());
-
-                    if (normalisedBegin == 0 && normalisedEnd == array.getSize() - 1) {
-                        array.setStore(Arrays.copyOf((int[]) other.getStore(), other.getSize()), other.getSize());
-                    } else {
-                        panic();
-                        throw new RuntimeException();
-                    }
-                }
+            if (range.doesExcludeEnd()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new UnsupportedOperationException();
             } else {
-                panic(other.getStore());
-                throw new RuntimeException();
+                int normalisedBegin = array.normaliseIndex(range.getBegin());
+                int normalisedEnd = array.normaliseIndex(range.getEnd());
+
+                if (normalisedBegin == 0 && normalisedEnd == array.getSize() - 1) {
+                    array.setStore(Arrays.copyOf((int[]) other.getStore(), other.getSize()), other.getSize());
+                } else {
+                    panic();
+                    throw new RuntimeException();
+                }
             }
 
             return other;
-        }
-
-        @Specialization(order = 8)
-        public Object setUnexpected(RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
-            notDesignedForCompilation();
-
-            if (array.getStore() instanceof int[] && value instanceof Integer) {
-                return setIntegerFixnum(array, index, (int) value, unused);
-            }
-
-            // Just convert to object for now
-
-            if (!(array.getStore() instanceof Object[])) {
-                array.setStore(array.slowToArray(), array.getSize());
-            }
-
-            final int normalisedIndex = array.normaliseIndex(index);
-            Object[] store = (Object[]) array.getStore();
-
-            if (normalisedIndex < 0) {
-                tooSmallBranch.enter();
-                throw new UnsupportedOperationException();
-            } else if (normalisedIndex >= array.getSize()) {
-                pastEndBranch.enter();
-
-                if (normalisedIndex == array.getSize()) {
-                    appendBranch.enter();
-
-                    if (normalisedIndex >= store.length) {
-                        reallocateBranch.enter();
-                        array.setStore(store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, normalisedIndex + 1)), array.getSize());
-                    }
-
-                    store[normalisedIndex] = value;
-                    array.setSize(array.getSize() + 1);
-                } else if (normalisedIndex > array.getSize()) {
-                    beyondBranch.enter();
-                    throw new UnsupportedOperationException();
-                }
-            } else {
-                store[normalisedIndex] = value;
-            }
-
-            return value;
         }
 
     }
