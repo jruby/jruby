@@ -138,6 +138,7 @@ project 'JRuby Lib Setup' do
     gem_home = File.join( target, 'rubygems' )
     gems = File.join( gem_home, 'gems' )
     specs = File.join( gem_home, 'specifications' )
+    cache = File.join( gem_home, 'cache' )
     default_specs = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared',
                                'specifications', 'default' )
     bin_stubs = File.join( ctx.project.basedir.to_pathname, 'ruby', 'gems', 'shared',
@@ -162,6 +163,7 @@ project 'JRuby Lib Setup' do
 
     # now we can require the rubygems staff
     require 'rubygems/installer'
+    require 'rubygems/package'
 
     default_gems.each do |g|
       pom_version = ctx.project.properties.get( g.pom_version_key ) || g.pom_version_key
@@ -200,9 +202,13 @@ project 'JRuby Lib Setup' do
         end
 
         if g.default_gem
-          spec = Dir[ File.join( specs, "#{g.name}-#{version}*.gemspec" ) ].first
-          puts "copy to specifications/default: #{File.basename( spec )}"
-          FileUtils.cp( spec, default_specs )
+          specname = File.basename( Dir[ File.join( specs, "#{g.name}-#{version}*.gemspec" ) ].first )
+          puts "copy to specifications/default: #{specname}"
+
+          spec = Gem::Package.new( Dir[ File.join( cache, "#{g.name}-#{version}*.gem" ) ].first ).spec
+          File.open( File.join( default_specs, specname ), 'w' ) do |f|
+            f.print( spec.to_ruby )
+          end
         end
       end
     end
