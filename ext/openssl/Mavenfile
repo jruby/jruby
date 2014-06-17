@@ -20,6 +20,17 @@ end
 
 plugin( :compiler, :target => '1.6', :source => '1.6', :debug => true, :verbose => false, :showWarnings => true, :showDeprecation => true )
 
+# TODO need upstream fix
+plugin( :jar,
+        :outputDirectory => 'lib',
+        :finalName => 'jopenssl.jar' ) do
+  execute_goals :jar, :phase => 'prepare-package'
+end
+
+plugin( :clean, VERSIONS[ :clean_plugin ],
+        :filesets => [ { :directory => 'lib',
+                         :includes => [ "jopenssl.jar" ] } ] )
+
 jruby_plugin! :gem do
   # avoid adding this not yet built openssl to the load_path
   # when installing dependent gems
