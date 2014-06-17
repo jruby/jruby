@@ -16,8 +16,6 @@ if model.version.to_s.match /[a-zA-Z]/
                   :skip => false,
                   :altDeploymentRepository => 'sonatype-nexus-snapshots::default::https://oss.sonatype.org/content/repositories/snapshots/' )
   end
-else
-  parent 'org.jruby:jruby-ext', version
 end
 
 plugin( :compiler, :target => '1.6', :source => '1.6', :debug => true, :verbose => false, :showWarnings => true, :showDeprecation => true )
