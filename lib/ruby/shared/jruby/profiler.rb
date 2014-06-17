@@ -36,7 +36,7 @@ module JRuby
       end
 
       def self.profile_data
-        current_thread_context.profile_data
+        current_thread_context.profile_collection
       end
     
     private
