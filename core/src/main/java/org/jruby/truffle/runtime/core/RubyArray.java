@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ArrayAllocationSite;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
@@ -37,6 +38,7 @@ public final class RubyArray extends RubyObject {
 
     }
 
+    private final ArrayAllocationSite allocationSite;
     private Object store;
     private int size;
 
@@ -45,7 +47,13 @@ public final class RubyArray extends RubyObject {
     }
 
     public RubyArray(RubyClass arrayClass, Object store, int size) {
+        this(arrayClass, null, store, size);
+    }
+
+    public RubyArray(RubyClass arrayClass, ArrayAllocationSite allocationSite, Object store, int size) {
         super(arrayClass);
+
+        this.allocationSite = allocationSite;
 
         assert store == null
                 || store instanceof Object[]
@@ -262,6 +270,10 @@ public final class RubyArray extends RubyObject {
         assert !(store instanceof int[]) || size <= ((int[]) store).length;
         assert !(store instanceof long[]) || size <= ((long[]) store).length;
         assert !(store instanceof double[]) || size <= ((double[]) store).length;
+    }
+
+    public ArrayAllocationSite getAllocationSite() {
+        return allocationSite;
     }
 
 

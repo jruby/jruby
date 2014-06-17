@@ -228,7 +228,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), newStore, newStoreLength);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array.getAllocationSite(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isLongFixnum", order = 3)
@@ -242,7 +242,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), newStore, newStoreLength);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array.getAllocationSite(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isFloat", order = 4)
@@ -256,7 +256,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), newStore, newStoreLength);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array.getAllocationSite(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isObject", order = 5)
@@ -270,7 +270,7 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), newStore, newStoreLength);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array.getAllocationSite(), newStore, newStoreLength);
         }
 
     }
@@ -641,6 +641,10 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnum", order = 3)
         public long setLongInIntegerFixnum(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
+            if (array.getAllocationSite() != null) {
+                array.getAllocationSite().convertedIntToLong();
+            }
+
             final int normalisedIndex = array.normaliseIndex(index);
 
             long[] store = ArrayUtils.longCopyOf((int[]) array.getStore());
