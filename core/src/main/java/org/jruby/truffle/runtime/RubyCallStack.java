@@ -16,6 +16,7 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.core.RubyModule;
@@ -118,8 +119,12 @@ public abstract class RubyCallStack {
     }
 
     public static String getRubyStacktrace(){
+        StringBuilder stack = new StringBuilder();
+        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
+            stack.append("from " + frame.getCallNode().getEncapsulatingSourceSection() +"\n");
+        }
         try {
-            return String.format("%s at %s:%s", getCurrentMethod().getName(), getFilename(), getLineNumber());
+            return String.format("%s at %s:%s \n %s", getCurrentMethod().getName(), getFilename(), getLineNumber(), stack);
         } catch(UnsupportedOperationException ex) {
             return String.format("(root) at %s:%s", getFilename(), getLineNumber());
         }
