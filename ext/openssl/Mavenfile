@@ -1,5 +1,7 @@
 #-*- mode: ruby -*-
 
+snapshot_repository :id => 'sonatype', :url => 'https://oss.sonatype.org/content/repositories/snapshots'
+
 gemspec :jar => 'jopenssl', :include_jars => true
 
 if model.version.to_s.match /[a-zA-Z]/

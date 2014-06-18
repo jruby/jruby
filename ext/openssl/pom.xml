@@ -27,7 +27,7 @@
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <gem.path>${gem.home}</gem.path>
     <gem.home>../target/rubygems</gem.home>
-    <jruby.plugins.version>1.0.2</jruby.plugins.version>
+    <jruby.plugins.version>1.0.3-SNAPSHOT</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
   </properties>
@@ -62,6 +62,16 @@
     </dependency>
   </dependencies>
   <repositories>
+    <repository>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <id>sonatype</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </repository>
     <repository>
       <id>rubygems-releases</id>
       <url>http://rubygems-proxy.torquebox.org/releases</url>
@@ -130,6 +140,7 @@
         <configuration>
           <gemspec>jruby-openssl.gemspec</gemspec>
           <includeDependencies>true</includeDependencies>
+          <useRepositoryLayout>true</useRepositoryLayout>
         </configuration>
       </plugin>
       <plugin>
