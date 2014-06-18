@@ -14,6 +14,7 @@ import java.util.*;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
@@ -122,6 +123,9 @@ public abstract class HashNodes {
 
         @Child protected DispatchHeadNode eqlNode;
 
+        private final BranchProfile notInHashProfile = new BranchProfile();
+        private final BranchProfile useDefaultProfile = new BranchProfile();
+
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             eqlNode = new DispatchHeadNode(context, "eql?", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
@@ -146,8 +150,6 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isObjectArray", order = 2)
         public Object getObjectArray(VirtualFrame frame, RubyHash hash, Object key) {
-            notDesignedForCompilation();
-
             final Object[] store = (Object[]) hash.getStore();
 
             for (int n = 0; n < store.length; n++) {
@@ -157,12 +159,16 @@ public abstract class HashNodes {
                 }
             }
 
+            notInHashProfile.enter();
+
             if (hash.getDefaultBlock() == null) {
                 return NilPlaceholder.INSTANCE;
-            } else {
-                // TODO(CS): need a call node here
-                return hash.getDefaultBlock().call(hash, key);
             }
+
+            useDefaultProfile.enter();
+
+            // TODO(CS): need a call node here
+            return hash.getDefaultBlock().call(hash, key);
         }
 
         @Specialization(guards = "isObjectLinkedHashMap", order = 3)
@@ -629,8 +635,6 @@ public abstract class HashNodes {
 
         @Specialization(guards = {"isObjectArray", "isOtherNull"})
         public RubyHash merge(RubyHash hash, RubyHash other) {
-            notDesignedForCompilation();
-
             final Object[] store = (Object[]) hash.getStore();
             final Object[] copy = Arrays.copyOf(store, store.length);
 

@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.util.SlowPathLinkedHashMap;
 import org.jruby.util.cli.Options;
 
 import java.util.LinkedHashMap;
@@ -47,10 +48,10 @@ public class HashLiteralNode extends RubyNode {
 
             return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, storage);
         } else {
-            final LinkedHashMap<Object, Object> storage = new LinkedHashMap<>();
+            final LinkedHashMap<Object, Object> storage = SlowPathLinkedHashMap.allocate();
 
             for (int n = 0; n < keys.length; n++) {
-                storage.put(keys[n].execute(frame), values[n].execute(frame));
+                SlowPathLinkedHashMap.put(storage, keys[n].execute(frame), values[n].execute(frame));
             }
 
             return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, storage);
