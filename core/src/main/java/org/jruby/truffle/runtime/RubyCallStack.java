@@ -124,7 +124,7 @@ public abstract class RubyCallStack {
             stack.append("from " + frame.getCallNode().getEncapsulatingSourceSection() +"\n");
         }
         try {
-            return String.format("%s at %s:%s \n %s", getCurrentMethod().getName(), getFilename(), getLineNumber(), stack);
+            return String.format("%s at %s \n %s", getCurrentMethod().getName(), getCurrentMethod().getSharedMethodInfo().getSourceSection().getShortDescription(), stack);
         } catch(UnsupportedOperationException ex) {
             return String.format("(root) at %s:%s", getFilename(), getLineNumber());
         }
