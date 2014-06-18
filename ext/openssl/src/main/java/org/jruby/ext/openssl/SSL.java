@@ -59,17 +59,27 @@ public class SSL {
     public static final long OP_NETSCAPE_CA_DN_BUG =                        0x20000000L;
     public static final long OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG =           0x40000000L;
 
+    private static IRubyObject getConstantFromIO(Ruby runtime, String name) {
+        try {
+            return runtime.getIO().getConstant(name);
+        }
+        catch(Exception e) {
+	    e.printStackTrace();
+            return null;
+        }
+    }
+
     public static void createSSL(final Ruby runtime, final RubyModule ossl) {
         final RubyModule _SSL = ossl.defineModuleUnder("SSL");
         final RubyClass _OpenSSLError = ossl.getClass("OpenSSLError");
         RubyClass _SSLError = _SSL.defineClassUnder("SSLError", _OpenSSLError, _OpenSSLError.getAllocator());
 
-        final IRubyObject _WaitReadable = runtime.getIO().getConstant("WaitReadable");
+        final IRubyObject _WaitReadable = getConstantFromIO(runtime, "WaitReadable");
         if ( _WaitReadable != null ) { // since 2.0 (do not exist in 1.8 / 1.9)
             _SSL.defineClassUnder("SSLErrorWaitReadable", _SSLError, _OpenSSLError.getAllocator()).
                 include(new IRubyObject[]{ _WaitReadable });
         }
-        final IRubyObject _WaitWritable = runtime.getIO().getConstant("WaitWritable");
+        final IRubyObject _WaitWritable = getConstantFromIO(runtime, "WaitWritable");
         if ( _WaitWritable != null ) { // since 2.0 (do not exist in 1.8 / 1.9)
             _SSL.defineClassUnder("SSLErrorWaitWritable", _SSLError, _OpenSSLError.getAllocator()).
                 include(new IRubyObject[]{ _WaitWritable });
