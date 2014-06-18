@@ -2,11 +2,6 @@
 
 gemspec :jar => 'jopenssl', :include_jars => true
 
-# that all should be part of ruby-maven to pick the right extension
-properties 'jruby.plugins.version' => '1.0.2'
-build.extensions.clear
-extension 'de.saumya.mojo:gem-with-jar-extension', '${jruby.plugins.version}'
-
 if model.version.to_s.match /[a-zA-Z]/
   model.group_id = 'org.jruby.gems'
 
@@ -19,17 +14,6 @@ if model.version.to_s.match /[a-zA-Z]/
 end
 
 plugin( :compiler, :target => '1.6', :source => '1.6', :debug => true, :verbose => false, :showWarnings => true, :showDeprecation => true )
-
-# TODO need upstream fix
-plugin( :jar,
-        :outputDirectory => 'lib',
-        :finalName => 'jopenssl' ) do
-  execute_goals :jar, :phase => 'prepare-package'
-end
-
-plugin( :clean, VERSIONS[ :clean_plugin ],
-        :filesets => [ { :directory => 'lib',
-                         :includes => [ "jopenssl.jar" ] } ] )
 
 jruby_plugin! :gem do
   # avoid adding this not yet built openssl to the load_path
