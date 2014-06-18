@@ -125,10 +125,12 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_TRACE = bool(TRUFFLE, "truffle.before", true, "Install trace probes needed for set_trace_func.");
     public static final Option<Boolean> TRUFFLE_PRINT_JAVA_EXCEPTIONS = bool(TRUFFLE, "truffle.printJavaExceptions", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
     public static final Option<Boolean> TRUFFLE_LITERALS_INT = bool(TRUFFLE, "truffle.literals.int", true, "Use int for Fixnum literals where possible.");
-    public static final Option<Boolean> TRUFFLE_ARRAYS_INT = bool(TRUFFLE, "truffle.arrays.int", true, "Use int[] for Fixnum array storage where possible.");
-    public static final Option<Boolean> TRUFFLE_ARRAYS_LONG = bool(TRUFFLE, "truffle.arrays.long", true, "Use long[] for Fixnum array storage where possible.");
-    public static final Option<Boolean> TRUFFLE_ARRAYS_DOUBLE = bool(TRUFFLE, "truffle.arrays.double", true, "Use double[] Float for array storage where possible.");
-    public static final Option<Boolean> TRUFFLE_ARRAYS_OPTIMISTIC_LONG = bool(TRUFFLE, "truffle.arrays.optimistic.long", true, "If we allocate an int[] and it has been converted to a long[], directly allocate a long[] next time.");
+    public static final Option<Boolean> TRUFFLE_ARRAYS_INT = bool(TRUFFLE, "truffle.arrays.int", true, "Use int[] for Fixnum Array storage where possible.");
+    public static final Option<Boolean> TRUFFLE_ARRAYS_LONG = bool(TRUFFLE, "truffle.arrays.long", true, "Use long[] for Fixnum Array storage where possible.");
+    public static final Option<Boolean> TRUFFLE_ARRAYS_DOUBLE = bool(TRUFFLE, "truffle.arrays.double", true, "Use double[] Float for Array storage where possible.");
+    public static final Option<Boolean> TRUFFLE_ARRAYS_OPTIMISTIC_LONG = bool(TRUFFLE, "truffle.arrays.optimistic.long", true, "If we allocate an int[] for an Array and it has been converted to a long[], directly allocate a long[] next time.");
+    public static final Option<Integer> TRUFFLE_ARRAYS_SMALL = integer(TRUFFLE, "truffle.arrays.small", 3, "Maximum size of an Array to consider small for optimisations.");
+    public static final Option<Integer> TRUFFLE_HASHES_SMALL = integer(TRUFFLE, "truffle.hashes.small", 3, "Maximum size of a Hash to consider small for optimisations.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");

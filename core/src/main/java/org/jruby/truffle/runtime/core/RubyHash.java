@@ -11,8 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import java.util.*;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import org.jruby.util.cli.Options;
 
 /**
  * Represents the Ruby {@code Hash} class.
@@ -32,49 +31,43 @@ public class RubyHash extends RubyObject {
 
         @Override
         public RubyBasicObject newInstance() {
-            return new RubyHash(this);
+            return new RubyHash(this, null, null);
         }
 
     }
 
-    @CompilationFinal public Map<Object, Object> storage;
-    @CompilationFinal public RubyProc defaultBlock;
+    private RubyProc defaultBlock;
+    private Object store;
 
-    public RubyHash(RubyClass rubyClass, RubyProc defaultBlock) {
+    public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object store) {
         super(rubyClass);
-        initialize(defaultBlock);
+
+        assert store == null || store instanceof Object[] || store instanceof LinkedHashMap<?, ?>;
+        assert !(store instanceof Object[]) || ((Object[]) store).length > 0;
+        assert !(store instanceof Object[]) || ((Object[]) store).length <= Options.TRUFFLE_HASHES_SMALL.load() * 2;
+
+        this.defaultBlock = defaultBlock;
+        this.store = store;
     }
 
-    public RubyHash(RubyClass rubyClass) {
-        super(rubyClass);
-        initialize(null);
+    public RubyProc getDefaultBlock() {
+        return defaultBlock;
     }
 
-    @CompilerDirectives.SlowPath
-    public void initialize(RubyProc setDefaultBlock) {
-        storage = new LinkedHashMap<>();
-        defaultBlock = setDefaultBlock;
+    public Object getStore() {
+        return store;
     }
 
-    @CompilerDirectives.SlowPath
-    public void put(Object key, Object value) {
-        checkFrozen();
-
-        if (key instanceof RubyString) {
-            key = RubyString.fromJavaString(getRubyClass().getContext().getCoreLibrary().getStringClass(), key.toString());
-            ((RubyString) key).frozen = true;
-        }
-
-        storage.put(key, value);
+    public void setDefaultBlock(RubyProc defaultBlock) {
+        this.defaultBlock = defaultBlock;
     }
 
-    @CompilerDirectives.SlowPath
-    public Object get(Object key) {
-        return storage.get(key);
-    }
+    public void setStore(Object store) {
+        assert store == null || store instanceof Object[] || store instanceof LinkedHashMap<?, ?>;
+        assert !(store instanceof Object[]) || ((Object[]) store).length > 0;
+        assert !(store instanceof Object[]) || ((Object[]) store).length <= Options.TRUFFLE_HASHES_SMALL.load() * 2;
 
-    public Map<Object, Object> getMap() {
-        return storage;
+        this.store = store;
     }
 
 }
