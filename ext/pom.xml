@@ -15,7 +15,6 @@
   <name>JRuby Ext</name>
 
   <modules>
-    <module>openssl</module>
     <module>readline</module>
     <module>ripper</module>
   </modules>
