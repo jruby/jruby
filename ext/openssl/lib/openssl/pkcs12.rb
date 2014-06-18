@@ -8,6 +8,7 @@ module OpenSSL
     java_import java.io.StringReader
     java_import java.io.StringBufferInputStream
     java_import java.io.ByteArrayOutputStream
+    java_import 'org.jruby.ext.openssl.PEMUtils'
     java_import 'org.jruby.ext.openssl.SecurityHelper'
 
     def self.create(pass, name, key, cert, ca = nil)
