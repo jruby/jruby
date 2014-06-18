@@ -88,9 +88,6 @@
     <minitest-excludes.version>1.0.2</minitest-excludes.version>
     <rdoc.version>4.0.1</rdoc.version>
     <json.version>1.8.0</json.version>
-    <jopenssl.version>0.9.5.dev-SNAPSHOT</jopenssl.version>
-    <bc.version>1.5.0147</bc.version>
-    <bouncy-castle.version>1.47</bouncy-castle.version>
     <krypt.version>0.0.2.rc1</krypt.version>
     <ant.version>1.9.2</ant.version>
     <joda.time.version>2.3</joda.time.version>

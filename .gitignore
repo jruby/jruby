@@ -19,7 +19,8 @@ lib/native
 lib/jni
 lib/ruby/gems
 lib/ruby/shared/rubygems/defaults/jruby_native.rb
-lib/ruby/shared/jopenssl* 
+lib/ruby/shared/jopenssl*
+lib/ruby/shared/org/
 lib/ruby/shared/openssl
 nbproject/private
 share

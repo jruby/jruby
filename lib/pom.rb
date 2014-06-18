@@ -204,12 +204,5 @@ project 'JRuby Lib Setup' do
     # use this instead of FileUtils.rm_f - issue #1698
     f = File.join( ruby_dir, 'shared', 'jruby-openssl.rb' )
     File.delete( f ) if File.exists?( f )
-
-    # patch the bouncy-castle loading problems on certain classloaders
-#    File.open( File.join( ruby_dir, 'shared', 'bouncy-castle-java.rb' ), 'w' ) do |f|
-#      bc_version = ctx.project.properties.get( 'bouncy-castle.version' )
-#      f.puts "require 'bcpkix-jdk15on-#{bc_version}.jar'"
-#      f.puts "require 'bcprov-jdk15on-#{bc_version}.jar'"
-#    end
   end
 end
