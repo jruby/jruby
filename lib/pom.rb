@@ -30,17 +30,6 @@ class ImportedGem
 end
 require 'rexml/document'
 require 'rexml/xpath'
-# # the versions are declared in ../pom.xml
-# default_gems = { 
-#   'jruby-openssl' => 'jopenssl.version',
-#   'rake' => 'rake.version',
-#   'rdoc' => 'rdoc.version',
-#   'json' => 'json.version',
-#   'krypt' => 'krypt.version',
-#   'krypt-core' => 'krypt.version',
-#   'krypt-provider-jdk' => 'krypt.version',
-#   'bouncy-castle-java' => 'bc.version'
-# }
 
 #only_specs = [ 'rdoc', 'jruby-openssl' ]
 # the versions are declared in ../pom.xml
@@ -53,9 +42,7 @@ default_gems =
    ImportedGem.new( 'krypt', 'krypt.version', true ),
    ImportedGem.new( 'krypt-core', 'krypt.version', true ),
    ImportedGem.new( 'krypt-provider-jdk', 'krypt.version', true ),
-   ImportedGem.new( 'ffi', '1.9.3', true ),
-   # NOTE: BC is now getting embedded within jruby-openssl.gem
-   # ImportedGem.new( 'bouncy-castle-java', 'bc.version', true )
+   ImportedGem.new( 'ffi', '1.9.3', true )
   ]
 
 project 'JRuby Lib Setup' do
