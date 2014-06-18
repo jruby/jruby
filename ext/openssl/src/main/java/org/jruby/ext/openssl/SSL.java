@@ -64,7 +64,6 @@ public class SSL {
             return runtime.getIO().getConstant(name);
         }
         catch(Exception e) {
-	    e.printStackTrace();
             return null;
         }
     }
