@@ -23,7 +23,7 @@ plugin( :compiler, :target => '1.6', :source => '1.6', :debug => true, :verbose 
 # TODO need upstream fix
 plugin( :jar,
         :outputDirectory => 'lib',
-        :finalName => 'jopenssl.jar' ) do
+        :finalName => 'jopenssl' ) do
   execute_goals :jar, :phase => 'prepare-package'
 end
 
