@@ -36,12 +36,6 @@
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>rdoc</artifactId>
-      <version>${rdoc.version}</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>json</artifactId>
       <version>${json.version}</version>
       <type>gem</type>
@@ -122,14 +116,6 @@
                   <groupId>rubygems</groupId>
                   <artifactId>rake</artifactId>
                   <version>${rake.version}</version>
-                  <type>gem</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>rubygems</groupId>
-                  <artifactId>rdoc</artifactId>
-                  <version>${rdoc.version}</version>
                   <type>gem</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
