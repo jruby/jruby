@@ -31,13 +31,14 @@ end
 require 'rexml/document'
 require 'rexml/xpath'
 
-#only_specs = [ 'rdoc', 'jruby-openssl' ]
+only_specs = [ 'rdoc' ]
+
 # the versions are declared in ../pom.xml
 default_gems =
   [
    ImportedGem.new( 'jruby-openssl', '0.9.5.dev-SNAPSHOT', true ),
    ImportedGem.new( 'rake', 'rake.version', true ),
-#   ImportedGem.new( 'rdoc', 'rdoc.version', true, false ),
+   ImportedGem.new( 'rdoc', 'rdoc.version', true, false ),
    ImportedGem.new( 'json', 'json.version', true, false ),
    ImportedGem.new( 'krypt', 'krypt.version', true ),
    ImportedGem.new( 'krypt-core', 'krypt.version', true ),
