@@ -93,7 +93,7 @@ class TestIntegration < Test::Unit::TestCase
   # about illegal_parameter when
   # it can't use the cipher string correctly
   def test_cipher_strings
-    socket = TCPSocket.new('rubyforge.org', 443)
+    socket = TCPSocket.new('ruby-lang.org', 443)
     ctx = OpenSSL::SSL::SSLContext.new
     ctx.cert_store = OpenSSL::X509::Store.new
     ctx.verify_mode = 0
