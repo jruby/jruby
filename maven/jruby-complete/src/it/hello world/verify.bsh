@@ -13,21 +13,7 @@ if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
-expected = "readline loaded";
-if ( !log.contains( expected ) )
-{
-    throw new RuntimeException( "log file does not contain '" + expected + "'" );
-}expected = "hello world - 2";
-if ( !log.contains( expected ) )
-{
-    throw new RuntimeException( "log file does not contain '" + expected + "'" );
-}
-expected = "openssl loaded - 2";
-if ( !log.contains( expected ) )
-{
-    throw new RuntimeException( "log file does not contain '" + expected + "'" );
-}
-expected = "readline loaded - 2";
+expected = "ffi,jruby-openssl,krypt,krypt-core,krypt-provider-jdk";
 if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
