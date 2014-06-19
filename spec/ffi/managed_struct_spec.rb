@@ -9,7 +9,7 @@ describe "Managed Struct" do
   include FFI
   module ManagedStructTestLib
     extend FFI::Library
-    ffi_lib TestLibrary::PATH
+    ffi_lib File.expand_path("../fixtures/libtest.#{FFI::Platform::LIBSUFFIX}", __FILE__)
     attach_function :ptr_from_address, [ FFI::Platform::ADDRESS_SIZE == 32 ? :uint : :ulong_long ], :pointer
   end
   it "should raise an error if release() is not defined" do
@@ -48,7 +48,11 @@ describe "Managed Struct" do
         loop = 5
         while loop > 0 && @@count < count
           loop -= 1
-          TestLibrary.force_gc
+          if RUBY_PLATFORM =~ /java/
+            java.lang.System.gc
+          else
+            GC.start
+          end
           sleep 0.05 if @@count < count
         end
       end
