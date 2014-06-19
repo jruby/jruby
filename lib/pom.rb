@@ -1,7 +1,7 @@
 class ImportedGem
   attr_reader :name, :default_gem, :pom_version_key, :ruby_version, :only_spec
 
-  def initialize( name, pom_version_key, default_gem, ruby_version = nil )
+  def initialize( name, pom_version_key, default_gem, ruby_version = nil, only_spec = false )
     @name = name
     @default_gem = default_gem
     @pom_version_key = pom_version_key
@@ -10,6 +10,7 @@ class ImportedGem
     else
       @ruby_version = ruby_version
     end
+    @only_spec = only_spec
   end
 
   def group_id
@@ -31,14 +32,12 @@ end
 require 'rexml/document'
 require 'rexml/xpath'
 
-only_specs = [ 'rdoc' ]
-
 # the versions are declared in ../pom.xml
 default_gems =
   [
    ImportedGem.new( 'jruby-openssl', '0.9.5.dev-SNAPSHOT', true ),
    ImportedGem.new( 'rake', 'rake.version', true ),
-   ImportedGem.new( 'rdoc', 'rdoc.version', true, false ),
+   ImportedGem.new( 'rdoc', 'rdoc.version', true, false, true ),
    ImportedGem.new( 'json', 'json.version', true, false ),
    ImportedGem.new( 'krypt', 'krypt.version', true ),
    ImportedGem.new( 'krypt-core', 'krypt.version', true ),
