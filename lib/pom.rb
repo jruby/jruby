@@ -32,6 +32,10 @@ end
 require 'rexml/document'
 require 'rexml/xpath'
 
+# TODO please remove monkey patch for krypt at the end of this file
+#      when you change the version here
+KRYPT_VERSION = '0.0.2.rc1'
+
 # the versions are declared in ../pom.xml
 default_gems =
   [
@@ -39,9 +43,9 @@ default_gems =
    ImportedGem.new( 'rake', 'rake.version', true ),
    ImportedGem.new( 'rdoc', 'rdoc.version', true, false, true ),
    ImportedGem.new( 'json', 'json.version', true, false ),
-   ImportedGem.new( 'krypt', 'krypt.version', true ),
-   ImportedGem.new( 'krypt-core', 'krypt.version', true ),
-   ImportedGem.new( 'krypt-provider-jdk', 'krypt.version', true ),
+   ImportedGem.new( 'krypt', KRYPT_VERSION, true ),
+   ImportedGem.new( 'krypt-core', KRYPT_VERSION, true ),
+   ImportedGem.new( 'krypt-provider-jdk', KRYPT_VERSION, true ),
    ImportedGem.new( 'ffi', '1.9.3', true )
   ]
 
@@ -204,5 +208,13 @@ project 'JRuby Lib Setup' do
     # use this instead of FileUtils.rm_f - issue #1698
     f = File.join( ruby_dir, 'shared', 'jruby-openssl.rb' )
     File.delete( f ) if File.exists?( f )
+
+    # monkey patch krypt-0.0.2.rc1 
+    # see https://github.com/krypt/krypt/issues/47
+    f = File.join( ruby_dir, 'shared', 'krypt', 'provider.rb' )
+    content = File.read( f )
+    content.sub!( /^require_relative 'provider\/ffi'$/,
+                  "begin; require_relative 'provider/ffi'; rescue LoadError => e; end" )
+    File.open( f, 'w' ) { |s| s.print content } if KRYPT_VERSION == '0.0.2.rc1'
   end
 end
