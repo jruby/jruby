@@ -29,6 +29,7 @@ import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.Memo;
+import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -372,7 +373,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "==", minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"==", "eql?"}, minArgs = 1, maxArgs = 1)
     public abstract static class EqualNode extends ArrayCoreMethodNode {
 
         @Child protected DispatchHeadNode equals;
@@ -432,7 +433,6 @@ public abstract class ArrayNodes {
             return Arrays.equals((double[]) a.getStore(), (double[]) b.getStore());
         }
 
-
         @Specialization(order = 5)
         public boolean equal(VirtualFrame frame, RubyArray a, RubyArray b) {
             notDesignedForCompilation();
@@ -455,6 +455,13 @@ public abstract class ArrayNodes {
             }
 
             return true;
+        }
+
+        // TODO(CS): what to do about all the other cases?
+
+        @Specialization(order = 6)
+        public boolean equal(VirtualFrame frame, RubyArray a, RubySymbol b) {
+            return false;
         }
 
     }
@@ -2648,7 +2655,7 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         }
 
-        @Specialization(guards = {"isIntegerFixnum", "isVeryShort"}, order = 2)
+        @Specialization(guards = {"isIntegerFixnum", "isSmall"}, order = 2)
         public RubyArray sortVeryShortIntegerFixnum(VirtualFrame frame, RubyArray array) {
             final int[] store = (int[]) array.getStore();
 
@@ -2723,8 +2730,8 @@ public abstract class ArrayNodes {
             });
         }
 
-        protected static boolean isVeryShort(RubyArray array) {
-            return array.getSize() <= 3;
+        protected static boolean isSmall(RubyArray array) {
+            return array.getSize() <= Options.TRUFFLE_ARRAYS_SMALL.load();
         }
 
     }

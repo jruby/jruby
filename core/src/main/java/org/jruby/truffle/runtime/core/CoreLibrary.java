@@ -23,6 +23,7 @@ import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
 import java.math.BigInteger;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class CoreLibrary {
@@ -186,13 +187,15 @@ public class CoreLibrary {
         objectClass.setConstant("FALSE", false);
         objectClass.setConstant("NIL", NilPlaceholder.INSTANCE);
 
-        final RubyHash configHash = new RubyHash(hashClass);
-        configHash.put(RubyString.fromJavaString(stringClass, "ruby_install_name"), RubyString.fromJavaString(stringClass, "rubytruffle"));
-        configHash.put(RubyString.fromJavaString(stringClass, "RUBY_INSTALL_NAME"), RubyString.fromJavaString(stringClass, "rubytruffle"));
-        configHash.put(RubyString.fromJavaString(stringClass, "host_os"), RubyString.fromJavaString(stringClass, "unknown"));
-        configHash.put(RubyString.fromJavaString(stringClass, "exeext"), RubyString.fromJavaString(stringClass, ""));
-        configHash.put(RubyString.fromJavaString(stringClass, "EXEEXT"), RubyString.fromJavaString(stringClass, "rubytruffle"));
+        final LinkedHashMap<Object, Object> configHashMap = new LinkedHashMap<>();
+        configHashMap.put(RubyString.fromJavaString(stringClass, "ruby_install_name"), RubyString.fromJavaString(stringClass, "rubytruffle"));
+        configHashMap.put(RubyString.fromJavaString(stringClass, "RUBY_INSTALL_NAME"), RubyString.fromJavaString(stringClass, "rubytruffle"));
+        configHashMap.put(RubyString.fromJavaString(stringClass, "host_os"), RubyString.fromJavaString(stringClass, "unknown"));
+        configHashMap.put(RubyString.fromJavaString(stringClass, "exeext"), RubyString.fromJavaString(stringClass, ""));
+        configHashMap.put(RubyString.fromJavaString(stringClass, "EXEEXT"), RubyString.fromJavaString(stringClass, "rubytruffle"));
+        final RubyHash configHash = new RubyHash(hashClass, null, configHashMap);
         configModule.setConstant("CONFIG", configHash);
+
         objectClass.setConstant("RbConfig", configModule);
 
         mathModule.setConstant("PI", Math.PI);
@@ -641,13 +644,13 @@ public class CoreLibrary {
     public RubyEncoding getDefaultEncoding() { return RubyEncoding.findEncodingByName(context.makeString("US-ASCII")); }
 
     public RubyHash getEnv() {
-        final RubyHash hash = new RubyHash(context.getCoreLibrary().getHashClass());
+        final LinkedHashMap<Object, Object> storage = new LinkedHashMap<>();
 
         for (Map.Entry<String, String> variable : System.getenv().entrySet()) {
-            hash.put(context.makeString(variable.getKey()), context.makeString(variable.getValue()));
+            storage.put(context.makeString(variable.getKey()), context.makeString(variable.getValue()));
         }
 
-        return hash;
+        return new RubyHash(context.getCoreLibrary().getHashClass(), null, storage);
     }
 
 }

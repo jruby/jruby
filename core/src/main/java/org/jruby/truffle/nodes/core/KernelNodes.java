@@ -236,7 +236,8 @@ public abstract class
 
             final RubyHash env = (RubyHash) context.getCoreLibrary().getObjectClass().lookupConstant("ENV").value;
 
-            for (Map.Entry<Object, Object> entry : env.getMap().entrySet()) {
+            // TODO(CS): cast
+            for (Map.Entry<Object, Object> entry : ((LinkedHashMap<Object, Object>) env.getStore()).entrySet()) {
                 builder.environment().put(entry.getKey().toString(), entry.getValue().toString());
             }
 

@@ -74,7 +74,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = {"==", "==="}, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"==", "===", "eql?"}, minArgs = 1, maxArgs = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {

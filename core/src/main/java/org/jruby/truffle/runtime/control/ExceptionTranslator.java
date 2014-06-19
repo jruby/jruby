@@ -55,9 +55,31 @@ public final class ExceptionTranslator {
 
                 if (value instanceof RubyBasicObject) {
                     builder.append(((RubyBasicObject) value).getRubyClass().getName());
-                    builder.append(" (");
+                    builder.append("(");
                     builder.append(value.getClass().getName());
                     builder.append(")");
+
+                    if (value instanceof RubyArray) {
+                        final Object store = ((RubyArray) value).getStore();
+
+                        if (store == null) {
+                            builder.append("[null]");
+                        } else {
+                            builder.append("[");
+                            builder.append(store.getClass().getName());
+                            builder.append("]");
+                        }
+                    } else if (value instanceof RubyHash) {
+                        final Object store = ((RubyHash) value).getStore();
+
+                        if (store == null) {
+                            builder.append("[null]");
+                        } else {
+                            builder.append("[");
+                            builder.append(store.getClass().getName());
+                            builder.append("]");
+                        }
+                    }
                 } else {
                     builder.append(value.getClass().getName());
                 }
