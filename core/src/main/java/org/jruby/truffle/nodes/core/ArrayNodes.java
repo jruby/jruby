@@ -12,13 +12,24 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.CoreSourceSection;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
+import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
+import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
+import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNode;
+import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNodeFactory;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
@@ -27,6 +38,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.Memo;
 import org.jruby.util.cli.Options;
@@ -2132,58 +2144,151 @@ public abstract class ArrayNodes {
 
     // TODO: move into Enumerable?
 
+    @CoreMethod(names = "max", maxArgs = 0)
+    public abstract static class MaxNode extends ArrayCoreMethodNode {
+
+        @Child protected DispatchHeadNode eachNode;
+        private final MaxBlock maxBlock;
+
+        public MaxNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            eachNode = new DispatchHeadNode(context, "each", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            maxBlock = context.getCoreLibrary().getArrayMaxBlock();
+        }
+
+        public MaxNode(MaxNode prev) {
+            super(prev);
+            eachNode = prev.eachNode;
+            maxBlock = prev.maxBlock;
+        }
+
+        @Specialization
+        public Object max(VirtualFrame frame, RubyArray array) {
+            final Memo<Object> maximum = new Memo<>();
+
+            final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, array, null), maxBlock.getFrameDescriptor());
+            maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
+
+            final RubyMethod method = new RubyMethod(maxBlock.getMethod().getSharedMethodInfo(),
+                    maxBlock.getMethod().getName(), null, Visibility.PUBLIC, false, maxBlock.getMethod().getCallTarget(),
+                    maximumClosureFrame.materialize(), false);
+
+            final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, array, null,
+                    method);
+
+            eachNode.dispatch(frame, array, block);
+
+            if (maximum.get() == null) {
+                return NilPlaceholder.INSTANCE;
+            } else {
+                return maximum.get();
+            }
+        }
+
+    }
+
+    public abstract static class MaxBlockNode extends CoreMethodNode {
+
+        @Child protected DispatchHeadNode compareNode;
+
+        public MaxBlockNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            compareNode = new DispatchHeadNode(context, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        }
+
+        public MaxBlockNode(MaxBlockNode prev) {
+            super(prev);
+            compareNode = prev.compareNode;
+        }
+
+        @Specialization
+        public NilPlaceholder max(VirtualFrame frame, Object maximumObject, Object value) {
+            final Memo<Object> maximum = (Memo<Object>) maximumObject;
+
+            // TODO(CS): cast
+
+            final Object current = maximum.get();
+
+            if (current == null || (int) compareNode.dispatch(frame, value, null, current) < 0) {
+                maximum.set(value);
+            }
+
+            return NilPlaceholder.INSTANCE;
+        }
+
+    }
+
+    public static class MaxBlock {
+
+        private final FrameDescriptor frameDescriptor;
+        private final FrameSlot frameSlot;
+        private final RubyMethod method;
+
+        public MaxBlock(RubyContext context) {
+            final String name = "(max-block)";
+
+            final SourceSection sourceSection = new CoreSourceSection(name);
+
+            frameDescriptor = new FrameDescriptor();
+            frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
+
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name, false, null);
+
+            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(sourceSection, null, sharedMethodInfo,
+                    ArrayNodesFactory.MaxBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
+                            ReadLevelVariableNodeFactory.create(context, sourceSection, frameSlot, 1),
+                            new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
+                    })));
+
+            method = new RubyMethod(sharedMethodInfo, name, null, Visibility.PUBLIC, false, callTarget, null, false);
+        }
+
+        public FrameDescriptor getFrameDescriptor() {
+            return frameDescriptor;
+        }
+
+        public FrameSlot getFrameSlot() {
+            return frameSlot;
+        }
+
+        public RubyMethod getMethod() {
+            return method;
+        }
+    }
+
     @CoreMethod(names = "min", maxArgs = 0)
     public abstract static class MinNode extends ArrayCoreMethodNode {
 
         @Child protected DispatchHeadNode eachNode;
-        @Child protected DispatchHeadNode compareNode;
+        private final MinBlock minBlock;
 
         public MinNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             eachNode = new DispatchHeadNode(context, "each", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
-            compareNode = new DispatchHeadNode(context, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            minBlock = context.getCoreLibrary().getArrayMinBlock();
         }
 
         public MinNode(MinNode prev) {
             super(prev);
             eachNode = prev.eachNode;
-            compareNode = prev.compareNode;
+            minBlock = prev.minBlock;
         }
 
         @Specialization
         public Object min(VirtualFrame frame, RubyArray array) {
-            notDesignedForCompilation();
-
-            // TODO(CS): will this be the right frame?
-            final VirtualFrame finalFrame = frame;
-
             final Memo<Object> minimum = new Memo<>();
 
-            final CallTarget callTarget = new CallTarget() {
+            final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, array, null), minBlock.getFrameDescriptor());
+            minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
 
-                @Override
-                public Object call(Object... arguments) {
-                    final Object value = RubyArguments.getUserArgument(arguments, 0);
+            final RubyMethod method = new RubyMethod(minBlock.getMethod().getSharedMethodInfo(),
+                    minBlock.getMethod().getName(), null, Visibility.PUBLIC, false, minBlock.getMethod().getCallTarget(),
+                    minimumClosureFrame.materialize(), false);
 
-                    if (minimum.get() == null) {
-                        minimum.set(value);
-                    } else {
-                        // TODO(CS): cast
+            final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, array, null,
+                    method);
 
-                        if ((int) compareNode.dispatch(finalFrame, value, null, minimum.get()) < 0) {
-                            minimum.set(value);
-                        }
-                    }
-
-                    return NilPlaceholder.INSTANCE;
-                }
-
-            };
-
-            final RubyProc compareProc = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, null, null,
-                    new RubyMethod(null, null, null, Visibility.PRIVATE, false, callTarget, null, false));
-
-            eachNode.dispatch(frame, array, compareProc);
+            eachNode.dispatch(frame, array, block);
 
             if (minimum.get() == null) {
                 return NilPlaceholder.INSTANCE;
@@ -2192,6 +2297,75 @@ public abstract class ArrayNodes {
             }
         }
 
+    }
+
+    public abstract static class MinBlockNode extends CoreMethodNode {
+
+        @Child protected DispatchHeadNode compareNode;
+
+        public MinBlockNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            compareNode = new DispatchHeadNode(context, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        }
+
+        public MinBlockNode(MinBlockNode prev) {
+            super(prev);
+            compareNode = prev.compareNode;
+        }
+
+        @Specialization
+        public NilPlaceholder min(VirtualFrame frame, Object minimumObject, Object value) {
+            final Memo<Object> minimum = (Memo<Object>) minimumObject;
+
+            // TODO(CS): cast
+
+            final Object current = minimum.get();
+
+            if (current == null || (int) compareNode.dispatch(frame, value, null, current) < 0) {
+                minimum.set(value);
+            }
+
+            return NilPlaceholder.INSTANCE;
+        }
+
+    }
+
+    public static class MinBlock {
+
+        private final FrameDescriptor frameDescriptor;
+        private final FrameSlot frameSlot;
+        private final RubyMethod method;
+
+        public MinBlock(RubyContext context) {
+            final String name = "(min-block)";
+
+            final SourceSection sourceSection = new CoreSourceSection(name);
+
+            frameDescriptor = new FrameDescriptor();
+            frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
+
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name, false, null);
+
+            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(sourceSection, null, sharedMethodInfo,
+                    ArrayNodesFactory.MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
+                            ReadLevelVariableNodeFactory.create(context, sourceSection, frameSlot, 1),
+                            new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
+                    })));
+
+            method = new RubyMethod(sharedMethodInfo, name, null, Visibility.PUBLIC, false, callTarget, null, false);
+        }
+
+        public FrameDescriptor getFrameDescriptor() {
+            return frameDescriptor;
+        }
+
+        public FrameSlot getFrameSlot() {
+            return frameSlot;
+        }
+
+        public RubyMethod getMethod() {
+            return method;
+        }
     }
 
     @CoreMethod(names = "pack", minArgs = 1, maxArgs = 1)
