@@ -1597,7 +1597,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     private Block setupBlock(Block block) {
         // FIXME: This is an ugly hack to resolve JRUBY-1381; I'm not proud of it
-        block = block.cloneBlock();
+        block = block.cloneBlockAndFrame();
         block.getBinding().setSelf(this);
         block.getBinding().getFrame().setSelf(this);
 
