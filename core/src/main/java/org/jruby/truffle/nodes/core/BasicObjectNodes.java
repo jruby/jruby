@@ -156,8 +156,6 @@ public abstract class BasicObjectNodes {
         public Object methodMissing(RubyBasicObject self, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            CompilerDirectives.transferToInterpreter();
-
             final RubySymbol name = (RubySymbol) args[0];
             final Object[] sentArgs = Arrays.copyOfRange(args, 1, args.length);
             return methodMissing(self, name, sentArgs, null);
@@ -166,8 +164,6 @@ public abstract class BasicObjectNodes {
         @Specialization
         public Object methodMissing(RubyBasicObject self, Object[] args, RubyProc block) {
             notDesignedForCompilation();
-
-            CompilerDirectives.transferToInterpreter();
 
             final RubySymbol name = (RubySymbol) args[0];
             final Object[] sentArgs = Arrays.copyOfRange(args, 1, args.length);
