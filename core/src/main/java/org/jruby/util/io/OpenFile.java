@@ -1707,7 +1707,7 @@ public class OpenFile implements Finalizable {
                         clearReadConversion();
                         return context.nil;
                     }
-                /* return an unit of an incomplete character just before EOF */
+                    /* return an unit of an incomplete character just before EOF */
                     str = RubyString.newString(runtime, cbuf.ptr, cbuf.off, 1, read_enc);
                     cbuf.off += 1;
                     cbuf.len -= 1;
