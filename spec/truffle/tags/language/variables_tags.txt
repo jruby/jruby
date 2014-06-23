@@ -26,3 +26,5 @@ fails:Multiple assignments with grouping supports multiple levels of nested grou
 fails:Multiple assignment has the proper return value
 fails:Multiple assignment, array-style returns an array of all rhs values
 fails:Basic multiple assignment with a splatted single RHS value calls #to_a on an object if #to_ary is not defined
+fails:Assigning multiple values supports parallel assignment to lhs args using []=
+fails:A local variable in a #define_method scope Multiple assignments with splats * on the LHS has to be applied to any parameter

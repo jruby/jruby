@@ -11,8 +11,11 @@ package org.jruby.truffle.nodes.control;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -20,35 +23,28 @@ import org.jruby.truffle.runtime.core.*;
  * Represents a Ruby {@code or} or {@code ||} expression.
  */
 @NodeInfo(shortName = "or")
-@NodeChildren({@NodeChild("left"), @NodeChild("right")})
-public abstract class OrNode extends RubyNode {
+public class OrNode extends RubyNode {
 
-    public OrNode(RubyContext context, SourceSection sourceSection) {
+    @Child protected RubyNode left;
+    @Child protected BooleanCastNode leftCast;
+    @Child protected RubyNode right;
+
+    public OrNode(RubyContext context, SourceSection sourceSection, RubyNode left, RubyNode right) {
         super(context, sourceSection);
+        this.left = left;
+        leftCast = BooleanCastNodeFactory.create(context, sourceSection, null);
+        this.right = right;
     }
 
-    public OrNode(OrNode copy) {
-        super(copy.getContext(), copy.getSourceSection());
-    }
+    @Override
+    public Object execute(VirtualFrame frame) {
+        final Object leftValue = left.execute(frame);
 
-    @ShortCircuit("right")
-    public boolean needsRightNode(Object a) {
-        return !RubyTrueClass.toBoolean(a);
-    }
+        if (leftCast.executeBoolean(frame, leftValue)) {
+            return leftValue;
+        }
 
-    @ShortCircuit("right")
-    public boolean needsRightNode(boolean a) {
-        return !a;
-    }
-
-    @Specialization
-    public Object doBoolean(boolean a, boolean hasB, Object b) {
-        return hasB ? b : a;
-    }
-
-    @Generic
-    public Object doGeneric(Object a, boolean hasB, Object b) {
-        return hasB ? b : a;
+        return right.execute(frame);
     }
 
 }

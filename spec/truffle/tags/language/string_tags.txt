@@ -12,3 +12,5 @@ fails:Ruby String interpolation creates a String having an Encoding compatible w
 fails:Ruby String interpolation creates a String having the Encoding of the components when all are the same Encoding
 fails:Ruby String interpolation raises an Encoding::CompatibilityError if the Encodings are not compatible
 fails:Ruby character strings uses an internal representation when #to_s doesn't return a String
+fails:Ruby character strings calls #to_s as a private method
+fails:Ruby character strings calls #to_s when the object is not a String

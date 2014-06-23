@@ -32,13 +32,9 @@
 package org.jruby.ast;
 
 
-import org.jruby.Ruby;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Represents an array. This could be an array literal, quoted words or some args stuff.
@@ -77,23 +73,5 @@ public class ArrayNode extends ListNode implements ILiteralNode {
     
     public boolean isLightweight() {
         return lightweight;
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject[] array = interpretPrimitive(runtime, context, self, aBlock);
-        
-        return lightweight ? runtime.newArrayNoCopyLight(array) : runtime.newArrayNoCopy(array);        
-    }
-    
-    public IRubyObject[] interpretPrimitive(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        int size = size();
-        IRubyObject[] array = new IRubyObject[size];
-        
-        for (int i = 0; i < size; i++) {
-            array[i] = get(i).interpret(runtime, context, self, aBlock);
-        }
-
-        return array;
     }
 }

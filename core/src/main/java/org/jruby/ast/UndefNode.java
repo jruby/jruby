@@ -76,18 +76,4 @@ public class UndefNode extends Node {
     public List<Node> childNodes() {
         return Node.createList(name);
     }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RubyModule module = context.getRubyClass();
-        String undefName = Helpers.interpretAliasUndefName(name, runtime, context, self, aBlock);
-   
-        if (module == null) {
-            throw runtime.newTypeError("No class to undef method '" + undefName + "'.");
-        }
-        
-        module.undef(context, undefName);
-   
-        return runtime.getNil();        
-    }
 }

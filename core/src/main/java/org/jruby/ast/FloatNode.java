@@ -33,22 +33,16 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyFloat;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents a float literal.
  */
 public class FloatNode extends Node implements ILiteralNode {
     private double value;
-    private RubyFloat flote;
-    
+
     public FloatNode(ISourcePosition position, double value) {
         super(position);
         this.value = value;
@@ -75,26 +69,11 @@ public class FloatNode extends Node implements ILiteralNode {
      * @param value to set
      */
     public void setValue(double value) {
-        // This should never happen past parse, but just bulletproof this just in case
-        if (flote != null) {
-            flote = null;
-        }
         this.value = value;
     }
-    
-    public RubyFloat getFloat(Ruby runtime) {
-        if (flote == null) {
-            return flote = RubyFloat.newFloat(runtime, value);
-        }
-        return flote;
-    }
+
     
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return getFloat(runtime);
     }
 }

@@ -11,8 +11,9 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.truffle.runtime.ArrayUtils;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.util.cli.Options;
 
 public abstract class ArrayBuilderNode extends Node {
 
@@ -42,9 +43,9 @@ public abstract class ArrayBuilderNode extends Node {
 
     public static class UninitializedArrayBuilderNode extends ArrayBuilderNode {
 
-        private boolean couldUseInteger = true;
-        private boolean couldUseLong = true;
-        private boolean couldUseDouble = true;
+        private boolean couldUseInteger = Options.TRUFFLE_ARRAYS_INT.load();
+        private boolean couldUseLong = Options.TRUFFLE_ARRAYS_LONG.load();
+        private boolean couldUseDouble = Options.TRUFFLE_ARRAYS_DOUBLE.load();
 
         public UninitializedArrayBuilderNode(RubyContext context, boolean maxLengthKnown) {
             super(context, maxLengthKnown);

@@ -34,14 +34,8 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyBoolean;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A Range in a boolean expression (named after a FlipFlop component in electronic?).
@@ -126,54 +120,5 @@ public class FlipNode extends Node {
     
     public List<Node> childNodes() {
         return Node.createList(beginNode, endNode);
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        DynamicScope scope = context.getCurrentScope();
-        IRubyObject nil = runtime.getNil();
-        int index = getIndex();
-
-        // Make sure the appropriate scope has proper size. See JRUBY-2046.
-        DynamicScope flipScope = scope.getFlipScope();
-        flipScope.growIfNeeded();
-        
-        IRubyObject result = flipScope.getValueDepthZeroOrNil(index, nil);
-   
-        if (exclusive) {
-            if (result == null || !result.isTrue()) {
-                result = trueIfTrue(runtime, beginNode.interpret(runtime, context, self, aBlock));
-                flipScope.setValueDepthZero(result, index);
-                return result;
-            } else {
-                if (endNode.interpret(runtime, context, self, aBlock).isTrue()) {
-                    flipScope.setValueDepthZero(runtime.getFalse(), index);
-                }
-                
-                return runtime.getTrue();
-            }
-        } else {
-            if (result == null || !result.isTrue()) {
-                if (beginNode.interpret(runtime, context, self, aBlock).isTrue()) {
-                    flipScope.setValueDepthZero(falseIfTrue(runtime, endNode.interpret(runtime, context, self, aBlock)), index);
-                    return runtime.getTrue();
-                } 
-
-                return runtime.getFalse();
-            } else {
-                if (endNode.interpret(runtime, context, self, aBlock).isTrue()) {
-                    flipScope.setValueDepthZero(runtime.getFalse(), index);
-                }
-                return runtime.getTrue();
-            }
-        }
-    }
-    
-    private static RubyBoolean trueIfTrue(Ruby runtime, IRubyObject truish) {
-        return truish.isTrue() ? runtime.getTrue() : runtime.getFalse();
-    }
-    
-    private static RubyBoolean falseIfTrue(Ruby runtime, IRubyObject truish) {
-        return truish.isTrue() ? runtime.getFalse() : runtime.getTrue();
     }
 }

@@ -27,6 +27,7 @@ import org.jruby.truffle.nodes.constants.ReadConstantNode;
 import org.jruby.truffle.nodes.constants.WriteConstantNode;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.debug.TraceNode;
 import org.jruby.truffle.nodes.globals.CheckMatchVariableTypeNode;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.literal.array.UninitialisedArrayLiteralNode;
@@ -38,10 +39,12 @@ import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
+import org.jruby.util.cli.Options;
 
 import java.util.*;
 
@@ -145,7 +148,7 @@ public class BodyTranslator extends Translator {
             y = node.getSecondNode().accept(this);
         }
 
-        return AndNodeFactory.create(context, sourceSection, x, y);
+        return new AndNode(context, sourceSection, x, y);
     }
 
     @Override
@@ -446,7 +449,7 @@ public class BodyTranslator extends Translator {
                 // As with the if nodes, we work backwards to make it left associative
 
                 for (int i = comparisons.size() - 2; i >= 0; i--) {
-                    conditionNode = OrNodeFactory.create(context, sourceSection, comparisons.get(i), conditionNode);
+                    conditionNode = new OrNode(context, sourceSection, comparisons.get(i), conditionNode);
                 }
 
                 // Create the if node
@@ -499,7 +502,7 @@ public class BodyTranslator extends Translator {
                 // As with the if nodes, we work backwards to make it left associative
 
                 for (int i = tests.size() - 2; i >= 0; i--) {
-                    conditionNode = OrNodeFactory.create(context, sourceSection, tests.get(i), conditionNode);
+                    conditionNode = new OrNode(context, sourceSection, tests.get(i), conditionNode);
                 }
 
                 // Create the if node
@@ -749,12 +752,6 @@ public class BodyTranslator extends Translator {
         final RubyNode end = node.getEndNode().accept(this);
         SourceSection sourceSection = translate(node.getPosition());
 
-        if (begin instanceof IntegerFixnumLiteralNode && end instanceof IntegerFixnumLiteralNode) {
-            final int beginValue = ((IntegerFixnumLiteralNode) begin).getValue();
-            final int endValue = ((IntegerFixnumLiteralNode) end).getValue();
-
-            return new ObjectLiteralNode(context, sourceSection, new RubyRange.IntegerFixnumRange(context.getCoreLibrary().getRangeClass(), beginValue, endValue, node.isExclusive()));
-        }
         // See RangeNode for why there is a node specifically for creating this one type
         return RangeLiteralNodeFactory.create(context, sourceSection, node.isExclusive(), begin, end);
     }
@@ -794,7 +791,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitFixnumNode(org.jruby.ast.FixnumNode node) {
         final long value = node.getValue();
 
-        if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
+        if (RubyFixnum.fitsIntoInteger(value) && Options.TRUFFLE_LITERALS_INT.load()) {
             return new IntegerFixnumLiteralNode(context, translate(node.getPosition()), (int) value);
         } else {
             return new LongFixnumLiteralNode(context, translate(node.getPosition()), value);
@@ -1406,7 +1403,8 @@ public class BodyTranslator extends Translator {
 
             return restRead.makeWriteNode(rhsTranslated);
         } else {
-            throw new RuntimeException("Unknown form of multiple assignment " + node + " at " + node.getPosition());
+            context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, node.getPosition().getFile(), node.getPosition().getStartLine(), node + " unknown form of multiple assignment");
+            return new NilNode(context, sourceSection);
         }
     }
 
@@ -1467,8 +1465,12 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitNewlineNode(org.jruby.ast.NewlineNode node) {
         final RubyNode translated = node.getNextNode().accept(this);
-        // return instrumenter.instrumentAsStatement(translated);
-        return translated;
+
+        if (Options.TRUFFLE_TRACE.load()) {
+            return new TraceNode(context, translated.getEncapsulatingSourceSection(), translated);
+        } else {
+            return translated;
+        }
     }
 
     @Override
@@ -1515,7 +1517,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.Node lhs = node.getFirstNode();
         final org.jruby.ast.Node rhs = node.getSecondNode();
 
-        return AndNodeFactory.create(context, translate(node.getPosition()), lhs.accept(this), rhs.accept(this));
+        return new AndNode(context, translate(node.getPosition()), lhs.accept(this), rhs.accept(this));
     }
 
     @Override
@@ -1554,7 +1556,7 @@ public class BodyTranslator extends Translator {
         final org.jruby.ast.Node lhs = node.getFirstNode();
         final org.jruby.ast.Node rhs = node.getSecondNode();
 
-        return OrNodeFactory.create(context, translate(node.getPosition()), lhs.accept(this), rhs.accept(this));
+        return new OrNode(context, translate(node.getPosition()), lhs.accept(this), rhs.accept(this));
     }
 
     @Override
@@ -1635,7 +1637,7 @@ public class BodyTranslator extends Translator {
             y = node.getSecondNode().accept(this);
         }
 
-        return OrNodeFactory.create(context, sourceSection, x, y);
+        return new OrNode(context, sourceSection, x, y);
     }
 
     @Override
@@ -1645,13 +1647,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitRegexpNode(org.jruby.ast.RegexpNode node) {
-        Regex regex;
-
-        if (node.getPattern() != null) {
-            regex = node.getPattern().getPattern();
-        } else {
-            regex = RubyRegexp.compile(context, node.getValue().bytes(), node.getEncoding(), node.getOptions().toOptions());
-        }
+        Regex regex = RubyRegexp.compile(context, node.getValue().bytes(), node.getEncoding(), node.getOptions().toOptions());
 
         final RubyRegexp regexp = new RubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, node.getValue().toString());
         final ObjectLiteralNode literalNode = new ObjectLiteralNode(context, translate(node.getPosition()), regexp);

@@ -153,7 +153,7 @@ public class ConcurrentLocalContextProviderTest {
     /**
      * Test of getRuntime method, of class ConcurrentLocalContextProvider.
      */
-    @Test
+    //@Test
     public void testGetRuntime() {
         logger1.info("getRuntime");
         ConcurrentLocalContextProvider cook =
@@ -173,7 +173,7 @@ public class ConcurrentLocalContextProviderTest {
     /**
      * Test of getRubyInstanceConfig method, of class ConcurrentLocalContextProvider.
      */
-    @Test
+    //@Test
     public void testGetRubyInstanceConfig() {
         logger1.info("getRubyInstanceConfig");
         ConcurrentLocalContextProvider cook =
@@ -194,7 +194,7 @@ public class ConcurrentLocalContextProviderTest {
     /**
      * Test of getVarMap method, of class ConcurrentLocalContextProvider.
      */
-    @Test
+    //@Test
     public void testGetVarMap() {
         logger1.info("getVarMap");
         ConcurrentLocalContextProvider cook =
@@ -216,7 +216,7 @@ public class ConcurrentLocalContextProviderTest {
     /**
      * Test of getAttributeMap method, of class ConcurrentLocalContextProvider.
      */
-    @Test
+    //@Test
     public void testGetAttributeMap() {
         logger1.info("getAttributeMap");
         ConcurrentLocalContextProvider cook =
@@ -237,7 +237,7 @@ public class ConcurrentLocalContextProviderTest {
     /**
      * Test of isRuntimeInitialized method, of class ConcurrentLocalContextProvider.
      */
-    @Test
+    //@Test
     public void testIsRuntimeInitialized() {
         logger1.info("isRuntimeInitialized");
         ConcurrentLocalContextProvider cook =
@@ -247,7 +247,7 @@ public class ConcurrentLocalContextProviderTest {
         else assertFalse(result);
     }
     
-    @Test
+    //@Test
     public void testTerminate() {
         logger1.info("isTerminate");
         ConcurrentLocalContextProvider cook =

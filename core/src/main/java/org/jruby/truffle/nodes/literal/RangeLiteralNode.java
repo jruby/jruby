@@ -32,19 +32,18 @@ public abstract class RangeLiteralNode extends RubyNode {
     }
 
     @Specialization
-    public RubyRange.IntegerFixnumRange doFixnum(int begin, int end) {
+    public RubyRange.IntegerFixnumRange doIntegerFixnum(int begin, int end) {
         return new RubyRange.IntegerFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
     }
 
-    @Generic
-    public Object doGeneric(Object begin, Object end) {
-        final RubyContext context = getContext();
+    @Specialization
+    public RubyRange.LongFixnumRange doLongFixnum(long begin, long end) {
+        return new RubyRange.LongFixnumRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
+    }
 
-        if ((begin instanceof Integer) && (end instanceof Integer)) {
-            return doFixnum((int) begin, (int) end);
-        } else {
-            return new RubyRange.ObjectRange(context.getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
-        }
+    @Specialization
+    public Object doObject(Object begin, Object end) {
+        return new RubyRange.ObjectRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
     }
 
 }

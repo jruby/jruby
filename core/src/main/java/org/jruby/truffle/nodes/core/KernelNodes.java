@@ -236,7 +236,8 @@ public abstract class
 
             final RubyHash env = (RubyHash) context.getCoreLibrary().getObjectClass().lookupConstant("ENV").value;
 
-            for (Map.Entry<Object, Object> entry : env.getMap().entrySet()) {
+            // TODO(CS): cast
+            for (Map.Entry<Object, Object> entry : ((LinkedHashMap<Object, Object>) env.getStore()).entrySet()) {
                 builder.environment().put(entry.getKey().toString(), entry.getValue().toString());
             }
 
@@ -265,7 +266,7 @@ public abstract class
 
     }
 
-    @CoreMethod(names = "exit", isModuleMethod = true, needsSelf = false, minArgs = 0, maxArgs = 1)
+    @CoreMethod(names = "exit", isModuleMethod = true, needsSelf = false, minArgs = 0, maxArgs = 1, lowerFixnumParameters = 0)
     public abstract static class ExitNode extends CoreMethodNode {
 
         public ExitNode(RubyContext context, SourceSection sourceSection) {
@@ -747,7 +748,7 @@ public abstract class
         public NilPlaceholder setTraceFunc(NilPlaceholder proc) {
             notDesignedForCompilation();
 
-            getContext().getTraceManager().setTraceProc(null);
+            getContext().getTraceManager().setTraceFunc(null);
             return proc;
         }
 
@@ -755,7 +756,7 @@ public abstract class
         public RubyProc setTraceFunc(RubyProc proc) {
             notDesignedForCompilation();
 
-            getContext().getTraceManager().setTraceProc(proc);
+            getContext().getTraceManager().setTraceFunc(proc);
             return proc;
         }
 

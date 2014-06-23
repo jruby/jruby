@@ -33,19 +33,9 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.MetaClass;
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
-import org.jruby.util.DefinedMessage;
 
 /**
  * Access to a class variable.
@@ -84,33 +74,5 @@ public class ClassVarNode extends Node implements INameNode {
     
     public void setName(String name) {
         this.name = name;
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, runtime);
-   
-        if (rubyClass == null) rubyClass = self.getMetaClass();
-
-        return rubyClass.getClassVar(name);
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RubyModule module = context.getCurrentScope().getStaticScope().getModule();
-        
-        if (module == null && self.getMetaClass().isClassVarDefined(name)) {
-            return runtime.getDefinedMessage(DefinedMessage.CLASS_VARIABLE);
-        } else if (module.isClassVarDefined(name)) {
-            return runtime.getDefinedMessage(DefinedMessage.CLASS_VARIABLE);
-        }
-
-        IRubyObject attached = module.isSingleton() ? ((MetaClass)module).getAttached() : null;
-        
-        if (attached instanceof RubyModule && ((RubyModule) attached).isClassVarDefined(name)) {
-            return runtime.getDefinedMessage(DefinedMessage.CLASS_VARIABLE);
-        }
-
-        return null;
     }
 }

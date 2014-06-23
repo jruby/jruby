@@ -52,4 +52,9 @@ public class RubyNilClass extends RubyObject {
         return block instanceof NilPlaceholder || block instanceof RubyNilClass;
     }
 
+    @Override
+    public boolean isTrue() {
+        return false;
+    }
+
 }

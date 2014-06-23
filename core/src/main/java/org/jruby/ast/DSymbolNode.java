@@ -29,13 +29,8 @@
  ***** END LICENSE BLOCK *****/
  package org.jruby.ast;
 
-import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Node representing symbol in a form like ':"3jane"'.
@@ -66,11 +61,5 @@ public class DSymbolNode extends DNode {
     @Override
     public Object accept(NodeVisitor visitor) {
         return visitor.visitDSymbolNode(this);
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RubyString str = (RubyString)super.interpret(runtime, context, self, aBlock);
-        return str.intern19();
     }
 }

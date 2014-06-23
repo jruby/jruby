@@ -1,11 +1,8 @@
 #-*- mode: ruby -*-
 
-gemspec :jar => 'jopenssl', :include_jars => true
+snapshot_repository :id => 'sonatype', :url => 'https://oss.sonatype.org/content/repositories/snapshots'
 
-# that all should be part of ruby-maven to pick the right extension
-properties 'jruby.plugins.version' => '1.0.2'
-build.extensions.clear
-extension 'de.saumya.mojo:gem-with-jar-extension', '${jruby.plugins.version}'
+gemspec :jar => 'jopenssl', :include_jars => true
 
 if model.version.to_s.match /[a-zA-Z]/
   model.group_id = 'org.jruby.gems'
@@ -16,8 +13,6 @@ if model.version.to_s.match /[a-zA-Z]/
                   :skip => false,
                   :altDeploymentRepository => 'sonatype-nexus-snapshots::default::https://oss.sonatype.org/content/repositories/snapshots/' )
   end
-else
-  parent 'org.jruby:jruby-ext', version
 end
 
 plugin( :compiler, :target => '1.6', :source => '1.6', :debug => true, :verbose => false, :showWarnings => true, :showDeprecation => true )

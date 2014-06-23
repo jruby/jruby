@@ -319,27 +319,30 @@ public class SSLSocket extends RubyObject {
             thread.executeBlockingTask(new RubyThread.BlockingTask() {
                 public void run() throws InterruptedException {
                     try {
-                        if (!blocking) {
+                        if ( ! blocking ) {
                             result[0] = selector.selectNow();
-                            if (result[0] == 0) {
+
+                            if ( result[0] == 0 ) {
                                 if ((operations & SelectionKey.OP_READ) != 0 && (operations & SelectionKey.OP_WRITE) != 0) {
-                                    if (key.isReadable()) {
-                                        writeWouldBlock();
-                                    } else if (key.isWritable()) {
-                                        readWouldBlock();
+                                    if ( key.isReadable() ) {
+                                        writeWouldBlock(runtime);
+                                    } else if ( key.isWritable() ) {
+                                        readWouldBlock(runtime);
                                     } else { //neither, pick one
-                                        readWouldBlock();
+                                        readWouldBlock(runtime);
                                     }
                                 } else if ((operations & SelectionKey.OP_READ) != 0) {
-                                    readWouldBlock();
+                                    readWouldBlock(runtime);
                                 } else if ((operations & SelectionKey.OP_WRITE) != 0) {
-                                    writeWouldBlock();
+                                    writeWouldBlock(runtime);
                                 }
                             }
-                        } else {
+                        }
+                        else {
                             result[0] = selector.select();
                         }
-                    } catch (IOException ioe) {
+                    }
+                    catch (IOException ioe) {
                         throw runtime.newRuntimeError("Error with selector: " + ioe.getMessage());
                     }
                 }
@@ -349,10 +352,9 @@ public class SSLSocket extends RubyObject {
                 }
             });
 
-            if (result[0] >= 1) {
+            if ( result[0] >= 1 ) {
                 Set<SelectionKey> keySet = selector.selectedKeys();
-
-                if (keySet.iterator().next() == key) {
+                if ( keySet.iterator().next() == key ) {
                     return true;
                 }
             }
@@ -396,12 +398,12 @@ public class SSLSocket extends RubyObject {
         }
     }
 
-    private void readWouldBlock() {
-        throw newSSLErrorWaitReadable(getRuntime(), "read would block");
+    private static void readWouldBlock(final Ruby runtime) {
+        throw newSSLErrorWaitReadable(runtime, "read would block");
     }
 
-    private void writeWouldBlock() {
-        throw newSSLErrorWaitWritable(getRuntime(), "write would block");
+    private static void writeWouldBlock(final Ruby runtime) {
+        throw newSSLErrorWaitWritable(runtime, "write would block");
     }
 
     private void doHandshake(boolean blocking) throws IOException {

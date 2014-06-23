@@ -34,7 +34,7 @@ public abstract class NilClassNodes {
         }
     }
 
-    @CoreMethod(names = "==", needsSelf = false, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"==", "eql?"}, needsSelf = false, minArgs = 1, maxArgs = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -137,6 +137,25 @@ public abstract class NilClassNodes {
         @Specialization
         public RubyString toS() {
             return getContext().makeString("");
+        }
+    }
+
+    @CoreMethod(names = "<<", needsSelf = false, maxArgs = 1)
+    public abstract static class XNode extends CoreMethodNode {
+
+        public XNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public XNode(XNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString toS(Object foo) {
+            RubyCallStack.dump(this);
+            System.exit(1);
+            return null;
         }
     }
 

@@ -135,7 +135,6 @@ public interface NodeVisitor<T> {
     public T visitSuperNode(SuperNode iVisited);
     public T visitSValueNode(SValueNode iVisited);
     public T visitSymbolNode(SymbolNode iVisited);
-    public T visitToAryNode(ToAryNode iVisited);
     public T visitTrueNode(TrueNode iVisited);
     public T visitUndefNode(UndefNode iVisited);
     public T visitUntilNode(UntilNode iVisited);

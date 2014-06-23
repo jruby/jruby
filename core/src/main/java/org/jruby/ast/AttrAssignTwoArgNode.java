@@ -28,35 +28,4 @@ public class AttrAssignTwoArgNode extends AttrAssignNode {
         arg1 = argsNode.get(0);
         arg2 = argsNode.get(1);
     }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
-        IRubyObject param1 = arg1.interpret(runtime, context, self, aBlock);
-        IRubyObject param2 = arg2.interpret(runtime, context, self, aBlock);
-        
-        assert hasMetaClass(receiver) : receiverClassName(receiver);
-        
-        // If reciever is self then we do the call the same way as vcall
-        CallSite callSite = callAdapter;
-        callSite.call(context, self, receiver, param1, param2);
-
-        return param2;
-    }
-    
-        
-    @Override
-    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block aBlock, boolean checkArity) {
-        IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
-        IRubyObject param1 = arg1.interpret(runtime, context, self, aBlock);
-        IRubyObject param2 = arg2.interpret(runtime, context, self, aBlock);
-        
-        assert hasMetaClass(receiver) : receiverClassName(receiver);
-        
-        // If reciever is self then we do the call the same way as vcall
-        CallSite callSite = callAdapter;
-        callSite.call(context, self, receiver, param1, param2, value);
-        
-        return runtime.getNil();
-    }
 }

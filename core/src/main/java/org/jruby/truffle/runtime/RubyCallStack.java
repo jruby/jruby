@@ -16,6 +16,7 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.core.RubyModule;
@@ -87,6 +88,10 @@ public abstract class RubyCallStack {
     private static RubyMethod getMethod(FrameInstance frame) {
         CompilerAsserts.neverPartOfCompilation();
 
+        if (frame == null) {
+            return null;
+        }
+
         final CallTarget callTarget = frame.getCallTarget();
 
         if (!(callTarget instanceof RootCallTarget)) {
@@ -111,6 +116,26 @@ public abstract class RubyCallStack {
         CompilerAsserts.neverPartOfCompilation();
 
         return getCurrentMethod().getDeclaringModule();
+    }
+
+    public static String getRubyStacktrace(){
+        StringBuilder stack = new StringBuilder();
+        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
+            stack.append("from " + frame.getCallNode().getEncapsulatingSourceSection() +"\n");
+        }
+        try {
+            return String.format("%s at %s \n %s", getCurrentMethod().getName(), getCurrentMethod().getSharedMethodInfo().getSourceSection().getShortDescription(), stack);
+        } catch(UnsupportedOperationException ex) {
+            return String.format("(root) at %s:%s", getFilename(), getLineNumber());
+        }
+    }
+
+    public static String getFilename(){
+        return getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName();
+    }
+
+    public static int getLineNumber(){
+        return getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine();
     }
 
 }

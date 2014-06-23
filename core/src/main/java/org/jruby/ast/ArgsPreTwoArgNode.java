@@ -27,11 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import org.jruby.Ruby;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
+
 /**
  *
  * @author enebo
@@ -39,41 +36,5 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class ArgsPreTwoArgNode extends ArgsNode {
     public ArgsPreTwoArgNode(ISourcePosition position, ListNode pre) {
         super(position, pre, null, null, null, null);
-    }
-
-    @Override
-    public void checkArgCount(Ruby runtime, int length) {
-        if (length != 2) throw runtime.newArgumentError(length, 2);
-    }
-
-
-    @Override
-    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self,
-            IRubyObject[] args, Block block) {
-        super.prepare(context, runtime, self, args, block);
-    }
-
-    @Override
-    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self,
-            IRubyObject arg0, Block block) {
-        context.getCurrentScope().setArgValues(arg0);
-    }
-
-    @Override
-    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0,
-            IRubyObject arg1, Block block) {
-        context.getCurrentScope().setArgValues(arg0, arg1);
-    }
-
-    @Override
-    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0,
-            IRubyObject arg1, IRubyObject arg2, Block block) {
-        throw runtime.newArgumentError(3, 2);
-    }
-
-    @Override
-    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject arg0,
-            IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-        throw runtime.newArgumentError(4, 2);
     }
 }

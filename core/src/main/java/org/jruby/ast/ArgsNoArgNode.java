@@ -27,11 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
-import org.jruby.Ruby;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -40,10 +36,5 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class ArgsNoArgNode extends ArgsNode {
     public ArgsNoArgNode(ISourcePosition position) {
         super(position, null, null, null, null, null);
-    }
-
-    @Override
-    public void prepare(ThreadContext context, Ruby runtime, IRubyObject self, IRubyObject[] args, Block block) {
-        // Do nothing
     }
 }

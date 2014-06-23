@@ -15,6 +15,10 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.util.SlowPathLinkedHashMap;
+import org.jruby.util.cli.Options;
+
+import java.util.LinkedHashMap;
 
 @NodeInfo(shortName = "hash")
 public class HashLiteralNode extends RubyNode {
@@ -32,13 +36,26 @@ public class HashLiteralNode extends RubyNode {
     @ExplodeLoop
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyHash hash = new RubyHash(getContext().getCoreLibrary().getHashClass());
+        if (keys.length == 0) {
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null);
+        } else if (keys.length <= Options.TRUFFLE_HASHES_SMALL.load()) {
+            final Object[] storage = new Object[keys.length * 2];
 
-        for (int n = 0; n < keys.length; n++) {
-            hash.put(keys[n].execute(frame), values[n].execute(frame));
+            for (int n = 0; n < keys.length; n++) {
+                storage[n * 2] = keys[n].execute(frame);
+                storage[n * 2 + 1] = values[n].execute(frame);
+            }
+
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, storage);
+        } else {
+            final LinkedHashMap<Object, Object> storage = SlowPathLinkedHashMap.allocate();
+
+            for (int n = 0; n < keys.length; n++) {
+                SlowPathLinkedHashMap.put(storage, keys[n].execute(frame), values[n].execute(frame));
+            }
+
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, storage);
         }
-
-        return hash;
     }
 
     @Override

@@ -34,4 +34,8 @@ public @interface CoreMethod {
 
     int maxArgs() default Arity.NO_MAXIMUM;
 
+    boolean lowerFixnumSelf() default false;
+
+    int[] lowerFixnumParameters() default {};
+
 }

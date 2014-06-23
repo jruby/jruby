@@ -27,7 +27,7 @@
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <gem.path>${gem.home}</gem.path>
     <gem.home>../target/rubygems</gem.home>
-    <jruby.plugins.version>1.0.2</jruby.plugins.version>
+    <jruby.plugins.version>1.0.3-SNAPSHOT</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
   </properties>
@@ -63,6 +63,16 @@
   </dependencies>
   <repositories>
     <repository>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <id>sonatype</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </repository>
+    <repository>
       <id>rubygems-releases</id>
       <url>http://rubygems-proxy.torquebox.org/releases</url>
     </repository>
@@ -77,6 +87,36 @@
     </extensions>
     <directory>${basedir}/pkg</directory>
     <plugins>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.4</version>
+        <executions>
+          <execution>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <outputDirectory>lib</outputDirectory>
+          <finalName>jopenssl</finalName>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>lib</directory>
+              <includes>
+                <include>jopenssl.jar</include>
+              </includes>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
         <artifactId>gem-maven-plugin</artifactId>
@@ -100,6 +140,7 @@
         <configuration>
           <gemspec>jruby-openssl.gemspec</gemspec>
           <includeDependencies>true</includeDependencies>
+          <useRepositoryLayout>true</useRepositoryLayout>
         </configuration>
       </plugin>
       <plugin>

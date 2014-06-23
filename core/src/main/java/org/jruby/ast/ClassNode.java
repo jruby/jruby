@@ -33,16 +33,9 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyModule;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A class statement (name, superClass, body). Classes bodies also define their own scope. 
@@ -114,29 +107,5 @@ public class ClassNode extends Node implements IScopingNode {
 
     public List<Node> childNodes() {
         return Node.createList(cpath, bodyNode, superNode);
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        RubyModule enclosingClass = cpath.getEnclosingModule(runtime, context, self, aBlock);
-
-        // TODO: Figure out how this can happen and possibly remove
-        if (enclosingClass == null) throw runtime.newTypeError("no outer class/module");
-
-        RubyClass superClass = null;
-
-        if (superNode != null) {
-            IRubyObject superObj = superNode.interpret(runtime, context, self, aBlock);
-            RubyClass.checkInheritable(superObj);
-            superClass = (RubyClass)superObj;
-        }
-        
-        RubyClass clazz = enclosingClass.defineOrGetClassUnder(cpath.getName(), superClass);
-
-        scope.setModule(clazz);
-
-        IRubyObject classBodyResult = ASTInterpreter.evalClassDefinitionBody(runtime, context, scope, bodyNode, clazz, self, aBlock);
-
-        return classBodyResult;
     }
 }

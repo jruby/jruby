@@ -16,12 +16,15 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ArrayNodes;
 import org.jruby.truffle.runtime.NilPlaceholder;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
 import java.math.BigInteger;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class CoreLibrary {
@@ -76,13 +79,13 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass zeroDivisionErrorClass;
     @CompilerDirectives.CompilationFinal private RubyModule comparableModule;
     @CompilerDirectives.CompilationFinal private RubyModule configModule;
-    @CompilerDirectives.CompilationFinal private RubyModule debugModule;
     @CompilerDirectives.CompilationFinal private RubyModule enumerableModule;
     @CompilerDirectives.CompilationFinal private RubyModule errnoModule;
     @CompilerDirectives.CompilationFinal private RubyModule kernelModule;
     @CompilerDirectives.CompilationFinal private RubyModule mathModule;
     @CompilerDirectives.CompilationFinal private RubyModule objectSpaceModule;
     @CompilerDirectives.CompilationFinal private RubyModule signalModule;
+    @CompilerDirectives.CompilationFinal private RubyModule truffleDebugModule;
 
     @CompilerDirectives.CompilationFinal private RubyArray argv;
     @CompilerDirectives.CompilationFinal private RubyBasicObject globalVariablesObject;
@@ -90,6 +93,9 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyFalseClass falseObject;
     @CompilerDirectives.CompilationFinal private RubyNilClass nilObject;
     @CompilerDirectives.CompilationFinal private RubyTrueClass trueObject;
+
+    private ArrayNodes.MinBlock arrayMinBlock;
+    private ArrayNodes.MaxBlock arrayMaxBlock;
 
     public CoreLibrary(RubyContext context) {
         this.context = context;
@@ -127,7 +133,6 @@ public class CoreLibrary {
         comparableModule = new RubyModule(moduleClass, null, "Comparable");
         configModule = new RubyModule(moduleClass, null, "Config");
         continuationClass = new RubyClass(null, objectClass, "Continuation");
-        debugModule = new RubyModule(moduleClass, null, "Debug");
         dirClass = new RubyClass(null, objectClass, "Dir");
         encodingClass = new RubyEncoding.RubyEncodingClass(objectClass);
         errnoModule = new RubyModule(moduleClass, null, "Errno");
@@ -164,6 +169,7 @@ public class CoreLibrary {
         threadClass = new RubyThread.RubyThreadClass(objectClass);
         timeClass = new RubyTime.RubyTimeClass(objectClass);
         trueClass = new RubyClass(null, objectClass, "TrueClass");
+        truffleDebugModule = new RubyModule(moduleClass, null, "TruffleDebug");
         typeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "TypeError");
         zeroDivisionErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "ZeroDivisionError");
 
@@ -185,13 +191,15 @@ public class CoreLibrary {
         objectClass.setConstant("FALSE", false);
         objectClass.setConstant("NIL", NilPlaceholder.INSTANCE);
 
-        final RubyHash configHash = new RubyHash(hashClass);
-        configHash.put(RubyString.fromJavaString(stringClass, "ruby_install_name"), RubyString.fromJavaString(stringClass, "rubytruffle"));
-        configHash.put(RubyString.fromJavaString(stringClass, "RUBY_INSTALL_NAME"), RubyString.fromJavaString(stringClass, "rubytruffle"));
-        configHash.put(RubyString.fromJavaString(stringClass, "host_os"), RubyString.fromJavaString(stringClass, "unknown"));
-        configHash.put(RubyString.fromJavaString(stringClass, "exeext"), RubyString.fromJavaString(stringClass, ""));
-        configHash.put(RubyString.fromJavaString(stringClass, "EXEEXT"), RubyString.fromJavaString(stringClass, "rubytruffle"));
+        final LinkedHashMap<Object, Object> configHashMap = new LinkedHashMap<>();
+        configHashMap.put(RubyString.fromJavaString(stringClass, "ruby_install_name"), RubyString.fromJavaString(stringClass, "rubytruffle"));
+        configHashMap.put(RubyString.fromJavaString(stringClass, "RUBY_INSTALL_NAME"), RubyString.fromJavaString(stringClass, "rubytruffle"));
+        configHashMap.put(RubyString.fromJavaString(stringClass, "host_os"), RubyString.fromJavaString(stringClass, "unknown"));
+        configHashMap.put(RubyString.fromJavaString(stringClass, "exeext"), RubyString.fromJavaString(stringClass, ""));
+        configHashMap.put(RubyString.fromJavaString(stringClass, "EXEEXT"), RubyString.fromJavaString(stringClass, "rubytruffle"));
+        final RubyHash configHash = new RubyHash(hashClass, null, configHashMap);
         configModule.setConstant("CONFIG", configHash);
+
         objectClass.setConstant("RbConfig", configModule);
 
         mathModule.setConstant("PI", Math.PI);
@@ -220,7 +228,6 @@ public class CoreLibrary {
                         continuationClass, //
                         comparableModule, //
                         configModule, //
-                        debugModule, //
                         dirClass, //
                         enumerableModule, //
                         errnoModule, //
@@ -264,6 +271,7 @@ public class CoreLibrary {
                         threadClass, //
                         timeClass, //
                         trueClass, //
+                        truffleDebugModule, //
                         typeErrorClass, //
                         zeroDivisionErrorClass};
 
@@ -288,6 +296,9 @@ public class CoreLibrary {
         globalVariablesObject.setInstanceVariable("$\"", globalVariablesObject.getInstanceVariable("$LOADED_FEATURES"));
 
         initializeEncodingConstants();
+
+        arrayMinBlock = new ArrayNodes.MinBlock(context);
+        arrayMaxBlock = new ArrayNodes.MaxBlock(context);
     }
 
     public void initializeAfterMethodsAdded() {
@@ -372,27 +383,27 @@ public class CoreLibrary {
     }
 
     public RubyException runtimeError(String message) {
-        return new RubyException(runtimeErrorClass, message);
+        return new RubyException(runtimeErrorClass, String.format("RuntimeError: %s", message), RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException frozenError(String className) {
-        return runtimeError(String.format("can't modify frozen %s", className));
+        return runtimeError(String.format("FrozenError: can't modify frozen %s \n %s", className, RubyCallStack.getRubyStacktrace()));
     }
 
     public RubyException argumentError(String message) {
-        return new RubyException(argumentErrorClass, message);
+        return new RubyException(argumentErrorClass, String.format("ArgumentError: %s", message), RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException argumentError(int passed, int required) {
-        return argumentError(String.format("wrong number of arguments (%d for %d)", passed, required));
+        return argumentError(String.format("ArgumentError: wrong number of arguments (%d for %d)", passed, required));
     }
 
     public RubyException argumentErrorUncaughtThrow(Object tag) {
-        return argumentError(String.format("uncaught throw `%s'", tag));
+        return argumentError(String.format("ArgumentError: uncaught throw `%s'", tag));
     }
 
     public RubyException localJumpError(String message) {
-        return new RubyException(localJumpErrorClass, message);
+        return new RubyException(localJumpErrorClass, String.format("LocalJumpError: %s", message), RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException unexpectedReturn() {
@@ -404,39 +415,39 @@ public class CoreLibrary {
     }
 
     public RubyException typeError(String message) {
-        return new RubyException(typeErrorClass, message);
+        return new RubyException(typeErrorClass, String.format("%s ", message), RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException typeErrorShouldReturn(String object, String method, String expectedType) {
-        return typeError(String.format("%s#%s should return %s", object, method, expectedType));
+        return typeError(String.format("TypeError: %s#%s should return %s", object, method, expectedType));
     }
 
     public RubyException typeError(String from, String to) {
-        return typeError(String.format("can't convert %s to %s", from, to));
+        return typeError(String.format("TypeError: can't convert %s to %s", from, to));
     }
 
     public RubyException typeErrorIsNotA(String value, String expectedType) {
-        return typeError(String.format("%s is not a %s", value, expectedType));
+        return typeError(String.format("TypeError: %s is not a %s", value, expectedType));
     }
 
     public RubyException typeErrorNeedsToBe(String name, String expectedType) {
-        return typeError(String.format("%s needs to be %s", name, expectedType));
+        return typeError(String.format("TypeError: %s needs to be %s", name, expectedType));
     }
 
     public RubyException rangeError(String message) {
-        return new RubyException(rangeErrorClass, message);
+        return new RubyException(rangeErrorClass, message, RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException nameError(String message) {
-        return new RubyException(nameErrorClass, message);
+        return new RubyException(nameErrorClass, String.format("%s ", message), RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException nameErrorUninitializedConstant(String name) {
-        return nameError(String.format("uninitialized constant %s", name));
+        return nameError(String.format("NameError: uninitialized constant %s", name));
     }
 
     public RubyException nameErrorNoMethod(String name, String object) {
-        return nameError(String.format("undefined local variable or method `%s' for %s", name, object));
+        return nameError(String.format("NameError: undefined local variable or method `%s' for %s", name, object));
     }
 
     public RubyException nameErrorInstanceNameNotAllowable(String name) {
@@ -444,31 +455,31 @@ public class CoreLibrary {
     }
 
     public RubyException nameErrorUncaughtThrow(Object tag) {
-        return nameError(String.format("uncaught throw `%s'", tag));
+        return nameError(String.format("NameError: uncaught throw `%s'", tag));
     }
 
     public RubyException noMethodError(String message) {
-        return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), message);
+        return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), message, RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException noMethodError(String name, String object) {
-        return noMethodError(String.format("undefined method `%s' for %s", name, object));
+        return noMethodError(String.format("NameError: undefined method `%s' for %s", name, object));
     }
 
     public RubyException loadError(String message) {
-        return new RubyException(context.getCoreLibrary().getLoadErrorClass(), message);
+        return new RubyException(context.getCoreLibrary().getLoadErrorClass(), message, RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException loadErrorCannotLoad(String name) {
-        return loadError(String.format("cannot load such file -- %s", name));
+        return loadError(String.format("LoadError: cannot load such file -- %s", name));
     }
 
     public RubyException zeroDivisionError() {
-        return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), "divided by 0");
+        return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(),"divided by 0", RubyCallStack.getRubyStacktrace());
     }
 
     public RubyException syntaxError(String message) {
-        return new RubyException(syntaxErrorClass, message);
+        return new RubyException(syntaxErrorClass, String.format("SyntaxError: %s ", message), RubyCallStack.getRubyStacktrace());
     }
 
     public RubyContext getContext() {
@@ -640,13 +651,20 @@ public class CoreLibrary {
     public RubyEncoding getDefaultEncoding() { return RubyEncoding.findEncodingByName(context.makeString("US-ASCII")); }
 
     public RubyHash getEnv() {
-        final RubyHash hash = new RubyHash(context.getCoreLibrary().getHashClass());
+        final LinkedHashMap<Object, Object> storage = new LinkedHashMap<>();
 
         for (Map.Entry<String, String> variable : System.getenv().entrySet()) {
-            hash.put(context.makeString(variable.getKey()), context.makeString(variable.getValue()));
+            storage.put(context.makeString(variable.getKey()), context.makeString(variable.getValue()));
         }
 
-        return hash;
+        return new RubyHash(context.getCoreLibrary().getHashClass(), null, storage);
     }
 
+    public ArrayNodes.MinBlock getArrayMinBlock() {
+        return arrayMinBlock;
+    }
+
+    public ArrayNodes.MaxBlock getArrayMaxBlock() {
+        return arrayMaxBlock;
+    }
 }

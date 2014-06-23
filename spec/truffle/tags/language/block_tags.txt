@@ -1,20 +1,25 @@
 fails:A block taking |a, b| arguments calls #to_ary to convert a single yielded object to an Array
-fails:A block taking |a, b| arguments calls #to_ary to convert a single yielded object to an Array
-fails:A block taking |a, b| arguments raises an TypeError if #to_ary does not return an Array
 fails:A block taking |a, b| arguments raises an TypeError if #to_ary does not return an Array
 fails:A block taking |a, *b| arguments calls #to_ary to convert a single yielded object to an Array
-fails:A block taking |a, *b| arguments calls #to_ary to convert a single yielded object to an Array
-fails:A block taking |a, *b| arguments raises an TypeError if #to_ary does not return an Array
 fails:A block taking |a, *b| arguments raises an TypeError if #to_ary does not return an Array
 fails:A block taking |a, | arguments calls #to_ary to convert a single yielded object to an Array
-fails:A block taking |a, | arguments calls #to_ary to convert a single yielded object to an Array
-fails:A block taking |a, | arguments raises an TypeError if #to_ary does not return an Array
 fails:A block taking |a, | arguments raises an TypeError if #to_ary does not return an Array
 fails:A block taking |(a, b)| arguments calls #to_ary to convert a single yielded object to an Array
-fails:A block taking |(a, b)| arguments calls #to_ary to convert a single yielded object to an Array
-fails:A block taking |(a, b)| arguments raises an TypeError if #to_ary does not return an Array
 fails:A block taking |(a, b)| arguments raises an TypeError if #to_ary does not return an Array
 fails:A block taking |(a, b), c| arguments calls #to_ary to convert a single yielded object to an Array
-fails:A block taking |(a, b), c| arguments calls #to_ary to convert a single yielded object to an Array
 fails:A block taking |(a, b), c| arguments raises an TypeError if #to_ary does not return an Array
-fails:A block taking |(a, b), c| arguments raises an TypeError if #to_ary does not return an Array
+fails:A block taking |a, b| arguments raises a TypeError if #to_ary does not return an Array
+fails:A block taking |a, b| arguments raises the original exception if #to_ary raises an exception
+fails:A block taking |a, *b| arguments raises a TypeError if #to_ary does not return an Array
+fails:A block taking |a, | arguments raises a TypeError if #to_ary does not return an Array
+fails:A block taking |(a, b)| arguments raises a TypeError if #to_ary does not return an Array
+fails:A block taking |(a, b), c| arguments raises a TypeError if #to_ary does not return an Array
+fails:Post-args appear after a splat
+fails:Block-local variables override shadowed variables from the outer scope
+fails:Post-args with required args gathers remaining args in the splat
+fails:Post-args with required args has an empty splat when there are no remaining args
+fails:Post-args with optional args gathers remaining args in the splat
+fails:Post-args with optional args overrides the optional arg before gathering in the splat
+fails:Post-args with optional args uses the required arg before the optional and the splat
+fails:Post-args with optional args overrides the optional args from left to right before gathering the splat
+fails:Post-args with pattern matching extracts matched blocks with post arguments

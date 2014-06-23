@@ -33,15 +33,9 @@
 package org.jruby.ast;
 
 import java.util.List;
-
-import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -51,7 +45,6 @@ import org.jruby.util.StringSupport;
 public class StrNode extends Node implements ILiteralNode {
     private final ByteList value;
     private final int codeRange;
-    private transient RubyString frozenLiteralString;
 
     public StrNode(ISourcePosition position, ByteList value) {
         this(position, value, StringSupport.codeRangeScan(value.getEncoding(), value));
@@ -109,16 +102,5 @@ public class StrNode extends Node implements ILiteralNode {
     
     public List<Node> childNodes() {
         return EMPTY_LIST;
-    }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return RubyString.newStringShared(runtime, value, codeRange);
-    }
-
-    public RubyString getFrozenLiteralString(Ruby runtime) {
-        if (frozenLiteralString != null) return frozenLiteralString;
-
-        return frozenLiteralString = runtime.freezeAndDedupString(RubyString.newStringShared(runtime, value, codeRange));
     }
 }

@@ -3148,11 +3148,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         IOEncodable convconfig = new IOEncodable.ConvConfig();
         EncodingUtils.extractModeEncoding(context, convconfig, pm, opt, oflags_p, fmode_p);
         perm = (vperm(pm) == null || vperm(pm).isNil()) ? 0666 : RubyNumeric.num2int(vperm(pm));
-    
+
         if (!(cmd = PopenExecutor.checkPipeCommand(context, filename)).isNil()) {
-            // FIXME: not passing convconfig for transcoding
             return PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(runtime, oflags_p[0]), fmode_p[0], convconfig);
-            // TODO: lots of missing logic for pipe opening
         } else {
             return ((RubyFile)context.runtime.getFile().allocate()).fileOpenGeneric(context, filename, oflags_p[0], fmode_p[0], convconfig, perm);
         }

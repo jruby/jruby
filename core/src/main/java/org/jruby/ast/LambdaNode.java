@@ -28,15 +28,9 @@
 package org.jruby.ast;
 
 import java.util.List;
-import org.jruby.Ruby;
-import org.jruby.RubyProc;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Interpreted19Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Stubby lambda node (1.9 only)
@@ -67,13 +61,5 @@ public class LambdaNode extends IterNode {
     @Override
     public List<Node> childNodes() {
         return Node.createList(getArgs(), getBody());
-    }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        // JRUBY-5686: do this before executing so first time sets cref module
-        getScope().determineModule();
-        
-        return RubyProc.newProc(runtime, Interpreted19Block.newInterpretedClosure(context, getBlockBody(), self), Block.Type.LAMBDA, getPosition());
     }
 }

@@ -45,8 +45,6 @@ import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
-import org.jruby.ast.Node;
-import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.embed.Extension;
@@ -56,9 +54,7 @@ import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
 import org.jruby.internal.runtime.methods.CacheableMethod;
 import org.jruby.internal.runtime.methods.CallConfiguration;
-import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.InterpretedMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
@@ -3806,24 +3802,6 @@ public class RubyModule extends RubyObject {
         setFlag(USER0_F, cacheProxy);
     }
     
-    /**
-     * Visit all interpreted methods in this module (and superclasses, if this
-     * is a class with superclasses) using the given visitor.
-     * 
-     * @param visitor the visitor to use
-     */
-    public void visitInterpretedMethods(NodeVisitor visitor) {
-        RubyModule cls = this;
-        while (cls != null) {
-            visitMethods(visitor, cls);
-            if (cls instanceof RubyClass) {
-                cls = ((RubyClass)cls).getSuperClass();
-            } else {
-                break;
-            }
-        }
-    }
-    
     public Set<String> discoverInstanceVariables() {
         HashSet<String> set = new HashSet();
         RubyModule cls = this;
@@ -3840,33 +3818,6 @@ public class RubyModule extends RubyObject {
             }
         }
         return set;
-    }
-
-    /**
-     * Visit methods contained in the specified class using the given visitor.
-     * 
-     * @param visitor the visitor to use
-     * @param mod the module/class whose methods to visit
-     */
-    private static void visitMethods(NodeVisitor visitor, RubyModule mod) {
-        for (DynamicMethod method : mod.getNonIncludedClass().getMethods().values()) {
-            DynamicMethod realMethod = method.getRealMethod();
-            List<Node> args, body;
-            if (method instanceof DefaultMethod) {
-                DefaultMethod defaultMethod = ((DefaultMethod) realMethod);
-                args = defaultMethod.getArgsNode().childNodes();
-                body = defaultMethod.getBodyNode().childNodes();
-            } else if (method instanceof InterpretedMethod) {
-                InterpretedMethod interpretedMethod = ((InterpretedMethod) realMethod);
-                args = interpretedMethod.getArgsNode().childNodes();
-                body = interpretedMethod.getBodyNode().childNodes();
-            } else {
-                return;
-            }
-
-            for (int i = 0; i < args.size(); i++) args.get(i).accept(visitor);
-            for (int i = 0; i < body.size(); i++) body.get(i).accept(visitor);
-        }
     }
 
     /**

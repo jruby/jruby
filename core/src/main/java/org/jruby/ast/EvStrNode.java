@@ -34,12 +34,8 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /** Represents an #{} expression in a string. This Node is always a subnode
  * of a DStrNode, DXStrNode or a DRegexpNode.
@@ -77,12 +73,5 @@ public class EvStrNode extends Node {
     
     public List<Node> childNodes() {
         return createList(body);
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        if (body == null) return runtime.getNil().asString();
-
-        return body.interpret(runtime, context, self, aBlock).asString();
     }
 }

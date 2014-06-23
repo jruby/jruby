@@ -309,7 +309,6 @@ public final class Arity implements Serializable {
     }
 
     /**
-     * @see org.jruby.runtime.builtin.IRubyObject#scanArgs()
      */
     public static IRubyObject[] scanArgs(Ruby runtime, IRubyObject[] args, int required, int optional) {
         int total = required+optional;

@@ -33,21 +33,10 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.DynamicMethodFactory;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * Represents a singleton method definition.
@@ -93,27 +82,5 @@ public class DefsNode extends MethodDefNode implements INameNode {
     
     public List<Node> childNodes() {
         return Node.createList(receiverNode, nameNode, argsNode, bodyNode);
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = receiverNode.interpret(runtime,context, self, aBlock);
-        String name = getName();
-
-        RubyClass rubyClass = Helpers.performSingletonMethodChecks(runtime, receiver, name);
-
-        scope.determineModule();
-      
-        // Make a nil node if no body.  Notice this is not part of AST.
-        Node body = bodyNode == null ? new NilNode(getPosition()) : bodyNode;
-        
-        DynamicMethod newMethod = DynamicMethodFactory.newDefaultMethod(
-                runtime, rubyClass, name, scope, body, argsNode,
-                Visibility.PUBLIC, getPosition());
-   
-        rubyClass.addMethod(name, newMethod);
-        receiver.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
-   
-        return runtime.newSymbol(name);
     }
 }

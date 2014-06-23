@@ -32,17 +32,8 @@
 package org.jruby.ast;
 
 import java.util.List;
-
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.MethodIndex;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Represents a when condition
@@ -51,7 +42,6 @@ public class WhenNode extends Node {
     protected final Node expressionNodes;
     protected final Node bodyNode;
     private final Node nextCase;
-    public final CallSite eqq = MethodIndex.getFunctionalCallSite("===");
 
     public WhenNode(ISourcePosition position, Node expressionNodes, Node bodyNode, Node nextCase) {
         super(position);
@@ -102,25 +92,5 @@ public class WhenNode extends Node {
 
     public List<Node> childNodes() {
         return Node.createList(expressionNodes, bodyNode, nextCase);
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return bodyNode.interpret(runtime, context, self, aBlock);
-    }
-
-    public IRubyObject when(IRubyObject value, ThreadContext context, Ruby runtime, IRubyObject self, Block aBlock) {
-        RubyArray expressions = Helpers.splatValue(expressionNodes.interpret(runtime, context, self, aBlock));
-
-        for (int j = 0,k = expressions.getLength(); j < k; j++) {
-            IRubyObject test = expressions.eltInternal(j);
-
-            if ((value != null && eqq.call(context, self, test, value).isTrue()) ||
-                    (value == null && test.isTrue())) {
-                return bodyNode.interpret(runtime, context, self, aBlock);
-            }
-        }
-
-        return null;
     }
 }

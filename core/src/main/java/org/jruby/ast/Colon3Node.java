@@ -33,22 +33,9 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
-import org.jruby.runtime.opto.ConstantCache;
-import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.opto.Invalidator;
-import org.jruby.util.ByteList;
-import org.jruby.util.DefinedMessage;
 
 /**
  * Global scope node (::FooBar).  This is used to gain access to the global scope (that of the 
@@ -56,8 +43,7 @@ import org.jruby.util.DefinedMessage;
  */
 public class Colon3Node extends Node implements INameNode {
     protected String name;
-    protected ConstantCache cache;
-    
+
     public Colon3Node(ISourcePosition position, String name) {
         super(position);
         this.name = name;
@@ -89,52 +75,5 @@ public class Colon3Node extends Node implements INameNode {
 
     public void setName(String name) {
         this.name = name;
-        this.cache = null;
-    }
-    
-   /** Get parent module/class that this module represents */
-    public RubyModule getEnclosingModule(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.getObject();
-    }
-    
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject value = getValue(context);
-
-        // We can callsite cache const_missing if we want
-        return value != null ? value : runtime.getObject().getConstantFromConstMissing(name);
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        try {
-            RubyModule left = runtime.getObject();
-
-            return Helpers.getDefinedConstantOrBoundMethod(left, name);
-        } catch (JumpException excptn) {
-        }
-            
-        return null;
-    }
-
-    public IRubyObject getValue(ThreadContext context) {
-        ConstantCache cache = this.cache;
-
-        return ConstantCache.isCached(cache) ? cache.value : reCache(context, name);
-    }
-
-    public IRubyObject reCache(ThreadContext context, String name) {
-        Ruby runtime = context.runtime;
-        Invalidator invalidator = runtime.getConstantInvalidator(name);
-        Object newGeneration = invalidator.getData();
-        IRubyObject value = runtime.getObject().getConstantFromNoConstMissing(name, false);
-
-        if (value != null) {
-            cache = new ConstantCache(value, newGeneration, invalidator);
-        } else {
-            cache = null;
-        }
-
-        return value;
     }
 }

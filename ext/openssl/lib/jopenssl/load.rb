@@ -3,8 +3,15 @@ unless defined? JRUBY_VERSION
 end
 
 require 'jopenssl/version'
-require "bcpkix-jdk15on-#{Jopenssl::Version::BOUNCY_CASTLE_VERSION}.jar"
-require "bcprov-jdk15on-#{Jopenssl::Version::BOUNCY_CASTLE_VERSION}.jar"
+begin
+  # if we have jar-dependencies we let it track the jars
+  require 'jar-dependencies'
+  require_jar( 'org.bouncycastle', 'bcpkix-jdk15on', Jopenssl::Version::BOUNCY_CASTLE_VERSION )
+  require_jar( 'org.bouncycastle', 'bcprov-jdk15on', Jopenssl::Version::BOUNCY_CASTLE_VERSION )
+rescue LoadError
+  require "org/bouncycastle/bcpkix-jdk15on/#{Jopenssl::Version::BOUNCY_CASTLE_VERSION}/bcpkix-jdk15on-#{Jopenssl::Version::BOUNCY_CASTLE_VERSION}.jar"
+  require "org/bouncycastle/bcprov-jdk15on/#{Jopenssl::Version::BOUNCY_CASTLE_VERSION}/bcprov-jdk15on-#{Jopenssl::Version::BOUNCY_CASTLE_VERSION}.jar"
+end
 
 # Load extension
 require 'jruby'

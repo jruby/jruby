@@ -40,7 +40,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
         // Set up a context
 
-        truffleContext = new RubyContext(runtime, new TranslatorDriver(runtime));
+        truffleContext = new RubyContext(runtime);
     }
 
     @Override

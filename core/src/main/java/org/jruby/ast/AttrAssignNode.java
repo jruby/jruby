@@ -30,25 +30,9 @@ package org.jruby.ast;
 
 import java.util.List;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyClass;
-import org.jruby.RubyString;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.exceptions.JumpException;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.runtime.Helpers;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.CallType;
-import org.jruby.runtime.MethodIndex;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.DefinedMessage;
 
 /**
  * Node that represents an assignment of either an array element or attribute.
@@ -57,7 +41,6 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     protected final Node receiverNode;
     private String name;
     private Node argsNode;
-    public CallSite callAdapter;
 
     public AttrAssignNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
         super(position);
@@ -71,9 +54,6 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         this.receiverNode = receiverNode;
         this.name = name;
         setArgsInternal(argsNode);
-        this.callAdapter = receiverNode instanceof SelfNode ?
-                MethodIndex.getFunctionalCallSite(name) :
-                MethodIndex.getCallSite(name);
     }
 
     public NodeType getNodeType() {
@@ -187,90 +167,5 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
 
     public List<Node> childNodes() {
         return Node.createList(receiverNode, argsNode);
-    }
-
-    @Override
-    public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
-        IRubyObject[] args = ASTInterpreter.setupArgs(runtime, context, argsNode, self, aBlock);
-        
-        assert hasMetaClass(receiver) : receiverClassName(receiver);
-        
-        // If reciever is self then we do the call the same way as vcall
-        CallSite callSite;
-        callSite = callAdapter;
-        callSite.call(context, self, receiver, args);
-
-        return args[args.length - 1];
-    }
-    
-    protected static boolean hasMetaClass(IRubyObject object) {
-        return object.getMetaClass() != null;
-    }
-    
-    protected static String receiverClassName(IRubyObject object) {
-        return object.getClass().getName();
-    }
-    
-    @Override
-    public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {        
-        IRubyObject receiver = receiverNode.interpret(runtime, context, self, block);
-        
-        // If reciever is self then we do the call the same way as vcall
-        if (receiver == self) {
-            return selfAssign(runtime, context, self, value, block, checkArity);
-        } else {
-            return otherAssign(runtime, context, self, value, block, checkArity);
-        }
-    }
-    
-    private IRubyObject selfAssign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {        
-        IRubyObject receiver = receiverNode.interpret(runtime, context, self, block);
-        
-        if (argsNode == null) { // attribute set.
-            Helpers.invoke(context, receiver, name, value);
-        } else { // element set
-            RubyArray args = (RubyArray) argsNode.interpret(runtime, context, self, block);
-            args.append(value);
-            Helpers.invoke(context, receiver, name, args.toJavaArray());
-        } 
-        
-        return runtime.getNil();
-    }
-    
-    private IRubyObject otherAssign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {        
-        IRubyObject receiver = receiverNode.interpret(runtime, context, self, block);
-
-        if (argsNode == null) { // attribute set.
-            Helpers.invoke(context, receiver, name, value, CallType.NORMAL, Block.NULL_BLOCK);
-        } else { // element set
-            RubyArray args = (RubyArray) argsNode.interpret(runtime, context, self, block);
-            args.append(value);
-            Helpers.invoke(context, receiver, name, args.toJavaArray(), CallType.NORMAL, Block.NULL_BLOCK);
-        } 
-        
-        return runtime.getNil();
-    }
-    
-    @Override
-    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        if (receiverNode.definition(runtime, context, self, aBlock) != null) {
-            try {
-                IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
-                RubyClass metaClass = receiver.getMetaClass();
-                DynamicMethod method = metaClass.searchMethod(name);
-                Visibility visibility = method.getVisibility();
-
-                if (visibility != Visibility.PRIVATE && 
-                        (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self))) {
-                    if (metaClass.isMethodBound(name, false)) {
-                        return ASTInterpreter.getArgumentDefinition(runtime, context, argsNode, runtime.getDefinedMessage(DefinedMessage.ASSIGNMENT), self, aBlock);
-                    }
-                }
-            } catch (JumpException e) {
-            }
-        }
-
-        return null;
     }
 }
