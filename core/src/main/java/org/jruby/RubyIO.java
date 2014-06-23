@@ -583,7 +583,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         IRubyObject str = context.nil;
         boolean noLimit = false;
         Encoding enc;
-        IRubyObject defaultRs;
         
         OpenFile fptr = getOpenFileChecked();
 
@@ -626,9 +625,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 fptr.swallow(context, '\n');
                 rs = null;
                 if (!enc.isAsciiCompatible()) {
-                    RubyString tmprs = RubyString.newUsAsciiStringShared(runtime, rsptrBytes, rsptr, rslen);
-                    tmprs = (RubyString)EncodingUtils.rbStrEncode(context, tmprs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
-                    rs = tmprs;
+                    rs = RubyString.newUsAsciiStringShared(runtime, rsptrBytes, rsptr, rslen);
+                    rs = EncodingUtils.rbStrEncode(context, rs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
+                    rs.setFrozen(true);
                     rsStr = (RubyString)rs;
                     rsByteList = rsStr.getByteList();
                     rsptrBytes = rsByteList.getUnsafeBytes();
@@ -2012,6 +2011,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         throw new RuntimeException("invalid size for gets args: " + args.length);
     }
 
+    // MRI: prepare_getline_args, separator logic
     private IRubyObject prepareGetsSeparator(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         Ruby runtime = context.runtime;
         IRubyObject rs = runtime.getRecordSeparatorVar().get();
@@ -2060,6 +2060,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         throw new RuntimeException("invalid size for gets args: " + args.length);
     }
 
+    // MRI: prepare_getline_args, limit logic
     private long prepareGetsLimit(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         Ruby runtime = context.runtime;
         IRubyObject lim = context.nil;
