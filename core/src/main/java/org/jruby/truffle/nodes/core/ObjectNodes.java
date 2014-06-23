@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
+import org.jruby.truffle.nodes.call.DynamicNameDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -601,54 +602,38 @@ public abstract class ObjectNodes {
     @CoreMethod(names = "respond_to?", minArgs = 1, maxArgs = 2)
     public abstract static class RespondToNode extends CoreMethodNode {
 
+        @Child protected DynamicNameDispatchHeadNode dispatch;
+
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            dispatch = new DynamicNameDispatchHeadNode(context);
         }
 
         public RespondToNode(RespondToNode prev) {
             super(prev);
+            dispatch = prev.dispatch;
         }
 
         @Specialization(order = 1)
-        public boolean doesRespondTo(Object object, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder checkVisibility) {
-            notDesignedForCompilation();
-
-            return doesRespondTo(getContext().getCoreLibrary().box(object), name.toString(), false);
+        public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder checkVisibility) {
+            return dispatch.doesRespondTo(frame, object, name);
         }
 
         @Specialization(order = 2)
-        public boolean doesRespondTo(Object object, RubyString name, boolean dontCheckVisibility) {
-            notDesignedForCompilation();
-
-            return doesRespondTo(getContext().getCoreLibrary().box(object), name.toString(), dontCheckVisibility);
+        public boolean doesRespondTo(VirtualFrame frame, Object object, RubyString name, boolean dontCheckVisibility) {
+            // TODO(CS): check visibility flag
+            return dispatch.doesRespondTo(frame, object, name);
         }
 
         @Specialization(order = 3)
-        public boolean doesRespondTo(Object object, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder checkVisibility) {
-            notDesignedForCompilation();
-
-            return doesRespondTo(getContext().getCoreLibrary().box(object), name.toString(), false);
+        public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder checkVisibility) {
+            return dispatch.doesRespondTo(frame, object, name);
         }
 
         @Specialization(order = 4)
-        public boolean doesRespondTo(Object object, RubySymbol name, boolean dontCheckVisibility) {
-            notDesignedForCompilation();
-
-            return doesRespondTo(getContext().getCoreLibrary().box(object), name.toString(), dontCheckVisibility);
-        }
-
-        private static boolean doesRespondTo(RubyBasicObject object, String name, boolean dontCheckVisibility) {
-            final RubyMethod method = object.getLookupNode().lookupMethod(name);
-
-            if (method == null || method.isUndefined()) {
-                return false;
-            }
-
-            if (dontCheckVisibility) {
-                return true;
-            } else {
-                return method.getVisibility() == Visibility.PUBLIC;
-            }
+        public boolean doesRespondTo(VirtualFrame frame, Object object, RubySymbol name, boolean dontCheckVisibility) {
+            // TODO(CS): check visibility flag
+            return dispatch.doesRespondTo(frame, object, name);
         }
 
     }
