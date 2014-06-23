@@ -558,57 +558,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return file;
     }
 
-    /*
-     * Ensure that separator is valid otherwise give it the default paragraph separator.
-     */
-    private ByteList separator(Ruby runtime) {
-        return separator(runtime, runtime.getRecordSeparatorVar().get());
-    }
-
-    // prepare_getline_args, separator portion only
-    private ByteList separator(Ruby runtime, IRubyObject separatorValue) {
-        ByteList separator = separatorValue.isNil() ? null :
-            separatorValue.convertToString().getByteList();
-
-        if (separator != null) {
-            Encoding encIO, encRS;
-
-            encRS = separator.getEncoding();
-            encIO = getReadEncoding();
-
-            if (encIO != encRS
-                    && (
-                            ((RubyString)separatorValue).scanForCodeRange() != StringSupport.CR_7BIT
-                            || (separator.getRealSize() > 0 && !EncodingUtils.encAsciicompat(encIO)))) {
-                if (separatorValue == runtime.getGlobalVariables().getDefaultSeparator()) {
-                    separator = new ByteList(new byte[]{'\n'}, encIO);
-                } else {
-                    throw runtime.newArgumentError("encoding mismatch: " + encIO + " IO with " + encRS + " RS");
-                }
-            }
-        }
-
-        return separator;
-    }
-
-    private ByteList getSeparatorFromArgs(Ruby runtime, IRubyObject[] args, int idx) {
-
-        if (args.length > idx && args[idx] instanceof RubyFixnum) {
-            return separator(runtime, runtime.getRecordSeparatorVar().get());
-        }
-
-        return separator(runtime, args.length > idx ? args[idx] : runtime.getRecordSeparatorVar().get());
-    }
-
-    private ByteList getSeparatorForGets(Ruby runtime, IRubyObject[] args) {
-        return getSeparatorFromArgs(runtime, args, 0);
-    }
-
-    private IRubyObject getline(ThreadContext context, ByteList separator, ByteListCache cache) {
-        return getline(context, separator, -1, cache);
-    }
-
-    public IRubyObject getline(ThreadContext context, ByteList separator) {
+    public IRubyObject getline(ThreadContext context, IRubyObject separator) {
         return getline(context, separator, -1, null);
     }
 
@@ -616,11 +566,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * getline using logic of gets.  If limit is -1 then read unlimited amount.
      *
      */
-    public IRubyObject getline(ThreadContext context, ByteList separator, long limit) {
+    public IRubyObject getline(ThreadContext context, IRubyObject separator, long limit) {
         return getline(context, separator, limit, null);
     }
 
-    private IRubyObject getline(ThreadContext context, ByteList separator, long limit, ByteListCache cache) {
+    private IRubyObject getline(ThreadContext context, IRubyObject separator, long limit, ByteListCache cache) {
         return getlineInner(context, separator, (int)limit, cache);
     }
     
@@ -628,7 +578,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * getline using logic of gets.  If limit is -1 then read unlimited amount.
      * mri: rb_io_getline_1 (mostly)
      */
-    private IRubyObject getlineInner(ThreadContext context, ByteList rs, int _limit, ByteListCache cache) {
+    private IRubyObject getlineInner(ThreadContext context, IRubyObject rs, int _limit, ByteListCache cache) {
         Ruby runtime = context.runtime;
         IRubyObject str = context.nil;
         boolean noLimit = false;
@@ -639,17 +589,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fptr.checkCharReadable(context);
 
-        if (rs == null && _limit < 0) {
+        if (rs.isNil() && _limit < 0) {
             str = fptr.readAll(context, 0, context.nil);
             if (((RubyString)str).size() == 0) return context.nil;
         } else if (_limit == 0) {
             return RubyString.newEmptyString(runtime, fptr.readEncoding(runtime));
         } else if (
-            (defaultRs = runtime.getGlobalVariables().getDefaultSeparator()) instanceof RubyString
-                && rs != null
-                && rs.equals(((RubyString)defaultRs).getByteList())
-                && _limit < 0 && !fptr.needsReadConversion()
-                && (enc = fptr.readEncoding(runtime)).isAsciiCompatible()) {
+                rs == runtime.getGlobalVariables().getDefaultSeparator()
+                        && _limit < 0
+                        && !fptr.needsReadConversion()
+                        && (enc = fptr.readEncoding(runtime)).isAsciiCompatible()) {
             fptr.NEED_NEWLINE_DECORATOR_ON_READ_CHECK();
             return fptr.getlineFast(context, enc, this);
         }
@@ -665,8 +614,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
         fptr.setBinmode();
         enc = getReadEncoding();
 
-        if (rs != null) {
-            rslen = rs.getRealSize();
+        if (!rs.isNil()) {
+            RubyString rsStr = (RubyString)rs;
+            ByteList rsByteList = rsStr.getByteList();
+            rslen = rsByteList.getRealSize();
             if (rslen == 0) {
                 rsptrBytes = Stream.PARAGRAPH_SEPARATOR.unsafeBytes();
                 rsptr = Stream.PARAGRAPH_SEPARATOR.getBegin();
@@ -677,14 +628,16 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 if (!enc.isAsciiCompatible()) {
                     RubyString tmprs = RubyString.newUsAsciiStringShared(runtime, rsptrBytes, rsptr, rslen);
                     tmprs = (RubyString)EncodingUtils.rbStrEncode(context, tmprs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
-                    rs = tmprs.getByteList();
-                    rsptrBytes = rs.getUnsafeBytes();
-                    rsptr = rs.getBegin();
-                    rslen = rs.getRealSize();
+                    rs = tmprs;
+                    rsStr = (RubyString)rs;
+                    rsByteList = rsStr.getByteList();
+                    rsptrBytes = rsByteList.getUnsafeBytes();
+                    rsptr = rsByteList.getBegin();
+                    rslen = rsByteList.getRealSize();
                 }
             } else {
-                rsptrBytes = rs.unsafeBytes();
-                rsptr = rs.getBegin();
+                rsptrBytes = rsByteList.unsafeBytes();
+                rsptr = rsByteList.getBegin();
             }
             newline = rsptrBytes[rsptr + rslen - 1] & 0xFF;
         }
@@ -2014,8 +1967,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // rb_io_gets_m
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        IRubyObject result = getline(context, separator(runtime));
+        IRubyObject separator = prepareGetsSeparator(context, null, null);
+        IRubyObject result = getline(context, separator);
 
         if (!result.isNil()) context.setLastLine(result);
 
@@ -2025,16 +1978,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
     // rb_io_gets_m
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        ByteList separator;
-        long limit = -1;
-        IRubyObject test = TypeConverter.checkIntegerType(runtime, arg, "to_int");
-        if (test instanceof RubyInteger) {
-            limit = RubyInteger.fix2long(test);
-            separator = separator(runtime);
-        } else {
-            separator = separator(runtime, arg);
-        }
+        IRubyObject separator = prepareGetsSeparator(context, arg, null);
+        long limit = prepareGetsLimit(context, arg, null);
 
         IRubyObject result = getline(context, separator, limit);
 
@@ -2045,14 +1990,91 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // rb_io_gets_m
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
-    public IRubyObject gets(ThreadContext context, IRubyObject separator, IRubyObject limit_arg) {
-        Ruby runtime = context.runtime;
-        long limit = limit_arg.isNil() ? -1 : RubyNumeric.fix2long(TypeConverter.checkIntegerType(runtime, limit_arg, "to_int"));
-        IRubyObject result = getline(context, separator(runtime, separator), limit);
+    public IRubyObject gets(ThreadContext context, IRubyObject rs, IRubyObject limit_arg) {
+        rs = prepareGetsSeparator(context, rs, limit_arg);
+        long limit = prepareGetsLimit(context, rs, limit_arg);
+        IRubyObject result = getline(context, rs, limit);
 
         if (!result.isNil()) context.setLastLine(result);
 
         return result;
+    }
+
+    private IRubyObject prepareGetsSeparator(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return prepareGetsSeparator(context, null, null);
+            case 1:
+                return prepareGetsSeparator(context, args[0], null);
+            case 2:
+                return prepareGetsSeparator(context, args[1], args[2]);
+        }
+        throw new RuntimeException("invalid size for gets args: " + args.length);
+    }
+
+    private IRubyObject prepareGetsSeparator(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        Ruby runtime = context.runtime;
+        IRubyObject rs = runtime.getRecordSeparatorVar().get();
+        if (arg0 != null && arg1 == null) { // argc == 1
+            IRubyObject tmp = context.nil;
+
+            if (arg0.isNil() || !(tmp = TypeConverter.checkStringType(runtime, arg0)).isNil()) {
+                rs = tmp;
+            }
+        } else if (arg0 != null && arg1 != null) { // argc >= 2
+            rs = arg0;
+            if (!rs.isNil()) {
+                rs = rs.convertToString();
+            }
+        }
+        if (!rs.isNil()) {
+            Encoding enc_rs, enc_io;
+
+            OpenFile fptr = getOpenFileChecked();
+            enc_rs = ((RubyString)rs).getEncoding();
+            enc_io = fptr.readEncoding(runtime);
+            if (enc_io != enc_rs &&
+                    (((RubyString)rs).scanForCodeRange() != StringSupport.CR_7BIT ||
+                            (((RubyString)rs).size() > 0 && !enc_io.isAsciiCompatible()))) {
+                if (rs == runtime.getGlobalVariables().getDefaultSeparator()) {
+                    rs = RubyString.newStringLight(runtime, 0, enc_io);
+                    ((RubyString)rs).catAscii(NEWLINE_BYTES, 0, 1);
+                }
+                else {
+                    throw runtime.newArgumentError("encoding mismatch: " + enc_io + " IO with " + enc_rs + " RS");
+                }
+            }
+        }
+        return rs;
+    }
+
+    private long prepareGetsLimit(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return prepareGetsLimit(context, null, null);
+            case 1:
+                return prepareGetsLimit(context, args[0], null);
+            case 2:
+                return prepareGetsLimit(context, args[1], args[2]);
+        }
+        throw new RuntimeException("invalid size for gets args: " + args.length);
+    }
+
+    private long prepareGetsLimit(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        Ruby runtime = context.runtime;
+        IRubyObject lim = context.nil;
+        if (arg0 != null && arg1 == null) { // argc == 1
+            IRubyObject tmp = context.nil;
+
+            if (arg0.isNil() || !(tmp = TypeConverter.checkStringType(runtime, arg0)).isNil()) {
+                // only separator logic
+            } else {
+                lim = arg0;
+            }
+        } else if (arg0 != null && arg1 != null) { // argc >= 2
+            lim = arg1;
+        }
+        return lim.isNil() ? -1 : lim.convertToInteger().getLongValue();
     }
 
     private IRubyObject gets(ThreadContext context, IRubyObject[] args) {
@@ -2898,10 +2920,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, name, args);
 
         Ruby runtime = context.runtime;
-        ByteList separator = getSeparatorForGets(runtime, args);
+        IRubyObject separator = prepareGetsSeparator(context, args);
 
         ByteListCache cache = new ByteListCache();
-        for (IRubyObject line = getline(context, separator); !line.isNil(); 
+        for (IRubyObject line = getline(context, separator); !line.isNil();
 		        line = getline(context, separator, cache)) {
             block.yield(context, line);
         }
@@ -2933,8 +2955,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
     private RubyArray readlinesCommon(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         
-        long limit = getLimitFromArgs(args);
-        ByteList separator = getSeparatorFromArgs(runtime, args, 0);
+        long limit = prepareGetsLimit(context, args);
+        IRubyObject separator = prepareGetsSeparator(context, args);
         RubyArray result = runtime.newArray();
         IRubyObject line;
 
@@ -4529,14 +4551,31 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return 1;
     }
 
+    private static final byte[] NEWLINE_BYTES = {(byte)'\n'};
+
     @Deprecated
     public IRubyObject getline(Ruby runtime, ByteList separator) {
-        return getline(runtime.getCurrentContext(), separator, -1, null);
+        return getline(runtime.getCurrentContext(), runtime.newString(separator), -1, null);
     }
     
     @Deprecated
     public IRubyObject getline(Ruby runtime, ByteList separator, long limit) {
-        return getline(runtime.getCurrentContext(), separator, limit, null);
+        return getline(runtime.getCurrentContext(), runtime.newString(separator), limit, null);
+    }
+
+    @Deprecated
+    private IRubyObject getline(ThreadContext context, IRubyObject separator, ByteListCache cache) {
+        return getline(context, separator, -1, cache);
+    }
+
+    @Deprecated
+    public IRubyObject getline(ThreadContext context, ByteList separator) {
+        return getline(context, RubyString.newString(context.runtime, separator), -1, null);
+    }
+
+    @Deprecated
+    public IRubyObject getline(ThreadContext context, ByteList separator, long limit) {
+        return getline(context, RubyString.newString(context.runtime, separator), limit, null);
     }
 
     @Deprecated

@@ -990,8 +990,8 @@ public class OpenFile implements Finalizable {
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
-    public int appendline(ThreadContext context, int delim, ByteList[] strp, int[] lp)
-    {
+    // MRI: appendline
+    public int appendline(ThreadContext context, int delim, ByteList[] strp, int[] lp) {
         ByteList str = strp[0];
         int limit = lp[0];
 

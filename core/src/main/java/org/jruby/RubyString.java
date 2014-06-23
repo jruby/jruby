@@ -1401,19 +1401,20 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return ptr_cr_ret[0];
     }
 
-    public final RubyString catAscii(byte[]bytes, int p, int len) {
+    // rb_str_buf_cat_ascii
+    public final RubyString catAscii(byte[]bytes, int ptr, int ptrLen) {
         Encoding enc = value.getEncoding();
         if (enc.isAsciiCompatible()) {
-            EncodingUtils.encCrStrBufCat(getRuntime(), this, new ByteList(bytes, p, len), enc, CR_7BIT, null);
+            EncodingUtils.encCrStrBufCat(getRuntime(), this, new ByteList(bytes, ptr, ptrLen), enc, CR_7BIT, null);
         } else {
             byte buf[] = new byte[enc.maxLength()];
-            int end = p + len;
-            while (p < end) {
-                int c = bytes[p];
-                int cl = codeLength(getRuntime(), enc, c);
-                enc.codeToMbc(c, buf, 0);
-                EncodingUtils.encCrStrBufCat(getRuntime(), this, new ByteList(bytes, p, len), enc, CR_7BIT, null);
-                p++;
+            int end = ptr + ptrLen;
+            while (ptr < end) {
+                int c = bytes[ptr];
+                int len = codeLength(getRuntime(), enc, c);
+                EncodingUtils.encMbcput(c, buf, 0, enc);
+                EncodingUtils.encCrStrBufCat(getRuntime(), this, buf, 0, len, enc, CR_VALID, null);
+                ptr++;
             }
         }
         return this;

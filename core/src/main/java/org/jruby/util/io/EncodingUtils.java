@@ -1770,4 +1770,9 @@ public class EncodingUtils {
         return str;
 
     }
+
+    // rb_enc_mbcput
+    public static void encMbcput(int c, byte[] buf, int p, Encoding enc) {
+        enc.codeToMbc(c, buf, p);
+    }
 }
