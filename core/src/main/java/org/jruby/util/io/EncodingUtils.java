@@ -687,14 +687,14 @@ public class EncodingUtils {
             return c;
         }
         l = StringSupport.preciseLength(enc, pBytes, p, e);
-        if (StringSupport.MBCLEN_CHARFOUND_LEN(l) == 0) {
+        if (!StringSupport.MBCLEN_CHARFOUND_P(l)) {
             return -1;
         }
         c = enc.mbcToCode(pBytes, p, e);
         if (!Encoding.isAscii(c)) {
             return -1;
         }
-        if (len != null) len[0] = 1;
+        if (len != null) len[0] = l;
         return c;
     }
     
