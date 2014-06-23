@@ -1985,7 +1985,7 @@ public abstract class ArrayNodes {
 
         public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context, true);
+            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         public MapNode(MapNode prev) {
@@ -2002,7 +2002,7 @@ public abstract class ArrayNodes {
         public RubyArray mapIntegerFixnum(VirtualFrame frame, RubyArray array, RubyProc block) {
             final int[] store = (int[]) array.getStore();
 
-            Object mappedStore = arrayBuilder.length(array.getSize());
+            Object mappedStore = arrayBuilder.start(array.getSize());
 
             int count = 0;
 
@@ -2020,14 +2020,14 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore), array.getSize());
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore, count), count);
         }
 
         @Specialization(guards = "isLongFixnum", order = 3)
         public RubyArray mapLongFixnum(VirtualFrame frame, RubyArray array, RubyProc block) {
             final long[] store = (long[]) array.getStore();
 
-            Object mappedStore = arrayBuilder.length(array.getSize());
+            Object mappedStore = arrayBuilder.start(array.getSize());
 
             int count = 0;
 
@@ -2045,14 +2045,14 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore), array.getSize());
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore, count), count);
         }
 
         @Specialization(guards = "isObject", order = 4)
         public RubyArray mapObject(VirtualFrame frame, RubyArray array, RubyProc block) {
             final Object[] store = (Object[]) array.getStore();
 
-            Object mappedStore = arrayBuilder.length(array.getSize());
+            Object mappedStore = arrayBuilder.start(array.getSize());
 
             int count = 0;
 
@@ -2070,7 +2070,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore), array.getSize());
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(mappedStore, count), count);
         }
     }
 
@@ -2081,7 +2081,7 @@ public abstract class ArrayNodes {
 
         public MapInPlaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context, true);
+            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         public MapInPlaceNode(MapInPlaceNode prev) {
@@ -2092,7 +2092,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isIntegerFixnum", order = 1)
         public RubyArray mapInPlaceFixnumInteger(VirtualFrame frame, RubyArray array, RubyProc block) {
             final int[] store = (int[]) array.getStore();
-            Object mappedStore = arrayBuilder.length(array.getSize());
+            Object mappedStore = arrayBuilder.start(array.getSize());
 
             int count = 0;
 
@@ -2110,7 +2110,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            array.setStore(arrayBuilder.finish(mappedStore), array.getSize());
+            array.setStore(arrayBuilder.finish(mappedStore, count), count);
 
             return array;
         }
@@ -2118,7 +2118,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isObject", order = 2)
         public RubyArray mapInPlaceObject(VirtualFrame frame, RubyArray array, RubyProc block) {
             final Object[] store = (Object[]) array.getStore();
-            Object mappedStore = arrayBuilder.length(array.getSize());
+            Object mappedStore = arrayBuilder.start(array.getSize());
 
             int count = 0;
 
@@ -2136,7 +2136,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            array.setStore(arrayBuilder.finish(mappedStore), array.getSize());
+            array.setStore(arrayBuilder.finish(mappedStore, count), count);
 
             return array;
         }
@@ -2658,7 +2658,7 @@ public abstract class ArrayNodes {
 
         public SelectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context, true);
+            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         public SelectNode(SelectNode prev) {
@@ -2675,7 +2675,7 @@ public abstract class ArrayNodes {
         public Object selectObject(VirtualFrame frame, RubyArray array, RubyProc block) {
             final Object[] store = (Object[]) array.getStore();
 
-            Object selectedStore = arrayBuilder.length(array.getSize());
+            Object selectedStore = arrayBuilder.start(array.getSize());
             int selectedSize = 0;
 
             int count = 0;
@@ -2704,14 +2704,14 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(selectedStore), selectedSize);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
         }
 
         @Specialization(guards = "isIntegerFixnum", order = 3)
         public Object selectFixnumInteger(VirtualFrame frame, RubyArray array, RubyProc block) {
             final int[] store = (int[]) array.getStore();
 
-            Object selectedStore = arrayBuilder.length(array.getSize());
+            Object selectedStore = arrayBuilder.start(array.getSize());
             int selectedSize = 0;
 
             int count = 0;
@@ -2738,7 +2738,7 @@ public abstract class ArrayNodes {
                 }
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(selectedStore), selectedSize);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(selectedStore, selectedSize), selectedSize);
         }
 
     }

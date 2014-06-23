@@ -71,7 +71,7 @@ public abstract class RangeNodes {
 
         public CollectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context, true);
+            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         public CollectNode(CollectNode prev) {
@@ -85,7 +85,7 @@ public abstract class RangeNodes {
             final int exclusiveEnd = range.getExclusiveEnd();
             final int length = exclusiveEnd - begin;
 
-            Object store = arrayBuilder.length(length);
+            Object store = arrayBuilder.start(length);
 
             int count = 0;
 
@@ -103,7 +103,7 @@ public abstract class RangeNodes {
                 }
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(store), length);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilder.finish(store, length), length);
         }
 
     }

@@ -125,6 +125,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_TRACE = bool(TRUFFLE, "truffle.before", true, "Install trace probes needed for set_trace_func.");
     public static final Option<Boolean> TRUFFLE_PRINT_JAVA_EXCEPTIONS = bool(TRUFFLE, "truffle.printJavaExceptions", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
     public static final Option<Boolean> TRUFFLE_LITERALS_INT = bool(TRUFFLE, "truffle.literals.int", true, "Use int for Fixnum literals where possible.");
+    public static final Option<Integer> TRUFFLE_ARRAYS_UNINITIALIZED_SIZE = integer(TRUFFLE, "truffle.arrays.uninitialized_size", 32, "How large an array to allocate when we have no other information to go on.");
     public static final Option<Boolean> TRUFFLE_ARRAYS_INT = bool(TRUFFLE, "truffle.arrays.int", true, "Use int[] for Fixnum Array storage where possible.");
     public static final Option<Boolean> TRUFFLE_ARRAYS_LONG = bool(TRUFFLE, "truffle.arrays.long", true, "Use long[] for Fixnum Array storage where possible.");
     public static final Option<Boolean> TRUFFLE_ARRAYS_DOUBLE = bool(TRUFFLE, "truffle.arrays.double", true, "Use double[] Float for Array storage where possible.");

@@ -152,7 +152,7 @@ public abstract class HashNodes {
         public Object getObjectArray(VirtualFrame frame, RubyHash hash, Object key) {
             final Object[] store = (Object[]) hash.getStore();
 
-            for (int n = 0; n < store.length; n++) {
+            for (int n = 0; n < store.length; n += 2) {
                 // TODO(CS): cast
                 if ((boolean) eqlNode.dispatch(frame, store[n], null, key)) {
                     return store[n + 1];
