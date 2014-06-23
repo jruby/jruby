@@ -16,6 +16,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.ArrayNodes;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -92,6 +93,9 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyFalseClass falseObject;
     @CompilerDirectives.CompilationFinal private RubyNilClass nilObject;
     @CompilerDirectives.CompilationFinal private RubyTrueClass trueObject;
+
+    private ArrayNodes.MinBlock arrayMinBlock;
+    private ArrayNodes.MaxBlock arrayMaxBlock;
 
     public CoreLibrary(RubyContext context) {
         this.context = context;
@@ -292,6 +296,9 @@ public class CoreLibrary {
         globalVariablesObject.setInstanceVariable("$\"", globalVariablesObject.getInstanceVariable("$LOADED_FEATURES"));
 
         initializeEncodingConstants();
+
+        arrayMinBlock = new ArrayNodes.MinBlock(context);
+        arrayMaxBlock = new ArrayNodes.MaxBlock(context);
     }
 
     public void initializeAfterMethodsAdded() {
@@ -653,4 +660,11 @@ public class CoreLibrary {
         return new RubyHash(context.getCoreLibrary().getHashClass(), null, storage);
     }
 
+    public ArrayNodes.MinBlock getArrayMinBlock() {
+        return arrayMinBlock;
+    }
+
+    public ArrayNodes.MaxBlock getArrayMaxBlock() {
+        return arrayMaxBlock;
+    }
 }
