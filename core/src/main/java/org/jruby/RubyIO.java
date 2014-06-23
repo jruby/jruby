@@ -610,7 +610,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         boolean rspara = false;
         int extraLimit = 16;
 
-        fptr.setBinmode();
+        fptr.SET_BINARY_MODE();
         enc = getReadEncoding();
 
         if (!rs.isNil()) {
@@ -2471,7 +2471,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             c = c.convertToString();
         }
         if (fptr.needsReadConversion()) {
-            fptr.setBinmode();
+            fptr.SET_BINARY_MODE();
             len = ((RubyString)c).size();
 //            #if SIZEOF_LONG > SIZEOF_INT
 //            if (len > INT_MAX)
@@ -2855,7 +2855,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fptr.READ_CHECK(context);
         if (fptr.needsReadConversion()) {
-            fptr.setBinmode();
+            fptr.SET_BINARY_MODE();
             for (;;) {
                 fptr.makeReadConversion(context);
                 for (;;) {

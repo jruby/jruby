@@ -138,8 +138,12 @@ public class EncodingUtils {
     }
     
     public static final int MODE_BTMODE(int fmode, int a, int b, int c) {
-        return (fmode & OpenFile.BINMODE) != 0 ? b :
-                (fmode & OpenFile.TEXTMODE) != 0 ? c : a;
+        if ((fmode & OpenFile.BINMODE) != 0) {
+            return b;
+        } else if ((fmode & OpenFile.TEXTMODE) != 0) {
+            return c;
+        }
+        return a;
     }
     
     public static int SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(Encoding enc2, int ecflags) {
@@ -1391,7 +1395,7 @@ public class EncodingUtils {
             throw runtime.newArgumentError("ASCII incompatible encoding needs binmode");
         }
         
-        if ((fmode & OpenFile.BINMODE) == 0 && (EncodingUtils.DEFAULT_TEXTMODE != 0 || (ecflags & EConvFlags.DECORATOR_MASK) != 0)) {
+        if ((fmode & OpenFile.BINMODE) == 0 && (EncodingUtils.DEFAULT_TEXTMODE != 0 || (ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) != 0)) {
             fmode |= EncodingUtils.DEFAULT_TEXTMODE;
             fmode_p[0] = fmode;
         } else if (EncodingUtils.DEFAULT_TEXTMODE == 0 && (ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) == 0) {

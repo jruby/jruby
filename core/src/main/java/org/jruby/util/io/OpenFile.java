@@ -669,12 +669,10 @@ public class OpenFile implements Finalizable {
 
     public void setTextMode() {
         mode |= TEXTMODE;
-        // FIXME: Make stream(s) know about text mode.
     }
 
     public void clearTextMode() {
         mode &= ~TEXTMODE;
-        // FIXME: Make stream(s) know about text mode.
     }
 
     public void setBinmode() {
@@ -866,17 +864,22 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    // MRI: NEED_READCONV (FIXME: Windows has slightly different version)
+    // MRI: NEED_READCONV
     public boolean needsReadConversion() {
-        return (encs.enc2 != null || (encs.ecflags & ~EConvFlags.CRLF_NEWLINE_DECORATOR) != 0);
+        return Platform.IS_WINDOWS ?
+                (encs.enc2 != null || (encs.ecflags & ~EConvFlags.CRLF_NEWLINE_DECORATOR) != 0)
+                :
+                (encs.enc2 != null || NEED_NEWLINE_DECORATOR_ON_READ());
     }
 
-    // MRI: NEED_WRITECONV (FIXME: Windows has slightly different version)
+    // MRI: NEED_WRITECONV
     public boolean needsWriteConversion(ThreadContext context) {
         Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
 
-        return (encs.enc != null && encs.enc != ascii8bit) || isTextMode() ||
-                (encs.ecflags & ((EConvFlags.DECORATOR_MASK & ~EConvFlags.CRLF_NEWLINE_DECORATOR)| EConvFlags.STATEFUL_DECORATOR_MASK)) != 0;
+        return Platform.IS_WINDOWS ?
+                ((encs.enc != null && encs.enc != ascii8bit) || (encs.ecflags & ((EConvFlags.DECORATOR_MASK & ~EConvFlags.CRLF_NEWLINE_DECORATOR)|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0)
+                :
+                ((encs.enc != null && encs.enc != ascii8bit) || NEED_NEWLINE_DECORATOR_ON_WRITE() || (encs.ecflags & (EConvFlags.DECORATOR_MASK|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0);
     }
 
     // MRI: make_readconv
@@ -885,7 +888,7 @@ public class OpenFile implements Finalizable {
             int ecflags;
             IRubyObject ecopts;
             byte[] sname, dname;
-            ecflags = encs.ecflags & ~EConvFlags.NEWLINE_DECORATOR_MASK;
+            ecflags = encs.ecflags & ~EConvFlags.NEWLINE_DECORATOR_WRITE_MASK;
             ecopts = encs.ecopts;
             if (encs.enc2 != null) {
                 sname = encs.enc2.getName();
@@ -996,7 +999,7 @@ public class OpenFile implements Finalizable {
         int limit = lp[0];
 
         if (needsReadConversion()) {
-            setBinmode();
+            SET_BINARY_MODE();
             makeReadConversion(context);
             do {
                 int p, e;
@@ -1087,11 +1090,11 @@ public class OpenFile implements Finalizable {
 
     public void NEED_NEWLINE_DECORATOR_ON_READ_CHECK() {
         if (NEED_NEWLINE_DECORATOR_ON_READ()) {
-            if ((getMode() & OpenFile.READABLE) != 0 &&
+            if (isReadable() &&
                     (encs.ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) == 0) {
-                setBinmode();
+                SET_BINARY_MODE();
             } else {
-                setTextMode();
+                SET_TEXT_MODE();
             }
         }
     }
@@ -1387,7 +1390,7 @@ public class OpenFile implements Finalizable {
         if (needsReadConversion()) {
             Encoding enc = readEncoding(runtime);
             boolean needconv = enc.minLength() != 1;
-            setBinmode();
+            SET_BINARY_MODE();
             makeReadConversion(context);
             do {
                 int cnt;
@@ -1522,7 +1525,7 @@ public class OpenFile implements Finalizable {
         int cr;
 
         if (needsReadConversion()) {
-            setBinmode();
+            SET_BINARY_MODE();
             str = EncodingUtils.setStrBuf(runtime, str, 0);
             makeReadConversion(context);
             while (true) {
@@ -1686,7 +1689,7 @@ public class OpenFile implements Finalizable {
             str = context.nil;
             Encoding read_enc = readEncoding(runtime);
 
-            setBinmode();
+            SET_BINARY_MODE();
             makeReadConversion(context, 0);
 
             while (true) {
@@ -1888,7 +1891,7 @@ public class OpenFile implements Finalizable {
     {
         if (needsWriteConversion(context)) {
             IRubyObject common_encoding = context.nil;
-            setBinmode();
+            SET_BINARY_MODE();
 
             makeWriteConversion(context);
 
@@ -2438,6 +2441,14 @@ public class OpenFile implements Finalizable {
             // raise will also wake the thread from selection
             thread.raise(new IRubyObject[] {runtime.newIOError("stream closed").getException()}, Block.NULL_BLOCK);
         }
+    }
+
+    public void SET_BINARY_MODE() {
+        // FIXME: this only does something if we have O_BINARY at open(2) level
+    }
+
+    private void SET_TEXT_MODE() {
+        // FIXME: this only does something if we have O_TEXT at open(2) level
     }
 
     @Deprecated
