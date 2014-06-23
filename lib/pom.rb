@@ -32,9 +32,7 @@ end
 require 'rexml/document'
 require 'rexml/xpath'
 
-# TODO please remove monkey patch for krypt at the end of this file
-#      when you change the version here
-KRYPT_VERSION = '0.0.2.rc1'
+KRYPT_VERSION = '0.0.2'
 
 # the versions are declared in ../pom.xml
 default_gems =
@@ -94,7 +92,7 @@ project 'JRuby Lib Setup' do
   # tell maven to download the respective gem artifacts
   default_gems.each do |g|
     if g.group_id != 'rubygems'
-      dependency :gem, g.group_id, g.name, g.pom_version_key, nil
+      dependency g.group_id, g.name, g.pom_version_key, :type => :gem
     else
       gem g.name, g.version
     end
@@ -208,13 +206,5 @@ project 'JRuby Lib Setup' do
     # use this instead of FileUtils.rm_f - issue #1698
     f = File.join( ruby_dir, 'shared', 'jruby-openssl.rb' )
     File.delete( f ) if File.exists?( f )
-
-    # monkey patch krypt-0.0.2.rc1 
-    # see https://github.com/krypt/krypt/issues/47
-    f = File.join( ruby_dir, 'shared', 'krypt', 'provider.rb' )
-    content = File.read( f )
-    content.sub!( /^require_relative 'provider\/ffi'$/,
-                  "begin; require_relative 'provider/ffi'; rescue LoadError => e; end" )
-    File.open( f, 'w' ) { |s| s.print content } if KRYPT_VERSION == '0.0.2.rc1'
   end
 end

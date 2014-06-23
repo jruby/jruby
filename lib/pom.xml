@@ -49,19 +49,19 @@
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>krypt</artifactId>
-      <version>${krypt.version}</version>
+      <version>0.0.2</version>
       <type>gem</type>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>krypt-core</artifactId>
-      <version>${krypt.version}</version>
+      <version>0.0.2</version>
       <type>gem</type>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>krypt-provider-jdk</artifactId>
-      <version>${krypt.version}</version>
+      <version>0.0.2</version>
       <type>gem</type>
     </dependency>
     <dependency>
@@ -145,7 +145,7 @@
                 <artifactItem>
                   <groupId>rubygems</groupId>
                   <artifactId>krypt</artifactId>
-                  <version>${krypt.version}</version>
+                  <version>0.0.2</version>
                   <type>gem</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
@@ -153,7 +153,7 @@
                 <artifactItem>
                   <groupId>rubygems</groupId>
                   <artifactId>krypt-core</artifactId>
-                  <version>${krypt.version}</version>
+                  <version>0.0.2</version>
                   <type>gem</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
@@ -161,7 +161,7 @@
                 <artifactItem>
                   <groupId>rubygems</groupId>
                   <artifactId>krypt-provider-jdk</artifactId>
-                  <version>${krypt.version}</version>
+                  <version>0.0.2</version>
                   <type>gem</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
