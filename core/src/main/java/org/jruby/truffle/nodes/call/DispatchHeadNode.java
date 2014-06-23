@@ -52,6 +52,10 @@ public class DispatchHeadNode extends DispatchNode {
         return dispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
     }
 
+    public boolean doesRespondTo(VirtualFrame frame, Object receiverObject) {
+        return dispatch.doesRespondTo(frame, receiverObject);
+    }
+
     /**
      * Replace the entire dispatch chain with a fresh chain. Used when the situation has changed in
      * such a significant way that it's best to start again rather than add new specializations to
@@ -63,6 +67,14 @@ public class DispatchHeadNode extends DispatchNode {
         final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), name, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
         replace(newHead, reason);
         return newHead.dispatch(frame, receiverObject, blockObject, argumentObjects);
+    }
+
+    public boolean respecializeAndDoesRespondTo(VirtualFrame frame, String reason, Object receiverObject) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), name, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
+        replace(newHead, reason);
+        return newHead.doesRespondTo(frame, receiverObject);
     }
 
     public UnboxedDispatchNode getDispatch() {

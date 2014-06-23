@@ -86,6 +86,12 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
         return callNode.call(frame, entry.getMethod().getCallTarget(), RubyArguments.pack(entry.getMethod().getDeclarationFrame(), receiverObject, blockObject, argumentsToUse));
     }
 
+    @Override
+    public boolean doesRespondTo(VirtualFrame frame, RubyBasicObject receiverObject) {
+        RubyNode.notDesignedForCompilation();
+        throw new UnsupportedOperationException();
+    }
+
     @CompilerDirectives.SlowPath
     public MethodCacheEntry lookupInCache(LookupNode lookupNode) {
         return cache.get(lookupNode);

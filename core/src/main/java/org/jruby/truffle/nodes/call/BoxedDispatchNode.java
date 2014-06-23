@@ -25,4 +25,6 @@ public abstract class BoxedDispatchNode extends DispatchNode {
 
     public abstract Object dispatch(VirtualFrame frame, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects);
 
+    public abstract boolean doesRespondTo(VirtualFrame frame, RubyBasicObject receiverObject);
+
 }
