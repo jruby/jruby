@@ -60,6 +60,10 @@ public class HashNode extends Node {
         return iVisitor.visitHashNode(this);
     }
 
+    public boolean isEmpty() {
+        return listNode == null || listNode.isEmpty();
+    }
+
     /**
      * Gets the listNode.
      * @return Returns a IListNode

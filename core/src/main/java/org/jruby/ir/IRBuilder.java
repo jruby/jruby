@@ -2358,22 +2358,23 @@ public class IRBuilder {
     }
 
     public Operand buildHash(HashNode hashNode, IRScope s) {
-        if (hashNode.getListNode() == null || hashNode.getListNode().size() == 0) {
-            return copyAndReturnValue(s, new Hash(new ArrayList<KeyValuePair>()));
-        } else {
-            Operand key   = null;
-            List<KeyValuePair> args = new ArrayList<KeyValuePair>();
-            for (Node nextNode : hashNode.getListNode().childNodes()) {
-                Operand v = build(nextNode, s);
-                if (key == null) {
-                    key = v;
-                } else {
-                    args.add(new KeyValuePair(key, v));
-                    key = null;
-                }
+        List<KeyValuePair> args = new ArrayList<KeyValuePair>();
+
+        if (hashNode.isEmpty()) return copyAndReturnValue(s, new Hash(args));
+
+        Operand key = null;
+        // Alternate between key/value in the loop.
+        for (Node nextNode : hashNode.getListNode().childNodes()) {
+            Operand value = build(nextNode, s);
+
+            if (key == null) {
+                key = value;
+            } else {
+                args.add(new KeyValuePair(key, value));
+                key = null;
             }
-            return copyAndReturnValue(s, new Hash(args));
         }
+        return copyAndReturnValue(s, new Hash(args));
     }
 
     // Translate "r = if (cond); .. thenbody ..; else; .. elsebody ..; end" to
