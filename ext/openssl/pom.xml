@@ -112,6 +112,7 @@
               <directory>lib</directory>
               <includes>
                 <include>jopenssl.jar</include>
+                <include>*/**/*.jar</include>
               </includes>
             </fileset>
           </filesets>
