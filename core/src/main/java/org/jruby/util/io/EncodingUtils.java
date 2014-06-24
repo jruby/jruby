@@ -1607,8 +1607,9 @@ public class EncodingUtils {
                     snamev = args[0];
             }
 
-            if (!(flags = TypeConverter.checkHashType(runtime, flags)).isNil()) {
-                opt = flags;
+            IRubyObject tmp;
+            if (!(tmp = TypeConverter.checkHashType(runtime, flags)).isNil()) {
+                opt = tmp;
                 flags = context.nil;
             }
         }
