@@ -493,7 +493,7 @@ public class OpenFile implements Finalizable {
         try {
             if (fd.chSelect != null) {
                 int ready_stat = 0;
-                java.nio.channels.Selector sel = SelectorFactory.openWithRetryFrom(null, fd.chSelect.provider());
+                Selector sel = SelectorFactory.openWithRetryFrom(null, fd.chSelect.provider());
                 synchronized (fd.chSelect.blockingLock()) {
                     boolean is_block = fd.chSelect.isBlocking();
                     boolean addedThread = false;
@@ -1452,7 +1452,7 @@ public class OpenFile implements Finalizable {
         }
         cbuf.off += len;
         cbuf.len -= len;
-    /* xxx: set coderange */
+        /* xxx: set coderange */
         if (cbuf.len == 0)
             cbuf.off = 0;
         else if (cbuf.capa/2 < cbuf.off) {
