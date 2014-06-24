@@ -1,4 +1,7 @@
 exclude :test___dir__, "needs investigation"
+exclude :test_arity, "needs investigation"
+exclude :test_bmethod_bound_parameters, "needs investigation"
+exclude :test_bmethod_unbound_parameters, "needs investigation"
 exclude :test_body, "needs investigation"
 exclude :test_bound_method_entry, "broken subprocess logic"
 exclude :test_callee, "needs investigation"

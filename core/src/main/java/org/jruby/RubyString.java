@@ -5864,7 +5864,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         if (block.isGiven()) {
             if (wantarray) {
-                // this code should be live in 2.2
+                // this code should be live in 3.0
                 if (false) { // #if STRING_ENUMERATORS_WANTARRAY
                     runtime.getWarnings().warn("given block not used");
                     ary = RubyArray.newArray(runtime, str.length().getLongValue());
@@ -5933,7 +5933,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         if (block.isGiven()) {
             if (wantarray) {
-                // this code should be live in 2.2
+                // this code should be live in 3.0
                 if (false) { // #if STRING_ENUMERATORS_WANTARRAY
                     runtime.getWarnings().warn("given block not used");
                     ary = RubyArray.newArray(runtime, str.length().getLongValue());
@@ -5973,7 +5973,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         if (block.isGiven()) {
             if (wantarray) {
-                // this code should be live in 2.2
+                // this code should be live in 3.0
                 if (false) { // #if STRING_ENUMERATORS_WANTARRAY
                     runtime.getWarnings().warn("given block not used");
                     ary = RubyArray.newArray(runtime);

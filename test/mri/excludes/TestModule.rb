@@ -21,6 +21,7 @@ exclude :test_define_module_under_private_constant, "we don't evaluate colon2-li
 exclude :test_invalid_attr, "needs investigation"
 exclude :test_include_module_with_constants_invalidates_method_cache, "needs investigation"
 exclude :test_include_toplevel, "needs investigation"
+exclude :test_initialize_copy_empty, "needs investigation"
 exclude :test_leading_colons, "needs investigation"
 exclude :test_method_added, "needs investigation"
 exclude :test_method_redefinition, "needs investigation"
