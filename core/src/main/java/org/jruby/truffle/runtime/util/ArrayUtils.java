@@ -38,8 +38,8 @@ public abstract class ArrayUtils {
         return false;
     }
 
-    public static boolean contains(Object[] array, Object value) {
-        for (int n = 0; n < array.length; n++) {
+    public static boolean contains(Object[] array, int length, Object value) {
+        for (int n = 0; n < length; n++) {
             if (array[n].equals(value)) {
                 return true;
             }
@@ -102,36 +102,36 @@ public abstract class ArrayUtils {
         }
     }
 
-    public static int[] unboxInteger(Object[] unboxed) {
+    public static int[] unboxInteger(Object[] unboxed, int length) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final int[] boxed = new int[unboxed.length];
+        final int[] boxed = new int[length];
 
-        for (int n = 0; n < unboxed.length; n++) {
+        for (int n = 0; n < length; n++) {
             boxed[n] = (int) unboxed[n];
         }
 
         return boxed;
     }
 
-    public static long[] unboxLong(Object[] unboxed) {
+    public static long[] unboxLong(Object[] unboxed, int length) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final long[] boxed = new long[unboxed.length];
+        final long[] boxed = new long[length];
 
-        for (int n = 0; n < unboxed.length; n++) {
+        for (int n = 0; n < length; n++) {
             boxed[n] = (long) unboxed[n];
         }
 
         return boxed;
     }
 
-    public static double[] unboxDouble(Object[] unboxed) {
+    public static double[] unboxDouble(Object[] unboxed, int length) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final double[] boxed = new double[unboxed.length];
+        final double[] boxed = new double[length];
 
-        for (int n = 0; n < unboxed.length; n++) {
+        for (int n = 0; n < length; n++) {
             boxed[n] = (double) unboxed[n];
         }
 

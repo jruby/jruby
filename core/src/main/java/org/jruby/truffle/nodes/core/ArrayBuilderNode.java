@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.util.ArrayUtils;
@@ -104,13 +105,13 @@ public abstract class ArrayBuilderNode extends Node {
         public Object finish(Object store, int length) {
             if (couldUseInteger) {
                 replace(new IntegerArrayBuilderNode(getContext(), length));
-                return ArrayUtils.unboxInteger((Object[]) store);
+                return ArrayUtils.unboxInteger((Object[]) store, length);
             } else if (couldUseLong) {
                 replace(new LongArrayBuilderNode(getContext(), length));
-                return ArrayUtils.unboxLong((Object[]) store);
+                return ArrayUtils.unboxLong((Object[]) store, length);
             } else if (couldUseDouble) {
                 replace(new DoubleArrayBuilderNode(getContext(), length));
-                return ArrayUtils.unboxDouble((Object[]) store);
+                return ArrayUtils.unboxDouble((Object[]) store, length);
             } else {
                 replace(new ObjectArrayBuilderNode(getContext(), length));
                 return store;
@@ -139,6 +140,9 @@ public abstract class ArrayBuilderNode extends Node {
 
         private final int expectedLength;
 
+        @CompilerDirectives.CompilationFinal private boolean hasAppendedIntegerArray = false;
+        @CompilerDirectives.CompilationFinal private boolean hasAppendedObjectArray = false;
+
         public IntegerArrayBuilderNode(RubyContext context, int expectedLength) {
             super(context);
             this.expectedLength = expectedLength;
@@ -164,14 +168,53 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object ensure(Object store, int length) {
-            CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException();
+            if (length > ((int[]) store).length) {
+                CompilerDirectives.transferToInterpreter();
+
+                final Object[] newStore = ArrayUtils.box((int[]) store);
+
+                final UninitializedArrayBuilderNode newNode = new UninitializedArrayBuilderNode(getContext());
+                replace(newNode);
+                newNode.resume(newStore);
+                return newNode.ensure(newStore, length);
+            }
+
+            return store;
         }
 
         @Override
         public Object append(Object store, int index, RubyArray array) {
-            CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException();
+            Object otherStore = array.getStore();
+
+            if (otherStore == null) {
+                return store;
+            }
+
+            if (hasAppendedIntegerArray && otherStore instanceof int[]) {
+                System.arraycopy(otherStore, 0, store, index, array.getSize());
+                return store;
+            }
+
+            if (hasAppendedObjectArray && otherStore instanceof Object[]) {
+                System.arraycopy(otherStore, 0, store, index, array.getSize());
+                return store;
+            }
+
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+
+            if (otherStore instanceof int[]) {
+                hasAppendedIntegerArray = true;
+                System.arraycopy(otherStore, 0, store, index, array.getSize());
+                return store;
+            }
+
+            if (otherStore instanceof Object[]) {
+                hasAppendedObjectArray = true;
+                System.arraycopy(otherStore, 0, store, index, array.getSize());
+                return store;
+            }
+
+            throw new UnsupportedOperationException(array.getStore().getClass().getName());
         }
 
         @Override
@@ -327,6 +370,8 @@ public abstract class ArrayBuilderNode extends Node {
 
         private final int expectedLength;
 
+        @CompilerDirectives.CompilationFinal private boolean hasAppendedObjectArray = false;
+
         public ObjectArrayBuilderNode(RubyContext context, int expectedLength) {
             super(context);
             this.expectedLength = expectedLength;
@@ -368,14 +413,24 @@ public abstract class ArrayBuilderNode extends Node {
         public Object append(Object store, int index, RubyArray array) {
             Object otherStore = array.getStore();
 
-            if (otherStore instanceof Object[]) {
-                System.arraycopy(otherStore, 0, store, index, array.getSize());
-            } else {
-                CompilerDirectives.transferToInterpreter();
-                throw new UnsupportedOperationException();
+            if (otherStore == null) {
+                return store;
             }
 
-            return store;
+            if (hasAppendedObjectArray && otherStore instanceof Object[]) {
+                System.arraycopy(otherStore, 0, store, index, array.getSize());
+                return store;
+            }
+
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+
+            if (otherStore instanceof Object[]) {
+                hasAppendedObjectArray = true;
+                System.arraycopy(otherStore, 0, store, index, array.getSize());
+                return store;
+            }
+
+            throw new UnsupportedOperationException(array.getStore().getClass().getName());
         }
 
         @Override
