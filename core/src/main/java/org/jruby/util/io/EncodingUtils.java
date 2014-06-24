@@ -1782,4 +1782,17 @@ public class EncodingUtils {
     public static void encMbcput(int c, byte[] buf, int p, Encoding enc) {
         enc.codeToMbc(c, buf, p);
     }
+
+    // rb_enc_codepoint_len
+    public static int encCodepointLength(Ruby runtime, byte[] pBytes, int p, int e, int[] len_p, Encoding enc) {
+        int r;
+        if (e <= p)
+            throw runtime.newArgumentError("empty string");
+        r = StringSupport.preciseLength(enc, pBytes, p, e);
+        if (!StringSupport.MBCLEN_CHARFOUND_P(r)) {
+            throw runtime.newArgumentError("invalid byte sequence in " + enc);
+        }
+        if (len_p != null) len_p[0] = StringSupport.MBCLEN_CHARFOUND_LEN(r);
+        return StringSupport.codePoint(runtime, enc, pBytes, p, e);
+    }
 }
