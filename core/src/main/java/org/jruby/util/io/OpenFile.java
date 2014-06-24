@@ -1448,7 +1448,7 @@ public class OpenFile implements Finalizable {
                 ((RubyString)str).cat(cbuf.ptr, cbuf.off, len);
             }
             str.setTaint(true);
-            ((RubyString)str).setEncoding(encs.enc);
+            EncodingUtils.encAssociateIndex(str, encs.enc);
         }
         cbuf.off += len;
         cbuf.len -= len;

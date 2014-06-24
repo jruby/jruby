@@ -780,10 +780,12 @@ public class EncodingUtils {
     // rb_enc_associate_index
     public static IRubyObject encAssociateIndex(IRubyObject obj, Encoding encidx) {
         ((RubyBasicObject)obj).checkFrozen();
+        if (encidx == null) encidx = ASCIIEncoding.INSTANCE;
         if (((EncodingCapable)obj).getEncoding() == encidx) {
             return obj;
         }
-        if (!((RubyString)obj).isCodeRangeAsciiOnly() ||
+        if (obj instanceof RubyString &&
+                !((RubyString)obj).isCodeRangeAsciiOnly() ||
                 encAsciicompat(encidx)) {
             ((RubyString)obj).clearCodeRange();
         }
