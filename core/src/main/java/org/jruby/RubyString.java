@@ -80,7 +80,6 @@ import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.string.JavaCrypt;
 
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.Locale;
 
 import static org.jruby.RubyComparable.invcmp;
@@ -89,7 +88,6 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Visibility.PRIVATE;
-import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.CR_BROKEN;
@@ -5700,12 +5698,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "lines")
     public IRubyObject lines20(ThreadContext context, Block block) {
+        // Inefficient; build array manually rather than via Enumerator
         return block.isGiven() ? each_lineCommon19(context, block) :
             enumeratorize(context.runtime, this, "lines").callMethod(context, "to_a");
     }
 
     @JRubyMethod(name = "lines")
     public IRubyObject lines20(ThreadContext context, IRubyObject arg, Block block) {
+        // Inefficient; build array manually rather than via Enumerator
         return block.isGiven() ? each_lineCommon19(context, arg, block) :
             enumeratorize(context.runtime, this, "lines", arg).callMethod(context, "to_a");
     }
@@ -5802,22 +5802,22 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "each_byte")
     public IRubyObject each_byte19(ThreadContext context, Block block) {
-        return block.isGiven() ? each_byte(context, block) : enumeratorizeWithSize(context, this, "each_byte", eachByteSizeFn());
+        return enumerateBytes(context, block, false);
     }
 
     @JRubyMethod
     public IRubyObject bytes(ThreadContext context, Block block) {
-        return each_byte19(context, block);
+        return enumerateBytes(context, block, true);
     }
 
     @JRubyMethod(name = "each_char")
     public IRubyObject each_char19(ThreadContext context, Block block) {
-        return block.isGiven() ? each_charCommon19(context, block) : enumeratorizeWithSize(context, this, "each_char", eachCharSizeFn());
+        return enumerateChars(context, block, false);
     }
 
     @JRubyMethod(name = "chars")
     public IRubyObject chars19(ThreadContext context, Block block) {
-        return block.isGiven() ? each_charCommon19(context, block) : enumeratorizeWithSize(context, this, "chars", eachCharSizeFn());
+        return enumerateChars(context, block, true);
     }
 
     private SizeFn eachCharSizeFn() {
@@ -5830,46 +5830,177 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         };
     }
 
-    private IRubyObject each_charCommon19(ThreadContext context, Block block) {
-        byte bytes[] = value.getUnsafeBytes();
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
-        Encoding enc = value.getEncoding();
-
-        Ruby runtime = context.runtime;
-        ByteList val = value.shallowDup();
-        boolean isUSASCII = val.getEncoding() == USASCIIEncoding.INSTANCE;
-        boolean is7bit = getCodeRange() == StringSupport.CR_7BIT;
-        
-        // if 7bit, don't use more expensive length logic
-        // if USASCII, use preallocated single-byte ByteLists
-        while (p < end) {
-            int n = is7bit ? 1 : StringSupport.length(enc, bytes, p, end);
-            RubyString str;
-            if (n == 1 && isUSASCII) {
-                str = newStringShared(runtime, RubyFixnum.SINGLE_CHAR_BYTELISTS19[bytes[p] & 0xFF], StringSupport.CR_7BIT);
-            } else {
-                str = makeShared19(runtime, val, p-value.getBegin(), n);
-            }
-            block.yield(context, str);
-            p += n;
-        }
-        return this;
-    }
-
     /** rb_str_each_codepoint
      * 
      */
     @JRubyMethod
     public IRubyObject each_codepoint(ThreadContext context, Block block) {
-        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "each_codepoint", eachCodepointSizeFn());
-        return singleByteOptimizable() ? each_byte(context, block) : each_codepointCommon(context, block);
+        return enumerateCodepoints(context, block, false);
     }
 
     @JRubyMethod
     public IRubyObject codepoints(ThreadContext context, Block block) {
-        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "codepoints", eachCodepointSizeFn());
-        return singleByteOptimizable() ? each_byte(context, block) : each_codepointCommon(context, block);
+        return enumerateCodepoints(context, block, true);
+    }
+
+    // MRI: rb_str_enumerate_chars
+    private IRubyObject enumerateChars(ThreadContext context, Block block, boolean wantarray) {
+        Ruby runtime = context.runtime;
+        RubyString str = this;
+        IRubyObject orig = str;
+        IRubyObject substr;
+        int i, len, n;
+        byte[] ptrBytes;
+        int ptr;
+        Encoding enc;
+        RubyArray ary = null;
+
+        str = RubyString.newString(runtime, str.getByteList().dup());
+        ByteList strByteList = str.getByteList();
+        ptrBytes = strByteList.unsafeBytes();
+        ptr = strByteList.begin();
+        len = strByteList.getRealSize();
+        enc = str.getEncoding();
+
+        if (block.isGiven()) {
+            if (wantarray) {
+                // this code should be live in 2.2
+                if (false) { // #if STRING_ENUMERATORS_WANTARRAY
+                    runtime.getWarnings().warn("given block not used");
+                    ary = RubyArray.newArray(runtime, str.length().getLongValue());
+                } else {
+                    runtime.getWarnings().warning("passing a block to String#chars is deprecated");
+                    wantarray = false;
+                }
+            }
+        }
+        else {
+            if (wantarray)
+                ary = RubyArray.newArray(runtime, str.length().getLongValue());
+            else
+                return enumeratorizeWithSize(context, this, "chars", eachCharSizeFn());
+        }
+
+        switch (getCodeRange()) {
+            case CR_VALID:
+            case CR_7BIT:
+                for (i = 0; i < len; i += n) {
+                    n = StringSupport.encFastMBCLen(ptrBytes, ptr + i, ptr + len, enc);
+                    substr = str.substr(runtime, i, n);
+                    if (wantarray)
+                        ary.push(substr);
+                    else
+                        block.yield(context, substr);
+                }
+                break;
+            default:
+                for (i = 0; i < len; i += n) {
+                    n = StringSupport.length(enc, ptrBytes, ptr + i, ptr + len);
+                    substr = str.substr(runtime, i, n);
+                    if (wantarray)
+                        ary.push(substr);
+                    else
+                        block.yield(context, substr);
+                }
+        }
+        if (wantarray)
+            return ary;
+        else
+            return orig;
+    }
+
+    // MRI: rb_str_enumerate_codepoints
+    private IRubyObject enumerateCodepoints(ThreadContext context, Block block, boolean wantarray) {
+        Ruby runtime = context.runtime;
+        RubyString str = this;
+        IRubyObject orig = str;
+        int n;
+        int c;
+        byte[] ptrBytes;
+        int ptr, end;
+        Encoding enc;
+        RubyArray ary = null;
+
+        if (singleByteOptimizable())
+            return enumerateBytes(context, block, wantarray);
+
+        str = RubyString.newString(runtime, str.getByteList().dup());
+        ByteList strByteList = str.getByteList();
+        ptrBytes = strByteList.unsafeBytes();
+        ptr = strByteList.begin();
+        end = ptr + strByteList.getRealSize();
+        enc = str.getEncoding();
+
+        if (block.isGiven()) {
+            if (wantarray) {
+                // this code should be live in 2.2
+                if (false) { // #if STRING_ENUMERATORS_WANTARRAY
+                    runtime.getWarnings().warn("given block not used");
+                    ary = RubyArray.newArray(runtime, str.length().getLongValue());
+                } else {
+                    runtime.getWarnings().warning("passing a block to String#codepoints is deprecated");
+                    wantarray = false;
+                }
+            }
+        }
+        else {
+            if (wantarray)
+                ary = RubyArray.newArray(runtime, str.length().getLongValue());
+            else
+                return enumeratorizeWithSize(context, str, "codepoints", eachCodepointSizeFn());
+        }
+
+        while (ptr < end) {
+            c = codePoint(runtime, enc, ptrBytes, ptr, end);
+            n = codeLength(runtime, enc, c);
+            if (wantarray)
+                ary.push(RubyFixnum.newFixnum(runtime, c));
+            else
+                block.yield(context, RubyFixnum.newFixnum(runtime, c));
+            ptr += n;
+        }
+        if (wantarray)
+            return ary;
+        else
+            return orig;
+    }
+
+    private IRubyObject enumerateBytes(ThreadContext context, Block block, boolean wantarray) {
+        Ruby runtime = context.runtime;
+        RubyString str = this;
+        int i;
+        RubyArray ary = null;
+
+        if (block.isGiven()) {
+            if (wantarray) {
+                // this code should be live in 2.2
+                if (false) { // #if STRING_ENUMERATORS_WANTARRAY
+                    runtime.getWarnings().warn("given block not used");
+                    ary = RubyArray.newArray(runtime);
+                } else {
+                    runtime.getWarnings().warning("passing a block to String#bytes is deprecated");
+                    wantarray = false;
+                }
+            }
+        }
+        else {
+            if (wantarray)
+                ary = RubyArray.newArray(runtime, str.size());
+            else
+                return enumeratorizeWithSize(context, str, "bytes", eachByteSizeFn());
+        }
+
+        for (i=0; i<str.size(); i++) {
+            RubyFixnum bite = RubyFixnum.newFixnum(runtime, str.getByteList().get(i) & 0xff);
+            if (wantarray)
+                ary.push(bite);
+            else
+                block.yield(context, bite);
+        }
+        if (wantarray)
+            return ary;
+        else
+            return str;
     }
 
     private SizeFn eachCodepointSizeFn() {
@@ -5880,22 +6011,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 return self.length();
             }
         };
-    }
-
-    private IRubyObject each_codepointCommon(ThreadContext context, Block block) {
-        Ruby runtime = context.runtime;
-        byte bytes[] = value.getUnsafeBytes();
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
-        Encoding enc = value.getEncoding();
-
-        while (p < end) {
-            int c = codePoint(runtime, enc, bytes, p, end);
-            int n = codeLength(runtime, enc, c);
-            block.yield(context, runtime.newFixnum(c));
-            p += n;
-        }
-        return this;
     }
 
     /** rb_str_intern
