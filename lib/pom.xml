@@ -23,9 +23,9 @@
       <version>1.7.13</version>
     </dependency>
     <dependency>
-      <groupId>org.jruby.gems</groupId>
+      <groupId>rubygems</groupId>
       <artifactId>jruby-openssl</artifactId>
-      <version>0.9.5.dev-SNAPSHOT</version>
+      <version>0.9.5</version>
       <type>gem</type>
     </dependency>
     <dependency>
@@ -111,9 +111,9 @@
               <useBaseVersion>true</useBaseVersion>
               <artifactItems>
                 <artifactItem>
-                  <groupId>org.jruby.gems</groupId>
+                  <groupId>rubygems</groupId>
                   <artifactId>jruby-openssl</artifactId>
-                  <version>0.9.5.dev-SNAPSHOT</version>
+                  <version>0.9.5</version>
                   <type>gem</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
