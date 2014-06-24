@@ -13,7 +13,7 @@
 ###### Change these to tastes ######
 JAY=jay
 RUBY=/usr/bin/ruby
-PARSER_BASE=DefaultRubyParser
+PARSER_BASE=RubyParser
 YYTABLE_PREFIX=
 DEBUG=true
 ###### Do not change below ######
