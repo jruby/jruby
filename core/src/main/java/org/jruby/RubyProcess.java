@@ -48,6 +48,7 @@ import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ShellLauncher;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.util.io.PopenExecutor;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
@@ -1191,19 +1192,14 @@ public class RubyProcess {
         return RubyKernel.fork(context, recv, block);
     }
 
-    // See Process#spawn in src/jruby/kernel/process.rb
-    @JRubyMethod(required = 4, module = true, visibility = PRIVATE)
-    public static RubyFixnum _spawn_internal(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
+    public static RubyFixnum spawn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
-        IRubyObject env = args[0];
-        IRubyObject prog = args[1];
-        IRubyObject options = args[2];
-        IRubyObject arguments = args[3];
-
-        RubyIO.checkSpawnOptions(options);
-        
-        long pid = ShellLauncher.runExternalWithoutWait(runtime, env, prog, options, arguments);
+        if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
+            return PopenExecutor.spawn(context, args);
+        }
+        long pid = ShellLauncher.runExternalWithoutWait(runtime, args);
         return RubyFixnum.newFixnum(runtime, pid);
     }
     

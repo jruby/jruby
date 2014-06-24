@@ -64,6 +64,7 @@ public class PopenExecutor {
         return context.nil;
     }
 
+    // MRI: rb_f_spawn
     public static RubyFixnum spawn(ThreadContext context, IRubyObject[] argv) {
         Ruby runtime = context.runtime;
         long pid = 0;
@@ -87,6 +88,7 @@ public class PopenExecutor {
         return runtime.newFixnum(pid);
     }
 
+    // MRI: rb_spawn_process
     long spawnProcess(ThreadContext context, Ruby runtime, ExecArg eargp, String[] errmsg) {
         long pid;
         RubyString prog;

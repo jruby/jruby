@@ -1441,19 +1441,9 @@ public class RubyKernel {
         return RubyRandom.randCommon19(context, recv, arg);
     }
 
-    /**
-     * Now implemented in Ruby code. See Process::spawn in src/jruby/kernel19/process.rb
-     * 
-     * @deprecated 
-     */
+    @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static RubyFixnum spawn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
-        if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
-            return PopenExecutor.spawn(context, args);
-        }
-        long pid = ShellLauncher.runExternalWithoutWait(runtime, args);
-        return RubyFixnum.newFixnum(runtime, pid);
+        return RubyProcess.spawn(context, recv, args);
     }
 
     @JRubyMethod(required = 1, optional = 9, module = true, visibility = PRIVATE)

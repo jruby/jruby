@@ -24,8 +24,4 @@ module Kernel
   def exec(*args)
     _exec_internal(*JRuby::ProcessUtil.exec_args(args))
   end
-  
-  def spawn(*args)
-    Process.spawn(*args)
-  end
 end
