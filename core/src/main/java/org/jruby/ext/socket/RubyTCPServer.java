@@ -53,6 +53,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.ModeFlags;
 
 import org.jruby.util.io.SelectorFactory;
@@ -109,7 +110,7 @@ public class RubyTCPServer extends RubyTCPSocket {
 
             ssc.socket().bind(socket_address);
 
-            initSocket(runtime, new ChannelDescriptor(ssc, newModeFlags(runtime, ModeFlags.RDWR)));
+            initSocket(runtime, new ChannelFD(ssc, runtime.getPosix()));
 
         } catch(UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
@@ -164,7 +165,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                     }
 
                     // otherwise one key has been selected (ours) so we get the channel and hand it off
-                    socket.initSocket(runtime, new ChannelDescriptor(connected, newModeFlags(runtime, ModeFlags.RDWR)));
+                    socket.initSocket(runtime, new ChannelFD(connected, runtime.getPosix()));
 
                     return socket;
                 }
@@ -197,7 +198,7 @@ public class RubyTCPServer extends RubyTCPSocket {
 
                 } else {
                     // otherwise one key has been selected (ours) so we get the channel and hand it off
-                    socket.initSocket(context.runtime, new ChannelDescriptor(ssc.accept(), newModeFlags(runtime, ModeFlags.RDWR)));
+                    socket.initSocket(context.runtime, new ChannelFD(ssc.accept(), runtime.getPosix()));
 
                     return socket;
                 }

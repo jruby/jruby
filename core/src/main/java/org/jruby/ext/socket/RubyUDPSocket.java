@@ -58,6 +58,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.ChannelDescriptor;
 
@@ -94,7 +95,7 @@ public class RubyUDPSocket extends RubyIPSocket {
 
         try {
             DatagramChannel channel = DatagramChannel.open();
-            initSocket(runtime, new ChannelDescriptor(channel, newModeFlags(runtime, ModeFlags.RDWR)));
+            initSocket(runtime, new ChannelFD(channel, runtime.getPosix()));
 
         } catch (ConnectException e) {
             throw runtime.newErrnoECONNREFUSEDError();

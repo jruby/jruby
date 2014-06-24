@@ -60,10 +60,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.io.BadDescriptorException;
-import org.jruby.util.io.ChannelDescriptor;
-import org.jruby.util.io.ChannelStream;
+import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.FilenoUtil;
-import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 
 import jnr.constants.platform.SocketLevel;
@@ -99,10 +97,10 @@ public class RubyBasicSocket extends RubyIO {
         int fileno = (int)_fileno.convertToInteger().getLongValue();
         RubyClass klass = (RubyClass)_klass;
 
-        ChannelDescriptor descriptor = FilenoUtil.getDescriptorByFileno(runtime.getFilenoExtMap(fileno));
+        ChannelFD fd = FilenoUtil.getWrapperFromFileno(runtime.getFilenoExtMap(fileno));
 
         RubyBasicSocket basicSocket = (RubyBasicSocket)klass.getAllocator().allocate(runtime, klass);
-        basicSocket.initSocket(runtime, descriptor);
+        basicSocket.initSocket(runtime, fd);
 
         return basicSocket;
     }
@@ -611,19 +609,11 @@ public class RubyBasicSocket extends RubyIO {
         return context.runtime.isDoNotReverseLookupEnabled() || doNotReverseLookup;
     }
 
-    protected void initSocket(Ruby runtime, ChannelDescriptor descriptor) {
+    protected void initSocket(Ruby runtime, ChannelFD fd) {
         // continue with normal initialization
         MakeOpenFile();
 
-        try {
-            openFile.setMainStream(ChannelStream.fdopen(runtime, descriptor, newModeFlags(runtime, ModeFlags.RDONLY)));
-            openFile.setPipeStream(ChannelStream.fdopen(runtime, descriptor, newModeFlags(runtime, ModeFlags.WRONLY)));
-            openFile.getPipeStream().setSync(true);
-
-        } catch (org.jruby.util.io.InvalidValueException ex) {
-            throw runtime.newErrnoEINVALError();
-        }
-
+        openFile.setFD(fd);
         openFile.setMode(OpenFile.READWRITE | OpenFile.SYNC);
 
         // see rsock_init_sock in MRI; sockets are initialized to binary

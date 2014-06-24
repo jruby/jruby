@@ -51,6 +51,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.Sockaddr;
@@ -138,27 +139,27 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     @JRubyMethod(meta = true)
-    public static IRubyObject for_fd(ThreadContext context, IRubyObject socketClass, IRubyObject fd) {
+    public static IRubyObject for_fd(ThreadContext context, IRubyObject socketClass, IRubyObject _fd) {
         Ruby runtime = context.runtime;
 
-        if (fd instanceof RubyFixnum) {
-            int intFD = (int)((RubyFixnum)fd).getLongValue();
+        if (_fd instanceof RubyFixnum) {
+            int intFD = (int)((RubyFixnum)_fd).getLongValue();
 
-            ChannelDescriptor descriptor = FilenoUtil.getDescriptorByFileno(intFD);
+            ChannelFD fd = FilenoUtil.getWrapperFromFileno(intFD);
 
-            if (descriptor == null) {
+            if (fd == null) {
                 throw runtime.newErrnoEBADFError();
             }
 
             RubySocket socket = (RubySocket)((RubyClass)socketClass).allocate();
 
-            socket.initFieldsFromDescriptor(runtime, descriptor);
+            socket.initFieldsFromDescriptor(runtime, fd);
 
-            socket.initSocket(runtime, descriptor);
+            socket.initSocket(runtime, fd);
 
             return socket;
         } else {
-            throw runtime.newTypeError(fd, context.runtime.getFixnum());
+            throw runtime.newTypeError(_fd, context.runtime.getFixnum());
         }
     }
 
@@ -172,9 +173,9 @@ public class RubySocket extends RubyBasicSocket {
 
         initFieldsFromArgs(runtime, domain, type);
 
-        ChannelDescriptor descriptor = initChannel(runtime);
+        ChannelFD fd = initChannelFD(runtime);
 
-        initSocket(runtime, descriptor);
+        initSocket(runtime, fd);
 
         return this;
     }
@@ -185,9 +186,9 @@ public class RubySocket extends RubyBasicSocket {
 
         initFieldsFromArgs(runtime, domain, type, protocol);
 
-        ChannelDescriptor descriptor = initChannel(runtime);
+        ChannelFD fd = initChannelFD(runtime);
 
-        initSocket(runtime, descriptor);
+        initSocket(runtime, fd);
 
         return this;
     }
@@ -332,8 +333,8 @@ public class RubySocket extends RubyBasicSocket {
         return soType;
     }
 
-    private void initFieldsFromDescriptor(Ruby runtime, ChannelDescriptor descriptor) {
-        Channel mainChannel = descriptor.getChannel();
+    private void initFieldsFromDescriptor(Ruby runtime, ChannelFD fd) {
+        Channel mainChannel = fd.ch;
 
         if (mainChannel instanceof SocketChannel) {
             // ok, it's a socket...set values accordingly
@@ -378,10 +379,10 @@ public class RubySocket extends RubyBasicSocket {
         soType = serverSocket.soType;
         soProtocol = serverSocket.soProtocol;
 
-        initSocket(runtime, newChannelDescriptor(runtime, socketChannel));
+        initSocket(runtime, newChannelFD(runtime, socketChannel));
     }
 
-    protected ChannelDescriptor initChannel(Ruby runtime) {
+    protected ChannelFD initChannelFD(Ruby runtime) {
         Channel channel;
 
         try {
@@ -406,7 +407,7 @@ public class RubySocket extends RubyBasicSocket {
 
             }
 
-            return newChannelDescriptor(runtime, channel);
+            return newChannelFD(runtime, channel);
 
         } catch(IOException e) {
             throw SocketUtils.sockerr(runtime, "initialize: " + e.toString());
@@ -414,10 +415,8 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    protected static ChannelDescriptor newChannelDescriptor(Ruby runtime, Channel channel) {
-        ModeFlags modeFlags = newModeFlags(runtime, ModeFlags.RDWR);
-
-        return new ChannelDescriptor(channel, modeFlags);
+    protected static ChannelFD newChannelFD(Ruby runtime, Channel channel) {
+        return new ChannelFD(channel, runtime.getPosix());
     }
 
     private void initProtocol(Ruby runtime, IRubyObject protocol) {
@@ -611,6 +610,47 @@ public class RubySocket extends RubyBasicSocket {
     @Deprecated
     public static RuntimeException sockerr(Ruby runtime, String msg) {
         return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
+    }
+
+    @Deprecated
+    protected ChannelDescriptor initChannel(Ruby runtime) {
+        Channel channel;
+
+        try {
+            if(soType == Sock.SOCK_STREAM) {
+
+                if (soProtocol == ProtocolFamily.PF_UNIX ||
+                        soProtocol == ProtocolFamily.PF_LOCAL) {
+                    channel = UnixSocketChannel.open();
+                } else if (soProtocol == ProtocolFamily.PF_INET ||
+                        soProtocol == ProtocolFamily.PF_INET6 ||
+                        soProtocol == ProtocolFamily.PF_UNSPEC) {
+                    channel = SocketChannel.open();
+                } else {
+                    throw runtime.newArgumentError("unsupported protocol family `" + soProtocol + "'");
+                }
+
+            } else if(soType == Sock.SOCK_DGRAM) {
+                channel = DatagramChannel.open();
+
+            } else {
+                throw runtime.newArgumentError("unsupported socket type `" + soType + "'");
+
+            }
+
+            return newChannelDescriptor(runtime, channel);
+
+        } catch(IOException e) {
+            throw SocketUtils.sockerr(runtime, "initialize: " + e.toString());
+
+        }
+    }
+
+    @Deprecated
+    protected static ChannelDescriptor newChannelDescriptor(Ruby runtime, Channel channel) {
+        ModeFlags modeFlags = newModeFlags(runtime, ModeFlags.RDWR);
+
+        return new ChannelDescriptor(channel, modeFlags);
     }
 
     private static final Pattern ALREADY_BOUND_PATTERN = Pattern.compile("[Aa]lready.*bound");
