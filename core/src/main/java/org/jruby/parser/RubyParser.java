@@ -763,8 +763,8 @@ public class RubyParser {
      0,     0,     0,     7,     0,     0,     0,     0,     0,     0,
      0,     0,     0,     0,     0,     0,     0,     0,
     };
-    protected static final short[] yyTable = RubyYyTables.yyTable();
-    protected static final short[] yyCheck = RubyYyTables.yyCheck();
+    protected static final short[] yyTable = YyTables.yyTable();
+    protected static final short[] yyCheck = YyTables.yyCheck();
 
   /** maps symbol value to printable name.
       @see #yyExpecting
@@ -4637,7 +4637,7 @@ states[574] = new ParserState() {
 };
 states[575] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.newArrayNode(((Token)yyVals[-1+yyTop]).getPosition(), ((Node)yyVals[0+yyTop])).add(null);
+                    yyVal = support.newArrayNode(((Token)yyVals[-1+yyTop]).getPosition(), null).add(((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };

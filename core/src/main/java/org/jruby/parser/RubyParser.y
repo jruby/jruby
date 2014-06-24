@@ -2202,7 +2202,7 @@ assoc           : arg_value tASSOC arg_value {
                     $$ = support.newArrayNode(pos, new SymbolNode(pos, (String) $1.getValue())).add($2);
                 }
                 | tDSTAR arg_value {
-                    $$ = support.newArrayNode($1.getPosition(), $2).add(null);
+                    $$ = support.newArrayNode($1.getPosition(), null).add($2);
                 }
 
 operation       : tIDENTIFIER | tCONSTANT | tFID
