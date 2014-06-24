@@ -2,9 +2,9 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>rubygems</groupId>
+  <groupId>org.jruby.gems</groupId>
   <artifactId>jruby-openssl</artifactId>
-  <version>0.9.5</version>
+  <version>0.9.6.dev-SNAPSHOT</version>
   <packaging>gem</packaging>
   <name>JRuby OpenSSL</name>
   <description>JRuby-OpenSSL is an add-on gem for JRuby that emulates the Ruby OpenSSL native library.</description>
@@ -143,6 +143,20 @@
           <includeDependencies>true</includeDependencies>
           <useRepositoryLayout>true</useRepositoryLayout>
         </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>deploy</goal>
+            </goals>
+            <configuration>
+              <skip>false</skip>
+              <altDeploymentRepository>sonatype-nexus-snapshots::default::https://oss.sonatype.org/content/repositories/snapshots/</altDeploymentRepository>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
