@@ -465,7 +465,7 @@ public class OpenFile implements Finalizable {
                 return true;
             case EAGAIN:
             case EWOULDBLOCK:
-                ready(runtime, context.getThread(), SelectBlob.READ_ACCEPT_OPS, timeout);
+                ready(runtime, context.getThread(), SelectionKey.OP_READ, timeout);
                 return true;
             default:
                 return false;
