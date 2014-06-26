@@ -44,6 +44,7 @@ import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
+import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 
 import java.util.*;
@@ -996,23 +997,17 @@ public class BodyTranslator extends Translator {
         final List<RubyNode> keys = new ArrayList<>();
         final List<RubyNode> values = new ArrayList<>();
 
-        final org.jruby.ast.ListNode entries = node.getListNode();
-
-        assert entries.size() % 2 == 0;
-
-        for (int n = 0; n < entries.size(); n += 2) {
-            if (entries.get(n) == null) {
-                final NilNode nilNode = new NilNode(context, sourceSection);
-                keys.add(nilNode);
+        for (KeyValuePair<Node, Node> pair: node.getPairs()) {
+            if (pair.getKey() == null) {
+                keys.add(new NilNode(context, sourceSection));
             } else {
-                keys.add(entries.get(n).accept(this));
+                keys.add(pair.getKey().accept(this));
             }
 
-            if (entries.get(n + 1) == null) {
-                final NilNode nilNode = new NilNode(context, sourceSection);
-                values.add(nilNode);
+            if (pair.getValue() == null) {
+                values.add(new NilNode(context, sourceSection));
             } else {
-                values.add(entries.get(n + 1).accept(this));
+                values.add(pair.getValue().accept(this));
             }
         }
 

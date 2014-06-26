@@ -19,7 +19,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
-import org.jruby.util.ByteList;
+import org.jruby.util.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -2358,22 +2358,23 @@ public class IRBuilder {
     }
 
     public Operand buildHash(HashNode hashNode, IRScope s) {
-        List<KeyValuePair> args = new ArrayList<KeyValuePair>();
+        List<KeyValuePair<Operand, Operand>> args = new ArrayList<KeyValuePair<Operand, Operand>>();
 
         if (hashNode.isEmpty()) return copyAndReturnValue(s, new Hash(args));
 
-        Operand key = null;
-        // Alternate between key/value in the loop.
-        for (Node nextNode : hashNode.getListNode().childNodes()) {
-            Operand value = build(nextNode, s);
+        for (KeyValuePair<Node, Node> pair: hashNode.getPairs()) {
+            Node key = pair.getKey();
+            Operand keyOperand = null;
 
             if (key == null) {
-                key = value;
+                // FIXME: Special handling for **b
             } else {
-                args.add(new KeyValuePair(key, value));
-                key = null;
+               keyOperand = build(key, s);
             }
+
+            args.add(new KeyValuePair<Operand, Operand>(keyOperand, build(pair.getValue(), s)));
         }
+
         return copyAndReturnValue(s, new Hash(args));
     }
 

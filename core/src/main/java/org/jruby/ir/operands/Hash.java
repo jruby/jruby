@@ -7,6 +7,7 @@ import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.KeyValuePair;
 
 import java.util.List;
 import java.util.Map;
@@ -17,9 +18,9 @@ import java.util.Map;
 // Further down the line, this hash could get converted to calls
 // that actually build the hash
 public class Hash extends Operand {
-    final public List<KeyValuePair> pairs;
+    final public List<KeyValuePair<Operand, Operand>> pairs;
 
-    public Hash(List<KeyValuePair> pairs) {
+    public Hash(List<KeyValuePair<Operand, Operand>> pairs) {
         super(OperandType.HASH);
 
         this.pairs = pairs;
@@ -31,7 +32,7 @@ public class Hash extends Operand {
 
     @Override
     public boolean hasKnownValue() {
-        for (KeyValuePair pair : pairs) {
+        for (KeyValuePair<Operand, Operand> pair : pairs) {
             if (!pair.getKey().hasKnownValue() || !pair.getValue().hasKnownValue())
                 return false;
         }
@@ -41,8 +42,8 @@ public class Hash extends Operand {
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
-        List<KeyValuePair> newPairs = new java.util.ArrayList<KeyValuePair>();
-        for (KeyValuePair pair : pairs) {
+        List<KeyValuePair<Operand, Operand>> newPairs = new java.util.ArrayList<KeyValuePair<Operand, Operand>>();
+        for (KeyValuePair<Operand, Operand> pair : pairs) {
             newPairs.add(new KeyValuePair(pair.getKey().getSimplifiedOperand(valueMap, force), pair
                     .getValue().getSimplifiedOperand(valueMap, force)));
         }
@@ -53,7 +54,7 @@ public class Hash extends Operand {
     /** Append the list of variables used in this operand to the input list */
     @Override
     public void addUsedVariables(List<Variable> l) {
-        for (KeyValuePair pair : pairs) {
+        for (KeyValuePair<Operand, Operand> pair : pairs) {
             pair.getKey().addUsedVariables(l);
             pair.getValue().addUsedVariables(l);
         }
@@ -64,8 +65,8 @@ public class Hash extends Operand {
         if (hasKnownValue())
             return this;
 
-        List<KeyValuePair> newPairs = new java.util.ArrayList<KeyValuePair>();
-        for (KeyValuePair pair : pairs) {
+        List<KeyValuePair<Operand, Operand>> newPairs = new java.util.ArrayList<KeyValuePair<Operand, Operand>>();
+        for (KeyValuePair<Operand, Operand> pair : pairs) {
             newPairs.add(new KeyValuePair(pair.getKey().cloneForInlining(ii), pair.getValue()
                     .cloneForInlining(ii)));
         }
@@ -78,7 +79,7 @@ public class Hash extends Operand {
         Ruby runtime = context.runtime;
         RubyHash hash = RubyHash.newHash(runtime);
 
-        for (KeyValuePair pair : pairs) {
+        for (KeyValuePair<Operand, Operand> pair : pairs) {
             IRubyObject key = (IRubyObject) pair.getKey().retrieve(context, self, currDynScope,
                     temp);
             IRubyObject value = (IRubyObject) pair.getValue().retrieve(context, self, currDynScope,
@@ -112,7 +113,7 @@ public class Hash extends Operand {
         return builder.toString();
     }
 
-    public List<KeyValuePair> getPairs() {
+    public List<KeyValuePair<Operand, Operand>> getPairs() {
         return pairs;
     }
 }

@@ -20,7 +20,6 @@ import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.IRException;
-import org.jruby.ir.operands.KeyValuePair;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.MethodHandle;
@@ -50,6 +49,7 @@ import org.jruby.ir.operands.UnboxedFloat;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.persistence.read.parser.NonIRObjectFactory;
+import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 
 /**
@@ -120,7 +120,7 @@ class OperandDecoderMap {
 
     private Operand decodeHash() {
         int size = d.decodeInt();
-        List<KeyValuePair> pairs = new ArrayList(size);
+        List<KeyValuePair<Operand, Operand>> pairs = new ArrayList<KeyValuePair<Operand, Operand>>(size);
 
         for (int i = 0; i < size; i++) {
             pairs.add(new KeyValuePair(d.decodeOperand(), d.decodeOperand()));

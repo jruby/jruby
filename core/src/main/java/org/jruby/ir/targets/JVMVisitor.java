@@ -133,6 +133,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ByteList;
+import org.jruby.util.KeyValuePair;
 import org.jruby.util.ClassDefiningClassLoader;
 
 import java.util.List;
@@ -1931,7 +1932,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void Hash(Hash hash) {
         jvmMethod().loadContext();
-        for (KeyValuePair pair: hash.getPairs()) {
+        for (KeyValuePair<Operand, Operand> pair: hash.getPairs()) {
             visit(pair.getKey());
             visit(pair.getValue());
         }

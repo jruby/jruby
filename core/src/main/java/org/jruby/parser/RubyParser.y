@@ -113,6 +113,7 @@ import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.lexer.yacc.Token;
 import org.jruby.util.ByteList;
+import org.jruby.util.KeyValuePair;
 
 public class RubyParser {
     protected ParserSupport support;
@@ -223,7 +224,9 @@ public class RubyParser {
 %type <Node> f_kw, f_block_kw
 %type <ListNode> f_block_kwarg, f_kwarg
    // ENEBO: missing when_args
-%type <ListNode> mlhs_head assocs assoc assoc_list mlhs_post f_block_optarg
+%type <HashNode> assoc_list, assocs
+%type <KeyValuePair> assoc
+%type <ListNode> mlhs_head mlhs_post f_block_optarg
 %type <BlockPassNode> opt_block_arg block_arg none_block_pass
 %type <BlockArgNode> opt_f_block_arg f_block_arg
 %type <IterNode> brace_block do_block cmd_brace_block
@@ -961,10 +964,10 @@ aref_args       : none
                     $$ = $1;
                 }
                 | args ',' assocs trailer {
-                    $$ = support.arg_append($1, new HashNode(lexer.getPosition(), $3));
+                    $$ = support.arg_append($1, $3);
                 }
                 | assocs trailer {
-                    $$ = support.newArrayNode($1.getPosition(), new HashNode(lexer.getPosition(), $1));
+                    $$ = support.newArrayNode($1.getPosition(), $1);
                 }
 
 paren_args      : tLPAREN2 opt_call_args rparen {
@@ -980,10 +983,10 @@ opt_call_args   : none
                     $$ = $1;
                 }
                 | args ',' assocs ',' {
-                    $$ = support.arg_append($1, new HashNode(lexer.getPosition(), $3));
+                    $$ = support.arg_append($1, $3);
                 }
                 | assocs ',' {
-                    $$ = support.newArrayNode($1.getPosition(), new HashNode(lexer.getPosition(), $1));
+                    $$ = support.newArrayNode($1.getPosition(), $1);
                 }
    
 
@@ -995,11 +998,11 @@ call_args       : command {
                     $$ = support.arg_blk_pass($1, $2);
                 }
                 | assocs opt_block_arg {
-                    $$ = support.newArrayNode($1.getPosition(), new HashNode(lexer.getPosition(), $1));
+                    $$ = support.newArrayNode($1.getPosition(), $1);
                     $$ = support.arg_blk_pass((Node)$$, $2);
                 }
                 | args ',' assocs opt_block_arg {
-                    $$ = support.arg_append($1, new HashNode(lexer.getPosition(), $3));
+                    $$ = support.arg_append($1, $3);
                     $$ = support.arg_blk_pass((Node)$$, $4);
                 }
                 | block_arg {
@@ -1137,7 +1140,7 @@ primary         : literal
                     }
                 }
                 | tLBRACE assoc_list tRCURLY {
-                    $$ = new HashNode($1.getPosition(), $2);
+                    $$ = $2;
                 }
                 | kRETURN {
                     $$ = new ReturnNode($1.getPosition(), NilImplicitNode.NIL);
@@ -2172,37 +2175,31 @@ singleton       : var_ref {
                     $$ = $3;
                 }
 
-// [!null]
+// HashNode: [!null]
 assoc_list      : none {
-                    $$ = new ArrayNode(lexer.getPosition());
+                    $$ = new HashNode(lexer.getPosition());
                 }
                 | assocs trailer {
                     $$ = $1;
                 }
 
 // [!null]
-assocs          : assoc
+assocs          : assoc {
+                    $$ = new HashNode(lexer.getPosition(), $1);
+                }
                 | assocs ',' assoc {
-                    $$ = $1.addAll($3);
+                    $$ = $1.add($3);
                 }
 
-// [!null]
+// Cons: [!null]
 assoc           : arg_value tASSOC arg_value {
-                    ISourcePosition pos;
-                    if ($1 == null && $3 == null) {
-                        pos = $2.getPosition();
-                    } else {
-                        pos = $1.getPosition();
-                    }
-
-                    $$ = support.newArrayNode(pos, $1).add($3);
+                    $$ = new KeyValuePair<Node,Node>($1, $3);
                 }
                 | tLABEL arg_value {
-                    ISourcePosition pos = $1.getPosition();
-                    $$ = support.newArrayNode(pos, new SymbolNode(pos, (String) $1.getValue())).add($2);
+                    $$ = new KeyValuePair<Node,Node>(new SymbolNode($1.getPosition(), (String) $1.getValue()), $2);
                 }
                 | tDSTAR arg_value {
-                    $$ = support.newArrayNode($1.getPosition(), null).add($2);
+                    $$ = new KeyValuePair<Node,Node>(null, $2);
                 }
 
 operation       : tIDENTIFIER | tCONSTANT | tFID
