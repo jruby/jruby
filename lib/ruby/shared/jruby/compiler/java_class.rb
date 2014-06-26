@@ -145,6 +145,15 @@ module JRuby::Compiler
       end
     end
 
+    def add_field(signature)
+      if signature.kind_of? String
+        current_class.new_field(signature, @annotations)
+        @annotations = []
+      else
+        raise "java_field must take a literal string"
+      end
+    end
+
     def build_args_signature(params)
       sig = ["Object"]
       param_strings = params.child_nodes.map do |param|
@@ -252,6 +261,8 @@ module JRuby::Compiler
         add_requires(*node.args_node.child_nodes)
       when "java_package"
         set_package(*node.args_node.child_nodes)
+      when "java_field"
+        add_field(node.args_node.child_nodes[0].value)
       end
     end
 
@@ -323,6 +334,7 @@ module JRuby::Compiler
       @name = name
       @imports = imports
       @script_name = script_name
+      @fields = []
       @methods = []
       @annotations = annotations
       @interfaces = []
@@ -331,10 +343,14 @@ module JRuby::Compiler
       @has_constructor = false;
     end
 
-    attr_accessor :methods, :name, :script_name, :annotations, :interfaces, :requires, :package, :sourcefile
+    attr_accessor :methods, :name, :script_name, :fields, :annotations, :interfaces, :requires, :package, :sourcefile
 
     def constructor?
       @has_constructor
+    end
+
+    def new_field(java_signature, annotations = [])
+      fields << [java_signature, annotations]
     end
 
     def new_method(name, java_signature = nil, annotations = [])
@@ -467,6 +483,7 @@ public class #{name} extends RubyObject #{interface_string} {
 
 #{static_init}
 #{constructor_string}
+#{fields_string}
 #{methods_string}
 }
 JAVA
@@ -478,6 +495,17 @@ JAVA
       @imports.map do |import|
         "import #{import};"
       end.join("\n")
+    end
+
+    def fields_string
+      @fields.map do |field|
+        signature = field[0]
+        annotations = field[1]
+        annotations_string = annotations.map do |a|
+          "@" + a
+        end.join("\n")
+        "    #{annotations_string}\n    #{signature};\n"
+      end.join("\n\n")
     end
   end
 

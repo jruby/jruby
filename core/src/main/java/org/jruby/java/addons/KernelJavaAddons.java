@@ -32,7 +32,7 @@ public class KernelJavaAddons {
         if (exception != null) {
             // looks like someone's trying to raise a Java exception. Let them.
             Object maybeThrowable = exception.getObject();
-            
+
             if (maybeThrowable instanceof Throwable) {
                 // yes, we're cheating here.
                 Helpers.throwException((Throwable)maybeThrowable);
@@ -53,7 +53,7 @@ public class KernelJavaAddons {
             return Java.getInstance(context.runtime, fromObject.toJava(Object.class));
         }
     }
-    
+
     @JRubyMethod
     public static IRubyObject to_java(ThreadContext context, IRubyObject fromObject, IRubyObject type) {
         if (type.isNil()) {
@@ -102,6 +102,12 @@ public class KernelJavaAddons {
 
     @JRubyMethod(rest = true)
     public static IRubyObject java_package(IRubyObject recv, IRubyObject[] args) {
+        // empty stub for now
+        return recv.getRuntime().getNil();
+    }
+
+    @JRubyMethod(rest = true)
+    public static IRubyObject java_field(IRubyObject recv, IRubyObject[] args) {
         // empty stub for now
         return recv.getRuntime().getNil();
     }
