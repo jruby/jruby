@@ -1880,10 +1880,8 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().pushString(csByteList);
         for (Operand p : compoundstring.getPieces()) {
             if ((p instanceof StringLiteral) && (compoundstring.isSameEncoding((StringLiteral)p))) {
-                jvmAdapter().dup();
-                jvmAdapter().invokevirtual(p(RubyString.class), "getByteList", sig(ByteList.class));
                 jvmMethod().pushByteList(((StringLiteral)p).bytelist);
-                jvmAdapter().invokevirtual(p(ByteList.class), "append", sig(void.class, ByteList.class));
+                jvmAdapter().invokevirtual(p(RubyString.class), "cat", sig(RubyString.class, ByteList.class));
             } else {
                 visit(p);
                 jvmAdapter().invokevirtual(p(RubyString.class), "append19", sig(RubyString.class, IRubyObject.class));
