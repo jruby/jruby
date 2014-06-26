@@ -256,7 +256,7 @@ public class RubyModule extends RubyObject {
         return autoloads == Collections.EMPTY_MAP ? autoloads = new ConcurrentHashMap<String, Autoload>(4, 0.9f, 1) : autoloads;
     }
     
-    public void addIncludingHierarchy(IncludedModuleWrapper hierarchy) {
+    public void addIncludingHierarchy(IncludedModule hierarchy) {
         synchronized (getRuntime().getHierarchyLock()) {
             Set<RubyClass> oldIncludingHierarchies = includingHierarchies;
             if (oldIncludingHierarchies == Collections.EMPTY_SET) includingHierarchies = oldIncludingHierarchies = new WeakHashSet(4);
@@ -404,7 +404,7 @@ public class RubyModule extends RubyObject {
     }
 
     /**
-     * Is this module one that in an included one (e.g. an IncludedModuleWrapper). 
+     * Is this module one that in an included one (e.g. an IncludedModule).
      */
     public boolean isIncluded() {
         return false;
@@ -530,7 +530,7 @@ public class RubyModule extends RubyObject {
      * @return The module wrapper
      */
     @Deprecated
-    public IncludedModuleWrapper newIncludeClass(RubyClass superClazz) {
+    public IncludedModule newIncludeClass(RubyClass superClazz) {
         IncludedModuleWrapper includedModule = new IncludedModuleWrapper(getRuntime(), superClazz, this);
 
         // include its parent (and in turn that module's parents)
@@ -876,7 +876,7 @@ public class RubyModule extends RubyObject {
         testFrozen("class/module");
 
         // We can safely reference methods here instead of doing getMethods() since if we
-        // are adding we are not using a IncludedModuleWrapper.
+        // are adding we are not using a IncludedModule.
         synchronized(getMethodsForWrite()) {
             DynamicMethod method = (DynamicMethod) getMethodsForWrite().remove(name);
             if (method == null) {
@@ -1226,7 +1226,7 @@ public class RubyModule extends RubyObject {
 
             if (superClazz != null) {
                 RubyClass tmp = clazz.getSuperClass();
-                while (tmp != null && tmp.isIncluded()) tmp = tmp.getSuperClass(); // need to skip IncludedModuleWrappers
+                while (tmp != null && tmp.isIncluded()) tmp = tmp.getSuperClass(); // need to skip IncludedModules
                 if (tmp != null) tmp = tmp.getRealClass();
                 if (tmp != superClazz) throw runtime.newTypeError("superclass mismatch for class " + name);
                 // superClazz = null;
@@ -2010,6 +2010,37 @@ public class RubyModule extends RubyObject {
         return instance_methods(args, PRIVATE, false, true);
     }
 
+    /** rb_mod_prepend_features
+     *
+     */
+    @JRubyMethod(name = "prepend_features", required = 1, visibility = PRIVATE)
+    public RubyModule prepend_features(IRubyObject module) {
+        if (!(module instanceof RubyModule)) {
+            // MRI error message says Class, even though Module is ok
+            throw getRuntime().newTypeError(module,getRuntime().getClassClass());
+        }
+        RubyClass prep = new PrependedModule(getRuntime(), ((RubyModule)module).getSuperClass(), (RubyModule)module);
+        ((RubyModule) module).includeModule(this);
+
+        // if the insertion point is a class, update subclass lists
+        if (module instanceof RubyClass) {
+            RubyClass insertAboveClass = (RubyClass)module;
+
+            // if there's a non-null superclass, we're including into a normal class hierarchy;
+            // update subclass relationships to avoid stale parent/child relationships
+            if (insertAboveClass.getSuperClass() != null) {
+                insertAboveClass.getSuperClass().replaceSubclass(insertAboveClass, (RubyClass)prep);
+            }
+
+            prep.addSubclass(insertAboveClass);
+        }
+
+        ((RubyModule)module).invalidateCacheDescendants();
+        ((RubyModule)module).invalidateConstantCacheForModuleInclusion(this);
+
+        return this;
+    }
+
     /** rb_mod_append_features
      *
      */
@@ -2418,7 +2449,7 @@ public class RubyModule extends RubyObject {
      */
     private RubyModule proceedWithInclude(RubyModule insertAbove, RubyModule moduleToInclude) {
         // In the current logic, if we getService here we know that module is not an
-        // IncludedModuleWrapper, so there's no need to fish out the delegate. But just
+        // IncludedModule, so there's no need to fish out the delegate. But just
         // in case the logic should change later, let's do it anyway
         RubyClass wrapper = new IncludedModuleWrapper(getRuntime(), insertAbove.getSuperClass(), moduleToInclude.getNonIncludedClass());
         
@@ -2733,10 +2764,26 @@ public class RubyModule extends RubyObject {
         return this;
     }
     
-    @JRubyMethod(rest = true)
-    public IRubyObject prepend(ThreadContext context, IRubyObject[] args) {
-        // TODO
-        return context.nil;
+    @JRubyMethod(name = "prepend", rest = true, visibility = PUBLIC)
+    public IRubyObject prepend(ThreadContext context, IRubyObject[] modules) {
+        // MRI checks all types first:
+        for (int i = modules.length; --i >= 0; ) {
+            IRubyObject obj = modules[i];
+            if (!obj.isModule()) {
+                throw context.runtime.newTypeError(obj, context.runtime.getModule());
+            }
+        }
+        for (int i = modules.length - 1; i >= 0; i--) {
+            modules[i].callMethod(context, "prepend_features", this);
+            modules[i].callMethod(context, "prepended", this);
+        }
+
+        return this;
+    }
+
+    @JRubyMethod(name = "prepended", required = 1, visibility = PRIVATE)
+    public IRubyObject prepended(ThreadContext context, IRubyObject other) {
+        return context.runtime.getNil();
     }
 
     private void setConstantVisibility(ThreadContext context, String name, boolean hidden) {
@@ -3920,7 +3967,7 @@ public class RubyModule extends RubyObject {
     }
     
     private volatile Map<String, Autoload> autoloads = Collections.EMPTY_MAP;
-    private volatile Map<String, DynamicMethod> methods = Collections.EMPTY_MAP;
+    protected volatile Map<String, DynamicMethod> methods = Collections.EMPTY_MAP;
     protected Map<String, CacheEntry> cachedMethods = Collections.EMPTY_MAP;
     protected int generation;
     protected Integer generationObject;
