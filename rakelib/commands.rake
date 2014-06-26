@@ -1,5 +1,5 @@
 # -*- coding: iso-8859-1 -*-
-require 'ant'
+#require 'ant'
 require 'rbconfig'
 
 # Determine if we need to put a 32 or 64 bit flag to the command-line
