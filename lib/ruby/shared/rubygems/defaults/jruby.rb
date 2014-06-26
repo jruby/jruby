@@ -4,11 +4,6 @@ require 'jruby/util'
 
 module Gem
 
-  post_install do |gem_installer|
-    require 'jar_installer'
-    Jars::JarInstaller.new( gem_installer.spec ).vendor_jars
-  end
-
   ConfigFile::PLATFORM_DEFAULTS['install'] = '--no-rdoc --no-ri --env-shebang'
   ConfigFile::PLATFORM_DEFAULTS['update']  = '--no-rdoc --no-ri --env-shebang'
 
