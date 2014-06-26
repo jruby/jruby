@@ -2586,7 +2586,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "const_get", required = 1, optional = 1)
     public IRubyObject const_get_2_0(ThreadContext context, IRubyObject[] args) {
-        String symbol = args[0].asJavaString();
+        String fullName = args[0].asJavaString();
+        String symbol = fullName;
         boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
 
         RubyModule mod = this;
@@ -2594,15 +2595,15 @@ public class RubyModule extends RubyObject {
         while((sep = symbol.indexOf("::")) != -1) {
             String segment = symbol.substring(0, sep);
             symbol = symbol.substring(sep + 2);
-            IRubyObject obj = mod.getConstant(validateConstant(segment), inherit, inherit);
+            IRubyObject obj = mod.getConstant(validateConstant(segment, fullName), inherit, inherit);
             if(obj instanceof RubyModule) {
                 mod = (RubyModule)obj;
             } else {
-                throw getRuntime().newTypeError(segment + " does not refer to class/module");
+                throw context.runtime.newTypeError(segment + " does not refer to class/module");
             }
         }
 
-        return mod.getConstant(validateConstant(symbol), inherit, inherit);
+        return mod.getConstant(validateConstant(symbol, fullName), inherit, inherit);
     }
 
     /** rb_mod_const_set
@@ -3493,10 +3494,14 @@ public class RubyModule extends RubyObject {
     }
    
     protected final String validateConstant(String name) {
+        return validateConstant(name, name);
+    }
+
+    protected final String validateConstant(String name, String errorName) {
         if (IdUtil.isValidConstantName19(name)) {
             return name;
         }
-        throw getRuntime().newNameError("wrong constant name " + name, name);
+        throw getRuntime().newNameError("wrong constant name " + errorName, name);
     }
 
     protected final void ensureConstantsSettable() {
