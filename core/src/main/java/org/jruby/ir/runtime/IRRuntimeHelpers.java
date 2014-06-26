@@ -646,4 +646,8 @@ public class IRRuntimeHelpers {
 
         return rubyClass;
     }
+
+    public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explcitKwarg) {
+        return ((RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg)).merge(context, explcitKwarg, Block.NULL_BLOCK);
+    }
 }

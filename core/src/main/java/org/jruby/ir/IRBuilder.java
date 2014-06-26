@@ -2359,15 +2359,15 @@ public class IRBuilder {
 
     public Operand buildHash(HashNode hashNode, IRScope s) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<KeyValuePair<Operand, Operand>>();
-
-        if (hashNode.isEmpty()) return copyAndReturnValue(s, new Hash(args));
+        Operand splatKeywordArgument = null;
 
         for (KeyValuePair<Node, Node> pair: hashNode.getPairs()) {
             Node key = pair.getKey();
             Operand keyOperand = null;
 
-            if (key == null) {
-                // FIXME: Special handling for **b
+            if (key == null) { // splat kwargs [e.g. foo(a: 1, **splat)] key is null and will be in last pair of hash
+                splatKeywordArgument = build(pair.getValue(), s);
+                break;
             } else {
                keyOperand = build(key, s);
             }
@@ -2375,7 +2375,13 @@ public class IRBuilder {
             args.add(new KeyValuePair<Operand, Operand>(keyOperand, build(pair.getValue(), s)));
         }
 
-        return copyAndReturnValue(s, new Hash(args));
+        if (splatKeywordArgument != null) { // splat kwargs merge with any explicit kwargs
+            Variable tmp = s.createTemporaryVariable();
+            s.addInstr(new RuntimeHelperCall(tmp, MERGE_KWARGS, new Operand[] { splatKeywordArgument, new Hash(args)}));
+            return tmp;
+        } else {
+            return copyAndReturnValue(s, new Hash(args));
+        }
     }
 
     // Translate "r = if (cond); .. thenbody ..; else; .. elsebody ..; end" to
