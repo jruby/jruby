@@ -1,4 +1,5 @@
 exclude :test___dir__, "needs investigation"
+exclude :test_alias_owner, "needs investigation"
 exclude :test_body, "needs investigation"
 exclude :test_bound_method_entry, "broken subprocess logic"
 exclude :test_callee, "needs investigation"
