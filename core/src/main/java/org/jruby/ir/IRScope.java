@@ -272,8 +272,12 @@ public abstract class IRScope implements ParseResult {
         this.nestedClosures = new ArrayList<IRClosure>();
     }
 
-    public void addClosure(IRClosure c) {
-        nestedClosures.add(c);
+    public void addClosure(IRClosure closure) {
+        nestedClosures.add(closure);
+    }
+
+    public void removeClosure(IRClosure closure) {
+        nestedClosures.remove(closure);
     }
 
     public Instr getLastInstr() {

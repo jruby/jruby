@@ -260,6 +260,10 @@ public enum Operation {
         return this == LABEL;
     }
 
+    /**
+     * The last instruction in the BB which will exit the BB.  Note:  This also
+     * means any instructions past this point in that BB are unreachable.
+     */
     public boolean endsBasicBlock() {
         return transfersControl();
     }

@@ -25,6 +25,7 @@ import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.OperandType;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.ir.util.DirectedGraph;
@@ -286,7 +287,7 @@ public class CFG {
                         graph.addEdge(b, newBB, EdgeType.REGULAR);
                     }
                 }
-            } else if (bbEnded && (iop != Operation.EXC_REGION_END)) {
+            } else if (bbEnded && iop != Operation.EXC_REGION_END) {
                 newBB = createBB(nestedExceptionRegions);
                 // Jump instruction bbs dont add an edge to the succeeding bb by default
                 if (nextBBIsFallThrough) graph.addEdge(currBB, newBB, EdgeType.FALL_THROUGH); // currBB cannot be null!
@@ -469,6 +470,7 @@ public class CFG {
             if (bbToRemove == null) break;
 
             removeBB(bbToRemove);
+            removeNestedScopesFromBB(bbToRemove);
         }
     }
 
@@ -515,7 +517,25 @@ public class CFG {
         graph.removeVertexFor(b);
         bbMap.remove(b.getLabel());
         rescuerMap.remove(b);
+
         // SSS FIXME: Patch up rescued regions as well??
+    }
+
+    /**
+     * Wrapped IRClosures in dead BB are lexically rooted to that dead BB so they can
+     * be removed from the parent scope if the BB they live in died.
+     */
+    private void removeNestedScopesFromBB(BasicBlock bb) {
+        for (Instr instr: bb.getInstrs()) {
+            for (Operand oper: instr.getOperands()) {
+                if (oper.getOperandType() == OperandType.WRAPPED_IR_CLOSURE) {
+                    WrappedIRClosure closure = (WrappedIRClosure) oper;
+
+                    scope.removeClosure(closure.getClosure());
+                    break; // Only one WrappedIRClosure possible per instr
+                }
+            }
+        }
     }
 
     public void collapseStraightLineBBs() {
