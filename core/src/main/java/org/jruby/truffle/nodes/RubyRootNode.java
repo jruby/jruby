@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.util.cli.Options;
 
 /**
  * The root node in an AST for a method. Unlike {@link RubyNode}, this has a single entry point,
@@ -59,19 +60,21 @@ public class RubyRootNode extends RootNode {
     public void reportLoopCountThroughBlocks(int count) {
         CompilerAsserts.neverPartOfCompilation();
 
-        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
-            final RootNode rootNode = frame.getCallNode().getRootNode();
+        if (Options.TRUFFLE_COMPILER_PASS_LOOPS_THROUGH_BLOCKS.load()) {
+            for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
+                final RootNode rootNode = frame.getCallNode().getRootNode();
 
-            if (!(rootNode instanceof RubyRootNode)) {
-                break;
-            }
+                if (!(rootNode instanceof RubyRootNode)) {
+                    break;
+                }
 
-            final RubyRootNode rubyRootNode = (RubyRootNode) rootNode;
+                final RubyRootNode rubyRootNode = (RubyRootNode) rootNode;
 
-            rootNode.reportLoopCount(count);
+                rootNode.reportLoopCount(count);
 
-            if (!rubyRootNode.getSharedMethodInfo().isBlock()) {
-                break;
+                if (!rubyRootNode.getSharedMethodInfo().isBlock()) {
+                    break;
+                }
             }
         }
 
