@@ -11,8 +11,13 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.RootCallTarget;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.methods.arguments.BehaveAsBlockNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.methods.*;
@@ -105,6 +110,24 @@ public class RubyProc extends RubyObject {
 
     public CallTarget getCallTarget() {
         return callTarget;
+    }
+
+    public CallTarget getCallTargetForMethods() {
+        return withoutBlockDestructureSemantics(callTarget);
+    }
+
+    private static CallTarget withoutBlockDestructureSemantics(CallTarget callTarget) {
+        if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
+            final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
+
+            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNode, BehaveAsBlockNode.class)) {
+                behaveAsBlockNode.setBehaveAsBlock(false);
+            }
+
+            return Truffle.getRuntime().createCallTarget(newRootNode);
+        } else {
+            throw new UnsupportedOperationException("Can't change the semantics of an opaque call target");
+        }
     }
 
     public MaterializedFrame getDeclarationFrame() {
