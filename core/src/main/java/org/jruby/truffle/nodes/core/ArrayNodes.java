@@ -2887,7 +2887,29 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), unboxed, array.getSize());
         }
 
-        @Specialization(guards = "isObject", order = 6)
+        @Specialization(guards = {"isObject", "isSmall"}, order = 6)
+        public RubyArray sortVeryShortObject(VirtualFrame frame, RubyArray array) {
+            final Object[] store = (Object[]) array.getStore();
+
+            // Insertion sort
+
+            final int size = array.getSize();
+
+            for (int i = 1; i < size; i++) {
+                final Object x = store[i];
+                int j = i;
+                // TODO(CS): node for this cast
+                while (j > 0 && (int) compareDispatchNode.dispatch(frame, store[j - 1], null, x) > 0) {
+                    store[j] = store[j - 1];
+                    j--;
+                }
+                store[j] = x;
+            }
+
+            return array;
+        }
+
+        @Specialization(guards = "isObject", order = 7)
         public RubyArray sortObject(VirtualFrame frame, RubyArray array) {
             notDesignedForCompilation();
 

@@ -15,6 +15,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.Ruby;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
@@ -88,6 +89,15 @@ public abstract class HashNodes {
     @CoreMethod(names = "[]", isModuleMethod = true, needsSelf = false, isSplatted = true)
     public abstract static class ConstructNode extends HashCoreMethodNode {
 
+        private final BranchProfile singleObject = new BranchProfile();
+        private final BranchProfile singleArray = new BranchProfile();
+        private final BranchProfile objectArray = new BranchProfile();
+        private final BranchProfile smallObjectArray = new BranchProfile();
+        private final BranchProfile largeObjectArray = new BranchProfile();
+        private final BranchProfile otherArray = new BranchProfile();
+        private final BranchProfile singleOther = new BranchProfile();
+        private final BranchProfile keyValues = new BranchProfile();
+
         public ConstructNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -98,22 +108,77 @@ public abstract class HashNodes {
 
         @Specialization
         public RubyHash construct(Object[] args) {
-            notDesignedForCompilation();
+            if (args.length == 1) {
+                singleObject.enter();
 
-            if (args.length == 0) {
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null);
-            } else if (args.length <= Options.TRUFFLE_HASHES_SMALL.load()) {
-                // TODO(CS): we can just reference the arguments array, can't we? It'll escape of course. Problem?
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, args);
-            } else {
-                final LinkedHashMap<Object, Object> store = new LinkedHashMap<>();
+                final Object arg = args[0];
 
-                for (int n = 0; n < args.length; n += 2) {
-                    store.put(args[n], args[n + 1]);
+                if (arg instanceof RubyArray) {
+                    singleArray.enter();
+
+                    final RubyArray array = (RubyArray) arg;
+
+                    if (array.getStore() instanceof Object[]) {
+                        objectArray.enter();
+
+                        final Object[] store = (Object[]) array.getStore();
+
+                        // TODO(CS): zero length arrays might be a good specialisation
+
+                        if (store.length <= Options.TRUFFLE_HASHES_SMALL.load()) {
+                            smallObjectArray.enter();
+
+                            final Object[] newStore = new Object[store.length * 2];
+
+                            for (int n = 0; n < store.length; n++) {
+                                final Object pair = store[n];
+
+                                if (!(pair instanceof RubyArray)) {
+                                    CompilerDirectives.transferToInterpreter();
+                                    throw new UnsupportedOperationException();
+                                }
+
+                                final RubyArray pairArray = (RubyArray) pair;
+
+                                if (!(pairArray.getStore() instanceof Object[])) {
+                                    CompilerDirectives.transferToInterpreter();
+                                    throw new UnsupportedOperationException();
+                                }
+
+                                final Object[] pairStore = (Object[]) pairArray.getStore();
+
+                                newStore[n * 2] = pairStore[0];
+                                newStore[n * 2 + 1] = pairStore[1];
+                            }
+
+                            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, newStore);
+                        } else {
+                            largeObjectArray.enter();
+                            throw new UnsupportedOperationException();
+                        }
+                    } else {
+                        otherArray.enter();
+                        throw new UnsupportedOperationException();
+                    }
+                } else {
+                    singleOther.enter();
+                    throw new UnsupportedOperationException();
                 }
-
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, store);
+            } else {
+                keyValues.enter();
+                throw new UnsupportedOperationException();
             }
+        }
+
+        @CompilerDirectives.SlowPath
+        public RubyHash constructObjectLinkedMapMap(Object[] args) {
+            final LinkedHashMap<Object, Object> store = new LinkedHashMap<>();
+
+            for (int n = 0; n < args.length; n += 2) {
+                store.put(args[n], args[n + 1]);
+            }
+
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, store);
         }
 
     }

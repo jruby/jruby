@@ -50,6 +50,7 @@ public class ReadRestArgumentNode extends RubyNode {
             } else {
                 subsetOfArgumentsProfile.enter();
                 final Object[] arguments = RubyArguments.extractUserArguments(frame.getArguments());
+                // TODO(CS): risk here of widening types too much - always going to be Object[] - does seem to be something that does happen
                 return new RubyArray(arrayClass, Arrays.copyOfRange(arguments, index, arguments.length), arguments.length - index);
             }
         }
