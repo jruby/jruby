@@ -165,7 +165,7 @@ class MethodTranslator extends BodyTranslator {
         }
     }
 
-    private static CallTarget withoutBlockDestructureSemantics(CallTarget callTarget) {
+    private CallTarget withoutBlockDestructureSemantics(CallTarget callTarget) {
         if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
             final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
 
@@ -173,7 +173,11 @@ class MethodTranslator extends BodyTranslator {
                 behaveAsBlockNode.setBehaveAsBlock(false);
             }
 
-            return Truffle.getRuntime().createCallTarget(newRootNode);
+            final RubyRootNode newRootNodeWithCatchReturn = new RubyRootNode(newRootNode.getSourceSection(),
+                    newRootNode.getFrameDescriptor(), newRootNode.getSharedMethodInfo(),
+                        new CatchReturnNode(context, newRootNode.getSourceSection(), newRootNode.getBody(), getEnvironment().getReturnID()));
+
+            return Truffle.getRuntime().createCallTarget(newRootNodeWithCatchReturn);
         } else {
             throw new UnsupportedOperationException("Can't change the semantics of an opaque call target");
         }

@@ -88,18 +88,14 @@ public class RubyProc extends RubyObject {
         assert modifiedSelf != null;
         assert args != null;
 
-        try {
-            return callTarget.call(RubyArguments.pack(declarationFrame, modifiedSelf, block, args));
-        } catch (ReturnException e) {
-            switch (type) {
-                case PROC:
-                    throw e;
-                case LAMBDA:
-                    return e.getValue();
-                default:
-                    throw new IllegalStateException();
-            }
+        switch (type) {
+            case PROC:
+                return callTarget.call(RubyArguments.pack(declarationFrame, modifiedSelf, block, args));
+            case LAMBDA:
+                return callTargetForMethods.call(RubyArguments.pack(declarationFrame, modifiedSelf, block, args));
         }
+
+        throw new IllegalStateException();
     }
 
     public Type getType() {
