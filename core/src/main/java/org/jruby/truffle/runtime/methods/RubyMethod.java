@@ -119,7 +119,7 @@ public class RubyMethod {
         return new RubyMethod(sharedMethodInfo, name, declaringModule, newVisibility, undefined, callTarget, declarationFrame, mapCallTarget);
     }
 
-    public RubyMethod withoutBlockDestructureSemantics() {
+    public static CallTarget withoutBlockDestructureSemantics(CallTarget callTarget) {
         if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
             final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
 
@@ -127,7 +127,7 @@ public class RubyMethod {
                 behaveAsBlockNode.setBehaveAsBlock(false);
             }
 
-            return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, undefined, Truffle.getRuntime().createCallTarget(newRootNode), declarationFrame, mapCallTarget);
+            return Truffle.getRuntime().createCallTarget(newRootNode);
         } else {
             throw new UnsupportedOperationException("Can't change the semantics of an opaque call target");
         }

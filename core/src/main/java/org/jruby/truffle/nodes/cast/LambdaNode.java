@@ -20,6 +20,8 @@ import org.jruby.truffle.runtime.methods.*;
 @NodeInfo(shortName = "lambda")
 public class LambdaNode extends RubyNode {
 
+    // TODO(CS): this should be a lambda definition node, alongside block definition node
+
     @Child protected RubyNode definition;
 
     public LambdaNode(RubyContext context, SourceSection sourceSection, RubyNode definition) {
@@ -31,7 +33,13 @@ public class LambdaNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA, RubyArguments.getSelf(frame.getArguments()), null, (RubyMethod) definition.execute(frame));
+        final RubyMethod method = (RubyMethod) definition.execute(frame);
+
+        // TODO(CS): not sure we're closing over the correct state here
+
+        return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA,
+                method.getSharedMethodInfo(), method.getCallTarget(), method.getDeclarationFrame(),
+                RubyArguments.getSelf(frame.getArguments()), null);
     }
 
     @Override

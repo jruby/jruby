@@ -30,6 +30,7 @@ import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.subsystems.*;
 
 @CoreClass(name = "Kernel")
@@ -406,7 +407,7 @@ public abstract class
 
     }
 
-    @CoreMethod(names = "lambda", isModuleMethod = true, needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "lambda", isModuleMethod = true, needsSelf = false, needsBlock = true, maxArgs = 0)
     public abstract static class LambdaNode extends CoreMethodNode {
 
         public LambdaNode(RubyContext context, SourceSection sourceSection) {
@@ -418,10 +419,12 @@ public abstract class
         }
 
         @Specialization
-        public RubyProc proc(Object self, RubyProc block) {
+        public RubyProc proc(RubyProc block) {
             notDesignedForCompilation();
 
-            return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA, self, block, block.getMethod().withoutBlockDestructureSemantics());
+            return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA,
+                    block.getSharedMethodInfo(), RubyMethod.withoutBlockDestructureSemantics(block.getCallTarget()),
+                    block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
         }
     }
 
@@ -600,7 +603,7 @@ public abstract class
         }
     }
 
-    @CoreMethod(names = "proc", isModuleMethod = true, needsBlock = true, maxArgs = 0)
+    @CoreMethod(names = "proc", isModuleMethod = true, needsSelf = false, needsBlock = true, maxArgs = 0)
     public abstract static class ProcNode extends CoreMethodNode {
 
         public ProcNode(RubyContext context, SourceSection sourceSection) {
@@ -612,10 +615,12 @@ public abstract class
         }
 
         @Specialization
-        public RubyProc proc(Object self, RubyProc block) {
+        public RubyProc proc(RubyProc block) {
             notDesignedForCompilation();
 
-            return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, self, block, block.getMethod());
+            return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
+                    block.getSharedMethodInfo(), block.getCallTarget(), block.getDeclarationFrame(),
+                    block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
         }
     }
 

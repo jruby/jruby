@@ -89,5 +89,4 @@ public class RubyRootNode extends RootNode {
     public SharedMethodInfo getSharedMethodInfo() {
         return sharedMethodInfo;
     }
-
 }

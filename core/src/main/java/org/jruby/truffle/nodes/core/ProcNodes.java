@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
@@ -55,7 +56,8 @@ public abstract class ProcNodes {
         public NilPlaceholder initialize(RubyProc proc, RubyProc block) {
             notDesignedForCompilation();
 
-            proc.initialize(block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), block.getMethod().withoutBlockDestructureSemantics());
+            proc.initialize(block.getSharedMethodInfo(), RubyMethod.withoutBlockDestructureSemantics(block.getCallTarget()),
+                    block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
             return NilPlaceholder.INSTANCE;
         }
 

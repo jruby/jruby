@@ -2166,17 +2166,15 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object max(VirtualFrame frame, RubyArray array) {
+            // TODO: can we just write to the frame instead of having this indirect object?
+
             final Memo<Object> maximum = new Memo<>();
 
             final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, array, null), maxBlock.getFrameDescriptor());
             maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
 
-            final RubyMethod method = new RubyMethod(maxBlock.getMethod().getSharedMethodInfo(),
-                    maxBlock.getMethod().getName(), null, Visibility.PUBLIC, false, maxBlock.getMethod().getCallTarget(),
-                    maximumClosureFrame.materialize(), false);
-
-            final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, array, null,
-                    method);
+            final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
+                    maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maximumClosureFrame.materialize(), array, null);
 
             eachNode.dispatch(frame, array, block);
 
@@ -2224,7 +2222,8 @@ public abstract class ArrayNodes {
 
         private final FrameDescriptor frameDescriptor;
         private final FrameSlot frameSlot;
-        private final RubyMethod method;
+        private final SharedMethodInfo sharedMethodInfo;
+        private final CallTarget callTarget;
 
         public MaxBlock(RubyContext context) {
             final String name = "(max-block)";
@@ -2234,15 +2233,13 @@ public abstract class ArrayNodes {
             frameDescriptor = new FrameDescriptor();
             frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
 
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name, false, null);
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, name, false, null);
 
-            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(sourceSection, null, sharedMethodInfo,
+            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(sourceSection, null, sharedMethodInfo,
                     ArrayNodesFactory.MaxBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
                             ReadLevelVariableNodeFactory.create(context, sourceSection, frameSlot, 1),
                             new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
                     })));
-
-            method = new RubyMethod(sharedMethodInfo, name, null, Visibility.PUBLIC, false, callTarget, null, false);
         }
 
         public FrameDescriptor getFrameDescriptor() {
@@ -2253,8 +2250,12 @@ public abstract class ArrayNodes {
             return frameSlot;
         }
 
-        public RubyMethod getMethod() {
-            return method;
+        public SharedMethodInfo getSharedMethodInfo() {
+            return sharedMethodInfo;
+        }
+
+        public CallTarget getCallTarget() {
+            return callTarget;
         }
     }
 
@@ -2278,17 +2279,15 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object min(VirtualFrame frame, RubyArray array) {
+            // TODO: can we just write to the frame instead of having this indirect object?
+
             final Memo<Object> minimum = new Memo<>();
 
             final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, array, null), minBlock.getFrameDescriptor());
             minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
 
-            final RubyMethod method = new RubyMethod(minBlock.getMethod().getSharedMethodInfo(),
-                    minBlock.getMethod().getName(), null, Visibility.PUBLIC, false, minBlock.getMethod().getCallTarget(),
-                    minimumClosureFrame.materialize(), false);
-
-            final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, array, null,
-                    method);
+            final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
+                    minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minimumClosureFrame.materialize(), array, null);
 
             eachNode.dispatch(frame, array, block);
 
@@ -2336,7 +2335,8 @@ public abstract class ArrayNodes {
 
         private final FrameDescriptor frameDescriptor;
         private final FrameSlot frameSlot;
-        private final RubyMethod method;
+        private final SharedMethodInfo sharedMethodInfo;
+        private final CallTarget callTarget;
 
         public MinBlock(RubyContext context) {
             final String name = "(min-block)";
@@ -2346,15 +2346,13 @@ public abstract class ArrayNodes {
             frameDescriptor = new FrameDescriptor();
             frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
 
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, name, false, null);
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, name, false, null);
 
-            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(sourceSection, null, sharedMethodInfo,
+            callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(sourceSection, null, sharedMethodInfo,
                     ArrayNodesFactory.MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
                             ReadLevelVariableNodeFactory.create(context, sourceSection, frameSlot, 1),
                             new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR)
                     })));
-
-            method = new RubyMethod(sharedMethodInfo, name, null, Visibility.PUBLIC, false, callTarget, null, false);
         }
 
         public FrameDescriptor getFrameDescriptor() {
@@ -2365,8 +2363,12 @@ public abstract class ArrayNodes {
             return frameSlot;
         }
 
-        public RubyMethod getMethod() {
-            return method;
+        public SharedMethodInfo getSharedMethodInfo() {
+            return sharedMethodInfo;
+        }
+
+        public CallTarget getCallTarget() {
+            return callTarget;
         }
     }
 

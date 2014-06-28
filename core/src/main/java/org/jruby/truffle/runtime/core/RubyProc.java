@@ -9,8 +9,11 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.frame.MaterializedFrame;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.methods.*;
 
@@ -42,28 +45,34 @@ public class RubyProc extends RubyObject {
     }
 
     private final Type type;
-    @CompilationFinal private Object selfCapturedInScope;
-    @CompilationFinal private RubyProc blockCapturedInScope;
-    @CompilationFinal private RubyMethod method;
+    @CompilationFinal private SharedMethodInfo sharedMethodInfo;
+    @CompilationFinal private CallTarget callTarget;
+    @CompilationFinal private MaterializedFrame declarationFrame;
+    @CompilationFinal private Object self;
+    @CompilationFinal private RubyProc block;
 
     public RubyProc(RubyClass procClass, Type type) {
         super(procClass);
         this.type = type;
     }
 
-    public RubyProc(RubyClass procClass, Type type, Object selfCapturedInScope, RubyProc blockCapturedInScope, RubyMethod method) {
+    public RubyProc(RubyClass procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTarget,
+                    MaterializedFrame declarationFrame, Object self, RubyProc block) {
         this(procClass, type);
-        initialize(selfCapturedInScope, blockCapturedInScope, method);
+        initialize(sharedMethodInfo, callTarget, declarationFrame, self, block);
     }
 
-    public void initialize(Object selfCapturedInScope, RubyProc blockCapturedInScope, RubyMethod setMethod) {
-        this.selfCapturedInScope = selfCapturedInScope;
-        this.blockCapturedInScope = blockCapturedInScope;
-        method = setMethod;
+    public void initialize(SharedMethodInfo sharedMethodInfo, CallTarget callTarget,
+                           MaterializedFrame declarationFrame, Object self, RubyProc block) {
+        this.sharedMethodInfo = sharedMethodInfo;
+        this.callTarget = callTarget;
+        this.declarationFrame = declarationFrame;
+        this.self = self;
+        this.block = block;
     }
 
     public Object call(Object... args) {
-        return callWithModifiedSelf(selfCapturedInScope, args);
+        return callWithModifiedSelf(self, args);
     }
 
     public Object callWithModifiedSelf(Object modifiedSelf, Object... args) {
@@ -73,7 +82,7 @@ public class RubyProc extends RubyObject {
         assert args != null;
 
         try {
-            return method.call(modifiedSelf, blockCapturedInScope, args);
+            return callTarget.call(RubyArguments.pack(declarationFrame, modifiedSelf, block, args));
         } catch (ReturnException e) {
             switch (type) {
                 case PROC:
@@ -90,16 +99,24 @@ public class RubyProc extends RubyObject {
         return type;
     }
 
+    public SharedMethodInfo getSharedMethodInfo() {
+        return sharedMethodInfo;
+    }
+
+    public CallTarget getCallTarget() {
+        return callTarget;
+    }
+
+    public MaterializedFrame getDeclarationFrame() {
+        return declarationFrame;
+    }
+
     public Object getSelfCapturedInScope() {
-        return selfCapturedInScope;
+        return self;
     }
 
     public RubyProc getBlockCapturedInScope() {
-        return blockCapturedInScope;
-    }
-
-    public RubyMethod getMethod() {
-        return method;
+        return block;
     }
 
 }

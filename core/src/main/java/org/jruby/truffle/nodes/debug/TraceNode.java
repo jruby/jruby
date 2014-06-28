@@ -52,7 +52,7 @@ public class TraceNode extends WrapperNode {
             traceFunc = getContext().getTraceManager().getTraceFunc();
 
             if (traceFunc != null) {
-                callNode = insert(Truffle.getRuntime().createDirectCallNode(traceFunc.getMethod().getCallTarget()));
+                callNode = insert(Truffle.getRuntime().createDirectCallNode(traceFunc.getCallTarget()));
             } else {
                 callNode = null;
             }
@@ -72,7 +72,7 @@ public class TraceNode extends WrapperNode {
                 };
 
                 try {
-                    callNode.call(frame, RubyArguments.pack(traceFunc.getMethod().getDeclarationFrame(), traceFunc.getSelfCapturedInScope(), traceFunc.getBlockCapturedInScope(), args));
+                    callNode.call(frame, RubyArguments.pack(traceFunc.getDeclarationFrame(), traceFunc.getSelfCapturedInScope(), traceFunc.getBlockCapturedInScope(), args));
                 } finally {
                     getContext().getTraceManager().setInTraceFunc(false);
                 }
