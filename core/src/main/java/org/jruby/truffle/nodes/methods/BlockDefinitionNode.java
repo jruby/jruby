@@ -30,11 +30,10 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
     private final CallTarget callTargetForMethods;
 
     public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo methodInfo,
-                    boolean requiresDeclarationFrame, RubyRootNode rootNode) {
+                    boolean requiresDeclarationFrame, CallTarget callTarget, CallTarget callTargetForMethods, RubyRootNode rootNode) {
         super(context, sourceSection, name, methodInfo, requiresDeclarationFrame, rootNode, false);
-        final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
-        callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
-        callTargetForMethods = withoutBlockDestructureSemantics(callTarget);
+        this.callTarget = callTarget;
+        this.callTargetForMethods = callTargetForMethods;
     }
 
     @Override
@@ -50,20 +49,6 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
         return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, sharedMethodInfo,
                 callTarget, callTargetForMethods, declarationFrame, RubyArguments.getSelf(frame.getArguments()),
                 RubyArguments.getBlock(frame.getArguments()));
-    }
-
-    private static CallTarget withoutBlockDestructureSemantics(CallTarget callTarget) {
-        if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
-            final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
-
-            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNode, BehaveAsBlockNode.class)) {
-                behaveAsBlockNode.setBehaveAsBlock(false);
-            }
-
-            return Truffle.getRuntime().createCallTarget(newRootNode);
-        } else {
-            throw new UnsupportedOperationException("Can't change the semantics of an opaque call target");
-        }
     }
 
 }
