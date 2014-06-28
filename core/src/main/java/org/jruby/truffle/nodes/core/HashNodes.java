@@ -593,8 +593,35 @@ public abstract class HashNodes {
             super(prev);
         }
 
-        @Specialization(guards = "isObjectLinkedHashMap")
-        public RubyArray map(VirtualFrame frame, RubyHash hash, RubyProc block) {
+        @Specialization(guards = "isObjectArray", order = 1)
+        public RubyArray mapObjectArray(VirtualFrame frame, RubyHash hash, RubyProc block) {
+            final Object[] store = (Object[]) hash.getStore();
+
+            final Object[] result = new Object[store.length / 2];
+
+            int count = 0;
+
+            try {
+                for (int n = 0; n < result.length; n++) {
+                    final Object key = store[n * 2];
+                    final Object value = store[n * 2 + 1];
+                    result[n] = yield(frame, block, key, value);
+
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    ((RubyRootNode) getRootNode()).reportLoopCountThroughBlocks(count);
+                }
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), result, result.length);
+        }
+
+        @Specialization(guards = "isObjectLinkedHashMap", order = 2)
+        public RubyArray mapObjectLinkedHashMap(VirtualFrame frame, RubyHash hash, RubyProc block) {
             notDesignedForCompilation();
 
             final LinkedHashMap<Object, Object> store = (LinkedHashMap<Object, Object>) hash.getStore();
