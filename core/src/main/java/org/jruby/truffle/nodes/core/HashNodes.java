@@ -166,7 +166,8 @@ public abstract class HashNodes {
                 }
             } else {
                 keyValues.enter();
-                throw new UnsupportedOperationException();
+                // Slow because we don't want the PE to see the hash map at all
+                return constructObjectLinkedMapMap(args);
             }
         }
 
