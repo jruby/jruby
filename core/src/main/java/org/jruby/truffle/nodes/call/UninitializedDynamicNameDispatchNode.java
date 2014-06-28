@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -45,6 +46,8 @@ public class UninitializedDynamicNameDispatchNode extends DynamicNameDispatchNod
     private DynamicNameDispatchNode extendCache(RubySymbol name) {
         CompilerDirectives.transferToInterpreter();
 
+        context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "growing dynamic name dispatch chain");
+
         final DynamicNameDispatchNode newNode = new CachedSymbolDynamicNameDispatchNode(context, name, this);
         replace(newNode, "appending new cache entry to dynamic name dispatch chain");
         return newNode;
@@ -52,6 +55,8 @@ public class UninitializedDynamicNameDispatchNode extends DynamicNameDispatchNod
 
     private DynamicNameDispatchNode extendCache(RubyString name) {
         CompilerDirectives.transferToInterpreter();
+
+        context.getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, "growing dynamic name dispatch chain");
 
         final DynamicNameDispatchNode newNode = new CachedStringDynamicNameDispatchNode(context, name, this);
         replace(newNode, "appending new cache entry to dynamic name dispatch chain");
