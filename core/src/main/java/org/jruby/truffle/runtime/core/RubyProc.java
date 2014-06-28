@@ -9,11 +9,8 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import com.oracle.truffle.api.frame.*;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.methods.*;
 
@@ -35,7 +32,7 @@ public class RubyProc extends RubyObject {
 
         @Override
         public RubyBasicObject newInstance() {
-            return new RubyProc(this);
+            return new RubyProc(this, Type.PROC);
         }
 
     }
@@ -44,24 +41,22 @@ public class RubyProc extends RubyObject {
         PROC, LAMBDA
     }
 
-    @CompilationFinal private Type type;
+    private final Type type;
     @CompilationFinal private Object selfCapturedInScope;
     @CompilationFinal private RubyProc blockCapturedInScope;
     @CompilationFinal private RubyMethod method;
 
-    public RubyProc(RubyClass procClass) {
+    public RubyProc(RubyClass procClass, Type type) {
         super(procClass);
+        this.type = type;
     }
 
     public RubyProc(RubyClass procClass, Type type, Object selfCapturedInScope, RubyProc blockCapturedInScope, RubyMethod method) {
-        super(procClass);
-        initialize(type, selfCapturedInScope, blockCapturedInScope, method);
+        this(procClass, type);
+        initialize(selfCapturedInScope, blockCapturedInScope, method);
     }
 
-    public void initialize(Type setType, Object selfCapturedInScope, RubyProc blockCapturedInScope, RubyMethod setMethod) {
-        assert RubyContext.shouldObjectBeVisible(selfCapturedInScope);
-
-        type = setType;
+    public void initialize(Object selfCapturedInScope, RubyProc blockCapturedInScope, RubyMethod setMethod) {
         this.selfCapturedInScope = selfCapturedInScope;
         this.blockCapturedInScope = blockCapturedInScope;
         method = setMethod;

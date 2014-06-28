@@ -52,10 +52,10 @@ public abstract class ProcNodes {
         }
 
         @Specialization
-        public NilPlaceholder initialize(VirtualFrame frame, RubyProc proc, RubyProc block) {
+        public NilPlaceholder initialize(RubyProc proc, RubyProc block) {
             notDesignedForCompilation();
 
-            proc.initialize(RubyProc.Type.PROC, block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), block.getMethod().withoutBlockDestructureSemantics());
+            proc.initialize(block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), block.getMethod().withoutBlockDestructureSemantics());
             return NilPlaceholder.INSTANCE;
         }
 
