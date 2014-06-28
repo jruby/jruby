@@ -38,8 +38,8 @@ public class LambdaNode extends RubyNode {
         // TODO(CS): not sure we're closing over the correct state here
 
         return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA,
-                method.getSharedMethodInfo(), method.getCallTarget(), method.getDeclarationFrame(),
-                RubyArguments.getSelf(frame.getArguments()), null);
+                method.getSharedMethodInfo(), method.getCallTarget(), method.getCallTarget(),
+                method.getDeclarationFrame(), RubyArguments.getSelf(frame.getArguments()), null);
     }
 
     @Override

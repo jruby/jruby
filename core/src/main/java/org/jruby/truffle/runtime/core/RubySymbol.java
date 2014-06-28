@@ -60,7 +60,8 @@ public class RubySymbol extends RubyObject {
         };
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, symbol, true, null);
-        return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, sharedMethodInfo, callTarget, null, NilPlaceholder.INSTANCE, null);
+        return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, sharedMethodInfo, callTarget,
+                callTarget, null, NilPlaceholder.INSTANCE, null);
     }
 
     public org.jruby.RubySymbol getJRubySymbol() {

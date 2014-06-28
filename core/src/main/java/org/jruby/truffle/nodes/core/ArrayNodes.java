@@ -2174,7 +2174,8 @@ public abstract class ArrayNodes {
             maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
 
             final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
-                    maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maximumClosureFrame.materialize(), array, null);
+                    maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
+                    maximumClosureFrame.materialize(), array, null);
 
             eachNode.dispatch(frame, array, block);
 
@@ -2287,7 +2288,8 @@ public abstract class ArrayNodes {
             minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
 
             final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
-                    minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minimumClosureFrame.materialize(), array, null);
+                    minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
+                    minimumClosureFrame.materialize(), array, null);
 
             eachNode.dispatch(frame, array, block);
 

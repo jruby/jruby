@@ -52,6 +52,7 @@ public class RubyProc extends RubyObject {
     private final Type type;
     @CompilationFinal private SharedMethodInfo sharedMethodInfo;
     @CompilationFinal private CallTarget callTarget;
+    @CompilationFinal private CallTarget callTargetForMethods;
     @CompilationFinal private MaterializedFrame declarationFrame;
     @CompilationFinal private Object self;
     @CompilationFinal private RubyProc block;
@@ -62,15 +63,16 @@ public class RubyProc extends RubyObject {
     }
 
     public RubyProc(RubyClass procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTarget,
-                    MaterializedFrame declarationFrame, Object self, RubyProc block) {
+                    CallTarget callTargetForMethods, MaterializedFrame declarationFrame, Object self, RubyProc block) {
         this(procClass, type);
-        initialize(sharedMethodInfo, callTarget, declarationFrame, self, block);
+        initialize(sharedMethodInfo, callTarget, callTargetForMethods, declarationFrame, self, block);
     }
 
-    public void initialize(SharedMethodInfo sharedMethodInfo, CallTarget callTarget,
+    public void initialize(SharedMethodInfo sharedMethodInfo, CallTarget callTarget, CallTarget callTargetForMethods,
                            MaterializedFrame declarationFrame, Object self, RubyProc block) {
         this.sharedMethodInfo = sharedMethodInfo;
         this.callTarget = callTarget;
+        this.callTargetForMethods = callTargetForMethods;
         this.declarationFrame = declarationFrame;
         this.self = self;
         this.block = block;
@@ -113,21 +115,7 @@ public class RubyProc extends RubyObject {
     }
 
     public CallTarget getCallTargetForMethods() {
-        return withoutBlockDestructureSemantics(callTarget);
-    }
-
-    private static CallTarget withoutBlockDestructureSemantics(CallTarget callTarget) {
-        if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
-            final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
-
-            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNode, BehaveAsBlockNode.class)) {
-                behaveAsBlockNode.setBehaveAsBlock(false);
-            }
-
-            return Truffle.getRuntime().createCallTarget(newRootNode);
-        } else {
-            throw new UnsupportedOperationException("Can't change the semantics of an opaque call target");
-        }
+        return callTargetForMethods;
     }
 
     public MaterializedFrame getDeclarationFrame() {

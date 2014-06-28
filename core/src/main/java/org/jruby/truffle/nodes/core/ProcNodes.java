@@ -56,7 +56,7 @@ public abstract class ProcNodes {
         public NilPlaceholder initialize(RubyProc proc, RubyProc block) {
             notDesignedForCompilation();
 
-            proc.initialize(block.getSharedMethodInfo(), block.getCallTargetForMethods(),
+            proc.initialize(block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
                     block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
             return NilPlaceholder.INSTANCE;
         }

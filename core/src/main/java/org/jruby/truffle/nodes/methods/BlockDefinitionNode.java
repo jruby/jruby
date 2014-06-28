@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.methods.arguments.BehaveAsBlockNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
@@ -26,12 +27,14 @@ import org.jruby.truffle.runtime.methods.*;
 public class BlockDefinitionNode extends MethodDefinitionNode {
 
     private final CallTarget callTarget;
+    private final CallTarget callTargetForMethods;
 
     public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo methodInfo,
                     boolean requiresDeclarationFrame, RubyRootNode rootNode) {
         super(context, sourceSection, name, methodInfo, requiresDeclarationFrame, rootNode, false);
         final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
         callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
+        callTargetForMethods = withoutBlockDestructureSemantics(callTarget);
     }
 
     @Override
@@ -45,8 +48,22 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
         }
 
         return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, sharedMethodInfo,
-                callTarget, declarationFrame, RubyArguments.getSelf(frame.getArguments()),
+                callTarget, callTargetForMethods, declarationFrame, RubyArguments.getSelf(frame.getArguments()),
                 RubyArguments.getBlock(frame.getArguments()));
+    }
+
+    private static CallTarget withoutBlockDestructureSemantics(CallTarget callTarget) {
+        if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
+            final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
+
+            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNode, BehaveAsBlockNode.class)) {
+                behaveAsBlockNode.setBehaveAsBlock(false);
+            }
+
+            return Truffle.getRuntime().createCallTarget(newRootNode);
+        } else {
+            throw new UnsupportedOperationException("Can't change the semantics of an opaque call target");
+        }
     }
 
 }

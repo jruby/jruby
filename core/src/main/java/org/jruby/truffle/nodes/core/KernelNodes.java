@@ -423,7 +423,7 @@ public abstract class
             notDesignedForCompilation();
 
             return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA,
-                    block.getSharedMethodInfo(), block.getCallTargetForMethods(),
+                    block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
                     block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
         }
     }
@@ -619,7 +619,7 @@ public abstract class
             notDesignedForCompilation();
 
             return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
-                    block.getSharedMethodInfo(), block.getCallTarget(), block.getDeclarationFrame(),
+                    block.getSharedMethodInfo(), block.getCallTarget(), block.getCallTarget(), block.getDeclarationFrame(),
                     block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
         }
     }
