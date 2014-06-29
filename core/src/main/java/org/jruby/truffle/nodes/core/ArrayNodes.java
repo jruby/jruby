@@ -1436,7 +1436,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "each_with_index", needsBlock = true, maxArgs = 0)
-    public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
+    public abstract static class EachWithIndexNode extends YieldingArrayCoreMethodNode {
 
         private final BranchProfile breakProfile = new BranchProfile();
         private final BranchProfile nextProfile = new BranchProfile();
@@ -1450,10 +1450,8 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization
-        public Object eachWithIndex(VirtualFrame frame, RubyArray array, RubyProc block) {
-            notDesignedForCompilation();
-
+        @Specialization(guards = "isObject")
+        public Object eachWithIndexObject(VirtualFrame frame, RubyArray array, RubyProc block) {
             final Object[] store = (Object[]) array.getStore();
 
             int count = 0;

@@ -13,6 +13,7 @@ import java.math.*;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -458,17 +459,46 @@ public abstract class FloatNodes {
     @CoreMethod(names = "round", maxArgs = 0)
     public abstract static class RoundNode extends CoreMethodNode {
 
+        @Child protected FixnumOrBignumNode fixnumOrBignum;
+
+        private final BranchProfile greaterZero = new BranchProfile();
+        private final BranchProfile lessZero = new BranchProfile();
+
         public RoundNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode();
         }
 
         public RoundNode(RoundNode prev) {
             super(prev);
+            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization
         public Object round(double n) {
-            return RubyFixnum.fixnumOrBignum(Math.round(n));
+            // Algorithm copied from JRuby - not shared as we want to branch profile it
+
+            double f = n;
+
+            if (f > 0.0) {
+                greaterZero.enter();
+
+                f = Math.floor(f);
+
+                if (n - f >= 0.5) {
+                    f += 1.0;
+                }
+            } else if (f < 0.0) {
+                lessZero.enter();
+
+                f = Math.ceil(f);
+
+                if (f - n >= 0.5) {
+                    f -= 1.0;
+                }
+            }
+
+            return fixnumOrBignum.fixnumOrBignum(f);
         }
 
     }

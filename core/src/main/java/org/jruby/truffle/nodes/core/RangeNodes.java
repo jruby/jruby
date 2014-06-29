@@ -291,8 +291,6 @@ public abstract class RangeNodes {
 
         @Specialization
         public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, int step, RubyProc block) {
-            notDesignedForCompilation();
-
             int count = 0;
 
             try {
