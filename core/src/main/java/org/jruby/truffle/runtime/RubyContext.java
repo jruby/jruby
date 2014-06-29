@@ -228,6 +228,8 @@ public class RubyContext {
             return runtime.newBoolean((boolean) object);
         } else if (object instanceof Integer) {
             return runtime.newFixnum((int) object);
+        } else if (object instanceof Long) {
+            return runtime.newFixnum((long) object);
         } else if (object instanceof Double) {
             return runtime.newFloat((double) object);
         } else if (object instanceof RubyString) {
