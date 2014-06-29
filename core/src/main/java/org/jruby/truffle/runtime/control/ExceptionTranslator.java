@@ -96,7 +96,7 @@ public final class ExceptionTranslator {
          * implementation.
          */
 
-        if (Options.TRUFFLE_PRINT_JAVA_EXCEPTIONS.load()) {
+        if (Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
             exception.printStackTrace();
         }
 
@@ -108,7 +108,7 @@ public final class ExceptionTranslator {
             message = exception.getClass().getSimpleName() + ": " + exception.getMessage();
         }
 
-        return new RubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), message, RubyCallStack.getRubyStacktrace());
+        return new RubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), message/*, RubyCallStack.getRubyStacktrace()*/);
     }
 
 }
