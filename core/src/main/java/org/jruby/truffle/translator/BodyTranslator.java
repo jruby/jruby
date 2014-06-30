@@ -183,7 +183,14 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitArgsPushNode(org.jruby.ast.ArgsPushNode node) {
-        return new ArrayPushNode(context, translate(node.getPosition()), node.getFirstNode().accept(this), node.getSecondNode().accept(this));
+        final SourceSection sourceSection = translate(node.getPosition());
+
+        return ArrayNodesFactory.PushOneNodeFactory.create(context, sourceSection, new RubyNode[]{
+                ArrayNodesFactory.DupNodeFactory.create(context, sourceSection, new RubyNode[]{
+                        node.getFirstNode().accept(this)
+                }),
+                node.getSecondNode().accept(this)
+        });
     }
 
     @Override

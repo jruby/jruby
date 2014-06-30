@@ -1244,22 +1244,16 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isLongFixnum", order = 3)
         public Object dupLongFixnum(RubyArray array) {
-            notDesignedForCompilation();
-
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((long[]) array.getStore(), array.getSize()), array.getSize());
         }
 
         @Specialization(guards = "isFloat", order = 4)
         public Object dupFloat(RubyArray array) {
-            notDesignedForCompilation();
-
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((double[]) array.getStore(), array.getSize()), array.getSize());
         }
 
         @Specialization(guards = "isObject", order = 5)
         public Object dupObject(RubyArray array) {
-            notDesignedForCompilation();
-
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((Object[]) array.getStore(), array.getSize()), array.getSize());
         }
 
@@ -2561,6 +2555,74 @@ public abstract class ArrayNodes {
                 store[start + n] = values[n];
             }
 
+            array.setSize(newSize);
+            return array;
+        }
+
+    }
+
+    // Not really a core method - used internally
+
+    public abstract static class PushOneNode extends ArrayCoreMethodNode {
+
+        private final BranchProfile extendBranch = new BranchProfile();
+
+        public PushOneNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PushOneNode(PushOneNode prev) {
+            super(prev);
+        }
+
+        @Specialization(guards = "isNull", order = 1)
+        public RubyArray pushEmpty(RubyArray array, Object value) {
+            array.setStore(new Object[]{value}, 1);
+            return array;
+        }
+
+        @Specialization(guards = "isIntegerFixnum", order = 2)
+        public RubyArray pushIntegerFixnumIntegerFixnum(RubyArray array, int value) {
+            final int oldSize = array.getSize();
+            final int newSize = oldSize + 1;
+
+            int[] store = (int[]) array.getStore();
+
+            if (store.length < newSize) {
+                extendBranch.enter();
+                array.setStore(store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize)), array.getSize());
+            }
+
+            store[oldSize] = value;
+            array.setSize(newSize);
+            return array;
+        }
+
+        @Specialization(guards = "isIntegerFixnum", order = 3)
+        public RubyArray pushIntegerFixnumObject(RubyArray array, Object value) {
+            final int oldSize = array.getSize();
+            final int newSize = oldSize + 1;
+
+            final int[] oldStore = (int[]) array.getStore();
+            final Object[] newStore = ArrayUtils.box(oldStore, newSize);
+            newStore[oldSize] = value;
+            array.setStore(newStore, newSize);
+            return array;
+        }
+
+        @Specialization(guards = "isObject", order = 4)
+        public RubyArray pushObjectObject(RubyArray array, Object value) {
+            final int oldSize = array.getSize();
+            final int newSize = oldSize + 1;
+
+            Object[] store = (Object[]) array.getStore();
+
+            if (store.length < newSize) {
+                extendBranch.enter();
+                array.setStore(store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize)), array.getSize());
+            }
+
+            store[oldSize] = value;
             array.setSize(newSize);
             return array;
         }
