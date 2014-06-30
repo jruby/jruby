@@ -1496,24 +1496,8 @@ public class IRBuilder {
             // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
             return protectCodeWithRescue(scope, protectedCode, rescueBlock);
         }
-        default: {
-            final Node aNode = node;
-            // protected code
-            CodeBlock protectedCode = new CodeBlock() {
-                public Operand run() {
-                    build(aNode, scope);
-                    // always an expression as long as we get through here without an exception!
-                    return new StringLiteral("expression");
-                }
-            };
-            // rescue block
-            CodeBlock rescueBlock = new CodeBlock() {
-                public Operand run() { return manager.getNil(); } // Nothing to do if we got an exception
-            };
-
-            // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
-            return protectCodeWithRescue(scope, protectedCode, rescueBlock);
-        }
+        default:
+            return new ConstantStringLiteral("expression");
         }
     }
 
