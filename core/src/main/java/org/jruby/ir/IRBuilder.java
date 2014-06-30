@@ -1315,7 +1315,7 @@ public class IRBuilder {
                 public Operand run() {
                     build(dNode, scope);
                     // always an expression as long as we get through here without an exception!
-                    return new StringLiteral("expression");
+                    return new ConstantStringLiteral("expression");
                 }
             };
             // rescue block
