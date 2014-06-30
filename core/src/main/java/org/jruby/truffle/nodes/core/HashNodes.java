@@ -883,8 +883,6 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isObjectArray", order = 2)
         public RubyArray valuesObjectArray(RubyHash hash) {
-            notDesignedForCompilation();
-
             final Object[] store = (Object[]) hash.getStore();
 
             final Object[] values = new Object[store.length / 2];
