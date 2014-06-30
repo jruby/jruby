@@ -1,2 +1,0 @@
-fails:The defined? keyword for literals for a literal Array returns nil if one element is not defined
-fails:The defined? keyword for literals for a literal Array returns nil if all elements are not defined

@@ -1333,6 +1333,26 @@ public class IRBuilder {
 
             return tmpVar;
         }
+        case ARRAYNODE: { // If all elts of array are defined the array is as well
+            ArrayNode array = (ArrayNode) node;
+            Label undefLabel = scope.getNewLabel();
+            Label doneLabel = scope.getNewLabel();
+
+            Variable tmpVar = scope.createTemporaryVariable();
+            for (Node elt: array.childNodes()) {
+                Operand result = buildGetDefinition(elt, scope);
+
+                addInstr(scope, BEQInstr.create(result, manager.getNil(), undefLabel));
+            }
+
+            addInstr(scope, new CopyInstr(tmpVar, new ConstantStringLiteral("expression")));
+            addInstr(scope, new JumpInstr(doneLabel));
+            addInstr(scope, new LabelInstr(undefLabel));
+            addInstr(scope, new CopyInstr(tmpVar, manager.getNil()));
+            addInstr(scope, new LabelInstr(doneLabel));
+
+            return tmpVar;
+        }
         case BACKREFNODE:
             return addResultInstr(scope, new RuntimeHelperCall(scope.createTemporaryVariable(), IS_DEFINED_BACKREF,
                     Operand.EMPTY_ARRAY));
