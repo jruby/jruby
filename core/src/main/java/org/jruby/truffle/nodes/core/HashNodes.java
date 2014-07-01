@@ -290,7 +290,7 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) hash.getStore();
             final int length = store.length;
 
-            if (length + 2 < smallHashArrayLength) {
+            if (length + 2 <= smallHashArrayLength) {
                 final Object[] newStore = Arrays.copyOf(store, length + 2);
                 newStore[length] = key;
                 newStore[length + 1] = value;
