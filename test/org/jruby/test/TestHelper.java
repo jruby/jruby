@@ -139,14 +139,10 @@ public class TestHelper {
         Ruby runtime = self.getRuntime();
         ThreadContext tc = runtime.getCurrentContext();
         
-        tc.pushRubyClass(self.getType());
-
         try {
             return (IRubyObject) method.invoke(null, new Object[] { runtime, self });
         } catch (InvocationTargetException e) {
             throw unrollException(e);
-        } finally {
-            tc.popRubyClass();
         }
     }
 
