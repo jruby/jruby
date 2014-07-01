@@ -14,7 +14,7 @@ import java.util.Map;
 //
 // NOTE: This operand is only used in the initial stages of optimization
 // Further down the line, it could get converted to calls that implement splat semantics
-public class Splat extends Operand {
+public class Splat extends Operand implements DepthCloneable {
     final private Operand array;
     final public boolean unsplatArgs;
 
@@ -59,6 +59,11 @@ public class Splat extends Operand {
     @Override
     public void addUsedVariables(List<Variable> l) {
         array.addUsedVariables(l);
+    }
+
+    /** When fixing up splats in nested closure we need to tweak the operand if it is a LocalVariable */
+    public Operand cloneForDepth(int n) {
+        return array instanceof LocalVariable ? new Splat(((LocalVariable) array).cloneForDepth(n), unsplatArgs) : this;
     }
 
     @Override

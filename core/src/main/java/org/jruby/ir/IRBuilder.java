@@ -3440,22 +3440,15 @@ public class IRBuilder {
         }
     }
 
-    // FIXME: How is this fixup supposed to be done?  Or does somehow this happen by zsuper?
+    /*
+     * Adjust all argument operands by changing their depths to reflect how far they are from
+     * super.  This fixup is only currently happening in supers nested in closures.
+     */
     private Operand[] adjustVariableDepth(Operand[] args, int depthFromSuper) {
         Operand[] newArgs = new Operand[args.length];
-        for (int i = 0; i < args.length; i++) {
-            if (args[i] instanceof LocalVariable) {
-                newArgs[i] = ((LocalVariable) args[i]).cloneForDepth(depthFromSuper);
-            } else if (args[i] instanceof Splat) {
-                Splat splat = (Splat) args[i];
-                Operand array = splat.getArray();
 
-                if (array instanceof LocalVariable) {
-                    newArgs[i] = new Splat(((LocalVariable) array).cloneForDepth(depthFromSuper), splat.unsplatArgs);
-                } else {
-                    newArgs[i] = args[i];
-                }
-            }
+        for (int i = 0; i < args.length; i++) {
+            newArgs[i] = ((DepthCloneable) args[i]).cloneForDepth(depthFromSuper);
         }
 
         return newArgs;
