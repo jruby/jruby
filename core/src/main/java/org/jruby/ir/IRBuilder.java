@@ -3461,7 +3461,7 @@ public class IRBuilder {
     }
 
     private Operand buildModuleOrClassBody(IRScope parent, Variable tmpVar, IRModuleBody body, Node bodyNode, int linenumber) {
-        Variable returnValue = addResultInstr(parent, new ProcessModuleBodyInstr(parent.createTemporaryVariable(), tmpVar, getImplicitBlockArg(parent)));
+        Variable processBodyResult = addResultInstr(parent, new ProcessModuleBodyInstr(parent.createTemporaryVariable(), tmpVar, getImplicitBlockArg(parent)));
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(body, new TraceInstr(RubyEvent.CLASS, null, body.getFileName(), linenumber));
@@ -3476,19 +3476,15 @@ public class IRBuilder {
         addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), new CurrentScope(body))); // %scope
         addInstr(body, new CopyInstr(body.getCurrentModuleVariable(), new ScopeModule(body))); // %module
         // Create a new nested builder to ensure this gets its own IR builder state
-        Operand rv = newIRBuilder(manager).build(bodyNode, body);
+        Operand bodyReturnValue = newIRBuilder(manager).build(bodyNode, body);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(body, new TraceInstr(RubyEvent.END, null, body.getFileName(), -1));
         }
 
-        if (rv != null) {
-            addInstr(body, new ReturnInstr(rv));
-        } else { // FIXME: SClass must be returning null bodyNode so there is no explcit return fix in AST to kill conditional
-            addInstr(body, new ReturnInstr(manager.getNil()));
-        }
+        addInstr(body, new ReturnInstr(bodyReturnValue));
 
-        return returnValue;
+        return processBodyResult;
     }
 
     private String methodNameFor(IRScope s) {
