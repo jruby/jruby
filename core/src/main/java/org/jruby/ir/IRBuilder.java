@@ -3482,7 +3482,11 @@ public class IRBuilder {
             addInstr(body, new TraceInstr(RubyEvent.END, null, body.getFileName(), -1));
         }
 
-        if (rv != null) addInstr(body, new ReturnInstr(rv));
+        if (rv != null) {
+            addInstr(body, new ReturnInstr(rv));
+        } else { // FIXME: SClass must be returning null bodyNode so there is no explcit return fix in AST to kill conditional
+            addInstr(body, new ReturnInstr(manager.getNil()));
+        }
 
         return returnValue;
     }
