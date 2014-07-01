@@ -66,8 +66,6 @@ public abstract class ArrayUtils {
     }
 
     public static Object[] box(int[] unboxed, int extra) {
-        CompilerAsserts.neverPartOfCompilation();
-
         final Object[] boxed = new Object[unboxed.length + extra];
 
         for (int n = 0; n < unboxed.length; n++) {
@@ -78,8 +76,6 @@ public abstract class ArrayUtils {
     }
 
     public static Object[] box(long[] unboxed, int extra) {
-        CompilerAsserts.neverPartOfCompilation();
-
         final Object[] boxed = new Object[unboxed.length + extra];
 
         for (int n = 0; n < unboxed.length; n++) {
@@ -90,11 +86,39 @@ public abstract class ArrayUtils {
     }
 
     public static Object[] box(double[] unboxed, int extra) {
-        CompilerAsserts.neverPartOfCompilation();
-
         final Object[] boxed = new Object[unboxed.length + extra];
 
         for (int n = 0; n < unboxed.length; n++) {
+            boxed[n] = unboxed[n];
+        }
+
+        return boxed;
+    }
+
+    public static Object[] boxUntil(int[] unboxed, int length) {
+        final Object[] boxed = new Object[length];
+
+        for (int n = 0; n < length; n++) {
+            boxed[n] = unboxed[n];
+        }
+
+        return boxed;
+    }
+
+    public static Object[] boxUntil(long[] unboxed, int length) {
+        final Object[] boxed = new Object[length];
+
+        for (int n = 0; n < length; n++) {
+            boxed[n] = unboxed[n];
+        }
+
+        return boxed;
+    }
+
+    public static Object[] boxUntil(double[] unboxed, int length) {
+        final Object[] boxed = new Object[length];
+
+        for (int n = 0; n < length; n++) {
             boxed[n] = unboxed[n];
         }
 

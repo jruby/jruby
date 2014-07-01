@@ -18,6 +18,7 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.methods.*;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 
 import java.util.Arrays;
 
@@ -62,7 +63,11 @@ public class RubyCallNode extends RubyNode {
     @Child protected DispatchHeadNode dispatchHead;
 
     private final BranchProfile splatNotArrayProfile = new BranchProfile();
-    private final BranchProfile splatUnboxProfile = new BranchProfile();
+
+    @CompilerDirectives.CompilationFinal private boolean seenNullInUnsplat = false;
+    @CompilerDirectives.CompilationFinal private boolean seenIntegerFixnumInUnsplat = false;
+    @CompilerDirectives.CompilationFinal private boolean seenLongFixnumInUnsplat = false;
+    @CompilerDirectives.CompilationFinal private boolean seenObjectInUnsplat = false;
 
     public RubyCallNode(RubyContext context, SourceSection section, String name, RubyNode receiver, RubyNode block, boolean isSplatted, RubyNode... arguments) {
         super(context, section);
@@ -131,22 +136,36 @@ public class RubyCallNode extends RubyNode {
         }
 
         final RubyArray array = (RubyArray) argument;
+        final int size = array.getSize();
         final Object store = array.getStore();
 
-        if (store instanceof Object[]) {
-            final Object[] objectStore = (Object[]) store;
-
-            // TODO(CS): specialize for this
-            if (objectStore.length == array.getSize()) {
-                return objectStore;
-            } else {
-                return Arrays.copyOf(objectStore, array.getSize());
-            }
-        } else {
-            splatUnboxProfile.enter();
-            notDesignedForCompilation();
-            return array.slowToArray();
+        if (seenNullInUnsplat && store == null) {
+            return new Object[]{};
+        } else if (seenIntegerFixnumInUnsplat && store instanceof int[]) {
+            return ArrayUtils.boxUntil((int[]) store, size);
+        } else if (seenLongFixnumInUnsplat && store instanceof long[]) {
+            return ArrayUtils.boxUntil((long[]) store, size);
+        } else if (seenObjectInUnsplat && store instanceof Object[]) {
+            return Arrays.copyOfRange((Object[]) store, 0, size);
         }
+
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+
+        if (store == null) {
+            seenNullInUnsplat = true;
+            return new Object[]{};
+        } else if (store instanceof int[]) {
+            seenIntegerFixnumInUnsplat = true;
+            return ArrayUtils.boxUntil((int[]) store, size);
+        } else if (store instanceof long[]) {
+            seenLongFixnumInUnsplat = true;
+            return ArrayUtils.boxUntil((long[]) store, size);
+        } else if (store instanceof Object[]) {
+            seenObjectInUnsplat = true;
+            return Arrays.copyOfRange((Object[]) store, 0, size);
+        }
+
+        throw new UnsupportedOperationException();
     }
 
     @Override
