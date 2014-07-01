@@ -3365,23 +3365,6 @@ public class IRBuilder {
        return copyAndReturnValue(s, new Array());
     }
 
-/**
-    private Operand[] getZSuperArgs(IRScope s) {
-        if (s instanceof IRMethod) return ((IRMethod)s).getCallArgs();
-
-        Operand[] sArgs = s.getNearestMethod().getCallArgs();
-
-        // Update args to make them accessible at a different depth
-        int n = ((IRClosure)s).getNestingDepth();
-        for (int i = 0; i < sArgs.length; i++) {
-            Operand arg = sArgs[i];
-            sArgs[i] = (arg instanceof Splat) ? new Splat(((LocalVariable)((Splat)arg).getArray()).cloneForDepth(n)) : ((LocalVariable)arg).cloneForDepth(n);
-        }
-
-        return sArgs;
-    }
-**/
-
     public Operand buildZSuper(ZSuperNode zsuperNode, IRScope s) {
         if (s.isModuleBody()) return buildSuperInScriptBody(s);
 
