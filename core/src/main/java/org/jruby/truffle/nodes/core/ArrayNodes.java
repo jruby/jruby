@@ -2522,6 +2522,9 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"push", "<<"}, isSplatted = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
+        private final boolean useIntegerArrays = Options.TRUFFLE_ARRAYS_INT.load();
+        private final boolean useLongArrays = Options.TRUFFLE_ARRAYS_LONG.load();
+
         private final BranchProfile extendBranch = new BranchProfile();
 
         public PushNode(RubyContext context, SourceSection sourceSection) {
@@ -2532,31 +2535,121 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization(guards = "isNull", order = 1)
-        public RubyArray pushEmpty(RubyArray array, Object... values) {
+        @Specialization(guards = {"isNull", "isSingleIntegerFixnum"}, order = 1)
+        public RubyArray pushEmptySingleIntegerFixnum(RubyArray array, Object... values) {
+            if (useIntegerArrays) {
+                array.setStore(new int[]{(int) values[0]}, 1);
+            } else if (useLongArrays) {
+                array.setStore(new long[]{(long) values[0]}, 1);
+            } else {
+                array.setStore(new Object[]{values[0]}, 1);
+            }
+
+            return array;
+        }
+
+        @Specialization(guards = {"isNull", "isSingleLongFixnum"}, order = 2)
+        public RubyArray pushEmptySingleIntegerLong(RubyArray array, Object... values) {
+            if (useLongArrays) {
+                array.setStore(new long[]{(long) values[0]}, 1);
+            } else {
+                array.setStore(new Object[]{values[0]}, 1);
+            }
+
+            return array;
+        }
+
+        @Specialization(guards = "isNull", order = 3)
+        public RubyArray pushEmptyObjects(RubyArray array, Object... values) {
+            CompilerDirectives.transferToInterpreter();
+
             array.setStore(values, values.length);
             return array;
         }
 
-        @Specialization(guards = "isObject", order = 2)
+        @Specialization(guards = {"isIntegerFixnum", "isSingleIntegerFixnum"}, order = 4)
+        public RubyArray pushIntegerFixnumSingleIntegerFixnum(RubyArray array, Object... values) {
+            final int oldSize = array.getSize();
+            final int newSize = oldSize + 1;
+
+            int[] store = (int[]) array.getStore();
+
+            if (store.length < newSize) {
+                extendBranch.enter();
+                store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                array.setStore(store, array.getSize());
+            }
+
+            store[oldSize] = (int) values[0];
+            array.setSize(newSize);
+            return array;
+        }
+
+        @Specialization(guards = {"isLongFixnum", "isSingleIntegerFixnum"}, order = 5)
+        public RubyArray pushLongFixnumSingleIntegerFixnum(RubyArray array, Object... values) {
+            final int oldSize = array.getSize();
+            final int newSize = oldSize + 1;
+
+            long[] store = (long[]) array.getStore();
+
+            if (store.length < newSize) {
+                extendBranch.enter();
+                store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                array.setStore(store, array.getSize());
+            }
+
+            store[oldSize] = (long) (int) values[0];
+            array.setSize(newSize);
+            return array;
+        }
+
+        @Specialization(guards = {"isLongFixnum", "isSingleLongFixnum"}, order = 6)
+        public RubyArray pushLongFixnumSingleLongFixnum(RubyArray array, Object... values) {
+            final int oldSize = array.getSize();
+            final int newSize = oldSize + 1;
+
+            long[] store = (long[]) array.getStore();
+
+            if (store.length < newSize) {
+                extendBranch.enter();
+                store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                array.setStore(store, array.getSize());
+            }
+
+            store[oldSize] = (long) values[0];
+            array.setSize(newSize);
+            return array;
+        }
+
+        @Specialization(guards = "isObject", order = 7)
         public RubyArray pushObject(RubyArray array, Object... values) {
-            final int newSize = array.getSize() + values.length;
+            notDesignedForCompilation();
+
+            final int oldSize = array.getSize();
+            final int newSize = oldSize + values.length;
 
             Object[] store = (Object[]) array.getStore();
 
             if (store.length < newSize) {
                 extendBranch.enter();
-                array.setStore(store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize)), array.getSize());
+                store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                array.setStore(store, oldSize);
             }
 
-            int start = array.getSize();
-
             for (int n = 0; n < values.length; n++) {
-                store[start + n] = values[n];
+                store[oldSize + n] = values[n];
             }
 
             array.setSize(newSize);
             return array;
+        }
+
+        protected boolean isSingleIntegerFixnum(RubyArray array, Object... values) {
+            return values.length == 1 && values[0] instanceof Integer;
+        }
+
+        protected boolean isSingleLongFixnum(RubyArray array, Object... values) {
+            return values.length == 1 && values[0] instanceof Long;
         }
 
     }
@@ -2640,8 +2733,13 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization(guards = "isObject")
-        public Object rejectInPlace(VirtualFrame frame, RubyArray array, RubyProc block) {
+        @Specialization(guards = "isNull", order = 1)
+        public Object rejectInPlaceNull(VirtualFrame frame, RubyArray array, RubyProc block) {
+            return array;
+        }
+
+        @Specialization(guards = "isObject", order = 2)
+        public Object rejectInPlaceObject(VirtualFrame frame, RubyArray array, RubyProc block) {
             final Object[] store = (Object[]) array.getStore();
 
             int i = 0;

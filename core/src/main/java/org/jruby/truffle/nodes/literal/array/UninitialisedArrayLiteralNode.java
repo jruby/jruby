@@ -38,7 +38,9 @@ public class UninitialisedArrayLiteralNode extends ArrayLiteralNode {
         final RubyArray array = RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), executedValues);
         final Object store = array.getStore();
 
-        if (store instanceof int[]) {
+        if (store == null) {
+            replace(new EmptyArrayLiteralNode(getContext(), getSourceSection(), values));
+        } if (store instanceof int[]) {
             replace(new IntegerFixnumArrayLiteralNode(getContext(), getSourceSection(), values));
         } else if (store instanceof long[]) {
             replace(new LongFixnumArrayLiteralNode(getContext(), getSourceSection(), values));

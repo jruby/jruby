@@ -1182,24 +1182,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object leftShift(int a, int b) {
-            if (b > 0) {
-                bAboveZeroProfile.enter();
-
-                if (RubyFixnum.SIZE - Integer.numberOfLeadingZeros(a) + b > RubyFixnum.SIZE - 1) {
-                    useBignumProfile.enter();
-                    return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.shiftLeft(BigInteger.valueOf(a), b));
-                } else {
-                    return a << b;
-                }
-            } else {
-                bNotAboveZeroProfile.enter();
-
-                if (-b >= Integer.SIZE) {
-                    return 0;
-                } else {
-                    return a >> -b;
-                }
-            }
+            return leftShift((long) a, b);
         }
 
         @Specialization
@@ -1207,7 +1190,7 @@ public abstract class FixnumNodes {
             if (b > 0) {
                 bAboveZeroProfile.enter();
 
-                if (RubyFixnum.SIZE - Long.numberOfLeadingZeros(a) + b > RubyFixnum.SIZE - 1) {
+                if (Long.SIZE - Long.numberOfLeadingZeros(a) + b > Long.SIZE - 1) {
                     useBignumProfile.enter();
                     return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.shiftLeft(BigInteger.valueOf(a), b));
                 } else {
@@ -1216,7 +1199,7 @@ public abstract class FixnumNodes {
             } else {
                 bNotAboveZeroProfile.enter();
 
-                if (-b >= Integer.SIZE) {
+                if (-b >= Long.SIZE) {
                     return 0;
                 } else {
                     return a >> -b;
@@ -1242,7 +1225,7 @@ public abstract class FixnumNodes {
             if (b > 0) {
                 return a >> b;
             } else {
-                if (-b >= RubyFixnum.SIZE) {
+                if (-b >= Long.SIZE) {
                     return 0;
                 } else {
                     return a << -b;
@@ -1255,7 +1238,7 @@ public abstract class FixnumNodes {
             if (b > 0) {
                 return a >> b;
             } else {
-                if (-b >= RubyFixnum.SIZE) {
+                if (-b >= Long.SIZE) {
                     return 0;
                 } else {
                     return a << -b;
