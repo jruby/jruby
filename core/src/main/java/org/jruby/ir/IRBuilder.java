@@ -3447,10 +3447,11 @@ public class IRBuilder {
             if (args[i] instanceof LocalVariable) {
                 newArgs[i] = ((LocalVariable) args[i]).cloneForDepth(depthFromSuper);
             } else if (args[i] instanceof Splat) {
-                Operand array = ((Splat) args[i]).getArray();
+                Splat splat = (Splat) args[i];
+                Operand array = splat.getArray();
 
                 if (array instanceof LocalVariable) {
-                    newArgs[i] = new Splat(((LocalVariable) array).cloneForDepth(depthFromSuper));
+                    newArgs[i] = new Splat(((LocalVariable) array).cloneForDepth(depthFromSuper), splat.unsplatArgs);
                 } else {
                     newArgs[i] = args[i];
                 }
