@@ -264,6 +264,10 @@ public abstract class HashNodes {
     @CoreMethod(names = "[]=", minArgs = 2, maxArgs = 2)
     public abstract static class SetIndexNode extends HashCoreMethodNode {
 
+        private final int smallHashArrayLength = Options.TRUFFLE_HASHES_SMALL.load() * 2;
+
+        private final BranchProfile transitionToLinkedHashMap = new BranchProfile();
+
         public SetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -274,38 +278,42 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isNull", order = 1)
         public Object setNull(RubyHash hash, Object key, Object value) {
-            notDesignedForCompilation();
-
             hash.checkFrozen();
-
-            final LinkedHashMap<Object, Object> store = new LinkedHashMap<>();
-            store.put(key, value);
-            hash.setStore(store);
-
+            hash.setStore(new Object[]{key, value});
             return value;
         }
 
         @Specialization(guards = "isObjectArray", order = 2)
         public Object setObjectArray(RubyHash hash, Object key, Object value) {
-            notDesignedForCompilation();
-
             hash.checkFrozen();
 
             final Object[] store = (Object[]) hash.getStore();
+            final int length = store.length;
 
-            // We'll transition straight to LinkedHashMap
+            if (length + 2 < smallHashArrayLength) {
+                final Object[] newStore = Arrays.copyOf(store, length + 2);
+                newStore[length] = key;
+                newStore[length + 1] = value;
+                hash.setStore(newStore);
+            } else {
+                transitionToLinkedHashMap.enter();
 
+                transitionToLinkedHashMap(hash, store, key, value);
+            }
+
+            return value;
+        }
+
+        @CompilerDirectives.SlowPath
+        private void transitionToLinkedHashMap(RubyHash hash, Object[] oldStore, Object key, Object value) {
             final LinkedHashMap<Object, Object> newStore = new LinkedHashMap<>();
 
-            for (int n = 0; n < store.length; n += 2) {
-                newStore.put(store[n], store[n + 1]);
+            for (int n = 0; n < oldStore.length; n += 2) {
+                newStore.put(oldStore[n], oldStore[n + 1]);
             }
 
             newStore.put(key, value);
-
             hash.setStore(newStore);
-
-            return value;
         }
 
         @Specialization(guards = "isObjectLinkedHashMap", order = 3)
@@ -344,7 +352,35 @@ public abstract class HashNodes {
             return NilPlaceholder.INSTANCE;
         }
 
-        @Specialization(guards = "isObjectLinkedHashMap", order = 2)
+        @Specialization(guards = "isObjectArray", order = 2)
+        public Object deleteObjectArray(RubyHash hash, Object key) {
+            notDesignedForCompilation();
+
+            // TODO(CS): seriously not correct
+
+            hash.checkFrozen();
+
+            final Object[] oldStore = (Object[]) hash.getStore();
+
+            final LinkedHashMap<Object, Object> newStore = new LinkedHashMap<>();
+            hash.setStore(newStore);
+
+            for (int n = 0; n < oldStore.length; n += 2) {
+                newStore.put(oldStore[n], oldStore[n + 1]);
+            }
+
+            // TODO(CS): seriously not correct - using Java's Object#equals
+
+            final Object removed = newStore.remove(key);
+
+            if (removed == null) {
+                return NilPlaceholder.INSTANCE;
+            } else {
+                return removed;
+            }
+        }
+
+        @Specialization(guards = "isObjectLinkedHashMap", order = 3)
         public Object delete(RubyHash hash, Object key) {
             notDesignedForCompilation();
 
@@ -883,6 +919,8 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isObjectArray", order = 2)
         public RubyArray valuesObjectArray(RubyHash hash) {
+            notDesignedForCompilation();
+
             final Object[] store = (Object[]) hash.getStore();
 
             final Object[] values = new Object[store.length / 2];
