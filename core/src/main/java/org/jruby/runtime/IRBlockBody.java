@@ -1,5 +1,6 @@
 package org.jruby.runtime;
 
+import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
@@ -15,12 +16,18 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     protected String[] parameterList;
     protected final String fileName;
     protected final int lineNumber;
+    protected EvalType evalType;
 
     public IRBlockBody(StaticScope staticScope, String[] parameterList, String fileName, int lineNumber, Arity arity) {
         super(staticScope, arity, -1);
         this.parameterList = parameterList;
         this.fileName = fileName;
         this.lineNumber = lineNumber;
+        this.evalType = EvalType.NONE;
+    }
+
+    public void setEvalType(EvalType evalType) {
+        this.evalType = evalType;
     }
 
     @Override

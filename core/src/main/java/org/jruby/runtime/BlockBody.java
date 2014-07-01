@@ -33,6 +33,7 @@
 
 package org.jruby.runtime;
 
+import org.jruby.EvalType;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
@@ -59,6 +60,10 @@ public abstract class BlockBody {
 
     public BlockBody(int argumentType) {
         this.argumentType = argumentType;
+    }
+
+    public void setEvalType(EvalType evalType) {
+        System.err.println("setEvalType unimplemented in " + this.getClass().getName());
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {

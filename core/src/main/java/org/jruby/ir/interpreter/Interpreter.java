@@ -3,6 +3,7 @@ package org.jruby.ir.interpreter;
 import java.util.List;
 import java.util.Map;
 
+import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFloat;
@@ -110,7 +111,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    private static IRScope getEvalContainerScope(StaticScope evalScope, boolean isModuleEval) {
+    private static IRScope getEvalContainerScope(StaticScope evalScope, EvalType evalType) {
         // We cannot get the containing IR scope from evalScope because of static-scope wrapping
         // that is going on.
         // 1. In all cases, DynamicScope.getEvalScope wraps the executing static scope in a new local scope.
@@ -130,16 +131,18 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         return s;
     }
 
-    public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, String backtraceName, RootNode rootNode, IRubyObject self, Block block, boolean isModuleEval) {
+    public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, String backtraceName, RootNode rootNode, IRubyObject self, Block block, EvalType evalType) {
         StaticScope ss = rootNode.getStaticScope();
-        IRScope containingIRScope = getEvalContainerScope(ss, isModuleEval);
-        IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode, isModuleEval);
+        IRScope containingIRScope = getEvalContainerScope(ss, evalType);
+        IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode, evalType);
         evalScript.prepareForInterpretation(false);
         ThreadContext context = runtime.getCurrentContext();
 
         IRubyObject rv = null;
+        DynamicScope s = null;
         try {
-            DynamicScope s = rootNode.getScope();
+            s = rootNode.getScope();
+            s.setEvalType(evalType);
             context.pushScope(s);
 
             // Since IR introduces additional local vars, we may need to grow the dynamic scope.
@@ -155,17 +158,18 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), s, block, backtraceName);
             runBeginEndBlocks(evalScript.getEndBlocks(), context, self, null); // FIXME: No temp vars right?
         } finally {
+            s.clearEvalType();
             context.popScope();
         }
         return rv;
     }
 
-    public static IRubyObject interpretSimpleEval(Ruby runtime, String file, int lineNumber, String backtraceName, Node node, IRubyObject self) {
-        return interpretCommonEval(runtime, file, lineNumber, backtraceName, (RootNode)node, self, Block.NULL_BLOCK, true);
+    public static IRubyObject interpretSimpleEval(Ruby runtime, String file, int lineNumber, String backtraceName, Node node, IRubyObject self, EvalType evalType) {
+        return interpretCommonEval(runtime, file, lineNumber, backtraceName, (RootNode)node, self, Block.NULL_BLOCK, evalType);
     }
 
     public static IRubyObject interpretBindingEval(Ruby runtime, String file, int lineNumber, String backtraceName, Node node, IRubyObject self, Block block) {
-        return interpretCommonEval(runtime, file, lineNumber, backtraceName, (RootNode)node, self, block, false);
+        return interpretCommonEval(runtime, file, lineNumber, backtraceName, (RootNode)node, self, block, EvalType.BINDING_EVAL);
     }
 
     public static void runBeginEndBlocks(List<IRClosure> beBlocks, ThreadContext context, IRubyObject self, Object[] temp) {
@@ -722,7 +726,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
      * @param lineNumber that the eval supposedly starts from
      * @return An IRubyObject result from the evaluation
      */
-    public static IRubyObject evalSimple(ThreadContext context, IRubyObject self, RubyString src, String file, int lineNumber) {
+    public static IRubyObject evalSimple(ThreadContext context, IRubyObject self, RubyString src, String file, int lineNumber, EvalType evalType) {
         // this is ensured by the caller
         assert file != null;
 
@@ -743,7 +747,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
             // SSS FIXME: AST interpreter passed both a runtime (which comes from the source string)
             // and the thread-context rather than fetch one from the other.  Why is that?
-            return Interpreter.interpretSimpleEval(runtime, file, lineNumber, "(eval)", node, self);
+            return Interpreter.interpretSimpleEval(runtime, file, lineNumber, "(eval)", node, self, evalType);
         } catch (JumpException.BreakJump bj) {
             throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
         } catch (StackOverflowError soe) {
@@ -766,6 +770,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         // in 1.9, eval scopes are local to the binding
         evalScope = binding.getEvalScope(runtime);
+        evalScope.setEvalType(EvalType.BINDING_EVAL);
 
         // FIXME:  This determine module is in a strange location and should somehow be in block
         evalScope.getStaticScope().determineModule();

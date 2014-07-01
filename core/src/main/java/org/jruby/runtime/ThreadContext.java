@@ -47,9 +47,12 @@ import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.JumpException.ReturnJump;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.ir.IRScopeType;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.IRStaticScope;
 import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
@@ -683,27 +686,29 @@ public final class ThreadContext {
         // FIXME: this seems like a good assertion, but it breaks compiled code and the code seems
         // to run without it...
         //assert currentModule != null : "Can't push null RubyClass";
-        int index = ++parentIndex;
-        RubyModule[] stack = parentStack;
-        stack[index] = currentModule;
-        if (index + 1 == stack.length) {
-            expandParentStack();
-        }
+        // int index = ++parentIndex;
+        // RubyModule[] stack = parentStack;
+        // stack[index] = currentModule;
+        // if (index + 1 == stack.length) {
+        //     expandParentStack();
+        // }
     }
     
     public RubyModule popRubyClass() {
-        int index = parentIndex;
-        RubyModule[] stack = parentStack;
-        RubyModule ret = stack[index];
-        stack[index] = null;
-        parentIndex = index - 1;
-        return ret;
+        // int index = parentIndex;
+        // RubyModule[] stack = parentStack;
+        // RubyModule ret = stack[index];
+        // stack[index] = null;
+        // parentIndex = index - 1;
+        // return ret;
+        return null;
     }
     
     public RubyModule getRubyClass() {
-        assert parentIndex != -1 : "Trying to getService RubyClass from empty stack";
-        RubyModule parentModule = parentStack[parentIndex];
-        return parentModule.getNonIncludedClass();
+        // assert parentIndex != -1 : "Trying to get RubyClass from empty stack";
+        // RubyModule parentModule = parentStack[parentIndex];
+        // return parentModule.getNonIncludedClass();
+        return null;
     }
 
     public RubyModule getPreviousRubyClass() {

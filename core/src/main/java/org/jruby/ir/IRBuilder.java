@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.*;
@@ -284,7 +285,7 @@ public class IRBuilder {
         int n = 0;
         while (s != null && s instanceof IRClosure) {
             // We have this oddity of an extra inserted scope for instance/class/module evals
-            if (s instanceof IREvalScript && ((IREvalScript)s).isModuleEval()) {
+            if (s instanceof IREvalScript && ((IREvalScript)s).isModuleOrInstanceEval()) {
                 n++;
             }
             n++;
@@ -737,7 +738,7 @@ public class IRBuilder {
     public Operand buildAlias(final AliasNode alias, IRScope s) {
         Operand newName = build(alias.getNewName(), s);
         Operand oldName = build(alias.getOldName(), s);
-        addInstr(s, new AliasInstr(s.getSelf(), newName, oldName));
+        addInstr(s, new AliasInstr(newName, oldName));
 
         return manager.getNil();
     }
@@ -1644,7 +1645,7 @@ public class IRBuilder {
 
     public Operand buildDefn(MethodDefNode node, IRScope s) { // Instance method
         IRMethod method = defineNewMethod(node, s, true);
-        addInstr(s, new DefineInstanceMethodInstr(new StringLiteral("--unused--"), method));
+        addInstr(s, new DefineInstanceMethodInstr(method));
         return new Symbol(method.getName());
     }
 
@@ -3160,9 +3161,9 @@ public class IRBuilder {
         return U_NIL;
     }
 
-    public IREvalScript buildEvalRoot(StaticScope staticScope, IRScope containingScope, String file, int lineNumber, RootNode rootNode, boolean isModuleEval) {
+    public IREvalScript buildEvalRoot(StaticScope staticScope, IRScope containingScope, String file, int lineNumber, RootNode rootNode, EvalType evalType) {
         // Top-level script!
-        IREvalScript script = new IREvalScript(manager, containingScope, file, lineNumber, staticScope, isModuleEval);
+        IREvalScript script = new IREvalScript(manager, containingScope, file, lineNumber, staticScope, evalType);
 
         // Debug info: record line number
         addInstr(script, new LineNumberInstr(script, lineNumber));
@@ -3261,7 +3262,6 @@ public class IRBuilder {
 
     public Operand buildUndef(Node node, IRScope s) {
         Operand methName = build(((UndefNode) node).getName(), s);
-
         return addResultInstr(s, new UndefMethodInstr(s.createTemporaryVariable(), methName));
     }
 

@@ -1,9 +1,10 @@
 package org.jruby.runtime;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
+import org.jruby.EvalType;
 import org.jruby.RubyModule;
-import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.Binding;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -29,16 +30,23 @@ public class InterpretedIRBlockBody extends IRBlockBody {
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame prevFrame = context.preYieldNoScope(binding, klass);
         if (klass == null) self = prepareSelf(binding);
+        DynamicScope newScope = null;
         try {
             DynamicScope prevScope = binding.getDynamicScope();
             // SSS FIXME: Maybe, we should allocate a NoVarsScope/DummyScope for for-loop bodies because the static-scope here
             // probably points to the parent scope? To be verified and fixed if necessary. There is no harm as it is now. It
             // is just wasteful allocation since the scope is not used at all.
-            DynamicScope newScope  = DynamicScope.newDynamicScope(getStaticScope(), prevScope);
+            newScope  = DynamicScope.newDynamicScope(getStaticScope(), prevScope);
+            // Pass on eval state info to the dynamic scope and clear it on the block-body
+            newScope.setEvalType(this.evalType);
+            this.evalType = EvalType.NONE;
             context.pushScope(newScope);
             return Interpreter.INTERPRET_BLOCK(context, self, closure, args, binding.getMethod(), block, type);
         }
         finally {
+            // IMPORTANT: Do not clear eval-type in case this is reused in bindings!
+            // Ex: eval("...", foo.instance_eval { binding })
+            // The dyn-scope used for binding needs to have its eval-type set to INSTANCE_EVAL
             binding.getFrame().setVisibility(oldVis);
             context.postYield(binding, prevFrame);
         }
