@@ -5,7 +5,6 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
-import org.jruby.RubyModule;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -49,13 +48,13 @@ public abstract class JavaInternalBlockBody extends BlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        return yield(context, args, null, null, binding, type);
+        return yield(context, args, null, binding, type);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding,
                             Block.Type type, Block block) {
-        return yield(context, args, null, null, binding, type, block);
+        return yield(context, args, null, binding, type, block);
     }
 
     @Override
@@ -66,7 +65,7 @@ public abstract class JavaInternalBlockBody extends BlockBody {
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, Binding binding, Type type) {
+    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type) {
         threadCheck(context);
         
         return yield(context, args);

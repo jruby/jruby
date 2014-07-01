@@ -146,7 +146,6 @@ public class RubyProc extends RubyObject implements DataType {
                     oldBinding.getSelf(),
                     oldBinding.getFrame().duplicate(),
                     oldBinding.getVisibility(),
-                    oldBinding.getKlass(), 
                     oldBinding.getDynamicScope(),
                     oldBinding.getBacktrace().clone());
             block = new Block(procBlock.getBody(), newBinding);

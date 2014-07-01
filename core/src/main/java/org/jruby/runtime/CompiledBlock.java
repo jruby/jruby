@@ -29,7 +29,6 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
@@ -83,12 +82,12 @@ public class CompiledBlock extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] { arg0, arg1 }, null, null, binding, type);
+        return yield(context, new IRubyObject[] { arg0, arg1 }, null, binding, type);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, null, binding, type);
+        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, binding, type);
     }
 
     @Override
@@ -97,8 +96,8 @@ public class CompiledBlock extends ContextAwareBlockBody {
     }
 
     @Override
-    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, Binding binding, Block.Type type) {
-        return yield(context, args, self, klass, binding, type, Block.NULL_BLOCK);
+    protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Block.Type type) {
+        return yield(context, args, self, binding, type, Block.NULL_BLOCK);
     }
 
     // FIXME: These two duplicate overrides should go away
@@ -108,7 +107,7 @@ public class CompiledBlock extends ContextAwareBlockBody {
 
         IRubyObject realArg = setupBlockArg(context.runtime, value, self);
         Visibility oldVis = binding.getFrame().getVisibility();
-        Frame lastFrame = pre(context, null, binding);
+        Frame lastFrame = pre(context, binding);
 
         try {
             return callback.call(context, self, realArg, block);
@@ -120,16 +119,15 @@ public class CompiledBlock extends ContextAwareBlockBody {
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, Binding binding, Block.Type type, Block block) {
-        if (klass == null) {
-            self = prepareSelf(binding);
-        }
+    public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Block.Type type, Block block) {
+        // SSS FIXME: This is now being done unconditionally compared to if (klass == null) earlier
+        self = prepareSelf(binding);
 
         IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, arity, args);
         RubyArray value = context.runtime.newArrayNoCopyLight(preppedArgs);
         IRubyObject realArg = setupBlockArgs(context, value, self);
         Visibility oldVis = binding.getFrame().getVisibility();
-        Frame lastFrame = pre(context, klass, binding);
+        Frame lastFrame = pre(context, binding);
 
         try {
             return callback.call(context, self, realArg, block);

@@ -9,8 +9,8 @@ import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.Variable;
-import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.IRStaticScope;
 
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
@@ -30,8 +30,10 @@ public class IRMethod extends IRScope {
         this.isInstanceMethod = isInstanceMethod;
         this.callArgs = new ArrayList<Operand>();
         this.argDesc = new ArrayList<String[]>();
-        if (!getManager().isDryRun()) {
-            if (staticScope != null) ((IRStaticScope)staticScope).setIRScope(this);
+
+        if (!getManager().isDryRun() && staticScope != null) {
+            ((IRStaticScope)staticScope).setIRScope(this);
+            staticScope.setScopeType(this.getScopeType());
         }
     }
 

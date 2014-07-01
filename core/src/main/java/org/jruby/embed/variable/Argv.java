@@ -128,7 +128,8 @@ public class Argv extends AbstractVariable {
     public void inject() {
         updateArgvByJavaObject();
         RubyModule rubyModule = getRubyClass(receiver.getRuntime());
-        if (rubyModule == null) rubyModule = receiver.getRuntime().getCurrentContext().getRubyClass();
+        // SSS FIXME: With rubyclass stack gone, this needs a replacement
+        if (rubyModule == null) rubyModule = null; // receiver.getRuntime().getCurrentContext().getRubyClass();
         if (rubyModule == null) return;
 
         rubyModule.storeConstant(name, irubyObject);

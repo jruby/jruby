@@ -49,7 +49,6 @@ public class Binding {
      */
     private final Frame frame;
     private final BacktraceElement backtrace;
-    private final RubyModule klass;
 
     private Visibility visibility;
     /**
@@ -80,37 +79,34 @@ public class Binding {
     private Binding evalScopeBinding = this;
     
     public Binding(IRubyObject self, Frame frame,
-            Visibility visibility, RubyModule klass, DynamicScope dynamicScope, BacktraceElement backtrace) {
+                   Visibility visibility, DynamicScope dynamicScope, BacktraceElement backtrace) {
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
-        this.klass = klass;
         this.dynamicScope = dynamicScope;
         this.backtrace = backtrace;
     }
 
     private Binding(IRubyObject self, Frame frame,
-                   Visibility visibility, RubyModule klass, DynamicScope dynamicScope, BacktraceElement backtrace, DynamicScope dummyScope) {
+                    Visibility visibility, DynamicScope dynamicScope, BacktraceElement backtrace, DynamicScope dummyScope) {
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
-        this.klass = klass;
         this.dynamicScope = dynamicScope;
         this.backtrace = backtrace;
         this.dummyScope = dummyScope;
     }
     
-    public Binding(Frame frame, RubyModule bindingClass, DynamicScope dynamicScope, BacktraceElement backtrace) {
+    public Binding(Frame frame, DynamicScope dynamicScope, BacktraceElement backtrace) {
         this.self = frame.getSelf();
         this.frame = frame;
         this.visibility = frame.getVisibility();
-        this.klass = bindingClass;
         this.dynamicScope = dynamicScope;
         this.backtrace = backtrace;
     }
     
     private Binding(Binding other) {
-        this(other.self, other.frame, other.visibility, other.klass, other.dynamicScope, other.backtrace, other.dummyScope);
+        this(other.self, other.frame, other.visibility, other.dynamicScope, other.backtrace, other.dummyScope);
     }
 
     /**
@@ -179,14 +175,6 @@ public class Binding {
         return frame;
     }
 
-    /**
-     * Gets the klass.
-     * @return Returns a RubyModule
-     */
-    public RubyModule getKlass() {
-        return klass;
-    }
-    
     public BacktraceElement getBacktrace() {
         return backtrace;
     }

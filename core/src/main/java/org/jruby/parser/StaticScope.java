@@ -35,6 +35,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.Node;
+import org.jruby.ir.IRScopeType;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.DynamicScope;
@@ -86,6 +87,16 @@ public abstract class StaticScope implements Serializable {
             return value < 0 || value >= values().length ? null : values()[value];
         }        
     }
+
+    public IRScopeType getScopeType() {
+        return scopeType;
+    }
+
+    public void setScopeType(IRScopeType scopeType) {
+        this.scopeType = scopeType;
+    }
+
+    private IRScopeType scopeType;
 
     /**
      * Construct a new static scope. The array of strings should all be the

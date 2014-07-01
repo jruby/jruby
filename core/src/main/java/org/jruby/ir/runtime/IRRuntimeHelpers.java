@@ -201,7 +201,8 @@ public class IRRuntimeHelpers {
                                   String filename, int line, String parameterDesc) {
         Ruby runtime = context.runtime;
 
-        RubyModule containingClass = context.getRubyClass();
+        // SSS FIXME: this has to be looked up at runtime now
+        RubyModule containingClass = null; // context.getRubyClass();
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
 
@@ -385,7 +386,7 @@ public class IRRuntimeHelpers {
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
         Block b = (Block)blk;
         IRubyObject yieldVal = (IRubyObject)yieldArg;
-        return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null, null) : b.yield(context, yieldVal);
+        return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null) : b.yield(context, yieldVal);
     }
 
     public static IRubyObject yieldSpecific(ThreadContext context, Object blk) {
@@ -612,12 +613,12 @@ public class IRRuntimeHelpers {
         return RubyRegexp.nth_match(matchNumber, context.getBackRef());
     }
 
-    public static void defineAlias(ThreadContext context, IRubyObject object, String newNameString, String oldNameString) {
-        if (object == null || object instanceof RubyFixnum || object instanceof RubySymbol) {
+    public static void defineAlias(ThreadContext context, IRubyObject self, DynamicScope currDynScope, String newNameString, String oldNameString) {
+        if (self == null || self instanceof RubyFixnum || self instanceof RubySymbol) {
             throw context.runtime.newTypeError("no class to make alias");
         }
 
-        RubyModule module = (object instanceof RubyModule) ? (RubyModule) object : object.getMetaClass();
+        RubyModule module = findInstanceMethodContainer(context, currDynScope, self);
         module.defineAlias(newNameString, oldNameString);
         module.callMethod(context, "method_added", context.runtime.newSymbol(newNameString));
     }
@@ -649,5 +650,46 @@ public class IRRuntimeHelpers {
 
     public static IRubyObject mergeKeywordArguments(ThreadContext context, IRubyObject restKwarg, IRubyObject explcitKwarg) {
         return ((RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg)).merge(context, explcitKwarg, Block.NULL_BLOCK);
+    }
+
+    public static RubyModule findInstanceMethodContainer(ThreadContext context, DynamicScope currDynScope, IRubyObject self) {
+        boolean inBindingEval = currDynScope.inBindingEval();
+
+        if (!inBindingEval && self == context.runtime.getTopSelf()) {
+            // Top-level-scripts are special
+            // but, not if binding-evals are in force!
+            return self.getType();
+        }
+
+        DynamicScope ds = currDynScope;
+        while (ds != null) {
+            IRScopeType scopeType = ds.getStaticScope().getScopeType();
+            switch (ds.getEvalType()) {
+                case MODULE_EVAL  : return (RubyModule)self;
+                case INSTANCE_EVAL: return self.getSingletonClass();
+                case BINDING_EVAL : ds = ds.getNextCapturedScope(); break;
+                case NONE:
+                    if (scopeType == null || scopeType.isClosureType()) {
+                        ds = ds.getNextCapturedScope();
+                    } else if (inBindingEval) {
+                        // Binding evals are special!
+                        return ds.getStaticScope().getModule();
+                    } else if (scopeType.isMethod()) {
+                        return self.getMetaClass();
+                    } else {
+                        switch (scopeType) {
+                            case MODULE_BODY:
+                            case CLASS_BODY:
+                            case METACLASS_BODY:
+                                return (RubyModule)self;
+
+                            default:
+                                throw new RuntimeException("Should not get here!");
+                        }
+                    }
+                    break;
+            }
+        }
+        throw new RuntimeException("Should not get here!");
     }
 }
