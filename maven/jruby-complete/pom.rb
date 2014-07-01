@@ -44,7 +44,8 @@ project 'JRuby Complete' do
             'Embed-Dependency' => '*;scope=compile|runtime;inline=true',
             'Embed-Transitive' => true
           } ) do
-    extensions true
+    # TODO fix DSL
+    @current.extensions = true
   end
 
   plugin( :invoker )
