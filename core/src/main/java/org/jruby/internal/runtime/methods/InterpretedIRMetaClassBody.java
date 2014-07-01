@@ -25,7 +25,6 @@ public class InterpretedIRMetaClassBody extends InterpretedIRMethod {
     protected void post(ThreadContext context) {
         // update call stacks (pop: ..)
         context.popFrame();
-        context.popRubyClass();
         context.popScope();
     }
 

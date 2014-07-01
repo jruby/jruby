@@ -43,7 +43,6 @@ package org.jruby.runtime;
 
 import org.jruby.EvalType;
 import org.jruby.RubyArray;
-import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -148,20 +147,18 @@ public final class Block {
         return body.yield(context, value, binding, type);
     }
 
-    public IRubyObject yieldNonArray(ThreadContext context, IRubyObject value, IRubyObject self,
-            RubyModule klass) {
-        return body.yield(context, new IRubyObject[] { value }, self, klass, binding, type);
+    public IRubyObject yieldNonArray(ThreadContext context, IRubyObject value, IRubyObject self) {
+        return body.yield(context, new IRubyObject[] { value }, self, binding, type);
     }
 
-    public IRubyObject yieldArray(ThreadContext context, IRubyObject value, IRubyObject self,
-            RubyModule klass) {
+    public IRubyObject yieldArray(ThreadContext context, IRubyObject value, IRubyObject self) {
         IRubyObject[] args;
         if (!(value instanceof RubyArray)) {
             args = new IRubyObject[] { value };
         } else {
             args = value.convertToArray().toJavaArray();
         }
-        return body.yield(context, args, self, klass, binding, type);
+        return body.yield(context, args, self, binding, type);
     }
 
     public Block cloneBlock() {
@@ -176,7 +173,7 @@ public final class Block {
     public Block cloneBlockAndFrame() {
         Binding oldBinding = binding;
         Binding binding = new Binding(
-                oldBinding.getSelf(), oldBinding.getFrame().duplicate(), oldBinding.getVisibility(), oldBinding.getKlass(), oldBinding.getDynamicScope(), oldBinding.getBacktrace());
+                oldBinding.getSelf(), oldBinding.getFrame().duplicate(), oldBinding.getVisibility(), oldBinding.getDynamicScope(), oldBinding.getBacktrace());
         
         Block newBlock = new Block(body, binding);
         

@@ -59,7 +59,6 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
         
         Binding binding = new Binding(
                 frame,
-                module,
                 dynamicScope,
                 new BacktraceElement(method.getMethodName(), body.getFile(), body.getLine()));
 
@@ -80,17 +79,17 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        return yield(context, args, null, null, binding, type, Block.NULL_BLOCK);
+        return yield(context, args, null, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
-        return yield(context, args, null, null, binding, type, block);
+        return yield(context, args, null, binding, type, block);
     }
     
     @Override
-    protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
-        return context.preYieldNoScope(binding, klass);
+    protected Frame pre(ThreadContext context, Binding binding) {
+        return context.preYieldNoScope(binding);
     }
     
     @Override
@@ -110,12 +109,12 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] { arg0, arg1 }, null, null, binding, type);
+        return yield(context, new IRubyObject[] { arg0, arg1 }, null, binding, type);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, null, binding, type);
+        return yield(context, new IRubyObject[] { arg0, arg1, arg2 }, null, binding, type);
     }
     
     @Override
@@ -130,8 +129,15 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
 
     @Override
     protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-                             RubyModule klass, Binding binding, Block.Type type) {
-        return yield(context, args, self, klass, binding, type, Block.NULL_BLOCK);
+                                  Binding binding, Block.Type type) {
+        return yield(context, args, self, binding, type, Block.NULL_BLOCK);
+    }
+
+    protected IRubyObject prepareSelf(Binding binding) {
+        IRubyObject self = binding.getSelf();
+        binding.getFrame().setSelf(self);
+
+        return self;
     }
 
     /**
@@ -140,18 +146,15 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
      * @param context represents the current thread-specific data
      * @param args The args for yield
      * @param self The current self
-     * @param klass
      * @return
      */
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-            RubyModule klass, Binding binding, Block.Type type, Block block) {
-        if (klass == null) {
-            self = binding.getSelf();
-            binding.getFrame().setSelf(self);
-        }
+                             Binding binding, Block.Type type, Block block) {
+        // SSS FIXME: This is now being done unconditionally compared to if (klass == null) earlier
+        self = prepareSelf(binding);
         
-        Frame lastFrame = pre(context, klass, binding);
+        Frame lastFrame = pre(context, binding);
 
         try {
             // This while loop is for restarting the block call in case a 'redo' fires.

@@ -3,10 +3,7 @@ package org.jruby.runtime;
 import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.ir.IRClosure;
-import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block.Type;
@@ -66,7 +63,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Type type, Block block) {
-        return commonYieldPath(context, prepareArgumentsForCall(context, args, type), null, null, binding, type, block);
+        return commonYieldPath(context, prepareArgumentsForCall(context, args, type), null, binding, type, block);
     }
 
     @Override
@@ -75,7 +72,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         if (type == Type.LAMBDA) {
             arity().checkArity(context.runtime, args);
         }
-        return commonYieldPath(context, args, null, null, binding, type, Block.NULL_BLOCK);
+        return commonYieldPath(context, args, null, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
@@ -89,7 +86,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
             } else {
                 args = IRRuntimeHelpers.convertValueIntoArgArray(context, arg0, arity, true, true);
             }
-            return commonYieldPath(context, args, null, null, binding, type, Block.NULL_BLOCK);
+            return commonYieldPath(context, args, null, binding, type, Block.NULL_BLOCK);
         } else {
             return yield(context, arg0, binding, type);
         }
@@ -106,7 +103,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
                 args = new IRubyObject[] { RubyArray.newArrayNoCopy(context.runtime, args) };
             }
         }
-        return commonYieldPath(context, args, null, null, binding, type, Block.NULL_BLOCK);
+        return commonYieldPath(context, args, null, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
@@ -137,26 +134,26 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
                 args = ((RubyArray)val0).toJavaArray();
             }
         }
-        return commonYieldPath(context, args, null, null, binding, type, Block.NULL_BLOCK);
+        return commonYieldPath(context, args, null, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
-    public IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, Binding binding, Type type) {
+    public IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type) {
         args = (args == null) ? IRubyObject.NULL_ARRAY : args;
         if (type == Type.LAMBDA) {
             arity().checkArity(context.runtime, args);
         }
-        return commonYieldPath(context, args, self, klass, binding, type, Block.NULL_BLOCK);
+        return commonYieldPath(context, args, self, binding, type, Block.NULL_BLOCK);
     }
 
-    protected IRubyObject prepareSelf(Binding binding) {
+    protected IRubyObject useBindingSelf(Binding binding) {
         IRubyObject self = binding.getSelf();
         binding.getFrame().setSelf(self);
 
         return self;
     }
 
-    protected abstract IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, Binding binding, Type type, Block block);
+    protected abstract IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block);
 
     protected void blockArgWarning(Ruby ruby, int length) {
         ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" +

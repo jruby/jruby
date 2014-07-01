@@ -397,7 +397,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             break;
         case POP_FRAME:
             context.popFrame();
-            context.popRubyClass();
             break;
         case POP_BINDING:
             context.popScope();

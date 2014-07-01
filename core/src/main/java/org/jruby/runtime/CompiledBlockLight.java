@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.RubyModule;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -55,8 +54,8 @@ public class CompiledBlockLight extends CompiledBlock {
     }
     
     @Override
-    protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
-        return context.preYieldLightBlock(binding, binding.getDummyScope(scope), klass);
+    protected Frame pre(ThreadContext context, Binding binding) {
+        return context.preYieldLightBlock(binding, binding.getDummyScope(scope));
     }
     
     @Override

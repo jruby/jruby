@@ -96,12 +96,11 @@ public class CallBlock19 extends BlockBody {
      * @param context represents the current thread-specific data
      * @param args The args to yield
      * @param self The current self
-     * @param klass
      * @return
      */
     @Override
     protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-            RubyModule klass, Binding binding, Block.Type type) {
+                                  Binding binding, Block.Type type) {
         return callback.call(context, args, Block.NULL_BLOCK);
     }
     

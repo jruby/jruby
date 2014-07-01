@@ -298,14 +298,13 @@ public class Helpers {
         Class compiledClass = scriptObject.getClass();
         Ruby runtime = context.runtime;
 
-        RubyModule containingClass = context.getRubyClass();
         Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
+        Visibility newVisibility = performNormalMethodChecksAndDetermineVisibility(runtime, null, rubyName, currVisibility);
 
         MethodFactory factory = MethodFactory.createFactory(compiledClass.getClassLoader());
         DynamicMethod method = constructNormalMethod(
                 factory, javaName,
-                rubyName, containingClass, new SimpleSourcePosition(filename, line), arity, scope, newVisibility, scriptObject,
+                rubyName, null, new SimpleSourcePosition(filename, line), arity, scope, newVisibility, scriptObject,
                 callConfig,
                 parameterDesc,
                 methodNodes);
@@ -316,7 +315,7 @@ public class Helpers {
             ((CompiledMethod) method).unsafeSetMethodNodes(methodNodes);
         }
 
-        return addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
+        return addInstanceMethod(null, rubyName, method, currVisibility, context, runtime);
     }
 
     public static IRubyObject defs(ThreadContext context, IRubyObject self, IRubyObject receiver, Object scriptObject, String rubyName, String javaName, StaticScope scope,
@@ -1639,8 +1638,7 @@ public class Helpers {
     }
 
     public static IRubyObject undefMethod(ThreadContext context, Object nameArg) {
-        RubyModule module = context.getRubyClass();
-
+        RubyModule module = null; // context.getRubyClass();
         String name = (nameArg instanceof String) ?
             (String) nameArg : nameArg.toString();
 
@@ -1655,7 +1653,7 @@ public class Helpers {
     
     public static IRubyObject defineAlias(ThreadContext context, IRubyObject self, Object newNameArg, Object oldNameArg) {
         Ruby runtime = context.runtime;
-        RubyModule module = context.getRubyClass();
+        RubyModule module = null; // context.getRubyClass();
    
         if (module == null || self instanceof RubyFixnum || self instanceof RubySymbol){
             throw runtime.newTypeError("no class to make alias");

@@ -202,7 +202,7 @@ public class IRRuntimeHelpers {
         Ruby runtime = context.runtime;
 
         // SSS FIXME: this has to be looked up at runtime now
-        RubyModule containingClass = context.getRubyClass();
+        RubyModule containingClass = null; // context.getRubyClass();
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
 
@@ -386,7 +386,7 @@ public class IRRuntimeHelpers {
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
         Block b = (Block)blk;
         IRubyObject yieldVal = (IRubyObject)yieldArg;
-        return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null, null) : b.yield(context, yieldVal);
+        return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null) : b.yield(context, yieldVal);
     }
 
     public static IRubyObject yieldSpecific(ThreadContext context, Object blk) {

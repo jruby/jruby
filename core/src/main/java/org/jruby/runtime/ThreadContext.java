@@ -50,7 +50,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
 import org.jruby.runtime.backtrace.BacktraceElement;
@@ -103,10 +102,7 @@ public final class ThreadContext {
     private ThreadFiber rootFiber; // hard anchor for root threads' fibers
     // Cache format string because it is expensive to create on demand
     private RubyDateFormatter dateFormatter;
-    
-    private RubyModule[] parentStack = new RubyModule[INITIAL_SIZE];
-    private int parentIndex = -1;
-    
+
     private Frame[] frameStack = new Frame[INITIAL_FRAMES_SIZE];
     private int frameIndex = -1;
 
@@ -286,16 +282,7 @@ public final class ThreadContext {
         
         return newFrameStack;
     }
-    
-    private void expandParentStack() {
-        int newSize = parentStack.length * 2;
-        RubyModule[] newParentStack = new RubyModule[newSize];
 
-        System.arraycopy(parentStack, 0, newParentStack, 0, parentStack.length);
-
-        parentStack = newParentStack;
-    }
-    
     public void pushScope(DynamicScope scope) {
         int index = ++scopeIndex;
         DynamicScope[] stack = scopeStack;
@@ -681,41 +668,6 @@ public final class ThreadContext {
     public void trace(RubyEvent event, String name, RubyModule implClass, String file, int line) {
         runtime.callEventHooks(this, event, file, line, name, implClass);
     }
-    
-    public void pushRubyClass(RubyModule currentModule) {
-        // FIXME: this seems like a good assertion, but it breaks compiled code and the code seems
-        // to run without it...
-        //assert currentModule != null : "Can't push null RubyClass";
-        // int index = ++parentIndex;
-        // RubyModule[] stack = parentStack;
-        // stack[index] = currentModule;
-        // if (index + 1 == stack.length) {
-        //     expandParentStack();
-        // }
-    }
-    
-    public RubyModule popRubyClass() {
-        // int index = parentIndex;
-        // RubyModule[] stack = parentStack;
-        // RubyModule ret = stack[index];
-        // stack[index] = null;
-        // parentIndex = index - 1;
-        // return ret;
-        return null;
-    }
-    
-    public RubyModule getRubyClass() {
-        // assert parentIndex != -1 : "Trying to get RubyClass from empty stack";
-        // RubyModule parentModule = parentStack[parentIndex];
-        // return parentModule.getNonIncludedClass();
-        return null;
-    }
-
-    public RubyModule getPreviousRubyClass() {
-        assert parentIndex != 0 : "Trying to getService RubyClass from too-shallow stack";
-        RubyModule parentModule = parentStack[parentIndex - 1];
-        return parentModule.getNonIncludedClass();
-    }
 
     @Deprecated
     public boolean getConstantDefined(String internedName) {
@@ -969,24 +921,20 @@ public final class ThreadContext {
     
     public void preAdoptThread() {
         pushFrame();
-        pushRubyClass(runtime.getObject());
         getCurrentFrame().setSelf(runtime.getTopSelf());
     }
 
     public void preExtensionLoad(IRubyObject self) {
         pushFrame();
-        pushRubyClass(runtime.getObject());
         getCurrentFrame().setSelf(self);
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
     }
 
     public void postExtensionLoad() {
         popFrame();
-        popRubyClass();
     }
     
     public void preCompiledClass(RubyModule type, StaticScope staticScope) {
-        pushRubyClass(type);
         pushFrameCopy();
         getCurrentFrame().setSelf(type);
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
@@ -995,7 +943,6 @@ public final class ThreadContext {
     }
 
     public void preCompiledClassDummyScope(RubyModule type, StaticScope staticScope) {
-        pushRubyClass(type);
         pushFrameCopy();
         getCurrentFrame().setSelf(type);
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
@@ -1005,7 +952,6 @@ public final class ThreadContext {
 
     public void postCompiledClass() {
         popScope();
-        popRubyClass();
         popFrame();
     }
     
@@ -1018,7 +964,6 @@ public final class ThreadContext {
     }
 
     public void preClassEval(StaticScope staticScope, RubyModule type) {
-        pushRubyClass(type);
         pushFrameCopy();
         getCurrentFrame().setSelf(type);
         getCurrentFrame().setVisibility(Visibility.PUBLIC);
@@ -1029,7 +974,6 @@ public final class ThreadContext {
     
     public void postClassEval() {
         popScope();
-        popRubyClass();
         popFrame();
     }
     
@@ -1048,14 +992,12 @@ public final class ThreadContext {
         RubyModule ssModule = staticScope.getModule();
         // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
         if (ssModule == null) ssModule = implClass;
-        pushRubyClass(ssModule);
         pushCallFrame(implClass, name, self, block);
     }
 
     // FIXME: This may not be correct for RubyClass in all cases
     public void preMethodFrameAndClass(String name, IRubyObject self, Block block, StaticScope staticScope) {
         RubyModule ssModule = staticScope.getModule();
-        pushRubyClass(ssModule);
         pushCallFrame(ssModule, name, self, block);
     }
     
@@ -1068,7 +1010,6 @@ public final class ThreadContext {
         }
         pushCallFrame(clazz, name, self, block);
         pushScope(DynamicScope.newDynamicScope(staticScope));
-        pushRubyClass(implementationClass);
     }
     
     public void preMethodFrameAndDummyScope(RubyModule clazz, String name, IRubyObject self, Block block, 
@@ -1080,7 +1021,6 @@ public final class ThreadContext {
         }
         pushCallFrame(clazz, name, self, block);
         pushScope(staticScope.getDummyScope());
-        pushRubyClass(implementationClass);
     }
 
     public void preMethodNoFrameAndDummyScope(RubyModule clazz, StaticScope staticScope) {
@@ -1090,23 +1030,19 @@ public final class ThreadContext {
             implementationClass = clazz;
         }
         pushScope(staticScope.getDummyScope());
-        pushRubyClass(implementationClass);
     }
     
     public void postMethodFrameAndScope() {
-        popRubyClass();
         popScope();
         popFrame();
     }
     
     public void preMethodFrameOnly(RubyModule clazz, String name, IRubyObject self, Block block) {
-        pushRubyClass(clazz);
         pushCallFrame(clazz, name, self, block);
     }
     
     public void postMethodFrameOnly() {
         popFrame();
-        popRubyClass();
     }
     
     public void preMethodScopeOnly(RubyModule clazz, StaticScope staticScope) {
@@ -1116,11 +1052,9 @@ public final class ThreadContext {
             implementationClass = clazz;
         }
         pushScope(DynamicScope.newDynamicScope(staticScope));
-        pushRubyClass(implementationClass);
     }
     
     public void postMethodScopeOnly() {
-        popRubyClass();
         popScope();
     }
     
@@ -1142,23 +1076,18 @@ public final class ThreadContext {
             implementationClass = clazz;
         }
         pushScope(staticScope.getDummyScope());
-        pushRubyClass(implementationClass);
     }
     
     public void postMethodBacktraceOnly() {
     }
 
     public void postMethodBacktraceDummyScope() {
-        popRubyClass();
         popScope();
     }
     
     public void prepareTopLevel(RubyClass objectClass, IRubyObject topSelf) {
         pushFrame();
         setCurrentVisibility(Visibility.PRIVATE);
-        
-        pushRubyClass(objectClass);
-        
         Frame frame = getCurrentFrame();
         frame.setSelf(topSelf);
         
@@ -1166,25 +1095,21 @@ public final class ThreadContext {
     }
     
     public void preNodeEval(RubyModule rubyClass, IRubyObject self, String name) {
-        pushRubyClass(rubyClass);
         pushEvalFrame(self);
     }
 
     public void preNodeEval(RubyModule rubyClass, IRubyObject self) {
-        pushRubyClass(rubyClass);
         pushEvalFrame(self);
     }
     
     public void postNodeEval() {
         popFrame();
-        popRubyClass();
     }
     
     // XXX: Again, screwy evaling under previous frame's scope
     public void preExecuteUnder(RubyModule executeUnderClass, Block block) {
         Frame frame = getCurrentFrame();
         
-        pushRubyClass(executeUnderClass);
         DynamicScope scope = getCurrentScope();
         StaticScope sScope = runtime.getStaticScopeFactory().newBlockScope(scope.getStaticScope());
         sScope.setModule(executeUnderClass);
@@ -1196,7 +1121,6 @@ public final class ThreadContext {
     public void postExecuteUnder() {
         popFrame();
         popScope();
-        popRubyClass();
     }
     
     public void preMproc() {
@@ -1217,28 +1141,27 @@ public final class ThreadContext {
         setWithinTrace(false);
     }
     
-    public Frame preForBlock(Binding binding, RubyModule klass) {
-        Frame lastFrame = preYieldNoScope(binding, klass);
+    public Frame preForBlock(Binding binding) {
+        Frame lastFrame = preYieldNoScope(binding);
         pushScope(binding.getDynamicScope());
         return lastFrame;
     }
     
-    public Frame preYieldSpecificBlock(Binding binding, StaticScope scope, RubyModule klass) {
-        Frame lastFrame = preYieldNoScope(binding, klass);
+    public Frame preYieldSpecificBlock(Binding binding, StaticScope scope) {
+        Frame lastFrame = preYieldNoScope(binding);
         // new scope for this invocation of the block, based on parent scope
         pushScope(DynamicScope.newDynamicScope(scope, binding.getDynamicScope()));
         return lastFrame;
     }
     
-    public Frame preYieldLightBlock(Binding binding, DynamicScope emptyScope, RubyModule klass) {
-        Frame lastFrame = preYieldNoScope(binding, klass);
+    public Frame preYieldLightBlock(Binding binding, DynamicScope emptyScope) {
+        Frame lastFrame = preYieldNoScope(binding);
         // just push the same empty scope, since we won't use one
         pushScope(emptyScope);
         return lastFrame;
     }
     
-    public Frame preYieldNoScope(Binding binding, RubyModule klass) {
-        pushRubyClass((klass != null) ? klass : binding.getKlass());
+    public Frame preYieldNoScope(Binding binding) {
         return pushFrameForBlock(binding);
     }
     
@@ -1252,30 +1175,25 @@ public final class ThreadContext {
     
     public Frame preEvalWithBinding(Binding binding) {
         Frame lastFrame = pushFrameForEval(binding);
-        pushRubyClass(binding.getKlass());
         return lastFrame;
     }
     
     public void postEvalWithBinding(Binding binding, Frame lastFrame) {
         popFrameReal(lastFrame);
-        popRubyClass();
     }
     
     public void postYield(Binding binding, Frame lastFrame) {
         popScope();
         popFrameReal(lastFrame);
-        popRubyClass();
     }
     
     public void postYieldLight(Binding binding, Frame lastFrame) {
         popScope();
         popFrameReal(lastFrame);
-        popRubyClass();
     }
     
     public void postYieldNoScope(Frame lastFrame) {
         popFrameReal(lastFrame);
-        popRubyClass();
     }
     
     public void preScopedBody(DynamicScope scope) {
@@ -1312,7 +1230,7 @@ public final class ThreadContext {
      */
     public Binding currentBinding() {
         Frame frame = getCurrentFrame().capture();
-        return new Binding(frame, parentIndex < 0 ? frame.getKlazz() : getRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
+        return new Binding(frame, getCurrentScope(), backtrace[backtraceIndex].clone());
     }
 
     /**
@@ -1322,7 +1240,7 @@ public final class ThreadContext {
      */
     public Binding currentBinding(IRubyObject self) {
         Frame frame = getCurrentFrame().capture();
-        return new Binding(self, frame, frame.getVisibility(), getRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
+        return new Binding(self, frame, frame.getVisibility(), getCurrentScope(), backtrace[backtraceIndex].clone());
     }
 
     /**
@@ -1334,7 +1252,7 @@ public final class ThreadContext {
      */
     public Binding currentBinding(IRubyObject self, Visibility visibility) {
         Frame frame = getCurrentFrame().capture();
-        return new Binding(self, frame, visibility, getRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
+        return new Binding(self, frame, visibility, getCurrentScope(), backtrace[backtraceIndex].clone());
     }
 
     /**
@@ -1346,7 +1264,7 @@ public final class ThreadContext {
      */
     public Binding currentBinding(IRubyObject self, DynamicScope scope) {
         Frame frame = getCurrentFrame().capture();
-        return new Binding(self, frame, frame.getVisibility(), getRubyClass(), scope, backtrace[backtraceIndex].clone());
+        return new Binding(self, frame, frame.getVisibility(), scope, backtrace[backtraceIndex].clone());
     }
 
     /**
@@ -1361,7 +1279,7 @@ public final class ThreadContext {
      */
     public Binding currentBinding(IRubyObject self, Visibility visibility, DynamicScope scope) {
         Frame frame = getCurrentFrame().capture();
-        return new Binding(self, frame, visibility, getRubyClass(), scope, backtrace[backtraceIndex].clone());
+        return new Binding(self, frame, visibility, scope, backtrace[backtraceIndex].clone());
     }
 
     /**
@@ -1371,7 +1289,7 @@ public final class ThreadContext {
     @Deprecated
     public Binding previousBinding() {
         Frame frame = getPreviousFrame();
-        return new Binding(frame, getPreviousRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
+        return new Binding(frame, getCurrentScope(), backtrace[backtraceIndex].clone());
     }
 
     /**
@@ -1382,7 +1300,7 @@ public final class ThreadContext {
     @Deprecated
     public Binding previousBinding(IRubyObject self) {
         Frame frame = getPreviousFrame();
-        return new Binding(self, frame, frame.getVisibility(), getPreviousRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
+        return new Binding(self, frame, frame.getVisibility(), getCurrentScope(), backtrace[backtraceIndex].clone());
     }
 
     /**

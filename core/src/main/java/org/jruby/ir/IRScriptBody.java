@@ -116,7 +116,6 @@ public class IRScriptBody extends IRScope {
         } catch (IRBreakJump bj) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
         } finally {
-            context.popRubyClass();
             context.popScope();
         }
 
