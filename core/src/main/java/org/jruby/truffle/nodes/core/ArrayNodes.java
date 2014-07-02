@@ -108,6 +108,16 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((long[]) b.getStore(), size), size);
         }
 
+        @Specialization(order = 7)
+        public RubyArray add(RubyArray a, RubyArray b) {
+            notDesignedForCompilation();
+            final int combinedSize = a.getSize() + b.getSize();
+            final Object[] combined = new Object[combinedSize];
+            ArrayUtils.copy(a.getStore(), combined, 0, a.getSize());
+            ArrayUtils.copy(b.getStore(), combined, a.getSize(), b.getSize());
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
+        }
+
     }
 
     @CoreMethod(names = "-", minArgs = 1, maxArgs = 1)
