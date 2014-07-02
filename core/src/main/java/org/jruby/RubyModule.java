@@ -1589,12 +1589,15 @@ public class RubyModule extends RubyObject {
         return clone;
     }
 
-    /** rb_mod_init_copy
+    /** mri: rb_mod_init_copy
      * 
      */
     @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original) {
+        if (this instanceof RubyClass) {
+            checkSafeTypeToCopy((RubyClass) original);
+        }
         super.initialize_copy(original);
 
         RubyModule originalModule = (RubyModule)original;
@@ -1607,6 +1610,15 @@ public class RubyModule extends RubyObject {
         originalModule.cloneMethods(this);
 
         return this;
+    }
+
+    // mri: class_init_copy_check
+    private void checkSafeTypeToCopy(RubyClass original) {
+        Ruby runtime = getRuntime();
+
+        if (original == runtime.getBasicObject()) throw runtime.newTypeError("can't copy the root class");
+        if (getSuperClass() == runtime.getBasicObject()) throw runtime.newTypeError("already initialized class");
+        if (original.isSingleton()) throw runtime.newTypeError("can't copy singleton class");
     }
 
     public void syncConstants(RubyModule other) {
