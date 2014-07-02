@@ -756,7 +756,9 @@ public abstract class HashNodes {
 
         @Child protected DispatchHeadNode eqlNode;
 
-        private final BranchProfile nothingFromOtherProfile = new BranchProfile();
+        private final BranchProfile nothingFromFirstProfile = new BranchProfile();
+        private final BranchProfile considerNothingFromSecondProfile = new BranchProfile();
+        private final BranchProfile nothingFromSecondProfile = new BranchProfile();
         private final BranchProfile considerResultIsSmallProfile = new BranchProfile();
         private final BranchProfile resultIsSmallProfile = new BranchProfile();
 
@@ -787,52 +789,59 @@ public abstract class HashNodes {
             final Object[] storeA = (Object[]) hash.getStore();
             final Object[] storeB = (Object[]) other.getStore();
 
-            final boolean[] mergeFromB = new boolean[storeB.length / 2];
-            int mergeFromBCount = 0;
+            final boolean[] mergeFromA = new boolean[storeA.length / 2];
+            int mergeFromACount = 0;
 
-            for (int b = 0; b < storeB.length; b += 2) {
+            for (int a = 0; a < storeA.length; a += 2) {
                 boolean merge = true;
 
-                for (int a = 0; a < storeA.length; a += 2) {
+                for (int b = 0; b < storeB.length; b += 2) {
                     // TODO(CS): cast
-                    if ((boolean) eqlNode.dispatch(frame, storeB[b], null, storeA[a])) {
+                    if ((boolean) eqlNode.dispatch(frame, storeA[a], null, storeB[b])) {
                         merge = false;
                         break;
                     }
                 }
 
                 if (merge) {
-                    mergeFromBCount++;
+                    mergeFromACount++;
                 }
 
-                mergeFromB[b / 2] = merge;
+                mergeFromA[a / 2] = merge;
             }
 
-            if (mergeFromBCount == 0) {
-                nothingFromOtherProfile.enter();
+            if (mergeFromACount == 0) {
+                nothingFromFirstProfile.enter();
+                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), Arrays.copyOf(storeB, storeB.length));
+            }
 
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), Arrays.copyOf(storeA, storeA.length));
+            considerNothingFromSecondProfile.enter();
+
+            if (mergeFromACount == storeB.length) {
+                nothingFromSecondProfile.enter();
+                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), Arrays.copyOf(storeB, storeB.length));
             }
 
             considerResultIsSmallProfile.enter();
 
-            if (storeA.length / 2 + mergeFromBCount <= smallHashSize) {
+            if (storeB.length / 2 + mergeFromACount <= smallHashSize) {
                 resultIsSmallProfile.enter();
 
-                final Object[] merged = new Object[storeA.length + mergeFromBCount * 2];
+                final Object[] merged = new Object[storeB.length + mergeFromACount * 2];
 
-                for (int n = 0; n < storeA.length; n++) {
-                    merged[n] = storeA[n];
-                }
+                int index = 0;
 
-                int index = storeA.length;
-
-                for (int n = 0; n < storeB.length; n += 2) {
-                    if (mergeFromB[n / 2]) {
-                        merged[index] = storeB[n];
-                        merged[index + 1] = storeB[n + 1];
+                for (int n = 0; n < storeA.length; n += 2) {
+                    if (mergeFromA[n / 2]) {
+                        merged[index] = storeA[n];
+                        merged[index + 1] = storeA[n + 1];
                         index += 2;
                     }
+                }
+
+                for (int n = 0; n < storeB.length; n++) {
+                    merged[index] = storeB[n];
+                    index++;
                 }
 
                 return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), merged);
