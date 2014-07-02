@@ -107,7 +107,7 @@ public class FixnumLowerNode extends PassthroughNode {
             return value;
         }
 
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(value.getClass().getName());
     }
 
     @Override

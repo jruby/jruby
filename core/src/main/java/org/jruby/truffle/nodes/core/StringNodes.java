@@ -239,9 +239,9 @@ public abstract class StringNodes {
 
         @Specialization(order = 3)
         public RubyString getIndex(RubyString string, int start, int length) {
-            notDesignedForCompilation();
-
-            return (RubyString) getContext().toTruffle(getContext().toJRuby(string).substr(getContext().getRuntime(), start, length));
+            // TODO(CS): not sure if this is right - encoding
+            // TODO(CS): why does subSequence return CharSequence?
+            return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) string.getBytes().subSequence(start, start + length));
         }
 
     }
