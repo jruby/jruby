@@ -2669,8 +2669,6 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isObject", order = 7)
         public RubyArray pushObject(RubyArray array, Object... values) {
-            notDesignedForCompilation();
-
             final int oldSize = array.getSize();
             final int newSize = oldSize + values.length;
 
