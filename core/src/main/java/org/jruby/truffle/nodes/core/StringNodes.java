@@ -22,6 +22,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
+import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -267,6 +268,9 @@ public abstract class StringNodes {
     @CoreMethod(names = "bytes", maxArgs = 0)
     public abstract static class BytesNode extends CoreMethodNode {
 
+        private final boolean useIntArray = Options.TRUFFLE_ARRAYS_INT.load();
+        private final boolean useLongArray = Options.TRUFFLE_ARRAYS_LONG.load();
+
         public BytesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -276,18 +280,34 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyArray chomp(RubyString string) {
-            notDesignedForCompilation();
-
+        public RubyArray bytes(RubyString string) {
             final byte[] bytes = string.getBytes().bytes();
 
-            final int[] ints = new int[bytes.length];
+            if (useIntArray) {
+                final int[] store = new int[bytes.length];
 
-            for (int n = 0; n < ints.length; n++) {
-                ints[n] = RubyFixnum.toUnsignedInt(bytes[n]);
+                for (int n = 0; n < store.length; n++) {
+                    store[n] = RubyFixnum.toUnsignedInt(bytes[n]);
+                }
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
+            } else if (useLongArray) {
+                final long[] store = new long[bytes.length];
+
+                for (int n = 0; n < store.length; n++) {
+                    store[n] = RubyFixnum.toUnsignedInt(bytes[n]);
+                }
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
+            } else {
+                final Object[] store = new Object[bytes.length];
+
+                for (int n = 0; n < store.length; n++) {
+                    store[n] = RubyFixnum.toUnsignedInt(bytes[n]);
+                }
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
             }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ints, bytes.length);
         }
     }
 

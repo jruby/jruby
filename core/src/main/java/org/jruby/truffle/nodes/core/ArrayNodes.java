@@ -597,6 +597,9 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "[]=", minArgs = 2, maxArgs = 3, lowerFixnumParameters = 0)
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
+        private final boolean useIntArray = Options.TRUFFLE_ARRAYS_INT.load();
+        private final boolean useLongArray = Options.TRUFFLE_ARRAYS_LONG.load();
+
         private final BranchProfile tooSmallBranch = new BranchProfile();
         private final BranchProfile pastEndBranch = new BranchProfile();
         private final BranchProfile appendBranch = new BranchProfile();
@@ -612,14 +615,53 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isNull", order = 1)
-        public Object setNull(RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
-            notDesignedForCompilation();
+        public Object setNullIntegerFixnum(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
+            if (index == 0) {
+                if (useIntArray) {
+                    array.setStore(new int[]{value}, 1);
+                } else if (useLongArray) {
+                    array.setStore(new long[]{value}, 1);
+                } else {
+                    array.setStore(new Object[]{value}, 1);
+                }
+            } else {
+                CompilerDirectives.transferToInterpreter();
+                throw new UnsupportedOperationException();
+            }
 
-            array.slowPush(value);
             return value;
         }
 
-        @Specialization(guards = "isIntegerFixnum", order = 2)
+        @Specialization(guards = "isNull", order = 2)
+        public Object setNullLongFixnum(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
+            if (index == 0) {
+                if (useLongArray) {
+                    array.setStore(new long[]{value}, 1);
+                } else {
+                    array.setStore(new Object[]{value}, 1);
+                }
+            } else {
+                CompilerDirectives.transferToInterpreter();
+                throw new UnsupportedOperationException();
+            }
+
+            return value;
+        }
+
+        @Specialization(guards = "isNull", order = 3)
+        public Object setNullObject(RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
+            notDesignedForCompilation();
+
+            if (index == 0) {
+                array.slowPush(value);
+            } else {
+                throw new UnsupportedOperationException();
+            }
+
+            return value;
+        }
+
+        @Specialization(guards = "isIntegerFixnum", order = 4)
         public int setIntegerFixnum(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
             final int normalisedIndex = array.normaliseIndex(index);
             int[] store = (int[]) array.getStore();
@@ -651,7 +693,7 @@ public abstract class ArrayNodes {
             return value;
         }
 
-        @Specialization(guards = "isIntegerFixnum", order = 3)
+        @Specialization(guards = "isIntegerFixnum", order = 5)
         public long setLongInIntegerFixnum(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
             if (array.getAllocationSite() != null) {
                 array.getAllocationSite().convertedIntToLong();
@@ -689,7 +731,7 @@ public abstract class ArrayNodes {
             return value;
         }
 
-        @Specialization(guards = "isLongFixnum", order = 4)
+        @Specialization(guards = "isLongFixnum", order = 6)
         public long setLongFixnum(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
             final int normalisedIndex = array.normaliseIndex(index);
             long[] store = (long[]) array.getStore();
@@ -721,7 +763,7 @@ public abstract class ArrayNodes {
             return value;
         }
 
-        @Specialization(guards = "isFloat", order = 5)
+        @Specialization(guards = "isFloat", order = 7)
         public double setFloat(RubyArray array, int index, double value, UndefinedPlaceholder unused) {
             final int normalisedIndex = array.normaliseIndex(index);
             double[] store = (double[]) array.getStore();
@@ -753,7 +795,7 @@ public abstract class ArrayNodes {
             return value;
         }
 
-        @Specialization(guards = "isObject", order = 6)
+        @Specialization(guards = "isObject", order = 8)
         public Object setObject(RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
             final int normalisedIndex = array.normaliseIndex(index);
             Object[] store = (Object[]) array.getStore();
@@ -785,7 +827,7 @@ public abstract class ArrayNodes {
             return value;
         }
 
-        @Specialization(guards = "isIntegerFixnum", order = 7)
+        @Specialization(guards = "isIntegerFixnum", order = 9)
         public RubyArray setIntegerFixnumRange(RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
             if (range.doesExcludeEnd()) {
                 CompilerDirectives.transferToInterpreter();
