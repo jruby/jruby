@@ -80,8 +80,12 @@ public final class RubyArray extends RubyObject {
 
         if (object instanceof Integer && Options.TRUFFLE_ARRAYS_INT.load()) {
             store = new int[]{(int) object};
+        } else if (object instanceof Integer && Options.TRUFFLE_ARRAYS_LONG.load()) {
+            store = new long[]{(long) (int) object};
         } else if (object instanceof RubyFixnum.IntegerFixnum && Options.TRUFFLE_ARRAYS_INT.load()) {
             store = new int[]{((RubyFixnum.IntegerFixnum) object).getValue()};
+        } else if (object instanceof RubyFixnum.IntegerFixnum && Options.TRUFFLE_ARRAYS_LONG.load()) {
+            store = new long[]{(long) ((RubyFixnum.IntegerFixnum) object).getValue()};
         } else if (object instanceof Long && Options.TRUFFLE_ARRAYS_LONG.load()) {
             store = new long[]{(long) object};
         } else if (object instanceof RubyFixnum.LongFixnum && Options.TRUFFLE_ARRAYS_LONG.load()) {
