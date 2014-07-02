@@ -73,7 +73,6 @@ freezing to) a specific jruby-complete jar version.</description>
         <configuration>
           <gemspec>jruby-jars.gemspec</gemspec>
           <includeDependencies>true</includeDependencies>
-          <useRepositoryLayout>true</useRepositoryLayout>
         </configuration>
       </plugin>
       <plugin>
