@@ -61,9 +61,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "areBothIntegerFixnum", order = 1)
-        public RubyArray addIntegerFixnum(RubyArray a, RubyArray b) {
-            notDesignedForCompilation();
-
+        public RubyArray addBothIntegerFixnum(RubyArray a, RubyArray b) {
             final int combinedSize = a.getSize() + b.getSize();
             final int[] combined = new int[combinedSize];
             System.arraycopy(a.getStore(), 0, combined, 0, a.getSize());
@@ -72,9 +70,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "areBothLongFixnum", order = 2)
-        public RubyArray addLongFixnum(RubyArray a, RubyArray b) {
-            notDesignedForCompilation();
-
+        public RubyArray addBothLongFixnum(RubyArray a, RubyArray b) {
             final int combinedSize = a.getSize() + b.getSize();
             final long[] combined = new long[combinedSize];
             System.arraycopy(a.getStore(), 0, combined, 0, a.getSize());
@@ -83,9 +79,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "areBothFloat", order = 3)
-        public RubyArray addFloat(RubyArray a, RubyArray b) {
-            notDesignedForCompilation();
-
+        public RubyArray addBothFloat(RubyArray a, RubyArray b) {
             final int combinedSize = a.getSize() + b.getSize();
             final double[] combined = new double[combinedSize];
             System.arraycopy(a.getStore(), 0, combined, 0, a.getSize());
@@ -94,9 +88,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "areBothObject", order = 4)
-        public RubyArray addObject(RubyArray a, RubyArray b) {
-            notDesignedForCompilation();
-
+        public RubyArray addBothObject(RubyArray a, RubyArray b) {
             final int combinedSize = a.getSize() + b.getSize();
             final Object[] combined = new Object[combinedSize];
             System.arraycopy(a.getStore(), 0, combined, 0, a.getSize());
@@ -104,15 +96,16 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
         }
 
-        @Specialization(order = 5)
-        public RubyArray add(RubyArray a, RubyArray b) {
-            notDesignedForCompilation();
+        @Specialization(guards = {"isNull", "isOtherIntegerFixnum"}, order = 5)
+        public RubyArray addNullIntegerFixnum(RubyArray a, RubyArray b) {
+            final int size = b.getSize();
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((int[]) b.getStore(), size), size);
+        }
 
-            final int combinedSize = a.getSize() + b.getSize();
-            final Object[] combined = new Object[combinedSize];
-            ArrayUtils.copy(a.getStore(), combined, 0, a.getSize());
-            ArrayUtils.copy(b.getStore(), combined, a.getSize(), b.getSize());
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
+        @Specialization(guards = {"isNull", "isOtherLongFixnum"}, order = 6)
+        public RubyArray addNullLongFixnum(RubyArray a, RubyArray b) {
+            final int size = b.getSize();
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((long[]) b.getStore(), size), size);
         }
 
     }
@@ -2377,6 +2370,7 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
+        @CompilerDirectives.SlowPath
         @Specialization
         public RubyString pack(RubyArray array, RubyString format) {
             notDesignedForCompilation();
@@ -2956,11 +2950,20 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization(guards = "isIntegerFixnum")
-        public RubyArray slice(RubyArray array, int start, int length) {
-            notDesignedForCompilation();
-
+        @Specialization(guards = "isIntegerFixnum", order = 1)
+        public RubyArray sliceIntegerFixnum(RubyArray array, int start, int length) {
             final int[] store = (int[]) array.getStore();
+
+            final int normalisedStart = array.normaliseIndex(start);
+            final int normalisedEnd = Math.min(normalisedStart + length, array.getSize() + length);
+            final int sliceLength = normalisedEnd - normalisedStart;
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, normalisedStart, normalisedEnd), sliceLength);
+        }
+
+        @Specialization(guards = "isLongFixnum", order = 2)
+        public RubyArray sliceLongFixnum(RubyArray array, int start, int length) {
+            final long[] store = (long[]) array.getStore();
 
             final int normalisedStart = array.normaliseIndex(start);
             final int normalisedEnd = Math.min(normalisedStart + length, array.getSize() + length);

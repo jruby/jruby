@@ -106,6 +106,8 @@ public class RubyContext {
     }
 
     public RubySymbol newSymbol(String name) {
+        RubyNode.notDesignedForCompilation();
+
         return symbolTable.getSymbol(name);
     }
 

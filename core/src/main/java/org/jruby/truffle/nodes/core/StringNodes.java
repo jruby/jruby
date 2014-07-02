@@ -164,8 +164,6 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString concat(RubyString string, RubyString other) {
-            notDesignedForCompilation();
-
             string.getBytes().append(other.getBytes());
             return string;
         }
@@ -511,8 +509,6 @@ public abstract class StringNodes {
 
         @Specialization
         public int getByte(RubyString string, int index) {
-            notDesignedForCompilation();
-
             return string.getBytes().get(index);
         }
     }
@@ -702,9 +698,7 @@ public abstract class StringNodes {
 
         @Specialization
         public int size(RubyString string) {
-            notDesignedForCompilation();
-
-            return string.toString().length();
+            return string.getBytes().getRealSize();
         }
     }
 
@@ -904,10 +898,9 @@ public abstract class StringNodes {
             super(prev);
         }
 
+        @CompilerDirectives.SlowPath
         @Specialization
         public RubyArray unpack(RubyString string, RubyString format) {
-            notDesignedForCompilation();
-
             final org.jruby.RubyArray jrubyArray = Pack.unpack(getContext().getRuntime(), string.getBytes(), format.getBytes());
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), jrubyArray.toArray());
         }

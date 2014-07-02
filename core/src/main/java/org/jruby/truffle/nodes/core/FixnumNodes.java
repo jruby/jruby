@@ -1551,8 +1551,6 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object upto(VirtualFrame frame, int from, int to, RubyProc block) {
-            notDesignedForCompilation();
-
             int count = 0;
 
             try {

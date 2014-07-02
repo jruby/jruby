@@ -31,10 +31,9 @@ public abstract class StringToSymbolNode extends RubyNode {
         super(prev);
     }
 
+    @CompilerDirectives.SlowPath
     @Specialization
     public RubySymbol doString(RubyString string) {
-        notDesignedForCompilation();
-
         return getContext().newSymbol(string.toString());
     }
 
