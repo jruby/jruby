@@ -241,7 +241,9 @@ public abstract class StringNodes {
         public RubyString getIndex(RubyString string, int start, int length) {
             // TODO(CS): not sure if this is right - encoding
             // TODO(CS): why does subSequence return CharSequence?
-            return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) string.getBytes().subSequence(start, start + length));
+            final int begin = string.normaliseIndex(start);
+            final int exclusiveEnd = string.normaliseExclusiveIndex(start + length);
+            return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) string.getBytes().subSequence(begin, exclusiveEnd - begin));
         }
 
     }
