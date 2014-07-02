@@ -754,20 +754,92 @@ public abstract class HashNodes {
     @CoreMethod(names = "merge", minArgs = 1, maxArgs = 1)
     public abstract static class MergeNode extends HashCoreMethodNode {
 
+        @Child protected DispatchHeadNode eqlNode;
+
+        private final BranchProfile nothingFromOtherProfile = new BranchProfile();
+        private final BranchProfile considerResultIsSmallProfile = new BranchProfile();
+        private final BranchProfile resultIsSmallProfile = new BranchProfile();
+
+        private final int smallHashSize = Options.TRUFFLE_HASHES_SMALL.load();
+
         public MergeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            eqlNode = new DispatchHeadNode(context, "eql?", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public MergeNode(MergeNode prev) {
             super(prev);
+            eqlNode = prev.eqlNode;
         }
 
-        @Specialization(guards = {"isObjectArray", "isOtherNull"})
-        public RubyHash merge(RubyHash hash, RubyHash other) {
+        @Specialization(guards = {"isObjectArray", "isOtherNull"}, order = 1)
+        public RubyHash mergeObjectArrayNull(RubyHash hash, RubyHash other) {
             final Object[] store = (Object[]) hash.getStore();
             final Object[] copy = Arrays.copyOf(store, store.length);
 
             return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), copy);
+        }
+
+        @Specialization(guards = {"isObjectArray", "isOtherObjectArray"}, order = 2)
+        public RubyHash mergeObjectArrayObjectArray(VirtualFrame frame, RubyHash hash, RubyHash other) {
+            // TODO(CS): what happens with the default block here? Which side does it get merged from?
+
+            final Object[] storeA = (Object[]) hash.getStore();
+            final Object[] storeB = (Object[]) other.getStore();
+
+            final boolean[] mergeFromB = new boolean[storeB.length / 2];
+            int mergeFromBCount = 0;
+
+            for (int b = 0; b < storeB.length; b += 2) {
+                boolean merge = true;
+
+                for (int a = 0; a < storeA.length; a += 2) {
+                    // TODO(CS): cast
+                    if ((boolean) eqlNode.dispatch(frame, storeB[b], null, storeA[a])) {
+                        merge = false;
+                        break;
+                    }
+                }
+
+                if (merge) {
+                    mergeFromBCount++;
+                }
+
+                mergeFromB[b / 2] = merge;
+            }
+
+            if (mergeFromBCount == 0) {
+                nothingFromOtherProfile.enter();
+
+                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), Arrays.copyOf(storeA, storeA.length));
+            }
+
+            considerResultIsSmallProfile.enter();
+
+            if (storeA.length / 2 + mergeFromBCount <= smallHashSize) {
+                resultIsSmallProfile.enter();
+
+                final Object[] merged = new Object[storeA.length + mergeFromBCount * 2];
+
+                for (int n = 0; n < storeA.length; n++) {
+                    merged[n] = storeA[n];
+                }
+
+                int index = storeA.length;
+
+                for (int n = 0; n < storeB.length; n += 2) {
+                    if (mergeFromB[n / 2]) {
+                        merged[index] = storeB[n];
+                        merged[index + 1] = storeB[n + 1];
+                        index += 2;
+                    }
+                }
+
+                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), merged);
+            }
+
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException();
         }
 
     }
