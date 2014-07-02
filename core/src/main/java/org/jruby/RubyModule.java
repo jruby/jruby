@@ -37,6 +37,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jcodings.Encoding;
 import org.jruby.anno.AnnotationBinder;
 import org.jruby.anno.AnnotationHelper;
 import org.jruby.anno.FrameField;
@@ -2582,7 +2583,7 @@ public class RubyModule extends RubyObject {
         boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
 
         // Note: includes part of fix for JRUBY-1339
-        return context.runtime.newBoolean(fastIsConstantDefined19(validateConstant(symbol.asJavaString()).intern(), inherit));
+        return context.runtime.newBoolean(fastIsConstantDefined19(validateConstant(symbol).intern(), inherit));
     }
 
     /** rb_mod_const_get
@@ -2607,7 +2608,7 @@ public class RubyModule extends RubyObject {
         while((sep = symbol.indexOf("::")) != -1) {
             String segment = symbol.substring(0, sep);
             symbol = symbol.substring(sep + 2);
-            IRubyObject obj = mod.getConstant(validateConstant(segment, fullName), inherit, inherit);
+            IRubyObject obj = mod.getConstant(validateConstant(segment, args[0]), inherit, inherit);
             if(obj instanceof RubyModule) {
                 mod = (RubyModule)obj;
             } else {
@@ -2615,7 +2616,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        return mod.getConstant(validateConstant(symbol, fullName), inherit, inherit);
+        return mod.getConstant(validateConstant(symbol, args[0]), inherit, inherit);
     }
 
     /** rb_mod_const_set
@@ -2623,7 +2624,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_set", required = 2)
     public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
-        IRubyObject constant = setConstant(validateConstant(symbol.asJavaString()).intern(), value);
+        IRubyObject constant = setConstant(validateConstant(symbol).intern(), value);
 
         if (constant instanceof RubyModule) {
             ((RubyModule)constant).calculateName();
@@ -2633,7 +2634,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "remove_const", required = 1, visibility = PRIVATE)
     public IRubyObject remove_const(ThreadContext context, IRubyObject rubyName) {
-        String name = validateConstant(rubyName.asJavaString());
+        String name = validateConstant(rubyName);
         IRubyObject value;
         if ((value = deleteConstant(name)) != null) {
             invalidateConstantCache(name);
@@ -2743,17 +2744,20 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod
     public IRubyObject private_constant(ThreadContext context, IRubyObject rubyName) {
-        String name = rubyName.asJavaString();
-        setConstantVisibility(context, validateConstant(name), true);
+        String name = validateConstant(rubyName);
+
+        setConstantVisibility(context, name, true);
         invalidateConstantCache(name);
+
         return this;
     }
 
     @JRubyMethod(required = 1, rest = true)
     public IRubyObject private_constant(ThreadContext context, IRubyObject[] rubyNames) {
         for (IRubyObject rubyName : rubyNames) {
-            String name = rubyName.asJavaString();
-            setConstantVisibility(context, validateConstant(name), true);
+            String name = validateConstant(rubyName);
+
+            setConstantVisibility(context, name, true);
             invalidateConstantCache(name);
         }
         return this;
@@ -2761,8 +2765,9 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod
     public IRubyObject public_constant(ThreadContext context, IRubyObject rubyName) {
-        String name = rubyName.asJavaString();
-        setConstantVisibility(context, validateConstant(name), false);
+        String name = validateConstant(rubyName);
+
+        setConstantVisibility(context, name, false);
         invalidateConstantCache(name);
         return this;
     }
@@ -2770,8 +2775,8 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(required = 1, rest = true)
     public IRubyObject public_constant(ThreadContext context, IRubyObject[] rubyNames) {
         for (IRubyObject rubyName : rubyNames) {
-            String name = rubyName.asJavaString();
-            setConstantVisibility(context, validateConstant(name), false);
+            String name = validateConstant(rubyName);
+            setConstantVisibility(context, name, false);
             invalidateConstantCache(name);
         }
         return this;
@@ -3505,15 +3510,28 @@ public class RubyModule extends RubyObject {
         return publicNames;
     }
    
-    protected final String validateConstant(String name) {
-        return validateConstant(name, name);
+    protected final String validateConstant(IRubyObject name) {
+        return validateConstant(name.asJavaString(), name);
     }
 
-    protected final String validateConstant(String name, String errorName) {
-        if (IdUtil.isValidConstantName19(name)) {
-            return name;
+    protected final String validateConstant(String name, IRubyObject errorName) {
+        if (IdUtil.isValidConstantName19(name)) return name;
+
+        Ruby runtime = getRuntime();
+
+        Encoding resultEncoding = runtime.getDefaultInternalEncoding();
+        if (resultEncoding == null) resultEncoding = runtime.getDefaultExternalEncoding();
+
+        // MRI is more complicated than this and distinguishes between ID and non-ID.
+        RubyString nameString = errorName.asString();
+
+        // MRI does strlen to check for \0 vs Ruby string length.
+        if ((nameString.getEncoding() != resultEncoding && !nameString.isAsciiOnly()) ||
+                nameString.toString().contains("\0")) {
+            nameString = (RubyString) nameString.inspect();
         }
-        throw getRuntime().newNameError("wrong constant name " + errorName, name);
+
+        throw getRuntime().newNameError("wrong constant name " + nameString, name);
     }
 
     protected final void ensureConstantsSettable() {
