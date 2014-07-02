@@ -40,7 +40,7 @@ public class CachedSymbolDynamicNameDispatchNode extends DynamicNameDispatchNode
 
     @Override
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyString name, RubyProc blockObject, Object[] argumentsObjects) {
-        return dispatchHeadNode.dispatch(frame, receiverObject, blockObject, argumentsObjects);
+        return next.dispatch(frame, receiverObject, name, blockObject, argumentsObjects);
     }
 
     @Override
@@ -54,7 +54,7 @@ public class CachedSymbolDynamicNameDispatchNode extends DynamicNameDispatchNode
 
     @Override
     public boolean doesRespondTo(VirtualFrame frame, Object receiverObject, RubyString name) {
-        return dispatchHeadNode.doesRespondTo(frame, receiverObject);
+        return next.doesRespondTo(frame, receiverObject, name);
     }
 
 
