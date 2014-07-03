@@ -36,6 +36,7 @@ import org.jruby.ir.instructions.BuildCompoundArrayInstr;
 import org.jruby.ir.instructions.BlockGivenInstr;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.BuildLambdaInstr;
+import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CheckArgsArrayArityInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
@@ -124,6 +125,7 @@ import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.Helpers;
 import org.jruby.parser.StaticScope;
@@ -765,33 +767,41 @@ public class JVMVisitor extends IRVisitor {
         IRBytecodeAdapter m = jvmMethod();
         String name = callInstr.getMethodAddr().getName();
         Operand[] args = callInstr.getCallArgs();
+        Operand receiver = callInstr.getReceiver();
         int numArgs = args.length;
+        Operand closure = callInstr.getClosureArg(null);
+        boolean hasClosure = closure != null;
+        CallType callType = callInstr.getCallType();
+        Variable result = callInstr.getResult();
 
+        compileCallCommon(m, name, args, receiver, numArgs, closure, hasClosure, callType, result);
+    }
 
+    private void compileCallCommon(IRBytecodeAdapter m, String name, Operand[] args, Operand receiver, int numArgs, Operand closure, boolean hasClosure, CallType callType, Variable result) {
         m.loadLocal(0); // tc
         m.loadLocal(2); // caller
-        visit(callInstr.getReceiver());
-
-        boolean isSplat = false;
+        visit(receiver);
 
         if (numArgs == 1 && args[0] instanceof Splat) {
             visit(args[0]);
             numArgs = -1;
+        } else if (CallBase.containsArgSplat(args)) {
+            // splat, but not in first position; bail out for now
+            // FIXME: handle compiling splat in non-first-position
+            throw new RuntimeException("splat in non-initial unsupported by JIT");
         } else {
             for (Operand operand : args) {
                 visit(operand);
             }
         }
 
-        Operand closure = callInstr.getClosureArg(null);
-        boolean hasClosure = closure != null;
         if (hasClosure) {
-            jvmMethod().loadContext();
+            m.loadContext();
             visit(closure);
-            jvmMethod().invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
+            m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
         }
 
-        switch (callInstr.getCallType()) {
+        switch (callType) {
             case FUNCTIONAL:
             case VARIABLE:
                 m.invokeSelf(name, numArgs, hasClosure);
@@ -801,7 +811,12 @@ public class JVMVisitor extends IRVisitor {
                 break;
         }
 
-        jvmStoreLocal(callInstr.getResult());
+        if (result != null) {
+            jvmStoreLocal(result);
+        } else {
+            // still need to drop, since all dyncalls return something (FIXME)
+            m.adapter.pop();
+        }
     }
 
     @Override
@@ -1342,32 +1357,15 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void NoResultCallInstr(NoResultCallInstr noResultCallInstr) {
         IRBytecodeAdapter m = jvmMethod();
-        m.loadLocal(0);
-        m.loadSelf(); // caller
-        visit(noResultCallInstr.getReceiver());
-        for (Operand operand : noResultCallInstr.getCallArgs()) {
-            visit(operand);
-        }
-
+        String name = noResultCallInstr.getMethodAddr().getName();
+        Operand[] args = noResultCallInstr.getCallArgs();
+        Operand receiver = noResultCallInstr.getReceiver();
+        int numArgs = args.length;
         Operand closure = noResultCallInstr.getClosureArg(null);
         boolean hasClosure = closure != null;
-        if (closure != null) {
-            jvmMethod().loadContext();
-            visit(closure);
-            jvmMethod().invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
-        }
+        CallType callType = noResultCallInstr.getCallType();
 
-        switch (noResultCallInstr.getCallType()) {
-            case FUNCTIONAL:
-            case VARIABLE:
-                m.invokeSelf(noResultCallInstr.getMethodAddr().getName(), noResultCallInstr.getCallArgs().length, hasClosure);
-                break;
-            case NORMAL:
-                m.invokeOther(noResultCallInstr.getMethodAddr().getName(), noResultCallInstr.getCallArgs().length, hasClosure);
-                break;
-        }
-
-        m.adapter.pop();
+        compileCallCommon(m, name, args, receiver, numArgs, closure, hasClosure, callType, null);
     }
 
     @Override
