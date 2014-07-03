@@ -182,7 +182,7 @@ public class JVMVisitor extends IRVisitor {
 //            e.printStackTrace();
 //        }
 
-        return jrubyClassLoader.defineClass(c(JVM.scriptToClass(scope.getName())), target.code());
+        return jrubyClassLoader.defineClass(c(JVM.scriptToClass(scope.getFileName())), target.code());
     }
 
     public byte[] code() {
@@ -296,7 +296,7 @@ public class JVMVisitor extends IRVisitor {
             .appendArgs(new String[]{"context", "scope", "self", "args", "block", "superName", "type"}, ThreadContext.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, String.class, Block.Type.class);
 
     public void emitScriptBody(IRScriptBody script) {
-        String clsName = jvm.scriptToClass(script.getName());
+        String clsName = jvm.scriptToClass(script.getFileName());
         jvm.pushscript(clsName, script.getFileName());
 
         emitScope(script, "__script__", METHOD_SIGNATURE);
@@ -315,7 +315,7 @@ public class JVMVisitor extends IRVisitor {
 
     public Handle emitMethodJIT(IRMethod method) {
         String name = JavaNameMangler.mangleMethodName(method.getName() + "_" + methodIndex++);
-        String clsName = jvm.scriptToClass(method.getName());
+        String clsName = jvm.scriptToClass(method.getFileName());
         jvm.pushscript(clsName, method.getFileName());
 
         emitScope(method, "__script__", METHOD_SIGNATURE);
@@ -337,7 +337,7 @@ public class JVMVisitor extends IRVisitor {
         } else {
             name = baseName + "_" + methodIndex++;
         }
-        String clsName = jvm.scriptToClass(method.getName());
+        String clsName = jvm.scriptToClass(method.getFileName());
         jvm.pushscript(clsName, method.getFileName());
 
         emitScope(method, "__script__", METHOD_SIGNATURE);
