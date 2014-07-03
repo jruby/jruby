@@ -997,7 +997,8 @@ public class JVMVisitor extends IRVisitor {
         a.aload(0); // ThreadContext
         jvmMethod().pushHandle(emitMethod(method)); // handle
         a.ldc(method.getName());
-        a.aload(1);
+        jvmLoadLocal(DYNAMIC_SCOPE);
+        a.aload(2); // self
         a.ldc(scopeString);
         a.ldc(method.getFileName());
         a.ldc(method.getLineNumber());
@@ -1006,7 +1007,7 @@ public class JVMVisitor extends IRVisitor {
         // add method
         a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledIRMethod",
                 sig(IRubyObject.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class,
-                        StaticScope.class, String.class, String.class, int.class, String.class));
+                        DynamicScope.class, IRubyObject.class, String.class, String.class, int.class, String.class));
 
         a.pop();
     }

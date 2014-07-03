@@ -197,12 +197,13 @@ public class IRRuntimeHelpers {
         }
     }
 
-    public static IRubyObject defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, StaticScope parentScope, String scopeDesc,
+    public static IRubyObject defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, DynamicScope currDynScope, IRubyObject self, String scopeDesc,
                                   String filename, int line, String parameterDesc) {
         Ruby runtime = context.runtime;
+        StaticScope parentScope = currDynScope.getStaticScope();
 
-        // SSS FIXME: this has to be looked up at runtime now
-        RubyModule containingClass = null; // context.getRubyClass();
+
+        RubyModule containingClass = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
 

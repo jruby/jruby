@@ -23,6 +23,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
+import org.jruby.ir.IRScopeType;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
@@ -2193,7 +2194,9 @@ public class Helpers {
                 .append(',')
                 .append(scope.getOptionalArgs())
                 .append(',')
-                .append(scope.getRestArg());
+                .append(scope.getRestArg())
+                .append(',')
+                .append(scope.getScopeType());
 
         return namesBuilder.toString();
     }
@@ -2233,6 +2236,7 @@ public class Helpers {
                 break;
         }
         setAritiesFromDecodedScope(scope, decodedScope[0]);
+        scope.setScopeType(IRScopeType.valueOf(decodedScope[0][5]));
         return scope;
     }
 

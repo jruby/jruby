@@ -23,7 +23,6 @@ public class IRStaticScope extends StaticScope {
     private boolean isArgumentScope; // Is this block and argument scope of a define_method (for the purposes of zsuper).
 
     private int scopeId;
-    private IRScopeType scopeType;
     private IRScope irScope; // Method/Closure that this static scope corresponds to
 
     protected IRStaticScope(Type type, StaticScope enclosingScope) {

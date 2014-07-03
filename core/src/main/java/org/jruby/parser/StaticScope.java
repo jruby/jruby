@@ -80,6 +80,8 @@ public abstract class StaticScope implements Serializable {
     
     private DynamicScope dummyScope;
 
+    protected IRScopeType scopeType;
+
     public enum Type {
         LOCAL, BLOCK, EVAL;
 
@@ -95,8 +97,6 @@ public abstract class StaticScope implements Serializable {
     public void setScopeType(IRScopeType scopeType) {
         this.scopeType = scopeType;
     }
-
-    private IRScopeType scopeType;
 
     /**
      * Construct a new static scope. The array of strings should all be the
