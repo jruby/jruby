@@ -54,6 +54,12 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         this.method.getStaticScope().determineModule();
         this.arity = calculateArity();
         this.pushScope = method.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE);
+
+        if (method.usesEval()) {
+            // Methods that contain evals don't have interpreted parent context in JIT,
+            // so we disable JIT here. FIXME: fix this some day?
+            box.callCount = -1;
+        }
     }
 
     // We can probably use IRMethod callArgs for something (at least arity)
