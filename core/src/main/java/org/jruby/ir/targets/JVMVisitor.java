@@ -784,6 +784,8 @@ public class JVMVisitor extends IRVisitor {
 
         if (numArgs == 1 && args[0] instanceof Splat) {
             visit(args[0]);
+            // need to unwrap for call path (FIXME: more efficient!)
+            m.adapter.invokevirtual(p(RubyArray.class), "toJavaArrayMaybeUnsafe", sig(IRubyObject[].class));
             numArgs = -1;
         } else if (CallBase.containsArgSplat(args)) {
             // splat, but not in first position; bail out for now
@@ -2045,7 +2047,6 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(splat.getArray());
         jvmMethod().invokeHelper("irSplat", RubyArray.class, ThreadContext.class, IRubyObject.class);
-        jvmAdapter().invokevirtual(p(RubyArray.class), "toJavaArrayMaybeUnsafe", sig(IRubyObject[].class));
     }
 
     @Override
