@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.jruby.ir.instructions.defined;
 
 import org.jruby.ir.IRVisitor;
@@ -16,10 +12,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author enebo
- */
 public class GetErrorInfoInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
 

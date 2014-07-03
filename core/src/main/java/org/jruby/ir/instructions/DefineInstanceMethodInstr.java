@@ -7,7 +7,6 @@ import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;

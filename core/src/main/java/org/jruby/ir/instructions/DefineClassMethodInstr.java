@@ -3,7 +3,6 @@ package org.jruby.ir.instructions;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyObject;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.IRVisitor;

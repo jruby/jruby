@@ -9,9 +9,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- */
 public class OneArgOperandAttrAssignInstr extends AttrAssignInstr {
     public OneArgOperandAttrAssignInstr(AttrAssignInstr instr) {
         super(instr);
