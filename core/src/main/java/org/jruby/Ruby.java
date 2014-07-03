@@ -136,6 +136,7 @@ import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.cli.Options;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.func.Function1;
 import org.jruby.util.io.ChannelDescriptor;
@@ -624,10 +625,16 @@ public final class Ruby {
         Script script = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile) {
-            script = tryCompile(scriptNode);
+            try {
+                script = tryCompile(scriptNode);
+            } catch (Exception e) {
+                if (Options.JIT_LOGGING_VERBOSE.load()) {
+                    e.printStackTrace();
+                }
+            }
             if (compile && script == null) {
-                // terminate; tryCompile will have printed out an error and we're done
-                return getNil();
+                // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
+                // FIXME: restore error once JIT should handle everything
             }
         }
         
@@ -702,7 +709,15 @@ public final class Ruby {
         Script script = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile || config.isShowBytecode()) {
-            script = tryCompile(scriptNode, null, new JRubyClassLoader(getJRubyClassLoader()), config.isShowBytecode());
+            // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
+            // FIXME: restore error once JIT should handle everything
+            try {
+                script = tryCompile(scriptNode, null, new JRubyClassLoader(getJRubyClassLoader()), config.isShowBytecode());
+            } catch (Exception e) {
+                if (Options.JIT_LOGGING_VERBOSE.load()) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         if (script != null) {
@@ -712,7 +727,8 @@ public final class Ruby {
 
             return runScript(script);
         } else {
-            failForcedCompile(scriptNode);
+            // FIXME: temporarily allowing JIT to fail for $0 and fall back on interpreter
+//            failForcedCompile(scriptNode);
             
             return runInterpreter(scriptNode);
         }
