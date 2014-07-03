@@ -456,11 +456,12 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void AliasInstr(AliasInstr aliasInstr) {
         IRBytecodeAdapter m = jvm.method();
-        m.loadLocal(0);
+        m.loadContext();
+        m.loadSelf();
         jvmLoadLocal(DYNAMIC_SCOPE);
         m.adapter.ldc(((StringLiteral)aliasInstr.getNewName()).string);
         m.adapter.ldc(((StringLiteral)aliasInstr.getOldName()).string);
-        m.invokeIRHelper("defineAlias", sig(void.class, ThreadContext.class, IRubyObject.class, String.class, String.class));
+        m.invokeIRHelper("defineAlias", sig(void.class, ThreadContext.class, IRubyObject.class, DynamicScope.class, String.class, String.class));
     }
 
     @Override
