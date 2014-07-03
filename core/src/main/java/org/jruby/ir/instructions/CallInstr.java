@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.OneOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
@@ -55,15 +56,15 @@ public class CallInstr extends CallBase implements ResultInstr {
     @Override
     public CallBase specializeForInterpretation() {
         Operand[] callArgs = getCallArgs();
-        if (hasClosure() || containsArgSplat(callArgs)) return this;
+        if (containsArgSplat(callArgs)) return this;
 
         switch (callArgs.length) {
             case 0:
-                return new ZeroOperandArgNoBlockCallInstr(this);
+                return hasClosure() ? this : new ZeroOperandArgNoBlockCallInstr(this);
             case 1:
-                if (isAllFixnums()) return new OneFixnumArgNoBlockCallInstr(this);
+                if (isAllFixnums() && !hasClosure()) return new OneFixnumArgNoBlockCallInstr(this);
 
-                return new OneOperandArgNoBlockCallInstr(this);
+                return hasClosure() ? new OneOperandArgBlockCallInstr(this) : new OneOperandArgNoBlockCallInstr(this);
         }
         return this;
     }
