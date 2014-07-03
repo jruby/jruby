@@ -235,6 +235,20 @@ public class IRRuntimeHelpers {
         return Helpers.addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
     }
 
+    public static IRubyObject undefMethod(ThreadContext context, Object nameArg, DynamicScope currDynScope, IRubyObject self) {
+        RubyModule module = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
+        String name = (nameArg instanceof String) ?
+                (String) nameArg : nameArg.toString();
+
+        if (module == null) {
+            throw context.runtime.newTypeError("No class to undef method '" + name + "'.");
+        }
+
+        module.undef(context, name);
+
+        return context.runtime.getNil();
+    }
+
     public static double unboxFloat(IRubyObject val) {
         if (val instanceof RubyFloat) {
             return ((RubyFloat)val).getValue();

@@ -1752,12 +1752,13 @@ public class JVMVisitor extends IRVisitor {
         jvmStoreLocal(toaryinstr.getResult());
     }
 
-    // SSS FIXME: Needs an update to reflect instr. change
     @Override
     public void UndefMethodInstr(UndefMethodInstr undefmethodinstr) {
         jvmMethod().loadContext();
         visit(undefmethodinstr.getMethodName());
-        jvmAdapter().invokestatic(p(Helpers.class), "undefMethod", sig(IRubyObject.class, ThreadContext.class, Object.class));
+        jvmLoadLocal(DYNAMIC_SCOPE);
+        jvmMethod().loadSelf();
+        jvmMethod().invokeIRHelper("undefMethod", sig(IRubyObject.class, ThreadContext.class, Object.class, DynamicScope.class, IRubyObject.class));
         jvmStoreLocal(undefmethodinstr.getResult());
     }
 
