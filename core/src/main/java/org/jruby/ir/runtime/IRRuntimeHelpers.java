@@ -202,7 +202,6 @@ public class IRRuntimeHelpers {
         Ruby runtime = context.runtime;
         StaticScope parentScope = currDynScope.getStaticScope();
 
-
         RubyModule containingClass = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, containingClass, rubyName, currVisibility);
