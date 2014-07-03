@@ -1269,7 +1269,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void LineNumberInstr(LineNumberInstr linenumberinstr) {
-        jvmAdapter().line(linenumberinstr.getLineNumber());
+        jvmAdapter().line(linenumberinstr.getLineNumber() + 1);
     }
 
     @Override
