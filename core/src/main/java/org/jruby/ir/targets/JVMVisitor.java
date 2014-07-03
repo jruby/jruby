@@ -1037,7 +1037,7 @@ public class JVMVisitor extends IRVisitor {
         a.ldc(metaClassBody.getFileName());
         a.ldc(metaClassBody.getLineNumber());
 
-        //// static scope
+        // static scope
         a.aload(0);
         a.aload(1);
         a.ldc(scopeString);

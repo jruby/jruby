@@ -2201,26 +2201,6 @@ public class Helpers {
         return namesBuilder.toString();
     }
 
-    @Deprecated
-    public static StaticScope decodeRootScope(ThreadContext context, String scopeString) {
-        return decodeScope(context, null, scopeString);
-    }
-
-    @Deprecated
-    public static StaticScope decodeLocalScope(ThreadContext context, String scopeString) {
-        return decodeScope(context, context.getCurrentStaticScope(), scopeString);
-    }
-
-    @Deprecated
-    public static StaticScope decodeLocalScope(ThreadContext context, StaticScope parent, String scopeString) {
-        return decodeScope(context, parent, scopeString);
-    }
-
-    @Deprecated
-    public static StaticScope decodeBlockScope(ThreadContext context, String scopeString) {
-        return decodeScope(context, context.getCurrentStaticScope(), scopeString);
-    }
-
     public static StaticScope decodeScope(ThreadContext context, StaticScope parent, String scopeString) {
         String[][] decodedScope = decodeScopeDescriptor(scopeString);
         StaticScope scope = null;
@@ -3154,5 +3134,25 @@ public class Helpers {
                     .append(strings[i]);
         }
         return sb.toString();
+    }
+
+    @Deprecated
+    public static StaticScope decodeRootScope(ThreadContext context, String scopeString) {
+        return decodeScope(context, null, scopeString);
+    }
+
+    @Deprecated
+    public static StaticScope decodeLocalScope(ThreadContext context, String scopeString) {
+        return decodeScope(context, context.getCurrentStaticScope(), scopeString);
+    }
+
+    @Deprecated
+    public static StaticScope decodeLocalScope(ThreadContext context, StaticScope parent, String scopeString) {
+        return decodeScope(context, parent, scopeString);
+    }
+
+    @Deprecated
+    public static StaticScope decodeBlockScope(ThreadContext context, String scopeString) {
+        return decodeScope(context, context.getCurrentStaticScope(), scopeString);
     }
 }
