@@ -2039,7 +2039,7 @@ public class IRBuilder {
             strPieces.add(dynamicPiece(n, s));
         }
 
-        return copyAndReturnValue(s, new Regexp(new CompoundString(strPieces), dregexpNode.getOptions()));
+        return copyAndReturnValue(s, new Regexp(new CompoundString(strPieces, dregexpNode.getEncoding()), dregexpNode.getOptions()));
     }
 
     public Operand buildDStr(DStrNode dstrNode, IRScope s) {
