@@ -354,7 +354,8 @@ module JRuby::Compiler
     end
 
     def new_method(name, java_signature = nil, annotations = [])
-      is_constructor = name == "initialize"
+      is_constructor = name == "initialize" ||
+          java_signature.is_a?(Java::OrgJrubyAstJava_signature::ConstructorSignatureNode)
       @has_constructor ||= is_constructor
 
       if is_constructor
