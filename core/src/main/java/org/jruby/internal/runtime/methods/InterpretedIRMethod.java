@@ -145,18 +145,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     }
 
     private IRubyObject callJitted(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        if (method.hasExplicitCallProtocol()) {
-            return box.actualMethod.call(context, self, clazz, name, args, block);
-        } else {
-            try {
-                // update call stacks (push: frame, class, scope, etc.)
-                pre(context, self, name, block);
-                return box.actualMethod.call(context, self, clazz, name, args, block);
-            } finally {
-                // update call stacks (pop: ..)
-                post(context);
-            }
-        }
+        return box.actualMethod.call(context, self, clazz, name, args, block);
     }
 
     private void ensureInstrsReady() {
@@ -185,7 +174,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
                     Method scriptMethod = compiled.getMethod("__script__", ThreadContext.class,
                             StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class);
                     MethodHandle handle = MethodHandles.publicLookup().unreflect(scriptMethod);
-                    box.actualMethod = new CompiledIRMethod(handle, getName(), getFile(), getLine(), method.getStaticScope(), getVisibility(), getImplementationClass(), Helpers.encodeParameterList(getParameterList()));
+                    box.actualMethod = new CompiledIRMethod(handle, getName(), getFile(), getLine(), method.getStaticScope(), getVisibility(), getImplementationClass(), Helpers.encodeParameterList(getParameterList()), method.hasExplicitCallProtocol());
 
                     if (config.isJitLogging()) {
                         LOG.info("done jitting: " + method);

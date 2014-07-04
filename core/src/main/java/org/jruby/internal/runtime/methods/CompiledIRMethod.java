@@ -24,9 +24,10 @@ public class CompiledIRMethod extends JavaMethod implements Cloneable, PositionA
     private final int line;
     private final StaticScope scope;
     private Arity arity;
+    private final boolean hasExplicitCallProtocol;
 
     public CompiledIRMethod(MethodHandle method, String name, String file, int line, StaticScope scope,
-                            Visibility visibility, RubyModule implementationClass, String parameterDesc) {
+                            Visibility visibility, RubyModule implementationClass, String parameterDesc, boolean hasExplicitCallProtocol) {
         super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
         this.method = method;
         this.name = name;
@@ -35,6 +36,7 @@ public class CompiledIRMethod extends JavaMethod implements Cloneable, PositionA
         this.scope = scope;
         this.scope.determineModule();
         this.arity = calculateArity();
+        this.hasExplicitCallProtocol = hasExplicitCallProtocol;
 
         setParameterDesc(parameterDesc);
 
@@ -42,7 +44,7 @@ public class CompiledIRMethod extends JavaMethod implements Cloneable, PositionA
     }
 
     public CompiledIRMethod(MethodHandle method, String name, String file, int line, StaticScope scope,
-                            Visibility visibility, RubyModule implementationClass, String[] parameterList) {
+                            Visibility visibility, RubyModule implementationClass, String[] parameterList, boolean hasExplicitCallProtocol) {
         super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
         this.method = method;
         this.name = name;
@@ -51,6 +53,7 @@ public class CompiledIRMethod extends JavaMethod implements Cloneable, PositionA
         this.scope = scope;
         this.scope.determineModule();
         this.arity = calculateArity();
+        this.hasExplicitCallProtocol = hasExplicitCallProtocol;
 
         setParameterList(parameterList);
 
@@ -78,20 +81,30 @@ public class CompiledIRMethod extends JavaMethod implements Cloneable, PositionA
         }
 
         try {
-            // update call stacks (push: frame, class, scope, etc.)
-            RubyModule implementationClass = getImplementationClass();
-            context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
-            context.setCurrentVisibility(getVisibility());
+            if (!hasExplicitCallProtocol) {
+                // update call stacks (push: frame, class, scope, etc.)
+                RubyModule implementationClass = getImplementationClass();
+                context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
+                // FIXME: does not seem right to use this method's visibility as current!!!
+                // See also PushFrame instruction in org.jruby.ir.targets.JVMVisitor
+                context.setCurrentVisibility(Visibility.PUBLIC);
+            }
             return (IRubyObject)this.method.invokeWithArguments(context, scope, self, args, block);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
             return null;
         } finally {
-            // update call stacks (pop: ..)
-            context.popFrame();
-            context.postMethodScopeOnly();
+            if (!hasExplicitCallProtocol) {
+                // update call stacks (pop: ..)
+                context.popFrame();
+                context.postMethodScopeOnly();
+            }
         }
+    }
+
+    public boolean hasExplicitCallProtocol() {
+        return hasExplicitCallProtocol;
     }
 // Because compiled IR methods have been simplified to just use IRubyObject[], we have no specific-arity paths.
 // This will come later by specializing the IR.
@@ -198,7 +211,7 @@ public class CompiledIRMethod extends JavaMethod implements Cloneable, PositionA
 */
     @Override
     public DynamicMethod dup() {
-        return new CompiledIRMethod(method, name, file, line, scope, visibility, implementationClass, getParameterList());
+        return new CompiledIRMethod(method, name, file, line, scope, visibility, implementationClass, getParameterList(), hasExplicitCallProtocol);
     }
 
     public String getFile() {

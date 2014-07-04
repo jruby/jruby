@@ -997,11 +997,12 @@ public class JVMVisitor extends IRVisitor {
         a.ldc(method.getFileName());
         a.ldc(method.getLineNumber());
         a.ldc(Helpers.encodeParameterList(parameters));
+        a.ldc(method.hasExplicitCallProtocol());
 
         // add method
         a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledIRClassMethod",
                 sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, java.lang.invoke.MethodHandle.class, String.class,
-                        StaticScope.class, String.class, String.class, int.class, String.class));
+                        StaticScope.class, String.class, String.class, int.class, String.class, boolean.class));
 
         a.pop();
     }
@@ -1027,11 +1028,12 @@ public class JVMVisitor extends IRVisitor {
         a.ldc(method.getFileName());
         a.ldc(method.getLineNumber());
         a.ldc(Helpers.encodeParameterList(parameters));
+        a.ldc(method.hasExplicitCallProtocol());
 
         // add method
         a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledIRMethod",
                 sig(IRubyObject.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class,
-                        DynamicScope.class, IRubyObject.class, String.class, String.class, int.class, String.class));
+                        DynamicScope.class, IRubyObject.class, String.class, String.class, int.class, String.class, boolean.class));
 
         a.pop();
     }
@@ -1423,6 +1425,14 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadLocal(4);
         jvmMethod().loadStaticScope();
         jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void preMethodFrameAndClass(String, org.jruby.runtime.builtin.IRubyObject, org.jruby.runtime.Block, org.jruby.parser.StaticScope)"));
+
+        // FIXME: this should be part of explicit call protocol only when needed, optimizable, and correct for the scope
+        // See also CompiledIRMethod.call
+        jvmMethod().loadContext();
+        jvmAdapter().invokestatic(p(Visibility.class), "values", sig(Visibility[].class));
+        jvmAdapter().ldc(Visibility.PUBLIC.ordinal());
+        jvmAdapter().aaload();
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "setCurrentVisibility", sig(void.class, Visibility.class));
     }
 
     @Override

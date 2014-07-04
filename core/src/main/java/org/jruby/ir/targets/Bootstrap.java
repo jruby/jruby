@@ -708,8 +708,8 @@ public class Bootstrap {
                 compiledIRMethod = ((InterpretedIRMethod)method).getCompiledIRMethod();
             }
 
-            if (compiledIRMethod != null) {
-                // SSS FIXME: What about frame/scope/visibility?
+            // CON FIXME: frame/scope/visibility are not alway done in IR, so we have this ugly check and bailout
+            if (compiledIRMethod != null && compiledIRMethod.hasExplicitCallProtocol()) {
                 mh = (MethodHandle)compiledIRMethod.getHandle();
 
                 binder = SmartBinder.from(site.signature)

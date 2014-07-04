@@ -198,7 +198,7 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, DynamicScope currDynScope, IRubyObject self, String scopeDesc,
-                                  String filename, int line, String parameterDesc) {
+                                  String filename, int line, String parameterDesc, boolean hasExplicitCallProtocol) {
         Ruby runtime = context.runtime;
         StaticScope parentScope = currDynScope.getStaticScope();
 
@@ -208,13 +208,13 @@ public class IRRuntimeHelpers {
 
         StaticScope scope = Helpers.decodeScope(context, parentScope, scopeDesc);
 
-        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, newVisibility, containingClass, parameterDesc);
+        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, newVisibility, containingClass, parameterDesc, hasExplicitCallProtocol);
 
         return Helpers.addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
     }
 
     public static IRubyObject defCompiledIRClassMethod(ThreadContext context, IRubyObject obj, MethodHandle handle, String rubyName, StaticScope parentScope, String scopeDesc,
-                                                  String filename, int line, String parameterDesc) {
+                                                  String filename, int line, String parameterDesc, boolean hasExplicitCallProtocol) {
         Ruby runtime = context.runtime;
 
         if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {
@@ -230,7 +230,7 @@ public class IRRuntimeHelpers {
 
         StaticScope scope = Helpers.decodeScope(context, parentScope, scopeDesc);
 
-        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, newVisibility, containingClass, parameterDesc);
+        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, newVisibility, containingClass, parameterDesc, hasExplicitCallProtocol);
 
         return Helpers.addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
     }
