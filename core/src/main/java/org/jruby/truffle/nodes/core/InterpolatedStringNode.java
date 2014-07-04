@@ -22,7 +22,6 @@ import org.jruby.util.ByteList;
 /**
  * A list of expressions to build up into a string.
  */
-@NodeInfo(shortName = "interpolated-string")
 public final class InterpolatedStringNode extends RubyNode {
 
     @Children protected final RubyNode[] children;

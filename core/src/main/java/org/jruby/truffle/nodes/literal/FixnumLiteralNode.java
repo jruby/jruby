@@ -17,7 +17,6 @@ import org.jruby.truffle.runtime.RubyContext;
 
 public abstract class FixnumLiteralNode {
 
-    @NodeInfo(shortName = "fixnum(int)")
     public static class IntegerFixnumLiteralNode extends RubyNode {
 
         private final int value;
@@ -48,7 +47,6 @@ public abstract class FixnumLiteralNode {
 
     }
 
-    @NodeInfo(shortName = "fixnum(long)")
     public static class LongFixnumLiteralNode extends RubyNode {
 
         private final long value;

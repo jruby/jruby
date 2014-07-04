@@ -17,7 +17,6 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyRange;
 
-@NodeInfo(shortName = "range")
 @NodeChildren({@NodeChild("begin"), @NodeChild("end")})
 public abstract class RangeLiteralNode extends RubyNode {
 

@@ -20,7 +20,6 @@ import org.jruby.truffle.runtime.core.RubyArray;
 /**
  * Concatenate arrays.
  */
-@NodeInfo(shortName = "array-concat")
 public final class ArrayConcatNode extends RubyNode {
 
     @Children protected final RubyNode[] children;

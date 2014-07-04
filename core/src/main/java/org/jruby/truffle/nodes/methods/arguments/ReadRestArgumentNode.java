@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.core.RubyArray;
 /**
  * Read the rest of arguments after a certain point into an array.
  */
-@NodeInfo(shortName = "read-rest-of-arguments")
 public class ReadRestArgumentNode extends RubyNode {
 
     private final int index;

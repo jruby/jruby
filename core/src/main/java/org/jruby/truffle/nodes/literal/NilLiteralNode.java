@@ -18,7 +18,6 @@ import org.jruby.truffle.runtime.*;
 /**
  * A node that does nothing and evaluates to {@code nil}. Also a no-op.
  */
-@NodeInfo(shortName = "nil")
 public final class NilLiteralNode extends RubyNode {
 
     public NilLiteralNode(RubyContext context, SourceSection sourceSection) {

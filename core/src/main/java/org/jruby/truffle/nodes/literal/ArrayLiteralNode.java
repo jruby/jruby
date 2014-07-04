@@ -219,7 +219,6 @@ public abstract class ArrayLiteralNode extends RubyNode {
 
     }
 
-    @NodeInfo(shortName = "uninit-array-literal")
     public static class UninitialisedArrayLiteralNode extends ArrayLiteralNode {
 
         public UninitialisedArrayLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] values) {

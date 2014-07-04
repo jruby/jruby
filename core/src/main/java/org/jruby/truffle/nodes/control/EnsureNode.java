@@ -18,7 +18,6 @@ import org.jruby.truffle.runtime.*;
 /**
  * Represents an ensure clause in exception handling. Represented separately to the try part.
  */
-@NodeInfo(shortName = "ensure")
 public class EnsureNode extends RubyNode {
 
     @Child protected RubyNode tryPart;

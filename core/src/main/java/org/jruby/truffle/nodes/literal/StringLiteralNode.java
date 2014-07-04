@@ -17,7 +17,6 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
-@NodeInfo(shortName = "string")
 public class StringLiteralNode extends RubyNode {
 
     private final ByteList bytes;

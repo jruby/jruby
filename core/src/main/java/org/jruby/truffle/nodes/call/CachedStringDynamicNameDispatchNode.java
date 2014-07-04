@@ -10,12 +10,15 @@
 package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.NodeCost;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.util.ByteList;
 
+@NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class CachedStringDynamicNameDispatchNode extends DynamicNameDispatchNode {
 
     private final ByteList cachedName;

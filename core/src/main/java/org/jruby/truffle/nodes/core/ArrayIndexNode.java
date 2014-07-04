@@ -20,7 +20,6 @@ import org.jruby.truffle.runtime.core.RubyArray;
  * Index an array, without using any method lookup. This isn't a call - it's an operation on a core
  * class.
  */
-@NodeInfo(shortName = "array-index")
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
 public abstract class ArrayIndexNode extends RubyNode {
 

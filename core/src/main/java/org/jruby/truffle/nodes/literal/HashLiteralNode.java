@@ -19,7 +19,6 @@ import org.jruby.util.cli.Options;
 
 import java.util.LinkedHashMap;
 
-@NodeInfo(shortName = "hash")
 public abstract class HashLiteralNode extends RubyNode {
 
     @Children protected final RubyNode[] keyValues;

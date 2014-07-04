@@ -20,7 +20,6 @@ import org.jruby.truffle.runtime.core.*;
 /**
  * Creates a regex from a string.
  */
-@NodeInfo(shortName = "cast-string-to-regexp")
 @NodeChild("string")
 public abstract class StringToRegexpNode extends RubyNode {
 

@@ -23,7 +23,6 @@ import java.util.List;
 /**
  * A sequence of statements to be executed in serial.
  */
-@NodeInfo(shortName = "sequence")
 public final class SequenceNode extends RubyNode {
 
     @Children protected final RubyNode[] body;
