@@ -1000,24 +1000,23 @@ public class BodyTranslator extends Translator {
     public RubyNode visitHashNode(org.jruby.ast.HashNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final List<RubyNode> keys = new ArrayList<>();
-        final List<RubyNode> values = new ArrayList<>();
+        final List<RubyNode> keyValues = new ArrayList<>();
 
         for (KeyValuePair<Node, Node> pair: node.getPairs()) {
             if (pair.getKey() == null) {
-                keys.add(new NilLiteralNode(context, sourceSection));
+                keyValues.add(new NilLiteralNode(context, sourceSection));
             } else {
-                keys.add(pair.getKey().accept(this));
+                keyValues.add(pair.getKey().accept(this));
             }
 
             if (pair.getValue() == null) {
-                values.add(new NilLiteralNode(context, sourceSection));
+                keyValues.add(new NilLiteralNode(context, sourceSection));
             } else {
-                values.add(pair.getValue().accept(this));
+                keyValues.add(pair.getValue().accept(this));
             }
         }
 
-        return new HashLiteralNode(translate(node.getPosition()), keys.toArray(new RubyNode[keys.size()]), values.toArray(new RubyNode[values.size()]), context);
+        return new HashLiteralNode(translate(node.getPosition()), keyValues.toArray(new RubyNode[keyValues.size()]), context);
     }
 
     @Override

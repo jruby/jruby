@@ -23,35 +23,32 @@ import java.util.LinkedHashMap;
 @NodeInfo(shortName = "hash")
 public class HashLiteralNode extends RubyNode {
 
-    @Children protected final RubyNode[] keys;
-    @Children protected final RubyNode[] values;
+    @Children protected final RubyNode[] keyValues;
 
-    public HashLiteralNode(SourceSection sourceSection, RubyNode[] keys, RubyNode[] values, RubyContext context) {
+    public HashLiteralNode(SourceSection sourceSection, RubyNode[] keyValues, RubyContext context) {
         super(context, sourceSection);
-        assert keys.length == values.length;
-        this.keys = keys;
-        this.values = values;
+        assert keyValues.length % 2 == 0;
+        this.keyValues = keyValues;
     }
 
     @ExplodeLoop
     @Override
     public Object execute(VirtualFrame frame) {
-        if (keys.length == 0) {
+        if (keyValues.length == 0) {
             return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null);
-        } else if (keys.length <= Options.TRUFFLE_HASHES_SMALL.load()) {
-            final Object[] storage = new Object[keys.length * 2];
+        } else if (keyValues.length <= Options.TRUFFLE_HASHES_SMALL.load() * 2) {
+            final Object[] storage = new Object[keyValues.length];
 
-            for (int n = 0; n < keys.length; n++) {
-                storage[n * 2] = keys[n].execute(frame);
-                storage[n * 2 + 1] = values[n].execute(frame);
+            for (int n = 0; n < storage.length; n++) {
+                storage[n] = keyValues[n].execute(frame);
             }
 
             return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, storage);
         } else {
             final LinkedHashMap<Object, Object> storage = SlowPathLinkedHashMap.allocate();
 
-            for (int n = 0; n < keys.length; n++) {
-                SlowPathLinkedHashMap.put(storage, keys[n].execute(frame), values[n].execute(frame));
+            for (int n = 0; n < keyValues.length; n += 2) {
+                SlowPathLinkedHashMap.put(storage, keyValues[n].execute(frame), keyValues[n + 1].execute(frame));
             }
 
             return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, storage);
