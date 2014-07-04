@@ -125,7 +125,7 @@ public abstract class HashNodes {
 
                         // TODO(CS): zero length arrays might be a good specialisation
 
-                        if (store.length <= Options.TRUFFLE_HASHES_SMALL.load()) {
+                        if (store.length <= RubyContext.TRUFFLE_HASHES_SMALL) {
                             smallObjectArray.enter();
 
                             final Object[] newStore = new Object[store.length * 2];
@@ -264,7 +264,7 @@ public abstract class HashNodes {
     @CoreMethod(names = "[]=", minArgs = 2, maxArgs = 2)
     public abstract static class SetIndexNode extends HashCoreMethodNode {
 
-        private final int smallHashArrayLength = Options.TRUFFLE_HASHES_SMALL.load() * 2;
+        private final int smallHashArrayLength = RubyContext.TRUFFLE_HASHES_SMALL * 2;
 
         private final BranchProfile transitionToLinkedHashMap = new BranchProfile();
 
@@ -762,7 +762,7 @@ public abstract class HashNodes {
         private final BranchProfile considerResultIsSmallProfile = new BranchProfile();
         private final BranchProfile resultIsSmallProfile = new BranchProfile();
 
-        private final int smallHashSize = Options.TRUFFLE_HASHES_SMALL.load();
+        private final int smallHashSize = RubyContext.TRUFFLE_HASHES_SMALL;
 
         public MergeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

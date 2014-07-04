@@ -41,9 +41,9 @@ public abstract class ArrayBuilderNode extends Node {
 
     public static class UninitializedArrayBuilderNode extends ArrayBuilderNode {
 
-        private boolean couldUseInteger = Options.TRUFFLE_ARRAYS_INT.load();
-        private boolean couldUseLong = Options.TRUFFLE_ARRAYS_LONG.load();
-        private boolean couldUseDouble = Options.TRUFFLE_ARRAYS_DOUBLE.load();
+        private boolean couldUseInteger = RubyContext.TRUFFLE_ARRAYS_INT;
+        private boolean couldUseLong = RubyContext.TRUFFLE_ARRAYS_LONG;
+        private boolean couldUseDouble = RubyContext.TRUFFLE_ARRAYS_DOUBLE;
 
         public UninitializedArrayBuilderNode(RubyContext context) {
             super(context);
@@ -58,7 +58,7 @@ public abstract class ArrayBuilderNode extends Node {
         @Override
         public Object start() {
             CompilerDirectives.transferToInterpreter();
-            return new Object[Options.TRUFFLE_ARRAYS_UNINITIALIZED_SIZE.load()];
+            return new Object[RubyContext.TRUFFLE_ARRAYS_UNINITIALIZED_SIZE];
         }
 
         @Override

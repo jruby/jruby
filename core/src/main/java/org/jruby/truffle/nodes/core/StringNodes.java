@@ -270,9 +270,6 @@ public abstract class StringNodes {
     @CoreMethod(names = "bytes", maxArgs = 0)
     public abstract static class BytesNode extends CoreMethodNode {
 
-        private final boolean useIntArray = Options.TRUFFLE_ARRAYS_INT.load();
-        private final boolean useLongArray = Options.TRUFFLE_ARRAYS_LONG.load();
-
         public BytesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -285,7 +282,7 @@ public abstract class StringNodes {
         public RubyArray bytes(RubyString string) {
             final byte[] bytes = string.getBytes().bytes();
 
-            if (useIntArray) {
+            if (RubyContext.TRUFFLE_ARRAYS_INT) {
                 final int[] store = new int[bytes.length];
 
                 for (int n = 0; n < store.length; n++) {
@@ -293,7 +290,7 @@ public abstract class StringNodes {
                 }
 
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
-            } else if (useLongArray) {
+            } else if (RubyContext.TRUFFLE_ARRAYS_LONG) {
                 final long[] store = new long[bytes.length];
 
                 for (int n = 0; n < store.length; n++) {

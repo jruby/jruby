@@ -34,11 +34,26 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
+import org.jruby.util.cli.Options;
 
 /**
  * The global state of a running Ruby system.
  */
 public class RubyContext {
+
+    public static final boolean TRUFFLE_PRINT_RUNTIME = Options.TRUFFLE_PRINT_RUNTIME.load();
+    public static final int TRUFFLE_GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD = Options.TRUFFLE_GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD.load();
+    public static final boolean TRUFFLE_TRACE = Options.TRUFFLE_TRACE.load();
+    public static final boolean TRUFFLE_EXCEPTIONS_PRINT_JAVA = Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load();
+    public static final boolean TRUFFLE_LITERALS_INT = Options.TRUFFLE_LITERALS_INT.load();
+    public static final int TRUFFLE_ARRAYS_UNINITIALIZED_SIZE = Options.TRUFFLE_ARRAYS_UNINITIALIZED_SIZE.load();
+    public static final boolean TRUFFLE_ARRAYS_INT = Options.TRUFFLE_ARRAYS_INT.load();
+    public static final boolean TRUFFLE_ARRAYS_LONG = Options.TRUFFLE_ARRAYS_LONG.load();
+    public static final boolean TRUFFLE_ARRAYS_DOUBLE = Options.TRUFFLE_ARRAYS_DOUBLE.load();
+    public static final boolean TRUFFLE_ARRAYS_OPTIMISTIC_LONG = Options.TRUFFLE_ARRAYS_OPTIMISTIC_LONG.load();
+    public static final int TRUFFLE_ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
+    public static final int TRUFFLE_HASHES_SMALL = Options.TRUFFLE_HASHES_SMALL.load();
+    public static final boolean TRUFFLE_COMPILER_PASS_LOOPS_THROUGH_BLOCKS = Options.TRUFFLE_COMPILER_PASS_LOOPS_THROUGH_BLOCKS.load();
 
     private final Ruby runtime;
     private final TranslatorDriver translator;

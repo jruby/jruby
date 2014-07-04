@@ -32,7 +32,7 @@ public abstract class HashLiteralNode extends RubyNode {
     public static HashLiteralNode create(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
         if (keyValues.length == 0) {
             return new EmptyHashLiteralNode(context, sourceSection);
-        } else if (keyValues.length <= Options.TRUFFLE_HASHES_SMALL.load() * 2) {
+        } else if (keyValues.length <= RubyContext.TRUFFLE_HASHES_SMALL * 2) {
             return new SmallHashLiteralNode(context, sourceSection, keyValues);
         } else {
             return new GenericHashLiteralNode(context, sourceSection, keyValues);

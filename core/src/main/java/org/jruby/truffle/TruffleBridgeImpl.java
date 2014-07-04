@@ -45,7 +45,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
     @Override
     public void init() {
-        if (Options.TRUFFLE_PRINT_RUNTIME.load()) {
+        if (RubyContext.TRUFFLE_PRINT_RUNTIME) {
             runtime.getInstanceConfig().getError().println("jruby: using " + Truffle.getRuntime().getName());
         }
 

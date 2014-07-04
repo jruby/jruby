@@ -798,7 +798,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitFixnumNode(org.jruby.ast.FixnumNode node) {
         final long value = node.getValue();
 
-        if (RubyFixnum.fitsIntoInteger(value) && Options.TRUFFLE_LITERALS_INT.load()) {
+        if (RubyFixnum.fitsIntoInteger(value) && RubyContext.TRUFFLE_LITERALS_INT) {
             return new FixnumLiteralNode.IntegerFixnumLiteralNode(context, translate(node.getPosition()), (int) value);
         } else {
             return new FixnumLiteralNode.LongFixnumLiteralNode(context, translate(node.getPosition()), value);
@@ -1466,7 +1466,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitNewlineNode(org.jruby.ast.NewlineNode node) {
         final RubyNode translated = node.getNextNode().accept(this);
 
-        if (Options.TRUFFLE_TRACE.load()) {
+        if (RubyContext.TRUFFLE_TRACE) {
             return new TraceNode(context, translated.getEncapsulatingSourceSection(), translated);
         } else {
             return translated;

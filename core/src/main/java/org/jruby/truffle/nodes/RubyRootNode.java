@@ -60,7 +60,7 @@ public class RubyRootNode extends RootNode {
     public void reportLoopCountThroughBlocks(int count) {
         CompilerAsserts.neverPartOfCompilation();
 
-        if (Options.TRUFFLE_COMPILER_PASS_LOOPS_THROUGH_BLOCKS.load()) {
+        if (RubyContext.TRUFFLE_COMPILER_PASS_LOOPS_THROUGH_BLOCKS) {
             for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
                 final RootNode rootNode = frame.getCallNode().getRootNode();
 

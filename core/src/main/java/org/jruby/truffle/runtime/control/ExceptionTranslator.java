@@ -96,7 +96,7 @@ public final class ExceptionTranslator {
          * implementation.
          */
 
-        if (Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
+        if (RubyContext.TRUFFLE_EXCEPTIONS_PRINT_JAVA) {
             exception.printStackTrace();
         }
 

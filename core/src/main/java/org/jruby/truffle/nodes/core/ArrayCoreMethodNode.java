@@ -85,7 +85,7 @@ public abstract class ArrayCoreMethodNode extends CoreMethodNode {
     }
 
     protected boolean areIntArraysEnabled() {
-        return Options.TRUFFLE_ARRAYS_INT.load();
+        return RubyContext.TRUFFLE_ARRAYS_INT;
     }
 
 }

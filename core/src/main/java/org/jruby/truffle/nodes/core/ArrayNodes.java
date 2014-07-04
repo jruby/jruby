@@ -607,9 +607,6 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "[]=", minArgs = 2, maxArgs = 3, lowerFixnumParameters = 0)
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
-        private final boolean useIntArray = Options.TRUFFLE_ARRAYS_INT.load();
-        private final boolean useLongArray = Options.TRUFFLE_ARRAYS_LONG.load();
-
         private final BranchProfile tooSmallBranch = new BranchProfile();
         private final BranchProfile pastEndBranch = new BranchProfile();
         private final BranchProfile appendBranch = new BranchProfile();
@@ -627,9 +624,9 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isNull", order = 1)
         public Object setNullIntegerFixnum(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
             if (index == 0) {
-                if (useIntArray) {
+                if (RubyContext.TRUFFLE_ARRAYS_INT) {
                     array.setStore(new int[]{value}, 1);
-                } else if (useLongArray) {
+                } else if (RubyContext.TRUFFLE_ARRAYS_LONG) {
                     array.setStore(new long[]{value}, 1);
                 } else {
                     array.setStore(new Object[]{value}, 1);
@@ -645,7 +642,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isNull", order = 2)
         public Object setNullLongFixnum(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
             if (index == 0) {
-                if (useLongArray) {
+                if (RubyContext.TRUFFLE_ARRAYS_LONG) {
                     array.setStore(new long[]{value}, 1);
                 } else {
                     array.setStore(new Object[]{value}, 1);
@@ -2568,9 +2565,6 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"push", "<<"}, isSplatted = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
-        private final boolean useIntegerArrays = Options.TRUFFLE_ARRAYS_INT.load();
-        private final boolean useLongArrays = Options.TRUFFLE_ARRAYS_LONG.load();
-
         private final BranchProfile extendBranch = new BranchProfile();
 
         public PushNode(RubyContext context, SourceSection sourceSection) {
@@ -2583,9 +2577,9 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isNull", "isSingleIntegerFixnum"}, order = 1)
         public RubyArray pushEmptySingleIntegerFixnum(RubyArray array, Object... values) {
-            if (useIntegerArrays) {
+            if (RubyContext.TRUFFLE_ARRAYS_INT) {
                 array.setStore(new int[]{(int) values[0]}, 1);
-            } else if (useLongArrays) {
+            } else if (RubyContext.TRUFFLE_ARRAYS_LONG) {
                 array.setStore(new long[]{(long) values[0]}, 1);
             } else {
                 array.setStore(new Object[]{values[0]}, 1);
@@ -2596,7 +2590,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isNull", "isSingleLongFixnum"}, order = 2)
         public RubyArray pushEmptySingleIntegerLong(RubyArray array, Object... values) {
-            if (useLongArrays) {
+            if (RubyContext.TRUFFLE_ARRAYS_LONG) {
                 array.setStore(new long[]{(long) values[0]}, 1);
             } else {
                 array.setStore(new Object[]{values[0]}, 1);
@@ -3144,7 +3138,7 @@ public abstract class ArrayNodes {
         }
 
         protected static boolean isSmall(RubyArray array) {
-            return array.getSize() <= Options.TRUFFLE_ARRAYS_SMALL.load();
+            return array.getSize() <= RubyContext.TRUFFLE_ARRAYS_SMALL;
         }
 
     }
