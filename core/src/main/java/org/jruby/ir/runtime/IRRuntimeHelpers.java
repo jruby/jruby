@@ -4,6 +4,7 @@ import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyMatchData;
@@ -705,5 +706,12 @@ public class IRRuntimeHelpers {
             }
         }
         throw new RuntimeException("Should not get here!");
+    }
+
+    public static RubyBoolean isBlockGiven(ThreadContext context, Object blk) {
+        if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
+        if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
+        Block b = (Block)blk;
+        return context.runtime.newBoolean(b.isGiven());
     }
 }

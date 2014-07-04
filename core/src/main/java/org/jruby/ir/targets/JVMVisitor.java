@@ -513,10 +513,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BlockGivenInstr(BlockGivenInstr blockGivenInstr) {
-        jvmMethod().loadRuntime();
+        jvmMethod().loadContext();
         visit(blockGivenInstr.getBlockArg());
-        jvmMethod().invokeVirtual(Type.getType(Block.class), Method.getMethod("boolean isGiven()"));
-        jvmMethod().invokeVirtual(Type.getType(Ruby.class), Method.getMethod("org.jruby.RubyBoolean newBoolean(boolean)"));
+        jvmMethod().invokeIRHelper("isBlockGiven", sig(RubyBoolean.class, ThreadContext.class, Object.class));
         jvmStoreLocal(blockGivenInstr.getResult());
     }
 
