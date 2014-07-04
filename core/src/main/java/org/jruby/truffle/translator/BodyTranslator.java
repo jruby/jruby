@@ -30,7 +30,7 @@ import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.debug.TraceNode;
 import org.jruby.truffle.nodes.globals.CheckMatchVariableTypeNode;
 import org.jruby.truffle.nodes.literal.*;
-import org.jruby.truffle.nodes.literal.array.UninitialisedArrayLiteralNode;
+import org.jruby.truffle.nodes.literal.ArrayLiteralNode;
 import org.jruby.truffle.nodes.methods.AddMethodNode;
 import org.jruby.truffle.nodes.methods.AliasNode;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
@@ -202,7 +202,7 @@ public class BodyTranslator extends Translator {
             translatedValues[n] = values.get(n).accept(this);
         }
 
-        return new UninitialisedArrayLiteralNode(context, translate(node.getPosition()), translatedValues);
+        return new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, translate(node.getPosition()), translatedValues);
     }
 
     @Override
@@ -1245,8 +1245,8 @@ public class BodyTranslator extends Translator {
          * a, b = c, d
          */
 
-        if (preArray != null && node.getPost() == null && node.getRest() == null && rhsTranslated instanceof UninitialisedArrayLiteralNode &&
-                ((UninitialisedArrayLiteralNode) rhsTranslated).getValues().length == preArray.size()) {
+        if (preArray != null && node.getPost() == null && node.getRest() == null && rhsTranslated instanceof ArrayLiteralNode.UninitialisedArrayLiteralNode &&
+                ((ArrayLiteralNode.UninitialisedArrayLiteralNode) rhsTranslated).getValues().length == preArray.size()) {
             /*
              * We can deal with this common case be rewriting as
              *
@@ -1262,7 +1262,7 @@ public class BodyTranslator extends Translator {
              * executed if it isn't actually demanded.
              */
 
-            final RubyNode[] rhsValues = ((UninitialisedArrayLiteralNode) rhsTranslated).getValues();
+            final RubyNode[] rhsValues = ((ArrayLiteralNode.UninitialisedArrayLiteralNode) rhsTranslated).getValues();
             final int assignedValuesCount = preArray.size();
 
             final RubyNode[] sequence = new RubyNode[assignedValuesCount * 2];
@@ -1283,7 +1283,7 @@ public class BodyTranslator extends Translator {
 
             final RubyNode blockNode = SequenceNode.sequence(context, sourceSection, sequence);
 
-            final UninitialisedArrayLiteralNode arrayNode = new UninitialisedArrayLiteralNode(context, sourceSection, tempValues);
+            final ArrayLiteralNode.UninitialisedArrayLiteralNode arrayNode = new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, sourceSection, tempValues);
 
             final ElidableResultNode elidableResult = new ElidableResultNode(context, sourceSection, blockNode, arrayNode);
 
@@ -1930,7 +1930,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitZArrayNode(org.jruby.ast.ZArrayNode node) {
         final RubyNode[] values = new RubyNode[0];
 
-        return new UninitialisedArrayLiteralNode(context, translate(node.getPosition()), values);
+        return new ArrayLiteralNode.UninitialisedArrayLiteralNode(context, translate(node.getPosition()), values);
     }
 
     @Override
