@@ -93,9 +93,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        if (box.callCount >= 0) {
-            if (tryCompile(context)) return callJitted(context, self, clazz, name, args, block);
-        }
+        if (tryCompile(context)) return callJitted(context, self, clazz, name, args, block);
 
         ensureInstrsReady();
 
@@ -158,6 +156,8 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (box.actualMethod != null) {
             return true;
         }
+
+        if (box.callCount == -1) return false;
 
         if (box.callCount++ >= Options.JIT_THRESHOLD.load()) {
 
