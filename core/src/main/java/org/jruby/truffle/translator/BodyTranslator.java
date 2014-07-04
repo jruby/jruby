@@ -800,9 +800,9 @@ public class BodyTranslator extends Translator {
         final long value = node.getValue();
 
         if (RubyFixnum.fitsIntoInteger(value) && Options.TRUFFLE_LITERALS_INT.load()) {
-            return new IntegerFixnumLiteralNode(context, translate(node.getPosition()), (int) value);
+            return new FixnumLiteralNode.IntegerFixnumLiteralNode(context, translate(node.getPosition()), (int) value);
         } else {
-            return new LongFixnumLiteralNode(context, translate(node.getPosition()), value);
+            return new FixnumLiteralNode.LongFixnumLiteralNode(context, translate(node.getPosition()), value);
         }
     }
 
