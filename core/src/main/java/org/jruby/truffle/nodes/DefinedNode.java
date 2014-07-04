@@ -19,7 +19,6 @@ import org.jruby.truffle.runtime.*;
  * Switches execution to the parallel {@link RubyNode#isDefined} semantic path. Represents the
  * {@code defined?} keyword in Ruby.
  */
-@NodeInfo(shortName = "defined")
 public class DefinedNode extends RubyNode {
 
     @Child protected RubyNode child;

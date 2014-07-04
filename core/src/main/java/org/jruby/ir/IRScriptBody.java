@@ -26,12 +26,11 @@ public class IRScriptBody extends IRScope {
     private List<IRClosure> beginBlocks;
     private List<IRClosure> endBlocks;
 
-    public IRScriptBody(IRManager manager, String className, String sourceName,
-            StaticScope staticScope) {
+    public IRScriptBody(IRManager manager, String className, String sourceName, StaticScope staticScope) {
         super(manager, null, sourceName, sourceName, 0, staticScope);
-
-        if (!getManager().isDryRun()) {
-            if (staticScope != null) ((IRStaticScope)staticScope).setIRScope(this);
+        if (!getManager().isDryRun() && staticScope != null) {
+            ((IRStaticScope)staticScope).setIRScope(this);
+            staticScope.setScopeType(this.getScopeType());
         }
     }
 
@@ -117,7 +116,6 @@ public class IRScriptBody extends IRScope {
         } catch (IRBreakJump bj) {
             throw IRException.BREAK_LocalJumpError.getException(context.runtime);
         } finally {
-            context.popRubyClass();
             context.popScope();
         }
 

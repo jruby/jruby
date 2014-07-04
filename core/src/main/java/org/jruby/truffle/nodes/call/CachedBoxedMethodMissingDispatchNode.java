@@ -58,8 +58,6 @@ public class CachedBoxedMethodMissingDispatchNode extends BoxedDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
-        RubyNode.notDesignedForCompilation();
-
         // Check the lookup node is what we expect
 
         if (receiverObject.getLookupNode() != expectedLookupNode) {
@@ -83,6 +81,25 @@ public class CachedBoxedMethodMissingDispatchNode extends BoxedDispatchNode {
         // Call the method
 
         return callNode.call(frame, RubyArguments.pack(method.getDeclarationFrame(), receiverObject, blockObject, modifiedArgumentsObjects));
+    }
+
+    @Override
+    public boolean doesRespondTo(VirtualFrame frame, RubyBasicObject receiverObject) {
+        // Check the lookup node is what we expect
+
+        if (receiverObject.getLookupNode() != expectedLookupNode) {
+            return next.doesRespondTo(frame, receiverObject);
+        }
+
+        // Check the class has not been modified
+
+        try {
+            unmodifiedAssumption.check();
+        } catch (InvalidAssumptionException e) {
+            return respecializeAndDoesRespondTo("class modified", frame, receiverObject);
+        }
+
+        return false;
     }
 
 }

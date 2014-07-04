@@ -123,7 +123,6 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     protected void post(ThreadContext context) {
         // update call stacks (pop: ..)
         context.popFrame();
-        context.popRubyClass();
         if (this.pushScope) {
             context.popScope();
         }
@@ -171,7 +170,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             Ruby runtime = context.runtime;
             RubyInstanceConfig config = runtime.getInstanceConfig();
 
-            if (config.getCompileMode() == RubyInstanceConfig.CompileMode.JIT) {
+            if (config.getCompileMode().shouldJIT()) {
 
                 ensureInstrsReady();
 

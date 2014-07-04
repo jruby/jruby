@@ -21,7 +21,6 @@ import org.jruby.truffle.runtime.control.*;
  * Represents an explicit return. The return ID indicates where we should be returning to - this can
  * be non-trivial if you have blocks.
  */
-@NodeInfo(shortName = "return")
 public class ReturnNode extends RubyNode {
 
     private final long returnID;

@@ -18,7 +18,6 @@ import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 
-@NodeInfo(shortName = "break")
 public class BreakNode extends RubyNode {
 
     @Child private RubyNode child;
@@ -30,7 +29,7 @@ public class BreakNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (child instanceof NilNode) {
+        if (child instanceof NilLiteralNode) {
             throw BreakException.NIL;
         } else {
             throw new BreakException(child.execute(frame));

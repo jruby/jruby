@@ -18,7 +18,6 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 
-@NodeInfo(shortName = "bignum")
 public class BignumLiteralNode extends RubyNode {
 
     private final BigInteger value;

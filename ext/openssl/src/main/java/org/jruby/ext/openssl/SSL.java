@@ -64,12 +64,12 @@ public class SSL {
         final RubyClass _OpenSSLError = ossl.getClass("OpenSSLError");
         RubyClass _SSLError = _SSL.defineClassUnder("SSLError", _OpenSSLError, _OpenSSLError.getAllocator());
 
-        final IRubyObject _WaitReadable = runtime.getIO().getConstant("WaitReadable");
+        final IRubyObject _WaitReadable = runtime.getIO().getConstantAt("WaitReadable");
         if ( _WaitReadable != null ) { // since 2.0 (do not exist in 1.8 / 1.9)
             _SSL.defineClassUnder("SSLErrorWaitReadable", _SSLError, _OpenSSLError.getAllocator()).
                 include(new IRubyObject[]{ _WaitReadable });
         }
-        final IRubyObject _WaitWritable = runtime.getIO().getConstant("WaitWritable");
+        final IRubyObject _WaitWritable = runtime.getIO().getConstantAt("WaitWritable");
         if ( _WaitWritable != null ) { // since 2.0 (do not exist in 1.8 / 1.9)
             _SSL.defineClassUnder("SSLErrorWaitWritable", _SSLError, _OpenSSLError.getAllocator()).
                 include(new IRubyObject[]{ _WaitWritable });

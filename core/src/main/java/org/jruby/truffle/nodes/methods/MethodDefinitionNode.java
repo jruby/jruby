@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.methods.*;
  * Define a method. That is, store the definition of a method and when executed
  * produce the executable object that results.
  */
-@NodeInfo(shortName = "method-def")
 public class MethodDefinitionNode extends RubyNode {
 
     protected final String name;

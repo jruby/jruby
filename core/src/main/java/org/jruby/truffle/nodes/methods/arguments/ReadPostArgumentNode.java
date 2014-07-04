@@ -19,7 +19,6 @@ import org.jruby.truffle.runtime.*;
 /**
  * Read a post-optional argument.
  */
-@NodeInfo(shortName = "read-post-optional-argument")
 public class ReadPostArgumentNode extends RubyNode {
 
     private final int indexFromEnd;

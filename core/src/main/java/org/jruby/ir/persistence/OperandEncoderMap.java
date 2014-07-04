@@ -17,7 +17,6 @@ import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.IRException;
-import org.jruby.ir.operands.KeyValuePair;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.MethAddr;
@@ -47,6 +46,7 @@ import org.jruby.ir.operands.UnboxedFloat;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.util.KeyValuePair;
 
 /**
  * Can cycles develop or will IR output guarantee non-cyclical nested operands?
@@ -117,7 +117,7 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void Hash(Hash hash) {
         encoder.encode(hash.pairs.size());
-        for (KeyValuePair pair: hash.pairs) {
+        for (KeyValuePair<Operand, Operand> pair: hash.pairs) {
             encoder.encode(pair.getKey());
             encoder.encode(pair.getValue());
         }

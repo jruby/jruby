@@ -51,4 +51,24 @@ public class UninitializedBoxingDispatchNode extends UnboxedDispatchNode {
         return next.dispatch(frame, getContext().getCoreLibrary().box(receiverObject), blockObject, argumentsObjects);
     }
 
+    @Override
+    public boolean doesRespondTo(VirtualFrame frame, Object receiverObject) {
+        CompilerDirectives.transferToInterpreter();
+
+        /*
+         * If the next dispatch node is something other than the uninitialized dispatch node then we
+         * need to replace this node because it's now on the fast path. If the receiver was already
+         * boxed.
+         *
+         * Note that with this scheme it will take a couple of calls for the chain to become fully
+         * specialized.
+         */
+
+        if (!(next instanceof UninitializedDispatchNode)) {
+            this.replace(new BoxingDispatchNode(getContext(), next));
+        }
+
+        return next.doesRespondTo(frame, getContext().getCoreLibrary().box(receiverObject));
+    }
+
 }

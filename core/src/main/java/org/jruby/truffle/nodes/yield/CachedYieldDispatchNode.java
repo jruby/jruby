@@ -27,16 +27,16 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
 
     public CachedYieldDispatchNode(RubyContext context, RubyProc block, YieldDispatchNode next) {
         super(context);
-        callNode = Truffle.getRuntime().createDirectCallNode(block.getMethod().getCallTarget());
+        callNode = Truffle.getRuntime().createDirectCallNode(block.getCallTarget());
         this.next = next;
     }
 
     @Override
     public Object dispatch(VirtualFrame frame, RubyProc block, Object[] argumentsObjects) {
-        if (block.getMethod().getCallTarget() != callNode.getCallTarget()) {
+        if (block.getCallTarget() != callNode.getCallTarget()) {
             return next.dispatch(frame, block, argumentsObjects);
         }
 
-        return callNode.call(frame, RubyArguments.pack(block.getMethod().getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects));
+        return callNode.call(frame, RubyArguments.pack(block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects));
     }
 }

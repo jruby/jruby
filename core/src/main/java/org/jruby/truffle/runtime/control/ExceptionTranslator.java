@@ -14,7 +14,6 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.UnsupportedSpecializationException;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.util.cli.Options;
 
 public final class ExceptionTranslator {
 
@@ -56,9 +55,31 @@ public final class ExceptionTranslator {
 
                 if (value instanceof RubyBasicObject) {
                     builder.append(((RubyBasicObject) value).getRubyClass().getName());
-                    builder.append(" (");
+                    builder.append("(");
                     builder.append(value.getClass().getName());
                     builder.append(")");
+
+                    if (value instanceof RubyArray) {
+                        final Object store = ((RubyArray) value).getStore();
+
+                        if (store == null) {
+                            builder.append("[null]");
+                        } else {
+                            builder.append("[");
+                            builder.append(store.getClass().getName());
+                            builder.append("]");
+                        }
+                    } else if (value instanceof RubyHash) {
+                        final Object store = ((RubyHash) value).getStore();
+
+                        if (store == null) {
+                            builder.append("[null]");
+                        } else {
+                            builder.append("[");
+                            builder.append(store.getClass().getName());
+                            builder.append("]");
+                        }
+                    }
                 } else {
                     builder.append(value.getClass().getName());
                 }
@@ -75,7 +96,7 @@ public final class ExceptionTranslator {
          * implementation.
          */
 
-        if (Options.TRUFFLE_PRINT_JAVA_EXCEPTIONS.load()) {
+        if (RubyContext.EXCEPTIONS_PRINT_JAVA) {
             exception.printStackTrace();
         }
 
@@ -87,7 +108,7 @@ public final class ExceptionTranslator {
             message = exception.getClass().getSimpleName() + ": " + exception.getMessage();
         }
 
-        return new RubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), message, RubyCallStack.getRubyStacktrace());
+        return new RubyException(context.getCoreLibrary().getRubyTruffleErrorClass(), message/*, RubyCallStack.getRubyStacktrace()*/);
     }
 
 }

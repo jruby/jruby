@@ -21,7 +21,6 @@ import org.jruby.truffle.runtime.methods.*;
 /**
  * Check arguments meet the arity of the method.
  */
-@NodeInfo(shortName = "check-arity")
 public class CheckArityNode extends RubyNode {
 
     private final Arity arity;

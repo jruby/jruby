@@ -35,6 +35,8 @@ public class DispatchNode extends Node {
      * {@link DispatchHeadNode} is at depth 1.
      */
     public int getDepth() {
+        // TODO: can we use findParent instead?
+
         int depth = 1;
         Node parent = this.getParent();
 
@@ -53,6 +55,15 @@ public class DispatchNode extends Node {
         final DispatchHeadNode head = (DispatchHeadNode) NodeUtil.getNthParent(this, depth);
 
         return head.respecialize(frame, reason, receiverObject, blockObject, argumentsObjects);
+    }
+
+    public boolean respecializeAndDoesRespondTo(String reason, VirtualFrame frame, Object receiverObject) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        final int depth = getDepth();
+        final DispatchHeadNode head = (DispatchHeadNode) NodeUtil.getNthParent(this, depth);
+
+        return head.respecializeAndDoesRespondTo(frame, reason, receiverObject);
     }
 
     protected RubyMethod lookup(RubyBasicObject boxedCallingSelf, RubyBasicObject receiverBasicObject, String name) throws UseMethodMissingException {

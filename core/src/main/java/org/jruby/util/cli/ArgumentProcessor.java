@@ -431,14 +431,17 @@ public class ArgumentProcessor {
                         }
                         
                         break FOR;
+                    } else if (argument.equals("--1.8")) {
+                        config.getError().println("warning: " + argument + " ignored");
+                        break FOR;
                     } else if (argument.equals("--1.9")) {
                         config.getError().println("warning: " + argument + " ignored");
                         break FOR;
                     } else if (argument.equals("--2.0")) {
                         config.getError().println("warning: " + argument + " ignored");
                         break FOR;
-                    } else if (argument.equals("--1.8")) {
-                        config.getError().println("warning: " + argument + " ignored");
+                    } else if (argument.equals("--2.1")) {
+                        // keep the switch for consistency 
                         break FOR;
                     } else if (argument.equals("--disable-gems")) {
                         config.setDisableGems(true);

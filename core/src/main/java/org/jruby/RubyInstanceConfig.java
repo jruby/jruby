@@ -215,7 +215,7 @@ public class RubyInstanceConfig {
         try {
             do {
                 if (isShebang(cursor)) break;
-            } while (skipToNextLine(cursor));
+		    } while (skipToNextLine(cursor));
         } catch (IOException e) {
         } finally {
             try { cursor.finish(); } catch (IOException e) {}
@@ -1334,7 +1334,7 @@ public class RubyInstanceConfig {
     }
     
     /**
-     * getService whether IPv4 is preferred
+     * get whether IPv4 is preferred
      * 
      * @see Options#PREFER_IPV4
      */
@@ -1343,7 +1343,7 @@ public class RubyInstanceConfig {
     }
 
     /**
-     * getService whether uppercase package names will be honored
+     * get whether uppercase package names will be honored
      */
     public boolean getAllowUppercasePackageNames() {
         return allowUppercasePackageNames;

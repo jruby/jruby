@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ ***** BEGIN LICENSE BLOCK *****
  * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -11,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2008 Ola Bini <ola.bini@gmail.com>
+ * Copyright (C) 2014 Timur Duehr <tduehr@gmail.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -25,16 +26,27 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.ext.openssl.impl;
+package org.jruby;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.Variable;
 
 /**
+ * This class is used as an intermediate superclass for Module#prepend
  *
- * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
+ * @see org.jruby.IncludedModuleWrapper
+ * @see org.jruby.RubyModule
  */
-public class NotVerifiedPKCS7Exception extends PKCS7Exception {
-    private static final long serialVersionUID = 1L;
-
-    public NotVerifiedPKCS7Exception() {
-        super(-1, -1);
+public class PrependedModule extends IncludedModule {
+    public PrependedModule(Ruby runtime, RubyClass superClass, RubyModule origin) {
+        super(runtime, superClass, origin);
+        methods = origin.methods;
+        origin.methods = Collections.EMPTY_MAP;
     }
-}// NotVerifiedPKCS7Exception
+
+}

@@ -18,7 +18,6 @@ import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.runtime.*;
 
-@NodeInfo(shortName = "flip-flop")
 public class FlipFlopNode extends RubyNode {
 
     @Child protected BooleanCastNode begin;

@@ -9,8 +9,8 @@
  */
 package org.jruby.truffle.nodes.debug;
 
-import com.oracle.truffle.api.instrument.PhylumTag;
-import com.oracle.truffle.api.instrument.StandardTag;
+import com.oracle.truffle.api.instrument.StandardSyntaxTag;
+import com.oracle.truffle.api.instrument.SyntaxTag;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
 
@@ -24,7 +24,7 @@ public class TraceProber implements RubyNodeProber {
             throw new UnsupportedOperationException();
         } else {
             wrapper = new RubyWrapper(node.getContext(), node.getEncapsulatingSourceSection(), node);
-            wrapper.tagAs(StandardTag.STATEMENT);
+            wrapper.tagAs(StandardSyntaxTag.STATEMENT);
         }
 
         wrapper.getProbe().addInstrument(new TraceInstrument(node.getContext(), node.getEncapsulatingSourceSection()));
@@ -33,7 +33,7 @@ public class TraceProber implements RubyNodeProber {
     }
 
     @Override
-    public Node probeAs(Node node, PhylumTag phylumTag, Object... objects) {
+    public Node probeAs(Node node, SyntaxTag syntaxTag, Object... objects) {
         throw new UnsupportedOperationException();
     }
 

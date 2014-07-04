@@ -26,7 +26,6 @@ import org.jruby.truffle.runtime.control.RedoException;
 /**
  * Represents a Ruby {@code while} statement where the body is executed before the condition for the first time.
  */
-@NodeInfo(shortName = "do-while")
 public class DoWhileNode extends RubyNode {
 
     @Child protected BooleanCastNode condition;

@@ -20,7 +20,6 @@ import org.jruby.truffle.runtime.*;
 /**
  * Represents a Ruby {@code not} or {@code !} expression.
  */
-@NodeInfo(shortName = "not")
 public class NotNode extends RubyNode {
 
     @Child protected BooleanCastNode child;

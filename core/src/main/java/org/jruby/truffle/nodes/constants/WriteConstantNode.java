@@ -20,7 +20,6 @@ import org.jruby.truffle.runtime.core.*;
 /**
  * Represents writing a constant into some module.
  */
-@NodeInfo(shortName = "write-constant")
 public class WriteConstantNode extends RubyNode {
 
     private final String name;

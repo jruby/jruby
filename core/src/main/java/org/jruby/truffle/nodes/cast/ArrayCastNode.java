@@ -20,7 +20,6 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 
-@NodeInfo(shortName = "array-cast")
 @NodeChild("child")
 public abstract class ArrayCastNode extends RubyNode {
 

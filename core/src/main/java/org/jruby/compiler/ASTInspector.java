@@ -504,7 +504,6 @@ public class ASTInspector {
         }
         case HASHNODE:
             HashNode hashNode = (HashNode)node;
-            inspect(hashNode.getListNode());
             break;
         case IFNODE:
             IfNode ifNode = (IfNode)node;

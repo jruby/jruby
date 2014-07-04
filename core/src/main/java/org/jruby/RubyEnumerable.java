@@ -763,7 +763,7 @@ public class RubyEnumerable {
                         larg = RubyArray.newArrayNoCopy(ctx.runtime, largs);
                     }
                     
-                    IRubyObject value = newAry ? block.yieldArray(ctx, larg, null, null) : block.yield(ctx, larg);
+                    IRubyObject value = newAry ? block.yieldArray(ctx, larg, null) : block.yield(ctx, larg);
                     synchronized (result) {
                         result.append(value);
                     }
@@ -828,7 +828,7 @@ public class RubyEnumerable {
                 IRubyObject larg = packEnumValues(runtime, largs);
                 checkContext(localContext, ctx, "inject");
                 result[0] = result[0] == null ? 
-                        larg : block.yieldArray(ctx, runtime.newArray(result[0], larg), null, null);
+                        larg : block.yieldArray(ctx, runtime.newArray(result[0], larg), null);
 
                 return runtime.getNil();
             }
@@ -1135,7 +1135,7 @@ public class RubyEnumerable {
                     IRubyObject larg = packEnumValues(runtime, largs);
                     checkContext(localContext, ctx, "max{}");
                     if (result[0] == null || RubyComparable.cmpint(ctx, block.yieldArray(ctx,
-                                                                                         runtime.newArray(larg, result[0]), null, null), larg, result[0]) > 0) {
+                                                                                         runtime.newArray(larg, result[0]), null), larg, result[0]) > 0) {
                         result[0] = larg;
                     }
                     return runtime.getNil();

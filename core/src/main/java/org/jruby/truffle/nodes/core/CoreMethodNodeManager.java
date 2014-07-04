@@ -104,7 +104,10 @@ public abstract class CoreMethodNodeManager {
             final Class<?> nodeClass = generatedBy.value();
             final CoreClass classAnnotation = nodeClass.getEnclosingClass().getAnnotation(CoreClass.class);
             final CoreMethod methodAnnotation = nodeClass.getAnnotation(CoreMethod.class);
-            methods.add(new MethodDetails(classAnnotation, methodAnnotation, nodeFactory));
+
+            if (methodAnnotation != null) {
+                methods.add(new MethodDetails(classAnnotation, methodAnnotation, nodeFactory));
+            }
         }
     }
 

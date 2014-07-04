@@ -15,6 +15,7 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.utilities.*;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.*;
@@ -361,6 +362,15 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "/", minArgs = 1, maxArgs = 1)
     public abstract static class DivNode extends CoreMethodNode {
 
+        private final BranchProfile bGreaterZero = new BranchProfile();
+        private final BranchProfile bGreaterZeroAGreaterEqualZero = new BranchProfile();
+        private final BranchProfile bGreaterZeroALessZero = new BranchProfile();
+        private final BranchProfile aGreaterZero = new BranchProfile();
+        private final BranchProfile bMinusOne = new BranchProfile();
+        private final BranchProfile bMinusOneAMinimum = new BranchProfile();
+        private final BranchProfile bMinusOneANotMinimum = new BranchProfile();
+        private final BranchProfile finalCase = new BranchProfile();
+
         public DivNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -369,49 +379,169 @@ public abstract class FixnumNodes {
             super(prev);
         }
 
-        @Specialization(order = 1)
-        public int div(int a, int b) {
-            return a / b;
+        @Specialization(rewriteOn = UnexpectedResultException.class, order = 1)
+        public int div(int a, int b) throws UnexpectedResultException {
+            if (b > 0) {
+                bGreaterZero.enter();
+                if (a >= 0) {
+                    bGreaterZeroAGreaterEqualZero.enter();
+                    return a / b;
+                } else {
+                    bGreaterZeroALessZero.enter();
+                    return (a + 1) / b - 1;
+                }
+            } else if (a > 0) {
+                aGreaterZero.enter();
+                return (a - 1) / b - 1;
+            } else if (b == -1) {
+                bMinusOne.enter();
+                if (a == Integer.MIN_VALUE) {
+                    bMinusOneAMinimum.enter();
+                    throw new UnexpectedResultException(BigInteger.valueOf(a).negate());
+                } else {
+                    bMinusOneANotMinimum.enter();
+                    return -a;
+                }
+            } else {
+                finalCase.enter();
+                return a / b;
+            }
         }
 
         @Specialization(order = 2)
-        public long div(int a, long b) {
-            return a / b;
+        public Object divEdgeCase(int a, int b) {
+            if (b > 0) {
+                bGreaterZero.enter();
+                if (a >= 0) {
+                    bGreaterZeroAGreaterEqualZero.enter();
+                    return a / b;
+                } else {
+                    bGreaterZeroALessZero.enter();
+                    return (a + 1) / b - 1;
+                }
+            } else if (a > 0) {
+                aGreaterZero.enter();
+                return (a - 1) / b - 1;
+            } else if (b == -1) {
+                bMinusOne.enter();
+                if (a == Integer.MIN_VALUE) {
+                    bMinusOneAMinimum.enter();
+                    return BigInteger.valueOf(a).negate();
+                } else {
+                    bMinusOneANotMinimum.enter();
+                    return -a;
+                }
+            } else {
+                finalCase.enter();
+                return a / b;
+            }
         }
 
-        @Specialization(order = 3)
+        @Specialization(rewriteOn = UnexpectedResultException.class, order = 3)
+        public long div(int a, long b) throws UnexpectedResultException {
+            return div((long) a, b);
+        }
+
+        @Specialization(order = 4)
+        public Object divEdgeCase(int a, long b) {
+            return divEdgeCase((long) a, b);
+        }
+
+        @Specialization(order = 5)
         public double div(int a, double b) {
             return a / b;
         }
 
-        @Specialization(order = 4)
+        @Specialization(order = 6)
         public int div(@SuppressWarnings("unused") int a, @SuppressWarnings("unused") BigInteger b) {
+            // TODO(CS): not entirely sure this is correct
             return 0;
         }
 
-        @Specialization(order = 5)
-        public long div(long a, int b) {
-            return a / b;
+        @Specialization(rewriteOn = UnexpectedResultException.class, order = 7)
+        public long div(long a, int b) throws UnexpectedResultException {
+            return div(a, (long) b);
         }
 
-        @Specialization(order = 6)
-        public long div(long a, long b) {
-            return a / b;
+        @Specialization(order = 8)
+        public Object divEdgeCase(long a, int b) {
+            return divEdgeCase(a, (long) b);
         }
 
-        @Specialization(order = 7)
+        @Specialization(rewriteOn = UnexpectedResultException.class, order = 9)
+        public long div(long a, long b) throws UnexpectedResultException {
+            if (b > 0) {
+                bGreaterZero.enter();
+                if (a >= 0) {
+                    bGreaterZeroAGreaterEqualZero.enter();
+                    return a / b;
+                } else {
+                    bGreaterZeroALessZero.enter();
+                    return (a + 1) / b - 1;
+                }
+            } else if (a > 0) {
+                aGreaterZero.enter();
+                return (a - 1) / b - 1;
+            } else if (b == -1) {
+                bMinusOne.enter();
+                if (a == Long.MIN_VALUE) {
+                    bMinusOneAMinimum.enter();
+                    throw new UnexpectedResultException(BigInteger.valueOf(a).negate());
+                } else {
+                    bMinusOneANotMinimum.enter();
+                    return -a;
+                }
+            } else {
+                finalCase.enter();
+                return a / b;
+            }
+        }
+
+        @Specialization(order = 10)
+        public Object divEdgeCase(long a, long b) {
+            if (b > 0) {
+                bGreaterZero.enter();
+                if (a >= 0) {
+                    bGreaterZeroAGreaterEqualZero.enter();
+                    return a / b;
+                } else {
+                    bGreaterZeroALessZero.enter();
+                    return (a + 1) / b - 1;
+                }
+            } else if (a > 0) {
+                aGreaterZero.enter();
+                return (a - 1) / b - 1;
+            } else if (b == -1) {
+                bMinusOne.enter();
+                if (a == Long.MIN_VALUE) {
+                    bMinusOneAMinimum.enter();
+                    return BigInteger.valueOf(a).negate();
+                } else {
+                    bMinusOneANotMinimum.enter();
+                    return -a;
+                }
+            } else {
+                finalCase.enter();
+                return a / b;
+            }
+        }
+
+        @Specialization(order = 11)
         public double div(long a, double b) {
             return a / b;
         }
 
-        @Specialization(order = 8)
+        @Specialization(order = 12)
         public int div(@SuppressWarnings("unused") long a, @SuppressWarnings("unused") BigInteger b) {
+            // TODO(CS): not entirely sure this is correct
             return 0;
         }
     }
 
     @CoreMethod(names = "%", minArgs = 1, maxArgs = 1)
     public abstract static class ModNode extends CoreMethodNode {
+
+        private final BranchProfile adjustProfile = new BranchProfile();
 
         public ModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -423,32 +553,51 @@ public abstract class FixnumNodes {
 
         @Specialization(order = 1)
         public int mod(int a, int b) {
-            return a % b;
+            int mod = a % b;
+
+            if (mod < 0 && b > 0 || mod > 0 && b < 0) {
+                adjustProfile.enter();
+                mod += b;
+            }
+
+            return mod;
         }
 
         @Specialization(order = 2)
         public long mod(int a, long b) {
-            return a % b;
+            return mod((long) a, b);
         }
 
         @Specialization(order = 3)
         public Object mod(int a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.mod(BigInteger.valueOf(a), b));
+            return mod(BigInteger.valueOf(a), b);
         }
 
         @Specialization(order = 4)
         public long mod(long a, int b) {
-            return a % b;
+            return mod(a, (long) b);
         }
 
         @Specialization(order = 5)
         public long mod(long a, long b) {
-            return a % b;
+            long mod = a % b;
+
+            if (mod < 0 && b > 0 || mod > 0 && b < 0) {
+                adjustProfile.enter();
+                mod += b;
+            }
+
+            return mod;
         }
 
         @Specialization(order = 6)
         public Object mod(long a, BigInteger b) {
-            return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.mod(BigInteger.valueOf(a), b));
+            return mod(BigInteger.valueOf(a), b);
+        }
+
+        public Object mod(BigInteger a, BigInteger b) {
+            notDesignedForCompilation();
+            return RubyFixnum.fixnumOrBignum(SlowPathBigInteger.mod(a, b));
         }
     }
 
@@ -603,7 +752,7 @@ public abstract class FixnumNodes {
         }
     }
 
-    @CoreMethod(names = {"==", "==="}, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"==", "===", "eql?"}, minArgs = 1, maxArgs = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -1034,24 +1183,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object leftShift(int a, int b) {
-            if (b > 0) {
-                bAboveZeroProfile.enter();
-
-                if (RubyFixnum.SIZE - Integer.numberOfLeadingZeros(a) + b > RubyFixnum.SIZE - 1) {
-                    useBignumProfile.enter();
-                    return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.shiftLeft(BigInteger.valueOf(a), b));
-                } else {
-                    return a << b;
-                }
-            } else {
-                bNotAboveZeroProfile.enter();
-
-                if (-b >= Integer.SIZE) {
-                    return 0;
-                } else {
-                    return a >> -b;
-                }
-            }
+            return leftShift((long) a, b);
         }
 
         @Specialization
@@ -1059,7 +1191,7 @@ public abstract class FixnumNodes {
             if (b > 0) {
                 bAboveZeroProfile.enter();
 
-                if (RubyFixnum.SIZE - Long.numberOfLeadingZeros(a) + b > RubyFixnum.SIZE - 1) {
+                if (Long.SIZE - Long.numberOfLeadingZeros(a) + b > Long.SIZE - 1) {
                     useBignumProfile.enter();
                     return fixnumOrBignum.fixnumOrBignum(SlowPathBigInteger.shiftLeft(BigInteger.valueOf(a), b));
                 } else {
@@ -1068,7 +1200,7 @@ public abstract class FixnumNodes {
             } else {
                 bNotAboveZeroProfile.enter();
 
-                if (-b >= Integer.SIZE) {
+                if (-b >= Long.SIZE) {
                     return 0;
                 } else {
                     return a >> -b;
@@ -1094,7 +1226,7 @@ public abstract class FixnumNodes {
             if (b > 0) {
                 return a >> b;
             } else {
-                if (-b >= RubyFixnum.SIZE) {
+                if (-b >= Long.SIZE) {
                     return 0;
                 } else {
                     return a << -b;
@@ -1107,7 +1239,7 @@ public abstract class FixnumNodes {
             if (b > 0) {
                 return a >> b;
             } else {
-                if (-b >= RubyFixnum.SIZE) {
+                if (-b >= Long.SIZE) {
                     return 0;
                 } else {
                     return a << -b;
@@ -1420,8 +1552,6 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object upto(VirtualFrame frame, int from, int to, RubyProc block) {
-            notDesignedForCompilation();
-
             int count = 0;
 
             try {

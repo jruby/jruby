@@ -10,6 +10,7 @@
 package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import org.jruby.ast.*;
@@ -19,7 +20,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.control.AndNode;
 import org.jruby.truffle.nodes.control.IfNode;
-import org.jruby.truffle.nodes.literal.NilNode;
+import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.methods.locals.*;
@@ -70,7 +71,7 @@ class MethodTranslator extends BodyTranslator {
         if (bodyNode != null) {
             body = bodyNode.accept(this);
         } else {
-            body = new NilNode(context, sourceSection);
+            body = new NilLiteralNode(context, sourceSection);
         }
 
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(context, source, isBlock, this);
@@ -121,7 +122,7 @@ class MethodTranslator extends BodyTranslator {
                     new IfNode(context, sourceSection,
                             BooleanCastNodeFactory.create(context, sourceSection,
                                     new BehaveAsBlockNode(context, sourceSection, true)),
-                            new NilNode(context, sourceSection),
+                            new NilLiteralNode(context, sourceSection),
                             new CheckArityNode(context, sourceSection, arityForCheck)), preludeBuilder);
         } else {
             prelude = SequenceNode.sequence(context, sourceSection,
@@ -155,9 +156,30 @@ class MethodTranslator extends BodyTranslator {
         final RubyRootNode rootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
 
         if (isBlock) {
-            return new BlockDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), rootNode);
+            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
+            final CallTarget callTargetForMethods = withoutBlockDestructureSemantics(callTarget);
+
+            return new BlockDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), callTarget, callTargetForMethods, rootNode);
         } else {
             return new MethodDefinitionNode(context, sourceSection, methodName, environment.getSharedMethodInfo(), environment.needsDeclarationFrame(), rootNode, ignoreLocalVisiblity);
+        }
+    }
+
+    private CallTarget withoutBlockDestructureSemantics(CallTarget callTarget) {
+        if (callTarget instanceof RootCallTarget && ((RootCallTarget) callTarget).getRootNode() instanceof RubyRootNode) {
+            final RubyRootNode newRootNode = ((RubyRootNode) ((RootCallTarget) callTarget).getRootNode()).cloneRubyRootNode();
+
+            for (BehaveAsBlockNode behaveAsBlockNode : NodeUtil.findAllNodeInstances(newRootNode, BehaveAsBlockNode.class)) {
+                behaveAsBlockNode.setBehaveAsBlock(false);
+            }
+
+            final RubyRootNode newRootNodeWithCatchReturn = new RubyRootNode(newRootNode.getSourceSection(),
+                    newRootNode.getFrameDescriptor(), newRootNode.getSharedMethodInfo(),
+                        new CatchReturnNode(context, newRootNode.getSourceSection(), newRootNode.getBody(), getEnvironment().getReturnID()));
+
+            return Truffle.getRuntime().createCallTarget(newRootNodeWithCatchReturn);
+        } else {
+            throw new UnsupportedOperationException("Can't change the semantics of an opaque call target");
         }
     }
 

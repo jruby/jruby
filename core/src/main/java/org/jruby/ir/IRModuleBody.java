@@ -1,8 +1,8 @@
 package org.jruby.ir;
 
 import org.jruby.ir.operands.LocalVariable;
-import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.IRStaticScope;
 
 public class IRModuleBody extends IRScope {
     private CodeVersion version;    // Current code version for this module
@@ -12,12 +12,15 @@ public class IRModuleBody extends IRScope {
     }
 
     public IRModuleBody(IRManager manager, IRScope lexicalParent, String name,
-            String fileName, int lineNumber, StaticScope scope) {
-        super(manager, lexicalParent, name, fileName, lineNumber, scope);
+            String fileName, int lineNumber, StaticScope staticScope) {
+        super(manager, lexicalParent, name, fileName, lineNumber, staticScope);
 
         if (!getManager().isDryRun()) {
-            if (scope != null) ((IRStaticScope)scope).setIRScope(this);
             updateVersion();
+            if (staticScope != null) {
+                ((IRStaticScope)staticScope).setIRScope(this);
+                staticScope.setScopeType(this.getScopeType());
+            }
         }
     }
 

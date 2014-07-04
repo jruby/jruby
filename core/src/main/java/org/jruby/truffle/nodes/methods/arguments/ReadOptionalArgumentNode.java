@@ -20,7 +20,6 @@ import org.jruby.truffle.runtime.*;
 /**
  * Read an optional argument.
  */
-@NodeInfo(shortName = "read-optional-argument")
 public class ReadOptionalArgumentNode extends RubyNode {
 
     private final int index;

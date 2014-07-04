@@ -352,7 +352,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
                 (closure == null ? "" : ", &" + closure) + ")";
     }
 
-    protected static boolean containsArgSplat(Operand[] arguments) {
+    public static boolean containsArgSplat(Operand[] arguments) {
         for (Operand argument : arguments) {
             if (argument instanceof Splat && ((Splat)argument).unsplatArgs) return true;
         }
@@ -428,7 +428,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         return argList.toArray(new IRubyObject[argList.size()]);
     }
 
-    protected Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+    public Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         if (closure == null) return Block.NULL_BLOCK;
 
         return IRRuntimeHelpers.getBlockFromObject(context, closure.retrieve(context, self, currDynScope, temp));

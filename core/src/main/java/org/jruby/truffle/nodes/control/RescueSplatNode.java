@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.core.RubyArray;
  * classes.
  * 
  */
-@NodeInfo(shortName = "rescue-splat")
 public class RescueSplatNode extends RescueNode {
 
     @Child RubyNode handlingClassesArray;

@@ -69,6 +69,7 @@ public enum Operation {
     /* specialized calls */
     CALL_1F(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     CALL_1O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    CALL_1OB(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     CALL_0O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     NORESULT_CALL_1O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
 
@@ -260,6 +261,10 @@ public enum Operation {
         return this == LABEL;
     }
 
+    /**
+     * The last instruction in the BB which will exit the BB.  Note:  This also
+     * means any instructions past this point in that BB are unreachable.
+     */
     public boolean endsBasicBlock() {
         return transfersControl();
     }

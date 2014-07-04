@@ -18,7 +18,6 @@ import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 
-@NodeInfo(shortName = "when*")
 public class WhenSplatNode extends RubyNode {
 
     @Child protected RubyNode readCaseExpression;

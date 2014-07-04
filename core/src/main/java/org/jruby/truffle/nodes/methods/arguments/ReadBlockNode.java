@@ -20,7 +20,6 @@ import org.jruby.truffle.runtime.core.*;
 /**
  * Read the block as a {@code Proc}.
  */
-@NodeInfo(shortName = "read-block-argument")
 public class ReadBlockNode extends RubyNode {
 
     private final Object valueIfNotPresent;

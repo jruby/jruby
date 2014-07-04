@@ -5,6 +5,7 @@
 package org.jruby.ir;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import org.jruby.Ruby;
 import org.jruby.ast.executable.AbstractScript;
@@ -38,12 +39,21 @@ public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
         final StaticScope staticScope = scope.getStaticScope();
         final IRubyObject runtimeTopSelf = runtime.getTopSelf();
         staticScope.setModule(runtimeTopSelf.getMetaClass());
+
+        Method _compiledMethod;
+        try {
+            _compiledMethod = compiled.getMethod("__script__", ThreadContext.class,
+                    StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        final Method compiledMethod = _compiledMethod;
+
         return new AbstractScript() {
             @Override
             public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                 try {
-                    return (IRubyObject) compiled.getMethod("__script__", ThreadContext.class,
-                            StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class).invoke(null,
+                    return (IRubyObject) compiledMethod.invoke(null,
                             runtime.getCurrentContext(), scope.getStaticScope(), runtimeTopSelf, IRubyObject.NULL_ARRAY, block);
                 } catch (InvocationTargetException ite) {
                     if (ite.getCause() instanceof JumpException) {

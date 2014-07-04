@@ -13,7 +13,6 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
@@ -60,19 +59,21 @@ public class RubyRootNode extends RootNode {
     public void reportLoopCountThroughBlocks(int count) {
         CompilerAsserts.neverPartOfCompilation();
 
-        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
-            final RootNode rootNode = frame.getCallNode().getRootNode();
+        if (RubyContext.COMPILER_PASS_LOOPS_THROUGH_BLOCKS) {
+            for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
+                final RootNode rootNode = frame.getCallNode().getRootNode();
 
-            if (!(rootNode instanceof RubyRootNode)) {
-                break;
-            }
+                if (!(rootNode instanceof RubyRootNode)) {
+                    break;
+                }
 
-            final RubyRootNode rubyRootNode = (RubyRootNode) rootNode;
+                final RubyRootNode rubyRootNode = (RubyRootNode) rootNode;
 
-            rootNode.reportLoopCount(count);
+                rootNode.reportLoopCount(count);
 
-            if (!rubyRootNode.getSharedMethodInfo().isBlock()) {
-                break;
+                if (!rubyRootNode.getSharedMethodInfo().isBlock()) {
+                    break;
+                }
             }
         }
 
@@ -88,4 +89,7 @@ public class RubyRootNode extends RootNode {
         return sharedMethodInfo;
     }
 
+    public RubyNode getBody() {
+        return body;
+    }
 }

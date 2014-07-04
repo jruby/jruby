@@ -17,34 +17,102 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyHash;
 
-@NodeInfo(shortName = "hash")
-public class HashLiteralNode extends RubyNode {
+import java.util.LinkedHashMap;
 
-    @Children protected final RubyNode[] keys;
-    @Children protected final RubyNode[] values;
+public abstract class HashLiteralNode extends RubyNode {
 
-    public HashLiteralNode(SourceSection sourceSection, RubyNode[] keys, RubyNode[] values, RubyContext context) {
+    @Children protected final RubyNode[] keyValues;
+
+    protected HashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
         super(context, sourceSection);
-        assert keys.length == values.length;
-        this.keys = keys;
-        this.values = values;
+        assert keyValues.length % 2 == 0;
+        this.keyValues = keyValues;
     }
 
-    @ExplodeLoop
+    public static HashLiteralNode create(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
+        if (keyValues.length == 0) {
+            return new EmptyHashLiteralNode(context, sourceSection);
+        } else if (keyValues.length <= RubyContext.HASHES_SMALL * 2) {
+            return new SmallHashLiteralNode(context, sourceSection, keyValues);
+        } else {
+            return new GenericHashLiteralNode(context, sourceSection, keyValues);
+        }
+    }
+
+    @Override
+    public abstract RubyHash executeRubyHash(VirtualFrame frame);
+
     @Override
     public Object execute(VirtualFrame frame) {
-        final RubyHash hash = new RubyHash(getContext().getCoreLibrary().getHashClass());
+        return executeRubyHash(frame);
+    }
 
-        for (int n = 0; n < keys.length; n++) {
-            hash.put(keys[n].execute(frame), values[n].execute(frame));
+    @Override
+    public void executeVoid(VirtualFrame frame) {
+        for (RubyNode child : keyValues) {
+            child.executeVoid(frame);
         }
-
-        return hash;
     }
 
     @Override
     public Object isDefined(@SuppressWarnings("unused") VirtualFrame frame) {
         return getContext().makeString("expression");
+    }
+
+    public static class EmptyHashLiteralNode extends HashLiteralNode {
+
+        public EmptyHashLiteralNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection, new RubyNode[]{});
+        }
+
+        @ExplodeLoop
+        @Override
+        public RubyHash executeRubyHash(VirtualFrame frame) {
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null);
+        }
+
+    }
+
+    public static class SmallHashLiteralNode extends HashLiteralNode {
+
+        public SmallHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
+            super(context, sourceSection, keyValues);
+        }
+
+        @ExplodeLoop
+        @Override
+        public RubyHash executeRubyHash(VirtualFrame frame) {
+            final Object[] storage = new Object[keyValues.length];
+
+            for (int n = 0; n < storage.length; n++) {
+                storage[n] = keyValues[n].execute(frame);
+            }
+
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, storage);
+        }
+
+    }
+
+    public static class GenericHashLiteralNode extends HashLiteralNode {
+
+        public GenericHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
+            super(context, sourceSection, keyValues);
+        }
+
+        @ExplodeLoop
+        @Override
+        public RubyHash executeRubyHash(VirtualFrame frame) {
+            notDesignedForCompilation();
+
+            final LinkedHashMap<Object, Object> storage = new LinkedHashMap<>();
+
+            for (int n = 0; n < keyValues.length; n += 2) {
+                storage.put(keyValues[n].execute(frame), keyValues[n + 1].execute(frame));
+            }
+
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, storage);
+        }
+
     }
 
 }

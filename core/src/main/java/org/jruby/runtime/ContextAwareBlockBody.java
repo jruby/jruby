@@ -1,6 +1,5 @@
 package org.jruby.runtime;
 
-import org.jruby.RubyModule;
 import org.jruby.parser.StaticScope;
 
 /**
@@ -20,8 +19,8 @@ public abstract class ContextAwareBlockBody extends BlockBody {
         this.arity = arity;
     }
 
-    protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
-        return context.preYieldSpecificBlock(binding, scope, klass);
+    protected Frame pre(ThreadContext context, Binding binding) {
+        return context.preYieldSpecificBlock(binding, scope);
     }
 
     protected void post(ThreadContext context, Binding binding, Visibility vis, Frame lastFrame) {

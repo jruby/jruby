@@ -278,7 +278,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
+                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
                       <arg value="-S" />
                       <arg value="rake" />
                       <arg value="${task}" />
@@ -306,9 +306,9 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
+                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
                       <arg value="-X+T" />
-                      <arg value="-Xtruffle.printJavaExceptions=true" />
+                      <arg value="-Xtruffle.exceptions.print_java=true" />
                       <arg value="-J-ea" />
                       <arg value="spec/mspec/bin/mspec" />
                       <arg value="run" />
@@ -317,7 +317,7 @@
                       <arg value="-T" />
                       <arg value="-X+T" />
                       <arg value="-T" />
-                      <arg value="-Xtruffle.printJavaExceptions=true" />
+                      <arg value="-Xtruffle.exceptions.print_java=true" />
                       <arg value="-T" />
                       <arg value="-J-ea" />
                       <arg value="--config" />

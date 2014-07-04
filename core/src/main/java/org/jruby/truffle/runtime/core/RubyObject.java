@@ -27,8 +27,6 @@ public class RubyObject extends RubyBasicObject {
     }
 
     public void checkFrozen() {
-        RubyNode.notDesignedForCompilation();
-
         if (frozen) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getRubyClass().getContext().getCoreLibrary().frozenError(getRubyClass().getName().toLowerCase()));

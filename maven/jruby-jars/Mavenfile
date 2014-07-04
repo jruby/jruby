@@ -1,10 +1,9 @@
 #-*- mode: ruby -*-
 require 'fileutils'
 
-name "JRuby Jars Gem"
+gemspec
 
-# tell maven to include the jar files into gem
-gemspec :include_jars => true
+name "JRuby Jars Gem"
 
 version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
@@ -45,7 +44,10 @@ end
 # do not push the gem during deploy phase
 # the bang reuses the plugin declaration which is already in place and
 # adds the extra execute_goal to it
-jruby_plugin!( :gem ) do
+jruby_plugin!( :gem,
+               :gemspec => 'jruby-jars.gemspec',
+               # tell maven to include the jar files into gem
+               :includeDependencies => true ) do
   execute_goals :id => 'default-push', :skip => true
 end
 

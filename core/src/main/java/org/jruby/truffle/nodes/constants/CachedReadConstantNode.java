@@ -20,7 +20,6 @@ import org.jruby.truffle.runtime.core.*;
  * was read from is unmodified. If that assumption does not hold the read is uninitialized. If the
  * class of the receiver changes we also uninitialize.
  */
-@NodeInfo(shortName = "cached-read-constant")
 public class CachedReadConstantNode extends ReadConstantChainNode {
 
     private final RubyClass expectedClass;

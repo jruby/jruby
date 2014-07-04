@@ -133,4 +133,101 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
         replace(newDispatch, "appending new boxed dispatch node to chain");
         return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
     }
+
+    @Override
+    public boolean doesRespondTo(VirtualFrame frame, RubyBasicObject receiverObject) {
+        // TODO(CS): this is a copy-and-paste of the above, needs to be factored out
+
+        CompilerDirectives.transferToInterpreter();
+
+        final RubyContext context = getContext();
+
+        final int depth = getDepth();
+        final DispatchHeadNode dispatchHead = (DispatchHeadNode) NodeUtil.getNthParent(this, depth);
+
+        if (depth == MAX_DEPTH) {
+            /*
+             * Replace the chain with DispatchHeadNode -> ExpectBoxedDispatchNode ->
+             * GeneralDispatchNode.
+             */
+
+            final GeneralDispatchNode newGeneralDispatch = new GeneralDispatchNode(getContext(), name);
+            final BoxingDispatchNode newBoxing = new BoxingDispatchNode(getContext(), newGeneralDispatch);
+
+            dispatchHead.getDispatch().replace(newBoxing);
+            return newBoxing.doesRespondTo(frame, receiverObject);
+        }
+
+        final RubyBasicObject boxedCallingSelf = getContext().getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
+
+        RubyMethod method;
+
+        try {
+            method = lookup(boxedCallingSelf, receiverObject, name);
+        } catch (UseMethodMissingException e) {
+            switch (missingBehavior) {
+                case RETURN_MISSING: {
+                    BoxedDispatchNode newDispatch = new CachedBoxedReturnMissingDispatchNode(getContext(), receiverObject.getLookupNode(), this);
+                    replace(newDispatch, "appending new boxed return nil dispatch node to chain");
+                    return newDispatch.doesRespondTo(frame, receiverObject);
+                }
+
+                case CALL_METHOD_MISSING: {
+                    try {
+                        method = lookup(boxedCallingSelf, receiverObject, "method_missing");
+                    } catch (UseMethodMissingException e2) {
+                        throw new RaiseException(context.getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing"));
+                    }
+
+                    BoxedDispatchNode newDispatch = new CachedBoxedMethodMissingDispatchNode(getContext(), receiverObject.getLookupNode(), method, name, this);
+                    replace(newDispatch, "appending new boxed method missing dispatch node to chain");
+                    return newDispatch.doesRespondTo(frame, receiverObject);
+                }
+
+                default:
+                    throw new UnsupportedOperationException(missingBehavior.toString());
+            }
+        }
+
+        if (receiverObject instanceof Unboxable) {
+            /*
+             * Unboxed dispatch nodes are prepended to the chain of dispatch nodes, so they're
+             * before the point where receivers will definitely be boxed.
+             */
+
+            final Object receiverUnboxed = ((Unboxable) receiverObject).unbox();
+            final UnboxedDispatchNode firstDispatch = dispatchHead.getDispatch();
+
+            if (receiverObject instanceof RubyTrueClass || receiverObject instanceof RubyFalseClass) {
+                try {
+                    final Assumption falseUnmodifiedAssumption = context.getCoreLibrary().getFalseClass().getUnmodifiedAssumption();
+                    final RubyMethod falseMethod = lookup(boxedCallingSelf, context.getCoreLibrary().box(false), name);
+                    final Assumption trueUnmodifiedAssumption = context.getCoreLibrary().getTrueClass().getUnmodifiedAssumption();
+                    final RubyMethod trueMethod = lookup(boxedCallingSelf, context.getCoreLibrary().box(true), name);
+
+                    final BooleanDispatchNode newDispatch = new BooleanDispatchNode(getContext(), falseUnmodifiedAssumption, falseMethod, trueUnmodifiedAssumption, trueMethod, null);
+                    firstDispatch.replace(newDispatch, "prepending new unboxed dispatch node to chain");
+                    newDispatch.setNext(firstDispatch);
+                    return newDispatch.doesRespondTo(frame, receiverUnboxed);
+                } catch (UseMethodMissingException e) {
+                    throw new UnsupportedOperationException();
+                }
+            }
+
+            final UnboxedDispatchNode newDispatch = new CachedUnboxedDispatchNode(getContext(), receiverUnboxed.getClass(), receiverObject.getRubyClass().getUnmodifiedAssumption(), method, null);
+            firstDispatch.replace(newDispatch, "prepending new unboxed dispatch node to chain");
+            newDispatch.setNext(firstDispatch);
+            return newDispatch.doesRespondTo(frame, receiverUnboxed);
+        }
+
+        /*
+         * Boxed dispatch nodes are appended to the chain of dispatch nodes, so they're after
+         * the point where receivers are guaranteed to be boxed.
+        */
+
+        final UninitializedDispatchNode newUninitializedDispatch = new UninitializedDispatchNode(getContext(), name, missingBehavior);
+        final BoxedDispatchNode newDispatch = new CachedBoxedDispatchNode(getContext(), receiverObject.getLookupNode(), method, newUninitializedDispatch);
+        replace(newDispatch, "appending new boxed dispatch node to chain");
+        return newDispatch.doesRespondTo(frame, receiverObject);
+    }
 }

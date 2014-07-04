@@ -11,8 +11,8 @@ package org.jruby.truffle.nodes.debug;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.KillException;
-import com.oracle.truffle.api.instrument.PhylumTag;
 import com.oracle.truffle.api.instrument.Probe;
+import com.oracle.truffle.api.instrument.SyntaxTag;
 import com.oracle.truffle.api.instrument.Wrapper;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -676,16 +676,16 @@ public class RubyWrapper extends RubyNode implements Wrapper {
     }
 
     @Override
-    public boolean isTaggedAs(PhylumTag tag) {
+    public boolean isTaggedAs(SyntaxTag tag) {
         return probe.isTaggedAs(tag);
     }
 
     @Override
-    public Iterable<PhylumTag> getPhylumTags() {
-        return probe.getPhylumTags();
+    public Iterable<SyntaxTag> getSyntaxTags() {
+        return probe.getSyntaxTags();
     }
 
-    public void tagAs(PhylumTag tag) {
+    public void tagAs(SyntaxTag tag) {
         probe.tagAs(tag);
     }
 

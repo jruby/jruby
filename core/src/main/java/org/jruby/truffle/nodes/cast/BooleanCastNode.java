@@ -24,7 +24,6 @@ import java.math.BigInteger;
  * Casts a value into a boolean. Works at the language level, so doesn't call any Ruby methods to
  * cast non-core or monkey-patched objects.
  */
-@NodeInfo(shortName = "cast-boolean")
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class BooleanCastNode extends RubyNode {
 

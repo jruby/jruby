@@ -41,10 +41,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  * A string which contains some dynamic elements which needs to be evaluated (introduced by #).
  */
 public class DStrNode extends DNode implements ILiteralNode {
-    public DStrNode(ISourcePosition position) {
-        this(position, null);
-    }
-
     public DStrNode(ISourcePosition position, Encoding encoding) {
         super(position, encoding);
     }

@@ -137,107 +137,46 @@ public class DefaultMethod extends DynamicMethod implements MethodArgs, Position
         getImplementationClass().invalidateCacheDescendants();
     }
 
-    private DynamicMethod tryJitReturnMethod(ThreadContext context) {
-        String className;
-        if (implementationClass.isSingleton()) {
-            MetaClass metaClass = (MetaClass)implementationClass;
-            RubyClass realClass = metaClass.getRealClass();
-            // if real class is Class
-            if (realClass == context.runtime.getClassClass()) {
-                // use the attached class's name
-                className = ((RubyClass)metaClass.getAttached()).getName();
-            } else {
-                // use the real class name
-                className = realClass.getName();
-            }
-        } else {
-            // use the class name
-            className = implementationClass.getName();
-        }
-        context.runtime.getJITCompiler().tryJIT(this, context, className, name);
-        return box.actualMethod;
-    }
-
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        if (box.callCount >= 0) {
-            return tryJitReturnMethod(context).call(context, self, clazz, name, args, block);
-        }
-        
         return box.actualMethod.call(context, self, clazz, name, args, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        if (box.callCount >= 0) {
-            return tryJitReturnMethod(context).call(context, self, clazz, name, args);
-        }
-
         return box.actualMethod.call(context, self, clazz, name, args);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-        if (box.callCount >= 0) {
-            return tryJitReturnMethod(context).call(context, self, clazz, name);
-        }
-
         return box.actualMethod.call(context, self, clazz, name );
     }
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        if (box.callCount >= 0) {
-            return tryJitReturnMethod(context).call(context, self, clazz, name, block);
-        }
-
         return box.actualMethod.call(context, self, clazz, name, block);
     }
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-        if (box.callCount >= 0) {
-            return tryJitReturnMethod(context).call(context, self, clazz, name, arg0);
-        }
-
         return box.actualMethod.call(context, self, clazz, name , arg0);
     }
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-        if (box.callCount >= 0) {
-            return tryJitReturnMethod(context).call(context, self, clazz, name, arg0, block);
-        }
-
         return box.actualMethod.call(context, self, clazz, name, arg0, block);
     }
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
-        if (box.callCount >= 0) {
-            return tryJitReturnMethod(context).call(context, self, clazz, name, arg0, arg1);
-        }
-
         return box.actualMethod.call(context, self, clazz, name , arg0, arg1);
     }
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        if (box.callCount >= 0) {
-            return tryJitReturnMethod(context).call(context, self, clazz, name, arg0, arg1, block);
-        }
-
         return box.actualMethod.call(context, self, clazz, name, arg0, arg1, block);
     }
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        if (box.callCount >= 0) {
-            return tryJitReturnMethod(context).call(context, self, clazz, name, arg0, arg1, arg2);
-        }
-
         return box.actualMethod.call(context, self, clazz, name , arg0, arg1, arg2);
     }
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        if (box.callCount >= 0) {
-            return tryJitReturnMethod(context).call(context, self, clazz, name, arg0, arg1, arg2, block);
-        }
-
         return box.actualMethod.call(context, self, clazz, name, arg0, arg1, arg2, block);
     }
 

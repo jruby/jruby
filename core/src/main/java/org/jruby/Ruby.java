@@ -77,7 +77,6 @@ import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.ir.Compiler;
-import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.persistence.IRReader;
@@ -136,6 +135,7 @@ import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.cli.Options;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.func.Function1;
 import org.jruby.util.io.ChannelDescriptor;
@@ -624,10 +624,16 @@ public final class Ruby {
         Script script = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile) {
-            script = tryCompile(scriptNode);
+            try {
+                script = tryCompile(scriptNode);
+            } catch (Exception e) {
+                if (Options.JIT_LOGGING_VERBOSE.load()) {
+                    e.printStackTrace();
+                }
+            }
             if (compile && script == null) {
-                // terminate; tryCompile will have printed out an error and we're done
-                return getNil();
+                // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
+                // FIXME: restore error once JIT should handle everything
             }
         }
         
@@ -702,7 +708,15 @@ public final class Ruby {
         Script script = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile || config.isShowBytecode()) {
-            script = tryCompile(scriptNode, null, new JRubyClassLoader(getJRubyClassLoader()), config.isShowBytecode());
+            // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
+            // FIXME: restore error once JIT should handle everything
+            try {
+                script = tryCompile(scriptNode, null, new JRubyClassLoader(getJRubyClassLoader()), config.isShowBytecode());
+            } catch (Exception e) {
+                if (Options.JIT_LOGGING_VERBOSE.load()) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         if (script != null) {
@@ -712,7 +726,8 @@ public final class Ruby {
 
             return runScript(script);
         } else {
-            failForcedCompile(scriptNode);
+            // FIXME: temporarily allowing JIT to fail for $0 and fall back on interpreter
+//            failForcedCompile(scriptNode);
             
             return runInterpreter(scriptNode);
         }
@@ -782,11 +797,6 @@ public final class Ruby {
                 compiler.compileRoot(node, asmCompiler, inspector, true, false);
             }
 
-            if (RubyInstanceConfig.JIT_CODE_CACHE != null && cachedClassName != null) {
-                // save script off to disk
-                String pathName = cachedClassName.replace('.', '/');
-                JITCompiler.saveToCodeCache(this, asmCompiler.getClassByteArray(), "ruby/jit", new File(RubyInstanceConfig.JIT_CODE_CACHE, pathName + ".class"));
-            }
             script = (Script)asmCompiler.loadClass(classLoader).newInstance();
 
             // __file__ method expects its scope at 0, so prepare that here
@@ -889,10 +899,6 @@ public final class Ruby {
         return beanManager;
     }
     
-    public JITCompiler getJITCompiler() {
-        return jitCompiler;
-    }
-
     public synchronized TruffleBridge getTruffleBridge() {
         if (truffleBridge == null) {
             /*
@@ -3200,8 +3206,6 @@ public final class Ruby {
         getBeanManager().unregisterRuntime();
 
         getSelectorPool().cleanup();
-
-        getJITCompiler().tearDown();
 
         if (getJRubyClassLoader() != null) {
             getJRubyClassLoader().tearDown(isDebug());

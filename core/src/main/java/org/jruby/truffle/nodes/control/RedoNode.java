@@ -17,7 +17,6 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 
-@NodeInfo(shortName = "redo")
 public class RedoNode extends RubyNode {
 
     public RedoNode(RubyContext context, SourceSection sourceSection) {

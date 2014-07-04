@@ -21,7 +21,6 @@ import org.jruby.truffle.runtime.core.RubyClass;
 /**
  * Reads the singleton (meta, eigen) class of an object.
  */
-@NodeInfo(shortName = "singleton")
 public class SingletonClassNode extends RubyNode {
 
     @Child protected BoxingNode child;

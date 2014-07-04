@@ -20,7 +20,6 @@ import org.jruby.truffle.runtime.core.RubyArray;
 
 import java.util.Arrays;
 
-@NodeInfo(shortName = "array-tail")
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
 public abstract class ArrayGetTailNode extends RubyNode {
 

@@ -20,7 +20,6 @@ import org.jruby.truffle.runtime.core.*;
 /**
  * Rescues any of a set of classes.
  */
-@NodeInfo(shortName = "rescue-classes")
 public class RescueClassesNode extends RescueNode {
 
     @Children final RubyNode[] handlingClassNodes;

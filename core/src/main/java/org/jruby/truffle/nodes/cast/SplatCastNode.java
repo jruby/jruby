@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 /**
  * Splat as used to cast a value to an array if it isn't already, as in {@code *value}.
  */
-@NodeInfo(shortName = "cast-splat")
 @NodeChild("child")
 public abstract class SplatCastNode extends RubyNode {
 

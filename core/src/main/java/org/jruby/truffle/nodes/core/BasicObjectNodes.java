@@ -16,6 +16,9 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.call.DynamicNameDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -157,8 +160,6 @@ public abstract class BasicObjectNodes {
         public Object methodMissing(RubyBasicObject self, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            CompilerDirectives.transferToInterpreter();
-
             final RubySymbol name = (RubySymbol) args[0];
             final Object[] sentArgs = Arrays.copyOfRange(args, 1, args.length);
             return methodMissing(self, name, sentArgs, null);
@@ -167,8 +168,6 @@ public abstract class BasicObjectNodes {
         @Specialization
         public Object methodMissing(RubyBasicObject self, Object[] args, RubyProc block) {
             notDesignedForCompilation();
-
-            CompilerDirectives.transferToInterpreter();
 
             final RubySymbol name = (RubySymbol) args[0];
             final Object[] sentArgs = Arrays.copyOfRange(args, 1, args.length);
@@ -185,21 +184,36 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = {"send", "__send__"}, needsBlock = true, minArgs = 1, isSplatted = true)
     public abstract static class SendNode extends CoreMethodNode {
 
+        @Child protected DynamicNameDispatchHeadNode dispatchNode;
+
+        private final BranchProfile symbolProfile = new BranchProfile();
+        private final BranchProfile stringProfile = new BranchProfile();
+
         public SendNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            dispatchNode = new DynamicNameDispatchHeadNode(context);
         }
 
         public SendNode(SendNode prev) {
             super(prev);
+            dispatchNode = prev.dispatchNode;
         }
 
         @Specialization
-        public Object send(RubyBasicObject self, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            final String name = args[0].toString();
+        public Object send(VirtualFrame frame, RubyBasicObject self, Object[] args, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+            final Object name = args[0];
             final Object[] sendArgs = Arrays.copyOfRange(args, 1, args.length);
-            return self.send(name, null, sendArgs);
+
+            if (name instanceof RubySymbol) {
+                symbolProfile.enter();
+                return dispatchNode.dispatch(frame, self, (RubySymbol) name, null, sendArgs);
+            } else if (name instanceof RubyString) {
+                stringProfile.enter();
+                return dispatchNode.dispatch(frame, self, (RubyString) name, null, sendArgs);
+            } else {
+                CompilerDirectives.transferToInterpreter();
+                throw new UnsupportedOperationException();
+            }
         }
 
         @Specialization

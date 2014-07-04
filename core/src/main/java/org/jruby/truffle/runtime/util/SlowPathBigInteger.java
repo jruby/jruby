@@ -11,9 +11,15 @@ package org.jruby.truffle.runtime.util;
 
 import com.oracle.truffle.api.CompilerDirectives;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public abstract class SlowPathBigInteger {
+
+    @CompilerDirectives.SlowPath
+    public static BigInteger create(double value) {
+        return new BigDecimal(value).toBigInteger();
+    }
 
     @CompilerDirectives.SlowPath
     public static BigInteger negate(BigInteger a) {

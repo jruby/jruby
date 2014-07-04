@@ -18,7 +18,6 @@ import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyModule;
 
-@NodeInfo(shortName = "undef")
 public class UndefNode extends RubyNode {
 
     @Child protected RubyNode module;

@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.core.*;
 /**
  * Represents a Ruby {@code and} or {@code &&} expression.
  */
-@NodeInfo(shortName = "and")
 public class AndNode extends RubyNode {
 
     @Child protected RubyNode left;

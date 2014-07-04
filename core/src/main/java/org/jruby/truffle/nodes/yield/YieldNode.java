@@ -22,7 +22,6 @@ import org.jruby.truffle.runtime.core.RubyArray;
 /**
  * Yield to the current block.
  */
-@NodeInfo(shortName = "yield")
 public class YieldNode extends RubyNode {
 
     @Children protected final RubyNode[] arguments;

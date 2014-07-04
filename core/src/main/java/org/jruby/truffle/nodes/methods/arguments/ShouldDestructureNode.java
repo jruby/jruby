@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.methods.Arity;
 /**
  * Switches between loading arguments as normal and doing a destructure.
  */
-@NodeInfo(shortName = "destructure-switch")
 public class ShouldDestructureNode extends RubyNode {
 
     private final Arity arity;

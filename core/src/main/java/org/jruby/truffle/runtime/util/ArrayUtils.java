@@ -4,6 +4,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.nodes.RubyNode;
 
+import java.util.Arrays;
 import java.util.List;
 
 public abstract class ArrayUtils {
@@ -38,8 +39,8 @@ public abstract class ArrayUtils {
         return false;
     }
 
-    public static boolean contains(Object[] array, Object value) {
-        for (int n = 0; n < array.length; n++) {
+    public static boolean contains(Object[] array, int length, Object value) {
+        for (int n = 0; n < length; n++) {
             if (array[n].equals(value)) {
                 return true;
             }
@@ -49,33 +50,23 @@ public abstract class ArrayUtils {
     }
 
     public static Object[] box(int[] unboxed) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        final Object[] boxed = new Object[unboxed.length];
-
-        for (int n = 0; n < unboxed.length; n++) {
-            boxed[n] = unboxed[n];
-        }
-
-        return boxed;
+        return box(unboxed, 0);
     }
 
     public static Object[] box(long[] unboxed) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        final Object[] boxed = new Object[unboxed.length];
-
-        for (int n = 0; n < unboxed.length; n++) {
-            boxed[n] = unboxed[n];
-        }
-
-        return boxed;
+        return box(unboxed, 0);
     }
 
     public static Object[] box(double[] unboxed) {
-        CompilerAsserts.neverPartOfCompilation();
+        return box(unboxed, 0);
+    }
 
-        final Object[] boxed = new Object[unboxed.length];
+    public static Object[] box(Object array) {
+        return box(array, 0);
+    }
+
+    public static Object[] box(int[] unboxed, int extra) {
+        final Object[] boxed = new Object[unboxed.length + extra];
 
         for (int n = 0; n < unboxed.length; n++) {
             boxed[n] = unboxed[n];
@@ -84,54 +75,105 @@ public abstract class ArrayUtils {
         return boxed;
     }
 
-    public static Object[] box(Object array) {
+    public static Object[] box(long[] unboxed, int extra) {
+        final Object[] boxed = new Object[unboxed.length + extra];
+
+        for (int n = 0; n < unboxed.length; n++) {
+            boxed[n] = unboxed[n];
+        }
+
+        return boxed;
+    }
+
+    public static Object[] box(double[] unboxed, int extra) {
+        final Object[] boxed = new Object[unboxed.length + extra];
+
+        for (int n = 0; n < unboxed.length; n++) {
+            boxed[n] = unboxed[n];
+        }
+
+        return boxed;
+    }
+
+    public static Object[] boxUntil(int[] unboxed, int length) {
+        final Object[] boxed = new Object[length];
+
+        for (int n = 0; n < length; n++) {
+            boxed[n] = unboxed[n];
+        }
+
+        return boxed;
+    }
+
+    public static Object[] boxUntil(long[] unboxed, int length) {
+        final Object[] boxed = new Object[length];
+
+        for (int n = 0; n < length; n++) {
+            boxed[n] = unboxed[n];
+        }
+
+        return boxed;
+    }
+
+    public static Object[] boxUntil(double[] unboxed, int length) {
+        final Object[] boxed = new Object[length];
+
+        for (int n = 0; n < length; n++) {
+            boxed[n] = unboxed[n];
+        }
+
+        return boxed;
+    }
+
+    public static Object[] box(Object array, int extra) {
         CompilerAsserts.neverPartOfCompilation();
 
         if (array == null) {
-           return new Object[]{};
+           return new Object[extra];
         } if (array instanceof int[]) {
-            return box((int[]) array);
+            return box((int[]) array, extra);
         } else if (array instanceof long[]) {
-            return box((long[]) array);
+            return box((long[]) array, extra);
         } else if (array instanceof double[]) {
-            return box((double[]) array);
+            return box((double[]) array, extra);
         } else if (array instanceof Object[]) {
-            return (Object[]) array;
+            final Object[] objectArray = (Object[]) array;
+            return Arrays.copyOf(objectArray, objectArray.length + extra);
         } else {
             throw new UnsupportedOperationException();
         }
     }
 
-    public static int[] unboxInteger(Object[] unboxed) {
+    public static int[] unboxInteger(Object[] unboxed, int length) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final int[] boxed = new int[unboxed.length];
+        final int[] boxed = new int[length];
 
-        for (int n = 0; n < unboxed.length; n++) {
+        for (int n = 0; n < length; n++) {
             boxed[n] = (int) unboxed[n];
         }
 
         return boxed;
     }
 
-    public static long[] unboxLong(Object[] unboxed) {
+    public static long[] unboxLong(Object[] unboxed, int length) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final long[] boxed = new long[unboxed.length];
+        final long[] boxed = new long[length];
 
-        for (int n = 0; n < unboxed.length; n++) {
+        for (int n = 0; n < length; n++) {
             boxed[n] = (long) unboxed[n];
         }
 
         return boxed;
     }
 
-    public static double[] unboxDouble(Object[] unboxed) {
+    public static double[] unboxDouble(Object[] unboxed, int length) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final double[] boxed = new double[unboxed.length];
+        final double[] boxed = new double[length];
 
-        for (int n = 0; n < unboxed.length; n++) {
+        for (int n = 0; n < length; n++) {
             boxed[n] = (double) unboxed[n];
         }
 

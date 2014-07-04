@@ -19,7 +19,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
 
-    @CoreMethod(names = {"==", "==="}, minArgs = 1, maxArgs = 1)
+    @CoreMethod(names = {"==", "===", "eql?"}, minArgs = 1, maxArgs = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
@@ -31,15 +31,8 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public boolean equal(@SuppressWarnings("unused") RubyString a, @SuppressWarnings("unused") NilPlaceholder b) {
-            return false;
-        }
-
-        @Specialization
         public boolean equal(RubySymbol a, RubySymbol b) {
-            notDesignedForCompilation();
-
-            return a.toString().equals(b.toString());
+            return a == b;
         }
 
         @Specialization

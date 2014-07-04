@@ -22,7 +22,6 @@ import org.jruby.truffle.runtime.core.*;
 /**
  * Casts an object to a Ruby Proc object.
  */
-@NodeInfo(shortName = "cast-proc")
 @NodeChild("child")
 public abstract class ProcCastNode extends RubyNode {
 

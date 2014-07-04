@@ -22,7 +22,6 @@ import org.jruby.truffle.runtime.control.*;
 /**
  * Represents a Ruby {@code while} statement.
  */
-@NodeInfo(shortName = "while")
 public class WhileNode extends RubyNode {
 
     @Child protected BooleanCastNode condition;

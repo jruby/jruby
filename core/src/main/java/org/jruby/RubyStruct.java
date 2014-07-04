@@ -254,7 +254,7 @@ public class RubyStruct extends RubyObject {
         if (block.isGiven()) {
             // Struct bodies should be public by default, so set block visibility to public. JRUBY-1185.
             block.getBinding().setVisibility(Visibility.PUBLIC);
-            block.yieldNonArray(runtime.getCurrentContext(), null, newStruct, newStruct);
+            block.yieldNonArray(runtime.getCurrentContext(), null, newStruct);
         }
 
         return newStruct;

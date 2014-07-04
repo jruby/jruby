@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.core.RubyArray;
  * used for lookup. Currently implemented without any caching, and needs to be replaced with the
  * same caching mechanism as for normal calls without complicating the existing calls too much.
  */
-@NodeInfo(shortName = "general-super-call")
 public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
 
     private final boolean isSplatted;

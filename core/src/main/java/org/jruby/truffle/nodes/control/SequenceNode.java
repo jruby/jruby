@@ -14,7 +14,7 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
-import org.jruby.truffle.nodes.literal.NilNode;
+import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.runtime.*;
 
 import java.util.ArrayList;
@@ -24,7 +24,6 @@ import java.util.List;
 /**
  * A sequence of statements to be executed in serial.
  */
-@NodeInfo(shortName = "sequence")
 public final class SequenceNode extends RubyNode {
 
     @Children protected final RubyNode[] body;
@@ -37,7 +36,7 @@ public final class SequenceNode extends RubyNode {
         final List<RubyNode> flattened = flatten(sequence, true);
 
         if (flattened.isEmpty()) {
-            return new NilNode(context, sourceSection);
+            return new NilLiteralNode(context, sourceSection);
         } else if (flattened.size() == 1) {
             return flattened.get(0);
         } else {
@@ -52,7 +51,7 @@ public final class SequenceNode extends RubyNode {
             final boolean lastNode = n == sequence.size() - 1;
             final RubyNode node = sequence.get(n);
 
-            if (node instanceof NilNode) {
+            if (node instanceof NilLiteralNode) {
                 if (allowTrailingNil && lastNode) {
                     flattened.add(node);
                 }

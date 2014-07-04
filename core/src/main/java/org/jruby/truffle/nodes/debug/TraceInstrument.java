@@ -57,7 +57,7 @@ public class TraceInstrument extends Instrument {
             traceFunc = context.getTraceManager().getTraceFunc();
 
             if (traceFunc != null) {
-                callNode = insert(Truffle.getRuntime().createDirectCallNode(traceFunc.getMethod().getCallTarget()));
+                callNode = insert(Truffle.getRuntime().createDirectCallNode(traceFunc.getCallTarget()));
             } else {
                 callNode = null;
             }
@@ -77,7 +77,7 @@ public class TraceInstrument extends Instrument {
                 };
 
                 try {
-                    callNode.call(frame, RubyArguments.pack(traceFunc.getMethod().getDeclarationFrame(), traceFunc.getSelfCapturedInScope(), traceFunc.getBlockCapturedInScope(), args));
+                    callNode.call(frame, RubyArguments.pack(traceFunc.getDeclarationFrame(), traceFunc.getSelfCapturedInScope(), traceFunc.getBlockCapturedInScope(), args));
                 } finally {
                     context.getTraceManager().setInTraceFunc(false);
                 }

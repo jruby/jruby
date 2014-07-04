@@ -16,7 +16,6 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 
-@NodeInfo(shortName = "self")
 public class SelfNode extends RubyNode {
 
     public SelfNode(RubyContext context, SourceSection sourceSection) {

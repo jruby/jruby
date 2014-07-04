@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.jruby.ir.instructions.defined;
 
 import org.jruby.ir.IRVisitor;
@@ -16,10 +12,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.Map;
 import org.jruby.ir.instructions.FixedArityInstr;
 
-/**
- *
- * @author enebo
- */
 public class RestoreErrorInfoInstr extends Instr implements FixedArityInstr {
     private Operand arg;
 

@@ -17,7 +17,6 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
-@NodeInfo(shortName = "behave-as-block")
 public class BehaveAsBlockNode extends RubyNode {
 
     private @CompilationFinal boolean behaveAsBlock;

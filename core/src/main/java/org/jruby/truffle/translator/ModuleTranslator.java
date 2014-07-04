@@ -9,16 +9,12 @@
  */
 package org.jruby.truffle.translator;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
-import com.oracle.truffle.api.nodes.*;
-import org.jruby.ast.*;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.constants.*;
 import org.jruby.truffle.nodes.control.*;
-import org.jruby.truffle.nodes.literal.*;
-import org.jruby.truffle.nodes.literal.NilNode;
+import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.AliasNode;
 import org.jruby.truffle.nodes.objects.*;
@@ -52,7 +48,7 @@ class ModuleTranslator extends BodyTranslator {
         if (bodyNode != null) {
             body = bodyNode.accept(this);
         } else {
-            body = new NilNode(context, sourceSection);
+            body = new NilLiteralNode(context, sourceSection);
         }
 
         if (environment.getFlipFlopStates().size() > 0) {

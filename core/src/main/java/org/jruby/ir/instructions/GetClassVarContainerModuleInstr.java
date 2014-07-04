@@ -1,11 +1,7 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -80,8 +76,7 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Ruby        runtime   = context.runtime;
-        StaticScope scope     = (StaticScope) startingScope.retrieve(context, self, currDynScope, temp);
+        StaticScope scope = (StaticScope) startingScope.retrieve(context, self, currDynScope, temp);
         IRubyObject arg =
                 object == null ?
                         null :

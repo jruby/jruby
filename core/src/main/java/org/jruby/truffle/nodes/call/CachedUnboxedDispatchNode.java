@@ -69,6 +69,25 @@ public class CachedUnboxedDispatchNode extends UnboxedDispatchNode {
     }
 
     @Override
+    public boolean doesRespondTo(VirtualFrame frame, Object receiverObject) {
+        // Check the class is what we expect
+
+        if (receiverObject.getClass() != expectedClass) {
+            return next.doesRespondTo(frame, receiverObject);
+        }
+
+        // Check the class has not been modified
+
+        try {
+            unmodifiedAssumption.check();
+        } catch (InvalidAssumptionException e) {
+            return respecializeAndDoesRespondTo("class modified", frame, receiverObject);
+        }
+
+        return true;
+    }
+
+    @Override
     public void setNext(UnboxedDispatchNode next) {
         this.next = insert(next);
     }

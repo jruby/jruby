@@ -22,7 +22,6 @@ import org.jruby.truffle.runtime.*;
  * Represents a Ruby {@code if} expression. Note that in this representation we always have an
  * {@code else} part.
  */
-@NodeInfo(shortName = "if")
 public class IfNode extends RubyNode {
 
     @Child protected BooleanCastNode condition;

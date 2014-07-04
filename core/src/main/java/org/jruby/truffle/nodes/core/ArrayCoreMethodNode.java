@@ -13,7 +13,6 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.util.cli.Options;
 
 public abstract class ArrayCoreMethodNode extends CoreMethodNode {
 
@@ -86,7 +85,7 @@ public abstract class ArrayCoreMethodNode extends CoreMethodNode {
     }
 
     protected boolean areIntArraysEnabled() {
-        return Options.TRUFFLE_ARRAYS_INT.load();
+        return RubyContext.ARRAYS_INT;
     }
 
 }

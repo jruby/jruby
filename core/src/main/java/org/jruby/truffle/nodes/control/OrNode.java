@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.core.*;
 /**
  * Represents a Ruby {@code or} or {@code ||} expression.
  */
-@NodeInfo(shortName = "or")
 public class OrNode extends RubyNode {
 
     @Child protected RubyNode left;

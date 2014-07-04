@@ -17,7 +17,6 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 
-@NodeInfo(shortName = "retry")
 public class RetryNode extends RubyNode {
 
     public RetryNode(RubyContext context, SourceSection sourceSection) {
