@@ -32,7 +32,7 @@ public class NextNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        if (child instanceof NilNode) {
+        if (child instanceof NilLiteralNode) {
             throw NextException.NIL;
         } else {
             throw new NextException(child.execute(frame));

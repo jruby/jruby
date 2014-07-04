@@ -16,12 +16,12 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 
 /**
- * A node that does nothing and evaluates to {@code nil}. A no-op.
+ * A node that does nothing and evaluates to {@code nil}. Also a no-op.
  */
 @NodeInfo(shortName = "nil")
-public final class NilNode extends RubyNode {
+public final class NilLiteralNode extends RubyNode {
 
-    public NilNode(RubyContext context, SourceSection sourceSection) {
+    public NilLiteralNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 

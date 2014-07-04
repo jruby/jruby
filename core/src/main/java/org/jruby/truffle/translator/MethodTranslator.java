@@ -19,8 +19,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.control.AndNode;
 import org.jruby.truffle.nodes.control.IfNode;
-import org.jruby.truffle.nodes.literal.*;
-import org.jruby.truffle.nodes.literal.NilNode;
+import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.methods.locals.*;
@@ -71,7 +70,7 @@ class MethodTranslator extends BodyTranslator {
         if (bodyNode != null) {
             body = bodyNode.accept(this);
         } else {
-            body = new NilNode(context, sourceSection);
+            body = new NilLiteralNode(context, sourceSection);
         }
 
         final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(context, source, isBlock, this);
@@ -122,7 +121,7 @@ class MethodTranslator extends BodyTranslator {
                     new IfNode(context, sourceSection,
                             BooleanCastNodeFactory.create(context, sourceSection,
                                     new BehaveAsBlockNode(context, sourceSection, true)),
-                            new NilNode(context, sourceSection),
+                            new NilLiteralNode(context, sourceSection),
                             new CheckArityNode(context, sourceSection, arityForCheck)), preludeBuilder);
         } else {
             prelude = SequenceNode.sequence(context, sourceSection,

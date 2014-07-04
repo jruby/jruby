@@ -140,7 +140,7 @@ public class TranslatorDriver {
         RubyNode truffleNode;
 
         if (rootNode.getBodyNode() == null) {
-            truffleNode = new NilNode(context, null);
+            truffleNode = new NilLiteralNode(context, null);
         } else {
             truffleNode = rootNode.getBodyNode().accept(translator);
         }

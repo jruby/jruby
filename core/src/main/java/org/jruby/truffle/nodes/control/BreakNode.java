@@ -29,7 +29,7 @@ public class BreakNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (child instanceof NilNode) {
+        if (child instanceof NilLiteralNode) {
             throw BreakException.NIL;
         } else {
             throw new BreakException(child.execute(frame));
