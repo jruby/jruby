@@ -15,14 +15,12 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import org.jruby.Ruby;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.util.cli.Options;
 
 @CoreClass(name = "Hash")
 public abstract class HashNodes {
@@ -125,7 +123,7 @@ public abstract class HashNodes {
 
                         // TODO(CS): zero length arrays might be a good specialisation
 
-                        if (store.length <= RubyContext.TRUFFLE_HASHES_SMALL) {
+                        if (store.length <= RubyContext.HASHES_SMALL) {
                             smallObjectArray.enter();
 
                             final Object[] newStore = new Object[store.length * 2];
@@ -264,7 +262,7 @@ public abstract class HashNodes {
     @CoreMethod(names = "[]=", minArgs = 2, maxArgs = 2)
     public abstract static class SetIndexNode extends HashCoreMethodNode {
 
-        private final int smallHashArrayLength = RubyContext.TRUFFLE_HASHES_SMALL * 2;
+        private final int smallHashArrayLength = RubyContext.HASHES_SMALL * 2;
 
         private final BranchProfile transitionToLinkedHashMap = new BranchProfile();
 
@@ -762,7 +760,7 @@ public abstract class HashNodes {
         private final BranchProfile considerResultIsSmallProfile = new BranchProfile();
         private final BranchProfile resultIsSmallProfile = new BranchProfile();
 
-        private final int smallHashSize = RubyContext.TRUFFLE_HASHES_SMALL;
+        private final int smallHashSize = RubyContext.HASHES_SMALL;
 
         public MergeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

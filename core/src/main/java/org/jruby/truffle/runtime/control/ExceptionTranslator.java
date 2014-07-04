@@ -13,7 +13,6 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.UnsupportedSpecializationException;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.util.cli.Options;
 
 public final class ExceptionTranslator {
 
@@ -96,7 +95,7 @@ public final class ExceptionTranslator {
          * implementation.
          */
 
-        if (RubyContext.TRUFFLE_EXCEPTIONS_PRINT_JAVA) {
+        if (RubyContext.EXCEPTIONS_PRINT_JAVA) {
             exception.printStackTrace();
         }
 

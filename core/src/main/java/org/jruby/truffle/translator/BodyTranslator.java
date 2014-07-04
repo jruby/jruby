@@ -44,7 +44,6 @@ import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
-import org.jruby.util.cli.Options;
 
 import java.util.*;
 
@@ -798,7 +797,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitFixnumNode(org.jruby.ast.FixnumNode node) {
         final long value = node.getValue();
 
-        if (RubyFixnum.fitsIntoInteger(value) && RubyContext.TRUFFLE_LITERALS_INT) {
+        if (RubyFixnum.fitsIntoInteger(value) && RubyContext.LITERALS_INT) {
             return new FixnumLiteralNode.IntegerFixnumLiteralNode(context, translate(node.getPosition()), (int) value);
         } else {
             return new FixnumLiteralNode.LongFixnumLiteralNode(context, translate(node.getPosition()), value);
@@ -1466,7 +1465,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitNewlineNode(org.jruby.ast.NewlineNode node) {
         final RubyNode translated = node.getNextNode().accept(this);
 
-        if (RubyContext.TRUFFLE_TRACE) {
+        if (RubyContext.TRACE) {
             return new TraceNode(context, translated.getEncapsulatingSourceSection(), translated);
         } else {
             return translated;

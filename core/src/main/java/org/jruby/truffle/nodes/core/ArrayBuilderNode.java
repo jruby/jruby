@@ -11,12 +11,9 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
 
@@ -41,9 +38,9 @@ public abstract class ArrayBuilderNode extends Node {
 
     public static class UninitializedArrayBuilderNode extends ArrayBuilderNode {
 
-        private boolean couldUseInteger = RubyContext.TRUFFLE_ARRAYS_INT;
-        private boolean couldUseLong = RubyContext.TRUFFLE_ARRAYS_LONG;
-        private boolean couldUseDouble = RubyContext.TRUFFLE_ARRAYS_DOUBLE;
+        private boolean couldUseInteger = RubyContext.ARRAYS_INT;
+        private boolean couldUseLong = RubyContext.ARRAYS_LONG;
+        private boolean couldUseDouble = RubyContext.ARRAYS_DOUBLE;
 
         public UninitializedArrayBuilderNode(RubyContext context) {
             super(context);
@@ -58,7 +55,7 @@ public abstract class ArrayBuilderNode extends Node {
         @Override
         public Object start() {
             CompilerDirectives.transferToInterpreter();
-            return new Object[RubyContext.TRUFFLE_ARRAYS_UNINITIALIZED_SIZE];
+            return new Object[RubyContext.ARRAYS_UNINITIALIZED_SIZE];
         }
 
         @Override

@@ -22,7 +22,6 @@ import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
-import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -282,7 +281,7 @@ public abstract class StringNodes {
         public RubyArray bytes(RubyString string) {
             final byte[] bytes = string.getBytes().bytes();
 
-            if (RubyContext.TRUFFLE_ARRAYS_INT) {
+            if (RubyContext.ARRAYS_INT) {
                 final int[] store = new int[bytes.length];
 
                 for (int n = 0; n < store.length; n++) {
@@ -290,7 +289,7 @@ public abstract class StringNodes {
                 }
 
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
-            } else if (RubyContext.TRUFFLE_ARRAYS_LONG) {
+            } else if (RubyContext.ARRAYS_LONG) {
                 final long[] store = new long[bytes.length];
 
                 for (int n = 0; n < store.length; n++) {

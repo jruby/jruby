@@ -12,7 +12,6 @@ package org.jruby.truffle.runtime.core;
 import java.util.*;
 
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.util.cli.Options;
 
 /**
  * Represents the Ruby {@code Hash} class.
@@ -45,7 +44,7 @@ public class RubyHash extends RubyObject {
 
         assert store == null || store instanceof Object[] || store instanceof LinkedHashMap<?, ?>;
         assert !(store instanceof Object[]) || ((Object[]) store).length > 0;
-        assert !(store instanceof Object[]) || ((Object[]) store).length <= RubyContext.TRUFFLE_HASHES_SMALL * 2;
+        assert !(store instanceof Object[]) || ((Object[]) store).length <= RubyContext.HASHES_SMALL * 2;
 
         this.defaultBlock = defaultBlock;
         this.store = store;
@@ -66,7 +65,7 @@ public class RubyHash extends RubyObject {
     public void setStore(Object store) {
         assert store == null || store instanceof Object[] || store instanceof LinkedHashMap<?, ?>;
         assert !(store instanceof Object[]) || ((Object[]) store).length > 0;
-        assert !(store instanceof Object[]) || ((Object[]) store).length <= RubyContext.TRUFFLE_HASHES_SMALL * 2;
+        assert !(store instanceof Object[]) || ((Object[]) store).length <= RubyContext.HASHES_SMALL * 2;
 
         this.store = store;
     }
