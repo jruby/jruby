@@ -1016,7 +1016,7 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        return new HashLiteralNode(translate(node.getPosition()), keyValues.toArray(new RubyNode[keyValues.size()]), context);
+        return HashLiteralNode.create(context, translate(node.getPosition()), keyValues.toArray(new RubyNode[keyValues.size()]));
     }
 
     @Override
