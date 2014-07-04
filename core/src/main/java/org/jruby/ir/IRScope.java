@@ -597,10 +597,11 @@ public abstract class IRScope implements ParseResult {
         // inline add lvar loads/store to tmp-var loads/stores.
         if (!flags.contains(HAS_END_BLOCKS) && !flags.contains(REQUIRES_DYNSCOPE)) {
             CompilerPass pass;
-            pass = new DeadCodeElimination();
-            if (pass.previouslyRun(this) == null) {
-                pass.run(this);
-            }
+            // FIXME: disable DCE because it's eliminating too much (#1786)
+//            pass = new DeadCodeElimination();
+//            if (pass.previouslyRun(this) == null) {
+//                pass.run(this);
+//            }
             pass = new AddLocalVarLoadStoreInstructions();
             if (pass.previouslyRun(this) == null) {
                 pass.run(this);
