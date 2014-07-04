@@ -3041,8 +3041,7 @@ public class IRBuilder {
         addInstr(s, BEQInstr.create(eqqResult, manager.getTrue(), caughtLabel));
     }
 
-    private void buildRescueBodyInternal(IRScope s, Node node, Variable rv, Variable exc, Label endLabel) {
-        final RescueBodyNode rescueBodyNode = (RescueBodyNode) node;
+    private void buildRescueBodyInternal(IRScope s, RescueBodyNode rescueBodyNode, Variable rv, Variable exc, Label endLabel) {
         final Node exceptionList = rescueBodyNode.getExceptionNodes();
 
         // Compare and branch as necessary!
@@ -3055,8 +3054,10 @@ public class IRBuilder {
                     excTypes.add(build(excType, s));
                 }
                 outputExceptionCheck(s, new Array(excTypes), exc, caughtLabel);
-            } else { // splatnode, catch
+            } else if (exceptionList instanceof SplatNode) { // splatnode, catch
                 outputExceptionCheck(s, build(((SplatNode)exceptionList).getValue(), s), exc, caughtLabel);
+            } else { // argscat/argspush
+                outputExceptionCheck(s, build(exceptionList, s), exc, caughtLabel);
             }
         } else {
             // FIXME:
