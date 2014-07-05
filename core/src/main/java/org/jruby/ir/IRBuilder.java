@@ -1140,7 +1140,10 @@ public class IRBuilder {
             cvarScope = cvarScope.getLexicalParent();
         }
 
-        if ((cvarScope != null) && cvarScope.isNonSingletonClassBody()) {
+        if (
+                // FIXME: This is attempting to avoid the unjittable ScopeModule when we just need immediate scope
+                cvarScope != s
+                        && (cvarScope != null) && cvarScope.isNonSingletonClassBody()) {
             return new ScopeModule(cvarScope);
         } else {
             return addResultInstr(s, new GetClassVarContainerModuleInstr(s.createTemporaryVariable(),
