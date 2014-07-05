@@ -16,6 +16,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.CompiledMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -1050,9 +1051,9 @@ public class Bootstrap {
         VariableAccessor accessor = self.getMetaClass().getRealClass().getVariableAccessorForRead(site.name);
 
         // produce nil if the variable has not been initialize
-        MethodHandle nullToNil = findStatic(Helpers.class, "nullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
+        MethodHandle nullToNil = findStatic(Bootstrap.class, "instVarNullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class, String.class));
         IRubyObject nil = self.getRuntime().getNil();
-        nullToNil = insertArguments(nullToNil, 1, nil);
+        nullToNil = insertArguments(nullToNil, 1, nil, site.name);
         nullToNil = explicitCastArguments(nullToNil, methodType(IRubyObject.class, Object.class));
 
         // get variable value and filter with nullToNil
@@ -1082,7 +1083,7 @@ public class Bootstrap {
 //        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget on class " + self.getMetaClass().id + " bound directly");
         site.setTarget(getValue);
 
-        return Helpers.nullToNil((IRubyObject)accessor.get(self), nil);
+        return Bootstrap.instVarNullToNil((IRubyObject)accessor.get(self), nil, site.name);
     }
 
     public static void ivarSet(VariableSite site, IRubyObject self, IRubyObject value) throws Throwable {
@@ -1291,5 +1292,13 @@ public class Bootstrap {
                 .constant(flote)
         );
         return flote;
+    }
+
+    public static IRubyObject instVarNullToNil(IRubyObject value, IRubyObject nil, String name) {
+        if (value == null) {
+            nil.getRuntime().getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + name + " not initialized");
+            return nil;
+        }
+        return value;
     }
 }
