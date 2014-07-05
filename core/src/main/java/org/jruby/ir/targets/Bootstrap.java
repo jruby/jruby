@@ -1203,6 +1203,12 @@ public class Bootstrap {
                 .append(noPrivateConsts)
                 .invokeStatic(LOOKUP, Bootstrap.class, "inheritanceSearchConst");
 
+        // test that module is same as before
+        MethodHandle test = Binder.from(site.type().changeReturnType(boolean.class))
+                .drop(0, 1)
+                .insert(1, module.id)
+                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testArg0ModuleMatch");
+        target = guardWithTest(test, target, fallback);
         site.setTarget(switchPoint.guardWithTest(target, fallback));
 
         return constant;
@@ -1300,5 +1306,9 @@ public class Bootstrap {
             return nil;
         }
         return value;
+    }
+
+    public static boolean testArg0ModuleMatch(IRubyObject arg0, int id) {
+        return arg0 instanceof RubyModule && ((RubyModule)arg0).id == id;
     }
 }
