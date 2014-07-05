@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.methods.*;
  * Define a block. That is, store the definition of a block and when executed produce the executable
  * object that results.
  */
-@NodeInfo(shortName = "block-def")
 public class BlockDefinitionNode extends MethodDefinitionNode {
 
     private final CallTarget callTarget;

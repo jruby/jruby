@@ -15,52 +15,103 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.util.SlowPathLinkedHashMap;
-import org.jruby.util.cli.Options;
 
 import java.util.LinkedHashMap;
 
-@NodeInfo(shortName = "hash")
-public class HashLiteralNode extends RubyNode {
+public abstract class HashLiteralNode extends RubyNode {
 
-    @Children protected final RubyNode[] keys;
-    @Children protected final RubyNode[] values;
+    @Children protected final RubyNode[] keyValues;
 
-    public HashLiteralNode(SourceSection sourceSection, RubyNode[] keys, RubyNode[] values, RubyContext context) {
+    protected HashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
         super(context, sourceSection);
-        assert keys.length == values.length;
-        this.keys = keys;
-        this.values = values;
+        assert keyValues.length % 2 == 0;
+        this.keyValues = keyValues;
     }
 
-    @ExplodeLoop
+    public static HashLiteralNode create(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
+        if (keyValues.length == 0) {
+            return new EmptyHashLiteralNode(context, sourceSection);
+        } else if (keyValues.length <= RubyContext.HASHES_SMALL * 2) {
+            return new SmallHashLiteralNode(context, sourceSection, keyValues);
+        } else {
+            return new GenericHashLiteralNode(context, sourceSection, keyValues);
+        }
+    }
+
+    @Override
+    public abstract RubyHash executeRubyHash(VirtualFrame frame);
+
     @Override
     public Object execute(VirtualFrame frame) {
-        if (keys.length == 0) {
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null);
-        } else if (keys.length <= Options.TRUFFLE_HASHES_SMALL.load()) {
-            final Object[] storage = new Object[keys.length * 2];
+        return executeRubyHash(frame);
+    }
 
-            for (int n = 0; n < keys.length; n++) {
-                storage[n * 2] = keys[n].execute(frame);
-                storage[n * 2 + 1] = values[n].execute(frame);
-            }
-
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, storage);
-        } else {
-            final LinkedHashMap<Object, Object> storage = SlowPathLinkedHashMap.allocate();
-
-            for (int n = 0; n < keys.length; n++) {
-                SlowPathLinkedHashMap.put(storage, keys[n].execute(frame), values[n].execute(frame));
-            }
-
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, storage);
+    @Override
+    public void executeVoid(VirtualFrame frame) {
+        for (RubyNode child : keyValues) {
+            child.executeVoid(frame);
         }
     }
 
     @Override
     public Object isDefined(@SuppressWarnings("unused") VirtualFrame frame) {
         return getContext().makeString("expression");
+    }
+
+    public static class EmptyHashLiteralNode extends HashLiteralNode {
+
+        public EmptyHashLiteralNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection, new RubyNode[]{});
+        }
+
+        @ExplodeLoop
+        @Override
+        public RubyHash executeRubyHash(VirtualFrame frame) {
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null);
+        }
+
+    }
+
+    public static class SmallHashLiteralNode extends HashLiteralNode {
+
+        public SmallHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
+            super(context, sourceSection, keyValues);
+        }
+
+        @ExplodeLoop
+        @Override
+        public RubyHash executeRubyHash(VirtualFrame frame) {
+            final Object[] storage = new Object[keyValues.length];
+
+            for (int n = 0; n < storage.length; n++) {
+                storage[n] = keyValues[n].execute(frame);
+            }
+
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, storage);
+        }
+
+    }
+
+    public static class GenericHashLiteralNode extends HashLiteralNode {
+
+        public GenericHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
+            super(context, sourceSection, keyValues);
+        }
+
+        @ExplodeLoop
+        @Override
+        public RubyHash executeRubyHash(VirtualFrame frame) {
+            notDesignedForCompilation();
+
+            final LinkedHashMap<Object, Object> storage = new LinkedHashMap<>();
+
+            for (int n = 0; n < keyValues.length; n += 2) {
+                storage.put(keyValues[n].execute(frame), keyValues[n + 1].execute(frame));
+            }
+
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, storage);
+        }
+
     }
 
 }

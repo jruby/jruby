@@ -12,10 +12,8 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
-import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
-import org.jruby.util.cli.Options;
 
 /**
  * The root node in an AST for a method. Unlike {@link RubyNode}, this has a single entry point,
@@ -60,7 +58,7 @@ public class RubyRootNode extends RootNode {
     public void reportLoopCountThroughBlocks(int count) {
         CompilerAsserts.neverPartOfCompilation();
 
-        if (Options.TRUFFLE_COMPILER_PASS_LOOPS_THROUGH_BLOCKS.load()) {
+        if (RubyContext.COMPILER_PASS_LOOPS_THROUGH_BLOCKS) {
             for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
                 final RootNode rootNode = frame.getCallNode().getRootNode();
 

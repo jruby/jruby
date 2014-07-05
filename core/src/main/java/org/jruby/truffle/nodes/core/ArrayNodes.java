@@ -13,14 +13,12 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.SourceSection;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.utilities.BranchProfile;
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -28,8 +26,6 @@ import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
-import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNode;
-import org.jruby.truffle.nodes.methods.locals.ReadLocalVariableNodeFactory;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
@@ -37,11 +33,9 @@ import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyRange;
-import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.Memo;
-import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -607,9 +601,6 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "[]=", minArgs = 2, maxArgs = 3, lowerFixnumParameters = 0)
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
-        private final boolean useIntArray = Options.TRUFFLE_ARRAYS_INT.load();
-        private final boolean useLongArray = Options.TRUFFLE_ARRAYS_LONG.load();
-
         private final BranchProfile tooSmallBranch = new BranchProfile();
         private final BranchProfile pastEndBranch = new BranchProfile();
         private final BranchProfile appendBranch = new BranchProfile();
@@ -627,9 +618,9 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isNull", order = 1)
         public Object setNullIntegerFixnum(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
             if (index == 0) {
-                if (useIntArray) {
+                if (RubyContext.ARRAYS_INT) {
                     array.setStore(new int[]{value}, 1);
-                } else if (useLongArray) {
+                } else if (RubyContext.ARRAYS_LONG) {
                     array.setStore(new long[]{value}, 1);
                 } else {
                     array.setStore(new Object[]{value}, 1);
@@ -645,7 +636,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = "isNull", order = 2)
         public Object setNullLongFixnum(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
             if (index == 0) {
-                if (useLongArray) {
+                if (RubyContext.ARRAYS_LONG) {
                     array.setStore(new long[]{value}, 1);
                 } else {
                     array.setStore(new Object[]{value}, 1);
@@ -2568,9 +2559,6 @@ public abstract class ArrayNodes {
     @CoreMethod(names = {"push", "<<"}, isSplatted = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
-        private final boolean useIntegerArrays = Options.TRUFFLE_ARRAYS_INT.load();
-        private final boolean useLongArrays = Options.TRUFFLE_ARRAYS_LONG.load();
-
         private final BranchProfile extendBranch = new BranchProfile();
 
         public PushNode(RubyContext context, SourceSection sourceSection) {
@@ -2583,9 +2571,9 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isNull", "isSingleIntegerFixnum"}, order = 1)
         public RubyArray pushEmptySingleIntegerFixnum(RubyArray array, Object... values) {
-            if (useIntegerArrays) {
+            if (RubyContext.ARRAYS_INT) {
                 array.setStore(new int[]{(int) values[0]}, 1);
-            } else if (useLongArrays) {
+            } else if (RubyContext.ARRAYS_LONG) {
                 array.setStore(new long[]{(long) values[0]}, 1);
             } else {
                 array.setStore(new Object[]{values[0]}, 1);
@@ -2596,7 +2584,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isNull", "isSingleLongFixnum"}, order = 2)
         public RubyArray pushEmptySingleIntegerLong(RubyArray array, Object... values) {
-            if (useLongArrays) {
+            if (RubyContext.ARRAYS_LONG) {
                 array.setStore(new long[]{(long) values[0]}, 1);
             } else {
                 array.setStore(new Object[]{values[0]}, 1);
@@ -3144,7 +3132,7 @@ public abstract class ArrayNodes {
         }
 
         protected static boolean isSmall(RubyArray array) {
-            return array.getSize() <= Options.TRUFFLE_ARRAYS_SMALL.load();
+            return array.getSize() <= RubyContext.ARRAYS_SMALL;
         }
 
     }

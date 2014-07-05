@@ -15,33 +15,32 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 
-@NodeInfo(shortName = "fixnum(int)")
-public class IntegerFixnumLiteralNode extends RubyNode {
+/**
+ * A node that does nothing and evaluates to {@code nil}. Also a no-op.
+ */
+public final class NilLiteralNode extends RubyNode {
 
-    private final int value;
-
-    public IntegerFixnumLiteralNode(RubyContext context, SourceSection sourceSection, int value) {
+    public NilLiteralNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        this.value = value;
+    }
+
+    @Override
+    public NilPlaceholder executeNilPlaceholder(VirtualFrame frame) {
+        return NilPlaceholder.INSTANCE;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return executeIntegerFixnum(frame);
+        return executeNilPlaceholder(frame);
     }
 
     @Override
-    public int executeIntegerFixnum(VirtualFrame frame) {
-        return value;
+    public void executeVoid(VirtualFrame frame) {
     }
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        return getContext().makeString("expression");
-    }
-
-    public int getValue() {
-        return value;
+        return NilPlaceholder.INSTANCE;
     }
 
 }

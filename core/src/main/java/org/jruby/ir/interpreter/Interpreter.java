@@ -49,6 +49,7 @@ import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.OneOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.Bignum;
@@ -359,6 +360,15 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, temp);
             IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currDynScope, temp);
             result = call.getCallSite().call(context, self, r, o);
+            setResult(temp, currDynScope, call.getResult(), result);
+            break;
+        }
+        case CALL_1OB: {
+            OneOperandArgBlockCallInstr call = (OneOperandArgBlockCallInstr)instr;
+            IRubyObject r = (IRubyObject)retrieveOp(call.getReceiver(), context, self, currDynScope, temp);
+            IRubyObject o = (IRubyObject)call.getArg1().retrieve(context, self, currDynScope, temp);
+            Block preparedBlock = call.prepareBlock(context, self, currDynScope, temp);
+            result = call.getCallSite().call(context, self, r, o, preparedBlock);
             setResult(temp, currDynScope, call.getResult(), result);
             break;
         }

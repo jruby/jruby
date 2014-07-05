@@ -20,6 +20,8 @@ public abstract class DNode extends ListNode {
     public DNode(ISourcePosition position, Encoding encoding) {
         super(position);
 
+        assert encoding != null: "" + getClass().getName() + " passed in a null encoding";
+
         this.encoding = encoding;
     }
 

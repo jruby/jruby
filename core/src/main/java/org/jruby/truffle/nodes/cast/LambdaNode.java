@@ -17,7 +17,6 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
 
-@NodeInfo(shortName = "lambda")
 public class LambdaNode extends RubyNode {
 
     // TODO(CS): this should be a lambda definition node, alongside block definition node

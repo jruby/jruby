@@ -45,11 +45,6 @@ import org.jruby.util.RegexpOptions;
 public class DRegexpNode extends DNode implements ILiteralNode {
     private final RegexpOptions options;
 
-    // 1.8 constructor
-    public DRegexpNode(ISourcePosition position, RegexpOptions options) {
-        this(position, options, null);
-    }
-
     // 1.9 constructor
     public DRegexpNode(ISourcePosition position, RegexpOptions options, Encoding encoding) {
         super(position, encoding);

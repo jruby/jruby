@@ -1606,7 +1606,7 @@ exc_list        : arg_value {
                 }
                 | mrhs {
                     $$ = support.splat_array($1);
-                    if ($$ == null) $$ = $1;
+                    if ($$ == null) $$ = $1; // ArgsCat or ArgsPush
                 }
                 | none
 

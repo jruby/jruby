@@ -17,7 +17,6 @@ import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
 
-@NodeInfo(shortName = "add-method")
 public class AddMethodNode extends RubyNode {
 
     @Child protected RubyNode receiver;
