@@ -1051,7 +1051,8 @@ public class Bootstrap {
 
         // produce nil if the variable has not been initialize
         MethodHandle nullToNil = findStatic(Helpers.class, "nullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
-        nullToNil = insertArguments(nullToNil, 1, self.getRuntime().getNil());
+        IRubyObject nil = self.getRuntime().getNil();
+        nullToNil = insertArguments(nullToNil, 1, nil);
         nullToNil = explicitCastArguments(nullToNil, methodType(IRubyObject.class, Object.class));
 
         // get variable value and filter with nullToNil
@@ -1063,7 +1064,7 @@ public class Bootstrap {
         MethodHandle fallback = null;
         if (site.getTarget() == null || site.chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
 //            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget triggered site rebind " + self.getMetaClass().id);
-            fallback = findStatic(InvokeDynamicSupport.class, "getVariableFallback", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
+            fallback = findStatic(Bootstrap.class, "ivarGet", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
             fallback = fallback.bindTo(site);
             site.clearChainCount();
         } else {
@@ -1081,7 +1082,7 @@ public class Bootstrap {
 //        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget on class " + self.getMetaClass().id + " bound directly");
         site.setTarget(getValue);
 
-        return (IRubyObject)getValue.invokeWithArguments(self);
+        return Helpers.nullToNil((IRubyObject)accessor.get(self), nil);
     }
 
     public static void ivarSet(VariableSite site, IRubyObject self, IRubyObject value) throws Throwable {
@@ -1096,7 +1097,7 @@ public class Bootstrap {
         MethodHandle fallback = null;
         if (site.getTarget() == null || site.chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
 //            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset triggered site rebind " + self.getMetaClass().id);
-            fallback = findStatic(InvokeDynamicSupport.class, "setVariableFallback", methodType(void.class, VariableSite.class, IRubyObject.class, IRubyObject.class));
+            fallback = findStatic(Bootstrap.class, "ivarSet", methodType(void.class, VariableSite.class, IRubyObject.class, IRubyObject.class));
             fallback = fallback.bindTo(site);
             site.clearChainCount();
         } else {
@@ -1115,7 +1116,7 @@ public class Bootstrap {
 //        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset on class " + self.getMetaClass().id + " bound directly");
         site.setTarget(setValue);
 
-        setValue.invokeWithArguments(self, value);
+        accessor.set(self, value);
     }
 
     private static MethodHandle findStatic(Class target, String name, MethodType type) {
