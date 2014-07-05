@@ -1302,7 +1302,10 @@ public class Bootstrap {
 
     public static IRubyObject instVarNullToNil(IRubyObject value, IRubyObject nil, String name) {
         if (value == null) {
-            nil.getRuntime().getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + name + " not initialized");
+            Ruby runtime = nil.getRuntime();
+            if (runtime.isVerbose()) {
+                nil.getRuntime().getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + name + " not initialized");
+            }
             return nil;
         }
         return value;
