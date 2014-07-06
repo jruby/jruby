@@ -413,7 +413,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0, arg1);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
@@ -430,7 +430,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0, arg1, arg2);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
@@ -447,7 +447,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, args);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
@@ -483,7 +483,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, block);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
@@ -501,7 +501,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0);
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0, block);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
@@ -519,7 +519,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0, arg1, block);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
@@ -537,7 +537,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0, arg1, arg2, block);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
@@ -555,7 +555,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, args, block);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
@@ -574,7 +574,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.FUNCTIONAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName);
+            return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, block);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
