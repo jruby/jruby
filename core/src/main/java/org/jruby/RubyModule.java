@@ -1189,15 +1189,33 @@ public class RubyModule extends RubyObject {
     }
     
     private DynamicMethod searchForAliasMethod(Ruby runtime, String name) {
-        // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
-        // We warn because we treat certain method names as "special" for purposes of
-        // optimization. Hopefully this will be enough to convince people not to alias
-        // them.
-        if (RubyModule.SCOPE_CAPTURING_METHODS.contains(name)) {
-            runtime.getWarnings().warn("`" + name + "' should not be aliased");
-        }  
-      
-        return deepMethodSearch(name, runtime);
+        DynamicMethod method = deepMethodSearch(name, runtime);
+
+        if (method instanceof JavaMethod) {
+            // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
+            // We warn because we treat certain method names as "special" for purposes of
+            // optimization. Hopefully this will be enough to convince people not to alias
+            // them.
+            CallConfiguration callerReq = ((JavaMethod)method).getCallerRequirement();
+
+            if (callerReq.framing() != Framing.None ||
+                    callerReq.scoping() != Scoping.None) {String baseName = getBaseName();
+                char refChar = '#';
+                String simpleName = getSimpleName();
+
+                if (baseName == null && this instanceof MetaClass) {
+                    IRubyObject attached = ((MetaClass)this).getAttached();
+                    if (attached instanceof RubyModule) {
+                        simpleName = ((RubyModule)attached).getSimpleName();
+                        refChar = '.';
+                    }
+                }
+
+                runtime.getWarnings().warn(simpleName + refChar + name + " accesses caller's state and should not be aliased");
+            }
+        }
+
+        return method;
     }
 
     /** this method should be used only by interpreter or compiler 

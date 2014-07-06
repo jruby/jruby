@@ -46,7 +46,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     protected StaticScope staticScope;
     private String parameterDesc;
     private String[] parameterList;
-    private CallConfiguration callerRequirement;
+    private CallConfiguration callerRequirement = CallConfiguration.FrameNoneScopeNone;
 
     public static final Class[][] METHODS = {
         {JavaMethodZero.class, JavaMethodZeroOrOne.class, JavaMethodZeroOrOneOrTwo.class, JavaMethodZeroOrOneOrTwoOrThree.class},
