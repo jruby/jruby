@@ -58,8 +58,7 @@ public class Options {
 
     public static final Option<Boolean> WARN_USELESSS_USE_OF = bool(PARSER, "parser.warnuselessuseof", true, "Print warnings about potentially useless expressions in void contents.");
 
-    // FIXME: JIT only on when invokedynamic would be one...need non-indy JIT
-    public static final Option<CompileMode> COMPILE_MODE = enumeration(COMPILER, "compile.mode", CompileMode.class, calculateInvokedynamicDefault() ? CompileMode.JIT : CompileMode.OFF, "Set compilation mode. JIT = at runtime; FORCE = before execution.");
+    public static final Option<CompileMode> COMPILE_MODE = enumeration(COMPILER, "compile.mode", CompileMode.class, CompileMode.JIT, "Set compilation mode. JIT = at runtime; FORCE = before execution.");
     public static final Option<Boolean> COMPILE_DUMP = bool(COMPILER, "compile.dump", false, "Dump to console all bytecode generated at runtime.");
     public static final Option<Boolean> COMPILE_THREADLESS = bool(COMPILER, "compile.threadless", false, "(EXPERIMENTAL) Turn on compilation without polling for \"unsafe\" thread events.");
     public static final Option<Boolean> COMPILE_FASTOPS = bool(COMPILER, "compile.fastops", true, "Turn on fast operators for Fixnum and Float.");
@@ -223,6 +222,13 @@ public class Options {
     public static final Option<Boolean> CLI_RUBYGEMS_ENABLE = bool(CLI, "cli.rubygems.enable", true, "Enable/disable RubyGems.");
     public static final Option<Boolean> CLI_STRIP_HEADER = bool(CLI, "cli.strip.header", false, "Strip text before shebang in script. Same as -x.");
     public static final Option<Boolean> CLI_LOAD_GEMFILE = bool(CLI, "cli.load.gemfile", false, "Load a bundler Gemfile in cwd before running. Same as -G.");
+
+    static {
+        // FIXME: JIT only on when invokedynamic would be one...need non-indy JIT
+        if (!COMPILE_INVOKEDYNAMIC.load()) {
+            COMPILE_MODE.force("OFF");
+        }
+    }
     
     public static String dump() {
         return "# JRuby configuration options with current values\n" +
