@@ -29,8 +29,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+
 import org.jruby.runtime.callsite.LtCallSite;
 import org.jruby.runtime.callsite.LeCallSite;
 import org.jruby.runtime.callsite.MinusCallSite;
@@ -52,12 +57,29 @@ import org.jruby.runtime.callsite.SuperCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.callsite.XorCallSite;
 import org.jruby.runtime.invokedynamic.MethodNames;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  *
  * @author headius
  */
 public class MethodIndex {
+    public static final Set<String> SCOPE_CAPTURING_METHODS = new HashSet<String>(Arrays.asList(
+            "eval",
+            "module_eval",
+            "class_eval",
+            "instance_eval",
+            "module_exec",
+            "class_exec",
+            "instance_exec",
+            "binding",
+            "local_variables"
+            ));
+    private static final boolean DEBUG = false;
+
+    private static final Logger LOG = LoggerFactory.getLogger("MethodIndex");
+
     @Deprecated
     public static final int NO_METHOD = MethodNames.DUMMY.ordinal();
     @Deprecated
@@ -79,6 +101,25 @@ public class MethodIndex {
         "hash",
         "<=>"
     };
+
+    public static final Set<String> FRAME_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
+    public static final Set<String> SCOPE_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
+
+    static {
+        MethodIndex.FRAME_AWARE_METHODS.add("eval");
+        MethodIndex.FRAME_AWARE_METHODS.add("module_eval");
+        MethodIndex.FRAME_AWARE_METHODS.add("class_eval");
+        MethodIndex.FRAME_AWARE_METHODS.add("instance_eval");
+        MethodIndex.FRAME_AWARE_METHODS.add("binding");
+        MethodIndex.FRAME_AWARE_METHODS.add("public");
+        MethodIndex.FRAME_AWARE_METHODS.add("private");
+        MethodIndex.FRAME_AWARE_METHODS.add("protected");
+        MethodIndex.FRAME_AWARE_METHODS.add("module_function");
+        MethodIndex.FRAME_AWARE_METHODS.add("block_given?");
+        MethodIndex.FRAME_AWARE_METHODS.add("iterator?");
+
+        MethodIndex.SCOPE_AWARE_METHODS.addAll(SCOPE_CAPTURING_METHODS);
+    }
 
     public static CallSite getCallSite(String name) {
         // fast and safe respond_to? call site logic
@@ -214,5 +255,15 @@ public class MethodIndex {
 
     public static CallSite getSuperCallSite() {
         return new SuperCallSite();
+    }
+
+    public static void addFrameAwareMethods(String... methods) {
+        if (DEBUG) LOG.debug("Adding frame-aware method names: {}", Arrays.toString(methods));
+        FRAME_AWARE_METHODS.addAll(Arrays.asList(methods));
+    }
+
+    public static void addScopeAwareMethods(String... methods) {
+        if (DEBUG) LOG.debug("Adding scope-aware method names: {}", Arrays.toString(methods));
+        SCOPE_AWARE_METHODS.addAll(Arrays.asList(methods));
     }
 }

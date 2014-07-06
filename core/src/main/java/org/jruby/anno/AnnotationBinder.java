@@ -102,7 +102,7 @@ public class AnnotationBinder extends AbstractProcessor {
             out.println("import org.jruby.internal.runtime.methods.DynamicMethod;");
             out.println("import org.jruby.runtime.Arity;");
             out.println("import org.jruby.runtime.Visibility;");
-            out.println("import org.jruby.compiler.ASTInspector;");
+            out.println("import org.jruby.runtime.MethodIndex;");
             out.println("import java.util.Arrays;");
             out.println("import java.util.List;");
             out.println("import javax.annotation.Generated;");
@@ -236,7 +236,7 @@ public class AnnotationBinder extends AbstractProcessor {
                     first = false;
                     frameMethodsString.append('"').append(name).append('"');
                 }
-                out.println("        ASTInspector.addFrameAwareMethods(" + frameMethodsString + ");");
+                out.println("        MethodIndex.addFrameAwareMethods(" + frameMethodsString + ");");
             }
             if (!scopeAwareMethods.isEmpty()) {
                 StringBuffer scopeMethodsString = new StringBuffer();
@@ -246,7 +246,7 @@ public class AnnotationBinder extends AbstractProcessor {
                     first = false;
                     scopeMethodsString.append('"').append(name).append('"');
                 }
-                out.println("        ASTInspector.addScopeAwareMethods(" + scopeMethodsString + ");");
+                out.println("        MethodIndex.addScopeAwareMethods(" + scopeMethodsString + ");");
             }
             out.println("    }");
 

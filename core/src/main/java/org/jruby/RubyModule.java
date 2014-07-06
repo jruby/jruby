@@ -47,7 +47,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.compiler.ASTInspector;
 import org.jruby.embed.Extension;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.AliasMethod;
@@ -68,6 +67,7 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.MethodFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -95,7 +95,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessControlException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -122,17 +121,6 @@ public class RubyModule extends RubyObject {
     private static final boolean DEBUG = false;
     protected static final String ERR_INSECURE_SET_CONSTANT  = "Insecure: can't modify constant";
     protected static final String ERR_FROZEN_CONST_TYPE = "class/module ";
-    public static final Set<String> SCOPE_CAPTURING_METHODS = new HashSet<String>(Arrays.asList(
-            "eval",
-            "module_eval",
-            "class_eval",
-            "instance_eval",
-            "module_exec",
-            "class_exec",
-            "instance_exec",
-            "binding",
-            "local_variables"
-            ));
 
     public static final ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
         @Override
@@ -1202,7 +1190,7 @@ public class RubyModule extends RubyObject {
         // We warn because we treat certain method names as "special" for purposes of
         // optimization. Hopefully this will be enough to convince people not to alias
         // them.
-        if (SCOPE_CAPTURING_METHODS.contains(name)) {
+        if (MethodIndex.SCOPE_CAPTURING_METHODS.contains(name)) {
             runtime.getWarnings().warn("`" + name + "' should not be aliased");
         }  
       
@@ -3661,12 +3649,12 @@ public class RubyModule extends RubyObject {
         if (frame) {
             Set<String> frameAwareMethods = new HashSet<String>();
             AnnotationHelper.addMethodNamesToSet(frameAwareMethods, jrubyMethod, simpleName);
-            ASTInspector.FRAME_AWARE_METHODS.addAll(frameAwareMethods);
+            MethodIndex.FRAME_AWARE_METHODS.addAll(frameAwareMethods);
         }
         if (scope) {
             Set<String> scopeAwareMethods = new HashSet<String>();
             AnnotationHelper.addMethodNamesToSet(scopeAwareMethods, jrubyMethod, simpleName);
-            ASTInspector.SCOPE_AWARE_METHODS.addAll(scopeAwareMethods);
+            MethodIndex.SCOPE_AWARE_METHODS.addAll(scopeAwareMethods);
         }
         
         RubyModule singletonClass;
@@ -4025,6 +4013,9 @@ public class RubyModule extends RubyObject {
      */
     @Deprecated
     public int index;
+
+    @Deprecated
+    public static final Set<String> SCOPE_CAPTURING_METHODS = MethodIndex.SCOPE_CAPTURING_METHODS;
     
     protected ClassIndex classIndex = ClassIndex.NO_INDEX;
 
