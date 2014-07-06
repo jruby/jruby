@@ -683,13 +683,13 @@ public class Bootstrap {
 
                     if (nc.isStatic()) {
                         mh = binder
-                                .permute("context", "self", "arg*", "block") // filter caller
+                                .permute("context", "self", "arg.*", "block") // filter caller
                                 .cast(nc.getNativeReturn(), nc.getNativeSignature())
                                 .invokeStaticQuiet(LOOKUP, nc.getNativeTarget(), nc.getNativeName())
                                 .handle();
                     } else {
                         mh = binder
-                                .permute("self", "context", "arg*", "block") // filter caller, move self
+                                .permute("self", "context", "arg.*", "block") // filter caller, move self
                                 .castArg("self", nc.getNativeTarget())
                                 .castVirtual(nc.getNativeReturn(), nc.getNativeTarget(), nc.getNativeSignature())
                                 .invokeVirtualQuiet(LOOKUP, nc.getNativeName())
