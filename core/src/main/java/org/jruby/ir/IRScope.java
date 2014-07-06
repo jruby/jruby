@@ -483,7 +483,7 @@ public abstract class IRScope implements ParseResult {
         return cfg;
     }
 
-    private Instr[] prepareInstructionsForInterpretation() {
+    private synchronized Instr[] prepareInstructionsForInterpretation() {
         checkRelinearization();
 
         if (linearizedInstrArray != null) return linearizedInstrArray; // Already prepared
@@ -637,7 +637,7 @@ public abstract class IRScope implements ParseResult {
 
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
-    public List<BasicBlock> prepareForCompilation() {
+    public synchronized List<BasicBlock> prepareForCompilation() {
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) {
             runCompilerPasses(getManager().getJITPasses(this));
