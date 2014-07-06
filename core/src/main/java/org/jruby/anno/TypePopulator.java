@@ -51,7 +51,7 @@ public abstract class TypePopulator {
     }
     
     public static void populateMethod(JavaMethod javaMethod, int arity, String simpleName, boolean isStatic, CallConfiguration callConfig, boolean notImplemented,
-            Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeArguments) {
+            Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeArguments, CallConfiguration callerRequirement) {
         javaMethod.setIsBuiltin(true);
         javaMethod.setArity(Arity.createArity(arity));
         javaMethod.setJavaName(simpleName);
@@ -59,6 +59,7 @@ public abstract class TypePopulator {
         javaMethod.setCallConfig(callConfig);
         javaMethod.setNotImplemented(notImplemented);
         javaMethod.setNativeCall(nativeTarget, nativeName, nativeReturn, nativeArguments, isStatic, false);
+        javaMethod.setCallerRequirement(callerRequirement);
     }
     
     public static DynamicMethod populateModuleMethod(RubyModule cls, JavaMethod javaMethod) {

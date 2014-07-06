@@ -690,6 +690,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     }
                 }
 
+                if (frame && !desc.anno.frame()) throw new RuntimeException("Unbalanced frame property on method " + desc.declaringClassName + "." + desc.name);
+                if (scope && !desc.anno.scope()) throw new RuntimeException("Unbalanced scope property on method " + desc.declaringClassName + "." + desc.name);
                 frame |= desc.anno.frame();
                 scope |= desc.anno.scope();
                 block |= desc.hasBlock;
@@ -773,6 +775,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> descs) {
         JavaMethodDescriptor desc1 = descs.get(0);
+        JRubyMethod anno = desc1.anno;
         String javaMethodName = desc1.name;
         
         if (DEBUG) out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
@@ -790,12 +793,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     Arity.optional().getValue(),
                     javaMethodName,
                     desc1.isStatic,
-                    CallConfiguration.getCallConfig(info.isFrame(), info.isScope()),
+                    CallConfiguration.getCallConfigByAnno(anno),
                     desc1.anno.notImplemented(),
                     desc1.getDeclaringClass(),
                     desc1.name,
                     desc1.getReturnClass(),
-                    desc1.getParameterClasses());
+                    desc1.getParameterClasses(),
+                    CallConfiguration.getCallerCallConfigByAnno(anno));
             return ic;
         } catch(Exception e) {
             e.printStackTrace();
@@ -912,7 +916,8 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                     desc.getDeclaringClass(),
                     desc.name,
                     desc.getReturnClass(),
-                    desc.getParameterClasses());
+                    desc.getParameterClasses(),
+                    CallConfiguration.getCallerCallConfigByAnno(desc.anno));
             return ic;
         } catch(Exception e) {
             e.printStackTrace();

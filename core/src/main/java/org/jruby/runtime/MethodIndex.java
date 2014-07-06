@@ -65,17 +65,6 @@ import org.jruby.util.log.LoggerFactory;
  * @author headius
  */
 public class MethodIndex {
-    public static final Set<String> SCOPE_CAPTURING_METHODS = new HashSet<String>(Arrays.asList(
-            "eval",
-            "module_eval",
-            "class_eval",
-            "instance_eval",
-            "module_exec",
-            "class_exec",
-            "instance_exec",
-            "binding",
-            "local_variables"
-            ));
     private static final boolean DEBUG = false;
 
     private static final Logger LOG = LoggerFactory.getLogger("MethodIndex");
@@ -104,22 +93,6 @@ public class MethodIndex {
 
     public static final Set<String> FRAME_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
     public static final Set<String> SCOPE_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
-
-    static {
-        MethodIndex.FRAME_AWARE_METHODS.add("eval");
-        MethodIndex.FRAME_AWARE_METHODS.add("module_eval");
-        MethodIndex.FRAME_AWARE_METHODS.add("class_eval");
-        MethodIndex.FRAME_AWARE_METHODS.add("instance_eval");
-        MethodIndex.FRAME_AWARE_METHODS.add("binding");
-        MethodIndex.FRAME_AWARE_METHODS.add("public");
-        MethodIndex.FRAME_AWARE_METHODS.add("private");
-        MethodIndex.FRAME_AWARE_METHODS.add("protected");
-        MethodIndex.FRAME_AWARE_METHODS.add("module_function");
-        MethodIndex.FRAME_AWARE_METHODS.add("block_given?");
-        MethodIndex.FRAME_AWARE_METHODS.add("iterator?");
-
-        MethodIndex.SCOPE_AWARE_METHODS.addAll(SCOPE_CAPTURING_METHODS);
-    }
 
     public static CallSite getCallSite(String name) {
         // fast and safe respond_to? call site logic

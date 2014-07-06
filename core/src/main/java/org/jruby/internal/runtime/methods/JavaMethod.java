@@ -27,6 +27,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -45,6 +46,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     protected StaticScope staticScope;
     private String parameterDesc;
     private String[] parameterList;
+    private CallConfiguration callerRequirement;
 
     public static final Class[][] METHODS = {
         {JavaMethodZero.class, JavaMethodZeroOrOne.class, JavaMethodZeroOrOneOrTwo.class, JavaMethodZeroOrOneOrTwoOrThree.class},
@@ -240,6 +242,20 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
         
         return parameterList;
+    }
+
+    /**
+     * Return a CallConfiguration representing what *callers* to this method must prepare (scope/frame).
+     */
+    public CallConfiguration getCallerRequirement() {
+        return callerRequirement;
+    }
+
+    /**
+     * Set a CallConfiguration indicating what callers to this method must prepare (scope/frame).
+     */
+    public void setCallerRequirement(CallConfiguration callerRequirement) {
+        this.callerRequirement = callerRequirement;
     }
 
     protected static IRubyObject raiseArgumentError(JavaMethod method, ThreadContext context, String name, int given, int min, int max) {

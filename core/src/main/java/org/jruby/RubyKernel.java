@@ -85,6 +85,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
 import static org.jruby.RubyEnumerator.SizeFn;
+import static org.jruby.anno.FrameField.*;
 
 /**
  * Note: For CVS history, see KernelModule.java.
@@ -726,7 +727,9 @@ public class RubyKernel {
         return binding19(context, recv, block);
     }
     
-    @JRubyMethod(name = "binding", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "binding", module = true, visibility = PRIVATE,
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
     public static RubyBinding binding19(ThreadContext context, IRubyObject recv, Block block) {
         return RubyBinding.newBinding(context.runtime, context.currentBinding());
     }
@@ -876,7 +879,9 @@ public class RubyKernel {
         return eval19(context, recv, args, block);
     }
 
-    @JRubyMethod(name = "eval", required = 1, optional = 3, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "eval", required = 1, optional = 3, module = true, visibility = PRIVATE,
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
     public static IRubyObject eval19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return evalCommon(context, recv, args, block, evalBinding19);
     }
