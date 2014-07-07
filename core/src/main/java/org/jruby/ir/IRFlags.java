@@ -51,4 +51,6 @@ public enum IRFlags {
     USES_BACKREF_OR_LASTLINE,     // Since backref ($~) and lastline ($_) vars are allocated space on the dynamic scope.
     USES_EVAL,                    // calls eval
     USES_ZSUPER,                  // has zsuper instr
+    REQUIRES_FRAME,               // callee may read/write caller's frame elements
+    REQUIRES_VISIBILITY,          // callee may read/write caller's visibility
 }

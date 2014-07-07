@@ -42,6 +42,7 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
     @Override
     public boolean computeScopeFlags(IRScope scope) {
         scope.getFlags().add(IRFlags.REQUIRES_DYNSCOPE);
+        scope.getFlags().add(IRFlags.REQUIRES_VISIBILITY);
         return true;
     }
 

@@ -28,6 +28,7 @@ import static org.jruby.ir.IRFlags.BINDING_HAS_ESCAPED;
 import static org.jruby.ir.IRFlags.CAN_CAPTURE_CALLERS_BINDING;
 import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
 import static org.jruby.ir.IRFlags.USES_EVAL;
+import static org.jruby.ir.IRFlags.REQUIRES_FRAME;
 
 public abstract class CallBase extends Instr implements Specializeable, ClosureAcceptingInstr {
     private static long callSiteCounter = 1;
@@ -43,6 +44,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     private boolean flagsComputed;
     private boolean canBeEval;
     private boolean targetRequiresCallersBinding;    // Does this call make use of the caller's binding?
+    private boolean targetRequiresCallersFrame;    // Does this call make use of the caller's frame?
     private boolean dontInline;
     private boolean containsArgSplat;
 
@@ -60,6 +62,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         flagsComputed = false;
         canBeEval = true;
         targetRequiresCallersBinding = true;
+        targetRequiresCallersFrame = true;
         dontInline = false;
 
     }
@@ -151,6 +154,11 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         if (targetRequiresCallersBinding()) {
             modifiedScope = true;
             scope.getFlags().add(BINDING_HAS_ESCAPED);
+        }
+
+        if (targetRequiresCallersFrame()) {
+            modifiedScope = true;
+            scope.getFlags().add(REQUIRES_FRAME);
         }
 
         if (canBeEval()) {
@@ -266,11 +274,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         if (closure != null) return true;
 
         String mname = getMethodAddr().getName();
-        if (mname.equals("lambda") ||
-            mname.equals("binding") ||
-            mname.equals("nesting") ||
-            mname.equals("local_variables"))
-        {
+        if (MethodIndex.SCOPE_AWARE_METHODS.contains(mname)) {
             return true;
         } else if (mname.equals("send") || mname.equals("__send__")) {
             Operand[] args = getCallArgs();
@@ -279,13 +283,7 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
                 if (!(meth instanceof StringLiteral)) return true; // We don't know -- could be anything
 
                 String name = ((StringLiteral) meth).string;
-                if (name.equals("send") ||
-                    name.equals("__send__") ||
-                    name.equals("lambda") ||
-                    name.equals("binding") ||
-                    name.equals("nesting") ||
-                    name.equals("local_variables"))
-                {
+                if (MethodIndex.SCOPE_AWARE_METHODS.contains(name)) {
                     return true;
                 }
             }
@@ -326,11 +324,38 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         return false;  // All checks done -- dont need one
     }
 
+    private boolean computeRequiresCallersFrameFlag() {
+        if (canBeEval()) return true;
+
+        // Conservative -- assuming that the callee will save the closure
+        // and use it at a later point.
+        if (closure != null) return true;
+
+        String mname = getMethodAddr().getName();
+        if (MethodIndex.FRAME_AWARE_METHODS.contains(mname)) {
+            return true;
+        } else if (mname.equals("send") || mname.equals("__send__")) {
+            Operand[] args = getCallArgs();
+            if (args.length >= 1) {
+                Operand meth = args[0];
+                if (!(meth instanceof StringLiteral)) return true; // We don't know -- could be anything
+
+                String name = ((StringLiteral) meth).string;
+                if (MethodIndex.FRAME_AWARE_METHODS.contains(name)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private void computeFlags() {
         // Order important!
         flagsComputed = true;
         canBeEval = computeEvalFlag();
         targetRequiresCallersBinding = canBeEval || computeRequiresCallersBindingFlag();
+        targetRequiresCallersFrame = canBeEval || computeRequiresCallersFrameFlag();
     }
 
     public boolean canBeEval() {
@@ -340,6 +365,12 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     }
 
     public boolean targetRequiresCallersBinding() {
+        if (!flagsComputed) computeFlags();
+
+        return targetRequiresCallersBinding;
+    }
+
+    public boolean targetRequiresCallersFrame() {
         if (!flagsComputed) computeFlags();
 
         return targetRequiresCallersBinding;
