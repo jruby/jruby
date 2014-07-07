@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import java.util.*;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.utilities.BranchProfile;
@@ -54,13 +55,16 @@ public abstract class HashNodes {
             }
 
             final Object[] aStore = (Object[]) a.getStore();
-            final Object[] bStore = (Object[]) b.getStore();
+            final int aSize = a.getStoreSize();
 
-            if (aStore.length != bStore.length) {
+            final Object[] bStore = (Object[]) b.getStore();
+            final int bSize = b.getStoreSize();
+
+            if (aSize != bSize) {
                 return false;
             }
 
-            for (int n = 0; n < aStore.length; n++) {
+            for (int n = 0; n < aSize * 2; n++) {
                 // TODO(CS): cast
                 if (!(boolean) equalNode.dispatch(frame, aStore[n], null, bStore[n])) {
                     return false;
@@ -126,7 +130,8 @@ public abstract class HashNodes {
                         if (store.length <= RubyContext.HASHES_SMALL) {
                             smallObjectArray.enter();
 
-                            final Object[] newStore = new Object[store.length * 2];
+                            final int size = store.length;
+                            final Object[] newStore = new Object[RubyContext.HASHES_SMALL * 2];
 
                             for (int n = 0; n < store.length; n++) {
                                 final Object pair = store[n];
@@ -149,7 +154,7 @@ public abstract class HashNodes {
                                 newStore[n * 2 + 1] = pairStore[1];
                             }
 
-                            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, newStore);
+                            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, newStore, size);
                         } else {
                             largeObjectArray.enter();
                             throw new UnsupportedOperationException();
@@ -177,7 +182,7 @@ public abstract class HashNodes {
                 store.put(args[n], args[n + 1]);
             }
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, store);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, store, 0);
         }
 
     }
@@ -212,14 +217,16 @@ public abstract class HashNodes {
             }
         }
 
+        @ExplodeLoop
         @Specialization(guards = "isObjectArray", order = 2)
         public Object getObjectArray(VirtualFrame frame, RubyHash hash, Object key) {
             final Object[] store = (Object[]) hash.getStore();
+            final int size = hash.getStoreSize();
 
-            for (int n = 0; n < store.length; n += 2) {
+            for (int n = 0; n < RubyContext.HASHES_SMALL; n++) {
                 // TODO(CS): cast
-                if ((boolean) eqlNode.dispatch(frame, store[n], null, key)) {
-                    return store[n + 1];
+                if (n < size && (boolean) eqlNode.dispatch(frame, store[n * 2], null, key)) {
+                    return store[n * 2 + 1];
                 }
             }
 
@@ -262,43 +269,64 @@ public abstract class HashNodes {
     @CoreMethod(names = "[]=", minArgs = 2, maxArgs = 2)
     public abstract static class SetIndexNode extends HashCoreMethodNode {
 
-        private final int smallHashArrayLength = RubyContext.HASHES_SMALL * 2;
+        @Child protected DispatchHeadNode eqlNode;
 
-        private final BranchProfile transitionToLinkedHashMap = new BranchProfile();
+        private final BranchProfile considerExtendProfile = new BranchProfile();
+        private final BranchProfile extendProfile = new BranchProfile();
+        private final BranchProfile transitionToLinkedHashMapProfile = new BranchProfile();
 
         public SetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            eqlNode = new DispatchHeadNode(context, "eql?", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public SetIndexNode(SetIndexNode prev) {
             super(prev);
+            eqlNode = prev.eqlNode;
         }
 
         @Specialization(guards = "isNull", order = 1)
         public Object setNull(RubyHash hash, Object key, Object value) {
             hash.checkFrozen();
-            hash.setStore(new Object[]{key, value});
+            final Object[] store = new Object[RubyContext.HASHES_SMALL * 2];
+            store[0] = key;
+            store[1] = value;
+            hash.setStore(store, 1);
             return value;
         }
 
+        @ExplodeLoop
         @Specialization(guards = "isObjectArray", order = 2)
-        public Object setObjectArray(RubyHash hash, Object key, Object value) {
+        public Object setObjectArray(VirtualFrame frame, RubyHash hash, Object key, Object value) {
             hash.checkFrozen();
 
             final Object[] store = (Object[]) hash.getStore();
-            final int length = store.length;
+            final int size = hash.getStoreSize();
 
-            if (length + 2 <= smallHashArrayLength) {
-                final Object[] newStore = Arrays.copyOf(store, length + 2);
-                newStore[length] = key;
-                newStore[length + 1] = value;
-                hash.setStore(newStore);
-            } else {
-                transitionToLinkedHashMap.enter();
-
-                transitionToLinkedHashMap(hash, store, key, value);
+            for (int n = 0; n < RubyContext.HASHES_SMALL; n++) {
+                // TODO(CS): cast
+                if (n < size && (boolean) eqlNode.dispatch(frame, store[n * 2], null, key)) {
+                    store[n * 2 + 1] = value;
+                    return value;
+                }
             }
 
+            considerExtendProfile.enter();
+
+            final int newSize = size + 1;
+
+            if (newSize <= RubyContext.HASHES_SMALL) {
+                extendProfile.enter();
+                store[size * 2] = key;
+                store[size * 2 + 1] = value;
+                hash.setStoreSize(newSize);
+                return value;
+            }
+
+
+            transitionToLinkedHashMapProfile.enter();
+
+            transitionToLinkedHashMap(hash, store, key, value);
             return value;
         }
 
@@ -311,7 +339,7 @@ public abstract class HashNodes {
             }
 
             newStore.put(key, value);
-            hash.setStore(newStore);
+            hash.setStore(newStore, 0);
         }
 
         @Specialization(guards = "isObjectLinkedHashMap", order = 3)
@@ -361,10 +389,10 @@ public abstract class HashNodes {
             final Object[] oldStore = (Object[]) hash.getStore();
 
             final LinkedHashMap<Object, Object> newStore = new LinkedHashMap<>();
-            hash.setStore(newStore);
+            hash.setStore(newStore, 0);
 
-            for (int n = 0; n < oldStore.length; n += 2) {
-                newStore.put(oldStore[n], oldStore[n + 1]);
+            for (int n = 0; n < hash.getStoreSize(); n++) {
+                newStore.put(oldStore[n * 2], oldStore[n * 2 + 1]);
             }
 
             // TODO(CS): seriously not correct - using Java's Object#equals
@@ -414,7 +442,7 @@ public abstract class HashNodes {
         public RubyHash dupNull(RubyHash hash) {
             notDesignedForCompilation();
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, 0);
         }
 
         @Specialization(guards = "isObjectArray", order = 2)
@@ -422,9 +450,9 @@ public abstract class HashNodes {
             notDesignedForCompilation();
 
             final Object[] store = (Object[]) hash.getStore();
-            final Object[] copy = Arrays.copyOf(store, store.length);
+            final Object[] copy = Arrays.copyOf(store, RubyContext.HASHES_SMALL * 2);
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, copy);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, copy, hash.getStoreSize());
         }
 
         @Specialization(guards = "isObjectLinkedHashMap", order = 3)
@@ -434,7 +462,7 @@ public abstract class HashNodes {
             final LinkedHashMap<Object, Object> store = (LinkedHashMap<Object, Object>) hash.getStore();
             final LinkedHashMap<Object, Object> copy = new LinkedHashMap<>(store);
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, copy);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, copy, 0);
         }
 
     }
@@ -451,27 +479,31 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "isNull", order = 1)
-        public RubyHash eachNull(VirtualFrame frame, RubyHash hash, RubyProc block) {
+        public RubyHash eachNull(RubyHash hash, RubyProc block) {
             notDesignedForCompilation();
 
             return hash;
         }
 
+        @ExplodeLoop
         @Specialization(guards = "isObjectArray", order = 2)
         public RubyHash eachObjectArray(VirtualFrame frame, RubyHash hash, RubyProc block) {
             notDesignedForCompilation();
 
             final Object[] store = (Object[]) hash.getStore();
+            final int size = hash.getStoreSize();
 
             int count = 0;
 
             try {
-                for (int n = 0; n < store.length; n += 2) {
+                for (int n = 0; n < RubyContext.HASHES_SMALL; n++) {
                     if (CompilerDirectives.inInterpreter()) {
                         count++;
                     }
 
-                    yield(frame, block, RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), store[n], store[n + 1]));
+                    if (n < size) {
+                        yield(frame, block, RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), store[n * 2], store[n * 2 + 1]));
+                    }
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -527,8 +559,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isObjectArray", order = 2)
         public boolean emptyObjectArray(RubyHash hash) {
-            // TODO(CS): is this invariant ok? Arrays for hashes should never be zero length?
-            return false;
+            return hash.getStoreSize() == 0;
         }
 
         @Specialization(guards = "isObjectLinkedHashMap", order = 3)
@@ -587,7 +618,7 @@ public abstract class HashNodes {
         @Specialization
         public NilPlaceholder initialize(RubyHash hash, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
-            hash.setStore(null);
+            hash.setStore(null, 0);
             hash.setDefaultBlock(null);
             return NilPlaceholder.INSTANCE;
         }
@@ -595,7 +626,7 @@ public abstract class HashNodes {
         @Specialization
         public NilPlaceholder initialize(RubyHash hash, RubyProc block) {
             notDesignedForCompilation();
-            hash.setStore(null);
+            hash.setStore(null, 0);
             hash.setDefaultBlock(block);
             return NilPlaceholder.INSTANCE;
         }
@@ -618,7 +649,7 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = "isNull", order = 1)
-        public RubyString inspectNull(VirtualFrame frame, RubyHash hash) {
+        public RubyString inspectNull(RubyHash hash) {
             notDesignedForCompilation();
 
             return getContext().makeString("{}");
@@ -634,7 +665,7 @@ public abstract class HashNodes {
 
             builder.append("{");
 
-            for (int n = 0; n < store.length; n += 2) {
+            for (int n = 0; n < hash.getStoreSize(); n += 2) {
                 if (n > 0) {
                     builder.append(", ");
                 }
@@ -693,22 +724,28 @@ public abstract class HashNodes {
             super(prev);
         }
 
+        @ExplodeLoop
         @Specialization(guards = "isObjectArray", order = 1)
         public RubyArray mapObjectArray(VirtualFrame frame, RubyHash hash, RubyProc block) {
             final Object[] store = (Object[]) hash.getStore();
+            final int size = hash.getStoreSize();
 
             final Object[] result = new Object[store.length / 2];
+            int resultIndex = 0;
 
             int count = 0;
 
             try {
-                for (int n = 0; n < result.length; n++) {
-                    final Object key = store[n * 2];
-                    final Object value = store[n * 2 + 1];
-                    result[n] = yield(frame, block, key, value);
+                for (int n = 0; n < RubyContext.HASHES_SMALL; n++) {
+                    if (n < size) {
+                        final Object key = store[n * 2];
+                        final Object value = store[n * 2 + 1];
+                        result[resultIndex] = yield(frame, block, key, value);
+                        resultIndex++;
 
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
                     }
                 }
             } finally {
@@ -775,74 +812,85 @@ public abstract class HashNodes {
         @Specialization(guards = {"isObjectArray", "isOtherNull"}, order = 1)
         public RubyHash mergeObjectArrayNull(RubyHash hash, RubyHash other) {
             final Object[] store = (Object[]) hash.getStore();
-            final Object[] copy = Arrays.copyOf(store, store.length);
+            final Object[] copy = Arrays.copyOf(store, RubyContext.HASHES_SMALL * 2);
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), copy);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), copy, hash.getStoreSize());
         }
 
+        @ExplodeLoop
         @Specialization(guards = {"isObjectArray", "isOtherObjectArray"}, order = 2)
         public RubyHash mergeObjectArrayObjectArray(VirtualFrame frame, RubyHash hash, RubyHash other) {
             // TODO(CS): what happens with the default block here? Which side does it get merged from?
 
             final Object[] storeA = (Object[]) hash.getStore();
-            final Object[] storeB = (Object[]) other.getStore();
+            final int storeASize = hash.getStoreSize();
 
-            final boolean[] mergeFromA = new boolean[storeA.length / 2];
+            final Object[] storeB = (Object[]) other.getStore();
+            final int storeBSize = hash.getStoreSize();
+
+            final boolean[] mergeFromA = new boolean[storeASize];
             int mergeFromACount = 0;
 
-            for (int a = 0; a < storeA.length; a += 2) {
-                boolean merge = true;
+            for (int a = 0; a < RubyContext.HASHES_SMALL; a++) {
+                if (a < storeASize) {
+                    boolean merge = true;
 
-                for (int b = 0; b < storeB.length; b += 2) {
-                    // TODO(CS): cast
-                    if ((boolean) eqlNode.dispatch(frame, storeA[a], null, storeB[b])) {
-                        merge = false;
-                        break;
+                    for (int b = 0; b < RubyContext.HASHES_SMALL; b++) {
+                        if (b < storeBSize) {
+                            // TODO(CS): cast
+                            if ((boolean) eqlNode.dispatch(frame, storeA[a], null, storeB[b])) {
+                                merge = false;
+                                break;
+                            }
+                        }
                     }
-                }
 
-                if (merge) {
-                    mergeFromACount++;
-                }
+                    if (merge) {
+                        mergeFromACount++;
+                    }
 
-                mergeFromA[a / 2] = merge;
+                    mergeFromA[a] = merge;
+                }
             }
 
             if (mergeFromACount == 0) {
                 nothingFromFirstProfile.enter();
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), Arrays.copyOf(storeB, storeB.length));
+                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), Arrays.copyOf(storeB, RubyContext.HASHES_SMALL * 2), storeBSize);
             }
 
             considerNothingFromSecondProfile.enter();
 
             if (mergeFromACount == storeB.length) {
                 nothingFromSecondProfile.enter();
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), Arrays.copyOf(storeB, storeB.length));
+                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), Arrays.copyOf(storeB, RubyContext.HASHES_SMALL * 2), storeBSize);
             }
 
             considerResultIsSmallProfile.enter();
 
-            if (storeB.length / 2 + mergeFromACount <= smallHashSize) {
+            final int mergedSize = storeBSize + mergeFromACount;
+
+            if (storeBSize + mergeFromACount <= smallHashSize) {
                 resultIsSmallProfile.enter();
 
-                final Object[] merged = new Object[storeB.length + mergeFromACount * 2];
+                final Object[] merged = new Object[RubyContext.HASHES_SMALL * 2];
 
                 int index = 0;
 
-                for (int n = 0; n < storeA.length; n += 2) {
-                    if (mergeFromA[n / 2]) {
-                        merged[index] = storeA[n];
-                        merged[index + 1] = storeA[n + 1];
+                for (int n = 0; n < storeASize; n++) {
+                    if (mergeFromA[n]) {
+                        merged[index] = storeA[n * 2];
+                        merged[index + 1] = storeA[n * 2 + 1];
                         index += 2;
                     }
                 }
 
-                for (int n = 0; n < storeB.length; n++) {
-                    merged[index] = storeB[n];
-                    index++;
+                for (int n = 0; n < storeBSize; n++) {
+                    merged[index] = storeB[n * 2];
+                    merged[index + 1] = storeB[n * 2 + 1];
+                    index += 2;
                 }
 
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), merged);
+                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), merged, mergedSize);
             }
 
             CompilerDirectives.transferToInterpreter();
@@ -922,7 +970,7 @@ public abstract class HashNodes {
 
             final Object[] store = (Object[]) hash.getStore();
 
-            final Object[] keys = new Object[store.length / 2];
+            final Object[] keys = new Object[hash.getStoreSize()];
 
             for (int n = 0; n < keys.length; n++) {
                 keys[n] = store[n * 2];
@@ -969,7 +1017,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isObjectArray", order = 2)
         public int sizeObjectArray(RubyHash hash) {
-            return ((Object[]) hash.getStore()).length / 2;
+            return hash.getStoreSize();
         }
 
         @Specialization(guards = "isObjectLinkedHashMap", order = 3)
@@ -1000,7 +1048,7 @@ public abstract class HashNodes {
         public RubyArray valuesObjectArray(RubyHash hash) {
             final Object[] store = (Object[]) hash.getStore();
 
-            final Object[] values = new Object[store.length / 2];
+            final Object[] values = new Object[hash.getStoreSize()];
 
             for (int n = 0; n < values.length; n++) {
                 values[n] = store[n * 2 + 1];
