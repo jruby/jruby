@@ -86,6 +86,26 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 }
             }
 
+            boolean requireFrame = bindingHasEscaped || scope.usesEval();
+
+            for (IRFlags flag : scope.getFlags()) {
+                switch (flag) {
+                    case BINDING_HAS_ESCAPED:
+                    case CAN_CAPTURE_CALLERS_BINDING:
+                    case CAN_RECEIVE_BREAKS:
+                    case CAN_RECEIVE_NONLOCAL_RETURNS:
+                    case HAS_NONLOCAL_RETURNS:
+                    case REQUIRES_FRAME:
+                    case REQUIRES_VISIBILITY:
+                    case USES_BACKREF_OR_LASTLINE:
+                    case USES_EVAL:
+                    case USES_ZSUPER:
+                        requireFrame = true;
+                }
+            }
+
+            boolean requireBinding = bindingHasEscaped || scopeHasLocalVarStores || scope.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE);
+
             // FIXME: Why do we need a push/pop for frame & binding for scopes with unrescued exceptions??
             // 1. I think we need a different check for frames -- it is NOT scopeHasUnrescuedExceptions
             //    We need scope.requiresFrame() to push/pop frames
@@ -93,14 +113,13 @@ public class AddCallProtocolInstructions extends CompilerPass {
             //    just be able to check (bindingHasEscaped || scopeHasVarStores) to push/pop bindings.
             // We need scopeHasUnrescuedExceptions to add GEB for popping frame/binding on exit from unrescued exceptions
             BasicBlock entryBB = cfg.getEntryBB();
-            boolean requireBinding = bindingHasEscaped || scopeHasLocalVarStores || scope.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE);
-            if (scope.usesBackrefOrLastline() || requireBinding || scopeHasUnrescuedExceptions) {
+            if (requireBinding || requireFrame) {
                 // Push
-                entryBB.addInstr(new PushFrameInstr(new MethAddr(scope.getName())));
+                if (requireFrame) entryBB.addInstr(new PushFrameInstr(new MethAddr(scope.getName())));
                 if (requireBinding) entryBB.addInstr(new PushBindingInstr(scope));
 
                 // Allocate GEB if necessary for popping
-                if (geb == null && scopeHasUnrescuedExceptions) {
+                if (geb == null) {
                     Variable exc = scope.createTemporaryVariable();
                     geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK", 0));
                     geb.addInstr(new ReceiveJRubyExceptionInstr(exc)); // JRuby Implementation exception handling
@@ -122,7 +141,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                             // Add before the break/return
                             instrs.previous();
                             if (requireBinding) instrs.add(new PopBindingInstr());
-                            instrs.add(new PopFrameInstr());
+                            if (requireFrame) instrs.add(new PopFrameInstr());
                             break;
                         }
                     }
@@ -131,14 +150,14 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         // Last instr could be a return -- so, move iterator one position back
                         if (instrs.hasPrevious()) instrs.previous();
                         if (requireBinding) instrs.add(new PopBindingInstr());
-                        instrs.add(new PopFrameInstr());
+                        if (requireFrame) instrs.add(new PopFrameInstr());
                     }
 
-                    if (bb == geb && scopeHasUnrescuedExceptions) {
+                    if (bb == geb) {
                         // Add before throw-exception-instr which would be the last instr
                         instrs.previous();
                         if (requireBinding) instrs.add(new PopBindingInstr());
-                        instrs.add(new PopFrameInstr());
+                        if (requireFrame) instrs.add(new PopFrameInstr());
                     }
                 }
             }
