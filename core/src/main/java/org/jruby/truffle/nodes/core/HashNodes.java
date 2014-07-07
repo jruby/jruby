@@ -730,8 +730,8 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getStoreSize();
 
-            final Object[] result = new Object[store.length / 2];
-            int resultIndex = 0;
+            final int resultSize = store.length / 2;
+            final Object[] result = new Object[resultSize];
 
             int count = 0;
 
@@ -740,8 +740,7 @@ public abstract class HashNodes {
                     if (n < size) {
                         final Object key = store[n * 2];
                         final Object value = store[n * 2 + 1];
-                        result[resultIndex] = yield(frame, block, key, value);
-                        resultIndex++;
+                        result[n] = yield(frame, block, key, value);
 
                         if (CompilerDirectives.inInterpreter()) {
                             count++;
@@ -754,7 +753,7 @@ public abstract class HashNodes {
                 }
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), result, result.length);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), result, resultSize);
         }
 
         @Specialization(guards = "isObjectLinkedHashMap", order = 2)
