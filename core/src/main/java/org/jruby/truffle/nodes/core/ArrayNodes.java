@@ -3067,7 +3067,7 @@ public abstract class ArrayNodes {
 
             final int size = array.getSize();
 
-            for (int i = 1; i < RubyContext.ARRAYS_SMALLJ; i++) {
+            for (int i = 1; i < RubyContext.ARRAYS_SMALL; i++) {
                 if (i < size) {
                     final int x = store[i];
                     int j = i;
