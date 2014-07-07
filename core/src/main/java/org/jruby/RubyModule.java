@@ -2392,7 +2392,7 @@ public class RubyModule extends RubyObject {
     /** 
      * Return an array of nested modules or classes.
      */
-    @JRubyMethod(name = "nesting", reads = FrameField.SCOPE, meta = true)
+    @JRubyMethod(name = "nesting", reads = SCOPE, meta = true)
     public static RubyArray nesting(ThreadContext context, IRubyObject recv, Block block) {
         Ruby runtime = context.runtime;
         RubyModule object = runtime.getObject();
