@@ -102,14 +102,10 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((long[]) b.getStore(), size), size);
         }
 
-        @Specialization(order = 7)
-        public RubyArray add(RubyArray a, RubyArray b) {
-            notDesignedForCompilation();
-            final int combinedSize = a.getSize() + b.getSize();
-            final Object[] combined = new Object[combinedSize];
-            ArrayUtils.copy(a.getStore(), combined, 0, a.getSize());
-            ArrayUtils.copy(b.getStore(), combined, a.getSize(), b.getSize());
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
+        @Specialization(guards = {"isNull", "isOtherObject"}, order = 7)
+        public RubyArray addNullObject(RubyArray a, RubyArray b) {
+            final int size = b.getSize();
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((Object[]) b.getStore(), size), size);
         }
 
     }
@@ -733,6 +729,12 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isLongFixnum", order = 6)
+        public int setLongFixnum(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
+            setLongFixnum(array, index, (long) value, unused);
+            return value;
+        }
+
+        @Specialization(guards = "isLongFixnum", order = 7)
         public long setLongFixnum(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
             final int normalisedIndex = array.normaliseIndex(index);
             long[] store = (long[]) array.getStore();
@@ -764,7 +766,7 @@ public abstract class ArrayNodes {
             return value;
         }
 
-        @Specialization(guards = "isFloat", order = 7)
+        @Specialization(guards = "isFloat", order = 8)
         public double setFloat(RubyArray array, int index, double value, UndefinedPlaceholder unused) {
             final int normalisedIndex = array.normaliseIndex(index);
             double[] store = (double[]) array.getStore();
@@ -796,7 +798,7 @@ public abstract class ArrayNodes {
             return value;
         }
 
-        @Specialization(guards = "isObject", order = 8)
+        @Specialization(guards = "isObject", order = 9)
         public Object setObject(RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
             final int normalisedIndex = array.normaliseIndex(index);
             Object[] store = (Object[]) array.getStore();
@@ -828,7 +830,7 @@ public abstract class ArrayNodes {
             return value;
         }
 
-        @Specialization(guards = "isIntegerFixnum", order = 9)
+        @Specialization(guards = "isIntegerFixnum", order = 10)
         public RubyArray setIntegerFixnumRange(RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
             if (range.doesExcludeEnd()) {
                 CompilerDirectives.transferToInterpreter();
