@@ -87,23 +87,44 @@ public class BoxingNode extends RubyNode {
 
         if (value instanceof RubyBasicObject) {
             seenBoxed = true;
-        } else if (value instanceof NilPlaceholder) {
-            seenNil = true;
-        } else if (value instanceof Boolean) {
-            seenBoolean = true;
-        } else if (value instanceof Integer) {
-            seenInteger = true;
-        } else if (value instanceof Long) {
-            seenLong = true;
-        } else if (value instanceof Double) {
-            seenDouble = true;
-        } else if (value instanceof BigInteger) {
-            seenBigInteger = true;
-        } else {
-            throw new UnsupportedOperationException(value.getClass().getName());
+            return (RubyBasicObject) value;
         }
 
-        return box(value);
+        if (value instanceof NilPlaceholder) {
+            seenNil = true;
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        if (value instanceof Boolean) {
+            seenBoolean = true;
+            if ((boolean) value) {
+                return getContext().getCoreLibrary().getTrueObject();
+            } else {
+                return getContext().getCoreLibrary().getFalseObject();
+            }
+        }
+
+        if (value instanceof Integer) {
+            seenInteger = true;
+            return new RubyFixnum.IntegerFixnum(getContext().getCoreLibrary().getFixnumClass(), (int) value);
+        }
+
+        if (value instanceof Long) {
+            seenLong = true;
+            return new RubyFixnum.LongFixnum(getContext().getCoreLibrary().getFixnumClass(), (long) value);
+        }
+
+        if (value instanceof Double) {
+            seenDouble = true;
+            return new RubyFloat(getContext().getCoreLibrary().getFloatClass(), (double) value);
+        }
+
+        if (value instanceof BigInteger) {
+            seenBigInteger = true;
+            return new RubyBignum(getContext().getCoreLibrary().getFixnumClass(), (BigInteger) value);
+        }
+
+        throw new UnsupportedOperationException(value.getClass().getName());
     }
 
 }

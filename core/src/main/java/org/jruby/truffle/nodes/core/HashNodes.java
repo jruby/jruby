@@ -108,6 +108,7 @@ public abstract class HashNodes {
             super(prev);
         }
 
+        @ExplodeLoop
         @Specialization
         public RubyHash construct(Object[] args) {
             if (args.length == 1) {
@@ -133,25 +134,27 @@ public abstract class HashNodes {
                             final int size = store.length;
                             final Object[] newStore = new Object[RubyContext.HASHES_SMALL * 2];
 
-                            for (int n = 0; n < store.length; n++) {
-                                final Object pair = store[n];
+                            for (int n = 0; n < RubyContext.HASHES_SMALL; n++) {
+                                if (n < size) {
+                                    final Object pair = store[n];
 
-                                if (!(pair instanceof RubyArray)) {
-                                    CompilerDirectives.transferToInterpreter();
-                                    throw new UnsupportedOperationException();
+                                    if (!(pair instanceof RubyArray)) {
+                                        CompilerDirectives.transferToInterpreter();
+                                        throw new UnsupportedOperationException();
+                                    }
+
+                                    final RubyArray pairArray = (RubyArray) pair;
+
+                                    if (!(pairArray.getStore() instanceof Object[])) {
+                                        CompilerDirectives.transferToInterpreter();
+                                        throw new UnsupportedOperationException();
+                                    }
+
+                                    final Object[] pairStore = (Object[]) pairArray.getStore();
+
+                                    newStore[n * 2] = pairStore[0];
+                                    newStore[n * 2 + 1] = pairStore[1];
                                 }
-
-                                final RubyArray pairArray = (RubyArray) pair;
-
-                                if (!(pairArray.getStore() instanceof Object[])) {
-                                    CompilerDirectives.transferToInterpreter();
-                                    throw new UnsupportedOperationException();
-                                }
-
-                                final Object[] pairStore = (Object[]) pairArray.getStore();
-
-                                newStore[n * 2] = pairStore[0];
-                                newStore[n * 2 + 1] = pairStore[1];
                             }
 
                             return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, newStore, size);

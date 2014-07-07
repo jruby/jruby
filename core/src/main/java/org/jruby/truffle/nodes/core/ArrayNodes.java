@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.SourceSection;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameDescriptor;
@@ -3057,6 +3058,7 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         }
 
+        @ExplodeLoop
         @Specialization(guards = {"isIntegerFixnum", "isSmall"}, order = 2)
         public RubyArray sortVeryShortIntegerFixnum(VirtualFrame frame, RubyArray array) {
             final int[] store = (int[]) array.getStore();
@@ -3065,15 +3067,17 @@ public abstract class ArrayNodes {
 
             final int size = array.getSize();
 
-            for (int i = 1; i < size; i++) {
-                final int x = store[i];
-                int j = i;
-                // TODO(CS): node for this cast
-                while (j > 0 && (int) compareDispatchNode.dispatch(frame, store[j - 1], null, x) > 0) {
-                    store[j] = store[j - 1];
-                    j--;
+            for (int i = 1; i < RubyContext.ARRAYS_SMALL; i++) {
+                if (i < size) {
+                    final int x = store[i];
+                    int j = i;
+                    // TODO(CS): node for this cast
+                    while (j > 0 && (int) compareDispatchNode.dispatch(frame, store[j - 1], null, x) > 0) {
+                        store[j] = store[j - 1];
+                        j--;
+                    }
+                    store[j] = x;
                 }
-                store[j] = x;
             }
 
             return array;
