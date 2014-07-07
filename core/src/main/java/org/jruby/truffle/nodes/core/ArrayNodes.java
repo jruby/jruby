@@ -205,6 +205,27 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), sub, i);
         }
 
+        @Specialization(guards = {"isObject", "isOtherIntegerFixnum"}, order = 5)
+        public RubyArray subObjectIntegerFixnum(RubyArray a, RubyArray b) {
+            notDesignedForCompilation();
+
+            final Object[] as = (Object[]) a.getStore();
+            final Object[] bs = ArrayUtils.box((int[]) b.getStore());
+
+            final Object[] sub = new Object[a.getSize()];
+
+            int i = 0;
+
+            for (int n = 0; n < a.getSize(); n++) {
+                if (!ArrayUtils.contains(bs, b.getSize(), as[n])) {
+                    sub[i] = as[n];
+                    i++;
+                }
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), sub, i);
+        }
+
     }
 
     @CoreMethod(names = "*", minArgs = 1, maxArgs = 1, lowerFixnumParameters = 0)

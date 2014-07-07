@@ -9,7 +9,6 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import org.jruby.truffle.runtime.*;
@@ -138,25 +137,6 @@ public abstract class NilClassNodes {
         @Specialization
         public RubyString toS() {
             return getContext().makeString("");
-        }
-    }
-
-    @CoreMethod(names = "<<", needsSelf = false, maxArgs = 1)
-    public abstract static class XNode extends CoreMethodNode {
-
-        public XNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public XNode(XNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString toS(Object foo) {
-            RubyCallStack.dump(this);
-            System.exit(1);
-            return null;
         }
     }
 

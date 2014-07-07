@@ -197,7 +197,7 @@ public class CoreLibrary {
         configHashMap.put(RubyString.fromJavaString(stringClass, "host_os"), RubyString.fromJavaString(stringClass, "unknown"));
         configHashMap.put(RubyString.fromJavaString(stringClass, "exeext"), RubyString.fromJavaString(stringClass, ""));
         configHashMap.put(RubyString.fromJavaString(stringClass, "EXEEXT"), RubyString.fromJavaString(stringClass, "rubytruffle"));
-        final RubyHash configHash = new RubyHash(hashClass, null, configHashMap);
+        final RubyHash configHash = new RubyHash(hashClass, null, configHashMap, 0);
         configModule.setConstant("CONFIG", configHash);
 
         objectClass.setConstant("RbConfig", configModule);
@@ -657,7 +657,7 @@ public class CoreLibrary {
             storage.put(context.makeString(variable.getKey()), context.makeString(variable.getValue()));
         }
 
-        return new RubyHash(context.getCoreLibrary().getHashClass(), null, storage);
+        return new RubyHash(context.getCoreLibrary().getHashClass(), null, storage, 0);
     }
 
     public ArrayNodes.MinBlock getArrayMinBlock() {

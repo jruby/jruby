@@ -68,7 +68,7 @@ public abstract class HashLiteralNode extends RubyNode {
         @ExplodeLoop
         @Override
         public RubyHash executeRubyHash(VirtualFrame frame) {
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, 0);
         }
 
     }
@@ -82,13 +82,13 @@ public abstract class HashLiteralNode extends RubyNode {
         @ExplodeLoop
         @Override
         public RubyHash executeRubyHash(VirtualFrame frame) {
-            final Object[] storage = new Object[keyValues.length];
+            final Object[] storage = new Object[RubyContext.HASHES_SMALL * 2];
 
-            for (int n = 0; n < storage.length; n++) {
+            for (int n = 0; n < keyValues.length; n++) {
                 storage[n] = keyValues[n].execute(frame);
             }
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, storage);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, storage, keyValues.length / 2);
         }
 
     }
@@ -110,7 +110,7 @@ public abstract class HashLiteralNode extends RubyNode {
                 storage.put(keyValues[n].execute(frame), keyValues[n + 1].execute(frame));
             }
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, storage);
+            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, storage, 0);
         }
 
     }

@@ -31,23 +31,25 @@ public class RubyHash extends RubyObject {
 
         @Override
         public RubyBasicObject newInstance() {
-            return new RubyHash(this, null, null);
+            return new RubyHash(this, null, null, 0);
         }
 
     }
 
     private RubyProc defaultBlock;
     private Object store;
+    private int storeSize;
 
-    public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object store) {
+    public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object store, int storeSize) {
         super(rubyClass);
 
         assert store == null || store instanceof Object[] || store instanceof LinkedHashMap<?, ?>;
-        assert !(store instanceof Object[]) || ((Object[]) store).length > 0;
-        assert !(store instanceof Object[]) || ((Object[]) store).length <= RubyContext.HASHES_SMALL * 2;
+        assert !(store instanceof Object[]) || ((Object[]) store).length == RubyContext.HASHES_SMALL * 2;
+        assert !(store instanceof Object[]) || storeSize <= RubyContext.HASHES_SMALL;
 
         this.defaultBlock = defaultBlock;
         this.store = store;
+        this.storeSize = storeSize;
     }
 
     public RubyProc getDefaultBlock() {
@@ -58,16 +60,27 @@ public class RubyHash extends RubyObject {
         return store;
     }
 
+    public int getStoreSize() {
+        return storeSize;
+    }
+
     public void setDefaultBlock(RubyProc defaultBlock) {
         this.defaultBlock = defaultBlock;
     }
 
-    public void setStore(Object store) {
+    public void setStore(Object store, int storeSize) {
         assert store == null || store instanceof Object[] || store instanceof LinkedHashMap<?, ?>;
-        assert !(store instanceof Object[]) || ((Object[]) store).length > 0;
-        assert !(store instanceof Object[]) || ((Object[]) store).length <= RubyContext.HASHES_SMALL * 2;
+        assert !(store instanceof Object[]) || ((Object[]) store).length == RubyContext.HASHES_SMALL * 2;
+        assert !(store instanceof Object[]) || storeSize <= RubyContext.HASHES_SMALL;
+
 
         this.store = store;
+        this.storeSize = storeSize;
+    }
+
+    public void setStoreSize(int storeSize) {
+        assert storeSize <= RubyContext.HASHES_SMALL;
+        this.storeSize = storeSize;
     }
 
 }
