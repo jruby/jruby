@@ -12,7 +12,7 @@ package org.jruby.truffle.runtime.core;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import com.oracle.truffle.api.*;
-import org.jruby.runtime.Visibility;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.methods.*;
@@ -25,6 +25,9 @@ public class RubySymbol extends RubyObject {
 
     private final String symbol;
     private final ByteList symbolBytes;
+
+    // See CachedBoxedSymbolDispatchNode
+    public static final Assumption globalSymbolLookupNodeAssumption = Truffle.getRuntime().createAssumption();
 
     private RubySymbol(RubyClass symbolClass, String symbol, ByteList byteList) {
         super(symbolClass);
@@ -144,6 +147,11 @@ public class RubySymbol extends RubyObject {
         public ConcurrentHashMap<ByteList, RubySymbol> getSymbolsTable(){
             return symbolsTable;
         }
+    }
+
+    public void lookupNodeChanged() {
+        getRubyClass().getContext().getRuntime().getWarnings().warning(IRubyWarnings.ID.TRUFFLE, "switching to slow path dispatch on symbols as they've been fiddled with!");
+        globalSymbolLookupNodeAssumption.invalidate();
     }
 
 }

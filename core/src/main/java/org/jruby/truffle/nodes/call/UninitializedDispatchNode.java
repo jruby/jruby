@@ -128,7 +128,15 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
         */
 
         final UninitializedDispatchNode newUninitializedDispatch = new UninitializedDispatchNode(getContext(), name, missingBehavior);
-        final BoxedDispatchNode newDispatch = new CachedBoxedDispatchNode(getContext(), receiverObject.getLookupNode(), method, newUninitializedDispatch);
+
+        final BoxedDispatchNode newDispatch;
+
+        if (receiverObject instanceof RubySymbol && RubySymbol.globalSymbolLookupNodeAssumption.isValid()) {
+            newDispatch = new CachedBoxedSymbolDispatchNode(getContext(), method, newUninitializedDispatch);
+        } else {
+            newDispatch = new CachedBoxedDispatchNode(getContext(), receiverObject.getLookupNode(), method, newUninitializedDispatch);
+        }
+
         replace(newDispatch, "appending new boxed dispatch node to chain");
         return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
     }
