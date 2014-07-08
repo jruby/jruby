@@ -3190,6 +3190,7 @@ public final class Ruby {
         getSelectorPool().cleanup();
 
         getJITCompiler().tearDown();
+        getLoadService().tearDown();
 
         if (getJRubyClassLoader() != null) {
             getJRubyClassLoader().tearDown(isDebug());
