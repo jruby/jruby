@@ -74,6 +74,7 @@ import static org.jruby.runtime.Visibility.*;
 
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BlockingIO;
+import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.SelectorFactory;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -161,7 +162,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private Unblocker unblockFunc;
 
     /** Argument to pass to the unblocker */
-    private IRubyObject unblockArg;
+    private Object unblockArg;
 
     /** The list of locks this thread currently holds, so they can be released on exit */
     private final List<Lock> heldLocks = new Vector<Lock>();
@@ -177,6 +178,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     /** Short circuit to avoid-re-scanning for interrupts */
     private volatile boolean pendingInterruptQueueChecked = false;
+
+    private volatile Selector currentSelector;
 
     private static final AtomicIntegerFieldUpdater INTERRUPT_FLAG_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(RubyThread.class, "interruptFlag");
@@ -605,7 +608,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     // RUBY_VM_INTERRUPTED_ANY
     private boolean anyInterrupted() {
-        return (interruptFlag & ~interruptMask) != 0;
+        return Thread.interrupted() || (interruptFlag & ~interruptMask) != 0;
     }
     
     private static void throwThreadKill() {
@@ -1139,31 +1142,21 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     /**
+     * Sleep the current thread for millis, waking up on any thread interrupts.
+     *
      * We can never be sure if a wait will finish because of a Java "spurious wakeup".  So if we
      * explicitly wakeup and we wait less than requested amount we will return false.  We will
      * return true if we sleep right amount or less than right amount via spurious wakeup.
+     *
+     * @param millis Number of milliseconds to sleep. Zero sleeps forever.
      */
-    public synchronized boolean sleep(long millis) throws InterruptedException {
+    public boolean sleep(long millis) throws InterruptedException {
         assert this == getRuntime().getCurrentContext().getThread();
-        boolean result;
-
-        synchronized (this) {
-            pollThreadEvents();
-            try {
-                status.set(Status.SLEEP);
-                if (millis == -1) {
-                    wait();
-                } else {
-                    wait(millis);
-                }
-            } finally {
-                result = (status.get() != Status.RUN);
-                pollThreadEvents();
-                status.set(Status.RUN);
-            }
+        if (executeTask(getContext(), new Object[]{this, millis, 0}, SLEEP_TASK2) >= millis) {
+            return true;
+        } else {
+            return false;
         }
-
-        return result;
     }
 
     public IRubyObject status() {
@@ -1190,13 +1183,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         public void wakeup();
     }
 
-    public interface Unblocker {
-        public void wakeup(RubyThread thread, IRubyObject self);
+    public interface Unblocker<Data> {
+        public void wakeup(RubyThread thread, Data self);
     }
 
-    public interface Task<Data, Return> extends Unblocker {
+    public interface Task<Data, Return> extends Unblocker<Data> {
         public Return run(ThreadContext context, Data data) throws InterruptedException;
-        public void wakeup(RubyThread thread, IRubyObject self);
+        public void wakeup(RubyThread thread, Data data);
     }
 
     public static final class SleepTask implements BlockingTask {
@@ -1225,6 +1218,28 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
+    private static final class SleepTask2 implements Task<Object[], Long> {
+        @Override
+        public Long run(ThreadContext context, Object[] data) throws InterruptedException {
+            Object syncObj = data[0];
+            long millis = (Long)data[1];
+            int nanos = (Integer)data[2];
+            synchronized (syncObj) {
+                long start = System.currentTimeMillis();
+                syncObj.wait(millis, nanos);
+                // TODO: nano handling?
+                return System.currentTimeMillis() - start;
+            }
+        }
+
+        @Override
+        public void wakeup(RubyThread thread, Object[] data) {
+            thread.getNativeThread().interrupt();
+        }
+    }
+
+    private static final Task<Object[], Long> SLEEP_TASK2 = new SleepTask2();
+
     @Deprecated
     public void executeBlockingTask(BlockingTask task) throws InterruptedException {
         enterSleep();
@@ -1239,18 +1254,17 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    public <Data extends IRubyObject, Return> Return executeTask(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
+    public <Data, Return> Return executeTask(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
         enterSleep();
         try {
             this.unblockFunc = task;
             this.unblockArg = data;
-            pollThreadEvents();
             return task.run(context, data);
         } finally {
             exitSleep();
             this.unblockFunc = null;
             this.unblockArg = null;
-            pollThreadEvents();
+            pollThreadEvents(context);
         }
     }
 
@@ -1404,30 +1418,27 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return receiver.getRuntime().getThreadService().getMainThread();
     }
     
-    private volatile Selector currentSelector;
-    
-    @Deprecated
-    public boolean selectForAccept(RubyIO io) {
-        return select(io, SelectionKey.OP_ACCEPT);
-    }
-
-    private synchronized Selector getSelector(SelectableChannel channel) throws IOException {
-        return SelectorFactory.openWithRetryFrom(getRuntime(), channel.provider());
-    }
-    
     public boolean select(RubyIO io, int ops) {
-        return select(io.getChannel(), io, ops);
+        return select(io.getChannel(), io.getOpenFile(), ops);
     }
     
     public boolean select(RubyIO io, int ops, long timeout) {
-        return select(io.getChannel(), io, ops, timeout);
+        return select(io.getChannel(), io.getOpenFile(), ops, timeout);
+    }
+
+    public boolean select(Channel channel, OpenFile fptr, int ops) {
+        return select(channel, fptr, ops, -1);
     }
 
     public boolean select(Channel channel, RubyIO io, int ops) {
-        return select(channel, io, ops, -1);
+        return select(channel, io == null ? null : io.getOpenFile(), ops, -1);
     }
 
     public boolean select(Channel channel, RubyIO io, int ops, long timeout) {
+        return select(channel, io == null ? null : io.getOpenFile(), ops, timeout);
+    }
+
+    public boolean select(Channel channel, OpenFile fptr, int ops, long timeout) {
         if (channel instanceof SelectableChannel) {
             SelectableChannel selectable = (SelectableChannel)channel;
             
@@ -1438,7 +1449,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 try {
                     selectable.configureBlocking(false);
                     
-                    if (io != null) io.addBlockingThread(this);
+                    if (fptr != null) fptr.addBlockingThread(this);
                     currentSelector = getRuntime().getSelectorPool().get(selectable.provider());
 
                     key = selectable.register(currentSelector, ops);
@@ -1494,7 +1505,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     }
 
                     // remove this thread as a blocker against the given IO
-                    if (io != null) io.removeBlockingThread(this);
+                    if (fptr != null) fptr.removeBlockingThread(this);
 
                     // go back to previous blocking state on the selectable
                     try {
@@ -1731,4 +1742,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @Deprecated
     private volatile BlockingTask currentBlockingTask;
+
+    @Deprecated
+    public boolean selectForAccept(RubyIO io) {
+        return select(io, SelectionKey.OP_ACCEPT);
+    }
 }

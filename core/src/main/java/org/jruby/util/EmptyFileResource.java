@@ -7,6 +7,8 @@ import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 import java.io.InputStream;
 
+import java.nio.channels.Channel;
+
 class EmptyFileResource implements FileResource {
     // All empty resources are the same and immutable, so may as well
     // cache the instance
@@ -91,6 +93,12 @@ class EmptyFileResource implements FileResource {
     }
 
     @Override
+    public Channel openChannel(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
+        throw new ResourceException.NotFound(absolutePath());
+    }
+
+    @Override
+    @Deprecated
     public ChannelDescriptor openDescriptor(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
         throw new ResourceException.NotFound(absolutePath());
     }

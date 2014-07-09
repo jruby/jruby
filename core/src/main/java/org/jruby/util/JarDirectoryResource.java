@@ -6,6 +6,8 @@ import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 import java.io.InputStream;
 
+import java.nio.channels.Channel;
+
 /**
  * Represents a directory in a jar.
  *
@@ -66,6 +68,14 @@ class JarDirectoryResource extends JarResource {
     }
 
     @Override
+    public Channel openChannel(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
+        // opening a directory seems to blow up with EACCESS in jruby (although MRI allows instantiation but blows up on read).
+        // So mimicking that for now.
+        throw new ResourceException.PermissionDenied(absolutePath());
+    }
+
+    @Override
+    @Deprecated
     public ChannelDescriptor openDescriptor(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
         // opening a directory seems to blow up with EACCESS in jruby (although MRI allows instantiation but blows up on read).
         // So mimicking that for now.

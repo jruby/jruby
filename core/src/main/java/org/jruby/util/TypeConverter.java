@@ -26,53 +26,36 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyIO;
 import org.jruby.RubyInteger;
-import org.jruby.RubyNil;
+import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ClassIndex;
+import org.jruby.RubyNil;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.encoding.EncodingService;
 
 public class TypeConverter {
     /**
      * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethodIndex the fast index to use for calling the method
+     * @param target is the type we are trying to convert to
      * @param convertMethod is the method to be called to try and convert to targeType
-     * @param raiseOnError will throw an Error if conversion does not work
+     * @param raise will throw an Error if conversion does not work
      * @return the converted value
      */
-    @Deprecated
-    public static final IRubyObject convertToType(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod, boolean raise) {
-        if (!obj.respondsTo(convertMethod)) return handleUncoercibleObject(raise, obj, target);
-        
-        return obj.callMethod(obj.getRuntime().getCurrentContext(), convertMethod);
-    }
-
-    /**
-     * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type).
-     *
-     * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethodIndex the fast index to use for calling the method
-     * @param convertMethod is the method to be called to try and convert to targeType
-     * @param raiseOnError will throw an Error if conversion does not work
-     * @return the converted value
-     */
-    public static final IRubyObject convertToType(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
+    public static IRubyObject convertToType(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
         if (!obj.respondsTo(convertMethod)) return handleUncoercibleObject(raise, obj, target);
         
         return obj.callMethod(obj.getRuntime().getCurrentContext(), convertMethod);
@@ -82,13 +65,12 @@ public class TypeConverter {
      * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type 1.9).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethodIndex the fast index to use for calling the method
+     * @param target is the type we are trying to convert to
      * @param convertMethod is the method to be called to try and convert to targeType
-     * @param raiseOnError will throw an Error if conversion does not work
+     * @param raise will throw an Error if conversion does not work
      * @return the converted value
      */
-    public static final IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
+    public static IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
         IRubyObject r = obj.checkCallMethod(obj.getRuntime().getCurrentContext(), convertMethod);
         
         return r == null ? handleUncoercibleObject(raise, obj, target) : r;
@@ -98,28 +80,11 @@ public class TypeConverter {
      * Converts this object to type 'targetType' using 'convertMethod' method and raises TypeError exception on failure (MRI: rb_convert_type).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethodIndex the fast index to use for calling the method
+     * @param target is the type we are trying to convert to
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
      */
-    @Deprecated
-    public static final IRubyObject convertToType(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod) {
-        if (target.isInstance(obj)) return obj;
-        IRubyObject val = convertToType(obj, target, convertMethod, true);
-        if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
-        return val;
-    }
-
-    /**
-     * Converts this object to type 'targetType' using 'convertMethod' method and raises TypeError exception on failure (MRI: rb_convert_type).
-     *
-     * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethod is the method to be called to try and convert to targeType
-     * @return the converted value
-     */
-    public static final IRubyObject convertToType(IRubyObject obj, RubyClass target, String convertMethod) {
+    public static IRubyObject convertToType(IRubyObject obj, RubyClass target, String convertMethod) {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = convertToType(obj, target, convertMethod, true);
         if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
@@ -130,11 +95,11 @@ public class TypeConverter {
      * Converts this object to type 'targetType' using 'convertMethod' method and raises TypeError exception on failure (MRI: rb_convert_type in 1.9).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
+     * @param target is the type we are trying to convert to
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
      */
-    public static final IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod) {
+    public static IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod) {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = convertToType19(obj, target, convertMethod, true);
         if (!target.isInstance(val)) {
@@ -159,7 +124,7 @@ public class TypeConverter {
      * @param obj the object to check
      * @return the converted value
      */
-    public static final IRubyObject checkData(IRubyObject obj) {
+    public static IRubyObject checkData(IRubyObject obj) {
         if(obj instanceof org.jruby.runtime.marshal.DataType) return obj;
 
         throw obj.getRuntime().newTypeError("wrong argument type " + typeAsString(obj) + " (expected Data)");
@@ -189,18 +154,17 @@ public class TypeConverter {
         
         return obj.asJavaString().intern();
     }
+
     /**
      * Higher level conversion utility similar to convertToType but it can throw an
      * additional TypeError during conversion (MRI: rb_check_convert_type).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethodIndex the fast index to use for calling the method
+     * @param target is the type we are trying to convert to
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
      */
-    @Deprecated
-    public static final IRubyObject convertToTypeWithCheck(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod) {  
+    public static IRubyObject convertToTypeWithCheck(IRubyObject obj, RubyClass target, String convertMethod) {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = TypeConverter.convertToType(obj, target, convertMethod, false);
         if (val.isNil()) return val;
@@ -213,30 +177,11 @@ public class TypeConverter {
      * additional TypeError during conversion (MRI: rb_check_convert_type).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethodIndex the fast index to use for calling the method
+     * @param target is the type we are trying to convert to
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
      */
-    public static final IRubyObject convertToTypeWithCheck(IRubyObject obj, RubyClass target, String convertMethod) {
-        if (target.isInstance(obj)) return obj;
-        IRubyObject val = TypeConverter.convertToType(obj, target, convertMethod, false);
-        if (val.isNil()) return val;
-        if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
-        return val;
-    }
-
-    /**
-     * Higher level conversion utility similar to convertToType but it can throw an
-     * additional TypeError during conversion (MRI: rb_check_convert_type).
-     *
-     * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
-     * @param convertMethodIndex the fast index to use for calling the method
-     * @param convertMethod is the method to be called to try and convert to targeType
-     * @return the converted value
-     */
-    public static final IRubyObject convertToTypeWithCheck19(IRubyObject obj, RubyClass target, String convertMethod) {
+    public static IRubyObject convertToTypeWithCheck19(IRubyObject obj, RubyClass target, String convertMethod) {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = TypeConverter.convertToType19(obj, target, convertMethod, false);
         if (val.isNil()) return val;
@@ -249,11 +194,11 @@ public class TypeConverter {
      * additional TypeError during conversion (MRI: rb_check_convert_type).
      *
      * @param obj the object to convert
-     * @param targetType is the type we are trying to convert to
+     * @param target is the type we are trying to convert to
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
      */
-    public static final IRubyObject convertToTypeOrRaise(IRubyObject obj, RubyClass target, String convertMethod) {  
+    public static IRubyObject convertToTypeOrRaise(IRubyObject obj, RubyClass target, String convertMethod) {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = TypeConverter.convertToType(obj, target, convertMethod, true);
         if (val.isNil()) return val;
@@ -269,7 +214,7 @@ public class TypeConverter {
         return conv instanceof RubyInteger ? conv : runtime.getNil();
     }
 
-    // 1.9 rb_check_to_float
+    // rb_check_to_float
     public static IRubyObject checkFloatType(Ruby runtime, IRubyObject obj) {
         if (obj instanceof RubyFloat) return obj;
         if (!(obj instanceof RubyNumeric)) return runtime.getNil();
@@ -277,14 +222,29 @@ public class TypeConverter {
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getFloat(), "to_f");
     }
 
-    // 1.9 rb_check_hash_type
+    // rb_check_hash_type
     public static IRubyObject checkHashType(Ruby runtime, IRubyObject obj) {
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_hash");
     }
 
     // rb_check_string_type
     public static IRubyObject checkStringType(Ruby runtime, IRubyObject obj) {
-        return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_str");
+        return TypeConverter.convertToTypeWithCheck(obj, runtime.getString(), "to_str");
+    }
+
+    // rb_check_array_type
+    public static IRubyObject checkArrayType(Ruby runtime, IRubyObject obj) {
+        return TypeConverter.convertToTypeWithCheck(obj, runtime.getArray(), "to_ary");
+    }
+
+    // rb_io_check_io
+    public static IRubyObject ioCheckIO(Ruby runtime, IRubyObject obj) {
+        return TypeConverter.convertToTypeWithCheck(obj, runtime.getIO(), "to_io");
+    }
+
+    // rb_io_get_io
+    public static RubyIO ioGetIO(Ruby runtime, IRubyObject obj) {
+        return (RubyIO)convertToType(obj, runtime.getIO(), "to_io");
     }
 
     public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) throws RaiseException {
@@ -293,12 +253,32 @@ public class TypeConverter {
         return obj.getRuntime().getNil();
     }
 
+    // rb_check_type and Check_Type
+    public static void checkType(ThreadContext context, IRubyObject x, RubyModule t) {
+        ClassIndex xt;
+
+        if (x == RubyBasicObject.UNDEF) {
+            throw context.runtime.newRuntimeError("bug: undef leaked to the Ruby space");
+        }
+
+        xt = x.getMetaClass().getNativeClassIndex();
+
+        // MISSING: special error for T_DATA of a certain type
+        if (xt != t.getClassIndex()) {
+            String tname = t.getBaseName();
+            if (tname != null) {
+                throw context.runtime.newArgumentError("wrong argument type " + xt + " (expected " + t.getClassIndex());
+            }
+            throw context.runtime.newRuntimeError("bug: unknown type " + t.getClassIndex() + " (" + xt + " given)");
+        }
+    }
+
     // rb_convert_to_integer
     public static IRubyObject convertToInteger(ThreadContext context, IRubyObject val, int base) {
         Ruby runtime = context.runtime;
-        IRubyObject tmp = null;
+        IRubyObject tmp;
 
-        LOOP: for (;;) {
+        for (;;) {
             if (val instanceof RubyFloat) {
                 if (base != 0) raiseIntegerBaseError(context);
                 double value = ((RubyFloat)val).getValue();
@@ -319,7 +299,7 @@ public class TypeConverter {
             if (base != 0) {
                 tmp = TypeConverter.checkStringType(context.runtime, val);
                 if (!tmp.isNil()) {
-                    continue LOOP;
+                    continue;
                 }
                 raiseIntegerBaseError(context);
             }
@@ -336,5 +316,29 @@ public class TypeConverter {
 
     private static void raiseIntegerBaseError(ThreadContext context) {
         throw context.runtime.newArgumentError("base specified for non string value");
+    }
+
+    @Deprecated
+    public static IRubyObject convertToType(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod, boolean raise) {
+        if (!obj.respondsTo(convertMethod)) return handleUncoercibleObject(raise, obj, target);
+
+        return obj.callMethod(obj.getRuntime().getCurrentContext(), convertMethod);
+    }
+
+    @Deprecated
+    public static IRubyObject convertToType(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod) {
+        if (target.isInstance(obj)) return obj;
+        IRubyObject val = convertToType(obj, target, convertMethod, true);
+        if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
+        return val;
+    }
+
+    @Deprecated
+    public static IRubyObject convertToTypeWithCheck(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod) {
+        if (target.isInstance(obj)) return obj;
+        IRubyObject val = TypeConverter.convertToType(obj, target, convertMethod, false);
+        if (val.isNil()) return val;
+        if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
+        return val;
     }
 }

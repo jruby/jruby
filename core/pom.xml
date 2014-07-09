@@ -76,12 +76,12 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.8.5</version>
+      <version>0.8.6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>1.0.7</version>
+      <version>2.0.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -107,7 +107,7 @@
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.10</version>
+      <version>1.0.12-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>

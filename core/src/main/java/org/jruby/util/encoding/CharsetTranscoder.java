@@ -29,6 +29,7 @@
 package org.jruby.util.encoding;
 
 import org.jcodings.specific.ISO8859_16Encoding;
+import org.jcodings.transcode.EConvFlags;
 import org.jruby.util.*;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -62,7 +63,7 @@ import org.jruby.util.unsafe.UnsafeHolder;
  * facilities.
  */
 // FIXME: Originally this was meant to capture invariant state.  Use specialization to make this much more efficient.
-public class CharsetTranscoder extends Transcoder {
+public class CharsetTranscoder extends EncodingConverter {
     // Java seems to find these specific Java charsets but they seem to trancode
     // some strings a little differently than MRI.  Since Java Charset transcoding
     // is a temporary implementation for us, having this gruesome hack is ok
@@ -200,13 +201,13 @@ public class CharsetTranscoder extends Transcoder {
                 ((RubyHash)ecopts).op_aref(context, context.runtime.newSymbol("replace")) :
                 context.nil;
         
-        if ((ecflags & (EncodingUtils.ECONV_NEWLINE_DECORATOR_MASK
-                | EncodingUtils.ECONV_XML_TEXT_DECORATOR
-                | EncodingUtils.ECONV_XML_ATTR_CONTENT_DECORATOR
-                | EncodingUtils.ECONV_XML_ATTR_QUOTE_DECORATOR)) == 0) {
+        if ((ecflags & (EConvFlags.NEWLINE_DECORATOR_MASK
+                | EConvFlags.XML_TEXT_DECORATOR
+                | EConvFlags.XML_ATTR_CONTENT_DECORATOR
+                | EConvFlags.XML_ATTR_QUOTE_DECORATOR)) == 0) {
             if (senc != null && senc == denc) {                
                 // TODO: Ruby 2.0 or 2.1 use String#scrub here
-                if ((ecflags & EncodingUtils.ECONV_INVALID_MASK) != 0) {
+                if ((ecflags & EConvFlags.INVALID_MASK) != 0) {
                     // TODO: scrub with replacement
                     return selfByteList;
                 } else {
@@ -265,17 +266,6 @@ public class CharsetTranscoder extends Transcoder {
         return result;
     }
     
-    public ByteList econvStrConvert(ThreadContext context, ByteList value, boolean finish) {
-        Encoding fromEncoding = this.inEncoding != null ? this.inEncoding : value.getEncoding();
-        
-        ByteList result = new ByteList();
-        transcode(context, value, result, fromEncoding, false, finish);
-        
-        lastResult = new RubyCoderResult("finished", fromEncoding, outEncoding, null, null);
-        
-        return result;
-    }
-    
     private RubyCoderResult transcode(ThreadContext context, ByteList inBuffer, ByteList outBuffer, Encoding inEncoding, boolean is7BitASCII, boolean finish) {
         primitiveConvert(context, inBuffer.shallowDup(), outBuffer, 0, -1, inEncoding, is7BitASCII, actions.ecflags);
         
@@ -314,7 +304,7 @@ public class CharsetTranscoder extends Transcoder {
             createTranscoder(inEncoding, outEncoding, actions, is7BitASCII);
         }
         
-        TranscoderEngine.TranscoderState state = transcoder.new TranscoderState(inBytes, outBytes, growable);
+        TranscoderState state = new TranscoderState(inBytes, outBytes, growable);
         
         lastResult = transcoder.transcode(state, flags);
         
@@ -788,23 +778,7 @@ public class CharsetTranscoder extends Transcoder {
             
             return inChars;
         }
-    
-        public class TranscoderState {
-            public final ByteBuffer inBytes;
-            public ByteBuffer outBytes;
-            public boolean growable;
 
-            public TranscoderState(ByteBuffer inBytes, ByteBuffer outBytes, boolean growable) {
-                this.growable = growable;
-                this.inBytes = inBytes;
-                this.outBytes = outBytes;
-            }
-
-            // unused but may be someday
-            public TranscoderState(ByteBuffer inBytes, boolean growable) {
-                this(inBytes, ByteBuffer.allocate((int)(inBytes.remaining() * averageByteRatio())), growable);
-            }
-        }
     }
     
     public static final String[] XMLTextCharacterTranslator = new String[128];
@@ -1026,4 +1000,5 @@ public class CharsetTranscoder extends Transcoder {
 
         return from;
     }
+
 }

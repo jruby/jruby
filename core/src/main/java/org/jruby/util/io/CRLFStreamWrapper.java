@@ -4,6 +4,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF16BEEncoding;
@@ -37,6 +38,11 @@ public class CRLFStreamWrapper implements Stream {
         stream.clearerr();
     }
 
+    @Override
+    public ByteBuffer getBuffer() {
+        return stream.getBuffer();
+    }
+
     public ModeFlags getModes() {
         return stream.getModes();
     }
@@ -51,6 +57,11 @@ public class CRLFStreamWrapper implements Stream {
 
     public void setSync(boolean sync) {
         stream.setSync(sync);
+    }
+
+    @Override
+    public int bufferedAvailable() {
+        return stream.bufferedAvailable();
     }
 
     public void setBinmode() {
@@ -337,5 +348,9 @@ public class CRLFStreamWrapper implements Stream {
 
     public Channel getChannel() {
         return stream.getChannel();
+    }
+
+    public final int refillBuffer() throws IOException {
+        return stream.refillBuffer();
     }
 }

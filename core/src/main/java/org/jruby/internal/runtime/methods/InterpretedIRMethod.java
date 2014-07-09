@@ -181,7 +181,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
                     }
 
                     return true;
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     if (config.isJitLogging()) {
                         LOG.info("failed to jit (" + e.getMessage() + "): " + method);
                         if (config.isJitLoggingVerbose()) {

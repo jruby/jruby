@@ -36,6 +36,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jruby.anno.JRubyMethod;
@@ -57,10 +58,12 @@ import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.io.BadDescriptorException;
+import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
 
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 
+import java.nio.channels.Channels;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -183,10 +186,25 @@ public class RubyGlobal {
         runtime.defineVariable(new SafeGlobalVariable(runtime, "$SAFE"), THREAD);
 
         runtime.defineVariable(new BacktraceGlobalVariable(runtime, "$@"), THREAD);
-
-        IRubyObject stdin = new RubyIO(runtime, STDIO.IN);
-        IRubyObject stdout = new RubyIO(runtime, STDIO.OUT);
-        IRubyObject stderr = new RubyIO(runtime, STDIO.ERR);
+        IRubyObject stdin = null;
+        IRubyObject stdout = null;
+        IRubyObject stderr = null;
+        if (runtime.getPosix().isNative()) {
+            // use real native channels for stdio
+            stdin = RubyIO.prepStdio(
+                    runtime, runtime.getIn(), new NativeDeviceChannel(0), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
+            stdout = RubyIO.prepStdio(
+                    runtime, runtime.getOut(), new NativeDeviceChannel(1), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
+            stderr = RubyIO.prepStdio(
+                    runtime, runtime.getErr(), new NativeDeviceChannel(2), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
+        } else {
+            stdin = RubyIO.prepStdio(
+                    runtime, runtime.getIn(), Channels.newChannel(runtime.getIn()), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
+            stdout = RubyIO.prepStdio(
+                    runtime, runtime.getOut(), Channels.newChannel(runtime.getOut()), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
+            stderr = RubyIO.prepStdio(
+                    runtime, runtime.getErr(), Channels.newChannel(runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
+        }
 
         runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin), GLOBAL);
 
@@ -770,19 +788,8 @@ public class RubyGlobal {
             if (value == get()) {
                 return value;
             }
-            if (value instanceof RubyIO) {
-                RubyIO io = (RubyIO)value;
-                
-                // HACK: in order to have stdout/err act like ttys and flush always,
-                // we set anything assigned to stdout/stderr to sync
-                try {
-                    io.getOpenFile().getWriteStreamSafe().setSync(true);
-                } catch (BadDescriptorException e) {
-                    throw runtime.newErrnoEBADFError();
-                }
-            }
 
-            if (!value.respondsTo("write")) {
+            if (!value.respondsTo("write") && !value.respondsToMissing("write")) {
                 throw runtime.newTypeError(name() + " must have write method, " +
                                     value.getType().getName() + " given");
             }

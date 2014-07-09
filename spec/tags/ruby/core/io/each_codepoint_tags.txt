@@ -1,3 +1,0 @@
-fails:IO#each_codepoint yields each codepoint
-fails:IO#each_codepoint raises an error if reading invalid sequence
-fails:IO#each_codepoint calls the given block

@@ -30,32 +30,20 @@ package org.jruby.ext.socket;
 
 import static jnr.constants.platform.IPProto.IPPROTO_TCP;
 import static jnr.constants.platform.IPProto.IPPROTO_IP;
-import static jnr.constants.platform.Sock.SOCK_DGRAM;
-import static jnr.constants.platform.Sock.SOCK_STREAM;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
 
-import java.io.EOFException;
 import java.io.IOException;
-import java.net.DatagramSocket;
 import java.net.Inet6Address;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
 
 import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.Sock;
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -72,10 +60,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.io.BadDescriptorException;
-import org.jruby.util.io.ChannelDescriptor;
-import org.jruby.util.io.ChannelStream;
-import org.jruby.util.io.EncodingUtils;
-import org.jruby.util.io.ModeFlags;
+import org.jruby.util.io.ChannelFD;
+import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.OpenFile;
 
 import jnr.constants.platform.SocketLevel;
@@ -111,10 +97,10 @@ public class RubyBasicSocket extends RubyIO {
         int fileno = (int)_fileno.convertToInteger().getLongValue();
         RubyClass klass = (RubyClass)_klass;
 
-        ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(runtime.getFilenoExtMap(fileno));
+        ChannelFD fd = FilenoUtil.getWrapperFromFileno(runtime.getFilenoExtMap(fileno));
 
         RubyBasicSocket basicSocket = (RubyBasicSocket)klass.getAllocator().allocate(runtime, klass);
-        basicSocket.initSocket(runtime, descriptor);
+        basicSocket.initSocket(runtime, fd);
 
         return basicSocket;
     }
@@ -233,9 +219,6 @@ public class RubyBasicSocket extends RubyIO {
             default:
                 throw runtime.newErrnoENOPROTOOPTError();
             }
-
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
 
         } catch(IOException e) {
             throw runtime.newErrnoENOPROTOOPTError();
@@ -477,14 +460,11 @@ public class RubyBasicSocket extends RubyIO {
         try {
             context.getThread().beforeBlockingCall();
 
-            int read = openFile.getMainStreamSafe().getDescriptor().read(buf);
+            int read = openFile.readChannel().read(buf);
 
             if (read == 0) return null;
 
             return new ByteList(buf.array(), 0, buf.position());
-
-        } catch (BadDescriptorException e) {
-            throw runtime.newIOError("bad descriptor");
 
         } catch (IOException e) {
             // All errors to sysread should be SystemCallErrors, but on a closed stream
@@ -629,27 +609,19 @@ public class RubyBasicSocket extends RubyIO {
         return context.runtime.isDoNotReverseLookupEnabled() || doNotReverseLookup;
     }
 
-    protected void initSocket(Ruby runtime, ChannelDescriptor descriptor) {
+    protected void initSocket(Ruby runtime, ChannelFD fd) {
         // continue with normal initialization
         MakeOpenFile();
 
-        try {
-            openFile.setMainStream(ChannelStream.fdopen(runtime, descriptor, newModeFlags(runtime, ModeFlags.RDONLY)));
-            openFile.setPipeStream(ChannelStream.fdopen(runtime, descriptor, newModeFlags(runtime, ModeFlags.WRONLY)));
-            openFile.getPipeStream().setSync(true);
-
-        } catch (org.jruby.util.io.InvalidValueException ex) {
-            throw runtime.newErrnoEINVALError();
-        }
-
+        openFile.setFD(fd);
         openFile.setMode(OpenFile.READWRITE | OpenFile.SYNC);
 
         // see rsock_init_sock in MRI; sockets are initialized to binary
         setAscii8bitBinmode();
     }
     
-    private Channel getOpenChannel() throws BadDescriptorException {
-        return getOpenFileChecked().getMainStreamSafe().getDescriptor().getChannel();
+    private Channel getOpenChannel() {
+        return getOpenFileChecked().channel();
     }
 
     private int asNumber(IRubyObject val) {

@@ -60,6 +60,7 @@ import org.jruby.util.log.LoggerFactory;
 /**
  * This file implements a seekable IO file.
  */
+@Deprecated
 public class ChannelStream implements Stream, Finalizable {
 
     private static final Logger LOG = LoggerFactory.getLogger("ChannelStream");
@@ -125,6 +126,11 @@ public class ChannelStream implements Stream, Finalizable {
     private ChannelStream(Ruby runtime, ChannelDescriptor descriptor, ModeFlags modes, boolean autoclose) {
         this(runtime, descriptor, autoclose);
         this.modes = modes;
+    }
+
+    @Override
+    public ByteBuffer getBuffer() {
+        return buffer;
     }
 
     public Ruby getRuntime() {
@@ -199,12 +205,19 @@ public class ChannelStream implements Stream, Finalizable {
         return !reading && buffer.position() > 0;
     }
 
-    private final int refillBuffer() throws IOException {
+    @Override
+    public final int bufferedAvailable() {
+        return buffer.remaining();
+    }
+
+    @Override
+    public final int refillBuffer() throws IOException {
         buffer.clear();
         int n = ((ReadableByteChannel) descriptor.getChannel()).read(buffer);
         buffer.flip();
         return n;
     }
+
     public synchronized ByteList fgets(ByteList separatorString) throws IOException, BadDescriptorException {
         checkReadable();
         ensureRead();

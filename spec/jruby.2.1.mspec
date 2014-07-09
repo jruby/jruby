@@ -16,9 +16,6 @@ class MSpecScript
   # Language features specs
   set :language, [
     SPEC_DIR + '/language',
-
-    # One regexp in this file does not parse
-    '^' + SPEC_DIR + '/language/regexp/anchors_spec.rb'
   ]
 
   # Core library specs

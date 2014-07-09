@@ -48,6 +48,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
+import org.jruby.util.StringSupport;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.util.Numeric.checkInteger;
@@ -293,7 +294,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     static final ByteList[] SINGLE_CHAR_BYTELISTS;
-    static final ByteList[] SINGLE_CHAR_BYTELISTS19;
+    public static final ByteList[] SINGLE_CHAR_BYTELISTS19;
     static {
         SINGLE_CHAR_BYTELISTS = new ByteList[256];
         SINGLE_CHAR_BYTELISTS19 = new ByteList[256];

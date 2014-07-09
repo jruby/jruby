@@ -276,6 +276,17 @@ public final class EncodingService {
         return defaultEncoding != null ? getEncoding(defaultEncoding) : runtime.getNil();
     }
 
+    public IRubyObject findEncodingObject(byte[] bytes) {
+        Entry entry = findEncodingEntry(bytes);
+        Encoding enc;
+        if (entry != null) {
+            enc = entry.getEncoding();
+        } else {
+            enc = ASCIIEncoding.INSTANCE;
+        }
+        return convertEncodingToRubyEncoding(enc);
+    }
+
     public Encoding getJavaDefault() {
         return javaDefault;
     }

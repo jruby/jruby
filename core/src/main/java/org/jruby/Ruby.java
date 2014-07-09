@@ -139,6 +139,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.func.Function1;
 import org.jruby.util.io.ChannelDescriptor;
+import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.SelectorPool;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -154,6 +155,7 @@ import java.lang.ref.WeakReference;
 import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.channels.Channel;
 import java.nio.channels.ClosedChannelException;
 import java.security.AccessControlException;
 import java.security.SecureRandom;
@@ -1603,8 +1605,10 @@ public final class Ruby {
             encodingCompatibilityError = defineClassUnder("CompatibilityError", encodingError, encodingError.getAllocator(), encodingClass);
             invalidByteSequenceError = defineClassUnder("InvalidByteSequenceError", encodingError, encodingError.getAllocator(), encodingClass);
             invalidByteSequenceError.defineAnnotatedMethods(RubyConverter.EncodingErrorMethods.class);
+            invalidByteSequenceError.defineAnnotatedMethods(RubyConverter.InvalidByteSequenceErrorMethods.class);
             undefinedConversionError = defineClassUnder("UndefinedConversionError", encodingError, encodingError.getAllocator(), encodingClass);
             undefinedConversionError.defineAnnotatedMethods(RubyConverter.EncodingErrorMethods.class);
+            undefinedConversionError.defineAnnotatedMethods(RubyConverter.UndefinedConversionErrorMethods.class);
             converterNotFoundError = defineClassUnder("ConverterNotFoundError", encodingError, encodingError.getAllocator(), encodingClass);
             fiberError = defineClass("FiberError", standardError, standardError.getAllocator());
         }
@@ -1714,7 +1718,6 @@ public final class Ruby {
         addLazyBuiltin("tempfile.jar", "tempfile", "org.jruby.ext.tempfile.TempfileLibrary");
         addLazyBuiltin("fcntl.rb", "fcntl", "org.jruby.ext.fcntl.FcntlLibrary");
         addLazyBuiltin("yecht.jar", "yecht", "YechtService");
-        addLazyBuiltin("io/try_nonblock.jar", "io/try_nonblock", "org.jruby.ext.io.try_nonblock.IOTryNonblockLibrary");
         addLazyBuiltin("pathname_ext.jar", "pathname_ext", "org.jruby.ext.pathname.PathnameLibrary");
         addLazyBuiltin("truffelize.jar", "truffelize", "org.jruby.ext.truffelize.TruffelizeLibrary");
 
@@ -3599,6 +3602,10 @@ public final class Ruby {
         return newRaiseException(getKeyError(), message);
     }
 
+    public RaiseException newErrnoEINTRError() {
+        return newRaiseException(getErrno().getClass("EINTR"), "Interrupted");
+    }
+
     public RaiseException newErrnoFromLastPOSIXErrno() {
         RubyClass errnoClass = getErrno(getPosix().errno());
         if (errnoClass == null) errnoClass = systemCallError;
@@ -3622,6 +3629,13 @@ public final class Ruby {
         } else {
             return newSystemCallError("Unknown Error (" + errno + ") - " + message);
         }
+    }
+
+    public RaiseException newErrnoFromErrno(Errno errno, String message) {
+        if (errno == null || errno == Errno.__UNKNOWN_CONSTANT__) {
+            return newSystemCallError(message);
+        }
+        return newErrnoFromInt(errno.intValue(), message);
     }
 
     public RaiseException newErrnoFromInt(int errno) {
@@ -3789,20 +3803,36 @@ public final class Ruby {
         return newRaiseException(getStandardError(), message);
     }
 
-    public RaiseException newIOErrorFromException(IOException ioe) {
-        if (ioe instanceof ClosedChannelException) {
-            throw newErrnoEBADFError();
+    /**
+     * Java does not give us enough information for specific error conditions
+     * so we are reduced to divining them through string matches...
+     *
+     * TODO: Should ECONNABORTED get thrown earlier in the descriptor itself or is it ok to handle this late?
+     * TODO: Should we include this into Errno code somewhere do we can use this from other places as well?
+     */
+    public RaiseException newIOErrorFromException(IOException e) {
+        if (e instanceof ClosedChannelException) {
+            return newErrnoEBADFError();
         }
 
         // TODO: this is kinda gross
-        if(ioe.getMessage() != null) {
-            if (ioe.getMessage().equals("Broken pipe")) {
-                throw newErrnoEPIPEError();
-            } else if (ioe.getMessage().equals("Connection reset by peer") ||
-                    (Platform.IS_WINDOWS && ioe.getMessage().contains("connection was aborted"))) {
-                throw newErrnoECONNRESETError();
+        if(e.getMessage() != null) {
+            String errorMessage = e.getMessage();
+            // All errors to sysread should be SystemCallErrors, but on a closed stream
+            // Ruby returns an IOError.  Java throws same exception for all errors so
+            // we resort to this hack...
+            if ("File not open".equals(errorMessage)) {
+                return newIOError(e.getMessage());
+            } else if ("An established connection was aborted by the software in your host machine".equals(errorMessage)) {
+                return newErrnoECONNABORTEDError();
+            } else if (e.getMessage().equals("Broken pipe")) {
+                return newErrnoEPIPEError();
+            } else if ("Connection reset by peer".equals(e.getMessage())
+                    || "An existing connection was forcibly closed by the remote host".equals(e.getMessage()) ||
+                    (Platform.IS_WINDOWS && e.getMessage().contains("connection was aborted"))) {
+                return newErrnoECONNRESETError();
             }
-            return newRaiseException(getIOError(), ioe.getMessage());
+            return newRaiseException(getIOError(), e.getMessage());
         } else {
             return newRaiseException(getIOError(), "IO Error");
         }
@@ -3965,6 +3995,15 @@ public final class Ruby {
         return getFilenoIntMap(descriptor.getFileno());
     }
 
+    public int filenoForChannel(Channel channel) {
+        Integer val = channelFileno.get(channel);
+        if (val == null) {
+            FilenoUtil.getDescriptorFromChannel(channel);
+        }
+        return val;
+    }
+    private final Map<Channel, Integer> channelFileno = new ConcurrentHashMap<Channel, Integer>();
+
     @Deprecated
     public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {
     }
@@ -3979,7 +4018,7 @@ public final class Ruby {
 
     @Deprecated
     public ChannelDescriptor getDescriptorByFileno(int aFileno) {
-        return ChannelDescriptor.getDescriptorByFileno(aFileno);
+        return FilenoUtil.getDescriptorByFileno(aFileno);
     }
 
     public InputStream getIn() {

@@ -119,6 +119,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * before calling them
      */
     public void warning(String message) {
+        if (!isVerbose()) return;
         if (!runtime.warningsEnabled()) return;
 
         warning(ID.MISCELLANEOUS, message);
@@ -126,6 +127,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @Override
     public void warning(ID id, String message) {
+        if (!isVerbose()) return;
         if (!runtime.warningsEnabled()) return;
 
         RubyStackTraceElement[] stack = getRubyStackTrace(runtime);
@@ -148,6 +150,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     @Override
     public void warning(ID id, ISourcePosition position, String message) {
+        if (!isVerbose()) return;
         if (!runtime.warningsEnabled()) return;
 
         warning(id, position.getFile(), position.getStartLine() + 1, message);
@@ -158,8 +161,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     @Override
     public void warning(ID id, String fileName, int lineNumber, String message) {
-        assert isVerbose();
-
+        if (!isVerbose()) return;
         if (!runtime.warningsEnabled()) return;
 
         warn(id, fileName, lineNumber, message);
