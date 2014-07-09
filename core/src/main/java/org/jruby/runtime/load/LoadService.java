@@ -198,6 +198,7 @@ public class LoadService {
     protected final Map<String, JarFile> jarFiles = new HashMap<String, JarFile>();
 
     protected final Ruby runtime;
+    protected final LibrarySearcher librarySearcher;
 
     public LoadService(Ruby runtime) {
         this.runtime = runtime;
@@ -206,6 +207,10 @@ public class LoadService {
         } else {
             loadTimer = new LoadTimer();
         }
+
+        this.librarySearcher = runtime.is1_8() ?
+            new LibrarySearcher.Ruby18(this) :
+            new LibrarySearcher(this);
     }
 
     /**
@@ -321,15 +326,12 @@ public class LoadService {
             SearchState state = new SearchState(file);
             state.prepareLoadSearch(file);
 
-            Library library = findBuiltinLibrary(state, state.searchFile, state.suffixType);
-            if (library == null) library = findLibraryWithoutCWD(state, state.searchFile, state.suffixType);
+            Library library = findLibraryBySearchState(state);
 
             if (library == null) {
-                library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
-                if (library == null) {
-                    throw runtime.newLoadError("no such file to load -- " + file, file);
-                }
+              throw runtime.newLoadError("no such file to load -- " + file, file);
             }
+
             try {
                 library.load(runtime, wrap);
             } catch (IOException e) {
@@ -381,13 +383,7 @@ public class LoadService {
         SearchState state = new SearchState(file);
         state.prepareRequireSearch(file);
 
-        for (LoadSearcher searcher : searchers) {
-            if (searcher.shouldTrySearch(state)) {
-                if (!searcher.trySearch(state)) {
-                    return null;
-                }
-            }
-        }
+        findLibraryBySearchState(state);
 
         return state;
     }
@@ -671,6 +667,7 @@ public class LoadService {
         }
     }
 
+    @Deprecated
     public interface LoadSearcher {
         /**
          * @param state
@@ -685,6 +682,7 @@ public class LoadService {
         public boolean trySearch(SearchState state);
     }
 
+    @Deprecated
     public class BailoutSearcher implements LoadSearcher {
         public boolean shouldTrySearch(SearchState state) {
             return state.library == null;
@@ -705,6 +703,7 @@ public class LoadService {
         }
     }
 
+    @Deprecated
     public class SourceBailoutSearcher extends BailoutSearcher {
         public boolean shouldTrySearch(SearchState state) {
             // JRUBY-5032: Load extension files if they are required
@@ -721,6 +720,7 @@ public class LoadService {
         }
     }
 
+    @Deprecated
     public class NormalSearcher implements LoadSearcher {
         public boolean shouldTrySearch(SearchState state) {
             return state.library == null;
@@ -732,6 +732,7 @@ public class LoadService {
         }
     }
 
+    @Deprecated
     public class ClassLoaderSearcher implements LoadSearcher {
         public boolean shouldTrySearch(SearchState state) {
             return state.library == null;
@@ -743,6 +744,7 @@ public class LoadService {
         }
     }
 
+    @Deprecated
     public class ExtensionSearcher implements LoadSearcher {
         public boolean shouldTrySearch(SearchState state) {
             return (state.library == null || state.library instanceof JarredScript) && !state.searchFile.equalsIgnoreCase("");
@@ -750,58 +752,12 @@ public class LoadService {
 
         public boolean trySearch(SearchState state) {
             debugLogTry("jarWithExtension", state.searchFile);
-            
+
             // This code exploits the fact that all .jar files will be found for the JarredScript feature.
             // This is where the basic extension mechanism gets fixed
             Library oldLibrary = state.library;
-
-            // Create package name, by splitting on / and joining all but the last elements with a ".", and downcasing them.
-            String[] all = state.searchFile.split("/");
-
-            StringBuilder finName = new StringBuilder();
-            for(int i=0, j=(all.length-1); i<j; i++) {
-                finName.append(all[i].toLowerCase()).append(".");
-            }
-
-            try {
-                // Make the class name look nice, by splitting on _ and capitalize each segment, then joining
-                // the, together without anything separating them, and last put on "Service" at the end.
-                String[] last = all[all.length-1].split("_");
-                for(int i=0, j=last.length; i<j; i++) {
-                    if ("".equals(last[i])) break;
-                    finName.append(Character.toUpperCase(last[i].charAt(0))).append(last[i].substring(1));
-                }
-                finName.append("Service");
-
-                // We don't want a package name beginning with dots, so we remove them
-                String className = finName.toString().replaceAll("^\\.*","");
-
-                // If there is a jar-file with the required name, we add this to the class path.
-                if(state.library instanceof JarredScript) {
-                    // It's _really_ expensive to check that the class actually exists in the Jar, so
-                    // we don't do that now.
-                    URL jarURL = ((JarredScript)state.library).getResource().getURL();
-                    runtime.getJRubyClassLoader().addURL(jarURL);
-                    debugLogFound("jarWithoutExtension", jarURL.toString());
-                }
-
-                // quietly try to load the class
-                Class theClass = runtime.getJavaSupport().loadJavaClass(className);
-                state.library = new ClassExtensionLibrary(className + ".java", theClass);
-                debugLogFound("jarWithExtension", className);
-            } catch (ClassNotFoundException cnfe) {
-                if (runtime.isDebug()) cnfe.printStackTrace();
-                // we ignore this and assume the jar is not an extension
-            } catch (UnsupportedClassVersionError ucve) {
-                if (runtime.isDebug()) ucve.printStackTrace();
-                throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + finName + "': " + ucve, finName.toString());
-            } catch (IOException ioe) {
-                if (runtime.isDebug()) ioe.printStackTrace();
-                throw runtime.newLoadError("IOException loading extension `" + finName + "`: " + ioe, finName.toString());
-            } catch (Exception e) {
-                if (runtime.isDebug()) e.printStackTrace();
-                throw runtime.newLoadError("Exception loading extension `" + finName + "`: " + e, finName.toString());
-            }
+            state.library = ClassExtensionLibrary.tryFind(runtime, state.searchFile);
+            debugLogFound("jarWithExtension", state.searchFile);
 
             // If there was a good library before, we go back to that
             if(state.library == null && oldLibrary != null) {
@@ -811,6 +767,7 @@ public class LoadService {
         }
     }
 
+    @Deprecated
     public class ScriptClassSearcher implements LoadSearcher {
         public class ScriptClassLibrary implements Library {
             private Script script;
@@ -984,18 +941,21 @@ public class LoadService {
         }
     }
 
+    @Deprecated
     protected void debugLogTry(String what, String msg) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
             LOG.info( "trying " + what + ": " + msg );
         }
     }
 
+    @Deprecated
     protected void debugLogFound(String what, String msg) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
             LOG.info( "found " + what + ": " + msg );
         }
     }
 
+    @Deprecated
     protected void debugLogFound( LoadServiceResource resource ) {
         if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
             String resourceUrl;
@@ -1008,6 +968,21 @@ public class LoadService {
         }
     }
 
+    private Library findLibraryBySearchState(SearchState state) {
+        if (librarySearcher.findBySearchState(state) != null) {
+            // findBySearchState should fill the state already
+            return state.library;
+        }
+
+        // TODO(ratnikov): Remove the special classpath case by introducing a classpath file resource
+        Library library = findLibraryWithClassloaders(state, state.searchFile, state.suffixType);
+        if (library != null) {
+            state.library = library;
+        }
+        return library;
+    }
+
+    @Deprecated
     protected Library findBuiltinLibrary(SearchState state, String baseName, SuffixType suffixType) {
         for (String suffix : suffixType.getSuffixes()) {
             String namePlusSuffix = baseName + suffix;
@@ -1022,6 +997,7 @@ public class LoadService {
         return null;
     }
 
+    @Deprecated
     protected Library findLibraryWithoutCWD(SearchState state, String baseName, SuffixType suffixType) {
         Library library = null;
 
@@ -1064,6 +1040,7 @@ public class LoadService {
         return null;
     }
 
+    @Deprecated
     protected Library createLibrary(SearchState state, LoadServiceResource resource) {
         if (resource == null) {
             return null;
@@ -1086,6 +1063,7 @@ public class LoadService {
         }
     }
 
+    @Deprecated
     protected LoadServiceResource tryResourceFromCWD(SearchState state, String baseName,SuffixType suffixType) throws RaiseException {
         LoadServiceResource foundResource = null;
 
@@ -1114,6 +1092,7 @@ public class LoadService {
      * Try loading the resource from the current dir by appending suffixes and
      * passing it to tryResourceAsIs to have the ./ replaced by CWD.
      */
+    @Deprecated
     protected LoadServiceResource tryResourceFromDotSlash(SearchState state, String baseName, SuffixType suffixType) throws RaiseException {
         LoadServiceResource foundResource = null;
 
@@ -1128,6 +1107,7 @@ public class LoadService {
         return foundResource;
     }
 
+    @Deprecated
     protected LoadServiceResource tryResourceFromHome(SearchState state, String baseName, SuffixType suffixType) throws RaiseException {
         LoadServiceResource foundResource = null;
 
@@ -1161,6 +1141,7 @@ public class LoadService {
         return foundResource;
     }
 
+    @Deprecated
     protected LoadServiceResource tryResourceFromJarURL(SearchState state, String baseName, SuffixType suffixType) {
         // if a jar or file URL, return load service resource directly without further searching
         LoadServiceResource foundResource = null;
@@ -1219,6 +1200,7 @@ public class LoadService {
         return foundResource;
     }
 
+    @Deprecated
     protected LoadServiceResource tryResourceFromLoadPathOrURL(SearchState state, String baseName, SuffixType suffixType) {
         LoadServiceResource foundResource = null;
 
@@ -1310,6 +1292,7 @@ public class LoadService {
         return RubyFile.get_path(entry.getRuntime().getCurrentContext(), entry).asJavaString();
     }
 
+    @Deprecated
     protected LoadServiceResource tryResourceFromJarURLWithLoadPath(String namePlusSuffix, String loadPathEntry) {
         LoadServiceResource foundResource = null;
 
@@ -1392,6 +1375,7 @@ public class LoadService {
         return new String[]{filename, entry};
     }
 
+    @Deprecated
     protected LoadServiceResource tryResourceFromLoadPath( String namePlusSuffix,String loadPathEntry) throws RaiseException {
         LoadServiceResource foundResource = null;
 
@@ -1423,10 +1407,12 @@ public class LoadService {
         return foundResource;
     }
 
+    @Deprecated
     protected LoadServiceResource tryResourceAsIs(String namePlusSuffix) throws RaiseException {
         return tryResourceAsIs(namePlusSuffix, "resourceAsIs");
     }
 
+    @Deprecated
     protected LoadServiceResource tryResourceAsIs(String namePlusSuffix, String debugName) throws RaiseException {
         LoadServiceResource foundResource = null;
 
