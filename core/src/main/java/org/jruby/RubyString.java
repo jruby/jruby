@@ -265,11 +265,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     final boolean singleByteOptimizable() {
-        return getCodeRange() == CR_7BIT || value.getEncoding().isSingleByte();
+        return getCodeRange() == CR_7BIT || value.getEncoding().maxLength() == 1;
     }
 
     final boolean singleByteOptimizable(Encoding enc) {
-        return getCodeRange() == CR_7BIT || enc.isSingleByte();
+        return getCodeRange() == CR_7BIT || enc.maxLength() == 1;
     }
 
     // rb_enc_compatible
