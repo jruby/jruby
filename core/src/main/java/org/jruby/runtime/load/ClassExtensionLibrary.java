@@ -40,6 +40,43 @@ import org.jruby.Ruby;
 public class ClassExtensionLibrary implements Library {
     private final Class theClass;
     private final String name;
+
+    static ClassExtensionLibrary tryFind(Ruby runtime, String searchName) {
+      // Create package name, by splitting on / and joining all but the last elements with a ".", and downcasing them.
+      String[] all = searchName.split("/");
+
+      StringBuilder finName = new StringBuilder();
+      for(int i=0, j=(all.length-1); i<j; i++) {
+        finName.append(all[i].toLowerCase()).append(".");
+      }
+
+      try {
+        // Make the class name look nice, by splitting on _ and capitalize each segment, then joining
+        // the, together without anything separating them, and last put on "Service" at the end.
+        String[] last = all[all.length-1].split("_");
+        for(int i=0, j=last.length; i<j; i++) {
+          if ("".equals(last[i])) break;
+          finName.append(Character.toUpperCase(last[i].charAt(0))).append(last[i].substring(1));
+        }
+        finName.append("Service");
+
+        // We don't want a package name beginning with dots, so we remove them
+        String className = finName.toString().replaceAll("^\\.*","");
+
+        // quietly try to load the class
+        Class theClass = runtime.getJavaSupport().loadJavaClass(className);
+        return new ClassExtensionLibrary(className + ".java", theClass);
+      } catch (ClassNotFoundException cnfe) {
+        if (runtime.isDebug()) cnfe.printStackTrace();
+
+        // So apparently the class doesn't exist
+        return null;
+      } catch (UnsupportedClassVersionError ucve) {
+        if (runtime.isDebug()) ucve.printStackTrace();
+        throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + finName + "': " + ucve, finName.toString());
+      }
+    }
+
     public ClassExtensionLibrary(String name, Class extension) {
         theClass = extension;
         this.name = name;

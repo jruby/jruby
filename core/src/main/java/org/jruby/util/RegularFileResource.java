@@ -6,6 +6,7 @@ import jnr.posix.POSIXFactory;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
@@ -40,9 +41,19 @@ class RegularFileResource implements FileResource {
         this.file = new JRubyFile(filename);
     }
 
+    // TODO(ratnikov): This should likely be renamed to rubyPath, otherwise it's easy to get
+    // confused between java's absolute path (no symlink resolution) and ruby absolute path (which
+    // does symlink resolution).
     @Override
     public String absolutePath() {
-        return file.getAbsolutePath();
+        // Seems like for Ruby absolute path implies resolving system links,
+        // so canonicalization is in order.
+        try {
+          return file.getCanonicalPath();
+        } catch (IOException ioError) {
+          // I guess absolute path is next best thing?
+          return file.getAbsolutePath();
+        }
     }
 
     @Override
@@ -74,7 +85,7 @@ class RegularFileResource implements FileResource {
     @Override
     public boolean isSymLink() {
         try {
-            return symlinkPosix.lstat(absolutePath()).isSymlink();
+            return symlinkPosix.lstat(file.getAbsolutePath()).isSymlink();
         } catch (Throwable t) {
             return false;
         }
@@ -116,7 +127,7 @@ class RegularFileResource implements FileResource {
 
     @Override
     public FileStat lstat(POSIX posix) {
-        return posix.lstat(absolutePath());
+        return posix.lstat(file.getAbsolutePath());
     }
 
     @Override
@@ -126,7 +137,16 @@ class RegularFileResource implements FileResource {
 
     @Override
     public JRubyFile hackyGetJRubyFile() {
-      return file;
+        return file;
+    }
+
+    @Override
+    public FileInputStream getInputStream() {
+        try {
+            return new FileInputStream(file);
+        } catch (FileNotFoundException fnfe) {
+            return null;
+        }
     }
 
     @Override

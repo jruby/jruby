@@ -60,6 +60,11 @@ class JarFileResource extends JarResource {
   }
 
   @Override
+  public InputStream getInputStream() {
+    return entryStream;
+  }
+
+  @Override
   public ChannelDescriptor openDescriptor(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
     return new ChannelDescriptor(Channels.newChannel(entryStream), flags);
   }

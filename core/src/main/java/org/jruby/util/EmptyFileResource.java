@@ -5,6 +5,7 @@ import jnr.posix.POSIX;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
+import java.io.InputStream;
 
 class EmptyFileResource implements FileResource {
     // All empty resources are the same and immutable, so may as well
@@ -82,6 +83,11 @@ class EmptyFileResource implements FileResource {
         // intending to replace. However, that should go away once we get rid of the hacky method, so
         // should be okay for now.
         return JRubyNonExistentFile.NOT_EXIST;
+    }
+
+    @Override
+    public InputStream getInputStream() {
+      return null;
     }
 
     @Override
