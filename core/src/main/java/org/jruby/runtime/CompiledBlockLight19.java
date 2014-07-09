@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jruby.EvalType;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -35,6 +36,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * rather than with an ICallable. For lightweight block logic within
  * Java code.
  */
+@Deprecated
 public class CompiledBlockLight19 extends CompiledBlock19 {
     public static Block newCompiledClosureLight(ThreadContext context, IRubyObject self, Arity arity,
             StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType) {
@@ -47,6 +49,9 @@ public class CompiledBlockLight19 extends CompiledBlock19 {
     public static BlockBody newCompiledBlockLight(Arity arity,
             StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType, String[] parameterList) {
         return new CompiledBlockLight19(arity, scope, callback, hasMultipleArgsHead, argumentType, parameterList);
+    }
+
+    public void setEvalType(EvalType evalType) {
     }
 
     protected CompiledBlockLight19(Arity arity, StaticScope scope, CompiledBlockCallback19 callback, boolean hasMultipleArgsHead, int argumentType, String[] parameterList) {
