@@ -28,7 +28,7 @@
                 <groupId>com.agilejava.docbkx</groupId>
                 <artifactId>docbkx-maven-plugin</artifactId>
                 <!-- this needs 2.0.8, as 2.0.9 has a bug wrt manpages -->
-                <version>2.0.8</version>
+                <version>2.0.15</version>
                 <executions>
                     <execution>
                         <goals>
