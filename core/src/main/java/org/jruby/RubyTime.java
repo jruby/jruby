@@ -709,13 +709,6 @@ public class RubyTime extends RubyObject {
     @JRubyMethod
     public IRubyObject to_r(ThreadContext context) {
         IRubyObject rational = to_f().to_r(context);
-        if (rational instanceof RubyRational) {
-            IRubyObject denominator = ((RubyRational)rational).denominator(context);
-            if (RubyNumeric.num2long(denominator) == 1) {
-                return ((RubyRational)rational).numerator(context);
-            }
-        }
-
         return rational;
     }
 
