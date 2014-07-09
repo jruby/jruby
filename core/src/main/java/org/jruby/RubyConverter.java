@@ -187,7 +187,7 @@ public class RubyConverter extends RubyObject {
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return RubyString.newString(context.runtime, "#<Encoding::Converter: " + transcoder.inEncoding + " to " + transcoder.outEncoding);
+        return RubyString.newString(context.runtime, "#<Encoding::Converter: " + transcoder.inEncoding + " to " + transcoder.outEncoding + ">");
     }
 
     @JRubyMethod
