@@ -1174,8 +1174,7 @@ public class IRBuilder {
             Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
             addInstr(s, new PutConstInstr(module, constDeclNode.getName(), val));
         } else { // colon3, assign in Object
-            ScopeModule object = new ScopeModule(manager.getObject());
-            addInstr(s, new PutConstInstr(object, constDeclNode.getName(), val));
+            addInstr(s, new PutConstInstr(new ObjectClass(), constDeclNode.getName(), val));
         }
 
         return val;
@@ -2588,7 +2587,7 @@ public class IRBuilder {
                 container = findContainerModule(s);
             }
         } else { //::Bar
-            container = new ScopeModule(manager.getObject());
+            container = new ObjectClass();
         }
 
         return container;
