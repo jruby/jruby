@@ -35,6 +35,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -712,7 +713,7 @@ public class RubyEnumerator extends RubyObject {
                         @Override
                         public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
                             try {
-                                if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + args[0]);
+                                if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + Arrays.toString(args));
                                 if (die) throw new JumpException.BreakJump(-1, NEVER);
                                 out.put(RubyEnumerable.packEnumValues(runtime, args));
                                 if (die) throw new JumpException.BreakJump(-1, NEVER);
@@ -731,6 +732,12 @@ public class RubyEnumerator extends RubyObject {
                     runtime.getGlobalVariables().set("$!", oldExc);
                     if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exception at toplevel: " + re.getException());
                     finalObject = re.getException();
+                } catch (Throwable t) {
+                    if (DEBUG) {
+                        System.out.println(Thread.currentThread().getName() + ": exception at toplevel: " + t);
+                        t.printStackTrace();
+                    }
+                    Helpers.throwException(t);
                 }
 
                 try {
