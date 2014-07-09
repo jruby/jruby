@@ -74,6 +74,7 @@ import static org.jruby.runtime.Visibility.*;
 
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BlockingIO;
+import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.SelectorFactory;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -177,6 +178,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     /** Short circuit to avoid-re-scanning for interrupts */
     private volatile boolean pendingInterruptQueueChecked = false;
+
+    private volatile Selector currentSelector;
 
     private static final AtomicIntegerFieldUpdater INTERRUPT_FLAG_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(RubyThread.class, "interruptFlag");
@@ -1415,26 +1418,27 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return receiver.getRuntime().getThreadService().getMainThread();
     }
     
-    private volatile Selector currentSelector;
-    
-    @Deprecated
-    public boolean selectForAccept(RubyIO io) {
-        return select(io, SelectionKey.OP_ACCEPT);
-    }
-    
     public boolean select(RubyIO io, int ops) {
-        return select(io.getChannel(), io, ops);
+        return select(io.getChannel(), io.getOpenFile(), ops);
     }
     
     public boolean select(RubyIO io, int ops, long timeout) {
-        return select(io.getChannel(), io, ops, timeout);
+        return select(io.getChannel(), io.getOpenFile(), ops, timeout);
+    }
+
+    public boolean select(Channel channel, OpenFile fptr, int ops) {
+        return select(channel, fptr, ops, -1);
     }
 
     public boolean select(Channel channel, RubyIO io, int ops) {
-        return select(channel, io, ops, -1);
+        return select(channel, io == null ? null : io.getOpenFile(), ops, -1);
     }
 
     public boolean select(Channel channel, RubyIO io, int ops, long timeout) {
+        return select(channel, io == null ? null : io.getOpenFile(), ops, timeout);
+    }
+
+    public boolean select(Channel channel, OpenFile fptr, int ops, long timeout) {
         if (channel instanceof SelectableChannel) {
             SelectableChannel selectable = (SelectableChannel)channel;
             
@@ -1445,7 +1449,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 try {
                     selectable.configureBlocking(false);
                     
-                    if (io != null) io.addBlockingThread(this);
+                    if (fptr != null) fptr.addBlockingThread(this);
                     currentSelector = getRuntime().getSelectorPool().get(selectable.provider());
 
                     key = selectable.register(currentSelector, ops);
@@ -1501,7 +1505,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     }
 
                     // remove this thread as a blocker against the given IO
-                    if (io != null) io.removeBlockingThread(this);
+                    if (fptr != null) fptr.removeBlockingThread(this);
 
                     // go back to previous blocking state on the selectable
                     try {
@@ -1738,4 +1742,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @Deprecated
     private volatile BlockingTask currentBlockingTask;
+
+    @Deprecated
+    public boolean selectForAccept(RubyIO io) {
+        return select(io, SelectionKey.OP_ACCEPT);
+    }
 }

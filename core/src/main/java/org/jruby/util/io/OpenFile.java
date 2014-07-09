@@ -1258,46 +1258,13 @@ public class OpenFile implements Finalizable {
         @Override
         public Integer run(ThreadContext context, InternalReadStruct iis) throws InterruptedException {
             ChannelFD fd = iis.fd;
-            try {
-                if (fd.chSelect != null && !iis.fptr.nonblock) {
-                    iis.selector = context.runtime.getSelectorPool().get(fd.chSelect.provider());
-                    synchronized (fd.chSelect.blockingLock()) {
-                        boolean blocking = fd.chSelect.isBlocking();
-                        try {
-                            fd.chSelect.configureBlocking(false);
-                            fd.chSelect.register(iis.selector, SelectionKey.OP_READ);
-                            iis.fptr.addBlockingThread(context.getThread());
-                            while (iis.selector.select() != 1) {
-                                // keep selecting until ready or there's a thread event
-                                context.pollThreadEvents();
-                            }
-                        } finally {
-                            iis.fptr.removeBlockingThread(context.getThread());
-                            iis.selector.close();
-                            fd.chSelect.configureBlocking(blocking);
-                        }
-                    }
-                }
-            } catch (ClosedChannelException ioe) {
-                // if it's a closed channel exception, we raise IOError, since it should have been
-                // open up to this point
-                throw context.runtime.newIOError("closed stream");
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-                throw context.runtime.newIOErrorFromException(ioe);
-            }
 
-            // if we can select, we should have data to read; if not, we'll interrupt below
             return iis.fptr.posix.read(fd, iis.bufBytes, iis.buf, iis.capa, iis.fptr.nonblock);
         }
 
         @Override
         public void wakeup(RubyThread thread, InternalReadStruct data) {
-            if (data.selector != null && data.selector.isOpen()) {
-                data.selector.wakeup();
-            } else {
-                thread.getNativeThread().interrupt();
-            }
+            thread.getNativeThread().interrupt();
         }
     };
 
@@ -1318,6 +1285,11 @@ public class OpenFile implements Finalizable {
     public static int readInternal(ThreadContext context, OpenFile fptr, ChannelFD fd, byte[] bufBytes, int buf, int count) {
         InternalReadStruct iis = new InternalReadStruct(fptr, fd, bufBytes, buf, count);
 
+        // if we can do selection and this is not a non-blocking call, do selection
+        if (fd.chSelect != null && !iis.fptr.nonblock) {
+            context.getThread().select(fd.chSelect, fptr, SelectionKey.OP_READ);
+        }
+
         try {
             return context.getThread().executeTask(context, iis, readTask);
         } catch (InterruptedException ie) {
@@ -1332,7 +1304,7 @@ public class OpenFile implements Finalizable {
         }
 
         if (fd.chSelect != null) {
-            return context.getThread().select(fd.chSelect, null, SelectionKey.OP_READ);
+            return context.getThread().select(fd.chSelect, this, SelectionKey.OP_READ);
         }
 
         // kinda-hacky way to see if there's more data to read from a seekable channel
