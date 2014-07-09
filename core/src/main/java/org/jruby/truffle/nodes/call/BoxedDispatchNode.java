@@ -10,6 +10,8 @@
 package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.NodeCost;
+import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -24,5 +26,7 @@ public abstract class BoxedDispatchNode extends DispatchNode {
     }
 
     public abstract Object dispatch(VirtualFrame frame, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects);
+
+    public abstract boolean doesRespondTo(VirtualFrame frame, RubyBasicObject receiverObject);
 
 }

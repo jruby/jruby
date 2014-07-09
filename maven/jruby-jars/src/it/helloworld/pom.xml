@@ -37,6 +37,7 @@
             <argument>
               puts 'hello world'
               puts 'openssl loaded' if require 'openssl'
+              puts Gem.loaded_specs.keys.sort.join(',')
             </argument>
           </arguments>
         </configuration>

@@ -566,37 +566,6 @@ public class ASTCompiler {
     }
 
     private boolean isListAllLiterals(ListNode listNode) {
-        for (int i = 0; i < listNode.size(); i++) {
-            switch (listNode.get(i).getNodeType()) {
-            case STRNODE:
-            case FLOATNODE:
-            case FIXNUMNODE:
-            case BIGNUMNODE:
-            case REGEXPNODE:
-            case ZARRAYNODE:
-            case SYMBOLNODE:
-            case NILNODE:
-                // simple literals, continue
-                continue;
-            case ARRAYNODE:
-                // scan contained array
-                if (isListAllLiterals((ArrayNode)listNode.get(i))) {
-                    continue;
-                } else {
-                    return false;
-                }
-            case HASHNODE:
-                // scan contained hash
-                if (isListAllLiterals(((HashNode)listNode.get(i)).getListNode())) {
-                    continue;
-                } else {
-                    return false;
-                }
-            default:
-                return false;
-            }
-        }
-
         // all good!
         return true;
     }
@@ -2425,44 +2394,7 @@ public class ASTCompiler {
     }
 
     protected void compileHashCommon(HashNode hashNode, BodyCompiler context, boolean expr) {
-        if (expr) {
-            if (hashNode.getListNode() == null || hashNode.getListNode().size() == 0) {
-                context.createEmptyHash();
-                return;
-            }
 
-            ArrayCallback hashCallback = new ArrayCallback() {
-                public void nextValue(BodyCompiler context, Object sourceArray,
-                        int index) {
-                    ListNode listNode = (ListNode) sourceArray;
-                    int keyIndex = index * 2;
-                    Node keyNode = listNode.get(keyIndex);
-
-                    // whether to prepare string keys during aset by freezing and deduping them
-                    boolean prepare = true;
-
-                    if (keyNode instanceof StrNode) {
-                        compileFastFrozenString((StrNode) keyNode, context, true);
-                        prepare = false;
-                    } else {
-                        compile(keyNode, context, true);
-                    }
-
-                    compile(listNode.get(keyIndex + 1), context, true);
-                    context.pushBoolean(prepare);
-                }
-            };
-
-            if (isListAllLiterals(hashNode.getListNode())) {
-                context.createNewLiteralHash(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
-            } else {
-                context.createNewHash(hashNode.getListNode(), hashCallback, hashNode.getListNode().size() / 2);
-            }
-        } else {
-            for (Node nextNode : hashNode.getListNode().childNodes()) {
-                compile(nextNode, context, false);
-            }
-        }
     }
 
     public void compileIf(Node node, BodyCompiler context, final boolean expr) {

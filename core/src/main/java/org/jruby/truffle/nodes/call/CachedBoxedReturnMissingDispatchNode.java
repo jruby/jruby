@@ -57,4 +57,25 @@ public class CachedBoxedReturnMissingDispatchNode extends BoxedDispatchNode {
         return DispatchHeadNode.MISSING;
     }
 
+    @Override
+    public boolean doesRespondTo(VirtualFrame frame, RubyBasicObject receiverObject) {
+        RubyNode.notDesignedForCompilation();
+
+        // Check the lookup node is what we expect
+
+        if (receiverObject.getLookupNode() != expectedLookupNode) {
+            return next.doesRespondTo(frame, receiverObject);
+        }
+
+        // Check the class has not been modified
+
+        try {
+            unmodifiedAssumption.check();
+        } catch (InvalidAssumptionException e) {
+            return respecializeAndDoesRespondTo("class modified", frame, receiverObject);
+        }
+
+        return false;
+    }
+
 }

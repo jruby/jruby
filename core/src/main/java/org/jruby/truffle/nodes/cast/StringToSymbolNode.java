@@ -19,7 +19,6 @@ import org.jruby.truffle.runtime.core.*;
 /**
  * Creates a symbol from a string.
  */
-@NodeInfo(shortName = "cast-string-to-symbol")
 @NodeChild("string")
 public abstract class StringToSymbolNode extends RubyNode {
 
@@ -31,10 +30,9 @@ public abstract class StringToSymbolNode extends RubyNode {
         super(prev);
     }
 
+    @CompilerDirectives.SlowPath
     @Specialization
     public RubySymbol doString(RubyString string) {
-        notDesignedForCompilation();
-
         return getContext().newSymbol(string.toString());
     }
 

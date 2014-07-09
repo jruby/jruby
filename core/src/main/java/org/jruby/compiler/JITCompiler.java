@@ -171,14 +171,6 @@ public class JITCompiler implements JITCompilerMBean {
         return counts.largestCodeSize.get();
     }
 
-    public void tryJIT(DefaultMethod method, ThreadContext context, String className, String methodName) {
-        if (!config.getCompileMode().shouldJIT()) return;
-        
-        if (method.incrementCallCount() < config.getJitThreshold()) return;
-        
-        jitThresholdReached(method, config, context, className, methodName);
-    }
-
     public void tearDown() {
         if (executor != null) {
             try {

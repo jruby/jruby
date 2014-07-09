@@ -17,7 +17,6 @@ import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Visibility;
 
 import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.runtime.IRReturnJump;
@@ -225,7 +224,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                         if (init == NEVER) {
                             result = block.yieldSpecific(context);
                         } else {
-                            result = block.yieldArray(context, init, null, null);
+                            result = block.yieldArray(context, init, null);
                         }
 
                         data.prev.data.queue.push(context, result);

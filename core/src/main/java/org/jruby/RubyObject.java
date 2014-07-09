@@ -417,11 +417,11 @@ public class RubyObject extends RubyBasicObject {
      * filename and line of the string under evaluation.
      */
     @Deprecated
-    public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject[] args, Block block) {
+    public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject[] args, Block block, EvalType evalType) {
         if (block.isGiven()) {
             if (args.length > 0) throw getRuntime().newArgumentError(args.length, 0);
 
-            return yieldUnder(context, mod, block);
+            return yieldUnder(context, mod, block, evalType);
         }
 
         if (args.length == 0) {
@@ -454,7 +454,7 @@ public class RubyObject extends RubyBasicObject {
             line = 0;
         }
 
-        return evalUnder(context, mod, evalStr, file, line);
+        return evalUnder(context, mod, evalStr, file, line, evalType);
     }
 
     // Methods of the Object class (rb_obj_*):

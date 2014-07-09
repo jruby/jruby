@@ -27,8 +27,6 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
     public static final BigInteger MIN_VALUE_BIG = BigInteger.valueOf(MIN_VALUE);
     public static final BigInteger MAX_VALUE_BIG = BigInteger.valueOf(MAX_VALUE);
 
-    public static final long SIZE = Long.SIZE;
-
     protected RubyFixnum(RubyClass fixnumClass) {
         super(fixnumClass);
     }
@@ -199,13 +197,6 @@ public abstract class RubyFixnum extends RubyObject implements Unboxable {
         } else {
             return super.equals(other);
         }
-    }
-
-    @Override
-    public int hashCode() {
-        RubyNode.notDesignedForCompilation();
-
-        throw new UnsupportedOperationException();
     }
 
     public static class IntegerFixnum extends RubyFixnum {

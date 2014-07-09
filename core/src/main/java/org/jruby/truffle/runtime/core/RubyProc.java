@@ -9,11 +9,16 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.RootCallTarget;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.methods.arguments.BehaveAsBlockNode;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.methods.*;
 
@@ -35,7 +40,7 @@ public class RubyProc extends RubyObject {
 
         @Override
         public RubyBasicObject newInstance() {
-            return new RubyProc(this);
+            return new RubyProc(this, Type.PROC);
         }
 
     }
@@ -44,31 +49,37 @@ public class RubyProc extends RubyObject {
         PROC, LAMBDA
     }
 
-    @CompilationFinal private Type type;
-    @CompilationFinal private Object selfCapturedInScope;
-    @CompilationFinal private RubyProc blockCapturedInScope;
-    @CompilationFinal private RubyMethod method;
+    private final Type type;
+    @CompilationFinal private SharedMethodInfo sharedMethodInfo;
+    @CompilationFinal private CallTarget callTarget;
+    @CompilationFinal private CallTarget callTargetForMethods;
+    @CompilationFinal private MaterializedFrame declarationFrame;
+    @CompilationFinal private Object self;
+    @CompilationFinal private RubyProc block;
 
-    public RubyProc(RubyClass procClass) {
+    public RubyProc(RubyClass procClass, Type type) {
         super(procClass);
+        this.type = type;
     }
 
-    public RubyProc(RubyClass procClass, Type type, Object selfCapturedInScope, RubyProc blockCapturedInScope, RubyMethod method) {
-        super(procClass);
-        initialize(type, selfCapturedInScope, blockCapturedInScope, method);
+    public RubyProc(RubyClass procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTarget,
+                    CallTarget callTargetForMethods, MaterializedFrame declarationFrame, Object self, RubyProc block) {
+        this(procClass, type);
+        initialize(sharedMethodInfo, callTarget, callTargetForMethods, declarationFrame, self, block);
     }
 
-    public void initialize(Type setType, Object selfCapturedInScope, RubyProc blockCapturedInScope, RubyMethod setMethod) {
-        assert RubyContext.shouldObjectBeVisible(selfCapturedInScope);
-
-        type = setType;
-        this.selfCapturedInScope = selfCapturedInScope;
-        this.blockCapturedInScope = blockCapturedInScope;
-        method = setMethod;
+    public void initialize(SharedMethodInfo sharedMethodInfo, CallTarget callTarget, CallTarget callTargetForMethods,
+                           MaterializedFrame declarationFrame, Object self, RubyProc block) {
+        this.sharedMethodInfo = sharedMethodInfo;
+        this.callTarget = callTarget;
+        this.callTargetForMethods = callTargetForMethods;
+        this.declarationFrame = declarationFrame;
+        this.self = self;
+        this.block = block;
     }
 
     public Object call(Object... args) {
-        return callWithModifiedSelf(selfCapturedInScope, args);
+        return callWithModifiedSelf(self, args);
     }
 
     public Object callWithModifiedSelf(Object modifiedSelf, Object... args) {
@@ -77,34 +88,42 @@ public class RubyProc extends RubyObject {
         assert modifiedSelf != null;
         assert args != null;
 
-        try {
-            return method.call(modifiedSelf, blockCapturedInScope, args);
-        } catch (ReturnException e) {
-            switch (type) {
-                case PROC:
-                    throw e;
-                case LAMBDA:
-                    return e.getValue();
-                default:
-                    throw new IllegalStateException();
-            }
+        switch (type) {
+            case PROC:
+                return callTarget.call(RubyArguments.pack(declarationFrame, modifiedSelf, block, args));
+            case LAMBDA:
+                return callTargetForMethods.call(RubyArguments.pack(declarationFrame, modifiedSelf, block, args));
         }
+
+        throw new IllegalStateException();
     }
 
     public Type getType() {
         return type;
     }
 
+    public SharedMethodInfo getSharedMethodInfo() {
+        return sharedMethodInfo;
+    }
+
+    public CallTarget getCallTarget() {
+        return callTarget;
+    }
+
+    public CallTarget getCallTargetForMethods() {
+        return callTargetForMethods;
+    }
+
+    public MaterializedFrame getDeclarationFrame() {
+        return declarationFrame;
+    }
+
     public Object getSelfCapturedInScope() {
-        return selfCapturedInScope;
+        return self;
     }
 
     public RubyProc getBlockCapturedInScope() {
-        return blockCapturedInScope;
-    }
-
-    public RubyMethod getMethod() {
-        return method;
+        return block;
     }
 
 }

@@ -272,8 +272,12 @@ public abstract class IRScope implements ParseResult {
         this.nestedClosures = new ArrayList<IRClosure>();
     }
 
-    public void addClosure(IRClosure c) {
-        nestedClosures.add(c);
+    public void addClosure(IRClosure closure) {
+        nestedClosures.add(closure);
+    }
+
+    public void removeClosure(IRClosure closure) {
+        nestedClosures.remove(closure);
     }
 
     public Instr getLastInstr() {
@@ -479,7 +483,7 @@ public abstract class IRScope implements ParseResult {
         return cfg;
     }
 
-    private Instr[] prepareInstructionsForInterpretation() {
+    private synchronized Instr[] prepareInstructionsForInterpretation() {
         checkRelinearization();
 
         if (linearizedInstrArray != null) return linearizedInstrArray; // Already prepared
@@ -593,10 +597,11 @@ public abstract class IRScope implements ParseResult {
         // inline add lvar loads/store to tmp-var loads/stores.
         if (!flags.contains(HAS_END_BLOCKS) && !flags.contains(REQUIRES_DYNSCOPE)) {
             CompilerPass pass;
-            pass = new DeadCodeElimination();
-            if (pass.previouslyRun(this) == null) {
-                pass.run(this);
-            }
+            // FIXME: disable DCE because it's eliminating too much (#1786)
+//            pass = new DeadCodeElimination();
+//            if (pass.previouslyRun(this) == null) {
+//                pass.run(this);
+//            }
             pass = new AddLocalVarLoadStoreInstructions();
             if (pass.previouslyRun(this) == null) {
                 pass.run(this);
@@ -632,7 +637,7 @@ public abstract class IRScope implements ParseResult {
 
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
-    public List<BasicBlock> prepareForCompilation() {
+    public synchronized List<BasicBlock> prepareForCompilation() {
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) {
             runCompilerPasses(getManager().getJITPasses(this));

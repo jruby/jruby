@@ -38,6 +38,25 @@ public abstract class TruffleDebugNodes {
 
     }
 
+    @CoreMethod(names = "array_storage_info", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    public abstract static class ArrayStorageInfo extends CoreMethodNode {
+
+        public ArrayStorageInfo(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ArrayStorageInfo(ArrayStorageInfo prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString javaClassOf(RubyArray array) {
+            notDesignedForCompilation();
+            return getContext().makeString("RubyArray(" + (array.getStore() == null ? "null" : array.getStore().getClass()) + "*" + array.getSize() + ")");
+        }
+
+    }
+
     @CoreMethod(names = "parse_tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
     public abstract static class ParseTreeNode extends CoreMethodNode {
 

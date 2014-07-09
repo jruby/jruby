@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.control.PassthroughNode;
@@ -20,6 +21,12 @@ import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyRange;
 
 public class FixnumLowerNode extends PassthroughNode {
+
+    @CompilerDirectives.CompilationFinal private boolean hasSeenInteger = false;
+    @CompilerDirectives.CompilationFinal private boolean hasSeenLong = false;
+    @CompilerDirectives.CompilationFinal private boolean hasSeenIntegerRange = false;
+    @CompilerDirectives.CompilationFinal private boolean hasSeenLongRange = false;
+    @CompilerDirectives.CompilationFinal private boolean hasSeenUndefined = false;
 
     @CompilerDirectives.CompilationFinal private boolean hasNeededToLowerLongFixnum = false;
     @CompilerDirectives.CompilationFinal private boolean hasNeededToLowerLongFixnumRange = false;
@@ -35,29 +42,72 @@ public class FixnumLowerNode extends PassthroughNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         final Object value = child.execute(frame);
 
-        if (value instanceof Long && canLower((long) value)) {
-            hasNeededToLowerLongFixnum = true;
-            return lower((long) value);
+        if (hasSeenInteger && value instanceof Integer) {
+            return value;
+        }
+
+        if (hasSeenLong && value instanceof Long) {
+            if (canLower((long) value)) {
+                return lower((long) value);
+            } else {
+                return value;
+            }
+        }
+
+        if (hasSeenIntegerRange && value instanceof RubyRange.IntegerFixnumRange) {
+            return value;
+        }
+
+        if (hasSeenLongRange && value instanceof RubyRange.LongFixnumRange) {
+            if (canLower((RubyRange.LongFixnumRange) value)) {
+                return lower((RubyRange.LongFixnumRange) value);
+            } else {
+                return value;
+            }
+        }
+
+        if (hasSeenUndefined && value instanceof UndefinedPlaceholder) {
+            return value;
+        }
+
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+
+        if (value instanceof Integer) {
+            hasSeenInteger = true;
+            return value;
         }
 
         if (value instanceof Long) {
-            throw new UnsupportedOperationException();
+            hasSeenLong = true;
+            if (canLower((long) value)) {
+                return lower((long) value);
+            } else {
+                return value;
+            }
         }
 
-        if (value instanceof RubyRange.LongFixnumRange && canLower((RubyRange.LongFixnumRange) value)) {
-            hasNeededToLowerLongFixnumRange = true;
-            return lower((RubyRange.LongFixnumRange) value);
+        if (value instanceof RubyRange.IntegerFixnumRange) {
+            hasSeenIntegerRange = true;
+            return value;
         }
 
         if (value instanceof RubyRange.LongFixnumRange) {
-            throw new UnsupportedOperationException();
+            hasSeenLongRange = true;
+            if (canLower((RubyRange.LongFixnumRange) value)) {
+                return lower((RubyRange.LongFixnumRange) value);
+            } else {
+                return value;
+            }
         }
 
-        return value;
+        if (value instanceof UndefinedPlaceholder) {
+            hasSeenUndefined = true;
+            return value;
+        }
+
+        throw new UnsupportedOperationException(value.getClass().getName());
     }
 
     @Override

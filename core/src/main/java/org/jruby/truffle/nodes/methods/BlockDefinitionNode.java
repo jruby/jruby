@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.methods.arguments.BehaveAsBlockNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.*;
@@ -22,16 +23,16 @@ import org.jruby.truffle.runtime.methods.*;
  * Define a block. That is, store the definition of a block and when executed produce the executable
  * object that results.
  */
-@NodeInfo(shortName = "block-def")
 public class BlockDefinitionNode extends MethodDefinitionNode {
 
     private final CallTarget callTarget;
+    private final CallTarget callTargetForMethods;
 
     public BlockDefinitionNode(RubyContext context, SourceSection sourceSection, String name, SharedMethodInfo methodInfo,
-                    boolean requiresDeclarationFrame, RubyRootNode rootNode) {
+                    boolean requiresDeclarationFrame, CallTarget callTarget, CallTarget callTargetForMethods, RubyRootNode rootNode) {
         super(context, sourceSection, name, methodInfo, requiresDeclarationFrame, rootNode, false);
-        final RubyRootNode rootNodeClone = NodeUtil.cloneNode(rootNode);
-        callTarget = Truffle.getRuntime().createCallTarget(rootNodeClone);
+        this.callTarget = callTarget;
+        this.callTargetForMethods = callTargetForMethods;
     }
 
     @Override
@@ -44,9 +45,9 @@ public class BlockDefinitionNode extends MethodDefinitionNode {
             declarationFrame = null;
         }
 
-        final RubyMethod method = new RubyMethod(sharedMethodInfo, name, null, Visibility.PUBLIC, false, callTarget, declarationFrame, false);
-
-        return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, RubyArguments.getSelf(frame.getArguments()), RubyArguments.getBlock(frame.getArguments()), method);
+        return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, sharedMethodInfo,
+                callTarget, callTargetForMethods, declarationFrame, RubyArguments.getSelf(frame.getArguments()),
+                RubyArguments.getBlock(frame.getArguments()));
     }
 
 }

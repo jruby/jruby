@@ -29,8 +29,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+
 import org.jruby.runtime.callsite.LtCallSite;
 import org.jruby.runtime.callsite.LeCallSite;
 import org.jruby.runtime.callsite.MinusCallSite;
@@ -52,12 +57,18 @@ import org.jruby.runtime.callsite.SuperCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.callsite.XorCallSite;
 import org.jruby.runtime.invokedynamic.MethodNames;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  *
  * @author headius
  */
 public class MethodIndex {
+    private static final boolean DEBUG = false;
+
+    private static final Logger LOG = LoggerFactory.getLogger("MethodIndex");
+
     @Deprecated
     public static final int NO_METHOD = MethodNames.DUMMY.ordinal();
     @Deprecated
@@ -79,6 +90,9 @@ public class MethodIndex {
         "hash",
         "<=>"
     };
+
+    public static final Set<String> FRAME_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
+    public static final Set<String> SCOPE_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
 
     public static CallSite getCallSite(String name) {
         // fast and safe respond_to? call site logic
@@ -214,5 +228,15 @@ public class MethodIndex {
 
     public static CallSite getSuperCallSite() {
         return new SuperCallSite();
+    }
+
+    public static void addFrameAwareMethods(String... methods) {
+        if (DEBUG) LOG.debug("Adding frame-aware method names: {}", Arrays.toString(methods));
+        FRAME_AWARE_METHODS.addAll(Arrays.asList(methods));
+    }
+
+    public static void addScopeAwareMethods(String... methods) {
+        if (DEBUG) LOG.debug("Adding scope-aware method names: {}", Arrays.toString(methods));
+        SCOPE_AWARE_METHODS.addAll(Arrays.asList(methods));
     }
 }

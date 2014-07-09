@@ -12,7 +12,9 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.core.RubyFixnum;
+import org.jruby.truffle.runtime.util.SlowPathBigInteger;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public class FixnumOrBignumNode extends Node {
@@ -20,6 +22,9 @@ public class FixnumOrBignumNode extends Node {
     private final BranchProfile lowerProfile = new BranchProfile();
     private final BranchProfile integerProfile = new BranchProfile();
     private final BranchProfile longProfile = new BranchProfile();
+
+    private final BranchProfile bignumProfile = new BranchProfile();
+    private final BranchProfile checkLongProfile = new BranchProfile();
 
     public Object fixnumOrBignum(BigInteger value) {
         if (value.compareTo(RubyFixnum.MIN_VALUE_BIG) >= 0 && value.compareTo(RubyFixnum.MAX_VALUE_BIG) <= 0) {
@@ -37,6 +42,28 @@ public class FixnumOrBignumNode extends Node {
         } else {
             return value;
         }
+    }
+
+    public Object fixnumOrBignum(double value) {
+        if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
+            // TODO(CS): reusing profiles might not be a good idea
+            integerProfile.enter();
+
+            return (int) value;
+        }
+
+        checkLongProfile.enter();
+
+        if (value >= Long.MIN_VALUE && value <= Long.MAX_VALUE) {
+            // TODO(CS): reusing profiles might not be a good idea
+            longProfile.enter();
+
+            return (long) value;
+        }
+
+        bignumProfile.enter();
+
+        return SlowPathBigInteger.create(value);
     }
 
 }

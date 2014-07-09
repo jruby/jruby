@@ -12,7 +12,6 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 
-import java.util.List;
 import java.util.Map;
 
 // This represents an array that is used solely during arguments construction

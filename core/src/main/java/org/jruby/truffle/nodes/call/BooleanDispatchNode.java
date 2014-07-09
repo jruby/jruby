@@ -94,6 +94,13 @@ public class BooleanDispatchNode extends UnboxedDispatchNode {
     }
 
     @Override
+    public boolean doesRespondTo(VirtualFrame frame, Object receiverObject) {
+        // We should probably make this node a kind of branch
+        RubyNode.notDesignedForCompilation();
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void setNext(UnboxedDispatchNode next) {
         this.next = next;
     }

@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.jruby.ir.instructions;
 
 import java.util.Map;
@@ -11,10 +5,6 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 
-/**
- *
- * @author enebo
- */
 public abstract class TwoOperandBranchInstr extends BranchInstr {
     private Operand arg1;
     private Operand arg2;

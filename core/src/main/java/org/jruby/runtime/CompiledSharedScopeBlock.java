@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -49,8 +48,8 @@ public class CompiledSharedScopeBlock extends CompiledBlockLight {
     }
     
     @Override
-    protected Frame pre(ThreadContext context, RubyModule klass, Binding binding) {
-        return context.preForBlock(binding, klass);
+    protected Frame pre(ThreadContext context, Binding binding) {
+        return context.preForBlock(binding);
     }
     
     @Override

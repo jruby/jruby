@@ -15,7 +15,6 @@ import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 
-@NodeInfo(shortName = "float")
 public class FloatLiteralNode extends RubyNode {
 
     private final double value;

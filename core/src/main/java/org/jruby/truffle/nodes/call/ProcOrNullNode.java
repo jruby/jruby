@@ -21,7 +21,6 @@ import org.jruby.truffle.runtime.core.*;
  * Wraps some node that will produce either a {@link RubyProc} or a {@link NilPlaceholder} and
  * returns {@code null} in case of the latter. Used in parts of the dispatch chain.
  */
-@NodeInfo(shortName = "proc-or-null")
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ProcOrNullNode extends RubyNode {
 

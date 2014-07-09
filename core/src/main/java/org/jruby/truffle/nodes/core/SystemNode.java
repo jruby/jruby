@@ -26,7 +26,6 @@ import org.jruby.truffle.runtime.core.RubyHash;
  * Represents an expression that is evaluated by running it as a system command via forking and
  * execing, and then taking stdout as a string.
  */
-@NodeInfo(shortName = "system")
 public class SystemNode extends RubyNode {
 
     @Child protected RubyNode child;

@@ -1364,7 +1364,7 @@ public class RubyHash extends RubyObject implements Map {
                 if (oneNine) {
                     block.yield(context, RubyArray.newArray(runtime, key, value));
                 } else {
-                    block.yieldArray(context, RubyArray.newArray(runtime, key, value), null, null);
+                    block.yieldArray(context, RubyArray.newArray(runtime, key, value), null);
                 }
             }
         });
@@ -1604,7 +1604,7 @@ public class RubyHash extends RubyObject implements Map {
         iteratorVisitAll(new Visitor() {
             @Override
             public void visit(IRubyObject key, IRubyObject value) {
-                if (block.yieldArray(context, runtime.newArray(key, value), null, null).isTrue()) {
+                if (block.yieldArray(context, runtime.newArray(key, value), null).isTrue()) {
                     result.fastASet(key, value);
                 }
             }
@@ -1624,7 +1624,7 @@ public class RubyHash extends RubyObject implements Map {
         iteratorVisitAll(new Visitor() {
             @Override
             public void visit(IRubyObject key, IRubyObject value) {
-                if (block.yieldArray(context, RubyArray.newArray(runtime, key, value), null, null).isTrue()) {
+                if (block.yieldArray(context, RubyArray.newArray(runtime, key, value), null).isTrue()) {
                     self.delete(context, key, Block.NULL_BLOCK);
                 }
             }

@@ -18,7 +18,6 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
-@NodeInfo(shortName = "object")
 public class ObjectLiteralNode extends RubyNode {
 
     private final Object object;

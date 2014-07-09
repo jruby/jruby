@@ -6,8 +6,11 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.IRFlags;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
@@ -15,37 +18,32 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
 import org.jruby.ir.operands.ScopeModule;
 
 public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr {
-    private Operand container;
     private final IRMethod method;
 
-    public DefineInstanceMethodInstr(Operand container, IRMethod method) {
+    // SSS FIXME: Implicit self arg -- make explicit to not get screwed by inlining!
+    public DefineInstanceMethodInstr(IRMethod method) {
         super(Operation.DEF_INST_METH);
-        this.container = container;
         this.method = method;
     }
 
-    public Operand getContainer() {
-        return container;
-    }
-
-
     @Override
     public Operand[] getOperands() {
-        return new Operand[]{container, new ScopeModule(method) };
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        container = container.getSimplifiedOperand(valueMap, force);
+        return new Operand[]{ new ScopeModule(method) };
     }
 
     @Override
     public String toString() {
-        return getOperation() + "(" + container + ", " + method.getName() + ", " + method.getFileName() + ")";
+        return getOperation() + "(" + method.getName() + ", " + method.getFileName() + ")";
+    }
+
+    @Override
+    public boolean computeScopeFlags(IRScope scope) {
+        scope.getFlags().add(IRFlags.REQUIRES_DYNSCOPE);
+        scope.getFlags().add(IRFlags.REQUIRES_VISIBILITY);
+        return true;
     }
 
     public IRMethod getMethod() {
@@ -54,18 +52,19 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineInstanceMethodInstr(container.cloneForInlining(ii), method);
+        return new DefineInstanceMethodInstr(method);
     }
 
     // SSS FIXME: Go through this and DefineClassMethodInstr.interpret, clean up, extract common code
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Ruby runtime = context.runtime;
+        RubyModule clazz = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
 
-        // SSS FIXME: This is a temporary solution that uses information from the stack.
-        // This instruction and this logic will be re-implemented to not use implicit information from the stack.
-        // Till such time, this code implements the correct semantics.
-        RubyModule clazz = context.getRubyClass();
+        //if (clazz != context.getRubyClass()) {
+        //    System.out.println("*** DING DING DING! *** For " + this + "; clazz: " + clazz + "; ruby module: " + context.getRubyClass());
+        //}
+
         String     name  = method.getName();
         Visibility currVisibility = context.getCurrentVisibility();
         Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, name, currVisibility);

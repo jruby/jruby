@@ -14,6 +14,7 @@ import java.util.*;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
@@ -22,10 +23,12 @@ import org.jruby.truffle.runtime.core.RubyArray;
 /**
  * Read the rest of arguments after a certain point into an array.
  */
-@NodeInfo(shortName = "read-rest-of-arguments")
 public class ReadRestArgumentNode extends RubyNode {
 
     private final int index;
+
+    private final BranchProfile noArgumentsLeftProfile = new BranchProfile();
+    private final BranchProfile subsetOfArgumentsProfile = new BranchProfile();
 
     public ReadRestArgumentNode(RubyContext context, SourceSection sourceSection, int index) {
         super(context, sourceSection);
@@ -34,18 +37,21 @@ public class ReadRestArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         final RubyClass arrayClass = getContext().getCoreLibrary().getArrayClass();
 
-        if (RubyArguments.getUserArgumentsCount(frame.getArguments()) <= index) {
-            return new RubyArray(arrayClass);
-        } else if (index == 0) {
+        if (index == 0) {
             final Object[] arguments = RubyArguments.extractUserArguments(frame.getArguments());
             return new RubyArray(arrayClass, arguments, arguments.length);
         } else {
-            final Object[] arguments = RubyArguments.extractUserArguments(frame.getArguments());
-            return new RubyArray(arrayClass, Arrays.copyOfRange(arguments, index, arguments.length), arguments.length - index);
+            if (RubyArguments.getUserArgumentsCount(frame.getArguments()) <= index) {
+                noArgumentsLeftProfile.enter();
+                return new RubyArray(arrayClass);
+            } else {
+                subsetOfArgumentsProfile.enter();
+                final Object[] arguments = RubyArguments.extractUserArguments(frame.getArguments());
+                // TODO(CS): risk here of widening types too much - always going to be Object[] - does seem to be something that does happen
+                return new RubyArray(arrayClass, Arrays.copyOfRange(arguments, index, arguments.length), arguments.length - index);
+            }
         }
     }
 }

@@ -5,13 +5,20 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
+<<<<<<< HEAD
     <version>9000.dev</version>
+=======
+    <version>1.7.14-SNAPSHOT</version>
+>>>>>>> jruby-1_7
   </parent>
   <artifactId>jruby-ext</artifactId>
+<<<<<<< HEAD
+=======
+  <version>1.7.14-SNAPSHOT</version>
+>>>>>>> jruby-1_7
   <packaging>pom</packaging>
   <name>JRuby Ext</name>
   <modules>
-    <module>openssl</module>
     <module>readline</module>
     <module>ripper</module>
   </modules>

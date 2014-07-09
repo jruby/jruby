@@ -199,7 +199,6 @@ public class InstrEncoderMap {
     }
 
     private void encodeAliasInstr(AliasInstr instr) {
-        e.encode(instr.getReceiver());
         e.encode(instr.getNewName());
         e.encode(instr.getOldName());
     }
@@ -300,7 +299,6 @@ public class InstrEncoderMap {
     }
 
     private void encodeDefineInstanceMethodInstr(DefineInstanceMethodInstr instr) {
-        e.encode(instr.getContainer());
         e.encode(instr.getMethod());
     }
 

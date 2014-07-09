@@ -8,9 +8,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- */
 public class OneFixnumArgNoBlockCallInstr extends CallInstr {
     private final long fixNum;
 

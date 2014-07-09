@@ -36,4 +36,9 @@ public class BoxingDispatchNode extends UnboxedDispatchNode {
         return next.dispatch(frame, boxing.box(receiverObject), blockObject, argumentsObjects);
     }
 
+    @Override
+    public boolean doesRespondTo(VirtualFrame frame, Object receiverObject) {
+        return next.doesRespondTo(frame, boxing.box(receiverObject));
+    }
+
 }

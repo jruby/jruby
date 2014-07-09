@@ -20,7 +20,6 @@ import org.jruby.truffle.runtime.core.RubyClass;
 /**
  * Reads the class of an object.
  */
-@NodeInfo(shortName = "class")
 public class ClassNode extends RubyNode {
 
     @Child protected BoxingNode child;

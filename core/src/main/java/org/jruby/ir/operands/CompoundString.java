@@ -31,10 +31,6 @@ public class CompoundString extends Operand {
         this.encoding = encoding;
     }
 
-    public CompoundString(List<Operand> pieces) {
-        this(pieces, null);
-    }
-
     public List<Operand> getPieces() {
        return pieces;
     }

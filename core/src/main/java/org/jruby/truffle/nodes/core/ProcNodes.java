@@ -12,8 +12,10 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
+import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
@@ -21,21 +23,21 @@ public abstract class ProcNodes {
     @CoreMethod(names = {"call", "[]"}, isSplatted = true)
     public abstract static class CallNode extends CoreMethodNode {
 
+        @Child protected YieldDispatchHeadNode yieldNode;
+
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            yieldNode = new YieldDispatchHeadNode(context);
         }
 
         public CallNode(CallNode prev) {
             super(prev);
+            yieldNode = prev.yieldNode;
         }
 
         @Specialization
         public Object call(VirtualFrame frame, RubyProc proc, Object[] args) {
-            notDesignedForCompilation();
-
-            // TODO(CS): need to call with the caller frame the same as this method's caller frame, not this method's frame
-
-            return proc.call(args);
+            return yieldNode.dispatch(frame, proc, args);
         }
 
     }
@@ -52,10 +54,10 @@ public abstract class ProcNodes {
         }
 
         @Specialization
-        public NilPlaceholder initialize(VirtualFrame frame, RubyProc proc, RubyProc block) {
-            notDesignedForCompilation();
+        public NilPlaceholder initialize(RubyProc proc, RubyProc block) {
+            proc.initialize(block.getSharedMethodInfo(), block.getCallTargetForMethods(), block.getCallTargetForMethods(),
+                    block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
 
-            proc.initialize(RubyProc.Type.PROC, block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), block.getMethod().withoutBlockDestructureSemantics());
             return NilPlaceholder.INSTANCE;
         }
 

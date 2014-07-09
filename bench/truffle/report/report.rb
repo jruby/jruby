@@ -38,7 +38,7 @@ while not args.empty?
       exit
     end
   else
-    if ["rbx", "topaz", "jruby", "jruby-master", "competition", "almost-all", "all", "interpreters", "summary", "other-vms", "head"].include? arg
+    if ["rbx", "topaz", "jruby", "competition", "almost-all", "all", "interpreters", "summary", "other-vms"].include? arg
       reports.push(arg)
     else
       puts "unknown report " + arg
@@ -53,16 +53,14 @@ end
 
 report_references = {
   "topaz" => "topaz-dev",
-  "rbx" => "rbx-2.2.7",
-  "jruby" => "jruby-1.7.12-server-indy",
-  "jruby-master" => "jruby-master-server-indy",
-  "competition" => "jruby-1.7.12-server-indy",
+  "rbx" => "rbx-2.2.9",
+  "jruby" => "jruby-1.7.13-server-indy",
+  "competition" => "jruby-1.7.13-server-indy",
   "almost-all" => "2.1.2",
   "all" => "1.8.7-p375",
   "interpreters" => "2.1.2",
   "summary" => "2.1.2",
   "other-vms" => "2.1.2",
-  "head" => "jruby-master+truffle-server"
 }
 
 Ruby = Struct.new(
@@ -73,7 +71,7 @@ Ruby = Struct.new(
 
 rubies = []
 
-["1.8.7-p375", "1.9.3-p547", "2.0.0-p481", "2.1.2", "ree-1.8.7-2012.02", "rbx-2.2.7"].each do |name|
+["1.8.7-p375", "1.9.3-p547", "2.0.0-p481", "2.1.2", "ree-1.8.7-2012.02", "rbx-2.2.9"].each do |name|
   dir = "~/.rbenv/versions/" + name
 
   if Dir.exists? File.expand_path(dir)
@@ -83,11 +81,11 @@ rubies = []
       relevant_reports.push("interpreters")
     end
 
-    if ["2.1.2", "rbx-2.2.7"].include? name
+    if ["2.1.2", "rbx-2.2.9"].include? name
       relevant_reports.push("almost-all")
     end
 
-    if name == "rbx-2.2.7"
+    if name == "rbx-2.2.9"
       relevant_reports.push("summary")
       relevant_reports.push("competition")
       relevant_reports.push("other-vms")
@@ -106,7 +104,7 @@ rubies = []
   end
 end
 
-["jruby-1.7.12"].each do |name|
+["jruby-1.7.13"].each do |name|
   dir = "~/.rbenv/versions/" + name
 
   if Dir.exists? File.expand_path(dir)
@@ -125,21 +123,12 @@ else
 end
 
 if not ENV["JRUBY_DIR"].nil? and not ENV["GRAAL_RELEASE_DIR"].nil? and Dir.exists? File.expand_path(ENV["JRUBY_DIR"]) and Dir.exists? File.expand_path(ENV["GRAAL_RELEASE_DIR"])
-  rubies.push Ruby.new("jruby-master-server-interpreter", "$JRUBY_DIR/bin/jruby --server -Xcompile.mode=OFF", ["almost-all", "all", "jruby", "jruby-master", "interpreters"])
-  rubies.push Ruby.new("jruby-master-server", "$JRUBY_DIR/bin/jruby --server", ["almost-all", "all", "jruby", "jruby-master"])
-  rubies.push Ruby.new("jruby-master-server-indy", "$JRUBY_DIR/bin/jruby --server -Xcompile.invokedynamic=true", ["almost-all", "all", "jruby", "jruby-master", "summary"])
-  rubies.push Ruby.new("jruby-master-server-ir-interpreter", "$JRUBY_DIR/bin/jruby --server -X-CIR", ["all", "jruby", "jruby-master", "interpreters"])
-  rubies.push Ruby.new("jruby-master-server-ir-compiler", "$JRUBY_DIR/bin/jruby --server -X+CIR", ["all", "jruby", "jruby-master"])
-  rubies.push Ruby.new("jruby-master+truffle-server-original", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-original -X+T -Xtruffle.printRuntime=true", ["all", "interpreters", "jruby", "jruby-master"])
-  rubies.push Ruby.new("jruby-master+truffle-server", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-server -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-master", "topaz", "rbx", "competition", "summary", "other-vms", "head"])
+  rubies.push Ruby.new("jruby-master-server-ir-interpreter", "$JRUBY_DIR/bin/jruby --server -X-CIR", ["all", "jruby", "interpreters"])
+  rubies.push Ruby.new("jruby-master-server-ir-compiler", "$JRUBY_DIR/bin/jruby --server -X+CIR", ["all", "jruby"])
+  rubies.push Ruby.new("jruby-master+truffle-server-original", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-original -X+T -Xtruffle.printRuntime=true", ["all", "interpreters", "jruby"])
+  rubies.push Ruby.new("jruby-master+truffle-server", "JAVACMD=$GRAAL_RELEASE_DIR/bin/java $JRUBY_DIR/bin/jruby -J-server -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "topaz", "rbx", "competition", "summary", "other-vms"])
 else
   puts "warning: couldn't find $JRUBY_DIR or $GRAAL_RELEASE_DIR"
-end
-
-if not ENV["JRUBY_TRUFFLE_HEAD_DIR"].nil? and not ENV["GRAAL_HEAD_DIR"].nil? and Dir.exists? File.expand_path(ENV["JRUBY_TRUFFLE_HEAD_DIR"]) and Dir.exists? File.expand_path(ENV["GRAAL_HEAD_DIR"])
-  rubies.push Ruby.new("jruby-truffle-head+truffle-server", "JAVACMD=$GRAAL_HEAD_DIR/jdk1.8.0/product/bin/java $JRUBY_TRUFFLE_HEAD_DIR/bin/jruby -J-server -X+T -Xtruffle.printRuntime=true", ["almost-all", "all", "jruby", "jruby-master", "topaz", "competition", "other-vms", "head"])
-else
-  puts "warning: couldn't find $JRUBY_TRUFFLE_HEAD_DIR or $GRAAL_HEAD_DIR"
 end
 
 benchmarks = [

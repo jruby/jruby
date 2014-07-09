@@ -1,4 +1,5 @@
 exclude :test___dir__, "needs investigation"
+exclude :test_alias_owner, "needs investigation"
 exclude :test_arity, "needs investigation"
 exclude :test_bmethod_bound_parameters, "needs investigation"
 exclude :test_bmethod_unbound_parameters, "needs investigation"

@@ -22,7 +22,6 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
  * Represents a block of code run with exception handlers. There's no {@code try} keyword in Ruby -
  * it's implicit - but it's similar to a try statement in any other language.
  */
-@NodeInfo(shortName = "try")
 public class TryNode extends RubyNode {
 
     @Child protected RubyNode tryPart;

@@ -7,10 +7,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author enebo
- */
 public class OneOperandArgNoBlockNoResultCallInstr extends NoResultCallInstr {
     public OneOperandArgNoBlockNoResultCallInstr(NoResultCallInstr call) {
         super(Operation.NORESULT_CALL_1O, call);

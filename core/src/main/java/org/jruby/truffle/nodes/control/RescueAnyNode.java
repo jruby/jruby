@@ -19,7 +19,6 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 /**
  * Rescues any exception.
  */
-@NodeInfo(shortName = "rescue-any")
 public class RescueAnyNode extends RescueNode {
 
     public RescueAnyNode(RubyContext context, SourceSection sourceSection, RubyNode body) {

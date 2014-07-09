@@ -2,6 +2,7 @@ package org.jruby.ir;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.jruby.EvalType;
 import org.jruby.RubyModule;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.Label;
@@ -11,6 +12,7 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.IRStaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -25,13 +27,13 @@ public class IREvalScript extends IRClosure {
     private int     nearestNonEvalScopeDepth;
     private List<IRClosure> beginBlocks;
     private List<IRClosure> endBlocks;
-    private boolean isModuleEval;
+    private EvalType evalType;
 
     public IREvalScript(IRManager manager, IRScope lexicalParent, String fileName,
-            int lineNumber, StaticScope staticScope, boolean isModuleEval) {
+            int lineNumber, StaticScope staticScope, EvalType evalType) {
         super(manager, lexicalParent, fileName, lineNumber, staticScope, "EVAL_");
 
-        this.isModuleEval = isModuleEval;
+        this.evalType = evalType;
 
         int n = 0;
         IRScope s = lexicalParent;
@@ -43,6 +45,15 @@ public class IREvalScript extends IRClosure {
         this.nearestNonEvalScope = s;
         this.nearestNonEvalScopeDepth = n;
         this.nearestNonEvalScope.initEvalScopeVariableAllocator(false);
+
+        if (!getManager().isDryRun() && staticScope != null) {
+            // SSS FIXME: This is awkward!
+            if (evalType == EvalType.MODULE_EVAL) {
+                staticScope.setScopeType(this.getScopeType());
+            } else {
+                staticScope.setScopeType(this.nearestNonEvalScope.getScopeType());
+            }
+        }
     }
 
     @Override
@@ -55,13 +66,13 @@ public class IREvalScript extends IRClosure {
         return IRScopeType.EVAL_SCRIPT;
     }
 
-    public boolean isModuleEval() {
-        return isModuleEval;
-    }
-
     @Override
     public Operand[] getBlockArgs() {
         return new Operand[0];
+    }
+
+    public boolean isModuleOrInstanceEval() {
+        return evalType == EvalType.MODULE_EVAL || evalType == EvalType.INSTANCE_EVAL;
     }
 
     /* Record a begin block -- not all scope implementations can handle them */
@@ -121,7 +132,7 @@ public class IREvalScript extends IRClosure {
         // FIXME: Investigate if this is something left behind from
         // 1.8 mode support. Or if we need to introduce the additional
         // IRScope object.
-        int lookupDepth = isModuleEval ? scopeDepth - 1 : scopeDepth;
+        int lookupDepth = isModuleOrInstanceEval() ? scopeDepth - 1 : scopeDepth;
         LocalVariable lvar = findExistingLocalVariable(name, lookupDepth);
         if (lvar == null) lvar = getNewLocalVariable(name, lookupDepth);
         // Create a copy of the variable usable at the right depth

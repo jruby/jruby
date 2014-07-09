@@ -3224,7 +3224,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             public int compare(Object o1, Object o2) {
                 IRubyObject obj1 = (IRubyObject) o1;
                 IRubyObject obj2 = (IRubyObject) o2;
-                IRubyObject ret = block.yieldArray(context, getRuntime().newArray(obj1, obj2), null, null);
+                IRubyObject ret = block.yieldArray(context, getRuntime().newArray(obj1, obj2), null);
                 //TODO: ary_sort_check should be done here
                 return RubyComparable.cmpint(context, ret, obj1, obj2);
             }

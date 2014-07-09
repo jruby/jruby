@@ -215,7 +215,7 @@ public class RubyInstanceConfig {
         try {
             do {
                 if (isShebang(cursor)) break;
-            } while (skipToNextLine(cursor));
+		    } while (skipToNextLine(cursor));
         } catch (IOException e) {
         } finally {
             try { cursor.finish(); } catch (IOException e) {}

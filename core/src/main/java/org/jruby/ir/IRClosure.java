@@ -109,8 +109,8 @@ public class IRClosure extends IRScope {
         } else {
             this.body = new InterpretedIRBlockBody(this, arity, argumentType);
             if (staticScope != null) {
-                staticScope = getStaticScope();
                 ((IRStaticScope)staticScope).setIRScope(this);
+                staticScope.setScopeType(this.getScopeType());
             }
         }
 

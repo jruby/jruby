@@ -82,7 +82,7 @@ public class CallBlock extends BlockBody {
 
     @Override
     protected IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self,
-            RubyModule klass, Binding binding, Block.Type type) {
+                                  Binding binding, Block.Type type) {
         return callback.call(context, args, Block.NULL_BLOCK);
     }
     

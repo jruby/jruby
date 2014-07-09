@@ -27,6 +27,7 @@
 
 package org.jruby.runtime;
 
+import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.runtime.scope.NoVarsDynamicScope;
@@ -45,6 +46,8 @@ public abstract class DynamicScope {
     // Captured dynamic scopes
     protected final DynamicScope parent;
 
+    private EvalType evalType;
+
     // A place to store that special hiding space that bindings need to implement things like:
     // eval("a = 1", binding); eval("p a").  All binding instances must get access to this
     // hidden shared scope.  We store it here.  This will be null if no binding has yet
@@ -54,6 +57,7 @@ public abstract class DynamicScope {
     protected DynamicScope(StaticScope staticScope, DynamicScope parent) {
         this.staticScope = staticScope;
         this.parent = parent;
+        this.evalType = EvalType.NONE;
     }
 
     protected DynamicScope(StaticScope staticScope) {
@@ -380,5 +384,29 @@ public abstract class DynamicScope {
         }
 
         return buf.toString();
+    }
+
+    public boolean inInstanceEval() {
+        return evalType == EvalType.INSTANCE_EVAL;
+    }
+
+    public boolean inModuleEval() {
+        return evalType == EvalType.MODULE_EVAL;
+    }
+
+    public boolean inBindingEval() {
+        return evalType == EvalType.BINDING_EVAL;
+    }
+
+    public void setEvalType(EvalType evalType) {
+        this.evalType = evalType;
+    }
+
+    public EvalType getEvalType() {
+        return this.evalType;
+    }
+
+    public void clearEvalType() {
+        evalType = EvalType.NONE;
     }
 }

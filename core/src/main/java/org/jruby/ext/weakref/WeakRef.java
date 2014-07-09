@@ -88,11 +88,10 @@ public class WeakRef extends RubyObject {
     }
 
     // framed for invokeSuper
-    @JRubyMethod(frame = true, visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject obj) {
         ref = new WeakReference<IRubyObject>(obj);
-        
-        return Helpers.invokeSuper(context, this, obj, Block.NULL_BLOCK);
+        return context.nil;
     }
     
     @JRubyMethod(name = "weakref_alive?")

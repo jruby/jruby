@@ -397,13 +397,11 @@ public abstract class ModuleNodes {
         private void defineMethod(RubyModule module, RubySymbol name, RubyProc proc) {
             notDesignedForCompilation();
 
-            final RubyMethod method = proc.getMethod();
-
-            if (!(method.getCallTarget() instanceof RootCallTarget)) {
+            if (!(proc.getCallTarget() instanceof RootCallTarget)) {
                 throw new UnsupportedOperationException("Can only use define_method with methods where we have the original AST, as we need to clone and modify it");
             }
 
-            final RubyRootNode modifiedRootNode = (RubyRootNode) ((RootCallTarget) method.getCallTarget()).getRootNode();
+            final RubyRootNode modifiedRootNode = (RubyRootNode) ((RootCallTarget) proc.getCallTarget()).getRootNode();
             final CatchReturnPlaceholderNode currentCatchReturn = NodeUtil.findFirstNodeInstance(modifiedRootNode, CatchReturnPlaceholderNode.class);
 
             if (currentCatchReturn == null) {
@@ -413,7 +411,7 @@ public abstract class ModuleNodes {
             currentCatchReturn.replace(new CatchReturnNode(getContext(), currentCatchReturn.getSourceSection(), currentCatchReturn.getBody(), currentCatchReturn.getReturnID()));
 
             final CallTarget modifiedCallTarget = Truffle.getRuntime().createCallTarget(modifiedRootNode);
-            final RubyMethod modifiedMethod = new RubyMethod(method.getSharedMethodInfo(), name.toString(), method.getDeclaringModule(), method.getVisibility(), method.isUndefined(), modifiedCallTarget, method.getDeclarationFrame(), true);
+            final RubyMethod modifiedMethod = new RubyMethod(proc.getSharedMethodInfo(), name.toString(), null, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame(), true);
             module.addMethod(modifiedMethod);
         }
 

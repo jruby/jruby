@@ -15,13 +15,11 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.methods.*;
-import org.jruby.util.cli.Options;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,7 +45,7 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
         MethodCacheEntry entry = lookupInCache(receiverObject.getLookupNode());
 
         if (entry == null) {
-            CompilerDirectives.transferToInterpreter();
+            CompilerDirectives.transferToInterpreterAndInvalidate();
 
             final RubyBasicObject boxedCallingSelf = getContext().getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
 
@@ -67,7 +65,7 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
 
             cache.put(receiverObject.getLookupNode(), entry);
 
-            if (cache.size() > Options.TRUFFLE_GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD.load()) {
+            if (cache.size() > RubyContext.GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD) {
                 getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "general call node cache has " + cache.size() + " entries");
             }
         }
@@ -84,6 +82,41 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
         }
 
         return callNode.call(frame, entry.getMethod().getCallTarget(), RubyArguments.pack(entry.getMethod().getDeclarationFrame(), receiverObject, blockObject, argumentsToUse));
+    }
+
+    @Override
+    public boolean doesRespondTo(VirtualFrame frame, RubyBasicObject receiverObject) {
+        // TODO(CS): copy-and-paste of the above - needs to be factored out
+
+        MethodCacheEntry entry = lookupInCache(receiverObject.getLookupNode());
+
+        if (entry == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+
+            final RubyBasicObject boxedCallingSelf = getContext().getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
+
+            try {
+                entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, name), false);
+            } catch (UseMethodMissingException e) {
+                try {
+                    entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, "method_missing"), true);
+                } catch (UseMethodMissingException e2) {
+                    throw new RaiseException(getContext().getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing"));
+                }
+            }
+
+            if (entry.isMethodMissing()) {
+                hasAnyMethodsMissing = true;
+            }
+
+            cache.put(receiverObject.getLookupNode(), entry);
+
+            if (cache.size() > RubyContext.GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD) {
+                getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, getEncapsulatingSourceSection().getSource().getName(), getEncapsulatingSourceSection().getStartLine(), "general call node cache has " + cache.size() + " entries");
+            }
+        }
+
+        return !entry.isMethodMissing();
     }
 
     @CompilerDirectives.SlowPath

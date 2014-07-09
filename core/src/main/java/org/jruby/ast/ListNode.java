@@ -124,6 +124,10 @@ public class ListNode extends Node {
     public Node getLast() {
     	return list.size() == 0 ? null : list.get(list.size() - 1);
     }
+
+    public boolean isEmpty() {
+        return list.isEmpty();
+    }
     
     public List<Node> childNodes() {
         return list;

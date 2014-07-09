@@ -16,7 +16,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
 
-@NodeInfo(shortName = "is-nil")
 public class IsNilNode extends RubyNode {
 
     @Child protected RubyNode child;

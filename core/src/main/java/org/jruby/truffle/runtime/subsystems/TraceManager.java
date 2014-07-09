@@ -1,10 +1,3 @@
-package org.jruby.truffle.runtime.subsystems;
-
-import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.utilities.AssumedValue;
-import com.oracle.truffle.api.utilities.CyclicAssumption;
-import org.jruby.truffle.runtime.core.RubyProc;
-
 /*
  * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
@@ -14,6 +7,13 @@ import org.jruby.truffle.runtime.core.RubyProc;
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
+package org.jruby.truffle.runtime.subsystems;
+
+import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.utilities.AssumedValue;
+import com.oracle.truffle.api.utilities.CyclicAssumption;
+import org.jruby.truffle.runtime.core.RubyProc;
+
 public class TraceManager {
 
     private CyclicAssumption traceAssumption = new CyclicAssumption("before-func");

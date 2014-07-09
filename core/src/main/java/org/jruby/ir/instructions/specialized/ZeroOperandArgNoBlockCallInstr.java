@@ -7,8 +7,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- */
 public class ZeroOperandArgNoBlockCallInstr extends CallInstr {
     public ZeroOperandArgNoBlockCallInstr(CallInstr call) {
         super(Operation.CALL_0O, call);

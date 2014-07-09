@@ -164,8 +164,6 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString concat(RubyString string, RubyString other) {
-            notDesignedForCompilation();
-
             string.getBytes().append(other.getBytes());
             return string;
         }
@@ -240,9 +238,11 @@ public abstract class StringNodes {
 
         @Specialization(order = 3)
         public RubyString getIndex(RubyString string, int start, int length) {
-            notDesignedForCompilation();
-
-            return (RubyString) getContext().toTruffle(getContext().toJRuby(string).substr(getContext().getRuntime(), start, length));
+            // TODO(CS): not sure if this is right - encoding
+            // TODO(CS): why does subSequence return CharSequence?
+            final int begin = string.normaliseIndex(start);
+            final int exclusiveEnd = string.normaliseExclusiveIndex(start + length);
+            return new RubyString(getContext().getCoreLibrary().getStringClass(), (ByteList) string.getBytes().subSequence(begin, exclusiveEnd - begin));
         }
 
     }
@@ -278,18 +278,34 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyArray chomp(RubyString string) {
-            notDesignedForCompilation();
-
+        public RubyArray bytes(RubyString string) {
             final byte[] bytes = string.getBytes().bytes();
 
-            final int[] ints = new int[bytes.length];
+            if (RubyContext.ARRAYS_INT) {
+                final int[] store = new int[bytes.length];
 
-            for (int n = 0; n < ints.length; n++) {
-                ints[n] = RubyFixnum.toUnsignedInt(bytes[n]);
+                for (int n = 0; n < store.length; n++) {
+                    store[n] = RubyFixnum.toUnsignedInt(bytes[n]);
+                }
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
+            } else if (RubyContext.ARRAYS_LONG) {
+                final long[] store = new long[bytes.length];
+
+                for (int n = 0; n < store.length; n++) {
+                    store[n] = RubyFixnum.toUnsignedInt(bytes[n]);
+                }
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
+            } else {
+                final Object[] store = new Object[bytes.length];
+
+                for (int n = 0; n < store.length; n++) {
+                    store[n] = RubyFixnum.toUnsignedInt(bytes[n]);
+                }
+
+                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
             }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ints, bytes.length);
         }
     }
 
@@ -511,8 +527,6 @@ public abstract class StringNodes {
 
         @Specialization
         public int getByte(RubyString string, int index) {
-            notDesignedForCompilation();
-
             return string.getBytes().get(index);
         }
     }
@@ -702,9 +716,7 @@ public abstract class StringNodes {
 
         @Specialization
         public int size(RubyString string) {
-            notDesignedForCompilation();
-
-            return string.toString().length();
+            return string.getBytes().getRealSize();
         }
     }
 
@@ -904,10 +916,9 @@ public abstract class StringNodes {
             super(prev);
         }
 
+        @CompilerDirectives.SlowPath
         @Specialization
         public RubyArray unpack(RubyString string, RubyString format) {
-            notDesignedForCompilation();
-
             final org.jruby.RubyArray jrubyArray = Pack.unpack(getContext().getRuntime(), string.getBytes(), format.getBytes());
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), jrubyArray.toArray());
         }
