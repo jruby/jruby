@@ -36,6 +36,8 @@ package org.jruby.ext.zlib;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.zip.Adler32;
+
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
@@ -57,7 +59,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.ext.zlib.Zlib.*;
 
-import org.jruby.util.Adler32Ext;
 import org.jruby.util.ByteList;
 import org.jruby.util.CRC32Ext;
 
@@ -71,7 +72,21 @@ public class RubyZlib {
     public final static String ZLIB_VERSION = "1.2.3.3";
     public final static String VERSION = "0.6.0";
 
-    
+    private static final Field crc32InternalField = getCRC32InternalField();
+
+    private static final Field getCRC32InternalField() {
+        try {
+            Field field = CRC32.class.getDeclaredField("crc");
+            field.setAccessible(true);
+            field.setInt(new CRC32(), 1);
+            return field;
+        } catch(NoSuchFieldException nsfe) {
+            return null;
+        } catch(IllegalAccessException iae) {
+            return null;
+        }
+    }
+
     /** Create the Zlib module and add it to the Ruby runtime.
      * 
      */
@@ -213,16 +228,20 @@ public class RubyZlib {
     @JRubyMethod(name = "adler32", optional = 2, module = true, visibility = PRIVATE)
     public static IRubyObject adler32(IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(recv.getRuntime(),args,0,2);
-        int adler = 1;
+        int start = 1;
         ByteList bytes = null;
         if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
-        if (!args[1].isNil()) adler = RubyNumeric.fix2int(args[1]);
+        if (!args[1].isNil()) start = (int)RubyNumeric.num2long(args[1]);
 
-        Adler32Ext ext = new Adler32Ext(adler);
+        Adler32 checksum = new Adler32();
         if (bytes != null) {
-            ext.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length()); // it's safe since adler.update doesn't modify the array
+            checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
         }
-        return recv.getRuntime().newFixnum(ext.getValue());
+        long result = checksum.getValue();
+        if (start != 1) {
+            result = JZlib.adler32_combine(start, result, bytes.length());
+        }
+        return recv.getRuntime().newFixnum(result);
     }
 
     @JRubyMethod(compat = RUBY1_9)
