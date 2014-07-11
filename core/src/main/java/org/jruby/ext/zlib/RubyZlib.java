@@ -32,10 +32,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.zlib;
 
+import java.lang.reflect.Field;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.zip.CRC32;
 import java.util.zip.Adler32;
 
 import org.jruby.Ruby;
@@ -60,7 +62,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.ext.zlib.Zlib.*;
 
 import org.jruby.util.ByteList;
-import org.jruby.util.CRC32Ext;
 
 import com.jcraft.jzlib.JZlib;
 
@@ -211,18 +212,28 @@ public class RubyZlib {
     @JRubyMethod(name = "crc32", optional = 2, module = true, visibility = PRIVATE)
     public static IRubyObject crc32(IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(recv.getRuntime(),args,0,2);
-        long crc = 0;
+        int start = 0;
         ByteList bytes = null;
-        
         if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
-        if (!args[1].isNil()) crc = RubyNumeric.num2long(args[1]);
+        if (!args[1].isNil()) start = (int)RubyNumeric.num2long(args[1]);
 
-        CRC32Ext ext = new CRC32Ext((int)crc);
+        CRC32 checksum = new CRC32();
+        boolean slow = crc32InternalField == null;
         if (bytes != null) {
-            ext.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+            if (start != 0 && !slow) {
+                try {
+                    crc32InternalField.setInt(checksum, start);
+                } catch (IllegalAccessException iae) {
+                    slow = true;
+                }
+            }
+            checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
         }
-        
-        return recv.getRuntime().newFixnum(ext.getValue());
+        long result = checksum.getValue();
+        if (start != 0 && slow) {
+            result = JZlib.crc32_combine(start, result, bytes.length());
+        }
+        return recv.getRuntime().newFixnum(result);
     }
 
     @JRubyMethod(name = "adler32", optional = 2, module = true, visibility = PRIVATE)
