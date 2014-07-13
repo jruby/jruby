@@ -17,7 +17,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 class LibrarySearcher {
     static class Ruby18 extends LibrarySearcher {
@@ -50,8 +49,6 @@ class LibrarySearcher {
         }
     }
 
-    private static final Pattern ABSOLUTE_PATH_PATTERN = Pattern.compile("([^:]+:)*/.*");
-
     private final LoadService loadService;
     private final Ruby runtime;
     private final Map<String, Library> builtinLibraries;
@@ -74,8 +71,7 @@ class LibrarySearcher {
 
     public FoundLibrary findLibrary(String baseName, SuffixType suffixType) {
         for (String suffix : suffixType.getSuffixes()) {
-            FoundLibrary library = null;
-            if (library == null) library = findBuiltinLibrary(baseName, suffix);
+            FoundLibrary library = findBuiltinLibrary(baseName, suffix);
             if (library == null) library = findResourceLibrary(baseName, suffix);
             if (library == null) library = findServiceLibrary(baseName, suffix);
 
@@ -134,7 +130,7 @@ class LibrarySearcher {
         }
 
         // If path is absolute, try loading it directly
-        if (ABSOLUTE_PATH_PATTERN.matcher(baseName).matches()) {
+        if (new File(baseName).isAbsolute()) {
             return findFileResource(baseName, suffix);
         }
 
