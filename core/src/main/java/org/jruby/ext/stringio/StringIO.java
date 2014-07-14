@@ -53,7 +53,6 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.encoding.Transcoder;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
@@ -400,13 +399,6 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return RubyString.newStringShared(runtime, strBytes, strByteList.getBegin() + pos, len, enc);
     }
 
-    private static int memchr(byte[] ptr, int start, int find, int len) {
-        for (int i = start; i < start + len; i++) {
-            if (ptr[i] == find) return i;
-        }
-        return -1;
-    }
-    
     private static final int CHAR_BIT = 8;
     
     private static void bm_init_skip(int[] skip, byte[] pat, int patPtr, int m) {
@@ -599,7 +591,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
             }
             s = p;
             // find next \n or end; if followed by \n, include it too
-            p = memchr(dataBytes, p, '\n', e - p);
+            p = StringSupport.memchr(dataBytes, p, '\n', e - p);
             if (p != -1) {
                 if (++p < e && dataBytes[p] == '\n') {
                     e = p + 1;
@@ -611,7 +603,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         } else if (n == 1) {
             RubyString strStr = (RubyString)str;
             ByteList strByteList = strStr.getByteList();
-            if ((p = memchr(dataBytes, s, strByteList.get(0), e - s)) != -1) {
+            if ((p = StringSupport.memchr(dataBytes, s, strByteList.get(0), e - s)) != -1) {
                 e = p + 1;
             }
             str = strioSubstr(runtime, ptr.pos, e - s);
@@ -677,7 +669,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "print", rest = true)
     public IRubyObject print(ThreadContext context, IRubyObject[] args) {
-        return RubyIO.print19(context, this, args);
+        return RubyIO.print(context, this, args);
     }
 
     @JRubyMethod(name = "printf", required = 1, rest = true)
@@ -1131,7 +1123,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         if (enc != enc2 && enc != EncodingUtils.ascii8bitEncoding(runtime)
                 // this is a hack because we don't seem to handle incoming ASCII-8BIT properly in transcoder
                 && enc2 != ASCIIEncoding.INSTANCE) {
-            str = runtime.newString(Transcoder.strConvEnc(context, str.getByteList(), enc2, enc));
+            str = runtime.newString(EncodingUtils.strConvEnc(context, str.getByteList(), enc2, enc));
         }
         len = str.size();
         if (len == 0) return RubyFixnum.zero(runtime);

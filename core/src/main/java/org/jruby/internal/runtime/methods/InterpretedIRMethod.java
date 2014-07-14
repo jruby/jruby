@@ -54,6 +54,12 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         this.method.getStaticScope().determineModule();
         this.arity = calculateArity();
         this.pushScope = method.getFlags().contains(IRFlags.REQUIRES_DYNSCOPE);
+
+        if (method.usesEval()) {
+            // Methods that contain evals don't have interpreted parent context in JIT,
+            // so we disable JIT here. FIXME: fix this some day?
+            box.callCount = -1;
+        }
     }
 
     // We can probably use IRMethod callArgs for something (at least arity)
@@ -87,9 +93,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        if (box.callCount >= 0) {
-            if (tryCompile(context)) return callJitted(context, self, clazz, name, args, block);
-        }
+        if (tryCompile(context)) return callJitted(context, self, clazz, name, args, block);
 
         ensureInstrsReady();
 
@@ -139,18 +143,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     }
 
     private IRubyObject callJitted(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        if (method.hasExplicitCallProtocol()) {
-            return box.actualMethod.call(context, self, clazz, name, args, block);
-        } else {
-            try {
-                // update call stacks (push: frame, class, scope, etc.)
-                pre(context, self, name, block);
-                return box.actualMethod.call(context, self, clazz, name, args, block);
-            } finally {
-                // update call stacks (pop: ..)
-                post(context);
-            }
-        }
+        return box.actualMethod.call(context, self, clazz, name, args, block);
     }
 
     private void ensureInstrsReady() {
@@ -163,6 +156,8 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (box.actualMethod != null) {
             return true;
         }
+
+        if (box.callCount == -1) return false;
 
         if (box.callCount++ >= Options.JIT_THRESHOLD.load()) {
 
@@ -179,14 +174,14 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
                     Method scriptMethod = compiled.getMethod("__script__", ThreadContext.class,
                             StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class);
                     MethodHandle handle = MethodHandles.publicLookup().unreflect(scriptMethod);
-                    box.actualMethod = new CompiledIRMethod(handle, getName(), getFile(), getLine(), method.getStaticScope(), getVisibility(), getImplementationClass(), Helpers.encodeParameterList(getParameterList()));
+                    box.actualMethod = new CompiledIRMethod(handle, getName(), getFile(), getLine(), method.getStaticScope(), getVisibility(), getImplementationClass(), Helpers.encodeParameterList(getParameterList()), method.hasExplicitCallProtocol());
 
                     if (config.isJitLogging()) {
                         LOG.info("done jitting: " + method);
                     }
 
                     return true;
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     if (config.isJitLogging()) {
                         LOG.info("failed to jit (" + e.getMessage() + "): " + method);
                         if (config.isJitLoggingVerbose()) {

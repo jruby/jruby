@@ -1140,7 +1140,10 @@ public class IRBuilder {
             cvarScope = cvarScope.getLexicalParent();
         }
 
-        if ((cvarScope != null) && cvarScope.isNonSingletonClassBody()) {
+        if (
+                // FIXME: This is attempting to avoid the unjittable ScopeModule when we just need immediate scope
+                cvarScope != s
+                        && (cvarScope != null) && cvarScope.isNonSingletonClassBody()) {
             return new ScopeModule(cvarScope);
         } else {
             return addResultInstr(s, new GetClassVarContainerModuleInstr(s.createTemporaryVariable(),
@@ -1171,8 +1174,7 @@ public class IRBuilder {
             Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
             addInstr(s, new PutConstInstr(module, constDeclNode.getName(), val));
         } else { // colon3, assign in Object
-            ScopeModule object = new ScopeModule(manager.getObject());
-            addInstr(s, new PutConstInstr(object, constDeclNode.getName(), val));
+            addInstr(s, new PutConstInstr(new ObjectClass(), constDeclNode.getName(), val));
         }
 
         return val;
@@ -2039,7 +2041,7 @@ public class IRBuilder {
             strPieces.add(dynamicPiece(n, s));
         }
 
-        return copyAndReturnValue(s, new Regexp(new CompoundString(strPieces), dregexpNode.getOptions()));
+        return copyAndReturnValue(s, new Regexp(new CompoundString(strPieces, dregexpNode.getEncoding()), dregexpNode.getOptions()));
     }
 
     public Operand buildDStr(DStrNode dstrNode, IRScope s) {
@@ -2585,7 +2587,7 @@ public class IRBuilder {
                 container = findContainerModule(s);
             }
         } else { //::Bar
-            container = new ScopeModule(manager.getObject());
+            container = new ObjectClass();
         }
 
         return container;

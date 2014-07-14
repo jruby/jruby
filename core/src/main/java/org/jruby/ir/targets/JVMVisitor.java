@@ -192,6 +192,12 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public void codegenScope(IRScope scope) {
+        if (scope.usesEval()) {
+            // Methods that contain evals don't have interpreted parent context in JIT,
+            // so we disable JIT here. FIXME: fix this some day?
+            throw new RuntimeException("JIT does not support methods with eval");
+        }
+
         if (scope instanceof IRScriptBody) {
             codegenScriptBody((IRScriptBody)scope);
         } else if (scope instanceof IRMethod) {
@@ -507,10 +513,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BlockGivenInstr(BlockGivenInstr blockGivenInstr) {
-        jvmMethod().loadRuntime();
+        jvmMethod().loadContext();
         visit(blockGivenInstr.getBlockArg());
-        jvmMethod().invokeVirtual(Type.getType(Block.class), Method.getMethod("boolean isGiven()"));
-        jvmMethod().invokeVirtual(Type.getType(Ruby.class), Method.getMethod("org.jruby.RubyBoolean newBoolean(boolean)"));
+        jvmMethod().invokeIRHelper("isBlockGiven", sig(RubyBoolean.class, ThreadContext.class, Object.class));
         jvmStoreLocal(blockGivenInstr.getResult());
     }
 
@@ -784,6 +789,8 @@ public class JVMVisitor extends IRVisitor {
 
         if (numArgs == 1 && args[0] instanceof Splat) {
             visit(args[0]);
+            // need to unwrap for call path (FIXME: more efficient!)
+            m.adapter.invokevirtual(p(RubyArray.class), "toJavaArrayMaybeUnsafe", sig(IRubyObject[].class));
             numArgs = -1;
         } else if (CallBase.containsArgSplat(args)) {
             // splat, but not in first position; bail out for now
@@ -989,11 +996,12 @@ public class JVMVisitor extends IRVisitor {
         a.ldc(method.getFileName());
         a.ldc(method.getLineNumber());
         a.ldc(Helpers.encodeParameterList(parameters));
+        a.ldc(method.hasExplicitCallProtocol());
 
         // add method
         a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledIRClassMethod",
                 sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, java.lang.invoke.MethodHandle.class, String.class,
-                        StaticScope.class, String.class, String.class, int.class, String.class));
+                        StaticScope.class, String.class, String.class, int.class, String.class, boolean.class));
 
         a.pop();
     }
@@ -1019,11 +1027,12 @@ public class JVMVisitor extends IRVisitor {
         a.ldc(method.getFileName());
         a.ldc(method.getLineNumber());
         a.ldc(Helpers.encodeParameterList(parameters));
+        a.ldc(method.hasExplicitCallProtocol());
 
         // add method
         a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledIRMethod",
                 sig(IRubyObject.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class,
-                        DynamicScope.class, IRubyObject.class, String.class, String.class, int.class, String.class));
+                        DynamicScope.class, IRubyObject.class, String.class, String.class, int.class, String.class, boolean.class));
 
         a.pop();
     }
@@ -1267,7 +1276,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void LineNumberInstr(LineNumberInstr linenumberinstr) {
-        jvmAdapter().line(linenumberinstr.getLineNumber());
+        jvmAdapter().line(linenumberinstr.getLineNumber() + 1);
     }
 
     @Override
@@ -1415,6 +1424,14 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadLocal(4);
         jvmMethod().loadStaticScope();
         jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void preMethodFrameAndClass(String, org.jruby.runtime.builtin.IRubyObject, org.jruby.runtime.Block, org.jruby.parser.StaticScope)"));
+
+        // FIXME: this should be part of explicit call protocol only when needed, optimizable, and correct for the scope
+        // See also CompiledIRMethod.call
+        jvmMethod().loadContext();
+        jvmAdapter().invokestatic(p(Visibility.class), "values", sig(Visibility[].class));
+        jvmAdapter().ldc(Visibility.PUBLIC.ordinal());
+        jvmAdapter().aaload();
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "setCurrentVisibility", sig(void.class, Visibility.class));
     }
 
     @Override
@@ -1752,12 +1769,13 @@ public class JVMVisitor extends IRVisitor {
         jvmStoreLocal(toaryinstr.getResult());
     }
 
-    // SSS FIXME: Needs an update to reflect instr. change
     @Override
     public void UndefMethodInstr(UndefMethodInstr undefmethodinstr) {
         jvmMethod().loadContext();
         visit(undefmethodinstr.getMethodName());
-        jvmAdapter().invokestatic(p(Helpers.class), "undefMethod", sig(IRubyObject.class, ThreadContext.class, Object.class));
+        jvmLoadLocal(DYNAMIC_SCOPE);
+        jvmMethod().loadSelf();
+        jvmMethod().invokeIRHelper("undefMethod", sig(IRubyObject.class, ThreadContext.class, Object.class, DynamicScope.class, IRubyObject.class));
         jvmStoreLocal(undefmethodinstr.getResult());
     }
 
@@ -2029,6 +2047,8 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ScopeModule(ScopeModule scopemodule) {
+        // FIXME: Disabling until #1792 is addressed
+        super.ScopeModule(scopemodule);
         jvmAdapter().aload(1);
         jvmAdapter().invokevirtual(p(StaticScope.class), "getModule", sig(RubyModule.class));
     }
@@ -2044,7 +2064,6 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         visit(splat.getArray());
         jvmMethod().invokeHelper("irSplat", RubyArray.class, ThreadContext.class, IRubyObject.class);
-        jvmAdapter().invokevirtual(p(RubyArray.class), "toJavaArrayMaybeUnsafe", sig(IRubyObject[].class));
     }
 
     @Override

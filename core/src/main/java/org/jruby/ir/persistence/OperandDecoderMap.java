@@ -3,6 +3,8 @@ package org.jruby.ir.persistence;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
@@ -112,7 +114,7 @@ class OperandDecoderMap {
     private Operand decodeCompoundString() {
         String encodingString = d.decodeString();
 
-        if (encodingString.equals("")) return new CompoundString(d.decodeOperandList());
+        if (encodingString.equals("")) return new CompoundString(d.decodeOperandList(), ASCIIEncoding.INSTANCE);
 
         // FIXME: yuck
         return new CompoundString(d.decodeOperandList(), NonIRObjectFactory.createEncoding(encodingString));

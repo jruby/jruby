@@ -16,6 +16,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.CompiledMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -258,7 +259,7 @@ public class Bootstrap {
 
         MethodHandle handle = Binder
                 .from(lookup, type)
-                .append(site, constName)
+                .append(site, constName.intern())
                 .append(noPrivateConsts == 0 ? false : true)
                 .invokeStaticQuiet(LOOKUP, Bootstrap.class, "searchConst");
 
@@ -274,7 +275,7 @@ public class Bootstrap {
 
         MethodHandle handle = Binder
                 .from(lookup, type)
-                .append(site, constName)
+                .append(site, constName.intern())
                 .append(noPrivateConsts == 0 ? false : true)
                 .invokeStaticQuiet(LOOKUP, Bootstrap.class, "inheritanceSearchConst");
 
@@ -412,7 +413,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0, arg1);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
@@ -429,7 +430,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0, arg1, arg2);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
@@ -446,7 +447,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, args);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, false);
@@ -482,7 +483,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, block);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
@@ -500,7 +501,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0);
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0, block);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
@@ -518,7 +519,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0, arg1, block);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
@@ -536,7 +537,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0, arg1, arg2, block);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
@@ -554,7 +555,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.NORMAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, args, block);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
@@ -573,7 +574,7 @@ public class Bootstrap {
         DynamicMethod method = entry.method;
 
         if (methodMissing(entry, CallType.FUNCTIONAL, methodName, caller)) {
-            return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName);
+            return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, block);
         }
 
         MethodHandle mh = getHandle(selfClass, "invokeSelfSimple", switchPoint, site, method, true);
@@ -682,13 +683,13 @@ public class Bootstrap {
 
                     if (nc.isStatic()) {
                         mh = binder
-                                .permute("context", "self", "arg*", "block") // filter caller
+                                .permute("context", "self", "arg.*", "block") // filter caller
                                 .cast(nc.getNativeReturn(), nc.getNativeSignature())
                                 .invokeStaticQuiet(LOOKUP, nc.getNativeTarget(), nc.getNativeName())
                                 .handle();
                     } else {
                         mh = binder
-                                .permute("self", "context", "arg*", "block") // filter caller, move self
+                                .permute("self", "context", "arg.*", "block") // filter caller, move self
                                 .castArg("self", nc.getNativeTarget())
                                 .castVirtual(nc.getNativeReturn(), nc.getNativeTarget(), nc.getNativeSignature())
                                 .invokeVirtualQuiet(LOOKUP, nc.getNativeName())
@@ -708,8 +709,8 @@ public class Bootstrap {
                 compiledIRMethod = ((InterpretedIRMethod)method).getCompiledIRMethod();
             }
 
-            if (compiledIRMethod != null) {
-                // SSS FIXME: What about frame/scope/visibility?
+            // CON FIXME: frame/scope/visibility are not alway done in IR, so we have this ugly check and bailout
+            if (compiledIRMethod != null && compiledIRMethod.hasExplicitCallProtocol()) {
                 mh = (MethodHandle)compiledIRMethod.getHandle();
 
                 binder = SmartBinder.from(site.signature)
@@ -1050,8 +1051,9 @@ public class Bootstrap {
         VariableAccessor accessor = self.getMetaClass().getRealClass().getVariableAccessorForRead(site.name);
 
         // produce nil if the variable has not been initialize
-        MethodHandle nullToNil = findStatic(Helpers.class, "nullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
-        nullToNil = insertArguments(nullToNil, 1, self.getRuntime().getNil());
+        MethodHandle nullToNil = findStatic(Bootstrap.class, "instVarNullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class, String.class));
+        IRubyObject nil = self.getRuntime().getNil();
+        nullToNil = insertArguments(nullToNil, 1, nil, site.name);
         nullToNil = explicitCastArguments(nullToNil, methodType(IRubyObject.class, Object.class));
 
         // get variable value and filter with nullToNil
@@ -1063,7 +1065,7 @@ public class Bootstrap {
         MethodHandle fallback = null;
         if (site.getTarget() == null || site.chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
 //            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget triggered site rebind " + self.getMetaClass().id);
-            fallback = findStatic(InvokeDynamicSupport.class, "getVariableFallback", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
+            fallback = findStatic(Bootstrap.class, "ivarGet", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
             fallback = fallback.bindTo(site);
             site.clearChainCount();
         } else {
@@ -1081,7 +1083,7 @@ public class Bootstrap {
 //        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget on class " + self.getMetaClass().id + " bound directly");
         site.setTarget(getValue);
 
-        return (IRubyObject)getValue.invokeWithArguments(self);
+        return Bootstrap.instVarNullToNil((IRubyObject)accessor.get(self), nil, site.name);
     }
 
     public static void ivarSet(VariableSite site, IRubyObject self, IRubyObject value) throws Throwable {
@@ -1096,7 +1098,7 @@ public class Bootstrap {
         MethodHandle fallback = null;
         if (site.getTarget() == null || site.chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
 //            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset triggered site rebind " + self.getMetaClass().id);
-            fallback = findStatic(InvokeDynamicSupport.class, "setVariableFallback", methodType(void.class, VariableSite.class, IRubyObject.class, IRubyObject.class));
+            fallback = findStatic(Bootstrap.class, "ivarSet", methodType(void.class, VariableSite.class, IRubyObject.class, IRubyObject.class));
             fallback = fallback.bindTo(site);
             site.clearChainCount();
         } else {
@@ -1115,7 +1117,7 @@ public class Bootstrap {
 //        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset on class " + self.getMetaClass().id + " bound directly");
         site.setTarget(setValue);
 
-        setValue.invokeWithArguments(self, value);
+        accessor.set(self, value);
     }
 
     private static MethodHandle findStatic(Class target, String name, MethodType type) {
@@ -1201,6 +1203,12 @@ public class Bootstrap {
                 .append(noPrivateConsts)
                 .invokeStatic(LOOKUP, Bootstrap.class, "inheritanceSearchConst");
 
+        // test that module is same as before
+        MethodHandle test = Binder.from(site.type().changeReturnType(boolean.class))
+                .drop(0, 1)
+                .insert(1, module.id)
+                .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testArg0ModuleMatch");
+        target = guardWithTest(test, target, fallback);
         site.setTarget(switchPoint.guardWithTest(target, fallback));
 
         return constant;
@@ -1290,5 +1298,20 @@ public class Bootstrap {
                 .constant(flote)
         );
         return flote;
+    }
+
+    public static IRubyObject instVarNullToNil(IRubyObject value, IRubyObject nil, String name) {
+        if (value == null) {
+            Ruby runtime = nil.getRuntime();
+            if (runtime.isVerbose()) {
+                nil.getRuntime().getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + name + " not initialized");
+            }
+            return nil;
+        }
+        return value;
+    }
+
+    public static boolean testArg0ModuleMatch(IRubyObject arg0, int id) {
+        return arg0 instanceof RubyModule && ((RubyModule)arg0).id == id;
     }
 }

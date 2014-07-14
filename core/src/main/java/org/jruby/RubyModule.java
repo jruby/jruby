@@ -47,7 +47,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.compiler.ASTInspector;
 import org.jruby.embed.Extension;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.AliasMethod;
@@ -56,8 +55,10 @@ import org.jruby.internal.runtime.methods.AttrWriterMethod;
 import org.jruby.internal.runtime.methods.CacheableMethod;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.Framing;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.internal.runtime.methods.Scoping;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
@@ -68,6 +69,7 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.MethodFactory;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -106,7 +108,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static org.jruby.anno.FrameField.VISIBILITY;
+import static org.jruby.anno.FrameField.*;
 import static org.jruby.runtime.Visibility.*;
 
 
@@ -122,17 +124,6 @@ public class RubyModule extends RubyObject {
     private static final boolean DEBUG = false;
     protected static final String ERR_INSECURE_SET_CONSTANT  = "Insecure: can't modify constant";
     protected static final String ERR_FROZEN_CONST_TYPE = "class/module ";
-    public static final Set<String> SCOPE_CAPTURING_METHODS = new HashSet<String>(Arrays.asList(
-            "eval",
-            "module_eval",
-            "class_eval",
-            "instance_eval",
-            "module_exec",
-            "class_exec",
-            "instance_exec",
-            "binding",
-            "local_variables"
-            ));
 
     public static final ObjectAllocator MODULE_ALLOCATOR = new ObjectAllocator() {
         @Override
@@ -1198,15 +1189,33 @@ public class RubyModule extends RubyObject {
     }
     
     private DynamicMethod searchForAliasMethod(Ruby runtime, String name) {
-        // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
-        // We warn because we treat certain method names as "special" for purposes of
-        // optimization. Hopefully this will be enough to convince people not to alias
-        // them.
-        if (SCOPE_CAPTURING_METHODS.contains(name)) {
-            runtime.getWarnings().warn("`" + name + "' should not be aliased");
-        }  
-      
-        return deepMethodSearch(name, runtime);
+        DynamicMethod method = deepMethodSearch(name, runtime);
+
+        if (method instanceof JavaMethod) {
+            // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
+            // We warn because we treat certain method names as "special" for purposes of
+            // optimization. Hopefully this will be enough to convince people not to alias
+            // them.
+            CallConfiguration callerReq = ((JavaMethod)method).getCallerRequirement();
+
+            if (callerReq.framing() != Framing.None ||
+                    callerReq.scoping() != Scoping.None) {String baseName = getBaseName();
+                char refChar = '#';
+                String simpleName = getSimpleName();
+
+                if (baseName == null && this instanceof MetaClass) {
+                    IRubyObject attached = ((MetaClass)this).getAttached();
+                    if (attached instanceof RubyModule) {
+                        simpleName = ((RubyModule)attached).getSimpleName();
+                        refChar = '.';
+                    }
+                }
+
+                runtime.getWarnings().warn(simpleName + refChar + name + " accesses caller's state and should not be aliased");
+            }
+        }
+
+        return method;
     }
 
     /** this method should be used only by interpreter or compiler 
@@ -2143,7 +2152,7 @@ public class RubyModule extends RubyObject {
             throw runtime.newTypeError(hash0, runtime.getHash());
         }
         
-        for (Map.Entry entry : (Set<Map.Entry<Object, Object>>)methodNames.directEntrySet()) {
+        for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)methodNames.directEntrySet()) {
             String name = entry.getValue().toString();
             if (methods.containsKey(entry.getValue().toString())) {
                 throw runtime.newArgumentError("constant would conflict - " + name);
@@ -2307,19 +2316,27 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = {"module_eval", "class_eval"})
+    @JRubyMethod(name = {"module_eval", "class_eval"},
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
     public IRubyObject module_eval(ThreadContext context, Block block) {
         return specificEval(context, this, block, EvalType.MODULE_EVAL);
     }
-    @JRubyMethod(name = {"module_eval", "class_eval"})
+    @JRubyMethod(name = {"module_eval", "class_eval"},
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, Block block) {
         return specificEval(context, this, arg0, block, EvalType.MODULE_EVAL);
     }
-    @JRubyMethod(name = {"module_eval", "class_eval"})
+    @JRubyMethod(name = {"module_eval", "class_eval"},
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return specificEval(context, this, arg0, arg1, block, EvalType.MODULE_EVAL);
     }
-    @JRubyMethod(name = {"module_eval", "class_eval"})
+    @JRubyMethod(name = {"module_eval", "class_eval"},
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
     public IRubyObject module_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return specificEval(context, this, arg0, arg1, arg2, block, EvalType.MODULE_EVAL);
     }
@@ -2328,7 +2345,9 @@ public class RubyModule extends RubyObject {
         return specificEval(context, this, args, block, EvalType.MODULE_EVAL);
     }
 
-    @JRubyMethod(name = {"module_exec", "class_exec"})
+    @JRubyMethod(name = {"module_exec", "class_exec"},
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
     public IRubyObject module_exec(ThreadContext context, Block block) {
         if (block.isGiven()) {
             return yieldUnder(context, this, IRubyObject.NULL_ARRAY, block, EvalType.MODULE_EVAL);
@@ -2337,7 +2356,9 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = {"module_exec", "class_exec"}, rest = true)
+    @JRubyMethod(name = {"module_exec", "class_exec"}, rest = true,
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
     public IRubyObject module_exec(ThreadContext context, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
             return yieldUnder(context, this, args, block, EvalType.MODULE_EVAL);
@@ -2371,7 +2392,7 @@ public class RubyModule extends RubyObject {
     /** 
      * Return an array of nested modules or classes.
      */
-    @JRubyMethod(name = "nesting", reads = FrameField.SCOPE, meta = true)
+    @JRubyMethod(name = "nesting", reads = SCOPE, meta = true)
     public static RubyArray nesting(ThreadContext context, IRubyObject recv, Block block) {
         Ruby runtime = context.runtime;
         RubyModule object = runtime.getObject();
@@ -3642,31 +3663,17 @@ public class RubyModule extends RubyObject {
     private static void define(RubyModule module, JavaMethodDescriptor desc, String simpleName, DynamicMethod dynamicMethod) {
         JRubyMethod jrubyMethod = desc.anno;
         // check for frame field reads or writes
-        boolean frame = false;
-        boolean scope = false;
-        if (jrubyMethod.frame()) {
-            frame = true;
-        }
-        if (jrubyMethod.scope()) {
-            scope = true;
-        }
-        for (FrameField field : jrubyMethod.reads()) {
-            frame |= field.needsFrame();
-            scope |= field.needsScope();
-        }
-        for (FrameField field : jrubyMethod.writes()) {
-            frame |= field.needsFrame();
-            scope |= field.needsScope();
-        }
-        if (frame) {
+        CallConfiguration needs = CallConfiguration.valueOf(AnnotationHelper.getCallerCallConfigNameByAnno(jrubyMethod));
+
+        if (needs.framing() == Framing.Full) {
             Set<String> frameAwareMethods = new HashSet<String>();
             AnnotationHelper.addMethodNamesToSet(frameAwareMethods, jrubyMethod, simpleName);
-            ASTInspector.FRAME_AWARE_METHODS.addAll(frameAwareMethods);
+            MethodIndex.FRAME_AWARE_METHODS.addAll(frameAwareMethods);
         }
-        if (scope) {
+        if (needs.scoping() == Scoping.Full) {
             Set<String> scopeAwareMethods = new HashSet<String>();
             AnnotationHelper.addMethodNamesToSet(scopeAwareMethods, jrubyMethod, simpleName);
-            ASTInspector.SCOPE_AWARE_METHODS.addAll(scopeAwareMethods);
+            MethodIndex.SCOPE_AWARE_METHODS.addAll(scopeAwareMethods);
         }
         
         RubyModule singletonClass;
@@ -4025,6 +4032,19 @@ public class RubyModule extends RubyObject {
      */
     @Deprecated
     public int index;
+
+    @Deprecated
+    public static final Set<String> SCOPE_CAPTURING_METHODS = new HashSet<String>(Arrays.asList(
+            "eval",
+            "module_eval",
+            "class_eval",
+            "instance_eval",
+            "module_exec",
+            "class_exec",
+            "instance_exec",
+            "binding",
+            "local_variables"
+    ));
     
     protected ClassIndex classIndex = ClassIndex.NO_INDEX;
 

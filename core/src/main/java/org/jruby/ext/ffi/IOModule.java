@@ -38,9 +38,6 @@ import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.BadDescriptorException;
-import org.jruby.util.io.ChannelStream;
-import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.OpenFile;
 
 /**
@@ -67,10 +64,9 @@ public class IOModule {
         Ruby runtime = context.runtime;
         try {
             OpenFile openFile = ((RubyIO) src).getOpenFile();
-            openFile.checkClosed(runtime);
-            openFile.checkReadable(runtime);
+            openFile.checkClosed();
+            openFile.checkReadable(context);
 
-            ChannelStream stream = (ChannelStream) openFile.getMainStreamSafe();
 
             ByteBuffer buffer = ((AbstractMemory) dst).getMemoryIO().asByteBuffer();
             int count = RubyNumeric.num2int(rbLength);
@@ -83,15 +79,11 @@ public class IOModule {
                 buffer = buffer.duplicate();
                 buffer.limit(count);
             }
-            
-            return runtime.newFixnum(stream.read(buffer));
 
-        } catch (InvalidValueException ex) {
-            throw runtime.newErrnoEINVALError();
+            // TODO: This used to use ChannelStream and honor its buffers; it does not honor OpenFile buffers now
+            return runtime.newFixnum(openFile.readChannel().read(buffer));
         } catch (EOFException e) {
             return runtime.newFixnum(-1);
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         }

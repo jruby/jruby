@@ -27,6 +27,7 @@
 package org.jruby.ext.zlib;
 
 import org.jcodings.Encoding;
+import org.jcodings.transcode.EConv;
 import org.joda.time.DateTime;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
@@ -41,7 +42,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.encoding.Transcoder;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
 
@@ -156,12 +156,11 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         }
 
         if (ec != null && enc2.isDummy()) {
-            value = ec.convert(runtime.getCurrentContext(), value, false);
+            value = EncodingUtils.econvStrConvert(runtime.getCurrentContext(), ec, value, 0);
             return RubyString.newString(runtime, value, getEnc());
         }
 
-        value = Transcoder.strConvEncOpts(runtime.getCurrentContext(), value, enc2, enc, ecflags, ecopts);
-        return RubyString.newString(runtime, value);
+        return EncodingUtils.strConvEncOpts(runtime.getCurrentContext(), RubyString.newString(runtime, value), enc2, enc, ecflags, ecopts);
     }
 
     @JRubyMethod(name = "os_code")
@@ -292,8 +291,8 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
     protected Encoding enc2;
     protected int ecflags;
     protected IRubyObject ecopts;
-    protected Transcoder ec;
+    protected EConv ec;
     protected boolean sync = false;
-    protected Transcoder readTranscoder = null;
-    protected Transcoder writeTranscoder = null;    
+    protected EConv readTranscoder = null;
+    protected EConv writeTranscoder = null;
 }

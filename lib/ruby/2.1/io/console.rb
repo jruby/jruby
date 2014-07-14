@@ -36,30 +36,15 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
     end
 
     class IO
-      module LibC
-        begin
-          FD_FIELD = java.io.FileDescriptor.java_class.declared_field("fd")
-          FD_FIELD.accessible = true
-          
-          def self.fd(io)
-            FD_FIELD.value io.to_java.open_file_checked.main_stream_safe.descriptor.file_descriptor
-          end
-        rescue
-          def self.fd(io)
-            io.fileno
-          end
-        end
-      end
-      
       def ttymode
         termios = LibC::Termios.new
-        if LibC.tcgetattr(LibC.fd(self), termios) != 0
+        if LibC.tcgetattr(self.fileno, termios) != 0
           raise SystemCallError.new("tcgetattr", FFI.errno)
         end
 
         if block_given?
           yield tmp = termios.dup
-          if LibC.tcsetattr(LibC.fd(self), LibC::TCSADRAIN, tmp) != 0
+          if LibC.tcsetattr(self.fileno, LibC::TCSADRAIN, tmp) != 0
             raise SystemCallError.new("tcsetattr", FFI.errno)
           end
         end
@@ -71,7 +56,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
           orig_termios = ttymode { |t| setup.call(t) }
           block.call(self)
         ensure
-          if orig_termios && LibC.tcsetattr(LibC.fd(self), LibC::TCSADRAIN, orig_termios) != 0
+          if orig_termios && LibC.tcsetattr(self.fileno, LibC::TCSADRAIN, orig_termios) != 0
             raise SystemCallError.new("tcsetattr", FFI.errno)
           end
         end
@@ -131,7 +116,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
 
       def winsize
         ws = LibC::Winsize.new
-        if LibC.ioctl(LibC.fd(self), LibC::TIOCGWINSZ, :pointer, ws.pointer) != 0
+        if LibC.ioctl(self.fileno, LibC::TIOCGWINSZ, :pointer, ws.pointer) != 0
           raise SystemCallError.new("ioctl(TIOCGWINSZ)", FFI.errno)
         end
         [ ws[:ws_row], ws[:ws_col] ]
@@ -139,27 +124,27 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
 
       def winsize=(size)
         ws = LibC::Winsize.new
-        if LibC.ioctl(LibC.fd(self), LibC::TIOCGWINSZ, :pointer, ws.pointer) != 0
+        if LibC.ioctl(self.fileno, LibC::TIOCGWINSZ, :pointer, ws.pointer) != 0
           raise SystemCallError.new("ioctl(TIOCGWINSZ)", FFI.errno)
         end
 
         ws[:ws_row] = size[0]
         ws[:ws_col] = size[1]
-        if LibC.ioctl(LibC.fd(self), LibC::TIOCSWINSZ, :pointer, ws.pointer) != 0
+        if LibC.ioctl(self.fileno, LibC::TIOCSWINSZ, :pointer, ws.pointer) != 0
           raise SystemCallError.new("ioctl(TIOCSWINSZ)", FFI.errno)
         end
       end
 
       def iflush
-        raise SystemCallError.new("tcflush(TCIFLUSH)", FFI.errno) unless LibC.tcflush(LibC.fd(self), LibC::TCIFLUSH) == 0
+        raise SystemCallError.new("tcflush(TCIFLUSH)", FFI.errno) unless LibC.tcflush(self.fileno, LibC::TCIFLUSH) == 0
       end
 
       def oflush
-        raise SystemCallError.new("tcflush(TCOFLUSH)", FFI.errno) unless LibC.tcflush(LibC.fd(self), LibC::TCOFLUSH) == 0
+        raise SystemCallError.new("tcflush(TCOFLUSH)", FFI.errno) unless LibC.tcflush(self.fileno, LibC::TCOFLUSH) == 0
       end
 
       def ioflush
-        raise SystemCallError.new("tcflush(TCIOFLUSH)", FFI.errno) unless LibC.tcflush(LibC.fd(self), LibC::TCIOFLUSH) == 0
+        raise SystemCallError.new("tcflush(TCIOFLUSH)", FFI.errno) unless LibC.tcflush(self.fileno, LibC::TCIOFLUSH) == 0
       end
     end
     true

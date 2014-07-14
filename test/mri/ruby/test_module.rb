@@ -364,6 +364,36 @@ class TestModule < Test::Unit::TestCase
     assert_equal([:MIXIN, :USER], User.constants.sort)
   end
 
+  def test_self_initialize_copy
+    bug9535 = '[ruby-dev:47989] [Bug #9535]'
+    m = Module.new do
+      def foo
+        :ok
+      end
+      initialize_copy(self)
+    end
+    assert_equal(:ok, Object.new.extend(m).foo, bug9535)
+  end
+
+  def test_initialize_copy_empty
+    bug9813 = '[ruby-dev:48182] [Bug #9813]'
+    m = Module.new do
+      def x
+      end
+      const_set(:X, 1)
+      @x = 2
+    end
+    assert_equal([:x], m.instance_methods)
+    assert_equal([:@x], m.instance_variables)
+    assert_equal([:X], m.constants)
+    m.module_eval do
+      initialize_copy(Module.new)
+    end
+    assert_empty(m.instance_methods, bug9813)
+    assert_empty(m.instance_variables, bug9813)
+    assert_empty(m.constants, bug9813)
+  end
+
   def test_dup
     bug6454 = '[ruby-core:45132]'
 
@@ -864,6 +894,19 @@ class TestModule < Test::Unit::TestCase
     assert_equal([:Foo], m.constants(true))
     assert_equal([:Foo], m.constants(false))
     m.instance_eval { remove_const(:Foo) }
+  end
+
+  class Bug9413
+    class << self
+      Foo = :foo
+    end
+  end
+
+  def test_singleton_constants
+    bug9413 = '[ruby-core:59763] [Bug #9413]'
+    c = Bug9413.singleton_class
+    assert_include(c.constants(true), :Foo, bug9413)
+    assert_include(c.constants(false), :Foo, bug9413)
   end
 
   def test_frozen_class
@@ -1535,17 +1578,11 @@ class TestModule < Test::Unit::TestCase
   end
 
   def labeled_module(name, &block)
-    Module.new do
-      singleton_class.class_eval {define_method(:to_s) {name}; alias inspect to_s}
-      class_eval(&block) if block
-    end
+    EnvUtil.labeled_module(name, &block)
   end
 
   def labeled_class(name, superclass = Object, &block)
-    Class.new(superclass) do
-      singleton_class.class_eval {define_method(:to_s) {name}; alias inspect to_s}
-      class_eval(&block) if block
-    end
+    EnvUtil.labeled_class(name, superclass, &block)
   end
 
   def test_prepend_instance_methods_false

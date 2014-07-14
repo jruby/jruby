@@ -48,7 +48,7 @@ import org.jruby.util.ByteList;
 import org.jruby.internal.runtime.GlobalVariable;
 
 public class RubyArgsFile {
-    private static final class ArgsFileData {
+    static final class ArgsFileData {
         private final Ruby runtime;
         public ArgsFileData(Ruby runtime) {
             this.runtime = runtime;
@@ -467,7 +467,7 @@ public class RubyArgsFile {
 
     public static void argf_close(ThreadContext context, IRubyObject file) {
         if(file instanceof RubyIO) {
-            ((RubyIO)file).ioClose(context.runtime);
+            ((RubyIO)file).rbIoClose(context.runtime);
         } else {
             file.callMethod(context, "close");
         }
@@ -615,7 +615,7 @@ public class RubyArgsFile {
             if (!(data.currentFile instanceof RubyFile)) {
                 bt = data.currentFile.callMethod(context, "getbyte");
             } else {
-                bt = ((RubyIO)data.currentFile).getbyte19(context);
+                bt = ((RubyIO)data.currentFile).getbyte(context);
             }
 
             if (!bt.isNil()) return bt;

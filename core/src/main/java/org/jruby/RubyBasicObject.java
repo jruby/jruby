@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jcodings.Encoding;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.runtime.ivars.VariableAccessor;
 import java.io.IOException;
@@ -53,6 +54,8 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+
+import static org.jruby.anno.FrameField.*;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -63,6 +66,7 @@ import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.CoreObjectType;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.unsafe.UnsafeHolder;
@@ -846,6 +850,24 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         clone.callMethod(clone.getRuntime().getCurrentContext(), method, original);
     }
 
+    protected static boolean OBJ_INIT_COPY(IRubyObject obj, IRubyObject orig) {
+        if (obj == orig) return false;
+
+        objInitCopy(obj, orig);
+        return true;
+    }
+
+    protected static void objInitCopy(IRubyObject obj, IRubyObject orig) {
+        if (obj == orig) return;
+        // FIXME: booooo!
+        ((RubyBasicObject)obj).checkFrozen();
+        // Not implemented
+//        checkTrusted();
+        if (obj.getClass() != orig.getClass() || obj.getMetaClass().getRealClass() != orig.getMetaClass().getRealClass()) {
+            throw obj.getRuntime().newTypeError("initialize_copy should take same class object");
+        }
+    }
+
     /**
      * Lots of MRI objects keep their state in non-lookupable ivars
      * (e:g. Range, Struct, etc). This method is responsible for
@@ -1036,6 +1058,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
     }
 
+    // MRI: rb_inspect, which does dispatch
+    public static IRubyObject rbInspect(ThreadContext context, IRubyObject obj) {
+        Ruby runtime = context.runtime;
+        RubyString str = obj.callMethod(context, "inspect").asString();
+        Encoding ext = EncodingUtils.defaultExternalEncoding(runtime);
+        if (!ext.isAsciiCompatible()) {
+            if (!str.isAsciiOnly())
+                throw runtime.newEncodingCompatibilityError("inspected result must be ASCII only if default external encoding is ASCII incompatible");
+            return str;
+        }
+        if (str.getEncoding() != ext && !str.isAsciiOnly())
+            throw runtime.newEncodingCompatibilityError("inspected result must be ASCII only or use the default external encoding");
+        return str;
+    }
     /**
      * For most objects, the hash used in the default #inspect is just the
      * identity hashcode of the actual object.
@@ -1568,24 +1604,34 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().finvoke(context, this, name, newArgs, block);
     }
     
-    @JRubyMethod(name = "instance_eval")
+    @JRubyMethod(name = "instance_eval",
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval19(ThreadContext context, Block block) {
         return specificEval(context, getInstanceEvalClass(), block, EvalType.INSTANCE_EVAL);
     }
-    @JRubyMethod(name = "instance_eval")
+    @JRubyMethod(name = "instance_eval",
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval19(ThreadContext context, IRubyObject arg0, Block block) {
         return specificEval(context, getInstanceEvalClass(), arg0, block, EvalType.INSTANCE_EVAL);
     }
-    @JRubyMethod(name = "instance_eval")
+    @JRubyMethod(name = "instance_eval",
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return specificEval(context, getInstanceEvalClass(), arg0, arg1, block, EvalType.INSTANCE_EVAL);
     }
-    @JRubyMethod(name = "instance_eval")
+    @JRubyMethod(name = "instance_eval",
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return specificEval(context, getInstanceEvalClass(), arg0, arg1, arg2, block, EvalType.INSTANCE_EVAL);
     }
 
-    @JRubyMethod(name = "instance_exec", optional = 3, rest = true)
+    @JRubyMethod(name = "instance_exec", optional = 3, rest = true,
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_exec19(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) {
             throw context.runtime.newLocalJumpErrorNoBlock();

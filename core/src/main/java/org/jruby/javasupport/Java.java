@@ -1106,7 +1106,7 @@ public class Java implements Library {
      * High-level object conversion utility function 'java_to_primitive' is the low-level version
      */
     @Deprecated
-    @JRubyMethod(frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject java_to_ruby(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         try {
             return JavaUtil.java_to_ruby(recv.getRuntime(), object);
@@ -1122,17 +1122,16 @@ public class Java implements Library {
      * High-level object conversion utility.
      */
     @Deprecated
-    @JRubyMethod(frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object, Block unusedBlock) {
         return JavaUtil.ruby_to_java(recv, object, unusedBlock);
     }
 
     @Deprecated
-    @JRubyMethod(frame = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         return JavaUtil.java_to_primitive(recv, object, unusedBlock);
     }
-
 
     // TODO: Formalize conversion mechanisms between Java and Ruby
     @JRubyMethod(required = 2, module = true, visibility = PRIVATE)

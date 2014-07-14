@@ -4,6 +4,7 @@ import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyMatchData;
@@ -198,10 +199,9 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject defCompiledIRMethod(ThreadContext context, MethodHandle handle, String rubyName, DynamicScope currDynScope, IRubyObject self, String scopeDesc,
-                                  String filename, int line, String parameterDesc) {
+                                  String filename, int line, String parameterDesc, boolean hasExplicitCallProtocol) {
         Ruby runtime = context.runtime;
         StaticScope parentScope = currDynScope.getStaticScope();
-
 
         RubyModule containingClass = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
         Visibility currVisibility = context.getCurrentVisibility();
@@ -209,13 +209,13 @@ public class IRRuntimeHelpers {
 
         StaticScope scope = Helpers.decodeScope(context, parentScope, scopeDesc);
 
-        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, newVisibility, containingClass, parameterDesc);
+        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, newVisibility, containingClass, parameterDesc, hasExplicitCallProtocol);
 
         return Helpers.addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
     }
 
     public static IRubyObject defCompiledIRClassMethod(ThreadContext context, IRubyObject obj, MethodHandle handle, String rubyName, StaticScope parentScope, String scopeDesc,
-                                                  String filename, int line, String parameterDesc) {
+                                                  String filename, int line, String parameterDesc, boolean hasExplicitCallProtocol) {
         Ruby runtime = context.runtime;
 
         if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {
@@ -231,9 +231,23 @@ public class IRRuntimeHelpers {
 
         StaticScope scope = Helpers.decodeScope(context, parentScope, scopeDesc);
 
-        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, newVisibility, containingClass, parameterDesc);
+        DynamicMethod method = new CompiledIRMethod(handle, rubyName, filename, line, scope, newVisibility, containingClass, parameterDesc, hasExplicitCallProtocol);
 
         return Helpers.addInstanceMethod(containingClass, rubyName, method, currVisibility, context, runtime);
+    }
+
+    public static IRubyObject undefMethod(ThreadContext context, Object nameArg, DynamicScope currDynScope, IRubyObject self) {
+        RubyModule module = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
+        String name = (nameArg instanceof String) ?
+                (String) nameArg : nameArg.toString();
+
+        if (module == null) {
+            throw context.runtime.newTypeError("No class to undef method '" + name + "'.");
+        }
+
+        module.undef(context, name);
+
+        return context.runtime.getNil();
     }
 
     public static double unboxFloat(IRubyObject val) {
@@ -692,5 +706,12 @@ public class IRRuntimeHelpers {
             }
         }
         throw new RuntimeException("Should not get here!");
+    }
+
+    public static RubyBoolean isBlockGiven(ThreadContext context, Object blk) {
+        if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
+        if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
+        Block b = (Block)blk;
+        return context.runtime.newBoolean(b.isGiven());
     }
 }

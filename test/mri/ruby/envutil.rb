@@ -30,7 +30,9 @@ module EnvUtil
   LANG_ENVS = %w"LANG LC_ALL LC_CTYPE"
 
   def invoke_ruby(args, stdin_data = "", capture_stdout = false, capture_stderr = false,
-                  encoding: nil, timeout: 10, reprieve: 1, **opt)
+                  encoding: nil, timeout: 10, reprieve: 1,
+                  stdout_filter: nil, stderr_filter: nil,
+                  **opt)
     in_c, in_p = IO.pipe
     out_p, out_c = IO.pipe if capture_stdout
     err_p, err_c = IO.pipe if capture_stderr && capture_stderr != :merge_to_stdout
@@ -84,6 +86,8 @@ module EnvUtil
       err_p.close if capture_stderr && capture_stderr != :merge_to_stdout
       Process.wait pid
       status = $?
+      stdout = stdout_filter.call(stdout) if stdout_filter
+      stderr = stderr_filter.call(stderr) if stderr_filter
       return stdout, stderr, status
     end
   ensure
@@ -155,6 +159,22 @@ module EnvUtil
     $VERBOSE = verbose
   end
   module_function :with_default_internal
+
+  def labeled_module(name, &block)
+    Module.new do
+      singleton_class.class_eval {define_method(:to_s) {name}; alias inspect to_s}
+      class_eval(&block) if block
+    end
+  end
+  module_function :labeled_module
+
+  def labeled_class(name, superclass = Object, &block)
+    Class.new(superclass) do
+      singleton_class.class_eval {define_method(:to_s) {name}; alias inspect to_s}
+      class_eval(&block) if block
+    end
+  end
+  module_function :labeled_class
 
   if /darwin/ =~ RUBY_PLATFORM
     DIAGNOSTIC_REPORTS_PATH = File.expand_path("~/Library/Logs/DiagnosticReports")
@@ -251,9 +271,10 @@ module Test
         pid = status.pid
         now = Time.now
         faildesc = proc do
-          signo = status.termsig
-          signame = Signal.signame(signo)
-          sigdesc = "signal #{signo}"
+          if signo = status.termsig
+            signame = Signal.signame(signo)
+            sigdesc = "signal #{signo}"
+          end
           log = EnvUtil.diagnostic_reports(signame, EnvUtil.rubybin, pid, now)
           if signame
             sigdesc = "SIG#{signame} (#{sigdesc})"
@@ -334,10 +355,10 @@ module Test
   end
 eom
         args = args.dup
-        args.insert((Hash === args.first ? 1 : 0), "--disable-gems", *$:.map {|l| "-I#{l}"})
+        args.insert((Hash === args.first ? 1 : 0), "--disable=gems", *$:.map {|l| "-I#{l}"})
         stdout, stderr, status = EnvUtil.invoke_ruby(args, src, true, true, **opt)
         abort = status.coredump? || (status.signaled? && ABORT_SIGNALS.include?(status.termsig))
-        assert(!abort, FailDesc[status, stderr])
+        assert(!abort, FailDesc[status, nil, stderr])
         self._assertions += stdout[/^assertions=(\d+)/, 1].to_i
         begin
           res = Marshal.load(stdout.unpack("m")[0])
@@ -372,29 +393,37 @@ eom
         assert_warning(*args) {$VERBOSE = false; yield}
       end
 
-      def assert_no_memory_leak(args, prepare, code, message=nil, limit: 1.5, **opt)
+      def assert_no_memory_leak(args, prepare, code, message=nil, limit: 1.5, rss: false, **opt)
+        require_relative 'memory_status'
         token = "\e[7;1m#{$$.to_s}:#{Time.now.strftime('%s.%L')}:#{rand(0x10000).to_s(16)}:\e[m"
         token_dump = token.dump
         token_re = Regexp.quote(token)
         envs = args.shift if Array === args and Hash === args.first
         args = [
-          "--disable-gems",
+          "--disable=gems",
           "-r", File.expand_path("../memory_status", __FILE__),
           *args,
           "-v", "-",
         ]
         args.unshift(envs) if envs
         cmd = [
-          'END {STDERR.puts '"#{token_dump}"'"FINAL=#{Memory::Status.new.size}"}',
+          'END {STDERR.puts '"#{token_dump}"'"FINAL=#{Memory::Status.new}"}',
           prepare,
-          'STDERR.puts('"#{token_dump}"'"START=#{$initial_size = Memory::Status.new.size}")',
+          'STDERR.puts('"#{token_dump}"'"START=#{$initial_status = Memory::Status.new}")',
+          '$initial_size = $initial_status.size',
           code,
+          'GC.start',
         ].join("\n")
         _, err, status = EnvUtil.invoke_ruby(args, cmd, true, true, **opt)
-        before = err.sub!(/^#{token_re}START=(\d+)\n/, '') && $1.to_i
-        after = err.sub!(/^#{token_re}FINAL=(\d+)\n/, '') && $1.to_i
+        before = err.sub!(/^#{token_re}START=(\{.*\})\n/, '') && Memory::Status.parse($1)
+        after = err.sub!(/^#{token_re}FINAL=(\{.*\})\n/, '') && Memory::Status.parse($1)
         assert_equal([true, ""], [status.success?, err], message)
-        assert_operator(after.fdiv(before), :<, limit, message)
+        ([:size, (rss && :rss)] & after.members).each do |n|
+          b = before[n]
+          a = after[n]
+          next unless a > 0 and b > 0
+          assert_operator(a.fdiv(b), :<, limit, message(message) {"#{n}: #{b} => #{a}"})
+        end
       end
 
       def assert_is_minus_zero(f)

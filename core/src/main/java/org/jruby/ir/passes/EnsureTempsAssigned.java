@@ -8,6 +8,7 @@ import org.jruby.ir.operands.Nil;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.TemporaryVariable;
+import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 
 import java.util.ArrayList;
@@ -35,9 +36,9 @@ public class EnsureTempsAssigned extends CompilerPass {
 
         for (BasicBlock b : scope.getCFG().getBasicBlocks()) {
             for (Instr i : b.getInstrs()) {
-                for (Operand o : i.getOperands()) {
-                    if (o instanceof TemporaryVariable) {
-                        names.add((TemporaryVariable)o);
+                for (Variable v : i.getUsedVariables()) {
+                    if (v instanceof TemporaryVariable) {
+                        names.add((TemporaryVariable)v);
                     }
                 }
             }

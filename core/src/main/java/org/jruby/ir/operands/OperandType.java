@@ -48,6 +48,7 @@ public enum OperandType {
     ;
 
     private final byte coded;
+    private static final OperandType[] byteToOperand = new OperandType[256];
 
     OperandType(byte coded) {
         this.coded = coded;
@@ -62,17 +63,18 @@ public enum OperandType {
         return name().toLowerCase();
     };
 
-    // FIXME: Slowwww
     public static OperandType fromCoded(byte coded) {
-        for (OperandType value: values()) {
-            if (value.coded == coded) return value;
-        }
-
-        return null;
+        return byteToOperand[coded];
     }
 
     public static OperandType fromOrdinal(int value) {
         return value < 0 || value >= values().length ? null : values()[value];
+    }
+
+    static {
+        for (OperandType type : values()) {
+            byteToOperand[type.coded] = type;
+        }
     }
 }
 

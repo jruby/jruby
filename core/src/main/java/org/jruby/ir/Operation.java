@@ -91,15 +91,18 @@ public enum Operation {
     BREAK(OpFlags.f_has_side_effect | OpFlags.f_is_return),
 
     /** defines **/
-    ALIAS(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_modifies_code),
-    DEF_MODULE(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
-    DEF_CLASS(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
-    DEF_META_CLASS(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
-    DEF_INST_METH(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
-    DEF_CLASS_METH(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
+    ALIAS(OpFlags.f_has_side_effect| OpFlags.f_modifies_code | OpFlags.f_can_raise_exception),
+    DEF_MODULE(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly | OpFlags.f_can_raise_exception),
+    DEF_CLASS(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly | OpFlags.f_can_raise_exception),
+    DEF_META_CLASS(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly | OpFlags.f_can_raise_exception),
+    DEF_INST_METH(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly | OpFlags.f_can_raise_exception),
+    DEF_CLASS_METH(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly | OpFlags.f_can_raise_exception),
+    PROCESS_MODULE_BODY(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly | OpFlags.f_can_raise_exception),
+    UNDEF_METHOD(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_can_raise_exception),
+
+    /** SSS FIXME: This can throw an exception only in tracing mode
+     ** Should override canRaiseException in GVarAliasInstr to implement this maybe */
     GVAR_ALIAS(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_modifies_code),
-    PROCESS_MODULE_BODY(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
-    UNDEF_METHOD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_modifies_code),
 
     /** marker instructions used to flag/mark places in the code and dont actually get executed **/
     LABEL(OpFlags.f_is_book_keeping_op | OpFlags.f_is_marker_op),
@@ -113,26 +116,28 @@ public enum Operation {
     SEARCH_CONST(OpFlags.f_can_raise_exception),
 
     /** value loads (SSS FIXME: Do any of these have side effects?) **/
-    BINDING_LOAD(OpFlags.f_is_load),
     GET_GLOBAL_VAR(OpFlags.f_is_load),
     GET_FIELD(OpFlags.f_is_load),
+    /** SSS FIXME: Document what causes this instr to raise an exception */
     GET_CVAR(OpFlags.f_is_load | OpFlags.f_can_raise_exception),
 
     /** value stores **/
-    BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect),
-    PUT_CONST(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     // SSS FIXME: Not all global variable sets can throw exceptions.  Should we split this
     // operation into two different operations?  Those that can throw exceptions and those
     // that cannot.  But, for now, this should be good enough
     PUT_GLOBAL_VAR(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
-    PUT_FIELD(OpFlags.f_is_store | OpFlags.f_has_side_effect),
-    PUT_CVAR(OpFlags.f_is_store | OpFlags.f_has_side_effect),
+    // put_const, put_cvar, put_field can raise exception trying to store into a frozen objects
+    PUT_CONST(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    PUT_CVAR(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    PUT_FIELD(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
 
     /** debugging ops **/
     LINE_NUM(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op),
     TRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
 
     /** JRuby-impl instructions **/
+    BINDING_LOAD(OpFlags.f_is_load),
+    BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     // FIXME: BUILD_COMPOUND_ARRAY is marked side-effecting since it *can* call to_a methods
     BUILD_COMPOUND_ARRAY(OpFlags.f_has_side_effect),
     BACKTICK_STRING(OpFlags.f_has_side_effect),

@@ -29,7 +29,6 @@
 
 package org.jruby.compiler;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -39,11 +38,10 @@ import org.jruby.ast.*;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-
-import static org.jruby.compiler.ASTInspector.Flag.*;
 
 /**
  *
@@ -130,37 +128,10 @@ public class ASTInspector {
     
     // pragmas
     private boolean noFrame;
-    
-    public static final Set<String> FRAME_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
-    public static final Set<String> SCOPE_AWARE_METHODS = Collections.synchronizedSet(new HashSet<String>());
-
-    public static void addFrameAwareMethods(String... methods) {
-        if (DEBUG) LOG.debug("Adding frame-aware method names: {}", Arrays.toString(methods));
-        FRAME_AWARE_METHODS.addAll(Arrays.asList(methods));
-    }
-    
-    public static void addScopeAwareMethods(String... methods) {
-        if (DEBUG) LOG.debug("Adding scope-aware method names: {}", Arrays.toString(methods));
-        SCOPE_AWARE_METHODS.addAll(Arrays.asList(methods));
-    }
 
     public static final Set<String> PRAGMAS = Collections.synchronizedSet(new HashSet<String>());
     
     static {
-        FRAME_AWARE_METHODS.add("eval");
-        FRAME_AWARE_METHODS.add("module_eval");
-        FRAME_AWARE_METHODS.add("class_eval");
-        FRAME_AWARE_METHODS.add("instance_eval");
-        FRAME_AWARE_METHODS.add("binding");
-        FRAME_AWARE_METHODS.add("public");
-        FRAME_AWARE_METHODS.add("private");
-        FRAME_AWARE_METHODS.add("protected");
-        FRAME_AWARE_METHODS.add("module_function");
-        FRAME_AWARE_METHODS.add("block_given?");
-        FRAME_AWARE_METHODS.add("iterator?");
-        
-        SCOPE_AWARE_METHODS.addAll(RubyModule.SCOPE_CAPTURING_METHODS);
-        
         PRAGMAS.add("__NOFRAME__");
     }
     
@@ -345,13 +316,13 @@ public class ASTInspector {
             inspect(((BlockAcceptingNode)node).getIterNode());
         case VCALLNODE:
             INameNode nameNode = (INameNode)node;
-            if (FRAME_AWARE_METHODS.contains(nameNode.getName())) {
+            if (MethodIndex.FRAME_AWARE_METHODS.contains(nameNode.getName())) {
                 setFlag(node, FRAME_AWARE);
                 if (nameNode.getName().indexOf("eval") != -1) {
                     setFlag(node, EVAL);
                 }
             }
-            if (SCOPE_AWARE_METHODS.contains(nameNode.getName())) {
+            if (MethodIndex.SCOPE_AWARE_METHODS.contains(nameNode.getName())) {
                 setFlag(node, SCOPE_AWARE);
             }
             break;
@@ -842,5 +813,20 @@ public class ASTInspector {
     
     public boolean noFrame() {
         return noFrame;
+    }
+
+    @Deprecated
+    public static final Set<String> FRAME_AWARE_METHODS = MethodIndex.FRAME_AWARE_METHODS;
+    @Deprecated
+    public static final Set<String> SCOPE_AWARE_METHODS = MethodIndex.SCOPE_AWARE_METHODS;
+
+    @Deprecated
+    public static void addFrameAwareMethods(String... methods) {
+        MethodIndex.addFrameAwareMethods(methods);
+    }
+
+    @Deprecated
+    public static void addScopeAwareMethods(String... methods) {
+        MethodIndex.addScopeAwareMethods(methods);
     }
 }

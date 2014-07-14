@@ -841,7 +841,7 @@ public abstract class HashNodes {
                     for (int b = 0; b < RubyContext.HASHES_SMALL; b++) {
                         if (b < storeBSize) {
                             // TODO(CS): cast
-                            if ((boolean) eqlNode.dispatch(frame, storeA[a], null, storeB[b])) {
+                            if ((boolean) eqlNode.dispatch(frame, storeA[a * 2], null, storeB[b * 2])) {
                                 merge = false;
                                 break;
                             }

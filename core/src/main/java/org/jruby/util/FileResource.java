@@ -4,6 +4,9 @@ import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
+import java.io.InputStream;
+
+import java.nio.channels.Channel;
 
 /**
  * This is a shared interface for files loaded as {@link java.io.File} and {@link java.util.zip.ZipEntry}.
@@ -36,5 +39,9 @@ public interface FileResource {
     // otherwise.
     JRubyFile hackyGetJRubyFile();
 
+    InputStream getInputStream();
+    Channel openChannel(ModeFlags flags, POSIX posix, int perm) throws ResourceException;
+
+    @Deprecated
     ChannelDescriptor openDescriptor(ModeFlags flags, POSIX posix, int perm) throws ResourceException;
 }

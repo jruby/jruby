@@ -78,6 +78,28 @@ class TestException < Test::Unit::TestCase
     assert(!bad)
   end
 
+  def test_errinfo_in_debug
+    bug9568 = EnvUtil.labeled_class("[ruby-core:61091] [Bug #9568]", RuntimeError) do
+      def to_s
+        require '\0'
+      rescue LoadError
+        self.class.to_s
+      end
+    end
+
+    err = EnvUtil.verbose_warning do
+      assert_raise(bug9568) do
+        $DEBUG, debug = true, $DEBUG
+        begin
+          raise bug9568
+        ensure
+          $DEBUG = debug
+        end
+      end
+    end
+    assert_include(err, bug9568.to_s)
+  end
+
   def test_break_ensure
     bad = true
     while true
@@ -483,6 +505,17 @@ end.join
     assert_raise(SystemStackError, #{bug9109.dump}) {
       h = {a: ->{h[:a].call}}
       h[:a].call
+    }
+    SRC
+  rescue SystemStackError
+  end
+
+  def test_machine_stackoverflow_by_define_method
+    bug9454 = '[ruby-core:60113] [Bug #9454]'
+    assert_separately([], <<-SRC)
+    assert_raise(SystemStackError, #{bug9454.dump}) {
+      define_method(:foo) {self.foo}
+      self.foo
     }
     SRC
   rescue SystemStackError

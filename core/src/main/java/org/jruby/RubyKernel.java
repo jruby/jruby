@@ -69,6 +69,7 @@ import org.jruby.util.IdUtil;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.PopenExecutor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -85,6 +86,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
 import static org.jruby.RubyEnumerator.SizeFn;
+import static org.jruby.anno.FrameField.*;
 
 /**
  * Note: For CVS history, see KernelModule.java.
@@ -297,30 +299,36 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "open", required = 1, optional = 3, module = true, visibility = PRIVATE)
-    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-        if (args[0].respondsTo("to_open")) {
-            if (args.length > 1) {
-                IRubyObject[] toOpenArgs = Arrays.copyOfRange(args, 1, args.length);
-                args[0] = args[0].callMethod(context, "to_open", toOpenArgs);
+    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {Ruby runtime = context.runtime;
+        //        ID to_open = 0;
+        boolean redirect = false;
+        int argc = args.length;
+
+        if (argc >= 1) {
+            //            CONST_ID(to_open, "to_open");
+            if (args[0].respondsTo("to_open")) {
+                redirect = true;
             } else {
-                args[0] = args[0].callMethod(context, "to_open");
+                IRubyObject tmp = args[0];
+                tmp = RubyFile.get_path(context, tmp);
+                if (tmp.isNil()) {
+                    redirect = true;
+                } else {
+                    IRubyObject cmd = PopenExecutor.checkPipeCommand(context, tmp);
+                    if (!cmd.isNil()) {
+                        args[0] = cmd;
+                        return PopenExecutor.popen(context, args, runtime.getIO(), block);
+                    }
+                }
             }
-            if (block.isGiven()) {
-                return block.yield(context, args[0]);
-            } else {
-                return args[0];
-            }
-        } else {
-            args[0] = RubyFile.get_path(context, args[0]);
         }
+        if (redirect) {
+            IRubyObject io = args[0].callMethod(context, "to_open", Arrays.copyOfRange(args, 1, args.length));
 
-        String arg = args[0].convertToString().toString();
-
-        // exec process, create IO with process
-        if (arg.startsWith("|")) return RubyIO.popen19(context, runtime.getIO(), popenArgs(runtime, arg, args), block);
-        
-        return RubyFile.open(context, runtime.getFile(), args, block);
+            RubyIO.ensureYieldClose(context, io, block);
+            return io;
+        }
+        return RubyIO.open(context, runtime.getFile(), args, block);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
@@ -451,29 +459,43 @@ public class RubyKernel {
         return TypeConverter.convertToType19(object, context.runtime.getString(), "to_s");
     }
 
+    // MRI: rb_f_p_internal
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject p(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
+        int argc = args.length;
+        int i;
+        IRubyObject ret = context.nil;
         IRubyObject defout = runtime.getGlobalVariables().get("$>");
-        for (IRubyObject arg: args) {
-            if (arg != null) {
-                defout.callMethod(context, "write", RubyObject.inspect(context, arg));
-                defout.callMethod(context, "write", runtime.newString("\n"));
+        IRubyObject defaultRS = context.runtime.getGlobalVariables().getDefaultSeparator();
+        boolean defoutWriteBuiltin = defout instanceof RubyIO &&
+                defout.getMetaClass().isMethodBuiltin("write");
+
+        for (i=0; i<argc; i++) {
+            // pulled out as rb_p in MRI
+//            rb_p(argv[i]);
+            IRubyObject obj = args[i];
+            IRubyObject str = RubyBasicObject.rbInspect(context, obj);
+            if (defoutWriteBuiltin) {
+                ((RubyIO)defout).write(context, str, true);
+                ((RubyIO)defout).write(context, defaultRS, true);
+            }
+            else {
+                RubyIO.write(context, defout, str);
+                RubyIO.write(context, defout, defaultRS);
             }
         }
-
-        IRubyObject result = runtime.getNil();
-        if (args.length == 1) {
-            result = args[0];
-        } else if (args.length > 1) {
-            result = runtime.newArray(args);
+        if (argc == 1) {
+            ret = args[0];
+        }
+        else if (argc > 1) {
+            ret = RubyArray.newArray(runtime, args);
         }
 
-        if (defout instanceof RubyFile) {
-            ((RubyFile)defout).flush();
+        if (defout instanceof RubyIO) {
+            ((RubyIO)defout).flush(context);
         }
-
-        return result;
+        return ret;
     }
 
     @JRubyMethod(required = 1, module = true)
@@ -486,68 +508,93 @@ public class RubyKernel {
     @JRubyMethod(required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject putc(ThreadContext context, IRubyObject recv, IRubyObject ch) {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
-        
-        return RubyIO.putc(context, defout, ch);
+        if (recv == defout) {
+            return RubyIO.putc(context, recv, ch);
+        }
+        return defout.callMethod(context, "putc", ch);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv) {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
-        return RubyIO.puts0(context, defout);
+        if (recv == defout) {
+            return RubyIO.puts0(context, recv);
+        }
+
+        return defout.callMethod(context, "puts");
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
-        return RubyIO.puts1(context, defout, arg0);
+        if (recv == defout) {
+            return RubyIO.puts1(context, recv, arg0);
+        }
+
+        return defout.callMethod(context, "puts", arg0);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
-        return RubyIO.puts2(context, defout, arg0, arg1);
+        if (recv == defout) {
+            return RubyIO.puts2(context, recv, arg0, arg1);
+        }
+
+        return defout.callMethod(context, "puts", new IRubyObject[]{arg0, arg1});
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
-        return RubyIO.puts3(context, defout, arg0, arg1, arg2);
+        if (recv == defout) {
+            return RubyIO.puts3(context, recv, arg0, arg1, arg2);
+        }
+
+        return defout.callMethod(context, "puts", new IRubyObject[]{arg0, arg1, arg2});
     }
 
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
 
-        return RubyIO.puts(context, defout, args);
-    }
-
-    @JRubyMethod(rest = true, module = true, visibility = PRIVATE, reads = LASTLINE)
-    public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        if (args.length == 0) return context.runtime.getNil();
-        
-        IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
-
-        return RubyIO.print(context, defout, args);
-    }
-
-    @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
-    public static IRubyObject printf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        if (args.length != 0) {
-            IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
-
-            if (!(args[0] instanceof RubyString)) {
-                defout = args[0];
-                args = ArgsUtil.popArray(args);
-            }
-
-            defout.callMethod(context, "write", RubyKernel.sprintf(context, recv, args));
+        if (recv == defout) {
+            return RubyIO.puts(context, recv, args);
         }
 
-        return context.runtime.getNil();
+        return defout.callMethod(context, "puts", args);
+    }
+
+    // rb_f_print
+    @JRubyMethod(rest = true, module = true, visibility = PRIVATE, reads = LASTLINE)
+    public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        RubyIO.print(context, context.runtime.getGlobalVariables().get("$>"), args);
+        return context.nil;
+    }
+
+    // rb_f_printf
+    @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
+    public static IRubyObject printf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        IRubyObject out;
+        int argc = args.length;
+
+        if (argc == 0) return context.nil;
+        if (args[0] instanceof RubyString) {
+            out = runtime.getGlobalVariables().get("$>");
+        }
+        else {
+            out = args[0];
+            args = Arrays.copyOfRange(args, 1, args.length);
+            argc--;
+        }
+        RubyIO.write(context, out, sprintf(context, recv, args));
+
+        return context.nil;
     }
 
     @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
@@ -726,7 +773,9 @@ public class RubyKernel {
         return binding19(context, recv, block);
     }
     
-    @JRubyMethod(name = "binding", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "binding", module = true, visibility = PRIVATE,
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
     public static RubyBinding binding19(ThreadContext context, IRubyObject recv, Block block) {
         return RubyBinding.newBinding(context.runtime, context.currentBinding());
     }
@@ -876,7 +925,9 @@ public class RubyKernel {
         return eval19(context, recv, args, block);
     }
 
-    @JRubyMethod(name = "eval", required = 1, optional = 3, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "eval", required = 1, optional = 3, module = true, visibility = PRIVATE,
+            reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
     public static IRubyObject eval19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return evalCommon(context, recv, args, block, evalBinding19);
     }
@@ -1395,15 +1446,9 @@ public class RubyKernel {
         return RubyRandom.randCommon19(context, recv, arg);
     }
 
-    /**
-     * Now implemented in Ruby code. See Process::spawn in src/jruby/kernel19/process.rb
-     * 
-     * @deprecated 
-     */
+    @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static RubyFixnum spawn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        long pid = ShellLauncher.runExternalWithoutWait(runtime, args);
-        return RubyFixnum.newFixnum(runtime, pid);
+        return RubyProcess.spawn(context, recv, args);
     }
 
     @JRubyMethod(required = 1, optional = 9, module = true, visibility = PRIVATE)

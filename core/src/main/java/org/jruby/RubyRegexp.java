@@ -76,6 +76,7 @@ import org.jruby.util.RegexpOptions;
 import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.EncodingUtils;
 
 @JRubyClass(name="Regexp")
 public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable, MarshalEncoding {
@@ -2067,151 +2068,134 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return RubyString.newString(str.getRuntime(), val);
     }
 
-    static RubyString regsub19(RubyString str, RubyString src, Matcher matcher, Regex pattern) {
-        Region regs = matcher.getRegion();
+    // MRI: ASCGET macro from rb_reg_regsub
+    private static final int ASCGET(boolean acompat, byte[] sBytes, int s, int e, int[] cl, Encoding strEnc) {
+        if (acompat) {
+            cl[0] = 1;
+            return Encoding.isAscii(sBytes[s]) ? sBytes[s] & 0xFF : -1;
+        } else {
+            return EncodingUtils.encAscget(sBytes, s, e, cl, strEnc);
+        }
+    }
 
-        int no = -1;
-        ByteList bs = str.getByteList();
-        int p = bs.getBegin();
-        int s = p;
-        int end = p + bs.getRealSize();
-        byte[]bytes = bs.getUnsafeBytes();
-        Encoding strEnc = bs.getEncoding();
-
-        ByteList srcbs = src.getByteList();
-        Encoding srcEnc = srcbs.getEncoding();
+    // rb_reg_regsub
+    static RubyString regsub19(ThreadContext context, RubyString str, RubyString src, Matcher matcher, Regex pattern) {
+        Ruby runtime = str.getRuntime();
 
         RubyString val = null;
+        int p, s, e;
+        int no = 0, clen[] = {0};
+        Encoding strEnc = EncodingUtils.encGet(context, str);
+        Encoding srcEnc = EncodingUtils.encGet(context, src);
+        boolean acompat = EncodingUtils.encAsciicompat(strEnc);
 
-        while (s < end) {
-            int c, cl;
-            if (strEnc.isAsciiCompatible()) {
-                cl = 1;
-                c = bytes[s] & 0xff;
-            } else {
-                cl = StringSupport.preciseLength(strEnc, bytes, s, end);
-                c = strEnc.mbcToCode(bytes, s, end);
-            }
+        Region regs = matcher.getRegion();
+        ByteList bs = str.getByteList();
+        ByteList srcbs = src.getByteList();
+        byte[] sBytes = bs.getUnsafeBytes();
 
-            if (!Encoding.isAscii(c)) {
-                s += StringSupport.length(strEnc, bytes, s, end);
+        p = s = bs.getBegin();
+        e = p + bs.getRealSize();
+
+        while (s < e) {
+            int c = ASCGET(acompat, sBytes, s, e, clen, strEnc);
+
+            if (c == -1) {
+                s += StringSupport.length(strEnc, sBytes, s, e);
                 continue;
             }
-
             int ss = s;
-            s += cl;
+            s += clen[0];
 
-            if (c != '\\' || s == end) continue;
-            if (val == null) val = RubyString.newString(str.getRuntime(), new ByteList(ss - p));
+            if (c != '\\' || s == e) continue;
 
-            val.cat(bytes, p, ss - p, strEnc);
-
-            if (strEnc.isAsciiCompatible()) {
-                cl = 1;
-                c = bytes[s] & 0xff;
-            } else {
-                cl = StringSupport.preciseLength(strEnc, bytes, s, end);
-                c = strEnc.mbcToCode(bytes, s, end);
+            if (val == null) {
+                val = RubyString.newString(str.getRuntime(), new ByteList(ss - p));
             }
+            EncodingUtils.encStrBufCat(runtime, val, sBytes, p, ss - p, strEnc);
 
-            if (!Encoding.isAscii(c)) {
-                s += StringSupport.length(strEnc, bytes, s, end);
-                val.cat(bytes, ss, s - ss, strEnc);
+            c = ASCGET(acompat, sBytes, s, e, clen, strEnc);
+
+            if (c == -1) {
+                s += StringSupport.length(strEnc, sBytes, s, e);
+                EncodingUtils.encStrBufCat(runtime, val, sBytes, ss, s - ss, strEnc);
                 p = s;
                 continue;
             }
+            s += clen[0];
 
-            s += cl;
             p = s;
-
             switch (c) {
             case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':
                 if (pattern.noNameGroupIsActive(Syntax.RUBY)) {
                     no = c - '0';
                     break;
+                } else {
+                    continue;
                 }
-                continue;
             case 'k':
-                if (s < end) {
-                    if (strEnc.isAsciiCompatible()) {
-                        cl = 1;
-                        c = bytes[s] & 0xff;
-                    } else {
-                        cl = StringSupport.preciseLength(strEnc, bytes, s, end);
-                        c = strEnc.mbcToCode(bytes, s, end);
+                if (s < e && ASCGET(acompat, sBytes, s, e, clen, strEnc) == '<') {
+                    int name = s + clen[0];
+                    int nameEnd = name;
+                    while (nameEnd < e) {
+                        c = ASCGET(acompat, sBytes, nameEnd, e, clen, strEnc);
+                        if (c == '>') break;
+                        nameEnd += c == -1 ? StringSupport.length(strEnc, sBytes, nameEnd, e) : clen[0];
                     }
-                    if (c == '<') {
-                        int name = s + cl;
-                        int nameEnd = name;
-                        while (nameEnd < end) {
-                            if (strEnc.isAsciiCompatible()) {
-                                cl = 1;
-                                c = bytes[nameEnd] & 0xff;
-                            } else {
-                                cl = StringSupport.preciseLength(strEnc, bytes, nameEnd, end);
-                                c = strEnc.mbcToCode(bytes, nameEnd, end);
-                            }
-                            if (c == '>') break;
-                            nameEnd += (!Encoding.isAscii(c)) ? StringSupport.length(strEnc, bytes, nameEnd, end) : cl;
+                    if (nameEnd < e) {
+                        try {
+                            no = pattern.nameToBackrefNumber(sBytes, name, nameEnd, regs);
+                        } catch (JOniException je) {
+                            throw str.getRuntime().newIndexError(je.getMessage());
                         }
-                        if (nameEnd < end) {
-                            try {
-                                no = pattern.nameToBackrefNumber(bytes, name, nameEnd, regs);
-                            } catch (JOniException je) {
-                                throw str.getRuntime().newIndexError(je.getMessage());
-                            }
-                            p = s = nameEnd + cl;
-                            break;
-                        } else {
-                            throw str.getRuntime().newRuntimeError("invalid group name reference format");
-                        }
+                        p = s = nameEnd + clen[0];
+                        break;
+                    } else {
+                        throw str.getRuntime().newRuntimeError("invalid group name reference format");
                     }
                 }
-                val.cat(bytes, ss, s - ss, strEnc);
+
+                EncodingUtils.encStrBufCat(runtime, val, sBytes, ss, s - ss, strEnc);
                 continue;
             case '0': case '&':
                 no = 0;
                 break;
             case '`':
-                val.cat( srcbs.getUnsafeBytes(), srcbs.getBegin(), matcher.getBegin(), srcEnc);
+                EncodingUtils.encStrBufCat(runtime, val, srcbs.getUnsafeBytes(), srcbs.getBegin(), matcher.getBegin(), srcEnc);
                 continue;
             case '\'':
-                val.cat(srcbs.getUnsafeBytes(), srcbs.getBegin() + matcher.getEnd(), srcbs.getRealSize() - matcher.getEnd(), srcEnc);
+                EncodingUtils.encStrBufCat(runtime, val, srcbs.getUnsafeBytes(), srcbs.getBegin() + matcher.getEnd(), srcbs.getRealSize() - matcher.getEnd(), srcEnc);
                 continue;
             case '+':
-                if (regs == null) {
-                    if (matcher.getBegin() == -1) {
-                        no = 0;
-                        continue;
-                    }
-                } else {
+                if (regs != null) {
                     no = regs.numRegs - 1;
                     while (regs.beg[no] == -1 && no > 0) no--;
-                    if (no == 0) continue;
                 }
+                if (no == 0) continue;
                 break;
             case '\\':
-                val.cat(bytes, s - cl, cl, strEnc);
+                EncodingUtils.encStrBufCat(runtime, val, sBytes, s - clen[0], clen[0], strEnc);
                 continue;
             default:
-                val.cat(bytes, ss, s - ss, strEnc);
+                EncodingUtils.encStrBufCat(runtime, val, sBytes, ss, s - ss, strEnc);
                 continue;
             }
 
             if (regs != null) {
                 if (no >= 0) {
-                    if (no >= regs.numRegs || regs.beg[no] == -1) continue;
-                    val.cat(srcbs.getUnsafeBytes(), srcbs.getBegin() + regs.beg[no], regs.end[no] - regs.beg[no], srcEnc);
+                    if (no >= regs.numRegs) continue;
+                    if (regs.beg[no] == -1) continue;
+                    EncodingUtils.encStrBufCat(runtime, val, srcbs.getUnsafeBytes(), srcbs.getBegin() + regs.beg[no], regs.end[no] - regs.beg[no], srcEnc);
                 }
             } else {
                 if (no != 0 || matcher.getBegin() == -1) continue;
-                val.cat(srcbs.getUnsafeBytes(), srcbs.getBegin() + matcher.getBegin(), matcher.getEnd() - matcher.getBegin(), srcEnc);
+                EncodingUtils.encStrBufCat(runtime, val, srcbs.getUnsafeBytes(), srcbs.getBegin() + matcher.getBegin(), matcher.getEnd() - matcher.getBegin(), srcEnc);
             }
         }
 
         if (val == null) return str;
-        if (p < end) val.cat(bytes, p, end - p, strEnc);
+        if (p < e) EncodingUtils.encStrBufCat(runtime, val, sBytes, p, e - p, strEnc);
         return val;
     }
 

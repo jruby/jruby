@@ -20,6 +20,7 @@ end
 require 'thread.jar'
 
 # These are loads so they don't pollute LOADED_FEATURES
+load 'jruby/kernel/string.rb'
 load 'jruby/kernel/thread.rb'
 load 'jruby/kernel/kernel.rb'
 load 'jruby/kernel/proc.rb'
@@ -31,7 +32,6 @@ load 'jruby/kernel/enumerable.rb'
 load 'jruby/kernel/io.rb'
 load 'jruby/kernel/time.rb'
 load 'jruby/kernel/gc.rb'
-load 'jruby/kernel/encoding/converter.rb'
 load 'jruby/kernel/range.rb'
 load 'jruby/kernel/load_error.rb'
 

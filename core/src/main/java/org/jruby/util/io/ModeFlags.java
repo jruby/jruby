@@ -32,8 +32,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.io;
 
+import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
+import jnr.posix.POSIX;
 import org.jruby.Ruby;
+
+import java.nio.channels.Channel;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 
 /**
  * This file represents the POSIX-like mode flags an open channel (as in a
@@ -94,11 +101,6 @@ public class ModeFlags implements Cloneable {
     	// TODO: Ruby does not seem to care about invalid numeric mode values
     	// I am not sure if ruby overflows here also...
         this.flags = (int)flags;
-        
-        if (isReadOnly() && ((flags & APPEND) != 0)) {
-            // MRI 1.8 behavior: this combination of flags is not allowed
-            throw new InvalidValueException();
-        }
     }
 
     public ModeFlags(String flagString) throws InvalidValueException {
@@ -153,6 +155,69 @@ public class ModeFlags implements Cloneable {
             return getOFlagsFromString(modesString);
         } catch (InvalidValueException ive) {
             throw runtime.newErrnoEINVALError("mode string: " + modesString);
+        }
+    }
+
+    /**
+     * Build a set of mode flags using the specified channel's actual capabilities.
+     *
+     * @param channel the channel to examine for capabilities
+     * @return the mode flags
+     */
+    public static int oflagsFrom(POSIX posix, Channel channel) {
+        int mode;
+
+        int fileno = FilenoUtil.filenoFrom(channel);
+        if (FilenoUtil.isFake(fileno) || !posix.isNative()) {
+            // channel doesn't have a real fileno; best we can do is go off the Java type
+            if (channel instanceof ReadableByteChannel) {
+                if (channel instanceof WritableByteChannel) {
+                    mode = RDWR;
+                } else {
+                    mode = RDONLY;
+                }
+            } else if (channel instanceof WritableByteChannel) {
+                mode = WRONLY;
+            } else {
+                // FIXME: I don't like this
+                mode = RDWR;
+            }
+        } else {
+            // real fileno, we can use fcntl
+            mode = posix.fcntl(fileno, Fcntl.F_GETFL);
+        }
+
+        return mode;
+    }
+
+    /**
+     * Build a set of mode flags using the specified channel's actual capabilities.
+     *
+     * @param channel the channel to examine for capabilities
+     * @return the mode flags
+     */
+    @Deprecated
+    public static ModeFlags getModesFromChannel(Channel channel) {
+        try {
+            ModeFlags modes;
+
+            if (channel instanceof ReadableByteChannel) {
+                if (channel instanceof WritableByteChannel) {
+                    modes = new ModeFlags(RDWR);
+                } else {
+                    modes = new ModeFlags(RDONLY);
+                }
+            } else if (channel instanceof WritableByteChannel) {
+                modes = new ModeFlags(WRONLY);
+            } else {
+                // FIXME: I don't like this
+                modes = new ModeFlags(RDWR);
+            }
+
+            return modes;
+        } catch (InvalidValueException ive) {
+            // should never happen, because all values above are valid
+            throw new RuntimeException(ive);
         }
     }
 
