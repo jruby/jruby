@@ -5,26 +5,16 @@ import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
 import java.io.File;
 import java.io.FileDescriptor;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
+import java.io.InputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 
-import org.jruby.Ruby;
-import org.jruby.RubyFile;
-import org.jruby.platform.Platform;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
-
-import jnr.posix.JavaSecuredFile;
-import java.util.jar.JarFile;
-import java.util.jar.JarEntry;
-import java.util.zip.ZipEntry;
-import java.io.IOException;
 
 /**
  * Represents a "regular" file, backed by regular file system.
@@ -141,9 +131,9 @@ class RegularFileResource implements FileResource {
     }
 
     @Override
-    public FileInputStream getInputStream() {
+    public InputStream getInputStream() {
         try {
-            return new FileInputStream(file);
+            return new java.io.BufferedInputStream(new FileInputStream(file), 32768);
         } catch (FileNotFoundException fnfe) {
             return null;
         }
