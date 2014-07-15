@@ -73,7 +73,7 @@
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jar-dependencies</artifactId>
-      <version>0.0.3</version>
+      <version>0.0.5</version>
       <type>gem</type>
     </dependency>
   </dependencies>
@@ -183,7 +183,7 @@
                 <artifactItem>
                   <groupId>rubygems</groupId>
                   <artifactId>jar-dependencies</artifactId>
-                  <version>0.0.3</version>
+                  <version>0.0.5</version>
                   <type>gem</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
