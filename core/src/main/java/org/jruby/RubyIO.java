@@ -1688,12 +1688,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyIO write_io;
         long pos;
 
-        RubyIO io = (RubyIO)TypeConverter.ioCheckIO(runtime, _io);
+        RubyIO io = TypeConverter.ioGetIO(runtime, _io);
         if (!OBJ_INIT_COPY(dest, io)) return dest;
         orig = io.getOpenFileChecked();
         fptr = dest.MakeOpenFile();
 
-        flush(context);
+        io.flush(context);
 
         /* copy rb_io_t structure */
         fptr.setMode(orig.getMode() & ~OpenFile.PREP);
@@ -1941,7 +1941,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //        }
 
         RubyIO io = GetWriteIO();
-        fptr = getOpenFileChecked();
+        fptr = io.getOpenFileChecked();
 
         if ((fptr.getMode() & OpenFile.WRITABLE) != 0) {
             if (fptr.io_fflush(context) < 0)
