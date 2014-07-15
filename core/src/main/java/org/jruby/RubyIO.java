@@ -2715,7 +2715,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         
         if (length.isNil()) {
             fptr = getOpenFileChecked();
-            fptr.checkReadable(context);
+            fptr.checkCharReadable(context);
             return fptr.readAll(context, 0, str);
         }
         
