@@ -2,28 +2,21 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>dummy</groupId>
+  <groupId>no_group_id_given</groupId>
   <artifactId>jetty</artifactId>
   <version>0.0.0</version>
   <packaging>war</packaging>
   <name>jetty</name>
   <properties>
     <webinf.dir>${public.dir}/WEB-INF</webinf.dir>
-    <tesla.version>0.0.9</tesla.version>
-    <jruby.plugins.version>1.0.0-rc4</jruby.plugins.version>
+    <tesla.version>0.1.1</tesla.version>
+    <jruby.plugins.version>1.0.3</jruby.plugins.version>
     <jruby.version>@project.version@</jruby.version>
     <jetty.version>9.1.3.v20140225</jetty.version>
-    <classes.dir>${webinf.dir}/classes</classes.dir>
-    <gem.home>${classes.dir}</gem.home>
-    <public.dir>${base.dir}/public</public.dir>
-    <final.name>${project.artifactId}</final.name>
-    <gem.path>${gem.home}</gem.path>
-    <lib.dir>${base.dir}/lib</lib.dir>
+    <public.dir>${basedir}/public</public.dir>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <jetty.group_id>org.eclipse.jetty</jetty.group_id>
-    <base.dir>${basedir}</base.dir>
-    <work.dir>${base.dir}/pkg</work.dir>
   </properties>
   <dependencies>
     <dependency>
@@ -36,18 +29,7 @@
       <groupId>org.jruby</groupId>
       <artifactId>jruby</artifactId>
       <version>${jruby.version}</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>jruby-stdlib</artifactId>
-          <groupId>org.jruby</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-stdlib</artifactId>
-      <version>${jruby.version}</version>
-      <scope>provided</scope>
+      <type>pom</type>
     </dependency>
     <dependency>
       <groupId>org.jruby.rack</groupId>
@@ -68,36 +50,7 @@
     </repository>
   </repositories>
   <build>
-    <resources>
-      <resource>
-        <directory>${lib.dir}</directory>
-      </resource>
-    </resources>
-    <directory>${work.dir}</directory>
-    <finalName>${final.name}</finalName>
     <plugins>
-      <plugin>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <version>2.8</version>
-        <executions>
-          <execution>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>unpack</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <artifactItems>
-            <artifactItem>
-              <groupId>org.jruby</groupId>
-              <artifactId>jruby-stdlib</artifactId>
-              <version>${jruby.version}</version>
-              <outputDirectory>${classes.dir}</outputDirectory>
-            </artifactItem>
-          </artifactItems>
-        </configuration>
-      </plugin>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
         <artifactId>gem-maven-plugin</artifactId>
@@ -112,26 +65,7 @@
         <configuration>
           <includeRubygemsInTestResources>false</includeRubygemsInTestResources>
           <includeRubygemsInResources>true</includeRubygemsInResources>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-clean-plugin</artifactId>
-        <version>2.5</version>
-        <configuration>
-          <filesets>
-            <fileset>
-              <directory>${work.dir}</directory>
-              <includes>
-                <include>**/*</include>
-              </includes>
-            </fileset>
-            <fileset>
-              <directory>${classes.dir}</directory>
-              <includes>
-                <include>**/*</include>
-              </includes>
-            </fileset>
-          </filesets>
+          <includeLibDirectoryInResources>true</includeLibDirectoryInResources>
         </configuration>
       </plugin>
       <plugin>
@@ -160,11 +94,8 @@
         <configuration>
           <path>/</path>
           <webAppSourceDirectory>${public.dir}</webAppSourceDirectory>
-          <webXml>${webinf.dir}/web.xml</webXml>
           <stopPort>9999</stopPort>
           <stopKey>foo</stopKey>
-          <scanIntervalSeconds>0</scanIntervalSeconds>
-          <classesDirectory>${lib.dir}</classesDirectory>
         </configuration>
       </plugin>
       <plugin>
@@ -172,17 +103,15 @@
         <version>2.2</version>
         <configuration>
           <warSourceDirectory>${public.dir}</warSourceDirectory>
-          <warSourceExcludes>WEB-INF/classes/META-INF/maven/*,WEB-INF/classes/META-INF/MANIFEST.MF</warSourceExcludes>
           <webResources>
             <webResource>
-              <directory>${base.dir}</directory>
+              <directory>${basedir}</directory>
               <targetPath>WEB-INF</targetPath>
               <includes>
                 <include>config.ru</include>
               </includes>
             </webResource>
           </webResources>
-          <webXml>${webinf.dir}/web.xml</webXml>
         </configuration>
       </plugin>
       <plugin>
@@ -191,13 +120,13 @@
         <version>${tesla.version}</version>
         <executions>
           <execution>
-            <id>setup</id>
+            <id>copy config.ru for jruby-rack to find</id>
             <phase>initialize</phase>
             <goals>
               <goal>execute</goal>
             </goals>
             <configuration>
-              <taskId>setup</taskId>
+              <taskId>copy config.ru for jruby-rack to find</taskId>
               <nativePom>Mavenfile</nativePom>
             </configuration>
           </execution>

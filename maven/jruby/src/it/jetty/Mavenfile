@@ -2,15 +2,8 @@
 
 properties( 'jruby.version' => '@project.version@',
             'project.build.sourceEncoding' => 'utf-8',
-            'final.name' => '${project.artifactId}',
-            'base.dir' => '${basedir}',
-            'public.dir' => '${base.dir}/public',
-            'webinf.dir' => '${public.dir}/WEB-INF',
-            'classes.dir' => '${webinf.dir}/classes',
-            'lib.dir' => '${base.dir}/lib',
-            'gem.home' => '${classes.dir}',
-            'gem.path' => '${gem.home}',
-            'work.dir' => '${base.dir}/pkg'  )
+            'public.dir' => '${basedir}/public',
+            'webinf.dir' => '${public.dir}/WEB-INF' )
 
 # ruby-maven will dump an equivalent pom.xml
 properties[ 'tesla.dump.pom' ] = 'pom.xml'
@@ -22,42 +15,13 @@ gem 'flickraw', '0.9.7'
 repository( 'http://rubygems-proxy.torquebox.org/releases',
             :id => 'rubygems-releases' )
 
-jar( 'org.jruby:jruby', '${jruby.version}',
-     :exclusions => ['org.jruby:jruby-stdlib' ])
-
-# needed to install gems for the build itself
-jar( 'org.jruby:jruby-stdlib', '${jruby.version}',
-     :scope => :provided )
+pom( 'org.jruby:jruby', '${jruby.version}' )
 
 jar( 'org.jruby.rack:jruby-rack', '1.1.14', 
      :exclusions => [ 'org.jruby:jruby-complete' ] )
 
-phase 'prepare-package' do
-  plugin( :dependency, '2.8',
-          :artifactItems => [ { :groupId => 'org.jruby',
-                                :artifactId => 'jruby-stdlib',
-                                :version => '${jruby.version}',
-                                :outputDirectory => '${classes.dir}' } ] ) do
-    execute_goal( :unpack )
-  end
-end
-
-jruby_plugin :gem, :includeRubygemsInTestResources => false, :includeRubygemsInResources => true do
+jruby_plugin :gem, :includeRubygemsInTestResources => false, :includeRubygemsInResources => true, :includeLibDirectoryInResources => true do
   execute_goal :initialize
-end
-
-plugin!( :clean, '2.5', 
-         :filesets => [ { :directory => '${work.dir}',
-                          :includes => [ '**/*' ] },
-                        { :directory => '${classes.dir}',
-                          :includes => [ '**/*' ] } ] )
-
-build do
-  final_name '${final.name}'
-  directory '${work.dir}'
-  resource do
-    directory '${lib.dir}'
-  end
 end
 
 properties( 'jetty.version' => '9.1.3.v20140225',
@@ -66,25 +30,19 @@ properties( 'jetty.version' => '9.1.3.v20140225',
 plugin( '${jetty.group_id}:jetty-maven-plugin', '${jetty.version}',
         :path => '/',
         :webAppSourceDirectory => '${public.dir}',
-        :webXml => '${webinf.dir}/web.xml',
         :stopPort => 9999,
-        :stopKey => 'foo',
-        :scanIntervalSeconds => 0,
-        :classesDirectory => '${lib.dir}' ) do
+        :stopKey => 'foo' ) do
    execute_goal( 'start', :id => 'start jetty', :phase => 'pre-integration-test', :daemon => true )
    execute_goal( 'stop', :id => 'stop jetty', :phase => 'post-integration-test' )
 end
 
 plugin( :war, '2.2',
         :warSourceDirectory => '${public.dir}',
-        :warSourceExcludes => [ 'WEB-INF/classes/META-INF/maven/*',
-                                'WEB-INF/classes/META-INF/MANIFEST.MF' ].join(','),
-        :webResources => [ { :directory => '${base.dir}',
+        :webResources => [ { :directory => '${basedir}',
                              :targetPath => 'WEB-INF',
-                             :includes => [ 'config.ru' ] } ],
-        :webXml => '${webinf.dir}/web.xml' )
+                             :includes => [ 'config.ru' ] } ] )
 
-execute 'setup', :phase => 'initialize' do |ctx|
+execute 'copy config.ru for jruby-rack to find', :phase => 'initialize' do |ctx|
   require 'fileutils'
   webinf = ctx.project.properties[ 'webinf.dir' ].to_s
   FileUtils.mkdir_p webinf
@@ -95,6 +53,7 @@ result = nil
 execute 'download', :phase => 'integration-test' do
   require 'open-uri'
   result = open( 'http://localhost:8080' ).string
+  puts result
 end
 
 execute 'check download', :phase => :verify do

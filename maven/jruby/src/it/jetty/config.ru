@@ -13,7 +13,7 @@ run lambda { |env|
       'Content-Type'  => 'text/html', 
       'Cache-Control' => 'public, max-age=86400' 
     },
-    [ HelloWorld.new, Gem.loaded_specs['flickraw'].gem_dir ]
+    [ HelloWorld.new + "\n", Gem.loaded_specs['flickraw'].gem_dir ]
   ]
 }
 
