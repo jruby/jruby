@@ -1160,7 +1160,7 @@ class Date
 
   # Get the date as a Julian Day Number.
   def jd
-    (JODA::DateTimeUtils.toJulianDay(@dt.getMillis) + @of.to_f + HALF_DAYS_IN_DAY.to_f).floor
+    (JODA::DateTimeUtils.toJulianDay(@dt.getMillis) + @of.to_f + 0.5).floor
   end
 
   # Get any fractional day part of the date.
