@@ -2465,7 +2465,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             c = EncodingUtils.encUintChr(context, (int)((RubyFixnum)c).getLongValue(), fptr.readEncoding(runtime));
         }
         else if (c instanceof RubyBignum) {
-            c = EncodingUtils.encUintChr(context, (int)((RubyFixnum)c).getLongValue(), fptr.readEncoding(runtime));
+            c = EncodingUtils.encUintChr(context, (int)((RubyBignum)c).getLongValue(), fptr.readEncoding(runtime));
         }
         else {
             c = c.convertToString();
