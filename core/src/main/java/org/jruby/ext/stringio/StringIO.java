@@ -141,6 +141,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return this;
     }
 
+    // MRI: strio_init
     private void strioInit(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         RubyString string;
@@ -186,6 +187,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         flags |= (ptr.flags & OpenFile.READWRITE) * (STRIO_READABLE / OpenFile.READABLE);
     }
 
+    // MRI: strio_copy
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
         StringIO otherIO = (StringIO) TypeConverter.convertToType(other,
@@ -283,6 +285,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return getRuntime().newBoolean(!writable());
     }
 
+    // MRI: strio_each
     @JRubyMethod(name = "each", optional = 2, writes = FrameField.LASTLINE)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", args);
@@ -568,15 +571,15 @@ public class StringIO extends RubyObject implements EncodingCapable {
             return context.nil;
         }
 
-        ByteList dataByteList = ptr.string.getByteList();
-        byte[] dataBytes = dataByteList.getUnsafeBytes();
-        int begin = dataByteList.getBegin();
+        ByteList sByteList = ptr.string.getByteList();
+        byte[] sBytes = sByteList.getUnsafeBytes();
+        int begin = sByteList.getBegin();
         int s = begin + ptr.pos;
-        int e = begin + dataByteList.getRealSize();
+        int e = begin + sByteList.getRealSize();
         int p;
 
         if (limit > 0 && s + limit < e) {
-            e = dataByteList.getEncoding().rightAdjustCharHead(dataBytes, s, s + limit, e);
+            e = sByteList.getEncoding().rightAdjustCharHead(sBytes, s, s + limit, e);
         }
         if (str.isNil()) {
             str = strioSubstr(runtime, ptr.pos, e - s);
@@ -584,16 +587,16 @@ public class StringIO extends RubyObject implements EncodingCapable {
             // this is not an exact port; the original confused me
             p = s;
             // remove leading \n
-            while (dataBytes[p] == '\n') {
+            while (sBytes[p] == '\n') {
                 if (++p == e) {
                     return context.nil;
                 }
             }
             s = p;
             // find next \n or end; if followed by \n, include it too
-            p = StringSupport.memchr(dataBytes, p, '\n', e - p);
+            p = StringSupport.memchr(sBytes, p, '\n', e - p);
             if (p != -1) {
-                if (++p < e && dataBytes[p] == '\n') {
+                if (++p < e && sBytes[p] == '\n') {
                     e = p + 1;
                 } else {
                     e = p;
@@ -603,7 +606,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         } else if (n == 1) {
             RubyString strStr = (RubyString)str;
             ByteList strByteList = strStr.getByteList();
-            if ((p = StringSupport.memchr(dataBytes, s, strByteList.get(0), e - s)) != -1) {
+            if ((p = StringSupport.memchr(sBytes, s, strByteList.get(0), e - s)) != -1) {
                 e = p + 1;
             }
             str = strioSubstr(runtime, ptr.pos, e - s);
@@ -617,7 +620,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
                 int pos;
                 p = strByteList.getBegin();
                 bm_init_skip(skip, strBytes, p, n);
-                if ((pos = bm_search(strBytes, p, n, dataBytes, s, e - s, skip)) >= 0) {
+                if ((pos = bm_search(strBytes, p, n, sBytes, s, e - s, skip)) >= 0) {
                     e = s + pos + n;
                 }
             }
@@ -920,6 +923,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return ary;
     }
 
+    // MRI: strio_reopen
     @JRubyMethod(name = "reopen", required = 0, optional = 2)
     public IRubyObject reopen(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
