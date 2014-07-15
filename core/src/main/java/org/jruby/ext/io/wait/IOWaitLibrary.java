@@ -135,7 +135,6 @@ public class IOWaitLibrary implements Library {
      */
     @JRubyMethod(optional = 1)
     public static IRubyObject wait_writable(ThreadContext context, IRubyObject _io, IRubyObject[] argv) {
-        Ruby runtime = context.runtime;
         RubyIO io = (RubyIO)_io;
         OpenFile fptr;
         boolean i;
