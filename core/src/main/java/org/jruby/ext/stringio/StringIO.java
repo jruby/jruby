@@ -701,21 +701,22 @@ public class StringIO extends RubyObject implements EncodingCapable {
         }
     }
 
-    @JRubyMethod(name = "putc", required = 1)
-    public IRubyObject putc(IRubyObject ch) {
+    // MRI: strio_putc
+    @JRubyMethod(name = "putc")
+    public IRubyObject putc(ThreadContext context, IRubyObject ch) {
+        Ruby runtime = context.runtime;
         checkWritable();
-        byte c = RubyNumeric.num2chr(ch);
-        int olen;
+        IRubyObject str;
 
         checkModifiable();
-
-        olen = ptr.string.size();
-        if ((ptr.flags & OpenFile.APPEND) != 0) {
-            ptr.pos = olen;
+        if (ch instanceof RubyString) {
+            str = ((RubyString)ch).substr(runtime, 0, 1);
         }
-        strioExtend(ptr.pos, 1);
-        ptr.string.getByteList().set(ptr.pos++, c);
-        ptr.string.infectBy(this);
+        else {
+            byte c = RubyNumeric.num2chr(ch);
+            str = RubyString.newString(runtime, new byte[c]);
+        }
+        write(context, str);
         return ch;
     }
 
@@ -1112,6 +1113,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         return syswrite(context, args[0]);
     }
 
+    // MRI: strio_write
     @JRubyMethod(name = {"write"}, required = 1)
     public IRubyObject write(ThreadContext context, IRubyObject arg) {
         checkWritable();
