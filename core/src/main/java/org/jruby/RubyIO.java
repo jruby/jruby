@@ -2480,9 +2480,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
             fptr.makeReadConversion(context, (int)len);
             if (fptr.cbuf.capa - fptr.cbuf.len < len)
                 throw runtime.newIOError("ungetc failed");
+            // shift cbuf back to 0
             if (fptr.cbuf.off < len) {
-                System.arraycopy(fptr.cbuf.ptr, fptr.cbuf.off, fptr.cbuf.ptr, fptr.cbuf.capa - fptr.cbuf.len, fptr.cbuf.len);
-                fptr.cbuf.off = fptr.cbuf.capa-fptr.cbuf.len;
+                System.arraycopy(
+                        fptr.cbuf.ptr, fptr.cbuf.off,
+                        fptr.cbuf.ptr, fptr.cbuf.capa - fptr.cbuf.len, // this should be 0
+                        fptr.cbuf.len);
+                fptr.cbuf.off = fptr.cbuf.capa-fptr.cbuf.len; // this should be 0 too
             }
             fptr.cbuf.off -= (int)len;
             fptr.cbuf.len += (int)len;
