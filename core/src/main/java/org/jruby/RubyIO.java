@@ -2451,6 +2451,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return context.nil;
     }
 
+    // MRI: rb_io_ungetc
     @JRubyMethod
     public IRubyObject ungetc(ThreadContext context, IRubyObject c)
     {
