@@ -1224,7 +1224,6 @@ public class OpenFile implements Finalizable {
                     if (waitReadable(context, fd)) {
                         continue retry;
                     }
-                    // This should be errno
                     throw context.runtime.newErrnoFromErrno(posix.errno, "channel: " + fd + (pathv != null ? " " + pathv : ""));
                 }
                 break;

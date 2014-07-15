@@ -1789,7 +1789,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     protected IRubyObject rbIoClose(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
         OpenFile fptr;
-        ChannelFD fd;
         RubyIO write_io;
         OpenFile write_fptr;
 
