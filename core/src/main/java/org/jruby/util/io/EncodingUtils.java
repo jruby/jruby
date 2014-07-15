@@ -906,7 +906,7 @@ public class EncodingUtils {
         Ptr destpPos = new Ptr(destp.getBegin());
         transcodeLoop(context, frompBytes, frompPos, destpBytes, destpPos, frompPos.p + slen, destpPos.p + blen, destp, strTranscodingResize, sname_p[0], dname_p[0], ecflags, ecopts);
 
-        if (frompPos.p != slen) {
+        if (frompPos.p != sp.begin() + slen) {
             throw runtime.newArgumentError("not fully converted, " + (slen - frompPos.p) + " bytes left");
         }
         destp.setRealSize(destpPos.p);
