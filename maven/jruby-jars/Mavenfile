@@ -1,8 +1,8 @@
 #-*- mode: ruby -*-
 
-gemspec :include_jars => true
+gemspec
 
-model.version = model.version.sub(/\.SNAPSHOT/, '-SNAPSHOT').sub( /-SNAPSHOT-SNAPSHOT/, '-SNAPSHOT' )
+model.version = model.version.sub(/\.SNAPSHOT/, '-SNAPSHOT')
 inherit "org.jruby:jruby-artifacts:#{model.version}"
 
 name "JRuby Jars Gem"
@@ -23,7 +23,9 @@ properties( 'tesla.dump.pom' => 'pom.xml',
             'tesla.dump.readonly' => true,
             'jruby.home' => '${basedir}/../../' )
 
-jruby_plugin :gem do
+jruby_plugin!( :gem,
+               :gemspec => 'jruby-jars.gemspec',
+               :includeDependencies => true ) do
   execute_goals :id => 'default-push', :skip => true
 end
 
