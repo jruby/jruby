@@ -21,9 +21,7 @@ public class IRReturnJump extends RuntimeException implements Unrescuable {
     public static IRReturnJump create(DynamicScope scope, Object rv) {
         IRReturnJump rj;
         Reference<IRReturnJump> rjRef = threadLocalRJ.get();
-        if (rjRef != null) {
-            rj = rjRef.get();
-        } else {
+        if (rjRef == null || (rj = rjRef.get()) == null) {
             rj = new IRReturnJump();
             threadLocalRJ.set(new SoftReference<IRReturnJump>(rj));
         }
