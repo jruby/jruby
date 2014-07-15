@@ -15,6 +15,7 @@
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <tesla.version>0.1.1</tesla.version>
   </properties>
   <build>
     <plugins>
@@ -23,7 +24,7 @@
         <executions>
           <execution>
             <id>unpack jruby-stdlib</id>
-            <phase>process-classes</phase>
+            <phase>package</phase>
             <goals>
               <goal>unpack</goal>
             </goals>
@@ -87,11 +88,11 @@
       <plugin>
         <groupId>io.tesla.polyglot</groupId>
         <artifactId>tesla-polyglot-maven-plugin</artifactId>
-        <version>0.0.8</version>
+        <version>${tesla.version}</version>
         <executions>
           <execution>
             <id>fix_executable_bits</id>
-            <phase>process-classes</phase>
+            <phase>package</phase>
             <goals>
               <goal>execute</goal>
             </goals>
@@ -105,7 +106,7 @@
           <dependency>
             <groupId>io.tesla.polyglot</groupId>
             <artifactId>tesla-polyglot-ruby</artifactId>
-            <version>0.0.8</version>
+            <version>${tesla.version}</version>
           </dependency>
         </dependencies>
       </plugin>
@@ -122,88 +123,29 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>buildnumber-maven-plugin</artifactId>
-            <version>1.2</version>
+            <groupId>io.tesla.polyglot</groupId>
+            <artifactId>tesla-polyglot-maven-plugin</artifactId>
+            <version>${tesla.version}</version>
             <executions>
               <execution>
-                <id>jruby-revision</id>
-                <phase>generate-sources</phase>
+                <id>pack_sources</id>
+                <phase>package</phase>
                 <goals>
-                  <goal>create</goal>
+                  <goal>execute</goal>
                 </goals>
                 <configuration>
-                  <shortRevisionLength>7</shortRevisionLength>
-                  <buildNumberPropertyName>jruby.revision</buildNumberPropertyName>
+                  <taskId>pack_sources</taskId>
+                  <nativePom>pom.rb</nativePom>
                 </configuration>
               </execution>
             </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>build source archive - tar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <workingDirectory>${basedir}/../..</workingDirectory>
-                  <arguments>
-                    <argument>archive</argument>
-                    <argument>--prefix</argument>
-                    <argument>jruby-${project.version}/</argument>
-                    <argument>--format</argument>
-                    <argument>tar</argument>
-                    <argument>${jruby.revision}</argument>
-                    <argument>.</argument>
-                    <argument>-o</argument>
-                    <argument>${project.build.directory}/${project.artifactId}-${project.version}-src.tar</argument>
-                  </arguments>
-                  <executable>git</executable>
-                </configuration>
-              </execution>
-              <execution>
-                <id>gzip build source tar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <workingDirectory>${basedir}/../..</workingDirectory>
-                  <arguments>
-                    <argument>${project.build.directory}/${project.artifactId}-${project.version}-src.tar</argument>
-                    <argument>-f</argument>
-                  </arguments>
-                  <executable>gzip</executable>
-                </configuration>
-              </execution>
-              <execution>
-                <id>build source archive - zip</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <workingDirectory>${basedir}/../..</workingDirectory>
-                  <arguments>
-                    <argument>archive</argument>
-                    <argument>--prefix</argument>
-                    <argument>jruby-${project.version}/</argument>
-                    <argument>-9</argument>
-                    <argument>--format</argument>
-                    <argument>zip</argument>
-                    <argument>${jruby.revision}</argument>
-                    <argument>.</argument>
-                    <argument>-o</argument>
-                    <argument>${project.build.directory}/${project.artifactId}-${project.version}-src.zip</argument>
-                  </arguments>
-                  <executable>git</executable>
-                </configuration>
-              </execution>
-            </executions>
+            <dependencies>
+              <dependency>
+                <groupId>io.tesla.polyglot</groupId>
+                <artifactId>tesla-polyglot-ruby</artifactId>
+                <version>${tesla.version}</version>
+              </dependency>
+            </dependencies>
           </plugin>
         </plugins>
       </build>
