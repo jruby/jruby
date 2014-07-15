@@ -710,11 +710,11 @@ public class StringIO extends RubyObject implements EncodingCapable {
 
         checkModifiable();
         if (ch instanceof RubyString) {
-            str = ((RubyString)ch).substr(runtime, 0, 1);
+            str = ((RubyString)ch).substr19(runtime, 0, 1);
         }
         else {
             byte c = RubyNumeric.num2chr(ch);
-            str = RubyString.newString(runtime, new byte[c]);
+            str = RubyString.newString(runtime, new byte[]{c});
         }
         write(context, str);
         return ch;
@@ -1138,9 +1138,7 @@ public class StringIO extends RubyObject implements EncodingCapable {
         if ((ptr.flags & OpenFile.APPEND) != 0) {
             ptr.pos = olen;
         }
-        if (ptr.pos == olen
-                // this is a hack because we don't seem to handle incoming ASCII-8BIT properly in transcoder
-                && enc2 != ASCIIEncoding.INSTANCE) {
+        if (ptr.pos == olen) {
             EncodingUtils.encStrBufCat(runtime, ptr.string, str.getByteList(), enc);
         } else {
             strioExtend(ptr.pos, len);
