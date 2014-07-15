@@ -1297,10 +1297,25 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    // rb_io_wait_readable
+    /**
+     * Logic to match (as well as possible) rb_io_wait_readable from MRI. We do not
+     * have the luxury of treating all file descriptors the same, so there's a bit
+     * of special-casing here when the channel is not selectable.
+     *
+     * Note also the EBADF on closed channels; I believe this is what *would*
+     * happen in MRI if we always called the selection logic and were given a
+     * closed channel.
+     *
+     * MRI: rb_io_wait_readable
+     */
     boolean waitReadable(ThreadContext context, ChannelFD fd) {
-        if (fd == null || !fd.ch.isOpen()) {
+        if (fd == null) {
             throw context.runtime.newIOError("closed stream");
+        }
+
+        if (!fd.ch.isOpen()) {
+            posix.errno = Errno.EBADF;
+            return false;
         }
 
         if (fd.chSelect != null) {
