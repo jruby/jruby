@@ -1188,7 +1188,6 @@ public class EncodingUtils {
                     rep = rep.convertToString();
                     Encoding repEnc = ((RubyString)rep).getEncoding();
                     ByteList repByteList = ((RubyString)rep).getByteList();
-                    byte[] repBytes = repByteList.bytes(); // inefficient but insertOutput doesn't take index
                     ec.insertOutput(repByteList.getUnsafeBytes(), repByteList.begin(), repByteList.getRealSize(), repEnc.getName());
 
                     // TODO: check for too-large replacement
