@@ -894,7 +894,7 @@ public class EncodingUtils {
         }
 
         ByteList sp = ((RubyString)str).getByteList();
-        ByteList fromp = sp.shallowDup();
+        ByteList fromp = sp;
         int slen = ((RubyString)str).size();
         int blen = slen + 30;
         dest = RubyString.newStringLight(runtime, blen);
