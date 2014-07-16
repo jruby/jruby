@@ -25,9 +25,7 @@ public class IRBreakJump extends RuntimeException implements Unrescuable {
     public static IRBreakJump create(DynamicScope scopeToReturnTo, IRubyObject rv) {
         IRBreakJump bj;
         Reference<IRBreakJump> bjRef = threadLocalBJ.get();
-        if (bjRef != null) {
-            bj = bjRef.get();
-        } else {
+        if (bjRef == null || (bj = bjRef.get()) == null) {
             bj = new IRBreakJump();
             threadLocalBJ.set(new SoftReference<IRBreakJump>(bj));
         }

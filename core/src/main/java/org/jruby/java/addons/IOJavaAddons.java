@@ -22,7 +22,6 @@ public class IOJavaAddons {
     @JRubyMethod
     public static IRubyObject to_inputstream(ThreadContext context, IRubyObject self) {
         RubyIO io = (RubyIO)self;
-        Ruby runtime = context.runtime;
 
         io.getOpenFile().checkReadable(context);
 
@@ -32,7 +31,6 @@ public class IOJavaAddons {
     @JRubyMethod
     public static IRubyObject to_outputstream(ThreadContext context, IRubyObject self) {
         RubyIO io = (RubyIO)self;
-        Ruby runtime = context.runtime;
 
         io.getOpenFile().checkWritable(context);
 

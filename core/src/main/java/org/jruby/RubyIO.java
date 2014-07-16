@@ -1688,12 +1688,12 @@ public class RubyIO extends RubyObject implements IOEncodable {
         RubyIO write_io;
         long pos;
 
-        RubyIO io = (RubyIO)TypeConverter.ioCheckIO(runtime, _io);
+        RubyIO io = TypeConverter.ioGetIO(runtime, _io);
         if (!OBJ_INIT_COPY(dest, io)) return dest;
         orig = io.getOpenFileChecked();
         fptr = dest.MakeOpenFile();
 
-        flush(context);
+        io.flush(context);
 
         /* copy rb_io_t structure */
         fptr.setMode(orig.getMode() & ~OpenFile.PREP);
@@ -1789,7 +1789,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
     protected IRubyObject rbIoClose(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
         OpenFile fptr;
-        ChannelFD fd;
         RubyIO write_io;
         OpenFile write_fptr;
 
@@ -1941,7 +1940,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //        }
 
         RubyIO io = GetWriteIO();
-        fptr = getOpenFileChecked();
+        fptr = io.getOpenFileChecked();
 
         if ((fptr.getMode() & OpenFile.WRITABLE) != 0) {
             if (fptr.io_fflush(context) < 0)
@@ -2451,6 +2450,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         return context.nil;
     }
 
+    // MRI: rb_io_ungetc
     @JRubyMethod
     public IRubyObject ungetc(ThreadContext context, IRubyObject c)
     {
@@ -2465,7 +2465,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             c = EncodingUtils.encUintChr(context, (int)((RubyFixnum)c).getLongValue(), fptr.readEncoding(runtime));
         }
         else if (c instanceof RubyBignum) {
-            c = EncodingUtils.encUintChr(context, (int)((RubyFixnum)c).getLongValue(), fptr.readEncoding(runtime));
+            c = EncodingUtils.encUintChr(context, (int)((RubyBignum)c).getLongValue(), fptr.readEncoding(runtime));
         }
         else {
             c = c.convertToString();
@@ -2480,9 +2480,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
             fptr.makeReadConversion(context, (int)len);
             if (fptr.cbuf.capa - fptr.cbuf.len < len)
                 throw runtime.newIOError("ungetc failed");
+            // shift cbuf back to 0
             if (fptr.cbuf.off < len) {
-                System.arraycopy(fptr.cbuf.ptr, fptr.cbuf.off, fptr.cbuf.ptr, fptr.cbuf.capa - fptr.cbuf.len, fptr.cbuf.len);
-                fptr.cbuf.off = fptr.cbuf.capa-fptr.cbuf.len;
+                System.arraycopy(
+                        fptr.cbuf.ptr, fptr.cbuf.off,
+                        fptr.cbuf.ptr, fptr.cbuf.capa - fptr.cbuf.len, // this should be 0
+                        fptr.cbuf.len);
+                fptr.cbuf.off = fptr.cbuf.capa-fptr.cbuf.len; // this should be 0 too
             }
             fptr.cbuf.off -= (int)len;
             fptr.cbuf.len += (int)len;
@@ -2601,7 +2605,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                             else
                                 throw runtime.newErrnoEAGAINReadableError("read would block");
                         }
-                        throw runtime.newSystemCallError(fptr.getPath());
+                        throw runtime.newEOFError(fptr.getPath());
                     }
                 } finally {
                     if (nonblock) {
@@ -2710,7 +2714,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         
         if (length.isNil()) {
             fptr = getOpenFileChecked();
-            fptr.checkReadable(context);
+            fptr.checkCharReadable(context);
             return fptr.readAll(context, 0, str);
         }
         

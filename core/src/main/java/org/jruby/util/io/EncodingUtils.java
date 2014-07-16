@@ -894,7 +894,7 @@ public class EncodingUtils {
         }
 
         ByteList sp = ((RubyString)str).getByteList();
-        ByteList fromp = sp.shallowDup();
+        ByteList fromp = sp;
         int slen = ((RubyString)str).size();
         int blen = slen + 30;
         dest = RubyString.newStringLight(runtime, blen);
@@ -906,7 +906,7 @@ public class EncodingUtils {
         Ptr destpPos = new Ptr(destp.getBegin());
         transcodeLoop(context, frompBytes, frompPos, destpBytes, destpPos, frompPos.p + slen, destpPos.p + blen, destp, strTranscodingResize, sname_p[0], dname_p[0], ecflags, ecopts);
 
-        if (frompPos.p != slen) {
+        if (frompPos.p != sp.begin() + slen) {
             throw runtime.newArgumentError("not fully converted, " + (slen - frompPos.p) + " bytes left");
         }
         destp.setRealSize(destpPos.p);
@@ -1188,7 +1188,6 @@ public class EncodingUtils {
                     rep = rep.convertToString();
                     Encoding repEnc = ((RubyString)rep).getEncoding();
                     ByteList repByteList = ((RubyString)rep).getByteList();
-                    byte[] repBytes = repByteList.bytes(); // inefficient but insertOutput doesn't take index
                     ec.insertOutput(repByteList.getUnsafeBytes(), repByteList.begin(), repByteList.getRealSize(), repEnc.getName());
 
                     // TODO: check for too-large replacement
