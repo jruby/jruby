@@ -2,6 +2,7 @@ require 'rbconfig'
 require 'jruby' if defined?(JRUBY_VERSION)
 require 'tempfile'
 
+
 module TestHelper
   # TODO: Consider how this should work if we have --windows or similiar
   WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
@@ -74,3 +75,5 @@ module TestHelper
     assert run_in_sub_runtime(script)
   end
 end
+
+org.jruby.security.SecurityManager.install
