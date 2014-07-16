@@ -12,7 +12,6 @@ public class IncludedModule extends RubyClass {
         super(runtime, superClass, false);
         this.origin = origin;
         this.metaClass = origin.metaClass;
-        origin.addIncludingHierarchy(this);
     }
 
     @Override
@@ -25,11 +24,6 @@ public class IncludedModule extends RubyClass {
         return false;
     }
 
-    @Override
-    public boolean isIncluded() {
-        return true;
-    }
-    
     @Override
     public boolean isImmediate() {
         return true;
