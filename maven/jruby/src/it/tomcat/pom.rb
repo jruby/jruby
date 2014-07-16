@@ -1,60 +1,44 @@
 id 'dummy:tomcat:1.0-SNAPSHOT'
 
+# it is war-file
 packaging 'war'
 
+# get jruby dependencies
+properties( 'jruby.version' => '@project.version@',
+            'project.build.sourceEncoding' => 'utf-8' )
+
+pom( 'org.jruby:jruby', '${jruby.version}' )
+
+# a gem to be used
 gem 'flickraw', '0.9.7'
 
-repository( 'http://rubygems-proxy.torquebox.org/releases',
+repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
             :id => 'rubygems-releases' )
 
 jruby_plugin :gem, :includeRubygemsInTestResources => false, :includeRubygemsInResources => true do
   execute_goal :initialize
 end 
 
-properties( 'tesla.version' => '0.0.9',
-            'jruby.version' => '@project.version@',
-            'jruby.plugins.version' => '1.0.0-rc4',
-            'gem.home' => '${project.build.outputDirectory}',
-            'gem.path' => '${gem.home}',
-            'project.build.sourceEncoding' => 'utf-8',
-            'tesla.dump.pom' => 'pom.xml' )
+# ruby-maven will dump an equivalent pom.xml
+properties[ 'tesla.dump.pom' ] = 'pom.xml'
 
-jar( 'org.jruby:jruby:${jruby.version}',
-     :exclusions => 'org.jruby:jruby-stdlib' )
-
-# needed to install gems for the build itself
-jar( 'org.jruby:jruby-stdlib', '${jruby.version}',
-     :scope => :provided )
-
-plugin( :dependency, '2.8',
-        'artifactItems' => [ { 'groupId' =>  'org.jruby',
-                               'artifactId' =>  'jruby-stdlib',
-                               'version' =>  '${jruby.version}',
-                               'outputDirectory' =>  '${project.build.outputDirectory}' } ] ) do
-  execute_goals( 'unpack',
-                 :phase => 'prepare-package' )
-end
-
-plugin( 'org.codehaus.mojo:tomcat-maven-plugin',
+# start tomcat for the tests
+plugin( 'org.codehaus.mojo:tomcat-maven-plugin', '1.1',
         :fork => true, :path => '/' ) do
   execute_goals( 'run',
                  :id => 'run-tomcat',
                  :phase => 'pre-integration-test' )
 end
 
-
-build do
-  resource do
-    directory 'src/main/ruby'
-  end
-end
-
+# download files during the tests
 result = nil
 execute 'download', :phase => 'integration-test' do
   require 'open-uri'
   result = open( 'http://localhost:8080' ).string
+  puts result
 end
 
+# verify the downloads
 execute 'check download', :phase => :verify do
   expected = 'hello world:'
   unless result.match( /#{expected}/ )

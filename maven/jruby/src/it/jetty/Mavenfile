@@ -1,33 +1,50 @@
 #-*- mode: ruby -*-
 
+# it is war-file
+packaging 'war'
+
+# get jruby dependencies
 properties( 'jruby.version' => '@project.version@',
             'project.build.sourceEncoding' => 'utf-8',
-            'public.dir' => '${basedir}/public',
-            'webinf.dir' => '${public.dir}/WEB-INF' )
-
-# ruby-maven will dump an equivalent pom.xml
-properties[ 'tesla.dump.pom' ] = 'pom.xml'
-
-packaging :war
-
-gem 'flickraw', '0.9.7'
-
-repository( 'http://rubygems-proxy.torquebox.org/releases',
-            :id => 'rubygems-releases' )
+            'public.dir' => '${basedir}/public' )
 
 pom( 'org.jruby:jruby', '${jruby.version}' )
 
 jar( 'org.jruby.rack:jruby-rack', '1.1.14', 
      :exclusions => [ 'org.jruby:jruby-complete' ] )
 
+
+# ruby-maven will dump an equivalent pom.xml
+properties[ 'tesla.dump.pom' ] = 'pom.xml'
+
+# a gem to be used
+gem 'flickraw', '0.9.7'
+
+repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
+            :id => 'rubygems-releases' )
+
 jruby_plugin :gem, :includeRubygemsInTestResources => false, :includeRubygemsInResources => true, :includeLibDirectoryInResources => true do
   execute_goal :initialize
 end
 
-properties( 'jetty.version' => '9.1.3.v20140225',
-            'jetty.group_id' => 'org.eclipse.jetty' )
+# pack the war with that ruby-like directory layout
+# not really needed but for completeness
+plugin( :war, '2.2',
+        :warSourceDirectory => '${public.dir}',
+        :webResources => [ { :directory => '${basedir}',
+                             :targetPath => 'WEB-INF',
+                             :includes => [ 'config.ru' ] } ] )
 
-plugin( '${jetty.group_id}:jetty-maven-plugin', '${jetty.version}',
+# jetty setup
+execute 'copy config.ru for jruby-rack to find', :phase => 'initialize' do |ctx|
+  require 'fileutils'
+  webinf = ctx.project.properties[ 'public.dir' ].to_s + '/WEB-INF'
+  FileUtils.mkdir_p webinf
+  FileUtils.cp( 'config.ru', webinf )
+end
+
+# start jetty for the tests
+plugin( 'org.eclipse.jetty:jetty-maven-plugin', '9.1.3.v20140225',
         :path => '/',
         :webAppSourceDirectory => '${public.dir}',
         :stopPort => 9999,
@@ -36,19 +53,7 @@ plugin( '${jetty.group_id}:jetty-maven-plugin', '${jetty.version}',
    execute_goal( 'stop', :id => 'stop jetty', :phase => 'post-integration-test' )
 end
 
-plugin( :war, '2.2',
-        :warSourceDirectory => '${public.dir}',
-        :webResources => [ { :directory => '${basedir}',
-                             :targetPath => 'WEB-INF',
-                             :includes => [ 'config.ru' ] } ] )
-
-execute 'copy config.ru for jruby-rack to find', :phase => 'initialize' do |ctx|
-  require 'fileutils'
-  webinf = ctx.project.properties[ 'webinf.dir' ].to_s
-  FileUtils.mkdir_p webinf
-  FileUtils.cp( 'config.ru', webinf )
-end
-
+# download files during the tests
 result = nil
 execute 'download', :phase => 'integration-test' do
   require 'open-uri'
@@ -56,6 +61,7 @@ execute 'download', :phase => 'integration-test' do
   puts result
 end
 
+# verify the downloads
 execute 'check download', :phase => :verify do
   expected = 'hello world:'
   unless result.match( /^#{expected}/ )
