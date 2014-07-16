@@ -67,6 +67,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassCache;
 import org.jruby.util.KCode;
 import org.jruby.util.cli.OutputStrings;
+import org.jruby.util.cli.Options;
 
 /**
  * ScriptingContainer provides various methods and resources that are useful
@@ -859,6 +860,31 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     public void setKCode(KCode kcode) {
         provider.getRubyInstanceConfig().setKCode(kcode);
     }
+
+    /**
+     * Set whether native code is enabled for this config. Disabling it also
+     * disables C extensions (@see RubyInstanceConfig#setCextEnabled).
+     *
+     * @see Options#NATIVE_ENABLED
+     *
+     * @param b new value indicating whether native code is enabled
+     */
+    public void setNativeEnabled(boolean b) {
+        provider.getRubyInstanceConfig().setNativeEnabled(b);
+    }
+
+    /**
+     * Get whether native code is enabled for this config.
+     *
+     * @see Options#NATIVE_ENABLED
+     *
+     * @return true if native code is enabled; false otherwise.
+     */
+    public boolean isNativeEnabled() {
+        return provider.getRubyInstanceConfig().isNativeEnabled();
+    }
+
+
 
     /**
      * Returns the value of n, which means that jitted methods are logged in
