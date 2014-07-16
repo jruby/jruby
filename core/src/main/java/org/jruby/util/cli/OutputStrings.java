@@ -117,12 +117,13 @@ public class OutputStrings {
         versionString = String.format("%s", ver);
 
         String fullVersion = String.format(
-                "jruby %s (%s) %s %s on %s %s%s [%s-%s]",
+                "jruby %s (%s) %s %s %s %s on %s%s [%s-%s]",
                 Constants.VERSION,
                 versionString,
                 Constants.COMPILE_DATE,
                 Constants.REVISION,
                 SafePropertyAccessor.getProperty("java.vm.name", "Unknown JVM"),
+                SafePropertyAccessor.getProperty("java.vm.version", "Unknown JVM version"),
                 SafePropertyAccessor.getProperty("java.runtime.version", SafePropertyAccessor.getProperty("java.version", "Unknown version")),
                 Options.COMPILE_INVOKEDYNAMIC.load() ? " +indy" : "",
                 Platform.getOSName(),
