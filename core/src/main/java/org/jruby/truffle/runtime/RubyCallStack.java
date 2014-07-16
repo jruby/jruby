@@ -15,14 +15,12 @@ import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.RubyMethod;
-
-import java.util.Iterator;
 
 public abstract class RubyCallStack {
 
@@ -37,24 +35,21 @@ public abstract class RubyCallStack {
 
         System.err.println("    in " + Truffle.getRuntime().getCurrentFrame().getCallTarget());
 
-        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
-            System.err.println("  from " + frame.getCallNode().getEncapsulatingSourceSection());
-        }
+        Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Void>() {
+
+            @Override
+            public Void visitFrame(FrameInstance frameInstance) {
+                System.err.println("  from " + frameInstance.getCallNode().getEncapsulatingSourceSection());
+                return null;
+            }
+
+        });
 
         System.err.println("---------------------");
     }
 
     public static FrameInstance getCallerFrame() {
-        final Iterable<FrameInstance> stackIterable = Truffle.getRuntime().getStackTrace();
-        assert stackIterable != null;
-
-        final Iterator<FrameInstance> stack = stackIterable.iterator();
-
-        if (stack.hasNext()) {
-            return stack.next();
-        } else {
-            return null;
-        }
+        return Truffle.getRuntime().getCallerFrame();
     }
 
     public static Frame getCallerFrame(FrameInstance.FrameAccess access, boolean slowPath) {
@@ -74,12 +69,17 @@ public abstract class RubyCallStack {
             return method;
         }
 
-        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
-            method = getMethod(frame);
+        method = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<RubyMethod>() {
 
-            if (method != null) {
-                return method;
+            @Override
+            public RubyMethod visitFrame(FrameInstance frameInstance) {
+                return getMethod(frameInstance);
             }
+
+        });
+
+        if (method != null) {
+            return method;
         }
 
         throw new UnsupportedOperationException();
@@ -119,10 +119,18 @@ public abstract class RubyCallStack {
     }
 
     public static String getRubyStacktrace(){
-        StringBuilder stack = new StringBuilder();
-        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
-            stack.append("from " + frame.getCallNode().getEncapsulatingSourceSection() +"\n");
-        }
+        final StringBuilder stack = new StringBuilder();
+
+        Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Void>() {
+
+            @Override
+            public Void visitFrame(FrameInstance frameInstance) {
+                stack.append("from " + frameInstance.getCallNode().getEncapsulatingSourceSection() + "\n");
+                return null;
+            }
+
+        });
+
         try {
             return String.format("%s at %s \n %s", getCurrentMethod().getName(), getCurrentMethod().getSharedMethodInfo().getSourceSection().getShortDescription(), stack);
         } catch(UnsupportedOperationException ex) {
