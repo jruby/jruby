@@ -450,6 +450,11 @@ public class RubyBasicSocket extends RubyIO {
 
     private ByteList doReceive(ThreadContext context, int length) {
         Ruby runtime = context.runtime;
+        OpenFile fptr;
+
+        fptr = getOpenFileChecked();
+        fptr.checkReadable(context);
+
         ByteBuffer buf = ByteBuffer.allocate(length);
 
         try {
