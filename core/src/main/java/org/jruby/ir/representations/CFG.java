@@ -238,6 +238,233 @@ public class CFG {
         rescuerMap.put(block, rescuerBlock);
     }
 
+    private boolean canBeHoistedOutOfProtectedRegion(List<BasicBlock> seseRegion) {
+        for (BasicBlock bb: seseRegion) {
+            if (bb.hasExceptingInstrs()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private BasicBlock shrinkFirstBB(BasicBlock bb) {
+        // IMPORTANT: Since jump and other branch instructions could
+        // have a reference to bb's label, we have to make sure that
+        // after the split, they execute instructions that have been
+        // moved out of the exception region.
+        //
+        // Ex: begin; ...; rescue; .. retry ..; end
+        //
+        // So, we cannot insert newBB *before* bb after shrinking it.
+        // That changes execution semantics since instructions in newBB
+        // will be before bb's label in the CFG.
+
+        boolean requiresSplit = false;
+
+        List<Instr> instrs = bb.getInstrs();
+        int i = 0;
+        while (true) {
+            Instr instr = instrs.get(i);
+
+            // We are bound to find an instruction that throws an exception
+            // or transfers control
+            if (instr.canRaiseException() || instr.transfersControl()) {
+                if (!requiresSplit) {
+                    // Nothing to do!
+                    return bb;
+                }
+
+                BasicBlock newBB = new BasicBlock(this, scope.getNewLabel());
+                addBasicBlock(newBB);
+                // System.out.println("*** Shrinking " + bb + " with new bb: " + newBB + " in scope: " + scope);
+
+                // Move rest of bb's instructions to newBB
+                int n = instrs.size();
+                while (i < n) {
+                    instr = instrs.get(i);
+                    bb.removeInstr(instr);
+                    newBB.addInstr(instr);
+
+                    n--;
+                }
+
+                // Transfer all outgoing edges of bb to newBB
+                // Remove all edges post-pass to prevent concurrent modification exceptions
+                List<Edge<BasicBlock>> edgesToRemove = new ArrayList<Edge<BasicBlock>>();
+                for (Edge<BasicBlock> e: getOutgoingEdges(bb)) {
+                    graph.addEdge(newBB, e.getDestination().getData(), e.getType());
+                    edgesToRemove.add(e);
+                }
+
+                for (Edge<BasicBlock> e: edgesToRemove) {
+                    graph.removeEdge(e);
+                }
+
+                // Add fall-through from bb to newBB
+                graph.addEdge(bb, newBB, EdgeType.FALL_THROUGH);
+                return newBB;
+            } else {
+                requiresSplit = true;
+            }
+
+            i++;
+        }
+    }
+
+    private void shrinkExceptionRegion(ExceptionRegion r) {
+        // Finding SESE regions is a simple algo for well-structured control-flow
+
+        // As long as there are more unprocessed nodes, find SESE regions.
+        while (true) {
+            BasicBlock start = r.getStartBB();
+            BasicBlock last = null;
+
+            Set<BasicBlock> visited = new HashSet<BasicBlock>();
+            List<BasicBlock> seseRegion = new ArrayList<BasicBlock>();
+            boolean fwd = true;
+
+            if (outDegree(start) <= 1) {
+                // outdegree can be zero if this ends in a return.
+                // synthetic edges from return to exit bb haven't
+                // been added yet at this stage.
+                seseRegion.add(start);
+                last = start;
+            } else {
+                List<BasicBlock> nodes = new ArrayList<BasicBlock>();
+                nodes.add(start);
+
+                // Find a SESE region
+                //
+                // With well-structured control-flow, if outdegree(b) > 1
+                // and b is in the exc-region, the entire SESE region
+                // starting at b will be in the exc-region.
+                while (!nodes.isEmpty()) {
+                    BasicBlock b = nodes.remove(0);
+                    seseRegion.add(b);
+                    visited.add(b);
+
+                    // Flip direction whenever you hit a meet point
+                    if (fwd && inDegree(b) > 1) {
+                        fwd = false;
+                        last = b;
+                    } else if (!fwd && b == start) {
+                        fwd = true;
+                    }
+
+                    // Add out/in edge nodes
+                    if (fwd) {
+                        for (BasicBlock c: getOutgoingDestinations(b)) {
+                            if (!visited.contains(c)) nodes.add(c);
+                        }
+                    } else {
+                        for (BasicBlock c: getIncomingSources(b)) {
+                            if (!visited.contains(c)) nodes.add(c);
+                        }
+                    }
+                }
+            }
+
+            ExceptionRegion parent = r.getParentRegion();
+
+            // If the SESE region couldn't be fully moved out,
+            // we are done with this exc-region!
+            if (!canBeHoistedOutOfProtectedRegion(seseRegion)) {
+                BasicBlock firstBB = seseRegion.get(0);
+                BasicBlock newBB = shrinkFirstBB(firstBB);
+                if (newBB != firstBB) {
+                    // Remove firstBB from excRegion's bbs
+                    r.removeBB(firstBB);
+                    firstBB.clearExceptingInstrsFlag();
+                    if (parent != null) {
+                        parent.addBB(firstBB);
+                    }
+
+                    // Add newBB to excRegion's bbs
+                    r.addBB(newBB);
+                }
+
+                break;
+            } else {
+                // Remove seseRegion's bbs from excRegion's bbs
+                for (BasicBlock n: seseRegion) {
+                    // System.out.println("Hoisting " + n + " out of rr " + r + " with startBB: " + start + " in scope " + scope);
+                    r.removeBB(n);
+                    n.clearExceptingInstrsFlag();
+                    if (parent != null) {
+                        parent.addBB(n);
+                    }
+                }
+
+                if (last == r.getEndBB()) {
+                    // Nothing more to do after this.
+                    // The entire region has been hoisted out.
+                    // There is nothing to rescue in this region.
+                    break;
+                }
+
+                // If 'last' has outDegree > 1, have to introduce a
+                // dummy bb into which last falls-through, but also move
+                // the branching instruction of last into the dummy BB.
+                if (outDegree(last) > 1) {
+                    BasicBlock newBB = new BasicBlock(this, scope.getNewLabel());
+                    addBasicBlock(newBB);
+
+                    // Transfer all outgoing edges of last to newBB
+                    // Remove all edges post-pass to prevent concurrent modification exceptions
+                    List<Edge<BasicBlock>> edgesToRemove = new ArrayList<Edge<BasicBlock>>();
+                    for (Edge<BasicBlock> e: getOutgoingEdges(last)) {
+                        graph.addEdge(newBB, e.getDestination().getData(), e.getType());
+                        edgesToRemove.add(e);
+                    }
+
+                    for (Edge<BasicBlock> e: edgesToRemove) {
+                        graph.removeEdge(e);
+                    }
+
+                    // Move the branching instr out of 'last'.
+                    List<Instr> instrs = last.getInstrs();
+                    Instr branch = instrs.get(instrs.size()-1);
+                    if (!branch.getOperation().isBranch() || branch.getOperation() == Operation.JUMP) {
+                        // Shouldn't happen. We haven't added exception edges to the CFG.
+                        // So, the only way 'last' can have outdegree > 1 is if it ends in a branch.
+                        String msg = "ERROR! Expected branch but got " + instr + " in " + scope + " while shrinking exception regions";
+                        throw new RuntimeException(msg);
+                    }
+                    last.removeInstr(branch);
+                    newBB.addInstr(branch);
+
+                    // Add fall-through from last to newBB
+                    graph.addEdge(last, newBB, EdgeType.FALL_THROUGH);
+
+                    // Update exception region
+                    r.addBB(newBB);
+                    r.setStartBB(newBB);
+                } else {
+                    // Update exception region
+                    BasicBlock nextBB = getOutgoingDestination(last);
+                    if (nextBB == null) {
+                        // Can be null if last ends in a return.
+                        // In this case, the rest of the blocks in this exception region
+                        // are unreachable -- we'll let optimize() take care of it.
+                        break;
+                    } else {
+                        r.setStartBB(nextBB);
+                    }
+                }
+            }
+        }
+    }
+
+    private void shrinkExceptionRegions(ExceptionRegion r) {
+        // Process nested regions first
+        for (ExceptionRegion nr: r.getNestedRegions()) {
+            shrinkExceptionRegions(nr);
+        }
+
+        // Now shrink r itself
+        shrinkExceptionRegion(r);
+    }
+
     /**
      *  Build the Control Flow Graph
      */
@@ -256,6 +483,9 @@ public class CFG {
 
         // List of all rescued regions
         List<ExceptionRegion> allExceptionRegions = new ArrayList<ExceptionRegion>();
+
+        // List of outermost rescued regions
+        List<ExceptionRegion> outermostExceptionRegions = new ArrayList<ExceptionRegion>();
 
         // Dummy entry basic block (see note at end to see why)
         entryBB = createBB(nestedExceptionRegions);
@@ -303,7 +533,9 @@ public class CFG {
                 rr.addBB(currBB);
                 allExceptionRegions.add(rr);
 
-                if (!nestedExceptionRegions.empty()) {
+                if (nestedExceptionRegions.empty()) {
+                    outermostExceptionRegions.add(rr);
+                } else {
                     nestedExceptionRegions.peek().addNestedRegion(rr);
                 }
 
@@ -344,12 +576,17 @@ public class CFG {
             }
         }
 
+        // Shrink exception regions
+        for (ExceptionRegion rr : outermostExceptionRegions) {
+            shrinkExceptionRegions(rr);
+        }
+
         // Process all rescued regions
         for (ExceptionRegion rr : allExceptionRegions) {
             // When this exception region represents an unrescued region
             // from a copied ensure block, we have a dummy label
             Label rescueLabel = rr.getFirstRescueBlockLabel();
-            if (!Label.UNRESCUED_REGION_LABEL.equals(rescueLabel)) {
+            if (!Label.UNRESCUED_REGION_LABEL.equals(rescueLabel) && !rr.isEmpty()) {
                 BasicBlock firstRescueBB = bbMap.get(rescueLabel);
                 // Mark the BB as a rescue entry BB
                 firstRescueBB.markRescueEntryBB();
