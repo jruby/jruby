@@ -97,7 +97,7 @@ public class RubyBasicSocket extends RubyIO {
         int fileno = (int)_fileno.convertToInteger().getLongValue();
         RubyClass klass = (RubyClass)_klass;
 
-        ChannelFD fd = FilenoUtil.getWrapperFromFileno(runtime.getFilenoExtMap(fileno));
+        ChannelFD fd = FilenoUtil.getWrapperFromFileno(fileno);
 
         RubyBasicSocket basicSocket = (RubyBasicSocket)klass.getAllocator().allocate(runtime, klass);
         basicSocket.initSocket(runtime, fd);
