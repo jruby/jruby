@@ -116,7 +116,7 @@ For normal day-to-day testing, we recommend running the Ruby (MRI) tests
 via the following rake command:
 
 ```
-rake test:mri
+bin/jruby -S rake test:mri
 ```
 
 This is a reasonably good suite that does not take too long to run. For
