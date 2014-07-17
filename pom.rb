@@ -51,7 +51,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   end
 
   properties( 'minitest-excludes.version' => '1.0.2',
-              'tesla.version' => '0.0.8',
+              'tesla.version' => '0.1.1',
               'rspec-core.version' => '2.14.2',
               'jruby.basedir' => '${project.basedir}',
               'minitest.version' => '5.0.7',
@@ -227,21 +227,21 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   end
 
   profile 'snapshots' do
-    snapshot_dir = '/builds/snapshots'
+    snapshots_dir = '/builds/snapshots'
 
+    properties 'snapshots.dir' => snapshots_dir
     activation do
-      file( :exists => snapshot_dir )
+      file( :exists => snapshots_dir )
     end
 
     distribution_management do
-      repository( "file:#{snapshot_dir}/maven", :id => 'local releases' )
-      snapshot_repository( "file:#{snapshot_dir}/maven",
+      repository( "file:#{snapshots_dir}/maven", :id => 'local releases' )
+      snapshot_repository( "file:#{snapshots_dir}/maven",
                            :id => 'local snapshots' )
     end
     build do
       default_goal :deploy
     end
-
   end
 
   reporting do
