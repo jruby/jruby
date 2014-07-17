@@ -528,11 +528,11 @@ class ServerTest < Test::Unit::TestCase
     loop do
       sock.syswrite("2")
     end
+  rescue Errno::EPIPE
+    # ok
   rescue => ex
-    # FIXME: Throws 'unknown' error
-    if !WINDOWS
-      assert Errno::EPIPE === ex
-    end
+    # FIXME: make Windows behave the same?
+    raise ex if !WINDOWS
   end
 end
 

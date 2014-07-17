@@ -1209,9 +1209,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         ByteList strByteList = ((RubyString)str).getByteList();
         n = OpenFile.writeInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize());
-//        RB_GC_GUARD(str);
 
-        if (n == -1) throw runtime.newSystemCallError(fptr.getPath());
+        if (n == -1) throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
 
         return runtime.newFixnum(n);
     }
