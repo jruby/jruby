@@ -99,19 +99,16 @@ class RegularFileResource implements FileResource {
     public String[] list() {
         String[] fileList = file.list();
 
-        if (fileList != null) {
-            // If we got some entries, then it's probably a directory and in Ruby all file
-            // directories should have '.' and '..' entries
-            String[] list = new String[fileList.length + 2];
-            list[0] = ".";
-            list[1] = "..";
-            for (int i = 0; i < fileList.length; i++) {
-                list[i+2] = fileList[i];
-            }
-            fileList = list;
-        }
+        if (fileList == null) return null;
 
-        return fileList;
+        // If we got some entries, then it's probably a directory and in Ruby all file
+        // directories should have '.' and '..' entries
+        String[] list = new String[fileList.length + 2];
+        list[0] = ".";
+        list[1] = "..";
+        System.arraycopy(fileList, 0, list, 2, fileList.length);
+
+        return list;
     }
 
     @Override
@@ -195,9 +192,8 @@ class RegularFileResource implements FileResource {
             // perm is > 0, and only if the file was created in this call.
             if (fileCreated && posix != null) {
                 perm = perm & ~PosixShim.umask(posix);
-                if (posix != null && perm > 0) {
-                    posix.chmod(file.getPath(), perm);
-                }
+
+                if (perm > 0) posix.chmod(file.getPath(), perm);
             }
 
             return channel;
@@ -250,12 +246,8 @@ class RegularFileResource implements FileResource {
         try {
             if (flags.isTruncate()) fileChannel.truncate(0);
         } catch (IOException ioe) {
-            if (ioe.getMessage().equals("Illegal seek")) {
-                // ignore; it's a pipe or fifo that can't be truncated
-                // ignore; it's a pipe or fifo that can't be truncated
-            } else {
-                throw new ResourceException.IOError(ioe);
-            }
+            // ignore; it's a pipe or fifo that can't be truncated (we only care about illegal seek).
+            if (!ioe.getMessage().equals("Illegal seek")) throw new ResourceException.IOError(ioe);
         }
 
         return fileChannel;
@@ -292,9 +284,7 @@ class RegularFileResource implements FileResource {
             // attempt to set the permissions, if we have been passed a POSIX instance,
             // perm is > 0, and only if the file was created in this call.
             if (fileCreated && posix != null && perm > 0) {
-                if (posix != null && perm > 0) {
-                    posix.chmod(file.getPath(), perm);
-                }
+                if (perm > 0) posix.chmod(file.getPath(), perm);
             }
 
             return descriptor;
@@ -354,12 +344,8 @@ class RegularFileResource implements FileResource {
         try {
             if (flags.isTruncate()) fileChannel.truncate(0);
         } catch (IOException ioe) {
-            if (ioe.getMessage().equals("Illegal seek")) {
-                // ignore; it's a pipe or fifo that can't be truncated
-                // ignore; it's a pipe or fifo that can't be truncated
-            } else {
-                throw new ResourceException.IOError(ioe);
-            }
+            // ignore; it's a pipe or fifo that can't be truncated (we only care about illegal seek).
+            if (!ioe.getMessage().equals("Illegal seek")) throw new ResourceException.IOError(ioe);
         }
 
         // TODO: append should set the FD to end, no? But there is no seek(int) in libc!
