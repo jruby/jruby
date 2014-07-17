@@ -1778,8 +1778,7 @@ public class OpenFile implements Finalizable {
     }
 
     // io_unread
-    public void unread(ThreadContext context)
-    {
+    public void unread(ThreadContext context) {
         Ruby runtime = context.runtime;
         long r, pos;
         int read_size;
@@ -1817,15 +1816,15 @@ public class OpenFile implements Finalizable {
             return;
         }
 
-    /* add extra offset for removed '\r' in rbuf */
+        /* add extra offset for removed '\r' in rbuf */
         extra_max = (long)(pos - rbuf.len);
         pBytes = rbuf.ptr;
         p = rbuf.off;
 
-    /* if the end of rbuf is '\r', rbuf doesn't have '\r' within rbuf.len */
+        /* if the end of rbuf is '\r', rbuf doesn't have '\r' within rbuf.len */
         if (rbuf.ptr[rbuf.capa - 1] == '\r') {
-        newlines++;
-    }
+            newlines++;
+        }
 
         for (i = 0; i < rbuf.len; i++) {
             if (pBytes[p] == '\n') newlines++;
