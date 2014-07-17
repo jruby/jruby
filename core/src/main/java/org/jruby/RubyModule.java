@@ -867,6 +867,11 @@ public class RubyModule extends RubyObject {
         return context.runtime.getFalse();
     }
 
+    @JRubyMethod(name = "singleton_class?")
+    public IRubyObject singleton_class_p(ThreadContext context) {
+        return context.runtime.newBoolean(isSingleton());
+    }
+
     // TODO: Consider a better way of synchronizing 
     public void addMethod(String name, DynamicMethod method) {
         testFrozen("class/module");
