@@ -77,7 +77,7 @@ profile :snapshots do
     snapshots_dir = ctx.project.properties[ 'snapshots.dir' ].to_s
     require 'date'
     format = Date.today.strftime( '%Y%m%d' )
-    Dir[ snapshot_dir + '/**/*' ].each do |f|
+    Dir[ snapshots_dir + '/**/*' ].each do |f|
       if File.file?( f ) && ! ( f =~ /maven-metadata.xml/ || f =~ /-#{format}\./ )
         File.delete( f )
       end
