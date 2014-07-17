@@ -110,6 +110,16 @@ After changing Java code, you can recompile quickly by running:
 mvn
 ```
 
+If you only want to build JRuby core (everything that goes in jruby.jar), you can use
+the following command:
+
+```
+mvn -pl core
+```
+
+This is generally the quickest way to build when you are just modifying JRuby core
+classes.
+
 ### Day to Day Testing
 
 For normal day-to-day testing, we recommend running the Ruby (MRI) tests
@@ -119,8 +129,18 @@ via the following rake command:
 bin/jruby -S rake test:mri
 ```
 
-This is a reasonably good suite that does not take too long to run. For
-more complete assurance, you can also run 1.9 RubySpecs via the
+This suite takes a while to complete, so if you want to run an individual file
+from MRI's tests (under test/mri), use one of the following commands:
+
+```
+# Run a specific test method in a specific file
+jruby <test file> -n <specific test method>
+
+# Run a test file with known-failing tests excluded
+EXCLUDE_DIR=test/mri/excludes jruby -r minitest/excludes <test file>
+```
+
+For more complete assurance, you can also run 1.9 RubySpecs via the
 following command:
 
 ```
