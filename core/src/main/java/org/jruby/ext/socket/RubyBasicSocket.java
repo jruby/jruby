@@ -383,26 +383,21 @@ public class RubyBasicSocket extends RubyIO {
     @JRubyMethod
     public IRubyObject close_write(ThreadContext context) {
         Ruby runtime = context.runtime;
+        OpenFile fptr;
 
-        if (!openFile.isWritable()) {
-            return runtime.getNil();
+//        if (rb_safe_level() >= 4 && !OBJ_TAINTED(sock)) {
+//            rb_raise(rb_eSecurityError, "Insecure: can't close socket");
+//        }
+        fptr = getOpenFileChecked();
+        if ((fptr.getMode() & OpenFile.READABLE) == 0) {
+            return rbIoClose(runtime);
         }
+        // shutdown write
+        try {
+            shutdownInternal(context, 1);
 
-        if (openFile.getPipeStream() == null && openFile.isReadable()) {
-            throw runtime.newIOError("closing non-duplex IO for writing");
-        }
-
-        if (!openFile.isReadable()) {
-            close();
-
-        } else {
-            // shutdown write
-            try {
-                shutdownInternal(context, 1);
-
-            } catch (BadDescriptorException e) {
-                throw runtime.newErrnoEBADFError();
-            }
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
         }
 
         return context.nil;
@@ -571,11 +566,6 @@ public class RubyBasicSocket extends RubyIO {
                 throw runtime.newIOError(e.getMessage());
             }
 
-            if(openFile.getPipeStream() != null) {
-                openFile.setMainStream(openFile.getPipeStream());
-                openFile.setPipeStream(null);
-            }
-
             openFile.setMode(openFile.getMode() & ~OpenFile.READABLE);
 
             return RubyFixnum.zero(runtime);
@@ -589,7 +579,6 @@ public class RubyBasicSocket extends RubyIO {
                 throw runtime.newIOError(e.getMessage());
             }
 
-            openFile.setPipeStream(null);
             openFile.setMode(openFile.getMode() & ~OpenFile.WRITABLE);
 
             return RubyFixnum.zero(runtime);
@@ -600,7 +589,7 @@ public class RubyBasicSocket extends RubyIO {
 
             return RubyFixnum.zero(runtime);
 
-            default:
+        default:
             throw runtime.newArgumentError("`how' should be either :SHUT_RD, :SHUT_WR, :SHUT_RDWR");
         }
     }
