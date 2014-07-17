@@ -19,6 +19,9 @@ env:
 
 matrix:
   fast_finish: true
+  include:
+    - jdk: openjdk7
+      script: mvn verify -Pall -Dinvoker.skip=false
 
 branches:
   only:
