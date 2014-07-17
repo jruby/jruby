@@ -1204,7 +1204,7 @@ public class RubyInstanceConfig {
      * @param b new value indicating whether native code is enabled
      */
     public void setNativeEnabled(boolean b) {
-        _nativeEnabled = false;
+        _nativeEnabled = b;
     }
     
     /**

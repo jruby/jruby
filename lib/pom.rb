@@ -198,5 +198,21 @@ project 'JRuby Lib Setup' do
     # use this instead of FileUtils.rm_f - issue #1698
     f = File.join( ruby_dir, 'shared', 'jruby-openssl.rb' )
     File.delete( f ) if File.exists?( f )
+
+    # PATCH krypt
+    if KRYPT_VERSION == '0.0.2'
+      file = 'lib/ruby/shared/krypt/provider.rb'
+      content = File.read( file )
+      content.sub! /else/, <<EOS
+elsif java?
+    warn "FFI support not available for #{RUBY_PLATFORM}"
+  else
+EOS
+      File.open( file, 'w' ) do |f|
+        f.print content
+      end
+    else
+      raise "please remove the obsolete PATCH for krypt in lib/pom.rb"
+    end
   end
 end

@@ -2,6 +2,6 @@ require 'openssl'
 
 class HelloWorld < String
   def initialize
-    super "hello world: #{OpenSSL::Random.random_bytes( 16 )}"
+    super "hello world: #{OpenSSL::Random.random_bytes( 16 ).inspect}"
   end
 end
