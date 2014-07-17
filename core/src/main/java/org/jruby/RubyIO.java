@@ -137,14 +137,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
         
         openFile = MakeOpenFile();
-        
-        try {
-            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(outputStream)), autoclose));
-        } catch (InvalidValueException e) {
-            throw getRuntime().newErrnoEINVALError();
-        }
-        
+        openFile.setFD(new ChannelFD(Channels.newChannel(outputStream), runtime.getPosix()));
         openFile.setMode(OpenFile.WRITABLE | OpenFile.APPEND);
+        openFile.setAutoclose(autoclose);
     }
     
     public RubyIO(Ruby runtime, InputStream inputStream) {
@@ -155,13 +150,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
         
         openFile = MakeOpenFile();
-        
-        try {
-            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(inputStream))));
-        } catch (InvalidValueException e) {
-            throw getRuntime().newErrnoEINVALError();
-        }
-        
+        openFile.setFD(new ChannelFD(Channels.newChannel(inputStream), runtime.getPosix()));
         openFile.setMode(OpenFile.READABLE);
     }
     
