@@ -134,6 +134,15 @@ or embedding APIs, you should run JRuby's Java-based unit tests via
 mvn -Ptest
 ```
 
+On travis the following tests will run
+
+```
+mvn -Ptest
+mvn -Prake -Dtask=test:extended
+mvn -Prake -Dtask=spec:ci\_interpreted\_travis
+mvn -Ptruffle
+```
+
 There are some maven integration tests (i.e. consistency test if all gems are included, osgi test, etc) for the various distributions of JRuby which can be invoked with
 
 ```
