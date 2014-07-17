@@ -25,18 +25,11 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
     private boolean     isRescueEntry;  // Is this basic block entry of a rescue?
     private Instr[]     instrsArray;
 
-    // Only relevant during CFG building!
-    // SSS FIXME: Maybe this is required during inlining as well?
-    // Post-inlining, what seemed like a bb with excepting instrs might
-    // no longer have any excepting instrs.
-    private boolean     hasExceptingInstrs;
-
     public BasicBlock(CFG cfg, Label label) {
         this.label = label;
         this.cfg = cfg;
         id = cfg.getNextBBID();
         isRescueEntry = false;
-        hasExceptingInstrs = false;
 
         assert label != null : "label is null";
         assert cfg != null : "cfg is null";
@@ -78,14 +71,6 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
         return cfg.getExitBB() == this;
     }
 
-    public void clearExceptingInstrsFlag() {
-        hasExceptingInstrs = false;
-    }
-
-    public boolean hasExceptingInstrs() {
-        return hasExceptingInstrs;
-    }
-
     public void markRescueEntryBB() {
         this.isRescueEntry = true;
     }
@@ -101,9 +86,6 @@ public class BasicBlock implements ExplicitVertexID, Comparable {
 
     public void addInstr(Instr i) {
         instrs.add(i);
-        if (i.canRaiseException()) {
-            hasExceptingInstrs = true;
-        }
     }
 
     public void insertInstr(Instr i) {

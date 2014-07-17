@@ -648,9 +648,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 }
             } catch (Throwable t) {
-                //if (!(t instanceof Unrescuable) && !instr.canRaiseException()) {
-                //    System.err.println("ERROR: Got exception " + t + " but instr " + instr + " is not supposed to be raising exceptions!");
-                //}
                 if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                 ipc = rescueMap.get(instr.getIPC());
                 if (debug) LOG.info("ipc for rescuer: " + ipc);

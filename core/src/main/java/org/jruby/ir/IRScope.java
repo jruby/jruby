@@ -465,19 +465,14 @@ public abstract class IRScope implements ParseResult {
     }
 
     public CFG buildCFG() {
-        if (this.cfg != null) {
-            System.err.println("--> ERROR (BUG?): Processing scope: " + this + " and cfg already exists!");
-            return this.cfg;
-        } else {
-            CFG newCFG = new CFG(this);
-            newCFG.build(getInstrs());
-            // Clear out instruction list after CFG has been built.
-            this.instrList = null;
+        CFG newCFG = new CFG(this);
+        newCFG.build(getInstrs());
+        // Clear out instruction list after CFG has been built.
+        this.instrList = null;
 
-            setCFG(newCFG);
+        setCFG(newCFG);
 
-            return newCFG;
-        }
+        return newCFG;
     }
 
     protected void setCFG(CFG cfg) {
@@ -1056,7 +1051,7 @@ public abstract class IRScope implements ParseResult {
         if (persistenceStore != null) {
             instrList = persistenceStore.decodeInstructionsAt(this, instructionsOffsetInfoPersistenceBuffer);
         }
-        if (cfg != null) throw new RuntimeException("Please use the CFG to access instructions for this scope (" + this + ")");
+        if (cfg != null) throw new RuntimeException("Please use the CFG to access this scope's instructions.");
         return instrList;
     }
 
