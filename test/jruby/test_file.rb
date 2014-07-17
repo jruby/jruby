@@ -458,7 +458,7 @@ class TestFile < Test::Unit::TestCase
   end
 
   def test_file_query # - file?
-    assert(File.file?('test/test_file.rb'))
+    assert(File.file?('test/jruby/test_file.rb'))
     assert(! File.file?('test'))
   end
 
@@ -857,7 +857,7 @@ class TestFile < Test::Unit::TestCase
   end
 
   def test_file_test
-    assert(FileTest.file?('test/test_file.rb'))
+    assert(FileTest.file?('test/jruby/test_file.rb'))
     assert(! FileTest.file?('test'))
   end
 
