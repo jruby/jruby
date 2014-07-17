@@ -359,7 +359,7 @@ public class RubyInstanceConfig {
             } catch (IOException e) {} // just let newJRubyHome stay the way it is if this fails
         }
         
-        return newJRubyHome;
+        return new NormalizedFile(newJRubyHome).getPath();
     }
 
     // We require the home directory to be absolute
