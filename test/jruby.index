@@ -43,7 +43,6 @@ jruby/test_java_accessible_object
 jruby/test_java_extension
 jruby/test_java_wrapper_deadlock
 jruby/test_jruby_internals
-jruby/compiler/test_jrubyc
 jruby/test_marshal_with_instance_variables
 jruby/test_marshal_gemspec
 jruby/test_method_missing
@@ -80,7 +79,6 @@ jruby/test_zlib
 
 # these tests are last because they pull in libraries that can affect others
 jruby/test_loading_builtin_libraries
-jruby/test_load_compiled_ruby_class_from_classpath
 jruby/test_null_channel
 jruby/test_irubyobject_java_passing
 jruby/test_jruby_object_input_stream
@@ -90,7 +88,6 @@ jruby/test_jruby_core_ext
 jruby/test_thread_context_frame_dereferences_unreachable_variables
 jruby/test_context_classloader
 jruby/test_rexml_document
-jruby/test_load_compiled_ruby
 jruby/test_openssl_stub
 jruby/test_missing_jruby_home
 jruby/test_ast_inspector
@@ -104,3 +101,9 @@ jruby/test_jruby_synchronized
 jruby/test_instantiating_interfaces
 jruby/test_openssl
 jruby/test_tempfile_cleanup
+
+# Disabled until the new JIT/AOT is more complete
+#jruby/compiler/test_jrubyc
+#jruby/test_load_compiled_ruby
+#jruby/test_load_compiled_ruby_class_from_classpath
+
