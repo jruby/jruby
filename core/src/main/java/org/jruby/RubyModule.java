@@ -2074,6 +2074,9 @@ public class RubyModule extends RubyObject {
         if (!isModule()) {
             throw getRuntime().newTypeError(this, getRuntime().getModule());
         }
+        if (!(module instanceof RubyModule)) {
+            throw getRuntime().newTypeError(module, getRuntime().getModule());
+        }
 
         if (!(include.isModule() || include.isClass())) {
             throw getRuntime().newTypeError(include, getRuntime().getModule());
@@ -2090,6 +2093,9 @@ public class RubyModule extends RubyObject {
     public RubyModule append_features(IRubyObject include) {
         if (!isModule()) {
             throw getRuntime().newTypeError(this, getRuntime().getModule());
+        }
+        if (!(module instanceof RubyModule)) {
+            throw getRuntime().newTypeError(module, getRuntime().getModule());
         }
 
         if (!(include.isModule() || include.isClass())) {
@@ -2894,7 +2900,7 @@ public class RubyModule extends RubyObject {
         }
         return this;
     }
-    
+
     @JRubyMethod(name = "prepend", rest = true, visibility = PUBLIC)
     public IRubyObject prepend(ThreadContext context, IRubyObject[] modules) {
         // MRI checks all types first:
