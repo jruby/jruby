@@ -469,10 +469,10 @@ class TestFile < Test::Unit::TestCase
   def test_file_exist_in_jar_file
     jruby_specific_test
 
-    assert(File.exist?("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!/abc/foo.rb"))
-    assert(File.exist?("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!/inside_jar.rb"))
-    assert(!File.exist?("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!/inside_jar2.rb"))
-    assert(File.exist?("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!/"))
+    assert(File.exist?("file:" + File.expand_path("test/jruby/dir with spaces/test_jar.jar") + "!/abc/foo.rb"))
+    assert(File.exist?("file:" + File.expand_path("test/jruby/dir with spaces/test_jar.jar") + "!/inside_jar.rb"))
+    assert(!File.exist?("file:" + File.expand_path("test/jruby/dir with spaces/test_jar.jar") + "!/inside_jar2.rb"))
+    assert(File.exist?("file:" + File.expand_path("test/jruby/dir with spaces/test_jar.jar") + "!/"))
   end
 
   def with_load_path(entry)
@@ -486,17 +486,17 @@ class TestFile < Test::Unit::TestCase
 
   def test_require_from_jar_url_with_spaces_in_load_path
     assert_nothing_raised do
-      with_load_path("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!/abc") do
+      with_load_path("file:" + File.expand_path("test/jruby/dir with spaces/test_jar.jar") + "!/abc") do
         assert require('foo')
         assert $LOADED_FEATURES.pop =~ /foo\.rb$/
       end
       
-      with_load_path("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!") do
+      with_load_path("file:" + File.expand_path("test/jruby/dir with spaces/test_jar.jar") + "!") do
         assert require('abc/foo')
         assert $LOADED_FEATURES.pop =~ /foo\.rb$/
       end
 
-      with_load_path(File.expand_path("test/dir with spaces/test_jar.jar")) do
+      with_load_path(File.expand_path("test/jruby/dir with spaces/test_jar.jar")) do
         assert require('abc/foo')
         assert $LOADED_FEATURES.pop =~ /foo\.rb$/
       end
@@ -506,24 +506,24 @@ class TestFile < Test::Unit::TestCase
   def test_file_read_in_jar_file
     jruby_specific_test
 
-    assert_equal("foobarx\n", File.read("file:" + File.expand_path("test/test_jar2.jar") + "!/test_value.rb"))
+    assert_equal("foobarx\n", File.read("file:" + File.expand_path("test/jruby/test_jar2.jar") + "!/test_value.rb"))
 
     assert_raises(Errno::ENOENT) do
-      File.read("file:" + File.expand_path("test/test_jar2.jar") + "!/inside_jar2.rb")
+      File.read("file:" + File.expand_path("test/jruby/test_jar2.jar") + "!/inside_jar2.rb")
     end
 
     assert_raises(Errno::ENOENT) do
-      File.read("file:" + File.expand_path("test/test_jar3.jar") + "!/inside_jar2.rb")
+      File.read("file:" + File.expand_path("test/jruby/test_jar3.jar") + "!/inside_jar2.rb")
     end
 
     val = ""
-    open("file:" + File.expand_path("test/test_jar2.jar") + "!/test_value.rb") do |f|
+    open("file:" + File.expand_path("test/jruby/test_jar2.jar") + "!/test_value.rb") do |f|
       val = f.read
     end
     assert_equal "foobarx\n", val
 
     values = ""
-    File.open("file:" + File.expand_path("test/test_jar2.jar") + "!/test_value.rb") do |f|
+    File.open("file:" + File.expand_path("test/jruby/test_jar2.jar") + "!/test_value.rb") do |f|
       f.each do |s|
         values << s
       end
@@ -535,7 +535,7 @@ class TestFile < Test::Unit::TestCase
   # JRUBY-2357
   def test_truncate_file_in_jar_file
     jruby_specific_test
-    File.open("file:" + File.expand_path("test/test_jar2.jar") + "!/test_value.rb", "r+") do |f|
+    File.open("file:" + File.expand_path("test/jruby/test_jar2.jar") + "!/test_value.rb", "r+") do |f|
       assert_raise(Errno::EINVAL) { f.truncate(2) }
     end
   end
@@ -581,9 +581,9 @@ class TestFile < Test::Unit::TestCase
   end
 
   def test_file_exists_uri_prefixes
-    assert(File.exists?("file:test/dir with spaces/test_jar.jar!/abc/foo.rb"))
-    assert(File.exists?("jar:file:test/dir with spaces/test_jar.jar!/abc/foo.rb"))
-    assert(File.exists?("jar:file:test/dir with spaces/./test_jar.jar!/abc/./foo/../foo.rb"))
+    assert(File.exists?("file:test/jruby/dir with spaces/test_jar.jar!/abc/foo.rb"))
+    assert(File.exists?("jar:file:test/jruby/dir with spaces/test_jar.jar!/abc/foo.rb"))
+    assert(File.exists?("jar:file:test/jruby/dir with spaces/./test_jar.jar!/abc/./foo/../foo.rb"))
   end
 
   # JRUBY-2524
@@ -743,7 +743,7 @@ class TestFile < Test::Unit::TestCase
   def test_file_times
     # Note: atime, mtime, ctime are all implemented using modification time
     assert_nothing_raised do
-      [ "pom.xml", "file:test/dir with spaces/test_jar.jar!/abc/foo.rb" ].each do |file|
+      [ "pom.xml", "file:test/jruby/dir with spaces/test_jar.jar!/abc/foo.rb" ].each do |file|
         File.mtime(file)
         File.atime(file)
         File.ctime(file)
@@ -1055,8 +1055,8 @@ class TestFile < Test::Unit::TestCase
   end
 
   def test_open_file_in_jar
-    File.open('file:test/dir with spaces/test_jar.jar!/abc/foo.rb'){}
-    File.open('jar:file:test/dir with spaces/test_jar.jar!/abc/foo.rb'){}
+    File.open('file:test/jruby/dir with spaces/test_jar.jar!/abc/foo.rb'){}
+    File.open('jar:file:test/jruby/dir with spaces/test_jar.jar!/abc/foo.rb'){}
   end
   
   # JRUBY-3634: File.read or File.open with a url to a file resource fails with StringIndexOutOfBounds exception

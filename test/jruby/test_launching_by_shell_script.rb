@@ -1,5 +1,5 @@
 require 'test/unit'
-require 'test/test_helper'
+require 'test/jruby/test_helper'
 
 class TestLaunchingByShellScript < Test::Unit::TestCase
   include TestHelper

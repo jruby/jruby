@@ -1,5 +1,5 @@
 require 'test/unit'
-require 'test/test_helper'
+require 'test/jruby/test_helper'
 require 'java'
 
 # This tests JRuby-specific environment stuff, like JRUBY_VERSION

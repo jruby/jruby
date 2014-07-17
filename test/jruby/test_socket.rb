@@ -1,7 +1,7 @@
 require 'test/unit'
 require 'socket'
 require 'thread'
-require 'test/test_helper'
+require 'test/jruby/test_helper'
 require 'ipaddr'
 
 WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/

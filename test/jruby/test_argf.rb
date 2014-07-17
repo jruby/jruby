@@ -1,5 +1,5 @@
 require 'test/unit'
-require 'test/test_helper'
+require 'test/jruby/test_helper'
 require 'rbconfig'
 
 # Since we haven't found a good way to instantiate multiple ARGF instances for testing,

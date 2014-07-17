@@ -1,5 +1,5 @@
 require 'test/unit'
-require 'test/test_helper'
+require 'test/jruby/test_helper'
 require 'rbconfig'
 
 class TestBackquote < Test::Unit::TestCase

@@ -1,5 +1,5 @@
 require 'test/unit'
-require 'test/test_helper'
+require 'test/jruby/test_helper'
 require 'rbconfig'
 require 'jruby/path_helper'
 
@@ -34,15 +34,15 @@ class TestLoad < Test::Unit::TestCase
 
       # JRUBY-1229, allow loading jar files without manifest
       assert_nothing_raised {
-        require "test/jar_with_no_manifest.jar"
+        require "test/jruby/jar_with_no_manifest.jar"
       }
     end
 
-    assert require('test/requireTarget')
-    assert !require('test/requireTarget')
+    assert require('test/jruby/requireTarget')
+    assert !require('test/jruby/requireTarget')
 
     $loaded_foo_bar = false
-    assert require('test/foo.bar')
+    assert require('test/jruby/foo.bar')
     assert $loaded_foo_bar
   end
 
@@ -51,7 +51,7 @@ class TestLoad < Test::Unit::TestCase
     begin
       $:.unshift("")
       $loaded_foo_bar = false
-      assert load('test/foo.bar.rb')
+      assert load('test/jruby/foo.bar.rb')
       assert $loaded_foo_bar
     ensure
       $:.shift
@@ -70,7 +70,7 @@ class TestLoad < Test::Unit::TestCase
   def test_require_jar_should_make_its_scripts_accessible
     assert_equal "hi", run_in_sub_runtime(%{
       $hello = nil
-      require 'test/jar_with_ruby_files'
+      require 'test/jruby/jar_with_ruby_files'
       require 'hello_from_jar'
       $hello
     })
@@ -79,7 +79,7 @@ class TestLoad < Test::Unit::TestCase
   def test_require_nested_jar_should_make_its_scripts_accessible
     assert_equal "hi from nested jar", run_in_sub_runtime(%{
       $hello = nil
-      require 'test/jar_with_ruby_files_in_jar'
+      require 'test/jruby/jar_with_ruby_files_in_jar'
       require 'jar_with_ruby_file'
       require 'hello_from_nested_jar'
       $hello
@@ -88,7 +88,7 @@ class TestLoad < Test::Unit::TestCase
 
   def test_require_nested_jar_enables_class_loading_from_that_jar
     assert_in_sub_runtime %{
-      require 'test/jar_with_nested_classes_jar'
+      require 'test/jruby/jar_with_nested_classes_jar'
       require 'jar_with_classes'
       java_import "test.HelloThere"
       HelloThere.new.message
@@ -99,17 +99,17 @@ class TestLoad < Test::Unit::TestCase
     cmd = ""
     cmd += "env CLASSPATH=#{classpath}" # classpath=nil, becomes empty CLASSPATH
     cmd += " #{RbConfig::CONFIG['bindir']}/#{RbConfig::CONFIG['RUBY_INSTALL_NAME']} -e "
-    cmd += "'"+'begin load "./test/foo.bar.rb"; rescue Exception => e; print "FAIL"; else print "OK"; end'+"'"
+    cmd += "'"+'begin load "./test/jruby/foo.bar.rb"; rescue Exception => e; print "FAIL"; else print "OK"; end'+"'"
     `#{cmd}`
   end
 
   unless WINDOWS || true # FIXME for Windows and 1.9+
     def test_load_relative_with_classpath
-      assert_equal call_extern_load_foo_bar(File.join('test', 'jar_with_ruby_files.jar')), 'OK'
+      assert_equal call_extern_load_foo_bar(File.join('test', 'jruby', 'jar_with_ruby_files.jar')), 'OK'
     end
 
     def test_load_relative_with_classpath_ends_colon
-      assert_equal call_extern_load_foo_bar(File.join('test', 'jar_with_ruby_files.jar') + ':'), 'OK'
+      assert_equal call_extern_load_foo_bar(File.join('test', 'jruby', 'jar_with_ruby_files.jar') + ':'), 'OK'
     end
 
     def test_load_relative_without_classpath
@@ -184,7 +184,7 @@ OUT
   end
 
   def test_load_rb_if_jar_doesnt_exist
-    require 'test/fake.jar' # test/fake.jar does not exist, but test/fake.jar.rb does.
+    require 'test/jruby/fake.jar' # test/fake.jar does not exist, but test/fake.jar.rb does.
   end
 
   def test_overriding_require_shouldnt_cause_problems
@@ -198,11 +198,11 @@ class ::Object
 end
 DEPS
 
-    require 'test/test_loading_behavior'
+    require 'test/jruby/test_loading_behavior'
 
     res = File.expand_path($loading_behavior_result)
 
-    assert_equal File.expand_path(File.join('test', 'test_loading_behavior.rb')), res
+    assert_equal File.expand_path(File.join('test', 'jruby', 'test_loading_behavior.rb')), res
   end
 
   # JRUBY-3894
@@ -233,7 +233,7 @@ DEPS
         Dir.mkdir 'not_A' unless File.exists? 'not_A'
         File.symlink("not_A", "A") unless File.symlink?('A')
         with_jruby_shell_spawning do
-          `bin/jruby -e "load File.join('file:', File.join(File.expand_path(File.dirname(File.dirname('#{__FILE__}'))), 'test/requireTest-1.0.jar!'), 'A', 'B.rb') ; B"`
+          `bin/jruby -e "load File.join('file:', File.join(File.expand_path(File.dirname(File.dirname('#{__FILE__}'))), 'test/jruby/requireTest-1.0.jar!'), 'A', 'B.rb') ; B"`
           assert_equal 0, $?
         end
       ensure
@@ -245,7 +245,7 @@ DEPS
 
   def test_loading_jar_with_dot_so
     assert_in_sub_runtime %{
-      require 'test/jruby-3977.so.jar'
+      require 'test/jruby/jruby-3977.so.jar'
       load 'jruby-3977.rb'
       $jruby3977
     }
@@ -253,8 +253,8 @@ DEPS
 
   def test_loading_jar_with_leading_underscore
     assert_in_sub_runtime %{
-      require 'test/_leading_and_consecutive__underscores.jar'
-      load 'test/_leading_and_consecutive__underscores.jar'
+      require 'test/jruby/_leading_and_consecutive__underscores.jar'
+      load 'test/jruby/_leading_and_consecutive__underscores.jar'
       true
     }
   end
@@ -263,23 +263,23 @@ DEPS
   def test_cwd_plus_dotdot_jar_loading
     assert_equal "hi", run_in_sub_runtime(%{
       $hello = nil
-      require './test/../test/jar_with_ruby_files'
+      require './test/../test/jruby/jar_with_ruby_files'
       require 'hello_from_jar'
       $hello
     })
   end
 
   def test_symlinked_jar
-    Dir.chdir('test') do
+    Dir.chdir('test/jruby') do
       FileUtils.cp 'jar_with_ruby_files.jar', 'jarwithoutextension' unless File.exists?('jarwithoutextension')
       File.symlink 'jarwithoutextension', 'symlink.jar' unless File.symlink?('symlink.jar')
     end
 
     assert_in_sub_runtime %{
-      require 'test/symlink.jar'
+      require 'test/jruby/symlink.jar'
     }
   ensure
-    Dir.chdir('test') do
+    Dir.chdir('test/jruby') do
       [ 'jarwithoutextension', 'symlink.jar' ].each do |file|
         File.delete(file)
       end

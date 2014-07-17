@@ -1,6 +1,6 @@
 require 'test/unit'
 require 'rbconfig'
-require 'test/test_helper'
+require 'test/jruby/test_helper'
 require 'pathname'
 
 class TestKernel < Test::Unit::TestCase

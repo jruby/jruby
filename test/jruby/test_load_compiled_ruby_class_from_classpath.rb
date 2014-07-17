@@ -1,6 +1,6 @@
 require "test/unit"
 require "fileutils"
-require 'test/test_helper'
+require 'test/jruby/test_helper'
 require 'rbconfig'
 
 # Necessary because of http://jira.codehaus.org/browse/JRUBY-1579

@@ -1,6 +1,6 @@
 require 'test/unit'
 require 'nkf'
-require 'test/test_helper'
+require 'test/jruby/test_helper'
 require 'kconv'
 
 class NKFTest < Test::Unit::TestCase

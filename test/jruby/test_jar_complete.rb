@@ -113,7 +113,7 @@ class JarCompleteTest < Test::Unit::TestCase
   end
 
   def test_binscripts_can_be_run_from_classpath
-    output = `java -cp \"#{COMPLETE_JAR}:test/dir with spaces/testgem.jar\" org.jruby.Main -S testgem`
+    output = `java -cp \"#{COMPLETE_JAR}:test/jruby/dir with spaces/testgem.jar\" org.jruby.Main -S testgem`
 
     assert output == "Testing... 1.. 2.. 3..\n"
   end

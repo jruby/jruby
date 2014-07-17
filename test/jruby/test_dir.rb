@@ -200,12 +200,10 @@ class TestDir < Test::Unit::TestCase
   end
 
   def jar_file_with_spaces
-    require 'test/dir with spaces/test_jar.jar'
+    require 'test/jruby/dir with spaces/test_jar.jar'
     require 'inside_jar'
 
-    first = File.expand_path(File.join(File.dirname(__FILE__), '..'))
-
-    "file:" + File.join(first, "test", "dir with spaces", "test_jar.jar") + "!"
+    "file:" + File.join(File.dirname(__FILE__), "dir with spaces", "test_jar.jar") + "!"
   end
 
   # JRUBY-4177

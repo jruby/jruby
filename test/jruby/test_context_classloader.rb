@@ -1,6 +1,6 @@
 require 'test/unit'
 require 'jruby'
-require 'test/test_helper'
+require 'test/jruby/test_helper'
 
 class TestContextClassloader < Test::Unit::TestCase
   include TestHelper
