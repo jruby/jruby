@@ -11,7 +11,7 @@ import org.jruby.runtime.Arity;
  */
 public class IRFor extends IRClosure {
     public IRFor(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, String labelPrefix) {
-        super(manager, lexicalParent, lineNumber, IRStaticScopeFactory.newIRBlockScope(staticScope), arity, argumentType, labelPrefix);
+        super(manager, lexicalParent, lineNumber, IRStaticScopeFactory.newIRBlockScope(staticScope), arity, argumentType, labelPrefix, labelPrefix == "_BEGIN_");
     }
 
     public IRFor(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType) {

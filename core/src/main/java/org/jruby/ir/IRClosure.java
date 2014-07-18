@@ -55,7 +55,7 @@ public class IRClosure extends IRScope {
     public boolean addedGEBForUncaughtBreaks;
     private Handle handle;
 
-    // Used by IREvalScript as well
+    // Used by other constructions and by IREvalScript as well
     protected IRClosure(IRManager manager, IRScope lexicalParent, String fileName, int lineNumber, StaticScope staticScope, String prefix) {
         super(manager, lexicalParent, null, fileName, lineNumber, staticScope);
 
@@ -98,6 +98,10 @@ public class IRClosure extends IRScope {
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, String prefix) {
+        this(manager, lexicalParent, lineNumber, staticScope, arity, argumentType, prefix, false);
+    }
+
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, String prefix, boolean isBeginEndBlock) {
         this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, prefix);
         this.blockArgs = new ArrayList<Operand>();
         this.argumentType = argumentType;
@@ -108,7 +112,7 @@ public class IRClosure extends IRScope {
             this.body = null;
         } else {
             this.body = new InterpretedIRBlockBody(this, arity, argumentType);
-            if (staticScope != null) {
+            if (staticScope != null && !isBeginEndBlock) {
                 ((IRStaticScope)staticScope).setIRScope(this);
                 staticScope.setScopeType(this.getScopeType());
             }
