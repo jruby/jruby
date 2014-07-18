@@ -268,57 +268,6 @@ class TestIO < Test::Unit::TestCase
     end
   end
 
-  # JRUBY-2202
-  def test_ungetc_empty_file
-    File.open(@file, "w+") {}
-    File.open(@file) do |file|
-      assert_nil(file.getc)
-      assert_equal(0, file.pos)
-      file.ungetc(100)
-
-      # The following line is an intentional regression tests,
-      # it checks that JRuby doesn't break.
-      assert_equal(-1, file.pos)
-
-      assert_equal("d", file.getc)
-     end
-  end
-
-  # JRUBY-2202
-  def test_ungetc_nonempty_file
-    File.open(@file, "w+") { |file| file.puts("HELLO") }
-    File.open(@file) do |file|
-      assert_equal("H", file.getc)
-      assert_equal(1, file.pos)
-      file.ungetc(100)
-      assert_equal(0, file.pos)
-      assert_equal("d", file.getc)
-      assert_equal(1, file.pos)
-     end
-  end
-
-  # JRUBY-2202
-  def test_ungetc_position_change
-    File.open(@file, "w+") { |file| file.puts("HELLO") }
-
-    # getc/ungetc the same char
-    File.open(@file) do |f|
-      f.ungetc(f.getc)
-      assert_equal(0, f.pos)
-      assert_equal("HELLO", f.read(5))
-      assert_equal(5, f.pos)
-    end
-
-    # getc/ungetc different char
-    File.open(@file) do |f|
-      f.getc
-      f.ungetc(100)
-      assert_equal(0, f.pos)
-      assert_equal("dELLO", f.read(5))
-      assert_equal(5, f.pos)
-     end
-  end
-
   # JRUBY-2203
   # unget char should be discarded after position changing calls
   def test_unget_before_position_change
