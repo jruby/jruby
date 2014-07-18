@@ -1787,7 +1787,7 @@ public class OpenFile implements Finalizable {
     }
 
     // io_unread, UNIX version
-    public void unreadUnix(ThreadContext context) {
+    private void unreadUnix(ThreadContext context) {
         long r;
         checkClosed();
         if (rbuf.len == 0 || (mode & DUPLEX) != 0)
@@ -1806,7 +1806,7 @@ public class OpenFile implements Finalizable {
     }
 
     // io_unread, Windows version
-    public void unreadWindows(ThreadContext context) {
+    private void unreadWindows(ThreadContext context) {
         Ruby runtime = context.runtime;
         long r, pos;
         int read_size;
