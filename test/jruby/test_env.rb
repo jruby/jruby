@@ -121,7 +121,7 @@ class TestEnv < Test::Unit::TestCase
     # See JRUBY-3097
     # try setting up PATH in such a way that doesn't find 'jruby'
     # but 'java' is available
-    jruby_exe = File.join(File.dirname(__FILE__), '..', 'bin', 'jruby')
+    jruby_exe = File.join(File.dirname(__FILE__), '..', '..', 'bin', 'jruby')
     old_path = ENV['PATH']
     our_path = []
     old_path.split(File::PATH_SEPARATOR).each do |dir|
