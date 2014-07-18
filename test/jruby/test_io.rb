@@ -278,7 +278,7 @@ class TestIO < Test::Unit::TestCase
 
       # The following line is an intentional regression tests,
       # it checks that JRuby doesn't break.
-      assert_equal(0, file.pos)
+      assert_equal(-1, file.pos)
 
       assert_equal("d", file.getc)
      end

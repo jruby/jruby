@@ -1777,8 +1777,35 @@ public class OpenFile implements Finalizable {
         return posix.lseek(fd, 0, PosixShim.SEEK_CUR);
     }
 
-    // io_unread
     public void unread(ThreadContext context) {
+        if (Platform.IS_WINDOWS) {
+            unreadWindows(context);
+        } else {
+            unreadUnix(context);
+        }
+    }
+
+    // io_unread, UNIX version
+    public void unreadUnix(ThreadContext context) {
+        long r;
+        checkClosed();
+        if (rbuf.len == 0 || (mode & DUPLEX) != 0)
+            return;
+        /* xxx: target position may be negative if buffer is filled by ungetc */
+        posix.errno = null;
+        r = posix.lseek(fd, -rbuf.len, PosixShim.SEEK_CUR);
+        if (r < 0 && posix.errno != null) {
+            if (posix.errno == Errno.ESPIPE)
+                mode |= DUPLEX;
+            return;
+        }
+        rbuf.off = 0;
+        rbuf.len = 0;
+        return;
+    }
+
+    // io_unread, Windows version
+    public void unreadWindows(ThreadContext context) {
         Ruby runtime = context.runtime;
         long r, pos;
         int read_size;
@@ -1795,7 +1822,7 @@ public class OpenFile implements Finalizable {
             return;
         }
 
-        // TODO...only for win32?
+        // TODO...
 //        if (!rb_w32_fd_is_text(fptr->fd)) {
 //            r = lseek(fptr->fd, -fptr->rbuf.len, SEEK_CUR);
 //            if (r < 0 && errno) {
