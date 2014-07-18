@@ -812,12 +812,13 @@ public class OpenFile implements Finalizable {
 
         if (writeconv != null) {
             if (write_lock != null && !noraise) {
-//                struct finish_writeconv_arg arg;
-//                arg.fptr = fptr;
-//                arg.noalloc = noraise;
-//                err = rb_mutex_synchronize(fptr->write_lock, finish_writeconv_sync, (VALUE)&arg);
                 // TODO: interruptible version
-                finishWriteconv(context, noraise);
+                write_lock.writeLock().lock();
+                try {
+                    finishWriteconv(context, noraise);
+                } finally {
+                    write_lock.writeLock().unlock();
+                }
             }
             else {
                 err = finishWriteconv(context, noraise);
