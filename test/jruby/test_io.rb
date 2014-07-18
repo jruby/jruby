@@ -327,7 +327,7 @@ class TestIO < Test::Unit::TestCase
     }
     threads.each {|thread| thread.join}
     f.close
-    assert File.size("__temp1") == 100*100
+    assert_equal 100*100, File.size("__temp1")
   ensure
     File.unlink("__temp1")
   end

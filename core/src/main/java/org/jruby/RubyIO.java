@@ -567,7 +567,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * getline using logic of gets.  If limit is -1 then read unlimited amount.
      * mri: rb_io_getline_1 (mostly)
      */
-    private IRubyObject getlineInner(ThreadContext context, IRubyObject rs, int _limit, ByteListCache cache) {
+    private synchronized IRubyObject getlineInner(ThreadContext context, IRubyObject rs, int _limit, ByteListCache cache) {
         Ruby runtime = context.runtime;
         IRubyObject str = context.nil;
         boolean noLimit = false;
@@ -1288,7 +1288,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     // io_write
-    public IRubyObject write(ThreadContext context, IRubyObject str, boolean nosync) {
+    public synchronized IRubyObject write(ThreadContext context, IRubyObject str, boolean nosync) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
         long n;
@@ -2695,7 +2695,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // io_read
     @JRubyMethod(name = "read")
-    public IRubyObject read(ThreadContext context, IRubyObject length, IRubyObject str) {
+    public synchronized IRubyObject read(ThreadContext context, IRubyObject length, IRubyObject str) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
         int n, len;
