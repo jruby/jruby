@@ -233,7 +233,7 @@ DEPS
         Dir.mkdir 'not_A' unless File.exists? 'not_A'
         File.symlink("not_A", "A") unless File.symlink?('A')
         with_jruby_shell_spawning do
-          `bin/jruby -e "load File.join('file:', File.join(File.expand_path(File.dirname(File.dirname('#{__FILE__}'))), 'test/jruby/requireTest-1.0.jar!'), 'A', 'B.rb') ; B"`
+          `bin/jruby -e "load File.join('file:', File.join(File.expand_path(File.dirname(File.dirname('#{__FILE__}'))), 'jruby/requireTest-1.0.jar!'), 'A', 'B.rb') ; B"`
           assert_equal 0, $?
         end
       ensure
