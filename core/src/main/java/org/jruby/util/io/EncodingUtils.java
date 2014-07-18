@@ -1066,7 +1066,7 @@ public class EncodingUtils {
 
     public static IRubyObject setStrBuf(Ruby runtime, IRubyObject str, int len) {
         if (str == null || str.isNil()) {
-            str = runtime.newString();
+            str = RubyString.newStringLight(runtime, len);
         } else {
             RubyString s = str.convertToString();
             int clen = s.size();
@@ -1079,8 +1079,8 @@ public class EncodingUtils {
             }
             str = s;
             len -= clen;
+            ((RubyString)str).modify(((RubyString)str).size() + len);
         }
-        ((RubyString)str).modify(((RubyString)str).size() + len);
         return str;
     }
 
