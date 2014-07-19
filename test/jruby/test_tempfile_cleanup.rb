@@ -22,8 +22,8 @@ class TestTempfilesCleanUp < Test::Unit::TestCase
     assert Dir["#{@tmpdir}/*"].size > 0
 
     100.times do
-      if defined?(JRUBY_VERSION)
-        java.lang.System.gc
+      if defined?(JRuby)
+        JRuby.gc
       else
         GC.start
       end
