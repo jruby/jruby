@@ -137,7 +137,7 @@ public abstract class TruffleDebugNodes {
         @Specialization
         public NilPlaceholder dumpCallStack() {
             notDesignedForCompilation();
-            RubyCallStack.dump(this);
+            RubyCallStack.dump(getContext(), this);
             return NilPlaceholder.INSTANCE;
         }
 
