@@ -28,11 +28,7 @@ namespace :test do
   task :all => [:compile, *all_tests]
 
   task :rake_targets => long_tests
-  
-  task :extended do    
-    # run Ruby integration tests
-    Rake::Task["test:rake_targets"].invoke
-  end
+  task :extended => long_tests
 
   desc "Run tracing tests"
   task :tracing do
