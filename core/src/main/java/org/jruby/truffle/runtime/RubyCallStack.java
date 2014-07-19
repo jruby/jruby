@@ -38,7 +38,13 @@ public abstract class RubyCallStack {
         System.err.println("    in " + Truffle.getRuntime().getCurrentFrame().getCallTarget());
 
         for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
-            System.err.println("  from " + frame.getCallNode().getEncapsulatingSourceSection());
+            String methodName = "<main>";
+            RubyMethod method = getMethod(frame);
+            if (method != null) {
+                methodName = method.getName();
+            }
+            String methodInfo = ":in `" + methodName + "'";
+            System.err.println("\tfrom " + frame.getCallNode().getEncapsulatingSourceSection() + methodInfo);
         }
 
         System.err.println("---------------------");
