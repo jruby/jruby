@@ -9,10 +9,13 @@
  */
 package org.jruby.truffle.runtime.backtrace;
 
+import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyException;
 
 import java.util.ArrayList;
@@ -30,10 +33,10 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
             if (activations.isEmpty()) {
                 lines.add(String.format("%s (%s)", exception.getMessage(), exception.getRubyClass().getName()));
             } else {
-                lines.add(formatInLine(activations, exception));
+                lines.add(formatInLine(context, activations, exception));
 
                 for (int n = 1; n < activations.size(); n++) {
-                    lines.add(formatFromLine(activations, n));
+                    lines.add(formatFromLine(context, activations, n));
                 }
             }
 
@@ -43,7 +46,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         }
     }
 
-    private static String formatInLine(List<Activation> activations, RubyException exception) {
+    private static String formatInLine(RubyContext context, List<Activation> activations, RubyException exception) {
         final StringBuilder builder = new StringBuilder();
 
         final SourceSection sourceSection = activations.get(0).getCallNode().getEncapsulatingSourceSection();
@@ -81,10 +84,12 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
             builder.append(")");
         }
 
+        builder.append(formatLocalVariables(context, activations.get(0).getMaterializedFrame()));
+
         return builder.toString();
     }
 
-    private static String formatFromLine(List<Activation> activations, int n) {
+    private static String formatFromLine(RubyContext context, List<Activation> activations, int n) {
         final StringBuilder builder = new StringBuilder();
 
         builder.append("\tfrom ");
@@ -107,6 +112,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
         builder.append(":in `");
         builder.append(reportedName);
         builder.append("'");
+        builder.append(formatLocalVariables(context, activations.get(n).getMaterializedFrame()));
 
         return builder.toString();
     }
@@ -121,6 +127,30 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
 
             n++;
         }
+    }
+
+    private static String formatLocalVariables(RubyContext context, MaterializedFrame f) {
+        final StringBuilder builder = new StringBuilder();
+        FrameDescriptor fd = f.getFrameDescriptor();
+        boolean first = true;
+        for (Object ident : fd.getIdentifiers()) {
+            if (ident instanceof String) {
+                RubyBasicObject value = context.getCoreLibrary().box(f.getValue(fd.findFrameSlot(ident)));
+                String repr = value.debugSend("inspect", null).toString();
+                if (first) {
+                    first = false;
+                    builder.append(" with ");
+                } else {
+                    builder.append(", ");
+                }
+                int maxLength = 12;
+                if (repr.length() > maxLength) {
+                    repr = repr.substring(0, maxLength) + "... (" + value.getRubyClass().getName() + ")";
+                }
+                builder.append(ident + " = " + repr);
+            }
+        }
+        return builder.toString();
     }
 
 }
