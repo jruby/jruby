@@ -123,4 +123,24 @@ public abstract class TruffleDebugNodes {
 
     }
 
+    @CoreMethod(names = "dump_call_stack", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    public abstract static class DumpCallStack extends CoreMethodNode {
+
+        public DumpCallStack(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DumpCallStack(FullTreeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public NilPlaceholder dumpCallStack() {
+            notDesignedForCompilation();
+            RubyCallStack.dump(getContext(), this);
+            return NilPlaceholder.INSTANCE;
+        }
+
+    }
+
 }

@@ -205,15 +205,11 @@ public abstract class RubyNode extends Node {
         CompilerAsserts.neverPartOfCompilation();
     }
 
-    public void panic(Object... info) {
-        panic(this, info);
+    public void panic(RubyContext context, Object... info) {
+        panic(context, this, info);
     }
 
-    public static void panic2(Object... info) {
-        panic(null, info);
-    }
-
-    private static void panic(RubyNode node, Object... info) {
+    private static void panic(RubyContext context, RubyNode node, Object... info) {
         CompilerDirectives.transferToInterpreter();
 
         System.err.println("panic -----------------------");
@@ -231,7 +227,7 @@ public abstract class RubyNode extends Node {
         }
 
         System.err.println();
-        RubyCallStack.dump(node);
+        RubyCallStack.dump(context, node);
         System.err.println();
         new Exception().printStackTrace(System.err);
         System.err.println();
