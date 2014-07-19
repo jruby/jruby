@@ -3,7 +3,7 @@ Building JRuby from Source
 
 Prerequisites:
 
-* A Java 7-compatible (or higher) Java developement kit (JDK)
+* A Java 7-compatible (or higher) Java development kit (JDK)
 * Maven 3+
 
 JRuby uses Maven for building and bootstrapping itself, along with Rake,
@@ -268,7 +268,7 @@ rake maven:set_version
 ```
 
 manually rollback the poms in ./ext/ if their main versions have been changed
-and then commit and tag averything respectively.  Now deploy the maven 
+and then commit and tag everything respectively.  Now deploy the maven 
 artifact to sonatype oss.
 
 ```
@@ -281,7 +281,7 @@ go to oss.sonatype.org and close the deployment which will check if all 'require
 
 the build system uses the **ruby-maven** gem and with this the build files are **pom.rb** and **Mavenfile**. the **Mavenfile** are used whenever the module produces a gem and uses the gemspec file for the gem for setting up the POM. otherwise **pom.rb** are used. so any change in the build-system is done in those files !!!!
 
-instead of ```mvn``` the ```rmvn``` command is used. this command will also geneate **pom.xml** files which can be used by regular maven.
+instead of ```mvn``` the ```rmvn``` command is used. this command will also generate **pom.xml** files which can be used by regular maven.
 
 to (re)generate all pom.xml use
 ```
@@ -289,9 +289,9 @@ rake maven:dump_poms
 ```
 (which is basically ```rmvn validate -Pall```)
 
-about the ruby DSL for those poms just look in the existing pom.rb/Mavenfile files - there are plenty of examples for all kind of situations. (more documention to come).
+about the ruby DSL for those poms just look in the existing pom.rb/Mavenfile files - there are plenty of examples for all kind of situations. (more documentation to come).
 
-regular maven uses the the jruby from the installion, i.e. 9000.dev. this also means that a regular maven run does not depend under the hood on any other jruby versions from maven central.
+regular maven uses the the jruby from the installation, i.e. 9000.dev. this also means that a regular maven run does not depend under the hood on any other jruby versions from maven central.
 
 at some parts there are **inline** plugins in **pom.rb** or **Mavenfile** which will work directly with regular maven where there is a special plugin running those ruby parts. see **./lib/pom.rb**.
 
