@@ -41,7 +41,7 @@ project 'JRuby Integration Tests' do
        :scope => 'test' )
   jar( 'org.jruby:requireTest:1.0',
        :scope => 'system',
-       :systemPath => '${project.basedir}/requireTest-1.0.jar' )
+       :systemPath => '${project.basedir}/jruby/requireTest-1.0.jar' )
   gem 'rubygems:rspec:${rspec.version}'
   gem 'rubygems:minitest:${minitest.version}'
   gem 'rubygems:minitest-excludes:${minitest-excludes.version}'

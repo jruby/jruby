@@ -56,7 +56,7 @@
       <artifactId>requireTest</artifactId>
       <version>1.0</version>
       <scope>system</scope>
-      <systemPath>${project.basedir}/requireTest-1.0.jar</systemPath>
+      <systemPath>${project.basedir}/jruby/requireTest-1.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>

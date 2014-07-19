@@ -153,7 +153,7 @@ namespace :test do
       "target/commons-logging.jar",
       "lib/jruby.jar",
       "target/test-classes",
-      "test/requireTest.jar",
+      "test/jruby/requireTest.jar",
       "test"
     ]
     
