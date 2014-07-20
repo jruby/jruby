@@ -1620,11 +1620,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         RubyIO io = GetWriteIO();
         fptr = io.getOpenFileChecked();
-        if (sync.isTrue()) {
-            fptr.setMode(fptr.getMode() | OpenFile.SYNC);
-        } else {
-            fptr.setMode(fptr.getMode() & ~OpenFile.SYNC);
-        }
+        fptr.setSync(sync.isTrue());
         return sync;
     }
 
