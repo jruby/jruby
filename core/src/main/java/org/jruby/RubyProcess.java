@@ -229,7 +229,7 @@ public class RubyProcess {
         }
 
         public IRubyObject inspect(Ruby runtime) {
-            return runtime.newString(pst_message("#<" + getClass().getName() + ": ", pid, status) + ">");
+            return runtime.newString(pst_message("#<" + getMetaClass().getName() + ": ", pid, status) + ">");
         }
 
         // MRI: pst_message
