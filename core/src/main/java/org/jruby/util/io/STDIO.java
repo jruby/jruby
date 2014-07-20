@@ -24,4 +24,13 @@ public enum STDIO {
 
         return false;
     }
+
+    public boolean isJVMDefault(Object stream) {
+        switch (this) {
+            case IN:  return stream == System.in;
+            case OUT: return stream == System.out;
+            case ERR: return stream == System.err;
+            default:  return false;
+        }
+    }
 }

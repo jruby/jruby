@@ -63,6 +63,9 @@ import org.jruby.util.io.STDIO;
 
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.util.HashMap;
 import java.util.Map;
@@ -186,31 +189,17 @@ public class RubyGlobal {
         runtime.defineVariable(new SafeGlobalVariable(runtime, "$SAFE"), THREAD);
 
         runtime.defineVariable(new BacktraceGlobalVariable(runtime, "$@"), THREAD);
-        IRubyObject stdin = null;
-        IRubyObject stdout = null;
-        IRubyObject stderr = null;
-        if (runtime.getPosix().isNative()) {
-            // use real native channels for stdio
-            stdin = RubyIO.prepStdio(
-                    runtime, runtime.getIn(), new NativeDeviceChannel(0), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
-            stdout = RubyIO.prepStdio(
-                    runtime, runtime.getOut(), new NativeDeviceChannel(1), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
-            stderr = RubyIO.prepStdio(
-                    runtime, runtime.getErr(), new NativeDeviceChannel(2), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
-        } else {
-            stdin = RubyIO.prepStdio(
-                    runtime, runtime.getIn(), Channels.newChannel(runtime.getIn()), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
-            stdout = RubyIO.prepStdio(
-                    runtime, runtime.getOut(), Channels.newChannel(runtime.getOut()), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
-            stderr = RubyIO.prepStdio(
-                    runtime, runtime.getErr(), Channels.newChannel(runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
-        }
+
+        IRubyObject stdin = RubyIO.prepStdio(
+                runtime, runtime.getIn(), prepareStdioChannel(runtime, STDIO.IN, runtime.getIn()), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
+        IRubyObject stdout = RubyIO.prepStdio(
+                runtime, runtime.getOut(), prepareStdioChannel(runtime, STDIO.OUT, runtime.getOut()), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
+        IRubyObject stderr = RubyIO.prepStdio(
+                runtime, runtime.getErr(), prepareStdioChannel(runtime, STDIO.ERR, runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
 
         runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin), GLOBAL);
-
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", stdout), GLOBAL);
         globals.alias("$>", "$stdout");
-
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", stderr), GLOBAL);
 
         runtime.defineGlobalConstant("STDIN", stdin);
@@ -282,6 +271,22 @@ public class RubyGlobal {
         globals.alias("$PREMATCH", "$`");
         globals.alias("$POSTMATCH", "$'");
         globals.alias("$LAST_PAREN_MATCH", "$+");
+    }
+
+    private static Channel prepareStdioChannel(Ruby runtime, STDIO stdio, Object stream) {
+        if (runtime.getPosix().isNative() && stdio.isJVMDefault(stream)) {
+            // use real native channel for stdio
+            return new NativeDeviceChannel(stdio.fileno());
+        } else {
+            switch (stdio) {
+                case IN:
+                    return Channels.newChannel((InputStream)stream);
+                case OUT:
+                case ERR:
+                    return Channels.newChannel((OutputStream)stream);
+                default: throw new RuntimeException("invalid stdio: " + stdio);
+            }
+        }
     }
 
     private static void defineGlobalEnvConstants(Ruby runtime) {
