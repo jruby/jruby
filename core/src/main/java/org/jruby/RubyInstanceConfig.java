@@ -363,7 +363,7 @@ public class RubyInstanceConfig {
             // if Ruby 2.0 encoding pragmas are implemented, this will need to change
             if (hasInlineScript) {
                 return new ByteArrayInputStream(inlineScript());
-            } else if (isSourceFromStdin()) {
+            } else if (isForceStdin() || getScriptFileName() == null) {
                 // can't use -v and stdin
                 if (isShowVersion()) {
                     return null;
@@ -448,7 +448,7 @@ public class RubyInstanceConfig {
             } else {
                 return "-e";
             }
-        } else if (isSourceFromStdin()) {
+        } else if (isForceStdin() || getScriptFileName() == null) {
             return "-";
         } else {
             return getScriptFileName();
@@ -756,8 +756,18 @@ public class RubyInstanceConfig {
         return hasInlineScript;
     }
 
-    private boolean isSourceFromStdin() {
-        return getScriptFileName() == null;
+    /**
+     * True if we are only using source from stdin and not from a -e or file argument.
+     */
+    public boolean isForceStdin() {
+        return forceStdin;
+    }
+
+    /**
+     * Set whether we should only look at stdin for source.
+     */
+    public void setForceStdin(boolean forceStdin) {
+        this.forceStdin = forceStdin;
     }
 
     public void setScriptFileName(String scriptFileName) {
@@ -1483,6 +1493,8 @@ public class RubyInstanceConfig {
     private int profileMaxMethods = Options.PROFILE_MAX_METHODS.load();
 
     private boolean allowUppercasePackageNames = Options.JI_UPPER_CASE_PACKAGE_NAME_ALLOWED.load();
+
+    private boolean forceStdin = false;
     
     ////////////////////////////////////////////////////////////////////////////
     // Support classes, etc.
