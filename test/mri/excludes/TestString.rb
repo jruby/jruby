@@ -1,5 +1,6 @@
 exclude :test_CMP, "needs investigation"
 exclude :test_LSHIFT, "needs investigation"
+exclude :test_LSHIFT_neary_long_max, "expects reliable NoMemoryError"
 exclude :test_bytes, "needs investigation"
 exclude :test_byteslice, "needs investigation"
 exclude :test_chars, "needs investigation"
