@@ -2071,6 +2071,10 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "prepend_features", required = 1, visibility = PRIVATE)
     public RubyModule prepend_features(IRubyObject include) {
+        if (!isModule()) {
+            throw getRuntime().newTypeError(this, getRuntime().getModule());
+        }
+
         if (!(include.isModule() || include.isClass())) {
             throw getRuntime().newTypeError(include, getRuntime().getModule());
         }
@@ -2084,6 +2088,10 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "append_features", required = 1, visibility = PRIVATE)
     public RubyModule append_features(IRubyObject include) {
+        if (!isModule()) {
+            throw getRuntime().newTypeError(this, getRuntime().getModule());
+        }
+
         if (!(include.isModule() || include.isClass())) {
             throw getRuntime().newTypeError(include, getRuntime().getModule());
         }
