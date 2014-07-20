@@ -25,8 +25,8 @@ class TestProcess < Test::Unit::TestCase
   end
 
   def test_process_status_to_s
-    assert_equal "256", @first_status.to_s
-    assert_equal "512", @second_status.to_s
+    assert_match /exit 1/, @first_status.to_s
+    assert_match /exit 2/, @second_status.to_s
   end
 
   def test_process_status_exitstatus
@@ -35,23 +35,23 @@ class TestProcess < Test::Unit::TestCase
   end
 
   def test_process_exited
-    assert_equal false, @first_status.exited?
-    assert_equal false, @second_status.exited?
+    assert_equal true, @first_status.exited?
+    assert_equal true, @second_status.exited?
   end
 
   def test_process_signaled
-    assert_equal true, @first_status.signaled?
-    assert_equal true, @second_status.signaled?
+    assert_equal false, @first_status.signaled?
+    assert_equal false, @second_status.signaled?
   end
 
   def test_process_stopsig
-    assert_equal 1, @first_status.stopsig
-    assert_equal 2, @second_status.stopsig
+    assert_equal nil, @first_status.stopsig
+    assert_equal nil, @second_status.stopsig
   end
 
   def test_process_termsig
-    assert_equal 1, @first_status.termsig
-    assert_equal 2, @second_status.termsig
+    assert_equal nil, @first_status.termsig
+    assert_equal nil, @second_status.termsig
   end
 
   def test_process_times
