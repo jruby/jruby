@@ -105,7 +105,7 @@ public class PopenExecutor {
             argv[0] = prog.toString();
         }
         if (eargp.use_shell) {
-            pid = procSpawnSh(runtime, prog.toString());
+            pid = procSpawnSh(runtime, prog.toString(), eargp);
         }
         else {
             String[] argv = ARGVSTR2ARGV(eargp.argv_str.argv);
@@ -123,7 +123,7 @@ public class PopenExecutor {
 //    #if defined(_WIN32)
 //    #define proc_spawn_cmd_internal(argv, prog) rb_w32_uaspawn(P_NOWAIT, (prog), (argv))
 //            #else
-    long procSpawnCmdInternal(Ruby runtime, String[] argv, String prog) {
+    long procSpawnCmdInternal(Ruby runtime, String[] argv, String prog, ExecArg eargp) {
         long status;
 
         if (prog == null)
@@ -135,12 +135,22 @@ public class PopenExecutor {
 
         // TODO?
 //        beforeExec();
-        status = runtime.getPosix().posix_spawnp(prog, Collections.EMPTY_LIST, Collections.EMPTY_LIST, Arrays.asList(argv), Collections.EMPTY_LIST);
+        status = runtime.getPosix().posix_spawnp(
+                prog,
+                eargp.fileActions,
+                eargp.attributes,
+                Arrays.asList(argv),
+                eargp.envp_str == null ? Collections.EMPTY_LIST : Arrays.asList(eargp.envp_str));
         if (status == -1 && runtime.getPosix().errno() == Errno.ENOEXEC.intValue()) {
             String[] newArgv = new String[argv.length + 1];
             newArgv[1] = prog;
             newArgv[0] = "sh";
-            status = runtime.getPosix().posix_spawnp("/bin/sh", Collections.EMPTY_LIST, Collections.EMPTY_LIST, Arrays.asList(argv), Collections.EMPTY_LIST);
+            status = runtime.getPosix().posix_spawnp(
+                    "/bin/sh",
+                    eargp.fileActions,
+                    eargp.attributes,
+                    Arrays.asList(argv),
+                    eargp.envp_str == null ? Collections.EMPTY_LIST : Arrays.asList(eargp.envp_str));
             // TODO?
 //            afterExec();
             if (status == -1) errno = Errno.ENOEXEC;
@@ -160,7 +170,7 @@ public class PopenExecutor {
 //            }
 //            pid = rb_w32_uaspawn_flags(P_NOWAIT, prog ? RSTRING_PTR(prog) : 0, argv, flags);
 //            #else
-            pid = procSpawnCmdInternal(runtime, argv, prog);
+            pid = procSpawnCmdInternal(runtime, argv, prog, eargp);
         }
         return pid;
     }
@@ -169,13 +179,13 @@ public class PopenExecutor {
 //    #if defined(_WIN32)
 //    #define proc_spawn_sh(str) rb_w32_uspawn(P_NOWAIT, (str), 0)
 //            #else
-    long procSpawnSh(Ruby runtime, String str) {
+    long procSpawnSh(Ruby runtime, String str, ExecArg eargp) {
         long status;
 
         String shell = dlnFindExeR(runtime, "sh", null);
         // TODO? Stops some threads and signals
 //        before_exec();
-        status = runtime.getPosix().posix_spawnp(shell != null ? shell : "/bin/sh", Collections.EMPTY_LIST, Collections.EMPTY_LIST, Arrays.asList("sh", "-c", str), Collections.EMPTY_LIST);
+        status = runtime.getPosix().posix_spawnp(shell != null ? shell : "/bin/sh", eargp.fileActions, eargp.attributes, Arrays.asList("sh", "-c", str), Collections.EMPTY_LIST);
         if (status == -1) errno = Errno.valueOf(runtime.getPosix().errno());
         // TODO?
 //        after_exec();

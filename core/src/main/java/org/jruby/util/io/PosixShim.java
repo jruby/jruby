@@ -1,11 +1,13 @@
 package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
+import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.Signal;
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 import org.jruby.RubyThread;
+import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.ResourceException;
@@ -255,10 +257,12 @@ public class PosixShim {
                 errno = Errno.valueOf(posix.errno());
                 return null;
             }
+            setCloexec(fds[0], true);
+            setCloexec(fds[1], true);
             return new Channel[]{new NativeDeviceChannel(fds[0]), new NativeDeviceChannel(fds[1])};
         }
 
-        // otherwise, Java pipe
+        // otherwise, Java pipe. Note Java pipe is not FD_CLOEXEC, but we can't use posix_spawn anyway
         try {
             Pipe pipe = Pipe.open();
             return new Channel[]{pipe.source(), pipe.sink()};
@@ -266,6 +270,25 @@ public class PosixShim {
             errno = Helpers.errnoFromException(ioe);
             return null;
         }
+    }
+
+    public int setCloexec(int fd, boolean cloexec) {
+        int ret = posix.fcntl(fd, Fcntl.F_GETFD);
+        if (ret == -1) {
+            errno = Errno.valueOf(posix.errno());
+            return -1;
+        }
+        if (
+                (cloexec && (ret & FcntlLibrary.FD_CLOEXEC) == FcntlLibrary.FD_CLOEXEC)
+                || (!cloexec && (ret & FcntlLibrary.FD_CLOEXEC) == 0)) {
+            return 0;
+        }
+        ret = cloexec ?
+                ret | FcntlLibrary.FD_CLOEXEC :
+                ret & ~FcntlLibrary.FD_CLOEXEC;
+        ret = posix.fcntlInt(fd, Fcntl.F_SETFD, ret);
+        if (ret == -1) errno = Errno.valueOf(posix.errno());
+        return ret;
     }
 
     public Channel open(String cwd, String path, ModeFlags flags, int perm) {
