@@ -139,10 +139,10 @@ public class RubyProcess {
         public IRubyObject stopped_p() {
             return RubyBoolean.newBoolean(getRuntime(), PosixShim.WIFSTOPPED(status));
         }
-        
-        @JRubyMethod
-        public IRubyObject exitstatus() {
-            return getRuntime().newFixnum(PosixShim.WEXITSTATUS(status));
+
+        @JRubyMethod(name = {"signaled?"})
+        public IRubyObject signaled() {
+            return RubyBoolean.newBoolean(getRuntime(), PosixShim.WIFSIGNALED(status));
         }
 
         @JRubyMethod(name = {"exited?"})
@@ -150,19 +150,28 @@ public class RubyProcess {
             return RubyBoolean.newBoolean(getRuntime(), PosixShim.WIFEXITED(status));
         }
 
-        @JRubyMethod(name = {"signaled?"})
-        public IRubyObject signaled() {
-            return RubyBoolean.newBoolean(getRuntime(), PosixShim.WIFSIGNALED(status));
+        @JRubyMethod(name = {"stopsig"})
+        public IRubyObject stopsig() {
+            if (PosixShim.WIFSTOPPED(status)) {
+                return RubyFixnum.newFixnum(getRuntime(), PosixShim.WSTOPSIG(status));
+            }
+            return getRuntime().getNil();
         }
 
         @JRubyMethod(name = {"termsig"})
         public IRubyObject termsig() {
-            return RubyFixnum.newFixnum(getRuntime(), PosixShim.WTERMSIG(status));
+            if (PosixShim.WIFSIGNALED(status)) {
+                return RubyFixnum.newFixnum(getRuntime(), PosixShim.WTERMSIG(status));
+            }
+            return getRuntime().getNil();
         }
 
-        @JRubyMethod(name = {"stopsig"})
-        public IRubyObject stopsig() {
-            return RubyFixnum.newFixnum(getRuntime(), PosixShim.WSTOPSIG(status));
+        @JRubyMethod
+        public IRubyObject exitstatus() {
+            if (PosixShim.WIFEXITED(status)) {
+                return getRuntime().newFixnum(PosixShim.WEXITSTATUS(status));
+            }
+            return getRuntime().getNil();
         }
 
         @JRubyMethod(name = ">>")
@@ -183,15 +192,12 @@ public class RubyProcess {
         public IRubyObject to_i(ThreadContext context) {
             return to_i(context.runtime);
         }
-        
-        @Override
-        public IRubyObject to_s() {
-            return to_s(getRuntime());
-        }
+
         @JRubyMethod
         public IRubyObject to_s(ThreadContext context) {
             return to_s(context.runtime);
         }
+
         @JRubyMethod
         public IRubyObject inspect(ThreadContext context) {
             return inspect(context.runtime);
@@ -225,7 +231,12 @@ public class RubyProcess {
         }
 
         public IRubyObject to_s(Ruby runtime) {
-            return runtime.newString(String.valueOf(status));
+            return runtime.newString(pst_message("", pid, status));
+        }
+
+        @Override
+        public IRubyObject to_s() {
+            return to_s(getRuntime());
         }
 
         public IRubyObject inspect(Ruby runtime) {
@@ -233,8 +244,8 @@ public class RubyProcess {
         }
 
         // MRI: pst_message
-        private static String pst_message(String str, long pid, long status) {
-            StringBuilder sb = new StringBuilder(str);
+        private static String pst_message(String prefix, long pid, long status) {
+            StringBuilder sb = new StringBuilder(prefix);
             sb
                     .append("pid ")
                     .append(pid);
