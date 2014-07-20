@@ -1149,7 +1149,7 @@ public class RubyInstanceConfig {
     }
 
     /**
-     * @see Options.CLI_RUBYOPT_ENABLE
+     * @see Options#CLI_RUBYOPT_ENABLE
      */
     public void setDisableRUBYOPT(boolean dr) {
         this.disableRUBYOPT = dr;
