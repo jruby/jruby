@@ -1754,7 +1754,7 @@ public class ScriptingContainerTest {
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        assertEquals(CompileMode.OFF, instance.getCompileMode());
+        assertEquals(CompileMode.JIT, instance.getCompileMode());
     }
 
     /**
