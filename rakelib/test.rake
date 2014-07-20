@@ -61,6 +61,7 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     ENV['EXCLUDE_DIR'] = 'test/mri/excludes'
+    ENV['TESTOPT'] = '--tty=no'
     t.ruby_opts << '-J-ea'
     t.ruby_opts << '-I lib/ruby/shared'
     t.ruby_opts << '-I lib/ruby/2.1'
