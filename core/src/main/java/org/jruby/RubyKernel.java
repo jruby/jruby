@@ -1397,7 +1397,8 @@ public class RubyKernel {
             tuple = new long[] {127, -1};
         }
 
-        context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple[0], tuple[1]));
+        // RubyStatus uses real native status now, so we unshift Java's shifted exit status
+        context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple[0] << 8, tuple[1]));
 
         byte[] out = output.toByteArray();
         int length = out.length;
@@ -1501,7 +1502,8 @@ public class RubyKernel {
             tuple = new long[] {127, -1};
         }
 
-        context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple[0], tuple[1]));
+        // RubyStatus uses real native status now, so we unshift Java's shifted exit status
+        context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple[0] << 8, tuple[1]));
         return (int)tuple[0];
     }
     

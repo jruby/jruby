@@ -1803,12 +1803,14 @@ public class RubyIO extends RubyObject implements IOEncodable {
             if (runtime.getPosix().isNative()) {
                 // We do not need to nuke native-launched child process, since we now have full control
                 // over child process pipes.
-                IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, fptr.getProcess().exitValue(), fptr.getPid());
+                // RubyStatus uses real native status now, so we unshift Java's shifted exit status
+                IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, fptr.getProcess().exitValue() << 8, fptr.getPid());
                 context.setLastExitStatus(processResult);
             } else {
                 if (!popenSpecial) {
                     obliterateProcess(fptr.getProcess());
-                    IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, fptr.getProcess().exitValue(), fptr.getPid());
+                    // RubyStatus uses real native status now, so we unshift Java's shifted exit status
+                    IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, fptr.getProcess().exitValue() << 8, fptr.getPid());
                     context.setLastExitStatus(processResult);
                 }
             }
@@ -3598,7 +3600,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     if (io.openFile.isOpen()) {
                         io.close();
                     }
-                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, process.waitFor(), ShellLauncher.getPidFromProcess(process)));
+                    // RubyStatus uses real native status now, so we unshift Java's shifted exit status
+                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, process.waitFor() << 8, ShellLauncher.getPidFromProcess(process)));
                 }
             }
             return io;
@@ -3656,10 +3659,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
                 try {
                     int exitValue = tuple.process.waitFor();
-                    
+
+                    // RubyStatus uses real native status now, so we unshift Java's shifted exit status
                     RubyProcess.RubyStatus status = RubyProcess.RubyStatus.newProcessStatus(
                             runtime,
-                            exitValue,
+                            exitValue << 8,
                             pid);
                     
                     rubyThread.cleanTerminate(status);
@@ -3710,7 +3714,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     return block.yield(context, yieldArgs);
                 } finally {
                     cleanupPOpen(tuple);
-                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple.process.waitFor(), ShellLauncher.getPidFromProcess(tuple.process)));
+                    // RubyStatus uses real native status now, so we unshift Java's shifted exit status
+                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple.process.waitFor() << 8, ShellLauncher.getPidFromProcess(tuple.process)));
                 }
             }
             return yieldArgs;

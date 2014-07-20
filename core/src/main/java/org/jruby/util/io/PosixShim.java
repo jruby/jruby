@@ -3,11 +3,13 @@ package org.jruby.util.io;
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.Signal;
+import jnr.constants.platform.WaitFlags;
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 import org.jruby.RubyThread;
 import org.jruby.ext.fcntl.FcntlLibrary;
+import org.jruby.ext.ffi.Platform;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.ResourceException;
@@ -270,6 +272,50 @@ public class PosixShim {
             errno = Helpers.errnoFromException(ioe);
             return null;
         }
+    }
+
+    public static final long WSTOPPED = WaitFlags.WSTOPPED.intValue();
+
+    // Only confirmed on Darwin
+    public static final long WCOREFLAG = 0xc8;
+
+    public static long WSTATUS(long status) {
+        // FIXME: we need logic from more platforms here
+        switch (Platform.OS) {
+            case DARWIN: // confirmed
+            case LINUX: // confirmed
+            default: // fingers crossed?
+                return status & WSTOPPED;
+        }
+    }
+
+    public static boolean WIFEXITED(long status) {
+        return WSTATUS(status) == 0;
+    }
+
+    public static boolean WIFSIGNALED(long status) {
+        return WSTATUS(status) != WSTOPPED && WSTATUS(status) != 0;
+    }
+
+    public static long WTERMSIG(long status) {
+        return WSTATUS(status);
+    }
+
+    public static long WEXITSTATUS(long status) {
+        // not confirmed on all platforms
+        return (status >>> 8) & 0xFF;
+    }
+
+    public static long WSTOPSIG(long status) {
+        return status >>> 8;
+    }
+
+    public static boolean WIFSTOPPED(long status) {
+        return WSTATUS(status) == WSTOPPED && WSTOPSIG(status) != 0x13;
+    }
+
+    public static boolean WCOREDUMP(long status) {
+        return (status & WCOREFLAG) != 0;
     }
 
     public int setCloexec(int fd, boolean cloexec) {
