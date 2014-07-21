@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.frame.*;
+import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 /**
  * Represents the Ruby {@code Binding} class.
@@ -35,6 +36,11 @@ public class RubyBinding extends RubyObject {
 
     public MaterializedFrame getFrame() {
         return frame;
+    }
+
+    @Override
+    public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
+        getRubyClass().getContext().getObjectSpaceManager().visitFrame(frame, visitor);
     }
 
 }

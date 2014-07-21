@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 /**
  * Represents the Ruby {@code MatchData} class.
@@ -37,6 +38,13 @@ public class RubyMatchData extends RubyObject {
 
     public Object[] getValues() {
         return values;
+    }
+
+    @Override
+    public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
+        for (Object object : values) {
+            getRubyClass().getContext().getCoreLibrary().box(object).visitObjectGraph(visitor);
+        }
     }
 
 }

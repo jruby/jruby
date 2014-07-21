@@ -44,6 +44,7 @@ public class RubyContext {
     public static final boolean PRINT_RUNTIME = Options.TRUFFLE_PRINT_RUNTIME.load();
     public static final int GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD = Options.TRUFFLE_GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD.load();
     public static final boolean TRACE = Options.TRUFFLE_TRACE.load();
+    public static final boolean OBJECTSPACE = Options.TRUFFLE_OBJECTSPACE.load();
     public static final boolean EXCEPTIONS_PRINT_JAVA = Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load();
     public static final boolean LITERALS_INT = Options.TRUFFLE_LITERALS_INT.load();
     public static final int ARRAYS_UNINITIALIZED_SIZE = Options.TRUFFLE_ARRAYS_UNINITIALIZED_SIZE.load();

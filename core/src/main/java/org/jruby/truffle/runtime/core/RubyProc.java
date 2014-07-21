@@ -21,6 +21,7 @@ import org.jruby.truffle.nodes.methods.arguments.BehaveAsBlockNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.methods.*;
+import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 /**
  * Represents the Ruby {@code Proc} class.
@@ -124,6 +125,11 @@ public class RubyProc extends RubyObject {
 
     public RubyProc getBlockCapturedInScope() {
         return block;
+    }
+
+    @Override
+    public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
+        getRubyClass().getContext().getObjectSpaceManager().visitFrame(declarationFrame, visitor);
     }
 
 }

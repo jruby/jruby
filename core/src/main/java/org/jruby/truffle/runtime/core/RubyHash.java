@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import java.util.*;
 
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 /**
  * Represents the Ruby {@code Hash} class.
@@ -81,6 +82,30 @@ public class RubyHash extends RubyObject {
     public void setStoreSize(int storeSize) {
         assert storeSize <= RubyContext.HASHES_SMALL;
         this.storeSize = storeSize;
+    }
+
+    public Map<Object, Object> slowToMap() {
+        if (store instanceof Object[]) {
+            final Map<Object, Object> map = new HashMap<>();
+
+            for (int n = 0; n < storeSize; n++) {
+                map.put(((Object[]) store)[n * 2], ((Object[]) store)[n * 2 + 1]);
+            }
+
+            return map;
+        } else if (store instanceof LinkedHashMap) {
+            return (LinkedHashMap<Object, Object>) store;
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    @Override
+    public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
+        for (Map.Entry<Object, Object> entry : slowToMap().entrySet()) {
+            getRubyClass().getContext().getCoreLibrary().box(entry.getKey()).visitObjectGraph(visitor);
+            getRubyClass().getContext().getCoreLibrary().box(entry.getValue()).visitObjectGraph(visitor);
+        }
     }
 
 }

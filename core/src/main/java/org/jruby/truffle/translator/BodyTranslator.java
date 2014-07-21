@@ -27,6 +27,7 @@ import org.jruby.truffle.nodes.constants.ReadConstantNode;
 import org.jruby.truffle.nodes.constants.WriteConstantNode;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.debug.ObjectSpaceSafepointNode;
 import org.jruby.truffle.nodes.debug.TraceNode;
 import org.jruby.truffle.nodes.globals.CheckMatchVariableTypeNode;
 import org.jruby.truffle.nodes.literal.*;
@@ -1843,7 +1844,11 @@ public class BodyTranslator extends Translator {
         final NotNode conditionCastNot = new NotNode(context, sourceSection, conditionCast);
         final BooleanCastNode conditionCastNotCast = BooleanCastNodeFactory.create(context, sourceSection, conditionCastNot);
 
-        final RubyNode body = node.getBodyNode().accept(this);
+        RubyNode body = node.getBodyNode().accept(this);
+
+        if (RubyContext.OBJECTSPACE) {
+            body = new ObjectSpaceSafepointNode(context, sourceSection, body);
+        }
 
         if (node.evaluateAtStart()) {
             return new WhileNode(context, sourceSection, conditionCastNotCast, body);
@@ -1875,7 +1880,11 @@ public class BodyTranslator extends Translator {
 
         final BooleanCastNode conditionCast = BooleanCastNodeFactory.create(context, sourceSection, condition);
 
-        final RubyNode body = node.getBodyNode().accept(this);
+        RubyNode body = node.getBodyNode().accept(this);
+
+        if (RubyContext.OBJECTSPACE) {
+            body = new ObjectSpaceSafepointNode(context, sourceSection, body);
+        }
 
         if (node.evaluateAtStart()) {
             return new WhileNode(context, sourceSection, conditionCast, body);

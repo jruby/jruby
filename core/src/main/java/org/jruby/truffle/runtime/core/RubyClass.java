@@ -11,7 +11,6 @@ package org.jruby.truffle.runtime.core;
 
 import java.util.*;
 
-import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.*;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;

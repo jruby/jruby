@@ -667,4 +667,5 @@ public class CoreLibrary {
     public ArrayNodes.MaxBlock getArrayMaxBlock() {
         return arrayMaxBlock;
     }
+
 }
