@@ -1,12 +1,11 @@
 package org.jruby.ir.runtime;
 
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
-
 import org.jruby.exceptions.Unrescuable;
-import org.jruby.ir.IRScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 
 public class IRBreakJump extends RuntimeException implements Unrescuable {
     public DynamicScope scopeToReturnTo;

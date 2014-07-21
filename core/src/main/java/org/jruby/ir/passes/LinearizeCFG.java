@@ -1,8 +1,9 @@
 package org.jruby.ir.passes;
 
+import org.jruby.ir.IRScope;
+
 import java.util.Arrays;
 import java.util.List;
-import org.jruby.ir.IRScope;
 
 public class LinearizeCFG extends CompilerPass {
     public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);

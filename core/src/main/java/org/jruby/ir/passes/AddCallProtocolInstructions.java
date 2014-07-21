@@ -1,31 +1,18 @@
 package org.jruby.ir.passes;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.ListIterator;
-
-import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRMethod;
-import org.jruby.ir.IRMetaClassBody;
-import org.jruby.ir.IRModuleBody;
-import org.jruby.ir.IRScope;
-import org.jruby.ir.instructions.BreakInstr;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.PopBindingInstr;
-import org.jruby.ir.instructions.PopFrameInstr;
-import org.jruby.ir.instructions.PushBindingInstr;
-import org.jruby.ir.instructions.PushFrameInstr;
-import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
-import org.jruby.ir.instructions.ReturnBase;
-import org.jruby.ir.instructions.ThrowExceptionInstr;
+import org.jruby.ir.*;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
+import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.ListIterator;
 
 public class AddCallProtocolInstructions extends CompilerPass {
     boolean addedInstrs = false;

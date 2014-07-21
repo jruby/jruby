@@ -1,21 +1,21 @@
 package org.jruby.ir;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.jruby.RubyModule;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.operands.IRException;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.representations.CFG;
+import org.jruby.ir.runtime.IRBreakJump;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+
+import java.util.ArrayList;
+import java.util.List;
 
 // FIXME: I made this IRModule because any methods placed in top-level script goes
 // into something which an IRScript is basically a module that is special in that
@@ -108,9 +108,9 @@ public class IRScriptBody extends IRScope {
             context.preMethodScopeOnly(currModule, scope);
             context.setCurrentVisibility(Visibility.PRIVATE);
 
-            Interpreter.runBeginEndBlocks(getBeginBlocks(), context, self, null);
+            Interpreter.runBeginEndBlocks(getBeginBlocks(), context, self, scope, null);
             retVal = Interpreter.INTERPRET_ROOT(context, self, this, currModule, name);
-            Interpreter.runBeginEndBlocks(getEndBlocks(), context, self, null);
+            Interpreter.runBeginEndBlocks(getEndBlocks(), context, self, scope, null);
 
             Interpreter.dumpStats();
         } catch (IRBreakJump bj) {

@@ -1,7 +1,7 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
-
+import org.jruby.RubyMatchData;
+import org.jruby.RubyRegexp;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
@@ -9,11 +9,12 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.RubyMatchData;
-import org.jruby.RubyRegexp;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 public class SetCapturedVarInstr extends Instr implements ResultInstr, FixedArityInstr {
     private Variable result;
@@ -62,8 +63,8 @@ public class SetCapturedVarInstr extends Instr implements ResultInstr, FixedArit
 
     @Interp
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        IRubyObject matchRes = (IRubyObject)match2Result.retrieve(context, self, currDynScope, temp);
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        IRubyObject matchRes = (IRubyObject)match2Result.retrieve(context, self, currScope, currDynScope, temp);
         Object val;
         if (matchRes.isNil()) {
             val = context.nil;

@@ -28,8 +28,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ir.listeners;
 
-import java.util.List;
 import org.jruby.ir.instructions.Instr;
+
+import java.util.List;
 
 public interface InstructionsListener {
     public enum OperationType {

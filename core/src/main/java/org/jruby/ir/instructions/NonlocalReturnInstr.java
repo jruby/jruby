@@ -1,10 +1,6 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.ir.IRFlags;
-import org.jruby.ir.IRMethod;
-import org.jruby.ir.IRScope;
-import org.jruby.ir.IRVisitor;
-import org.jruby.ir.Operation;
+import org.jruby.ir.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;

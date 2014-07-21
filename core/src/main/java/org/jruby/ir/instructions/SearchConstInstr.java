@@ -5,6 +5,7 @@ import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
@@ -15,8 +16,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.Invalidator;
 
 import java.util.Map;
-
-import org.jruby.ir.operands.StringLiteral;
 
 // Const search:
 // - looks up lexical scopes
@@ -74,11 +73,11 @@ public class SearchConstInstr extends Instr implements ResultInstr, FixedArityIn
         return super.toString() + "(" + constName + ", " + startingScope + ", no-private-consts=" + noPrivateConsts + ")";
     }
 
-    public Object cache(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+    public Object cache(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // Lexical lookup
         Ruby runtime = context.getRuntime();
         RubyModule object = runtime.getObject();
-        StaticScope staticScope = (StaticScope) startingScope.retrieve(context, self, currDynScope, temp);
+        StaticScope staticScope = (StaticScope) startingScope.retrieve(context, self, currScope, currDynScope, temp);
         Object constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
 
         // Inheritance lookup
@@ -110,9 +109,9 @@ public class SearchConstInstr extends Instr implements ResultInstr, FixedArityIn
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Object constant = cachedConstant; // Store to temp so it does null out on us mid-stream
-        if (!isCached(context, constant)) constant = cache(context, currDynScope, self, temp);
+        if (!isCached(context, constant)) constant = cache(context, currScope, currDynScope, self, temp);
 
         return constant;
     }

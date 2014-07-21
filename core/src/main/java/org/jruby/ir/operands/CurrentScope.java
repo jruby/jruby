@@ -1,13 +1,14 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
-
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.List;
 
 public class CurrentScope extends Operand {
     private final IRScope scope;
@@ -47,7 +48,7 @@ public class CurrentScope extends Operand {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         return scope.getStaticScope();
     }
 

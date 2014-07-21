@@ -1,16 +1,16 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubyHash;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.operands.Variable;
 import org.jruby.ir.Operation;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.RubyHash;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedArityInstr {
     public final int required;

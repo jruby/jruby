@@ -1,16 +1,17 @@
 package org.jruby.ir.operands;
 
-import java.nio.charset.UnsupportedCharsetException;
 import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.List;
-import org.jruby.runtime.Helpers;
 
 /**
  * Represents a literal string value.
@@ -80,7 +81,7 @@ public class StringLiteral extends Operand {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         // SSS FIXME: AST interpreter passes in a coderange argument.
         return RubyString.newStringShared(context.runtime, bytelist);
     }

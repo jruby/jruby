@@ -1,11 +1,11 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 
 import java.util.Map;
-import org.jruby.ir.operands.Fixnum;
 
 // These instructions show up in three contexts:
 // - To assign args in parenthesized units: |.., (a,b,c), .. |

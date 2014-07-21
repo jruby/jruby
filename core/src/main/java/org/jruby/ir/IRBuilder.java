@@ -7,9 +7,9 @@ import org.jruby.ast.*;
 import org.jruby.ast.types.INameNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.instructions.*;
-import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
+import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
@@ -20,14 +20,15 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
-import org.jruby.util.*;
+import org.jruby.util.ByteList;
+import org.jruby.util.KeyValuePair;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
 
-import org.jruby.ir.listeners.IRScopeListener;
+import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
 // This class converts an AST into a bunch of IR instructions
 

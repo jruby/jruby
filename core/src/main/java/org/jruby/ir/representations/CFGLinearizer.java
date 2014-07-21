@@ -1,13 +1,15 @@
 package org.jruby.ir.representations;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Iterator;
-import java.util.List;
 import org.jruby.ir.instructions.BranchInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.ReturnInstr;
+
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Iterator;
+import java.util.List;
+
 import static org.jruby.ir.representations.CFG.EdgeType.*;
 
 /**

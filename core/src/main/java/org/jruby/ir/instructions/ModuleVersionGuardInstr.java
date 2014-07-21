@@ -3,16 +3,17 @@ package org.jruby.ir.instructions;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.StringLiteral;
 
 /**
  * This instruction will be generated whenever speculative optimizations are performed
@@ -77,8 +78,8 @@ public class ModuleVersionGuardInstr extends Instr implements FixedArityInstr {
         return new ModuleVersionGuardInstr(module, expectedVersion, candidateObj.cloneForInlining(ii), ii.getRenamedLabel(failurePathLabel));
     }
 
-    private boolean versionMatches(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        IRubyObject receiver = (IRubyObject) candidateObj.retrieve(context, self, currDynScope, temp);
+    private boolean versionMatches(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        IRubyObject receiver = (IRubyObject) candidateObj.retrieve(context, self, currScope, currDynScope, temp);
         // if (module.getGeneration() != expectedVersion) ... replace this instr with a direct jump
         //
         // SSS FIXME: This is not always correct.  Implementation class is not always receiver.getMetaClass()
@@ -88,8 +89,8 @@ public class ModuleVersionGuardInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public int interpretAndGetNewIPC(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, int ipc) {
-        return versionMatches(context, currDynScope, self, temp) ? ipc : getFailurePathLabel().getTargetPC();
+    public int interpretAndGetNewIPC(ThreadContext context, DynamicScope currDynScope, StaticScope currScope, IRubyObject self, Object[] temp, int ipc) {
+        return versionMatches(context, currScope, currDynScope, self, temp) ? ipc : getFailurePathLabel().getTargetPC();
     }
 
     @Override

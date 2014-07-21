@@ -8,17 +8,12 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
 import org.jruby.ir.instructions.StoreLocalVarInstr;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
-import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.ClosureLocalVariable;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.TemporaryLocalVariable;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 
-import java.util.ListIterator;
 import java.util.HashSet;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 

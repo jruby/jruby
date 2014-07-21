@@ -1,13 +1,13 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyClass;
-import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ivars.VariableAccessor;
 
 public class GetFieldInstr extends GetInstr implements FixedArityInstr {
     private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;

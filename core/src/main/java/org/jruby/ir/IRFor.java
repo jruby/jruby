@@ -1,6 +1,5 @@
 package org.jruby.ir;
 
-import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.StaticScope;

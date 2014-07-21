@@ -4,9 +4,6 @@
  */
 package org.jruby.ir;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
 import org.jruby.Ruby;
 import org.jruby.ast.executable.AbstractScript;
 import org.jruby.ast.executable.Script;
@@ -18,6 +15,9 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyClassLoader;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
 

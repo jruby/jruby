@@ -4,16 +4,17 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
-import org.jruby.ir.operands.UnboxedBoolean;
 
 public class YieldInstr extends Instr implements ResultInstr, FixedArityInstr {
     public final boolean unwrapArray;
@@ -84,12 +85,12 @@ public class YieldInstr extends Instr implements ResultInstr, FixedArityInstr {
 
     @Interp
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Object blk = blockArg.retrieve(context, self, currDynScope, temp);
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        Object blk = blockArg.retrieve(context, self, currScope, currDynScope, temp);
         if (yieldArg == UndefinedValue.UNDEFINED) {
             return IRRuntimeHelpers.yieldSpecific(context, blk);
         } else {
-            IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(context, self, currDynScope, temp);
+            IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(context, self, currScope, currDynScope, temp);
             return IRRuntimeHelpers.yield(context, blk, yieldVal, unwrapArray);
         }
     }

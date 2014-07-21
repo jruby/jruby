@@ -1,8 +1,7 @@
 package org.jruby.ir;
 
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
+import org.jruby.parser.StaticScope;
 
 public class IRModuleBody extends IRScope {
     private CodeVersion version;    // Current code version for this module

@@ -3,10 +3,11 @@ package org.jruby.ir.instructions;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -73,11 +74,11 @@ public class BacktickInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         RubyString newString = context.runtime.newString();
 
         for (Operand p: pieces) {
-            RubyBasicObject piece = (RubyBasicObject) p.retrieve(context, self, currDynScope, temp);
+            RubyBasicObject piece = (RubyBasicObject) p.retrieve(context, self, currScope, currDynScope, temp);
             newString.append((piece instanceof RubyString) ? (RubyString) piece : piece.to_s());
         }
 

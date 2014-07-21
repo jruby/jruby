@@ -2,6 +2,7 @@ package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -94,11 +95,11 @@ public class Array extends Operand {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         IRubyObject[] elements = new IRubyObject[elts.length];
 
         for (int i = 0; i < elements.length; i++) {
-            elements[i] = (IRubyObject) elts[i].retrieve(context, self, currDynScope, temp);
+            elements[i] = (IRubyObject) elts[i].retrieve(context, self, currScope, currDynScope, temp);
         }
 
         return context.runtime.newArray(elements);

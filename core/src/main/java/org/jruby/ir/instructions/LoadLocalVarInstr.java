@@ -1,15 +1,12 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.ScopeModule;
-import org.jruby.ir.operands.TemporaryLocalVariable;
-import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.*;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -65,8 +62,8 @@ public class LoadLocalVarInstr extends Instr implements ResultInstr, FixedArityI
 
     @Interp
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        return lvar.retrieve(context, self, currDynScope, temp);
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        return lvar.retrieve(context, self, currScope, currDynScope, temp);
     }
 
     @Override

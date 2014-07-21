@@ -1,14 +1,9 @@
 package org.jruby.ir.dataflow;
 
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
 import org.jruby.ir.IRScope;
 import org.jruby.ir.representations.BasicBlock;
+
+import java.util.*;
 
 public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends FlowGraphNode<T, U>> {
 /* -------------- Public fields and methods below ---------------- */

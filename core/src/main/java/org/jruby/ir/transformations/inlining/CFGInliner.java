@@ -1,28 +1,18 @@
 package org.jruby.ir.transformations.inlining;
 
-import java.util.List;
-import java.util.ArrayList;
-
 import org.jruby.RubyModule;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Tuple;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.CallBase;
-import org.jruby.ir.instructions.JumpInstr;
-import org.jruby.ir.instructions.ModuleVersionGuardInstr;
-import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.YieldInstr;
-import org.jruby.ir.operands.Array;
-import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Splat;
-import org.jruby.ir.operands.Variable;
-import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.instructions.*;
+import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFG.EdgeType;
 import org.jruby.ir.util.Edge;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CFGInliner {
     private final CFG cfg;

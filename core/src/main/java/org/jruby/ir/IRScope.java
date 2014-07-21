@@ -1,47 +1,17 @@
 package org.jruby.ir;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
-
 import org.jruby.RubyModule;
 import org.jruby.ir.dataflow.DataFlowProblem;
-import org.jruby.ir.instructions.CallBase;
-import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.ReceiveSelfInstr;
-import org.jruby.ir.instructions.ResultInstr;
-import org.jruby.ir.instructions.Specializeable;
-import org.jruby.ir.instructions.ThreadPollInstr;
-import org.jruby.ir.operands.UnboxedBoolean;
-import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.instructions.*;
+import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Self;
-import org.jruby.ir.operands.TemporaryCurrentModuleVariable;
-import org.jruby.ir.operands.TemporaryCurrentScopeVariable;
-import org.jruby.ir.operands.TemporaryBooleanVariable;
-import org.jruby.ir.operands.TemporaryFixnumVariable;
-import org.jruby.ir.operands.TemporaryFloatVariable;
-import org.jruby.ir.operands.TemporaryLocalReplacementVariable;
-import org.jruby.ir.operands.TemporaryLocalVariable;
-import org.jruby.ir.operands.TemporaryVariableType;
-import org.jruby.ir.operands.Variable;
 import org.jruby.ir.passes.AddLocalVarLoadStoreInstructions;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassScheduler;
-import org.jruby.ir.passes.DeadCodeElimination;
-import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.passes.UnboxingPass;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
@@ -49,6 +19,9 @@ import org.jruby.ir.transformations.inlining.CFGInliner;
 import org.jruby.parser.StaticScope;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.jruby.ir.IRFlags.*;
 

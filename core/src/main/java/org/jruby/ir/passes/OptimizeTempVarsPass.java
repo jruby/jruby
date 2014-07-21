@@ -1,20 +1,13 @@
 package org.jruby.ir.passes;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.instructions.CallInstr;
-import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.ResultInstr;
-import org.jruby.ir.instructions.ReturnInstr;
+import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
+
+import java.util.*;
 
 public class OptimizeTempVarsPass extends CompilerPass {
     boolean optimizedTempVars = false;

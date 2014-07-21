@@ -8,6 +8,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -45,16 +46,16 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
     }
 
     @Override
-    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] arguments, DynamicScope dynamicScope, Object[] temp) {
+    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] arguments, StaticScope currScope, DynamicScope dynamicScope, Object[] temp) {
         // Unlike calls, zsuper args are known only at interpret time, not at constructor time.
         // So, we cannot use the cached containsArgSplat field from CallBase
         return containsArgSplat(arguments) ?
-                prepareArgumentsComplex(context, self, arguments, dynamicScope, temp) :
-                prepareArgumentsSimple(context, self, arguments, dynamicScope, temp);
+                prepareArgumentsComplex(context, self, arguments, currScope, dynamicScope, temp) :
+                prepareArgumentsSimple(context, self, arguments, currScope, dynamicScope, temp);
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         DynamicScope argsDynScope = currDynScope;
 
         // Find args that need to be passed into super
@@ -72,10 +73,10 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
         }
 
         // Prepare args -- but look up in 'argsDynScope', not 'currDynScope'
-        IRubyObject[] args = prepareArguments(context, self, superArgs, argsDynScope, temp);
+        IRubyObject[] args = prepareArguments(context, self, superArgs, currScope, argsDynScope, temp);
 
         // Prepare block -- fetching from the frame stack, if necessary
-        Block block = prepareBlock(context, self, currDynScope, temp);
+        Block block = prepareBlock(context, self, currScope, currDynScope, temp);
         if (block == null || !block.isGiven()) block = context.getFrameBlock();
 
         return IRRuntimeHelpers.unresolvedSuper(context, self, args, block);

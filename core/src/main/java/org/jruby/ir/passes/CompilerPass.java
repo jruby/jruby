@@ -1,11 +1,11 @@
 package org.jruby.ir.passes;
 
+import org.jruby.ir.IRScope;
+import org.jruby.util.log.LoggerFactory;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.jruby.ir.IRScope;
-import org.jruby.util.log.LoggerFactory;
 
 /**
  * A mechanism for executing code against an IRScope or transforming the

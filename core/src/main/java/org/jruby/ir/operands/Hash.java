@@ -4,6 +4,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -74,15 +75,15 @@ public class Hash extends Operand {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope,
-            Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope,
+                           Object[] temp) {
         Ruby runtime = context.runtime;
         RubyHash hash = RubyHash.newHash(runtime);
 
         for (KeyValuePair<Operand, Operand> pair : pairs) {
-            IRubyObject key = (IRubyObject) pair.getKey().retrieve(context, self, currDynScope,
+            IRubyObject key = (IRubyObject) pair.getKey().retrieve(context, self, currScope, currDynScope,
                     temp);
-            IRubyObject value = (IRubyObject) pair.getValue().retrieve(context, self, currDynScope,
+            IRubyObject value = (IRubyObject) pair.getValue().retrieve(context, self, currScope, currDynScope,
                     temp);
 
             hash.fastASetCheckString(runtime, key, value);

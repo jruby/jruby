@@ -1,12 +1,13 @@
 package org.jruby.ir.dataflow.analyses;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.dataflow.DataFlowConstants;
+import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
+
+import java.util.HashMap;
+import java.util.Map;
 
 // This problem tries to find unboxable (currently, Float and Fixnum) operands
 // by inferring types and optimistically assuming that Float and Fixnum numeric

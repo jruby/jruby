@@ -1,41 +1,19 @@
 package org.jruby.ir.dataflow.analyses;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.Operation;
 import org.jruby.ir.dataflow.DataFlowConstants;
 import org.jruby.ir.dataflow.FlowGraphNode;
-import org.jruby.ir.instructions.BreakInstr;
-import org.jruby.ir.instructions.BFalseInstr;
-import org.jruby.ir.instructions.BTrueInstr;
-import org.jruby.ir.instructions.CallBase;
-import org.jruby.ir.instructions.ClosureAcceptingInstr;
-import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.OneOperandBranchInstr;
-import org.jruby.ir.instructions.ReturnInstr;
-import org.jruby.ir.instructions.ResultInstr;
-import org.jruby.ir.instructions.boxing.AluInstr;
-import org.jruby.ir.instructions.boxing.BoxBooleanInstr;
-import org.jruby.ir.instructions.boxing.BoxFixnumInstr;
-import org.jruby.ir.instructions.boxing.BoxFloatInstr;
-import org.jruby.ir.instructions.boxing.UnboxBooleanInstr;
-import org.jruby.ir.instructions.boxing.UnboxFixnumInstr;
-import org.jruby.ir.instructions.boxing.UnboxFloatInstr;
+import org.jruby.ir.instructions.*;
+import org.jruby.ir.instructions.boxing.*;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
-import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.BasicBlock;
+import org.jruby.ir.representations.CFG;
 import org.jruby.ir.util.Edge;
+
+import java.util.*;
 
 public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysisProblem, UnboxableOpsAnalysisNode> {
     private class UnboxState {

@@ -1,9 +1,10 @@
 package org.jruby.ir.representations;
 
-import java.util.List;
-import java.util.ArrayList;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 // This class is currently only used during CFG building and is hence made private.
 // A scope's CFG exception regions are currently not exposed anywhere after the CFG is built.

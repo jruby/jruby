@@ -4,21 +4,17 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
-import org.jruby.ir.IRVisitor;
-import org.jruby.ir.IRMethod;
-import org.jruby.ir.IRScope;
-import org.jruby.ir.IRFlags;
-import org.jruby.ir.Operation;
+import org.jruby.ir.*;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import org.jruby.ir.operands.ScopeModule;
 
 public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr {
     private final IRMethod method;
@@ -57,7 +53,7 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
 
     // SSS FIXME: Go through this and DefineClassMethodInstr.interpret, clean up, extract common code
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Ruby runtime = context.runtime;
         RubyModule clazz = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
 

@@ -1,16 +1,16 @@
 package org.jruby.ir;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReceiveArgBase;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
-import org.jruby.ir.operands.Variable;
-import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
+import org.jruby.parser.StaticScope;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;

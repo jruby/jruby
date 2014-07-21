@@ -1,12 +1,6 @@
 package org.jruby.ir.util;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Meant to be single-threaded.  More work on whole impl if not.
