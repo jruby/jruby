@@ -376,7 +376,15 @@ public class RubyModule extends RubyObject {
     public void setParent(RubyModule parent) {
         this.parent = parent;
     }
-    
+
+    public RubyModule getMethodLocation() {
+        return methodLocation;
+    }
+
+    public void setMethodLocation(RubyModule module){
+        methodLocation = module;
+    }
+
     public Map<String, DynamicMethod> getMethods() {
         return this.methods;
     }
@@ -2580,27 +2588,34 @@ public class RubyModule extends RubyObject {
      * @return The new module wrapper resulting from this prepend
      */
     private RubyModule proceedWithPrepend(RubyModule insertBelow, RubyModule moduleToPrepend) {
-        // In the current logic, if we getService here we know that module is not an
-        // IncludedModule, so there's no need to fish out the delegate. But just
-        // in case the logic should change later, let's do it anyway
-        RubyClass prep = new PrependedModule(getRuntime(), insertBelow.getSuperClass(), insertBelow);
 
-        // if the insertion point is a class, update subclass lists
-        if (insertBelow instanceof RubyClass) {
-            RubyClass insertBelowClass = (RubyClass)insertBelow;
+        RubyClass insertBelowSuperClass = null;
+        if (insertBelow.methodLocation == insertBelow) {
+            // In the current logic, if we getService here we know that module is not an
+            // IncludedModule, so there's no need to fish out the delegate. But just
+            // in case the logic should change later, let's do it anyway
+            RubyClass prep = new PrependedModule(getRuntime(), insertBelow.getSuperClass(), insertBelow);
 
-            // if there's a non-null superclass, we're including into a normal class hierarchy;
-            // update subclass relationships to avoid stale parent/child relationships
-            if (insertBelowClass.getSuperClass() != null) {
-                insertBelowClass.getSuperClass().replaceSubclass(insertBelowClass, prep);
+            // if the insertion point is a class, update subclass lists
+            if (insertBelow instanceof RubyClass) {
+                RubyClass insertBelowClass = (RubyClass)insertBelow;
+
+                // if there's a non-null superclass, we're including into a normal class hierarchy;
+                // update subclass relationships to avoid stale parent/child relationships
+                if (insertBelowClass.getSuperClass() != null) {
+                    insertBelowClass.getSuperClass().replaceSubclass(insertBelowClass, prep);
+                }
+
+                prep.addSubclass(insertBelowClass);
             }
-
-            prep.addSubclass(insertBelowClass);
+            insertBelowSuperClass = prep;
+        } else {
+            insertBelowSuperClass = insertBelow.getSuperClass();
         }
         insertBelow = proceedWithInclude(insertBelow, moduleToPrepend);
 
-        insertBelow.setSuperClass(prep);
-        return prep;
+        insertBelow.setSuperClass(insertBelowSuperClass);
+        return insertBelowSuperClass;
     }
 
 

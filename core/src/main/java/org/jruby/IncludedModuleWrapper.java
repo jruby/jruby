@@ -93,6 +93,16 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
+    public RubyModule getMethodLocation() {
+        return origin.getMethodLocation();
+    }
+
+    @Override
+    public RubyModule getNonIncludedClass() {
+        return origin;
+    }
+
+    @Override
     protected synchronized Map<String, IRubyObject> getClassVariables() {
         return origin.getClassVariables();
     }
