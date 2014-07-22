@@ -14,29 +14,9 @@ os:
 env:
   matrix:
     - TARGET='-Ptest'
-    - TARGET='-Prake -Dtask=test:rubicon'
-    - TARGET='-Prake -Dtask=test:jruby'
-    - TARGET='-Prake -Dtask=test:mri'
-    - TARGET='-Prake -Dtask=test:slow_suites'
-    - TARGET='-Prake -Dtask=test:tracing'
-    - TARGET='-Prake -Dtask=spec:ji'
-    - TARGET='-Prake -Dtask=spec:compiler'
-    - TARGET='-Prake -Dtask=spec:ffi'
-    - TARGET='-Prake -Dtask=spec:regression'
-    - TARGET='-Prake -Dtask=spec:ci_interpreted_travis'
     - TARGET='-Ptruffle'
 
 matrix:
-  include:
-    # these profile do no need to run for all JDKs
-    - env: TARGET='-Pdist'
-      jdk: oraclejdk8
-    - env: TARGET='-Pjruby-jars'
-      jdk: oraclejdk7
-    - env: TARGET='-Pmain'
-      jdk: oraclejdk7
-    - env: TARGET='-Pcomplete'
-      jdk: oraclejdk8
   fast_finish: true
 
 branches:
@@ -50,7 +30,7 @@ before_install:
 
 # the install stores the artifact in the localrepo for 
 # the second maven run with $TARGET
-script: ( mvn install -Pbootstrap | grep -v Down ) && mvn -Dinvoker.skip=false $TARGET
+script: mvn install $TARGET -Dinvoker.skip=false | grep -v Down; [ ${PIPESTATUS[0]} == 0 ]
 install: /bin/true
 notifications:
   irc:
