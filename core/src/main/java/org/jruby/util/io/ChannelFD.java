@@ -132,7 +132,6 @@ public class ChannelFD implements Closeable {
         if (ch instanceof SeekableByteChannel) chSeek = (SeekableByteChannel)ch;
         else chSeek = null;
         if (ch instanceof SelectableChannel) chSelect = (SelectableChannel)ch;
-//        else if (realFileno != -1) chSelect = new NativeDeviceChannel(realFileno);
         else chSelect = null;
         if (ch instanceof FileChannel) chFile = (FileChannel)ch;
         else chFile = null;
