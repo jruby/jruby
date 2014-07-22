@@ -133,8 +133,9 @@ public class PopenExecutor {
         if (prog == null)
             prog = argv[0];
         prog = dlnFindExeR(runtime, prog, null);
-        if (prog == null)
-            return -1;
+        if (prog == null) {
+            throw runtime.newErrnoENOENTError(prog);
+        }
 
         status = runtime.getPosix().posix_spawnp(
                 prog,
@@ -183,6 +184,9 @@ public class PopenExecutor {
         long status;
 
         String shell = dlnFindExeR(runtime, "sh", null);
+        if (shell == null) {
+            throw runtime.newErrnoENOENTError("can't find sh");
+        }
         // TODO? Stops some threads and signals
 //        before_exec();
         status = runtime.getPosix().posix_spawnp(shell != null ? shell : "/bin/sh", eargp.fileActions, eargp.attributes, Arrays.asList("sh", "-c", str), Collections.EMPTY_LIST);
@@ -1876,10 +1880,10 @@ public class PopenExecutor {
         }
 
         if (!eargp.use_shell) {
-            RubyString abspath;
-            abspath = runtime.newString(dlnFindExeR(runtime, eargp.command_name.toString(), null));
-            if (abspath == null)
-                eargp.command_abspath = StringSupport.checkEmbeddedNulls(runtime, abspath);
+            String abspath;
+            abspath = dlnFindExeR(runtime, eargp.command_name.toString(), null);
+            if (abspath != null)
+                eargp.command_abspath = StringSupport.checkEmbeddedNulls(runtime, RubyString.newString(runtime, abspath));
             else
                 eargp.command_abspath = null;
         }
@@ -1912,8 +1916,7 @@ public class PopenExecutor {
         if (path != null) throw new RuntimeException("BUG: dln_find_exe_r with path is not supported yet");
         // FIXME: need to reencode path as same
         File exePath = ShellLauncher.findPathExecutable(runtime, fname);
-        // TODO: should we error if executable can't be found?
-        return exePath != null ? exePath.getAbsolutePath() : fname;
+        return exePath != null ? exePath.getAbsolutePath() : null;
     }
 
     private static class ArgvStr {
