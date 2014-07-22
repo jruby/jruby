@@ -134,6 +134,10 @@ class LibrarySearcher {
             return findFileResource(baseName, suffix);
         }
 
+        if (baseName.startsWith("jar:")) {
+            baseName = baseName.substring(4);
+        }
+
         // A hack because apparently test_load tests expect to be able to load file:foo.jar even if
         // '.' is not in $LOAD_PATH. *sigh*
         // This probably shouldn't survive into real release.
