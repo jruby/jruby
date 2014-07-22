@@ -15,11 +15,12 @@ class TestPathname < Test::Unit::TestCase
     def test_realpath_symlink
       target = Tempfile.new 'target'
       link = Tempfile.new 'link'
+      link.unlink
       File.symlink(target, link)
       assert_equal Pathname.new(target.path).realpath, Pathname.new(link).realpath
     ensure
       target.unlink if target
-      link.unlink if link
+      File.delete(link) if File.exists?(link)
     end
   end
 end
