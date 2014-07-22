@@ -94,6 +94,6 @@ public class POSIXProcess extends Process {
         } catch (InterruptedException ie) {
             throw new IllegalThreadStateException();
         }
-        return status;
+        return status == null ? -1 : status;
     }
 }
