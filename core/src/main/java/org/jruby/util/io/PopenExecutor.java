@@ -1775,7 +1775,7 @@ public class PopenExecutor {
                     pBytes = prog.getByteList().unsafeBytes();
                     p = prog.getByteList().begin();
                     while (p < pBytes.length){
-                        while (pBytes[p] == ' ' || pBytes[p] == '\t')
+                        while (p < pBytes.length && (pBytes[p] == ' ' || pBytes[p] == '\t'))
                             p++;
                         if (p < pBytes.length){
                             int w = p;
