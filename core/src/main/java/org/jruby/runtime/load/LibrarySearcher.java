@@ -1,13 +1,10 @@
 package org.jruby.runtime.load;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.DebugLog;
 import org.jruby.runtime.load.LoadService.SuffixType;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
@@ -28,15 +25,20 @@ class LibrarySearcher {
         protected String resolveLoadName(FileResource unused, String ruby18Path) {
             return ruby18Path;
         }
+
+        @Override
+        protected String resolveScriptName(FileResource unused, String ruby18Path) {
+            return ruby18Path;
+        }
     }
 
     static class FoundLibrary implements Library {
         private final Library delegate;
-        private final String scriptName;
+        private final String loadName;
 
-        public FoundLibrary(Library delegate, String scriptName) {
+        public FoundLibrary(Library delegate, String loadName) {
             this.delegate = delegate;
-            this.scriptName = scriptName;
+            this.loadName = loadName;
         }
 
         @Override
@@ -44,8 +46,8 @@ class LibrarySearcher {
             delegate.load(runtime, wrap);
         }
 
-        public String getScriptName() {
-            return scriptName;
+        public String getLoadName() {
+            return loadName;
         }
     }
 
@@ -64,7 +66,7 @@ class LibrarySearcher {
         FoundLibrary lib = findLibrary(state.searchFile, state.suffixType);
         if (lib != null) {
             state.library = lib;
-            state.loadName = lib.getScriptName();
+            state.loadName = lib.getLoadName();
         }
         return lib;
     }
@@ -172,17 +174,22 @@ class LibrarySearcher {
         FileResource resource = JRubyFile.createResource(runtime, pathWithSuffix);
         if (resource.exists()) {
             DebugLog.Resource.logFound(pathWithSuffix);
-            String scriptName = resolveLoadName(resource, pathWithSuffix);
+            String scriptName = resolveScriptName(resource, pathWithSuffix);
+            String loadName = resolveLoadName(resource, searchName + suffix);
 
             return new FoundLibrary(
                     new ResourceLibrary(searchName, scriptName, resource),
-                    scriptName);
+                    loadName);
         }
 
         return null;
     }
 
     protected String resolveLoadName(FileResource resource, String ruby18path) {
+        return resource.absolutePath();
+    }
+
+    protected String resolveScriptName(FileResource resource, String ruby18Path) {
         return resource.absolutePath();
     }
 
