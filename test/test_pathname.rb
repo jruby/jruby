@@ -1,7 +1,6 @@
 require 'test/unit'
 require 'pathname'
 require 'rbconfig'
-require 'fileutils'
 require 'tempfile'
 
 class TestPathname < Test::Unit::TestCase
@@ -14,13 +13,12 @@ class TestPathname < Test::Unit::TestCase
   unless WINDOWS # Don't have symlinks on Windows.
     def test_realpath_symlink
       target = Tempfile.new 'target'
-      link = Tempfile.new 'link'
-      link.unlink
+      link = Dir::Tmpname.make_tmpname 'link', nil
       File.symlink(target, link)
-      assert_equal Pathname.new(target.path).realpath, Pathname.new(link).realpath
+      assert_equal Pathname.new(target).realpath, Pathname.new(link).realpath
     ensure
-      target.unlink if target
-      File.delete(link) if File.exists?(link)
+      target.close! if target
+      File.delete(link) if link && File.exists?(link)
     end
   end
 end
