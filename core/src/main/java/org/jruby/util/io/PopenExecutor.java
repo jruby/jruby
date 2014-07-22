@@ -139,17 +139,21 @@ public class PopenExecutor {
                 eargp.attributes,
                 Arrays.asList(argv),
                 eargp.envp_str == null ? Collections.EMPTY_LIST : Arrays.asList(eargp.envp_str));
-        if (status == -1 && runtime.getPosix().errno() == Errno.ENOEXEC.intValue()) {
-            String[] newArgv = new String[argv.length + 1];
-            newArgv[1] = prog;
-            newArgv[0] = "sh";
-            status = runtime.getPosix().posix_spawnp(
-                    "/bin/sh",
-                    eargp.fileActions,
-                    eargp.attributes,
-                    Arrays.asList(argv),
-                    eargp.envp_str == null ? Collections.EMPTY_LIST : Arrays.asList(eargp.envp_str));
-            if (status == -1) errno = Errno.ENOEXEC;
+        if (status == -1) {
+            if (runtime.getPosix().errno() == Errno.ENOEXEC.intValue()) {
+                String[] newArgv = new String[argv.length + 1];
+                newArgv[1] = prog;
+                newArgv[0] = "sh";
+                status = runtime.getPosix().posix_spawnp(
+                        "/bin/sh",
+                        eargp.fileActions,
+                        eargp.attributes,
+                        Arrays.asList(argv),
+                        eargp.envp_str == null ? Collections.EMPTY_LIST : Arrays.asList(eargp.envp_str));
+                if (status == -1) errno = Errno.ENOEXEC;
+            } else {
+                errno = Errno.valueOf(runtime.getPosix().errno());
+            }
         }
         return status;
     }
@@ -354,12 +358,18 @@ public class PopenExecutor {
             return procSpawnSh(runtime, eargp, cmd, envp);
         }
 
-        return runtime.getPosix().posix_spawnp(
+        long ret = runtime.getPosix().posix_spawnp(
                 cmd,
                 eargp.fileActions,
                 eargp.attributes,
                 args == null ? Collections.EMPTY_LIST : Arrays.asList(args),
                 envp == null ? Collections.EMPTY_LIST : Arrays.asList(envp));
+
+        if (ret == -1) {
+            errno = Errno.valueOf(runtime.getPosix().errno());
+        }
+
+        return ret;
     }
 
     // MRI: Basically doing sh processing from proc_exec_sh but for non-fork path
@@ -394,12 +404,18 @@ public class PopenExecutor {
 //                    exit(status);
 //            }
 //            #else
-            return runtime.getPosix().posix_spawnp(
+            long ret = runtime.getPosix().posix_spawnp(
                     "/bin/sh",
                     eargp.fileActions,
                     eargp.attributes,
                     Arrays.asList("sh", "-c", str),
                     envp == null ? Collections.EMPTY_LIST : Arrays.asList(envp));
+
+            if (ret == -1) {
+                errno = Errno.valueOf(runtime.getPosix().errno());
+            }
+
+            return ret;
         }
     }
 

@@ -28,9 +28,9 @@ class TestBackquote < Test::Unit::TestCase
   #JRUBY-2251
   def test_empty_backquotes
     if (!WINDOWS)
-      assert_equal("", ``)    # empty
-      assert_equal("", `   `) # spaces
-      assert_equal("", `\n`)
+      assert_raise(Errno::ENOENT) {``}
+      assert_raise(Errno::ENOENT) {`   `}
+      assert_raise(Errno::ENOENT) {`\n`}
     else # we just check that empty backquotes won't blow up JRuby
       ``    rescue nil
       `   ` rescue nil
