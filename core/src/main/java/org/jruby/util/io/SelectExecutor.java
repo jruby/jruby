@@ -129,7 +129,7 @@ public class SelectExecutor {
 
         n = threadFdSelect(context);
 
-        if (pending == 0 && n == 0) return context.nil; /* returns nil on timeout */
+        if (pending == 0 && n == 0 && fds[4] == null && fds[5] == null) return context.nil; /* returns nil on timeout */
 
         res = RubyArray.newArray(runtime, 3);
         res.push(runtime.newArray());
@@ -147,6 +147,17 @@ public class SelectExecutor {
                 }
             }
         }
+        if (fds[4] != null) {
+            list = (RubyArray)res.eltOk(0);
+            for (i=0; i< readAry.size(); i++) {
+                IRubyObject obj = readAry.eltOk(i);
+                RubyIO io = TypeConverter.ioGetIO(runtime, obj);
+                fptr = io.getOpenFileChecked();
+                if (fds[4].contains(fptr.fd())) {
+                    list.push(obj);
+                }
+            }
+        }
 
         if (writeKeys != null) {
             list = (RubyArray)res.eltOk(1);
@@ -156,6 +167,17 @@ public class SelectExecutor {
                 RubyIO write_io = io.GetWriteIO();
                 fptr = write_io.getOpenFileChecked();
                 if (fdIsSet(fds, 1, fptr.fd())) {
+                    list.push(obj);
+                }
+            }
+        }
+        if (fds[5] != null) {
+            list = (RubyArray)res.eltOk(1);
+            for (i=0; i< writeAry.size(); i++) {
+                IRubyObject obj = writeAry.eltOk(i);
+                RubyIO io = TypeConverter.ioGetIO(runtime, obj);
+                fptr = io.getOpenFileChecked();
+                if (fds[5].contains(fptr.fd())) {
                     list.push(obj);
                 }
             }
@@ -189,6 +211,11 @@ public class SelectExecutor {
     }
 
     private void fdSetRead(ThreadContext context, List[] fds, int offset, ChannelFD fd) throws IOException {
+        if (fd.chFile != null || fd.isNativeFile) {
+            // files are not selectable, but we treat them as ready
+            if (fds[4] == null) fds[4] = new ArrayList(1);
+            fds[4].add(fd);
+        }
         SelectionKey key = trySelectRead(context, fd, fd);
         if (key == null) return;
         if (fds[offset] == null) fds[offset] = new ArrayList(1);
@@ -196,6 +223,11 @@ public class SelectExecutor {
     }
 
     private void fdSetWrite(ThreadContext context, List[] fds, int offset, ChannelFD fd) throws IOException {
+        if (fd.chFile != null || fd.isNativeFile) {
+            // files are not selectable, but we treat them as ready
+            if (fds[5] == null) fds[5] = new ArrayList(1);
+            fds[5].add(fd);
+        }
         SelectionKey key = trySelectWrite(context, fd, fd);
         if (key == null) return;
         if (fds[offset] == null) fds[offset] = new ArrayList(1);
@@ -206,7 +238,6 @@ public class SelectExecutor {
         if ((List<SelectionKey>)fds[offset] == null) return false;
 
         for (Object obj : fds[offset]) {
-            if (obj == fd) return true; // not selectable, treat as always selected
             SelectionKey key = (SelectionKey)obj;
             if (key.isValid() && key.readyOps() != 0 && key.attachment() == fd) return true;
         }
@@ -235,21 +266,12 @@ public class SelectExecutor {
     }
 
     private SelectionKey trySelectRead(ThreadContext context, Object attachment, ChannelFD fd) throws IOException {
+        SelectionKey key = null;
         if (fd.chSelect != null) {
-            return registerSelect(getSelector(context, fd.chSelect), attachment, fd.chSelect, READ_ACCEPT_OPS);
+            Selector selector = getSelector(context, fd.chSelect);
+            key = registerSelect(selector, attachment, fd.chSelect, READ_ACCEPT_OPS);
         }
-        return null;
-
-
-//            selectedReads++;
-//            if (fptr.READ_CHAR_PENDING() || fptr.READ_DATA_PENDING()) {
-//                getPendingReads()[attachment.get('r')] = true;
-//            }
-//        } else {
-//            if (fptr.isReadable()) {
-//                getUnselectableReads()[attachment.get('r')] = true;
-//            }
-//        }
+        return key;
     }
 
     private SelectionKey trySelectWrite(ThreadContext context, Object attachment, ChannelFD fd) throws IOException {
@@ -257,12 +279,6 @@ public class SelectExecutor {
             return registerSelect(getSelector(context, fd.chSelect), attachment, fd.chSelect, WRITE_CONNECT_OPS);
         }
         return null;
-
-//            selectedReads++;
-//            if (fptr.isWritable()) {
-//                getUnselectableWrites()[attachment.get('w')] = true;
-//            }
-//        }
     }
 
     private Selector getSelector(ThreadContext context, SelectableChannel channel) throws IOException {
@@ -319,6 +335,10 @@ public class SelectExecutor {
                 } catch (InterruptedException ie) {}
                 return 0;
             }
+
+            // 0 means "forever" for sleep below, but "zero" here
+            if (timeout == 0) return 0;
+
             try {
                 context.getThread().sleep(timeout);
             } catch (InterruptedException ie) {}
@@ -328,10 +348,10 @@ public class SelectExecutor {
         if (readKeys != null) {
 //            rb_fd_resize(max - 1, read);
         }
-        if (readKeys != null) {
+        if (writeKeys != null) {
 //            rb_fd_resize(max - 1, write);
         }
-        if (readKeys != null) {
+        if (exceptKeys != null) {
 //            rb_fd_resize(max - 1, except);
         }
         return doSelect(context);
@@ -345,7 +365,7 @@ public class SelectExecutor {
         RubyThread th = context.getThread();
 
         if (timeout != null) {
-            // Sets up a specific time for select to timeout by
+            // Sets up a specific time by which select should timeout
 //            limit = timeofday();
 //            limit += (double)timeout->tv_sec+(double)timeout->tv_usec*1e-6;
 //            wait_rest = *timeout;
@@ -491,7 +511,7 @@ public class SelectExecutor {
     }
 
     IRubyObject read, write, except;
-    List<SelectionKey>[] fds = new List[4];
+    List<SelectionKey>[] fds = new List[6];
     Selector mainSelector = null;
     Map<SelectorProvider, Selector> selectors = Collections.emptyMap();
     Collection<ENXIOSelector> enxioSelectors = Collections.emptyList();
