@@ -81,7 +81,7 @@ public class PopenExecutor {
 
         if (pid == -1) {
             if (errmsg[0] == null) {
-                throw runtime.newSystemCallError(fail_str.toString());
+                throw runtime.newErrnoFromErrno(executor.errno, fail_str.toString());
             }
             throw runtime.newErrnoFromErrno(executor.errno, errmsg[0]);
         }
@@ -111,8 +111,10 @@ public class PopenExecutor {
             String[] argv = ARGVSTR2ARGV(eargp.argv_str.argv);
             pid = procSpawnCmd(runtime, argv, prog.toString(), eargp);
         }
-        if (pid == -1)
+        if (pid == -1) {
             context.setLastExitStatus(new RubyProcess.RubyStatus(runtime, runtime.getProcStatus(), 0x7f << 8, 0));
+            errno = Errno.valueOf(runtime.getPosix().errno());
+        }
 
         execargRunOptions(context, runtime, sarg, null, errmsg);
 
