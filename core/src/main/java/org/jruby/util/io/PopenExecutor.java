@@ -444,6 +444,14 @@ public class PopenExecutor {
         if (prog != null)
             cmd = StringSupport.checkEmbeddedNulls(runtime, prog).toString();
 
+        if (eargp.chdir_given()) {
+            // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
+            // just need to add chdir to the cmd
+            cmd = "cd '" + eargp.chdir_dir + "'; ";
+            eargp.chdir_dir = null;
+            eargp.chdir_given_clear();
+        }
+
         if (eargp != null && !eargp.use_shell) {
             args = eargp.argv_str.argv;
         }
@@ -942,9 +950,9 @@ public class PopenExecutor {
                 return -1;
         }
 
-        // This should probably check actual cwd rather than property
-        if (eargp.chdir_given() || !runtime.getCurrentDirectory().equals(SafePropertyAccessor.getProperty("user.dir"))) {
-            throw runtime.newNotImplementedError("chdir in the child is not supported");
+        if (eargp.chdir_given()) {
+            // should have been set up in pipe_open, so we just raise here
+            throw new RuntimeException("BUG: chdir not supported in posix_spawn; should have been made into chdir");
             // we can't chdir in the parent
 //            if (sargp != null) {
 //                String cwd = runtime.getCurrentDirectory();
@@ -1690,12 +1698,21 @@ public class PopenExecutor {
             checkExecOptions(context, runtime, (RubyHash)opthash, eargp);
         }
 
+        // add chdir if necessary
+        if (!runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd())) {
+            if (!eargp.chdir_given()) { // only if :chdir is not specified
+                eargp.chdir_given_set();
+                eargp.chdir_dir = runtime.getCurrentDirectory();
+            }
+        }
+
         if (!env.isNil()) {
             eargp.env_modification = RubyIO.checkExecEnv(context, (RubyHash)env);
         }
 
         prog = prog.export(context);
-        eargp.use_shell = argc == 0;
+        // need to use shell
+        eargp.use_shell = argc == 0 || eargp.chdir_given();
         if (eargp.use_shell)
             eargp.command_name = prog;
         else
@@ -1766,8 +1783,8 @@ public class PopenExecutor {
                             }) != -1)
                         has_meta = true;
                 }
-                if (!has_meta) {
-                    /* avoid shell since no shell meta character found. */
+                if (!has_meta && !eargp.chdir_given()) {
+                    /* avoid shell since no shell meta character found and no chdir needed. */
                     eargp.use_shell = false;
                 }
                 if (!eargp.use_shell) {
