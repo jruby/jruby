@@ -461,4 +461,10 @@
           <arg line="compile"/>
         </exec>
     </target>
+
+    <target name="jruby-jars" description="Create the jruby-jars GEM">
+        <exec executable="mvn" failonerror="true">
+          <arg line="-Pjruby-jars"/>
+        </exec>
+    </target>
 </project>
