@@ -215,6 +215,7 @@ public class SelectExecutor {
             // files are not selectable, but we treat them as ready
             if (fds[4] == null) fds[4] = new ArrayList(1);
             fds[4].add(fd);
+            return;
         }
         SelectionKey key = trySelectRead(context, fd, fd);
         if (key == null) return;
@@ -227,6 +228,7 @@ public class SelectExecutor {
             // files are not selectable, but we treat them as ready
             if (fds[5] == null) fds[5] = new ArrayList(1);
             fds[5].add(fd);
+            return;
         }
         SelectionKey key = trySelectWrite(context, fd, fd);
         if (key == null) return;
@@ -238,6 +240,7 @@ public class SelectExecutor {
         if ((List<SelectionKey>)fds[offset] == null) return false;
 
         for (Object obj : fds[offset]) {
+            if (obj == fd) return true;
             SelectionKey key = (SelectionKey)obj;
             if (key.isValid() && key.readyOps() != 0 && key.attachment() == fd) return true;
         }
@@ -266,12 +269,10 @@ public class SelectExecutor {
     }
 
     private SelectionKey trySelectRead(ThreadContext context, Object attachment, ChannelFD fd) throws IOException {
-        SelectionKey key = null;
         if (fd.chSelect != null) {
-            Selector selector = getSelector(context, fd.chSelect);
-            key = registerSelect(selector, attachment, fd.chSelect, READ_ACCEPT_OPS);
+            return registerSelect(getSelector(context, fd.chSelect), attachment, fd.chSelect, READ_ACCEPT_OPS);
         }
-        return key;
+        return null;
     }
 
     private SelectionKey trySelectWrite(ThreadContext context, Object attachment, ChannelFD fd) throws IOException {
