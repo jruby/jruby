@@ -27,6 +27,9 @@ namespace :test do
   desc "Run the comprehensive suite: #{all_tests}"
   task :all => [:compile, *all_tests]
 
+  desc "Run tests that are too slow for the main suite"
+  task :slow_suites => [:compile, *slow_tests]
+
   task :rake_targets => long_tests
   task :extended => long_tests
 
