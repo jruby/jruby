@@ -137,39 +137,39 @@ public class RubyProcess {
 
         @JRubyMethod(name = "stopped?")
         public IRubyObject stopped_p() {
-            return RubyBoolean.newBoolean(getRuntime(), PosixShim.WIFSTOPPED(status));
+            return RubyBoolean.newBoolean(getRuntime(), PosixShim.WAIT_MACROS.WIFSTOPPED(status));
         }
 
         @JRubyMethod(name = {"signaled?"})
         public IRubyObject signaled() {
-            return RubyBoolean.newBoolean(getRuntime(), PosixShim.WIFSIGNALED(status));
+            return RubyBoolean.newBoolean(getRuntime(), PosixShim.WAIT_MACROS.WIFSIGNALED(status));
         }
 
         @JRubyMethod(name = {"exited?"})
         public IRubyObject exited() {
-            return RubyBoolean.newBoolean(getRuntime(), PosixShim.WIFEXITED(status));
+            return RubyBoolean.newBoolean(getRuntime(), PosixShim.WAIT_MACROS.WIFEXITED(status));
         }
 
         @JRubyMethod(name = {"stopsig"})
         public IRubyObject stopsig() {
-            if (PosixShim.WIFSTOPPED(status)) {
-                return RubyFixnum.newFixnum(getRuntime(), PosixShim.WSTOPSIG(status));
+            if (PosixShim.WAIT_MACROS.WIFSTOPPED(status)) {
+                return RubyFixnum.newFixnum(getRuntime(), PosixShim.WAIT_MACROS.WSTOPSIG(status));
             }
             return getRuntime().getNil();
         }
 
         @JRubyMethod(name = {"termsig"})
         public IRubyObject termsig() {
-            if (PosixShim.WIFSIGNALED(status)) {
-                return RubyFixnum.newFixnum(getRuntime(), PosixShim.WTERMSIG(status));
+            if (PosixShim.WAIT_MACROS.WIFSIGNALED(status)) {
+                return RubyFixnum.newFixnum(getRuntime(), PosixShim.WAIT_MACROS.WTERMSIG(status));
             }
             return getRuntime().getNil();
         }
 
         @JRubyMethod
         public IRubyObject exitstatus() {
-            if (PosixShim.WIFEXITED(status)) {
-                return getRuntime().newFixnum(PosixShim.WEXITSTATUS(status));
+            if (PosixShim.WAIT_MACROS.WIFEXITED(status)) {
+                return getRuntime().newFixnum(PosixShim.WAIT_MACROS.WEXITSTATUS(status));
             }
             return getRuntime().getNil();
         }
@@ -205,15 +205,15 @@ public class RubyProcess {
         
         @JRubyMethod(name = "success?")
         public IRubyObject success_p(ThreadContext context) {
-            if (!PosixShim.WIFEXITED(status)) {
+            if (!PosixShim.WAIT_MACROS.WIFEXITED(status)) {
                 return context.nil;
             }
-            return context.runtime.newBoolean(PosixShim.WEXITSTATUS(status) == EXIT_SUCCESS);
+            return context.runtime.newBoolean(PosixShim.WAIT_MACROS.WEXITSTATUS(status) == EXIT_SUCCESS);
         }
 
         @JRubyMethod(name = {"coredump?"})
         public IRubyObject coredump_p() {
-            return RubyBoolean.newBoolean(getRuntime(), PosixShim.WCOREDUMP(status));
+            return RubyBoolean.newBoolean(getRuntime(), PosixShim.WAIT_MACROS.WCOREDUMP(status));
         }
         
         @JRubyMethod
@@ -253,8 +253,8 @@ public class RubyProcess {
             sb
                     .append("pid ")
                     .append(pid);
-            if (PosixShim.WIFSTOPPED(status)) {
-                long stopsig = PosixShim.WSTOPSIG(status);
+            if (PosixShim.WAIT_MACROS.WIFSTOPPED(status)) {
+                long stopsig = PosixShim.WAIT_MACROS.WSTOPSIG(status);
                 String signame = RubySignal.signo2signm(stopsig);
                 if (signame != null) {
                     sb
@@ -269,8 +269,8 @@ public class RubyProcess {
                             .append(stopsig);
                 }
             }
-            if (PosixShim.WIFSIGNALED(status)) {
-                long termsig = PosixShim.WTERMSIG(status);
+            if (PosixShim.WAIT_MACROS.WIFSIGNALED(status)) {
+                long termsig = PosixShim.WAIT_MACROS.WTERMSIG(status);
                 String signame = RubySignal.signo2signm(termsig);
                 if (signame != null) {
                     sb
@@ -285,12 +285,12 @@ public class RubyProcess {
                             .append(termsig);
                 }
             }
-            if (PosixShim.WIFEXITED(status)) {
+            if (PosixShim.WAIT_MACROS.WIFEXITED(status)) {
                 sb
                         .append(" exit ")
-                        .append(PosixShim.WEXITSTATUS(status));
+                        .append(PosixShim.WAIT_MACROS.WEXITSTATUS(status));
             }
-            if (PosixShim.WCOREDUMP(status)) {
+            if (PosixShim.WAIT_MACROS.WCOREDUMP(status)) {
                 sb
                         .append(" (core dumped)");
             }

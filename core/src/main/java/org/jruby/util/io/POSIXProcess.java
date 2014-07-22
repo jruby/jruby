@@ -62,12 +62,12 @@ public class POSIXProcess extends Process {
             // FIXME: Is this different across platforms? Got it all from Darwin's wait.h
 
             status = stat_loc[0];
-            if (PosixShim.WIFEXITED((long)status)) {
-                exitValue = PosixShim.WEXITSTATUS((long)status);
-            } else if (PosixShim.WIFSIGNALED((long)status)) {
-                exitValue = PosixShim.WTERMSIG((long)status);
-            } else if (PosixShim.WIFSTOPPED((long)status)) {
-                exitValue = PosixShim.WSTOPSIG((long)status);
+            if (PosixShim.WAIT_MACROS.WIFEXITED((long)status)) {
+                exitValue = PosixShim.WAIT_MACROS.WEXITSTATUS((long)status);
+            } else if (PosixShim.WAIT_MACROS.WIFSIGNALED((long)status)) {
+                exitValue = PosixShim.WAIT_MACROS.WTERMSIG((long)status);
+            } else if (PosixShim.WAIT_MACROS.WIFSTOPPED((long)status)) {
+                exitValue = PosixShim.WAIT_MACROS.WSTOPSIG((long)status);
             }
         }
 
