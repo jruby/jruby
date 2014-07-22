@@ -368,7 +368,7 @@ public class PopenExecutor {
         int s = 0;
 
         sChars = str.toCharArray();
-        while (sChars[s] == ' ' || sChars[s] == '\t' || sChars[s] == '\n')
+        while (s < sChars.length && (sChars[s] == ' ' || sChars[s] == '\t' || sChars[s] == '\n'))
             s++;
 
         if (s >= sChars.length) {
