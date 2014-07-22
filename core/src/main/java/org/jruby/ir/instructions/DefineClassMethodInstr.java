@@ -41,7 +41,7 @@ public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[]{container, new ScopeModule(method) };
+        return new Operand[]{container};
     }
 
     @Override

@@ -37,7 +37,7 @@ public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[]{value, new ScopeModule(scope), lvar};
+        return new Operand[]{value, lvar};
     }
 
     @Override

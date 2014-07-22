@@ -103,7 +103,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
             if (requireBinding || requireFrame) {
                 // Push
                 if (requireFrame) entryBB.addInstr(new PushFrameInstr(new MethAddr(scope.getName())));
-                if (requireBinding) entryBB.addInstr(new PushBindingInstr(scope));
+                if (requireBinding) entryBB.addInstr(new PushBindingInstr());
 
                 // Allocate GEB if necessary for popping
                 if (geb == null) {

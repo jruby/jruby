@@ -88,7 +88,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case POP_BINDING: return new PopBindingInstr();
             case POP_FRAME: return new PopFrameInstr();
             case PROCESS_MODULE_BODY: return new ProcessModuleBodyInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
-            case PUSH_BINDING: return new PushBindingInstr(d.decodeScope());
+            case PUSH_BINDING: return new PushBindingInstr();
             case PUSH_FRAME: return decodeFrame();
             case PUT_CONST: return new PutConstInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
             case PUT_CVAR: return new PutClassVariableInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());

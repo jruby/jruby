@@ -35,8 +35,8 @@ public class IRScriptBody extends IRScope {
     }
 
     @Override
-    public IRScope getNearestModuleReferencingScope() {
-        return this;
+    public int getNearestModuleReferencingScopeDepth() {
+        return 0;
     }
 
     @Override

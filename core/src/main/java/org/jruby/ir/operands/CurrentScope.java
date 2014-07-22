@@ -1,6 +1,8 @@
 package org.jruby.ir.operands;
 
-import org.jruby.ir.IRScope;
+import java.util.List;
+
+import org.jruby.parser.StaticScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
@@ -11,11 +13,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.List;
 
 public class CurrentScope extends Operand {
-    private final IRScope scope;
+    private final int scopeNestingDepth;
 
-    public CurrentScope(IRScope scope) {
+    public CurrentScope(int scopeNestingDepth) {
         super(OperandType.CURRENT_SCOPE);
-        this.scope = scope;
+        this.scopeNestingDepth = scopeNestingDepth;
     }
 
     @Override
@@ -28,28 +30,36 @@ public class CurrentScope extends Operand {
         return this;
     }
 
-    public IRScope getScope() {
-        return scope;
-    }
-
     @Override
     public boolean canCopyPropagate() {
         return true;
     }
 
+    public int getScopeNestingDepth() {
+        return scopeNestingDepth;
+    }
+
     @Override
     public int hashCode() {
-        return scope.hashCode();
+        return scopeNestingDepth;
     }
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof CurrentScope && scope.equals(((CurrentScope) other).scope);
+        return other instanceof CurrentScope && scopeNestingDepth == ((CurrentScope) other).scopeNestingDepth;
     }
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        return scope.getStaticScope();
+        StaticScope scope = currScope;
+        int n = scopeNestingDepth;
+        while (n > 0) {
+            scope = scope.getEnclosingScope();
+            if (scope.getScopeType() != null) {
+                n--;
+            }
+        }
+        return scope;
     }
 
     @Override
@@ -59,6 +69,6 @@ public class CurrentScope extends Operand {
 
     @Override
     public String toString() {
-        return "scope<" + scope.getName() + ">";
+        return "scope<" + scopeNestingDepth + ">";
     }
 }

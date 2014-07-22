@@ -37,7 +37,7 @@ class OperandDecoderMap {
             case BIGNUM: return new Bignum(new BigInteger(d.decodeString()));
             case BOOLEAN: return new UnboxedBoolean(d.decodeBoolean());
             case COMPOUND_STRING: return decodeCompoundString();
-            case CURRENT_SCOPE: return new CurrentScope(d.decodeScope());
+            case CURRENT_SCOPE: return new CurrentScope(d.decodeInt());
             case DYNAMIC_SYMBOL: return new DynamicSymbol((CompoundString) d.decodeOperand());
             case FIXNUM: return new Fixnum(d.decodeLong());
             case FLOAT: return new org.jruby.ir.operands.Float(d.decodeDouble());
@@ -53,7 +53,7 @@ class OperandDecoderMap {
             case OBJECT_CLASS: return new ObjectClass();
             case RANGE: return new Range(d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case REGEXP: return decodeRegexp();
-            case SCOPE_MODULE: return new ScopeModule(d.decodeScope());
+            case SCOPE_MODULE: return new ScopeModule(d.decodeInt());
             case SELF: return Self.SELF;
             case SPLAT: return new Splat(d.decodeOperand(), d.decodeBoolean());
             case STANDARD_ERROR: return new StandardError();

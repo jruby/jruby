@@ -39,7 +39,7 @@ public class DefineClassInstr extends Instr implements ResultInstr, FixedArityIn
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[]{new ScopeModule(newIRClassBody), container, superClass};
+        return new Operand[]{container, superClass};
     }
 
     @Override

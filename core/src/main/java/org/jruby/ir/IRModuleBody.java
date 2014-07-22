@@ -24,8 +24,8 @@ public class IRModuleBody extends IRScope {
     }
 
     @Override
-    public IRScope getNearestModuleReferencingScope() {
-        return this;
+    public int getNearestModuleReferencingScopeDepth() {
+        return 0;
     }
 
     public void updateVersion() {

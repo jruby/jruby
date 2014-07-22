@@ -34,7 +34,7 @@ public class DefineModuleInstr extends Instr implements ResultInstr, FixedArityI
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[]{new ScopeModule(newIRModuleBody), container};
+        return new Operand[]{container};
     }
 
     @Override

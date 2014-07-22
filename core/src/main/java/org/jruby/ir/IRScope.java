@@ -346,19 +346,20 @@ public abstract class IRScope implements ParseResult {
      * this returns null (like for evals), then it means it cannot be statically
      * determined.
      */
-    public IRScope getNearestModuleReferencingScope() {
+    public int getNearestModuleReferencingScopeDepth() {
+        int n = 0;
         IRScope current = this;
-
         while (!(current instanceof IRModuleBody)) {
             // When eval'ing, we dont have a lexical view of what module we are nested in
             // because binding_eval, class_eval, module_eval, instance_eval can switch
             // around the lexical scope for evaluation to be something else.
-            if (current == null || current instanceof IREvalScript) return null;
+            if (current == null || current instanceof IREvalScript) return -1;
 
             current = current.getLexicalParent();
+            n++;
         }
 
-        return current;
+        return n;
     }
 
     public String getName() {

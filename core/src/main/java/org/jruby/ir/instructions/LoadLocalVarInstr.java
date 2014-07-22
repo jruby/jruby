@@ -36,7 +36,7 @@ public class LoadLocalVarInstr extends Instr implements ResultInstr, FixedArityI
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { new ScopeModule(scope), lvar };
+        return new Operand[] { lvar };
     }
 
     @Override

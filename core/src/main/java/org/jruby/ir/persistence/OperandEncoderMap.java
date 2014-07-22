@@ -64,7 +64,7 @@ class OperandEncoderMap extends IRVisitor {
     }
 
     @Override public void CurrentScope(CurrentScope scope) {
-        encoder.encode(scope.getScope());
+        encoder.encode(scope.getScopeNestingDepth());
     }
 
     //@Override public void DynamicSymbol(DynamicSymbol dsym) { encode(dsym.getSymbolName()); }
@@ -121,7 +121,7 @@ class OperandEncoderMap extends IRVisitor {
         encoder.encode(regexp.options.toEmbeddedOptions());
     }
 
-    @Override public void ScopeModule(ScopeModule scope) { encoder.encode(scope.getScope()); }
+    @Override public void ScopeModule(ScopeModule scope) { encoder.encode(scope.getScopeModuleDepth()); }
 
     @Override public void Self(Self self) {} // No data
 

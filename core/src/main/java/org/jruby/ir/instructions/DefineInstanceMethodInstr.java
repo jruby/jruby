@@ -27,7 +27,7 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[]{ new ScopeModule(method) };
+        return EMPTY_OPERANDS;
     }
 
     @Override

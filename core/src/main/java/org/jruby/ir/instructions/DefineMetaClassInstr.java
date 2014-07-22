@@ -33,7 +33,7 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr, FixedAri
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[]{object, new ScopeModule(metaClassBody)};
+        return new Operand[]{object};
     }
 
     @Override

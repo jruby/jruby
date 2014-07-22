@@ -82,7 +82,7 @@ public class InstrEncoderMap {
             case POP_BINDING: /* no state */ break;
             case POP_FRAME: /* no state */ break;
             case PROCESS_MODULE_BODY: encodeProcessModuleBodyInstr((ProcessModuleBodyInstr) instr); break;
-            case PUSH_BINDING: encodePushBindingInstr((PushBindingInstr) instr); break;
+            case PUSH_BINDING: /* no state */ break;
             case PUSH_FRAME: /* no state */ break;
             case PUT_CONST: encodePutConstInstr((PutConstInstr) instr); break;
             case PUT_CVAR: encodePutClassVariableInstr((PutClassVariableInstr) instr); break;
@@ -356,10 +356,6 @@ public class InstrEncoderMap {
     private void encodeProcessModuleBodyInstr(ProcessModuleBodyInstr instr) {
         e.encode(instr.getModuleBody());
         e.encode(instr.getBlockArg());
-    }
-
-    private void encodePushBindingInstr(PushBindingInstr instr) {
-        e.encode(instr.getScope());
     }
 
     private void encodePutConstInstr(PutConstInstr instr) {

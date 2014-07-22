@@ -2,7 +2,6 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.*;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
@@ -26,7 +25,7 @@ public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { new ScopeModule(declaringScope), new ScopeModule(endBlockClosure) };
+        return EMPTY_OPERANDS;
     }
 
     @Override

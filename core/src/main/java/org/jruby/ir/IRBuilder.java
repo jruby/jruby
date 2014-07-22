@@ -351,7 +351,7 @@ public class IRBuilder {
             case COLON2NODE: return buildColon2((Colon2Node) node, s);
             case COLON3NODE: return buildColon3((Colon3Node) node, s);
             case CONSTDECLNODE: return buildConstDecl((ConstDeclNode) node, s);
-            case CONSTNODE: return searchConst(s, s, ((ConstNode) node).getName());
+            case CONSTNODE: return searchConst(s, ((ConstNode) node).getName());
             case DASGNNODE: return buildDAsgn((DAsgnNode) node, s);
             case DEFINEDNODE: return buildGetDefinition(((DefinedNode) node).getExpressionNode(), s);
             case DEFNNODE: return buildDefn((MethodDefNode) node, s);
@@ -1136,16 +1136,15 @@ public class IRBuilder {
          * where the eval happens.  So, when we hit an eval-script boundary at compile-time,
          * defer scope traversal to when we know where this scope has been spliced in.
          * ------------------------------------------------------------------------------- */
+        int n = 0;
         IRScope cvarScope = s;
         while (cvarScope != null && !(cvarScope instanceof IREvalScript) && !cvarScope.isNonSingletonClassBody()) {
             cvarScope = cvarScope.getLexicalParent();
+            n++;
         }
 
-        if (
-                // FIXME: This is attempting to avoid the unjittable ScopeModule when we just need immediate scope
-                cvarScope != s
-                        && (cvarScope != null) && cvarScope.isNonSingletonClassBody()) {
-            return new ScopeModule(cvarScope);
+        if ((cvarScope != null) && cvarScope.isNonSingletonClassBody()) {
+            return new ScopeModule(n);
         } else {
             return addResultInstr(s, new GetClassVarContainerModuleInstr(s.createTemporaryVariable(),
                     s.getCurrentScopeVariable(), declContext ? null : s.getSelf()));
@@ -1157,13 +1156,13 @@ public class IRBuilder {
     }
 
     private Operand findContainerModule(IRScope s) {
-        IRScope nearestModuleBody = s.getNearestModuleReferencingScope();
-        return (nearestModuleBody == null) ? s.getCurrentModuleVariable() : new ScopeModule(nearestModuleBody);
+        int nearestModuleBodyDepth = s.getNearestModuleReferencingScopeDepth();
+        return (nearestModuleBodyDepth == -1) ? s.getCurrentModuleVariable() : new ScopeModule(nearestModuleBodyDepth);
     }
 
     private Operand startingSearchScope(IRScope s) {
-        IRScope nearestModuleBody = s.getNearestModuleReferencingScope();
-        return nearestModuleBody == null ? s.getCurrentScopeVariable() : new CurrentScope(nearestModuleBody);
+        int nearestModuleBodyDepth = s.getNearestModuleReferencingScopeDepth();
+        return nearestModuleBodyDepth == -1 ? s.getCurrentScopeVariable() : new CurrentScope(nearestModuleBodyDepth);
     }
 
     public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, IRScope s, Operand val) {
@@ -1194,8 +1193,8 @@ public class IRBuilder {
         return constVal;
     }
 
-    private Operand searchConst(IRScope s, IRScope startingScope, String name) {
-        boolean noPrivateConstants = (s != startingScope);
+    private Operand searchConst(IRScope s, String name) {
+        boolean noPrivateConstants = false;
         Variable v = s.createTemporaryVariable();
 /**
  * SSS FIXME: Go back to a single instruction for now.
@@ -1203,11 +1202,11 @@ public class IRBuilder {
  * Do not split search into lexical-search, inheritance-search, and const-missing instrs.
  *
         Label foundLabel = s.getNewLabel();
-        addInstr(s, new LexicalSearchConstInstr(v, startingSearchScope(startingScope), name));
+        addInstr(s, new LexicalSearchConstInstr(v, startingSearchScope(s), name));
         addInstr(s, BNEInstr.create(v, UndefinedValue.UNDEFINED, foundLabel));
         genInheritanceSearchInstrs(s, findContainerModule(startingScope), v, foundLabel, noPrivateConstants, name);
 **/
-        addInstr(s, new SearchConstInstr(v, name, startingSearchScope(startingScope), noPrivateConstants));
+        addInstr(s, new SearchConstInstr(v, name, startingSearchScope(s), noPrivateConstants));
         return v;
     }
 
@@ -1216,7 +1215,7 @@ public class IRBuilder {
         final String name = iVisited.getName();
 
         // Colon2ImplicitNode
-        if (leftNode == null) return searchConst(s, s, name);
+        if (leftNode == null) return searchConst(s, name);
 
         // Colon2ConstNode
         // 1. Load the module first (lhs of node)
@@ -1615,13 +1614,13 @@ public class IRBuilder {
             addInstr(method, new TraceInstr(RubyEvent.CALL, defNode.getName(), s.getFileName(), defNode.getPosition().getStartLine()));
         }
 
-        addInstr(method, new ReceiveSelfInstr(s.getSelf()));
+        addInstr(method, new ReceiveSelfInstr(method.getSelf()));
 
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
-        IRScope nearestScope = s.getNearestModuleReferencingScope();
-        addInstr(method, new CopyInstr(method.getCurrentScopeVariable(), new CurrentScope(nearestScope == null ? s : nearestScope)));
-        addInstr(method, new CopyInstr(method.getCurrentModuleVariable(), new ScopeModule(nearestScope == null ? s : nearestScope)));
+        int nearestScopeDepth = s.getNearestModuleReferencingScopeDepth();
+        addInstr(method, new CopyInstr(method.getCurrentScopeVariable(), new CurrentScope(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
+        addInstr(method, new CopyInstr(method.getCurrentModuleVariable(), new ScopeModule(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
 
         // Build IR for arguments (including the block arg)
         receiveMethodArgs(defNode.getArgsNode(), method);
@@ -2337,8 +2336,8 @@ public class IRBuilder {
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        forBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(closure)));
-        forBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(closure)));
+        forBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(0)));
+        forBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(0)));
 
         // Thread poll on entry of closure
         forBuilder.addInstr(closure, new ThreadPollInstr());
@@ -2487,8 +2486,8 @@ public class IRBuilder {
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(closure)));
-        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(closure)));
+        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(0)));
+        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(0)));
 
         // Thread poll on entry of closure
         closureBuilder.addInstr(closure, new ThreadPollInstr());
@@ -2896,8 +2895,8 @@ public class IRBuilder {
         IRBuilder closureBuilder = newIRBuilder(manager);
 
         // Set up %current_scope and %current_module
-        closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentScopeVariable(), new CurrentScope(endClosure)));
-        closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentModuleVariable(), new ScopeModule(endClosure)));
+        closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentScopeVariable(), new CurrentScope(0)));
+        closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentModuleVariable(), new ScopeModule(0)));
         closureBuilder.build(postExeNode.getBodyNode(), endClosure);
 
         // Add an instruction in 's' to record the end block in the 'topLevel' scope.
@@ -2915,8 +2914,8 @@ public class IRBuilder {
         IRBuilder closureBuilder = newIRBuilder(manager);
 
         // Set up %current_scope and %current_module
-        closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentScopeVariable(), new CurrentScope(beginClosure)));
-        closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentModuleVariable(), new ScopeModule(beginClosure)));
+        closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentScopeVariable(), new CurrentScope(0)));
+        closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentModuleVariable(), new ScopeModule(0)));
         closureBuilder.build(preExeNode.getBodyNode(), beginClosure);
 
         // Record the begin block at IR build time
@@ -3174,8 +3173,8 @@ public class IRBuilder {
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        addInstr(script, new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope(script)));
-        addInstr(script, new CopyInstr(script.getCurrentModuleVariable(), new ScopeModule(script)));
+        addInstr(script, new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope(0)));
+        addInstr(script, new CopyInstr(script.getCurrentModuleVariable(), new ScopeModule(0)));
         // Build IR for the tree and return the result of the expression tree
         Operand rval = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode(), script);
         addInstr(script, new ReturnInstr(rval));
@@ -3192,8 +3191,8 @@ public class IRBuilder {
         addInstr(script, new ReceiveSelfInstr(script.getSelf()));
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        addInstr(script, new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope(script)));
-        addInstr(script, new CopyInstr(script.getCurrentModuleVariable(), new ScopeModule(script)));
+        addInstr(script, new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope(0)));
+        addInstr(script, new CopyInstr(script.getCurrentModuleVariable(), new ScopeModule(0)));
 
         // Build IR for the tree and return the result of the expression tree
         addInstr(script, new ReturnInstr(build(rootNode.getBodyNode(), script)));
@@ -3454,8 +3453,8 @@ public class IRBuilder {
             addInstr(body, new ReceiveClosureInstr((Variable)getImplicitBlockArg(body)));      // %closure - SClass
         }
 
-        addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), new CurrentScope(body))); // %scope
-        addInstr(body, new CopyInstr(body.getCurrentModuleVariable(), new ScopeModule(body))); // %module
+        addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), new CurrentScope(0))); // %scope
+        addInstr(body, new CopyInstr(body.getCurrentModuleVariable(), new ScopeModule(0))); // %module
         // Create a new nested builder to ensure this gets its own IR builder state
         Operand bodyReturnValue = newIRBuilder(manager).build(bodyNode, body);
 

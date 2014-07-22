@@ -5,7 +5,6 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class LineNumberInstr extends Instr implements FixedArityInstr {
@@ -20,7 +19,7 @@ public class LineNumberInstr extends Instr implements FixedArityInstr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { new ScopeModule(scope), new Fixnum(lineNumber) };
+        return new Operand[] { new Fixnum(lineNumber) };
     }
 
     @Override
