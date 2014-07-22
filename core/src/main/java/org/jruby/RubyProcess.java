@@ -221,6 +221,10 @@ public class RubyProcess {
             return context.runtime.newFixnum(pid);
         }
 
+        public long getStatus() {
+            return status;
+        }
+
         public IRubyObject op_rshift(Ruby runtime, IRubyObject other) {
             long shiftValue = other.convertToInteger().getLongValue();
             return runtime.newFixnum(status >> shiftValue);
@@ -602,6 +606,7 @@ public class RubyProcess {
     public static IRubyObject waitpid(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return waitpid(context.runtime, args);
     }
+
     public static IRubyObject waitpid(Ruby runtime, IRubyObject[] args) {
         int pid = -1;
         int flags = 0;
@@ -611,14 +616,18 @@ public class RubyProcess {
         if (args.length > 1) {
             flags = (int)args[1].convertToInteger().getLongValue();
         }
-        
+
+        return runtime.newFixnum(waitpid(runtime, pid, flags));
+    }
+
+    public static long waitpid(Ruby runtime, long pid, int flags) {
         int[] status = new int[1];
         runtime.getPosix().errno(0);
         pid = runtime.getPosix().waitpid(pid, status, flags);
         raiseErrnoIfSet(runtime, ECHILD);
-        
+
         runtime.getCurrentContext().setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], pid));
-        return runtime.newFixnum(pid);
+        return pid;
     }
 
     private interface NonNativeErrno {

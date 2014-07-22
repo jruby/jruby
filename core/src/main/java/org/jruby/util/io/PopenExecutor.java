@@ -84,6 +84,17 @@ public class PopenExecutor {
         return runtime.newFixnum(pid);
     }
 
+    // MRI: rb_spawn_internal
+    public long spawnInternal(ThreadContext context, IRubyObject[] argv, String[] errmsg) {
+        ExecArg eargp;
+        long ret;
+
+        eargp = execargNew(context, argv, true);
+        execargFixup(context, context.runtime, eargp);
+        ret = spawnProcess(context, context.runtime, eargp, errmsg);
+        return ret;
+    }
+
     // MRI: rb_spawn_process
     long spawnProcess(ThreadContext context, Ruby runtime, ExecArg eargp, String[] errmsg) {
         long pid;

@@ -1483,6 +1483,44 @@ public class RubyKernel {
     @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject system19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
+
+        if (runtime.getPosix().isNative()) {
+            // MRI: rb_f_system
+            long pid;
+            int[] status = new int[1];
+
+//            #if defined(SIGCLD) && !defined(SIGCHLD)
+//            # define SIGCHLD SIGCLD
+//            #endif
+//
+//            #ifdef SIGCHLD
+//            RETSIGTYPE (*chfunc)(int);
+
+            context.setLastExitStatus(context.nil);
+//            chfunc = signal(SIGCHLD, SIG_DFL);
+//            #endif
+            PopenExecutor executor = new PopenExecutor();
+            pid = executor.spawnInternal(context, args, null);
+//            #if defined(HAVE_FORK) || defined(HAVE_SPAWNV)
+            if (pid > 0) {
+                long ret;
+                ret = RubyProcess.waitpid(runtime, pid, 0);
+                if (ret == -1)
+                    throw runtime.newErrnoFromInt(runtime.getPosix().errno(), "Another thread waited the process started by system().");
+            }
+//            #endif
+//            #ifdef SIGCHLD
+//            signal(SIGCHLD, chfunc);
+//            #endif
+            if (pid < 0) {
+                return runtime.getNil();
+            }
+            status[0] = (int)((RubyProcess.RubyStatus)context.getLastExitStatus()).getStatus();
+            if (status[0] == 0) return runtime.getTrue();
+            return runtime.getFalse();
+        }
+
+        // else old JDK logic
         if (args[0] instanceof RubyHash) {
             RubyHash env = (RubyHash) args[0].convertToHash();
             if (env != null) {
