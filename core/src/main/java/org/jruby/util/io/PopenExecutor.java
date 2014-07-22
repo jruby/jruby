@@ -130,13 +130,10 @@ public class PopenExecutor {
 
         if (prog == null)
             prog = argv[0];
-//        security(prog);
         prog = dlnFindExeR(runtime, prog, null);
         if (prog == null)
             return -1;
 
-        // TODO?
-//        beforeExec();
         status = runtime.getPosix().posix_spawnp(
                 prog,
                 eargp.fileActions,
@@ -153,8 +150,6 @@ public class PopenExecutor {
                     eargp.attributes,
                     Arrays.asList(argv),
                     eargp.envp_str == null ? Collections.EMPTY_LIST : Arrays.asList(eargp.envp_str));
-            // TODO?
-//            afterExec();
             if (status == -1) errno = Errno.ENOEXEC;
         }
         return status;
@@ -165,6 +160,7 @@ public class PopenExecutor {
         long pid = -1;
 
         if (argv.length > 0 && argv[0] != null) {
+            // TODO: win32
 //            #if defined(_WIN32)
 //            DWORD flags = 0;
 //            if (eargp->new_pgroup_given && eargp->new_pgroup_flag) {
