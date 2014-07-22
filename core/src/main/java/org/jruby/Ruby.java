@@ -4583,6 +4583,13 @@ public final class Ruby {
      * @return the freeze-duped version of the string
      */
     public synchronized RubyString freezeAndDedupString(RubyString string) {
+        if (string.getMetaClass().isSingleton()) {
+            // never cache a singleton
+            RubyString duped = string.strDup(this);
+            duped.setFrozen(true);
+            return duped;
+        }
+
         WeakReference<RubyString> dedupedRef = dedupMap.get(string);
         RubyString deduped;
 
