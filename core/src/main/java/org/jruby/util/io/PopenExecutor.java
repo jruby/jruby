@@ -1022,9 +1022,6 @@ public class PopenExecutor {
 //            }
 //        }
 
-        // Additional logic to clear all hooked signals
-        eargp.attributes.add(SpawnAttribute.sigmask(0));
-
         return 0;
     }
 
