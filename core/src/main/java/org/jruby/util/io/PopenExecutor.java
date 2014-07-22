@@ -447,7 +447,7 @@ public class PopenExecutor {
         if (eargp.chdir_given()) {
             // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
             // just need to add chdir to the cmd
-            cmd = "cd '" + eargp.chdir_dir + "'; ";
+            cmd = "cd '" + eargp.chdir_dir + "'; " + cmd;
             eargp.chdir_dir = null;
             eargp.chdir_given_clear();
         }
