@@ -1,6 +1,7 @@
 package org.jruby.util;
 
 import jnr.constants.platform.Errno;
+import jnr.constants.platform.Fcntl;
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
@@ -16,6 +17,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 
+import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.PosixShim;
@@ -160,6 +162,7 @@ class RegularFileResource implements FileResource {
 
                 }
             }
+            posix.fcntlInt(fd, Fcntl.F_SETFD, posix.fcntl(fd, Fcntl.F_GETFD) | FcntlLibrary.FD_CLOEXEC);
             return new NativeDeviceChannel(fd);
         }
 
