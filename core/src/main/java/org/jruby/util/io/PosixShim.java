@@ -2,12 +2,9 @@ package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
-import jnr.constants.platform.Signal;
-import jnr.constants.platform.WaitFlags;
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
-import org.jruby.RubyThread;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.ext.ffi.Platform;
 import org.jruby.runtime.Helpers;
@@ -15,7 +12,6 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.ResourceException;
 
 import java.io.Closeable;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
@@ -23,8 +19,6 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.Pipe;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 
 /**
  * Representations of as many native posix functions as possible applied to an NIO channel
@@ -274,48 +268,52 @@ public class PosixShim {
         }
     }
 
-    public static final long WSTOPPED = WaitFlags.WSTOPPED.intValue();
+    public static final long _WSTOPPED = 0177;
 
     // Only confirmed on Darwin
-    public static final long WCOREFLAG = 0xc8;
+    public static final long WCOREFLAG = 0200;
 
-    public static long WSTATUS(long status) {
+    public static long _WSTATUS(long status) {
         // FIXME: we need logic from more platforms here
         switch (Platform.OS) {
             case DARWIN: // confirmed
             case LINUX: // confirmed
             default: // fingers crossed?
-                return status & WSTOPPED;
+                return status & _WSTOPPED;
         }
     }
 
     public static boolean WIFEXITED(long status) {
-        return WSTATUS(status) == 0;
+        return _WSTATUS(status) == 0;
     }
 
     public static boolean WIFSIGNALED(long status) {
-        return WSTATUS(status) != WSTOPPED && WSTATUS(status) != 0;
+        return _WSTATUS(status) != _WSTOPPED && _WSTATUS(status) != 0;
     }
 
-    public static long WTERMSIG(long status) {
-        return WSTATUS(status);
+    public static int WTERMSIG(long status) {
+        return (int)_WSTATUS(status);
     }
 
-    public static long WEXITSTATUS(long status) {
+    public static int WEXITSTATUS(long status) {
         // not confirmed on all platforms
-        return (status >>> 8) & 0xFF;
+        return (int)((status >>> 8) & 0xFF);
     }
 
-    public static long WSTOPSIG(long status) {
-        return status >>> 8;
+    public static int WSTOPSIG(long status) {
+        return (int)(status >>> 8);
     }
 
     public static boolean WIFSTOPPED(long status) {
-        return WSTATUS(status) == WSTOPPED && WSTOPSIG(status) != 0x13;
+        return _WSTATUS(status) == _WSTOPPED && WSTOPSIG(status) != 0x13;
     }
 
     public static boolean WCOREDUMP(long status) {
         return (status & WCOREFLAG) != 0;
+    }
+
+    public static boolean WIFCONTINUED(long status) {
+        return _WSTATUS(status) == _WSTOPPED && WSTOPSIG(status) == 0x13;
     }
 
     public int setCloexec(int fd, boolean cloexec) {

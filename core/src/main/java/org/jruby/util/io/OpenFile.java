@@ -2,6 +2,7 @@ package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.OpenFlags;
+import jnr.posix.FileStat;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
@@ -2462,6 +2463,32 @@ public class OpenFile implements Finalizable {
 
     private void SET_TEXT_MODE() {
         // FIXME: this only does something if we have O_TEXT at open(2) level
+    }
+
+    public int remainSize() {
+        FileStat st;
+        int siz = READ_DATA_PENDING_COUNT();
+        long pos;
+
+        // MRI does all this presumably to read more of the file right away, but
+        // I believe the logic that uses this is ok with just pending read plus buf size.
+
+//        if (fstat(fptr -> fd, & st)==0 && S_ISREG(st.st_mode))
+//        {
+//            if (io_fflush(fptr) < 0)
+//                rb_sys_fail(0);
+//            pos = lseek(fptr -> fd, 0, SEEK_CUR);
+//            if (st.st_size >= pos && pos >= 0) {
+//                siz += st.st_size - pos;
+//                if (siz > LONG_MAX) {
+//                    rb_raise(rb_eIOError, "file too big for single read");
+//                }
+//            }
+//        }
+//        else {
+            siz += BUFSIZ;
+//        }
+        return siz;
     }
 
     @Deprecated

@@ -254,7 +254,7 @@ public class RubyProcess {
                 String signame = RubySignal.signo2signm(stopsig);
                 if (signame != null) {
                     sb
-                            .append(" stopped SIG")
+                            .append(" stopped ")
                             .append(signame)
                             .append(" (signal ")
                             .append(stopsig)
@@ -270,7 +270,7 @@ public class RubyProcess {
                 String signame = RubySignal.signo2signm(termsig);
                 if (signame != null) {
                     sb
-                            .append(" SIG")
+                            .append(" ")
                             .append(signame)
                             .append(" (signal ")
                             .append(termsig)

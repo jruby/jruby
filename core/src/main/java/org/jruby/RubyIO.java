@@ -51,6 +51,7 @@ import static org.jruby.util.io.EncodingUtils.vperm;
 import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.ModeFlags;
+import org.jruby.util.io.POSIXProcess;
 import org.jruby.util.io.PopenExecutor;
 import org.jruby.util.io.PosixShim;
 import org.jruby.util.io.SelectBlob;
@@ -1795,14 +1796,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (fptr.getProcess() != null) {
             context.setLastExitStatus(context.nil);
 
-            // If this is not a popen3/popen4 stream and it has a process, attempt to shut down that process
             if (runtime.getPosix().isNative()) {
                 // We do not need to nuke native-launched child process, since we now have full control
                 // over child process pipes.
-                // RubyStatus uses real native status now, so we unshift Java's shifted exit status
-                IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, fptr.getProcess().exitValue() << 8, fptr.getPid());
+                IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, ((POSIXProcess)fptr.getProcess()).status(), fptr.getPid());
                 context.setLastExitStatus(processResult);
             } else {
+                // If this is not a popen3/popen4 stream and it has a process, attempt to shut down that process
                 if (!popenSpecial) {
                     obliterateProcess(fptr.getProcess());
                     // RubyStatus uses real native status now, so we unshift Java's shifted exit status

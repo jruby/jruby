@@ -69,6 +69,7 @@ import org.jruby.util.IdUtil;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PopenExecutor;
 
 import java.io.ByteArrayOutputStream;
@@ -1383,9 +1384,27 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "`", required = 1, module = true, visibility = PRIVATE)
-    public static IRubyObject backquote(ThreadContext context, IRubyObject recv, IRubyObject aString) {
+    public static IRubyObject backquote(ThreadContext context, IRubyObject recv, IRubyObject str) {
         Ruby runtime = context.runtime;
-        RubyString string = aString.convertToString();
+
+        if (runtime.getPosix().isNative()) {
+            IRubyObject port;
+            IRubyObject result;
+            OpenFile fptr;
+
+            str = str.convertToString();
+            context.setLastExitStatus(context.nil);
+            port = PopenExecutor.pipeOpen(context, str, "r", OpenFile.READABLE|OpenFile.TEXTMODE, null);
+            if (port.isNil()) return RubyString.newEmptyString(runtime);
+
+            fptr = ((RubyIO)port).getOpenFileChecked();
+            result = fptr.readAll(context, fptr.remainSize(), context.nil);
+            ((RubyIO)port).rbIoClose(runtime);
+
+            return result;
+        }
+
+        RubyString string = str.convertToString();
         IRubyObject[] args = new IRubyObject[] {string};
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         long[] tuple;

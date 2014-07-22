@@ -2,7 +2,6 @@ package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.OpenFlags;
-import jnr.constants.platform.Signal;
 import jnr.posix.SpawnAttribute;
 import jnr.posix.SpawnFileAction;
 import org.jcodings.transcode.EConvFlags;
@@ -31,10 +30,7 @@ import org.jruby.util.TypeConverter;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.channels.Channel;
-import java.nio.channels.Pipe;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -556,77 +552,7 @@ public class PopenExecutor {
         }
         final long finalPid = pid;
         fptr.setPid(pid);
-        fptr.setProcess(new Process() {
-            volatile Integer exitValue = null;
-            @Override
-            public OutputStream getOutputStream() {
-                return null;
-            }
-
-            @Override
-            public InputStream getInputStream() {
-                return null;
-            }
-
-            @Override
-            public InputStream getErrorStream() {
-                return null;
-            }
-
-            @Override
-            public synchronized int waitFor() throws InterruptedException {
-                errno = null;
-
-                if (exitValue == null) {
-                    int[] stat_loc = {0};
-                    retry: while (true) {
-                        stat_loc[0] = 0;
-                        // TODO: investigate WNOHANG
-                        int result = runtime.getPosix().waitpid((int)finalPid, stat_loc, 0);
-                        if (result == -1) {
-                            Errno errno = Errno.valueOf(runtime.getPosix().errno());
-                            switch (errno) {
-                                case EINTR:
-                                    runtime.getCurrentContext().pollThreadEvents();
-                                    continue retry;
-                                case ECHILD:
-                                    PopenExecutor.this.errno = errno;
-                                    return -1;
-                                default:
-                                    throw new RuntimeException("unexpected waitpid errno: " + Errno.valueOf(runtime.getPosix().errno()));
-                            }
-                        }
-                        break;
-                    }
-                    // FIXME: Is this different across platforms? Got it all from Darwin's wait.h
-
-                    int status = stat_loc[0];
-                    if (WIFEXITED(status)) {
-                        exitValue = WEXITSTATUS(status);
-                    } else if (WIFSIGNALED(status)) {
-                        exitValue = WTERMSIG(status);
-                    } else if (WIFSTOPPED(status)) {
-                        exitValue = WSTOPSIG(status);
-                    }
-                }
-
-                return exitValue;
-            }
-
-            @Override
-            public int exitValue() {
-                try {
-                    return waitFor();
-                } catch (InterruptedException ie) {
-                    throw new IllegalThreadStateException();
-                }
-            }
-
-            @Override
-            public void destroy() {
-                runtime.getPosix().kill((int)finalPid, Signal.SIGTERM.intValue());
-            }
-        });
+        fptr.setProcess(new POSIXProcess(runtime, finalPid));
 
         if (write_fd != null) {
             write_port = runtime.getIO().allocate();
@@ -644,17 +570,6 @@ public class PopenExecutor {
 //        pipeAddFptr(fptr);
         return port;
     }
-
-    // FIXME: This are all from Darwin; other platforms may differ
-    static int _WSTATUS(int x)          { return x & 0177; }
-    static final int _WSTOPPED = 0177;
-    static int WEXITSTATUS(int x)       { return ((x) >> 8) & 0x000000ff; }
-    static int WSTOPSIG(int x)          { return x >> 8; }
-    static boolean WIFCONTINUED(int x)  { return _WSTATUS(x) == _WSTOPPED && WSTOPSIG(x) == 0x13; }
-    static boolean WIFSTOPPED(int x)    { return _WSTATUS(x) == _WSTOPPED && WSTOPSIG(x) != 0x13; }
-    static boolean WIFEXITED(int x)     { return _WSTATUS(x) == 0; }
-    static boolean WIFSIGNALED(int x)   { return _WSTATUS(x) != _WSTOPPED && _WSTATUS(x) != 0; }
-    static int WTERMSIG(int x)          { return _WSTATUS(x); }
 
     private void prepareStdioRedirects(Ruby runtime, Channel[] readPipe, Channel[] writePipe, ExecArg eargp) {
         // We insert these redirects directly into fd_dup2 so that chained redirection can be
@@ -2095,4 +2010,5 @@ public class PopenExecutor {
             return Integer.compare(o2.oldfd, o1.oldfd);
         }
     };
+
 }
