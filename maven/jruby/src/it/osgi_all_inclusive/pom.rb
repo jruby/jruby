@@ -2,7 +2,7 @@ gemfile
 
 packaging 'bundle'
 
-properties( #'tesla.dump.pom' => 'pom.xml',
+properties( 'tesla.dump.pom' => 'pom.xml',
             'exam.version' => '3.0.3',
             'url.version' => '1.5.2',
             'logback.version' => '1.0.13',
