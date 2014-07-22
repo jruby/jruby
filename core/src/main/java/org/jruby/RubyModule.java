@@ -2098,8 +2098,8 @@ public class RubyModule extends RubyObject {
         if (!isModule()) {
             throw getRuntime().newTypeError(this, getRuntime().getModule());
         }
-        if (!(module instanceof RubyModule)) {
-            throw getRuntime().newTypeError(module, getRuntime().getModule());
+        if (!(include instanceof RubyModule)) {
+            throw getRuntime().newTypeError(include, getRuntime().getModule());
         }
 
         if (!(include.isModule() || include.isClass())) {
@@ -2603,7 +2603,7 @@ public class RubyModule extends RubyObject {
      * in a hierarchy. Return the new module wrapper.
      *
      * @param insertBelow The hierarchy target below which to include the wrapped module
-     * @param moduleToInclude The module to wrap and prepend
+     * @param moduleToPrepend The module to wrap and prepend
      * @return The new module wrapper resulting from this prepend
      */
     private RubyModule proceedWithPrepend(RubyModule insertBelow, RubyModule moduleToPrepend) {
