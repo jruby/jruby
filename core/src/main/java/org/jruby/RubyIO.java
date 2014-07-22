@@ -1991,7 +1991,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             case 1:
                 return prepareGetsSeparator(context, args[0], null);
             case 2:
-                return prepareGetsSeparator(context, args[1], args[2]);
+                return prepareGetsSeparator(context, args[0], args[1]);
         }
         throw new RuntimeException("invalid size for gets args: " + args.length);
     }
@@ -2040,7 +2040,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             case 1:
                 return prepareGetsLimit(context, args[0], null);
             case 2:
-                return prepareGetsLimit(context, args[1], args[2]);
+                return prepareGetsLimit(context, args[0], args[1]);
         }
         throw new RuntimeException("invalid size for gets args: " + args.length);
     }
