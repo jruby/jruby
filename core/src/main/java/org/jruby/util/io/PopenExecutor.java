@@ -187,12 +187,11 @@ public class PopenExecutor {
         if (shell == null) {
             throw runtime.newErrnoENOENTError("can't find sh");
         }
-        // TODO? Stops some threads and signals
-//        before_exec();
+
         status = runtime.getPosix().posix_spawnp(shell != null ? shell : "/bin/sh", eargp.fileActions, eargp.attributes, Arrays.asList("sh", "-c", str), Collections.EMPTY_LIST);
+
         if (status == -1) errno = Errno.valueOf(runtime.getPosix().errno());
-        // TODO?
-//        after_exec();
+
         return status;
     }
 
