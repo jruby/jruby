@@ -1266,8 +1266,8 @@ public class RubyProcess {
         if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
             return PopenExecutor.spawn(context, args);
         }
-        long pid = ShellLauncher.runExternalWithoutWait(runtime, args);
-        return RubyFixnum.newFixnum(runtime, pid);
+
+        return RubyFixnum.newFixnum(runtime, ShellLauncher.runExternalWithoutWait(runtime, args));
     }
     
     @JRubyMethod(name = "exit", optional = 1, module = true, visibility = PRIVATE)
