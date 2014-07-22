@@ -101,14 +101,16 @@ public class PopenExecutor {
         }
 
         if (prog != null && !eargp.use_shell) {
-            String[] argv = ARGVSTR2ARGV(eargp.argv_str.argv);
-            argv[0] = prog.toString();
+            String[] argv = eargp.argv_str.argv;
+            if (argv.length > 0) {
+                argv[0] = prog.toString();
+            }
         }
         if (eargp.use_shell) {
             pid = procSpawnSh(runtime, prog.toString(), eargp);
         }
         else {
-            String[] argv = ARGVSTR2ARGV(eargp.argv_str.argv);
+            String[] argv = eargp.argv_str.argv;
             pid = procSpawnCmd(runtime, argv, prog.toString(), eargp);
         }
         if (pid == -1) {
@@ -443,7 +445,7 @@ public class PopenExecutor {
             cmd = StringSupport.checkEmbeddedNulls(runtime, prog).toString();
 
         if (eargp != null && !eargp.use_shell) {
-            args = ARGVSTR2ARGV(eargp.argv_str.argv);
+            args = eargp.argv_str.argv;
         }
         Channel[] mainPipe = null, secondPipe = null;
         switch (fmode & (OpenFile.READABLE|OpenFile.WRITABLE)) {
@@ -1864,7 +1866,11 @@ public class PopenExecutor {
                         }
                     }
                     eargp.argv_buf = argv_buf;
-                    eargp.command_name = RubyString.newStringNoCopy(runtime, argv_buf.get(0));
+                    if (argv_buf.size() > 0) {
+                        eargp.command_name = RubyString.newStringNoCopy(runtime, argv_buf.get(0));
+                    } else {
+                        eargp.command_name = RubyString.newEmptyString(runtime); // empty command will get caught below shortly
+                    }
                 }
             }
         }
@@ -1893,10 +1899,10 @@ public class PopenExecutor {
 
         if (!eargp.use_shell) {
             ArgvStr argv_str = new ArgvStr();
-            argv_str.argv = new byte[eargp.argv_buf.size()][];
+            argv_str.argv = new String[eargp.argv_buf.size()];
             int i = 0;
             for (byte[] bytes : eargp.argv_buf) {
-                argv_str.argv[i++] = bytes;
+                argv_str.argv[i++] = new String(bytes);
             }
             eargp.argv_str = argv_str;
         }
@@ -1911,7 +1917,7 @@ public class PopenExecutor {
     }
 
     private static class ArgvStr {
-        byte[][] argv;
+        String[] argv;
     }
 
     public static class ExecArg {
