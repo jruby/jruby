@@ -141,7 +141,7 @@ project 'JRuby Integration Tests' do
     plugin :antrun do
       execute_goals( 'run',
                      :id => 'rake',
-                     :phase => 'validate',
+                     :phase => 'test',
                      :configuration => [ xml( '<target><exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true"><arg value="-X+T" /><arg value="-Xtruffle.exceptions.print_java=true" /><arg value="-J-ea" /><arg value="spec/mspec/bin/mspec" /><arg value="run" /><arg value="-t" /><arg value="bin/jruby" /><arg value="-T" /><arg value="-X+T" /><arg value="-T" /><arg value="-Xtruffle.exceptions.print_java=true" /><arg value="-T" /><arg value="-J-ea" /><arg value="--config" /> <arg value="spec/truffle/truffle.mspec" /><arg value="--excl-tag" /><arg value="fails" /></exec></target>' ) ] )
     end
 
