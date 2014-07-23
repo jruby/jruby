@@ -467,4 +467,16 @@
           <arg line="-Pjruby-jars"/>
         </exec>
     </target>
+
+    <target name="complete" description="Create the jruby-complete.jar">
+        <exec executable="mvn" failonerror="true">
+          <arg line="-Pcomplete"/>
+        </exec>
+    </target>
+
+    <target name="main" description="Create the jruby maven artifacts">
+        <exec executable="mvn" failonerror="true">
+          <arg line="-Pmain"/>
+        </exec>
+    </target>
 </project>
