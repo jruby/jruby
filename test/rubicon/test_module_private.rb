@@ -51,26 +51,6 @@ class TestModulePrivate < Test::Unit::TestCase
 
   # --------------------------------------------------------
 
-  class C3
-    attr :a
-    attr :b, true
-    def initialize
-      @a = 1
-      @b = 2
-    end
-  end
-
-  def test_attr
-    assert_bag_equal([:a, :b, :b=], C3.instance_methods(false))
-    c3 = C3.new
-    assert_equal(1, c3.a)
-    assert_equal(2, c3.b)
-    c3.b = "cat"
-    assert_equal("cat", c3.b)
-  end
-
-  # --------------------------------------------------------
-
   class C4
     attr_accessor :a, :b
     def initialize
