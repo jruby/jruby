@@ -42,7 +42,7 @@ abstract class JarResource implements FileResource {
         return resource;
     }
 
-    private static JarResource createJarResource(String jarPath, String path) {
+    private static JarResource createJarResource(String jarPath, String entryPath) {
         JarCache.JarIndex index = jarCache.getIndex(jarPath);
 
         if (index == null) {
@@ -52,15 +52,15 @@ abstract class JarResource implements FileResource {
 
         // Try it as directory first, because jars tend to have foo/ entries
         // and it's not really possible disambiguate between files and directories.
-        String[] entries = index.getDirEntries(path);
+        String[] entries = index.getDirEntries(entryPath);
         if (entries != null) {
-            return new JarDirectoryResource(jarPath, path, entries);
+            return new JarDirectoryResource(jarPath, entryPath, entries);
         }
 
-        JarEntry jarEntry = index.getJarEntry(path);
+        JarEntry jarEntry = index.getJarEntry(entryPath);
         if (jarEntry != null) {
             InputStream jarEntryStream = index.getInputStream(jarEntry);
-            return new JarFileResource(path, jarEntry, jarEntryStream);
+            return new JarFileResource(jarPath, jarEntry, jarEntryStream);
         }
 
         return null;

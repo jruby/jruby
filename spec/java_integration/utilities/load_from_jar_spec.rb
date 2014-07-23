@@ -2,6 +2,11 @@ require File.dirname(__FILE__) + "/../spec_helper"
 require 'java'
 
 describe "Loading scripts from jar files" do
+  it "should correctly report $LOADED_FEATURES" do
+    require("#{File.expand_path("test/dir with spaces/test_jar.jar")}!abc/foo").should == true
+    $LOADED_FEATURES.pop.should =~ %r{dir with spaces/test_jar.jar!abc/foo.rb}
+  end
+
   # JRUBY-4774, WARBLER-15
   it "works with classpath URLs that have spaces in them" do
     url_loader = java.net.URLClassLoader.new([java.net.URL.new("file:" + File.expand_path("test/dir with spaces/test_jar.jar"))].to_java(java.net.URL))
