@@ -12,6 +12,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
 
@@ -131,24 +133,9 @@ class LibrarySearcher {
             return findFileResource(path, suffix);
         }
 
-        // If path is absolute, try loading it directly
-        if (new File(baseName).isAbsolute()) {
-            return findFileResource(baseName, suffix);
-        }
-
-        if (baseName.startsWith("jar:")) {
-            baseName = baseName.substring(4);
-        }
-
-        // A hack because apparently test_load tests expect to be able to load file:foo.jar even if
-        // '.' is not in $LOAD_PATH. *sigh*
-        // This probably shouldn't survive into real release.
-        if (baseName.startsWith("file:")) {
-            String name = baseName.substring(5);
-            FoundLibrary found = findFileResource(name, suffix);
-            if (found != null) {
-                return found;
-            }
+        // If path is considered absolute, bypass loadPath iteration and load as-is
+        if (isAbsolute(baseName)) {
+          return findFileResource(baseName, suffix);
         }
 
         for (IRubyObject loadPathEntry : loadService.loadPath.toJavaArray()) {
@@ -183,6 +170,23 @@ class LibrarySearcher {
         }
 
         return null;
+    }
+
+    private static boolean isAbsolute(String path) {
+        // jar: prefix doesn't mean anything anymore, but we might still encounter it
+        if (path.startsWith("jar:")) {
+            path = path.substring(4);
+        }
+
+        if (path.startsWith("file:")) {
+            // We treat any paths with a file schema as absolute, because apparently some tests
+            // explicitely depend on such behavior (test/test_load.rb). On other hand, maybe it's
+            // not too bad, since otherwise joining LOAD_PATH logic would be more complicated if
+            // it'd have to worry about schema.
+            return true;
+        }
+
+        return new File(path).isAbsolute();
     }
 
     protected String resolveLoadName(FileResource resource, String ruby18path) {
