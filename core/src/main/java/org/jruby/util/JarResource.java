@@ -28,14 +28,11 @@ abstract class JarResource implements FileResource {
 
         String jarPath = sanitized.substring(0, bang);
         String entryPath = sanitized.substring(bang + 1);
-        if (!entryPath.startsWith("/")) {
-            entryPath = "/" + entryPath;
-        }
 
         // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
         JarResource resource = createJarResource(jarPath, entryPath, false);
 
-        if (resource == null) {
+        if (resource == null && entryPath.startsWith("/")) {
             resource = createJarResource(jarPath, entryPath.substring(1), true);
         }
 
