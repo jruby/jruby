@@ -509,8 +509,15 @@ public class ArgumentProcessor {
                         }
                         break;
                     } else if (argument.equals("--dev")) {
+                        // most we can do after JVM boot
                         Options.COMPILE_INVOKEDYNAMIC.force("false");
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
+                        break FOR;
+                    } else if (argument.equals("--server")) {
+                        // ignore this...can't do anything with it after boot
+                        break FOR;
+                    } else if (argument.equals("--client")) {
+                        // ignore this...can't do anything with it after boot
                         break FOR;
                     } else {
                         if (argument.equals("--")) {
