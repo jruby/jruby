@@ -357,6 +357,9 @@
         <plugin>
           <artifactId>maven-invoker-plugin</artifactId>
           <version>1.8</version>
+          <configuration>
+            <streamLogs>true</streamLogs>
+          </configuration>
         </plugin>
 
         <plugin>
