@@ -17,8 +17,8 @@ class JarDirectoryResource extends JarResource {
     private final String path;
     private final String[] contents;
 
-    JarDirectoryResource(String jarPath, String path, String[] contents) {
-        super(jarPath);
+    JarDirectoryResource(String jarPath, boolean rootSlashPrefix, String path, String[] contents) {
+        super(jarPath, rootSlashPrefix);
         this.path = path;
         this.contents = contents;
     }

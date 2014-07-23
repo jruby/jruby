@@ -28,21 +28,18 @@ abstract class JarResource implements FileResource {
 
         String jarPath = sanitized.substring(0, bang);
         String entryPath = sanitized.substring(bang + 1);
-        if (!entryPath.startsWith("/")) {
-            entryPath = "/" + entryPath;
-        }
 
         // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
-        JarResource resource = createJarResource(jarPath, entryPath);
+        JarResource resource = createJarResource(jarPath, entryPath, false);
 
-        if (resource == null) {
-            resource = createJarResource(jarPath, entryPath.substring(1));
+        if (resource == null && entryPath.startsWith("/")) {
+            resource = createJarResource(jarPath, entryPath.substring(1), true);
         }
-        
+
         return resource;
     }
 
-    private static JarResource createJarResource(String jarPath, String path) {
+    private static JarResource createJarResource(String jarPath, String entryPath, boolean rootSlashPrefix) {
         JarCache.JarIndex index = jarCache.getIndex(jarPath);
 
         if (index == null) {
@@ -52,31 +49,31 @@ abstract class JarResource implements FileResource {
 
         // Try it as directory first, because jars tend to have foo/ entries
         // and it's not really possible disambiguate between files and directories.
-        String[] entries = index.getDirEntries(path);
+        String[] entries = index.getDirEntries(entryPath);
         if (entries != null) {
-            return new JarDirectoryResource(jarPath, path, entries);
+            return new JarDirectoryResource(jarPath, rootSlashPrefix, entryPath, entries);
         }
 
-        JarEntry jarEntry = index.getJarEntry(path);
+        JarEntry jarEntry = index.getJarEntry(entryPath);
         if (jarEntry != null) {
             InputStream jarEntryStream = index.getInputStream(jarEntry);
-            return new JarFileResource(path, jarEntry, jarEntryStream);
+            return new JarFileResource(jarPath, rootSlashPrefix, jarEntry, jarEntryStream);
         }
 
         return null;
     }
 
-    private final String jarPath;
+    private final String jarPrefix;
     private final JarFileStat fileStat;
 
-    protected JarResource(String jarPath) {
-        this.jarPath = jarPath;
+    protected JarResource(String jarPath, boolean rootSlashPrefix) {
+        this.jarPrefix = rootSlashPrefix ? jarPath + "!/" : jarPath + "!";
         this.fileStat = new JarFileStat(this);
     }
 
     @Override
     public String absolutePath() {
-        return jarPath + "!" + entryName();
+        return jarPrefix + entryName();
     }
 
     @Override
