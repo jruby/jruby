@@ -244,7 +244,7 @@
             <executions>
               <execution>
                 <id>truffle</id>
-                <phase>validate</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>run</goal>
                 </goals>

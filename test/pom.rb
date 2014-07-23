@@ -130,7 +130,7 @@ project 'JRuby Integration Tests' do
     plugin :antrun do
       execute_goals( 'run',
                      :id => 'rake',
-                     :phase => 'validate',
+                     :phase => 'test',
                      :configuration => [ xml( '<target><exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true"><arg value="-S"/><arg value="rake"/><arg value="${task}"/></exec></target>' ) ] )
     end
 

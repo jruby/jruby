@@ -504,15 +504,9 @@
       </modules>
     </profile>
     <profile>
-      <id>truffle</id>
-      <build>
-        <defaultGoal>validate</defaultGoal>
-      </build>
-    </profile>
-    <profile>
       <id>rake</id>
       <build>
-        <defaultGoal>validate</defaultGoal>
+        <defaultGoal>test</defaultGoal>
       </build>
       <modules>
         <module>test</module>
@@ -521,7 +515,7 @@
     <profile>
       <id>exec</id>
       <build>
-        <defaultGoal>validate</defaultGoal>
+        <defaultGoal>test</defaultGoal>
       </build>
       <modules>
         <module>test</module>
