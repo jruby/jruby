@@ -45,9 +45,6 @@ project 'JRuby Integration Tests' do
   gem 'rubygems:rspec:${rspec.version}'
   gem 'rubygems:minitest:${minitest.version}'
   gem 'rubygems:minitest-excludes:${minitest-excludes.version}'
-  gem 'rubygems:rdoc:${rdoc.version}-SNAPSHOT'
-  gem 'rubygems:json:${json.version}'
-  gem 'rubygems:rake:${rake.version}'
 
   overrides do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
@@ -135,17 +132,6 @@ project 'JRuby Integration Tests' do
                      :id => 'rake',
                      :phase => 'validate',
                      :configuration => [ xml( '<target><exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true"><arg value="-S"/><arg value="rake"/><arg value="${task}"/></exec></target>' ) ] )
-    end
-
-  end
-
-  profile 'truffle' do
-
-    plugin :antrun do
-      execute_goals( 'run',
-                     :id => 'rake',
-                     :phase => 'validate',
-                     :configuration => [ xml( '<target><exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true"><arg value="-X+T" /><arg value="-Xtruffle.exceptions.print_java=true" /><arg value="-J-ea" /><arg value="spec/mspec/bin/mspec" /><arg value="run" /><arg value="-t" /><arg value="bin/jruby" /><arg value="-T" /><arg value="-X+T" /><arg value="-T" /><arg value="-Xtruffle.exceptions.print_java=true" /><arg value="-T" /><arg value="-J-ea" /><arg value="--config" /> <arg value="spec/truffle/truffle.mspec" /><arg value="--excl-tag" /><arg value="fails" /></exec></target>' ) ] )
     end
 
   end

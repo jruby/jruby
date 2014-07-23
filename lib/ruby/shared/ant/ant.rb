@@ -5,7 +5,7 @@ rescue NameError => ne
   # uncaught, we should get a NameError, such as:
   # NameError: uppercase package names not accessible this way (`org.apache.tools.ant.IntrospectionHelper')
   # this probably means $ANT_HOME is not set properly
-  raise RuntimeError, "Caught NameError; examine $ANT_HOME"
+#  raise RuntimeError, "Caught NameError; examine $ANT_HOME"
 end
 require 'ant/target'
 
