@@ -7,9 +7,13 @@
   <dependencies>
     <dependency>
       <groupId>org.jruby</groupId>
-      <artifactId>jruby</artifactId>
+      <artifactId>jruby-core-complete</artifactId>
       <version>@project.version@</version>
-      <type>pom</type>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-stdlib-complete</artifactId>
+      <version>@project.version@</version>
     </dependency>
   </dependencies>
 
