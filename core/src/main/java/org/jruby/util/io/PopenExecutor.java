@@ -195,11 +195,14 @@ public class PopenExecutor {
         long status;
 
         String shell = dlnFindExeR(runtime, "sh", null);
-        if (shell == null) {
-            throw runtime.newErrnoENOENTError("can't find sh");
-        }
 
-        status = runtime.getPosix().posix_spawnp(shell != null ? shell : "/bin/sh", eargp.fileActions, eargp.attributes, Arrays.asList("sh", "-c", str), Collections.EMPTY_LIST);
+        //System.out.println("before: " + shell + ", fa=" + eargp.fileActions + ", a=" + eargp.attributes + ", argv=" + Arrays.asList("sh", "-c", str));
+        status = runtime.getPosix().posix_spawnp(
+                shell != null ? shell : "/bin/sh",
+                eargp.fileActions,
+                eargp.attributes,
+                Arrays.asList("sh", "-c", str),
+                eargp.envp_str == null ? Collections.EMPTY_LIST : Arrays.asList(eargp.envp_str));
 
         if (status == -1) errno = Errno.valueOf(runtime.getPosix().errno());
 

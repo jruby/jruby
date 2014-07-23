@@ -8,9 +8,6 @@ class TestRegexp < Test::Unit::TestCase
     a=Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE)
     b=Regexp.new(".foo.*([a-z])")
     assert(!(a == b))
-    a=Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE)
-    b=Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE, "S")
-    assert_equal(a, b)
   end
 
   def test_MATCH # '=~'
