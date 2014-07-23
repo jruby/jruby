@@ -22,8 +22,8 @@ class JarFileResource extends JarResource {
   private final JarEntry entry;
   private final InputStream entryStream;
 
-  JarFileResource(String jarPath, JarEntry entry, InputStream entryStream) {
-    super(jarPath);
+  JarFileResource(String jarPath, boolean rootSlashPrefix, JarEntry entry, InputStream entryStream) {
+    super(jarPath, rootSlashPrefix);
     this.entry = entry;
     this.entryStream = entryStream;
   }

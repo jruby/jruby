@@ -3,8 +3,14 @@ require 'java'
 
 describe "Loading scripts from jar files" do
   it "should correctly report $LOADED_FEATURES" do
-    require("#{File.expand_path("test/dir with spaces/test_jar.jar")}!abc/foo").should == true
+    jar = File.expand_path("test/dir with spaces/test_jar.jar")
+    require("#{jar}!abc/foo").should == true
     $LOADED_FEATURES.pop.should =~ %r{dir with spaces/test_jar.jar!abc/foo.rb}
+
+    # JRuby has supported a test_jar.jar!/abc/foo.rb alias for 'abc/foo.rb' entry in the test.jar for quite some time
+    # (more correct would be test.jar!foo.rb)
+    require("#{jar}!/abc/foo").should == true
+    $LOADED_FEATURES.pop.should == "#{jar}!/abc/foo.rb"
   end
 
   # JRUBY-4774, WARBLER-15

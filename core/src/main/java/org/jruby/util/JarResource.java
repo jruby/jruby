@@ -33,16 +33,16 @@ abstract class JarResource implements FileResource {
         }
 
         // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
-        JarResource resource = createJarResource(jarPath, entryPath);
+        JarResource resource = createJarResource(jarPath, entryPath, false);
 
         if (resource == null) {
-            resource = createJarResource(jarPath, entryPath.substring(1));
+            resource = createJarResource(jarPath, entryPath.substring(1), true);
         }
-        
+
         return resource;
     }
 
-    private static JarResource createJarResource(String jarPath, String entryPath) {
+    private static JarResource createJarResource(String jarPath, String entryPath, boolean rootSlashPrefix) {
         JarCache.JarIndex index = jarCache.getIndex(jarPath);
 
         if (index == null) {
@@ -54,29 +54,29 @@ abstract class JarResource implements FileResource {
         // and it's not really possible disambiguate between files and directories.
         String[] entries = index.getDirEntries(entryPath);
         if (entries != null) {
-            return new JarDirectoryResource(jarPath, entryPath, entries);
+            return new JarDirectoryResource(jarPath, rootSlashPrefix, entryPath, entries);
         }
 
         JarEntry jarEntry = index.getJarEntry(entryPath);
         if (jarEntry != null) {
             InputStream jarEntryStream = index.getInputStream(jarEntry);
-            return new JarFileResource(jarPath, jarEntry, jarEntryStream);
+            return new JarFileResource(jarPath, rootSlashPrefix, jarEntry, jarEntryStream);
         }
 
         return null;
     }
 
-    private final String jarPath;
+    private final String jarPrefix;
     private final JarFileStat fileStat;
 
-    protected JarResource(String jarPath) {
-        this.jarPath = jarPath;
+    protected JarResource(String jarPath, boolean rootSlashPrefix) {
+        this.jarPrefix = rootSlashPrefix ? jarPath + "!/" : jarPath + "!";
         this.fileStat = new JarFileStat(this);
     }
 
     @Override
     public String absolutePath() {
-        return jarPath + "!" + entryName();
+        return jarPrefix + entryName();
     }
 
     @Override
