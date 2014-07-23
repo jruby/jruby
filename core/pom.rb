@@ -42,7 +42,7 @@ project 'JRuby Core' do
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
   jar 'org.jruby.joni:joni:2.1.2-SNAPSHOT'
-  jar 'org.jruby.extras:bytelist:1.0.11'
+  jar 'org.jruby.extras:bytelist:1.0.12-SNAPSHOT'
   jar 'org.jruby.jcodings:jcodings:1.0.12-SNAPSHOT'
   jar 'org.jruby:yecht:1.0'
 
