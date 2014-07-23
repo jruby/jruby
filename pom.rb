@@ -169,13 +169,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  profile 'truffle' do
-    build do
-      default_goal 'validate'
-    end
-  end
-
-  [ 'rake', 'exec' ].each do |name|
+  [ 'rake', 'exec', 'truffle' ].each do |name|
     profile name do
 
       modules [ 'test' ]

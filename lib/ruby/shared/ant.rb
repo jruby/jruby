@@ -6,12 +6,11 @@ class Ant
       classpath_jars = []
       listing_path = nil
       jar_path = nil
-p "Asd"
       diag.readlines.each do |line|
-p line
 
         # workaround for JRUBY-4814 (IO.popen doesnt convert CRLF to LF on Windows)
         line.chomp!
+
         if line =~ /^ant\.home: (.*)$/ && !defined?(ANT_HOME)
           const_set(:ANT_HOME, $1)
         elsif line =~ /Tasks availability/
@@ -27,7 +26,6 @@ p line
           classpath_jars << File.join(jar_path, $1)
         end
       end
-p classpath_jars
       classpath_jars.uniq.each {|j| $CLASSPATH << j }
     end
   end
