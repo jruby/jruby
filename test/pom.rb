@@ -45,9 +45,6 @@ project 'JRuby Integration Tests' do
   gem 'rubygems:rspec:${rspec.version}'
   gem 'rubygems:minitest:${minitest.version}'
   gem 'rubygems:minitest-excludes:${minitest-excludes.version}'
-  gem 'rubygems:rdoc:${rdoc.version}-SNAPSHOT'
-  gem 'rubygems:json:${json.version}'
-  gem 'rubygems:rake:${rake.version}'
 
   overrides do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
