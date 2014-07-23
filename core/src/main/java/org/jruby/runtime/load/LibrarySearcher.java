@@ -247,6 +247,9 @@ class LibrarySearcher {
         private void loadJar(Ruby runtime, boolean wrap) {
             try {
                 URL url = new File(location).toURI().toURL();
+                if ( location.contains( "!") ) {
+                    url = new URL( "jar:" + url );
+                }
                 runtime.getJRubyClassLoader().addURL(url);
             } catch (MalformedURLException badUrl) {
                 runtime.newIOErrorFromException(badUrl);
