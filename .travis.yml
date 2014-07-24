@@ -38,6 +38,8 @@ matrix:
     - env: TARGET='-Pcomplete'
       jdk: oraclejdk8
   fast_finish: true
+  allow_failures:
+    - env: TARGET='-Prake -Dtask=spec:compiler'
 
 branches:
   only:
@@ -50,7 +52,7 @@ before_install:
 
 # the install stores the artifact in the localrepo for 
 # the second maven run with $TARGET
-script: env; mvn install $TARGET -Dinvoker.skip=false | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]
+script: mvn install $TARGET -Dinvoker.skip=false | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]
 install: /bin/true
 notifications:
   irc:

@@ -77,6 +77,7 @@ namespace :test do
 
   permute_tests(:jruby, compile_flags, 'test:compile') do |t|
     files = []
+    ENV['TESTOPT'] = '-v'
     File.open('test/jruby.index') do |f|
       f.each_line.each do |line|
         filename = "test/#{line.chomp}.rb"
