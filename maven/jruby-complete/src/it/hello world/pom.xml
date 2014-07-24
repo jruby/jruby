@@ -36,6 +36,9 @@
             <configuration>
               <executable>java</executable> 
               <arguments>
+<!--
+		<argument>-Djruby.debug.loadService=true</argument>
+-->
 		<argument>-jar</argument>
 		<argument>jruby-complete-@project.version@.jar</argument>
 		<argument>-e</argument>
