@@ -99,15 +99,23 @@ class TestGlobals < Test::Unit::TestCase
     assert_equal "is", $&
     assert_equal $&, $MATCH
   end
+
+  def no_warning
+    old_v = $VERBOSE
+    $VERBOSE = false
+    yield
+  ensure
+    $VERBOSE = old_v
+  end
   
   # This test just checks if JRuby allows $= assignment (and ignored)
   def test_english_ignore_case
     alias $IGNORECASE $=
     assert_not_nil($IGNORECASE)
-    assert_equal($=, $IGNORECASE)
+    no_warning {assert_equal($=, $IGNORECASE)}
     assert_nil("fOo" =~ /foo/)
     assert("fOo" =~ /foo/i)
-    $= = true
+    no_warning {$= = true}
     # The following matches on CRuby 1.8 (ignore case) but not on CRuby 1.9 and JRuby (both on 1.8 and 1.9 modes.)
     # assert("fOo" =~ /foo/)
     assert("fOo" =~ /foo/i)
