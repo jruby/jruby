@@ -145,6 +145,16 @@ public class PopenExecutor {
             return -1;
         }
 
+//        System.out.println(Arrays.asList(prog,
+//                eargp.fileActions,
+//                eargp.attributes,
+//                Arrays.asList(argv),
+//                eargp.envp_str == null ? Collections.EMPTY_LIST : Arrays.asList(eargp.envp_str)));
+        // MRI does not do this check, but posix_spawn does not reliably ENOENT for bad filenames like ''
+        if (prog == null || prog.length() == 0) {
+            errno = Errno.ENOENT;
+            return -1;
+        }
         status = runtime.getPosix().posix_spawnp(
                 prog,
                 eargp.fileActions,
@@ -197,7 +207,7 @@ public class PopenExecutor {
 
         String shell = dlnFindExeR(runtime, "sh", null);
 
-        //System.out.println("before: " + shell + ", fa=" + eargp.fileActions + ", a=" + eargp.attributes + ", argv=" + Arrays.asList("sh", "-c", str));
+//        System.out.println("before: " + shell + ", fa=" + eargp.fileActions + ", a=" + eargp.attributes + ", argv=" + Arrays.asList("sh", "-c", str));
         status = runtime.getPosix().posix_spawnp(
                 shell != null ? shell : "/bin/sh",
                 eargp.fileActions,
@@ -372,6 +382,17 @@ public class PopenExecutor {
             return procSpawnSh(runtime, eargp, cmd, envp);
         }
 
+//        System.out.println(Arrays.asList(
+//                cmd,
+//                eargp.fileActions,
+//                eargp.attributes,
+//                args == null ? Collections.EMPTY_LIST : Arrays.asList(args),
+//                envp == null ? Collections.EMPTY_LIST : Arrays.asList(envp)));
+        // MRI does not do this check, but posix_spawn does not reliably ENOENT for bad filenames like ''
+        if (cmd == null || cmd.length() == 0) {
+            errno = Errno.ENOENT;
+            return -1;
+        }
         long ret = runtime.getPosix().posix_spawnp(
                 cmd,
                 eargp.fileActions,
