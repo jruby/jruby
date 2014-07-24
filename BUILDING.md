@@ -222,3 +222,11 @@ mvn clean deploy -Psonatype-oss-release -Prelease
 ```
 
 go to oss.sonatype.org and close the deployment which will check if all 'required' files are in place and then finally push the release to maven central and . . . 
+
+### Start development
+
+After the release set the new development version:
+
+```
+mvn versions:set -DnewVersion=1.7.6.dev-SNAPSHOT -Pall
+```
