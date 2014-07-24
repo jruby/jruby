@@ -379,7 +379,7 @@ class TestIO < Test::Unit::TestCase
     assert IO.include?(File::Constants)
     constants = ["APPEND", "BINARY", "CREAT", "EXCL", "FNM_CASEFOLD",
                    "FNM_DOTMATCH", "FNM_NOESCAPE", "FNM_PATHNAME", "FNM_SYSCASE",
-                   "LOCK_EX", "LOCK_NB", "LOCK_SH", "LOCK_UN", "NOCTTY", "NONBLOCK",
+                   "LOCK_EX", "LOCK_NB", "LOCK_SH", "LOCK_UN", "NONBLOCK",
                    "RDONLY", "RDWR", "SEEK_CUR", "SEEK_END", "SEEK_SET", "SYNC", "TRUNC",
                    "WRONLY"]
     constants = constants.map(&:to_sym)
