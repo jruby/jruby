@@ -1,6 +1,6 @@
 language: java
 before_script:
-  - unset GEM_PATH GEM_HOME IRBRC
+  - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
   - "export PATH=`pwd`/bin:$PATH"
 
 jdk:
