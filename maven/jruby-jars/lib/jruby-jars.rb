@@ -8,6 +8,6 @@ module JRubyJars
   end
 
   def self.stdlib_jar_path
-    "#{PATH }/jruby-stdlib-#{JRubyJars::MAVEN_VERSION}.jar"
+    "#{PATH }/jruby-stdlib-complete-#{JRubyJars::MAVEN_VERSION}.jar"
   end
 end
