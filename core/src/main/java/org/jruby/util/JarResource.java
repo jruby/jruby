@@ -16,13 +16,13 @@ abstract class JarResource implements FileResource {
     private static final JarCache jarCache = new JarCache();
 
     public static JarResource create(String pathname) {
-        int bang = pathname.indexOf('!');
+        Matcher matcher = PREFIX_MATCH.matcher(pathname);
+        String sanitized = matcher.matches() ? matcher.group(1) : pathname;
+
+        int bang = sanitized.indexOf('!');
         if (bang < 0) {
             return null;
         }
-
-        Matcher matcher = PREFIX_MATCH.matcher(pathname);
-        String sanitized = matcher.matches() ? matcher.group(1) : pathname;
 
         String jarPath;
         String entryPath;
