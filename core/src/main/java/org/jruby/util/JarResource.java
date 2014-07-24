@@ -2,15 +2,13 @@ package org.jruby.util;
 
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
-import org.jruby.util.io.ChannelDescriptor;
-import org.jruby.util.io.ModeFlags;
 
-import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.jar.JarEntry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 abstract class JarResource implements FileResource {
     private static Pattern PREFIX_MATCH = Pattern.compile("^(?:jar:)?(?:file:)?(.*)$");
@@ -26,8 +24,19 @@ abstract class JarResource implements FileResource {
             return null;
         }
 
-        String jarPath = sanitized.substring(0, bang);
-        String entryPath = sanitized.substring(bang + 1);
+        String jarPath;
+        String entryPath;
+        try
+        {
+            // since pathname is actually an uri we need to decode any url decoded characters like %20
+            // which happens when directory names contain spaces
+            jarPath = URLDecoder.decode(sanitized.substring(0, bang), "UTF-8");
+            entryPath = URLDecoder.decode(sanitized.substring(bang + 1), "UTF-8");
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            throw new RuntimeException( "hmm - system does not know UTF-8 string encoding :(" );
+        }
 
         // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
         JarResource resource = createJarResource(jarPath, entryPath, false);
