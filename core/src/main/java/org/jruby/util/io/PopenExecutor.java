@@ -1855,9 +1855,9 @@ public class PopenExecutor {
                             while (p < pBytes.length && pBytes[p] != ' ' && pBytes[p] != '\t')
                                 p++;
                             argv_buf.add(Arrays.copyOfRange(pBytes, w, p));
+                            eargp.argv_buf = argv_buf;
                         }
                     }
-                    eargp.argv_buf = argv_buf;
                     if (argv_buf.size() > 0) {
                         eargp.command_name = RubyString.newStringNoCopy(runtime, argv_buf.get(0));
                     } else {
