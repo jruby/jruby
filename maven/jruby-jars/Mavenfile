@@ -2,7 +2,6 @@
 
 gemspec
 
-model.version = model.version.sub(/\.SNAPSHOT/, '-SNAPSHOT')
 inherit "org.jruby:jruby-artifacts:#{model.version}"
 
 name "JRuby Jars Gem"
@@ -30,13 +29,9 @@ jruby_plugin!( :gem,
 end
 
 execute 'rename gem file', :package do |ctx|
-
   require 'fileutils'
-  gem = File.join( ctx.project.build.directory,
-                   ctx.project.build.final_name + ".gem" )
-  source = gem.sub( /-SNAPSHOT/, '.SNAPSHOT' )
-  FileUtils.mv( source, gem ) if gem.match( /-SNAPSHOT/ ) and File.exists?( source )
-
+  FileUtils.rm_rf(Dir["#{ctx.project.build.directory}/*.gem"])
+  FileUtils.mv(Dir["#{ctx.project.basedir}/*.gem"], ctx.project.build.directory)
 end
 
 plugin( :invoker,
