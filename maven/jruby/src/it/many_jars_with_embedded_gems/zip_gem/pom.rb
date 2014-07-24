@@ -1,12 +1,7 @@
 #-*- mode: ruby -*-
 
-VERSION = '2.0.2'
+gemfile
 
-id 'rubygems:zip', VERSION
-
-gem 'zip', VERSION
-
-repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
-            :id => 'rubygems-releases' )
+id 'org.rubygems:zip', VERSION
 
 jruby_plugin! :gem, :includeRubygemsInResources => true
