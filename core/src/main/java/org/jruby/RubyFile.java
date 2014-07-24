@@ -146,10 +146,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
         /* truncate size to 0 */
         constants.setConstant("TRUNC", runtime.newFixnum(OpenFlags.O_TRUNC.intValue()));
-        if (OpenFlags.O_NOCTTY.defined()) {
+        // FIXME: NOCTTY is showing up as undefined on Linux, but it should be defined.
+//        if (OpenFlags.O_NOCTTY.defined()) {
             /* not to make opened IO the controlling terminal device */
             constants.setConstant("NOCTTY", runtime.newFixnum(OpenFlags.O_NOCTTY.intValue()));
-        }
+//        }
         if (!OpenFlags.O_BINARY.defined()) {
             constants.setConstant("BINARY", runtime.newFixnum(0));
         } else {
