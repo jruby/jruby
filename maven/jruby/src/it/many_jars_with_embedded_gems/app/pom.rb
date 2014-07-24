@@ -1,6 +1,6 @@
 # two jars with embedded gems
 jar 'de.saumya.mojo:maven-tools', '0.34.2'
-jar 'rubygems:zip', '2.0.2'
+jar 'org.rubygems:zip', '2.0.2'
 
 # jruby scripting container
 pom 'org.jruby:jruby', '@project.version@'

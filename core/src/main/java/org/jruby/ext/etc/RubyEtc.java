@@ -398,7 +398,7 @@ public class RubyEtc {
     @JRubyMethod(module = true)
     public static IRubyObject systmpdir(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
-        ByteList tmp = ByteList.create(System.getProperty("java.io.tmpdir"));
+        ByteList tmp = ByteList.create(System.getProperty("java.io.tmpdir")); // default for all platforms except Windows
         if (Platform.IS_WINDOWS) {
             String commonAppData = System.getenv("CSIDL_COMMON_APPDATA");
             if (commonAppData != null) tmp = ByteList.create(commonAppData);

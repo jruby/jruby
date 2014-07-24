@@ -753,7 +753,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (!RubyFileTest.exist_p(recv, file).isTrue()) {
             throw context.runtime.newErrnoENOENTError(file.toString());
         }
-        return file;
+        try {
+            return context.runtime.newString(new File(file.toString()).getCanonicalPath());
+        } catch (IOException ioex) {
+            throw context.runtime.newErrnoENOENTError(file.toString());
+        }
     }
 
     /**

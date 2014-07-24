@@ -117,19 +117,20 @@ class TestSystemError < Test::Unit::TestCase
     t.close
     File.open(t.path, 'w') {}
     File.chmod(0555, t.path)
+    expected_msg = "Permission denied - #{Pathname.new(t.path).realpath}"
     begin
       File.open(t.path, 'w') {}
       fail
     rescue Errno::EACCES => e
       # jruby 1.4 has duplicated error msg as well
-      assert_equal 'Permission denied - ' + t.path, e.message
+      assert_equal expected_msg, e.message
     end
     #
     begin
       File.open(t.path, File::WRONLY) {}
       fail
     rescue Errno::EACCES => e
-      assert_equal 'Permission denied - ' + t.path, e.message
+      assert_equal expected_msg, e.message
     end
   end
 end

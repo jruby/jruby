@@ -10,7 +10,7 @@ if RUBY_VERSION > '1.9'
       begin
         $LOAD_PATH.unshift ffi_path
 
-        require( 'krypt' ).should == true
+        require( 'krypt' )
 
       ensure
         $LOAD_PATH.delete( ffi_path )
