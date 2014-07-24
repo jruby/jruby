@@ -141,7 +141,8 @@ public class PopenExecutor {
             prog = argv[0];
         prog = dlnFindExeR(runtime, prog, null);
         if (prog == null) {
-            throw runtime.newErrnoENOENTError(prog);
+            errno = Errno.ENOENT;
+            return -1;
         }
 
         status = runtime.getPosix().posix_spawnp(
