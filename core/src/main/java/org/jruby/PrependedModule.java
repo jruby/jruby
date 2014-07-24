@@ -28,14 +28,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.builtin.Variable;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.internal.runtime.methods.WrapperMethod;
 
 /**
  * This class is used as an intermediate superclass for Module#prepend
@@ -46,17 +44,35 @@ import org.jruby.runtime.builtin.Variable;
 public class PrependedModule extends IncludedModule {
     public PrependedModule(Ruby runtime, RubyClass superClass, RubyModule origin) {
         super(runtime, superClass, origin);
-        methods = origin.methods;
-        origin.methods = new ConcurrentHashMap<String, DynamicMethod>(0, 0.9f, 1);
+
         origin.methodLocation = this;
-        for (Map.Entry<String, DynamicMethod> entry : methods.entrySet()) {
+
+        // Move origins methods to this module.
+        for (Map.Entry<String, DynamicMethod> entry : origin.getMethodsForWrite().entrySet()) {
             DynamicMethod method = entry.getValue();
-            method.setImplementationClass(this);
+            super.putMethod(entry.getKey(), new WrapperMethod(this, method, method.getVisibility()));
         }
+
+        // clear origin's methods so lookups go through prepended modules before reaching them.
+        origin.methods = new ConcurrentHashMap<String, DynamicMethod>(0, 0.9f, 1);
     }
 
     @Override
-    public boolean isPrepended() {
-        return true;
+    protected void putMethod(String name, DynamicMethod method) {
+        // we don't want to wrap undefined methods
+        method = method.isUndefined() ? method : new WrapperMethod(this, method, method.getVisibility());
+        getMethodsForWrite().put(name, method);
+    }
+
+    @Override
+    public void addMethod(String name, DynamicMethod method) {
+        // we don't want to wrap undefined methods
+        method = method.isUndefined() ? method : new WrapperMethod(this, method, method.getVisibility());
+        super.addMethod(name, method);
+    }
+
+    @Override
+    public boolean hasPrepends() {
+        return false;
     }
 }
