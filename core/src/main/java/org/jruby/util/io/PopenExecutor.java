@@ -103,6 +103,14 @@ public class PopenExecutor {
 
         prog = eargp.use_shell ? eargp.command_name : eargp.command_name;
 
+        if (eargp.chdir_given()) {
+            // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
+            // just need to add chdir to the cmd
+            prog = (RubyString)prog.strDup(runtime).prepend(context, RubyString.newString(runtime, "cd '" + eargp.chdir_dir + "'; "));
+            eargp.chdir_dir = null;
+            eargp.chdir_given_clear();
+        }
+
         if (execargRunOptions(context, runtime, eargp, sarg, errmsg) < 0) {
             return -1;
         }
