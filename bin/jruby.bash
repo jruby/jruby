@@ -14,7 +14,7 @@
 cygwin=false
 
 # ----- Identify OS we are running under --------------------------------------
-case "`uname`" in
+case "$(uname)" in
   CYGWIN*) cygwin=true;;
   Darwin) darwin=true;;
   MINGW*) jruby.exe "$@"; exit $?;;
@@ -41,12 +41,12 @@ done
 
 PRG=$SELF_PATH
 
-JRUBY_HOME_1=`dirname "$PRG"`           # the ./bin dir
+JRUBY_HOME_1=$(dirname "$PRG")           # the ./bin dir
 if [ "$JRUBY_HOME_1" = '.' ] ; then
-  cwd=`pwd`
-  JRUBY_HOME=`dirname "$cwd"` # JRUBY-2699
+  cwd=$(pwd)
+  JRUBY_HOME=$(dirname "$cwd") # JRUBY-2699
 else
-  JRUBY_HOME=`dirname "$JRUBY_HOME_1"`  # the . dir
+  JRUBY_HOME=$(dirname "$JRUBY_HOME_1")  # the . dir
 fi
 
 if [ -z "$JRUBY_OPTS" ] ; then
@@ -84,7 +84,7 @@ if [ -z "$JAVACMD" ] ; then
     JAVACMD='java'
   else
     if $cygwin; then
-      JAVACMD="`cygpath -u "$JAVA_HOME"`/bin/java"
+      JAVACMD="$(cygpath -u "$JAVA_HOME")/bin/java"
     else
       JAVACMD="$JAVA_HOME/bin/java"
     fi
@@ -147,7 +147,7 @@ for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
 done
 
 if $cygwin; then
-    JRUBY_CP=`cygpath -p -w "$JRUBY_CP"`
+    JRUBY_CP=$(cygpath -p -w "$JRUBY_CP")
 fi
 
 # ----- Set Up The System Classpath -------------------------------------------
@@ -172,7 +172,7 @@ else
     done
 
     if [ "$CP" != "" ] && $cygwin; then
-        CP=`cygpath -p -w "$CP"`
+        CP=$(cygpath -p -w "$CP")
     fi
 fi
 
@@ -258,7 +258,7 @@ do
           JAVACMD='jdb'
         else
           if $cygwin; then
-            JAVACMD="`cygpath -u "$JAVA_HOME"`/bin/jdb"
+            JAVACMD="$(cygpath -u "$JAVA_HOME")/bin/jdb"
           else
             JAVACMD="$JAVA_HOME/bin/jdb"
           fi
@@ -315,11 +315,11 @@ JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_MEM_MIN $JAVA_STACK"
 JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
 
 if $cygwin; then
-  JRUBY_HOME=`cygpath --mixed "$JRUBY_HOME"`
-  JRUBY_SHELL=`cygpath --mixed "$JRUBY_SHELL"`
+  JRUBY_HOME=$(cygpath --mixed "$JRUBY_HOME")
+  JRUBY_SHELL=$(cygpath --mixed "$JRUBY_SHELL")
 
   if [[ ( "${1:0:1}" = "/" ) && ( ( -f "$1" ) || ( -d "$1" )) ]]; then
-    win_arg=`cygpath -w "$1"`
+    win_arg=$(cygpath -w "$1")
     shift
     win_args=("$win_arg" "$@")
     set -- "${win_args[@]}"
