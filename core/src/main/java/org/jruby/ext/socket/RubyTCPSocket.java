@@ -55,9 +55,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.ChannelFD;
-import org.jruby.util.io.ModeFlags;
-import org.jruby.util.io.ChannelDescriptor;
 
 public class RubyTCPSocket extends RubyIPSocket {
     static void createTCPSocket(Ruby runtime) {

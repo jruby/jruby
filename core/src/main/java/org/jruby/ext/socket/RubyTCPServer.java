@@ -41,8 +41,6 @@ import java.nio.channels.SocketChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyInteger;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
@@ -52,9 +50,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.ChannelDescriptor;
-import org.jruby.util.io.ChannelFD;
-import org.jruby.util.io.ModeFlags;
 
 import org.jruby.util.io.SelectorFactory;
 import java.nio.channels.spi.SelectorProvider;
