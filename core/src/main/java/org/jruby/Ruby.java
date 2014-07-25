@@ -248,11 +248,12 @@ public final class Ruby {
             this.hashSeedK0 = this.random.nextLong();
             this.hashSeedK1 = this.random.nextLong();
         }
-        
-        this.beanManager.register(new Config(this));
-        this.beanManager.register(parserStats);
-        this.beanManager.register(new ClassCache(this));
-        this.beanManager.register(new org.jruby.management.Runtime(this));
+
+        this.configBean = new Config(this);
+        this.classCacheBean = new ClassCache(this);
+        this.runtimeBean = new org.jruby.management.Runtime(this);
+
+        registerMBeans();
 
         this.runtimeCache = new RuntimeCache();
         runtimeCache.initMethodCache(ClassIndex.MAX_CLASSES.ordinal() * MethodNames.values().length - 1);
@@ -266,6 +267,14 @@ public final class Ruby {
         }
 
         reinitialize(false);
+    }
+
+    public void registerMBeans() {
+        this.beanManager.register(jitCompiler);
+        this.beanManager.register(configBean);
+        this.beanManager.register(parserStats);
+        this.beanManager.register(classCacheBean);
+        this.beanManager.register(runtimeBean);
     }
 
     void reinitialize(boolean reinitCore) {
@@ -3955,72 +3964,6 @@ public final class Ruby {
         return objectSpace;
     }
 
-    private final Map<Integer, Integer> filenoExtIntMap = new HashMap<Integer, Integer>();
-    private final Map<Integer, Integer> filenoIntExtMap = new HashMap<Integer, Integer>();
-
-    public void putFilenoMap(int external, int internal) {
-        filenoExtIntMap.put(external, internal);
-        filenoIntExtMap.put(internal, external);
-    }
-
-    public int getFilenoExtMap(int external) {
-        Integer internal = filenoExtIntMap.get(external);
-        if (internal != null) return internal;
-        return external;
-    }
-
-    public int getFilenoIntMap(int internal) {
-        Integer external = filenoIntExtMap.get(internal);
-        if (external != null) return external;
-        return internal;
-    }
-
-    public int getFilenoIntMapSize() {
-        return filenoIntExtMap.size();
-    }
-
-    public void removeFilenoIntMap(int internal) {
-        filenoIntExtMap.remove(internal);
-    }
-
-    /**
-     * Get the "external" fileno for a given ChannelDescriptor. Primarily for
-     * the shared 0, 1, and 2 filenos, which we can't actually share across
-     * JRuby runtimes.
-     *
-     * @param descriptor The descriptor for which to getService the fileno
-     * @return The external fileno for the descriptor
-     */
-    public int getFileno(ChannelDescriptor descriptor) {
-        return getFilenoIntMap(descriptor.getFileno());
-    }
-
-    public int filenoForChannel(Channel channel) {
-        Integer val = channelFileno.get(channel);
-        if (val == null) {
-            FilenoUtil.getDescriptorFromChannel(channel);
-        }
-        return val;
-    }
-    private final Map<Channel, Integer> channelFileno = new ConcurrentHashMap<Channel, Integer>();
-
-    @Deprecated
-    public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {
-    }
-
-    @Deprecated
-    public void registerDescriptor(ChannelDescriptor descriptor) {
-    }
-
-    @Deprecated
-    public void unregisterDescriptor(int aFileno) {
-    }
-
-    @Deprecated
-    public ChannelDescriptor getDescriptorByFileno(int aFileno) {
-        return FilenoUtil.getDescriptorByFileno(aFileno);
-    }
-
     public InputStream getIn() {
         return in;
     }
@@ -4649,6 +4592,13 @@ public final class Ruby {
      * @return the freeze-duped version of the string
      */
     public synchronized RubyString freezeAndDedupString(RubyString string) {
+        if (string.getMetaClass().isSingleton()) {
+            // never cache a singleton
+            RubyString duped = string.strDup(this);
+            duped.setFrozen(true);
+            return duped;
+        }
+
         WeakReference<RubyString> dedupedRef = dedupMap.get(string);
         RubyString deduped;
 
@@ -4723,6 +4673,81 @@ public final class Ruby {
     @Deprecated
     public boolean is1_9() {
         return true;
+    }
+
+    @Deprecated
+    private final Map<Integer, Integer> filenoExtIntMap = new HashMap<Integer, Integer>();
+    @Deprecated
+    private final Map<Integer, Integer> filenoIntExtMap = new HashMap<Integer, Integer>();
+
+    @Deprecated
+    public void putFilenoMap(int external, int internal) {
+        filenoExtIntMap.put(external, internal);
+        filenoIntExtMap.put(internal, external);
+    }
+
+    @Deprecated
+    public int getFilenoExtMap(int external) {
+        Integer internal = filenoExtIntMap.get(external);
+        if (internal != null) return internal;
+        return external;
+    }
+
+    @Deprecated
+    public int getFilenoIntMap(int internal) {
+        Integer external = filenoIntExtMap.get(internal);
+        if (external != null) return external;
+        return internal;
+    }
+
+    @Deprecated
+    public int getFilenoIntMapSize() {
+        return filenoIntExtMap.size();
+    }
+
+    @Deprecated
+    public void removeFilenoIntMap(int internal) {
+        filenoIntExtMap.remove(internal);
+    }
+
+    /**
+     * Get the "external" fileno for a given ChannelDescriptor. Primarily for
+     * the shared 0, 1, and 2 filenos, which we can't actually share across
+     * JRuby runtimes.
+     *
+     * @param descriptor The descriptor for which to getService the fileno
+     * @return The external fileno for the descriptor
+     */
+    @Deprecated
+    public int getFileno(ChannelDescriptor descriptor) {
+        return getFilenoIntMap(descriptor.getFileno());
+    }
+
+    @Deprecated
+    public int filenoForChannel(Channel channel) {
+        Integer val = channelFileno.get(channel);
+        if (val == null) {
+            FilenoUtil.getDescriptorFromChannel(channel);
+        }
+        return val;
+    }
+    private final Map<Channel, Integer> channelFileno = new ConcurrentHashMap<Channel, Integer>();
+
+    @Deprecated
+    public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {
+    }
+
+    @Deprecated
+    public void registerDescriptor(ChannelDescriptor descriptor) {
+    }
+
+    @Deprecated
+    public void unregisterDescriptor(int aFileno) {
+    }
+
+    @Deprecated
+    public ChannelDescriptor getDescriptorByFileno(int aFileno) {
+        return FilenoUtil.getDescriptorByFileno(aFileno);
     }
 
     private final ConcurrentHashMap<String, Invalidator> constantNameInvalidators =
@@ -5022,4 +5047,8 @@ public final class Ruby {
 
     private static final AtomicInteger RUNTIME_NUMBER = new AtomicInteger(0);
     private final int runtimeNumber = RUNTIME_NUMBER.getAndIncrement();
+
+    private final Config configBean;
+    private final ClassCache classCacheBean;
+    private final org.jruby.management.Runtime runtimeBean;
 }

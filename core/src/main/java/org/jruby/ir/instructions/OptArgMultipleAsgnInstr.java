@@ -8,6 +8,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -45,9 +46,9 @@ public class OptArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedAr
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
-        RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currDynScope, temp);
+        RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currScope, currDynScope, temp);
         return IRRuntimeHelpers.extractOptionalArgument(rubyArray, minArgsLength, index);
     }
 

@@ -1,8 +1,6 @@
 package org.jruby.ir;
 
 import org.jruby.parser.StaticScope;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.Variable;
 
 public class IRMetaClassBody extends IRClassBody {
     public IRMetaClassBody(IRManager manager, IRScope lexicalParent, String name,

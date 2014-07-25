@@ -98,7 +98,7 @@ public class ArgumentProcessor {
             processArgument();
             argumentIndex++;
         }
-        if (inline && !config.isInlineScript() && config.getScriptFileName() == null) {
+        if (inline && !config.isInlineScript() && config.getScriptFileName() == null && !config.isForceStdin()) {
             if (argumentIndex < arguments.size()) {
                 config.setScriptFileName(arguments.get(argumentIndex).originalValue); //consume the file name
                 argumentIndex++;
@@ -144,6 +144,14 @@ public class ArgumentProcessor {
 
     private void processArgument() {
         String argument = arguments.get(argumentIndex).dashedValue;
+
+        if (argument.length() == 1) {
+            // sole "-" means read from stdin and pass remaining args as ARGV
+            endOfArguments = true;
+            config.setForceStdin(true);
+            return;
+        }
+
         FOR:
         for (characterIndex = 1; characterIndex < argument.length(); characterIndex++) {
             switch (argument.charAt(characterIndex)) {
@@ -501,8 +509,15 @@ public class ArgumentProcessor {
                         }
                         break;
                     } else if (argument.equals("--dev")) {
+                        // most we can do after JVM boot
                         Options.COMPILE_INVOKEDYNAMIC.force("false");
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
+                        break FOR;
+                    } else if (argument.equals("--server")) {
+                        // ignore this...can't do anything with it after boot
+                        break FOR;
+                    } else if (argument.equals("--client")) {
+                        // ignore this...can't do anything with it after boot
                         break FOR;
                     } else {
                         if (argument.equals("--")) {

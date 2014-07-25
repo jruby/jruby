@@ -1,10 +1,10 @@
 package org.jruby.ir.passes;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class LiveVariableAnalysis extends CompilerPass {
     public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);

@@ -2,6 +2,7 @@ package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.OpenFlags;
+import jnr.posix.FileStat;
 import org.jcodings.Encoding;
 import org.jcodings.Ptr;
 import org.jcodings.transcode.EConv;
@@ -812,12 +813,13 @@ public class OpenFile implements Finalizable {
 
         if (writeconv != null) {
             if (write_lock != null && !noraise) {
-//                struct finish_writeconv_arg arg;
-//                arg.fptr = fptr;
-//                arg.noalloc = noraise;
-//                err = rb_mutex_synchronize(fptr->write_lock, finish_writeconv_sync, (VALUE)&arg);
                 // TODO: interruptible version
-                finishWriteconv(context, noraise);
+                write_lock.writeLock().lock();
+                try {
+                    finishWriteconv(context, noraise);
+                } finally {
+                    write_lock.writeLock().unlock();
+                }
             }
             else {
                 err = finishWriteconv(context, noraise);
@@ -1777,9 +1779,35 @@ public class OpenFile implements Finalizable {
         return posix.lseek(fd, 0, PosixShim.SEEK_CUR);
     }
 
-    // io_unread
-    public void unread(ThreadContext context)
-    {
+    public void unread(ThreadContext context) {
+        if (Platform.IS_WINDOWS) {
+            unreadWindows(context);
+        } else {
+            unreadUnix(context);
+        }
+    }
+
+    // io_unread, UNIX version
+    private void unreadUnix(ThreadContext context) {
+        long r;
+        checkClosed();
+        if (rbuf.len == 0 || (mode & DUPLEX) != 0)
+            return;
+        /* xxx: target position may be negative if buffer is filled by ungetc */
+        posix.errno = null;
+        r = posix.lseek(fd, -rbuf.len, PosixShim.SEEK_CUR);
+        if (r < 0 && posix.errno != null) {
+            if (posix.errno == Errno.ESPIPE)
+                mode |= DUPLEX;
+            return;
+        }
+        rbuf.off = 0;
+        rbuf.len = 0;
+        return;
+    }
+
+    // io_unread, Windows version
+    private void unreadWindows(ThreadContext context) {
         Ruby runtime = context.runtime;
         long r, pos;
         int read_size;
@@ -1796,7 +1824,7 @@ public class OpenFile implements Finalizable {
             return;
         }
 
-        // TODO...only for win32?
+        // TODO...
 //        if (!rb_w32_fd_is_text(fptr->fd)) {
 //            r = lseek(fptr->fd, -fptr->rbuf.len, SEEK_CUR);
 //            if (r < 0 && errno) {
@@ -1817,15 +1845,15 @@ public class OpenFile implements Finalizable {
             return;
         }
 
-    /* add extra offset for removed '\r' in rbuf */
+        /* add extra offset for removed '\r' in rbuf */
         extra_max = (long)(pos - rbuf.len);
         pBytes = rbuf.ptr;
         p = rbuf.off;
 
-    /* if the end of rbuf is '\r', rbuf doesn't have '\r' within rbuf.len */
+        /* if the end of rbuf is '\r', rbuf doesn't have '\r' within rbuf.len */
         if (rbuf.ptr[rbuf.capa - 1] == '\r') {
-        newlines++;
-    }
+            newlines++;
+        }
 
         for (i = 0; i < rbuf.len; i++) {
             if (pBytes[p] == '\n') newlines++;
@@ -2435,6 +2463,32 @@ public class OpenFile implements Finalizable {
 
     private void SET_TEXT_MODE() {
         // FIXME: this only does something if we have O_TEXT at open(2) level
+    }
+
+    public int remainSize() {
+        FileStat st;
+        int siz = READ_DATA_PENDING_COUNT();
+        long pos;
+
+        // MRI does all this presumably to read more of the file right away, but
+        // I believe the logic that uses this is ok with just pending read plus buf size.
+
+//        if (fstat(fptr -> fd, & st)==0 && S_ISREG(st.st_mode))
+//        {
+//            if (io_fflush(fptr) < 0)
+//                rb_sys_fail(0);
+//            pos = lseek(fptr -> fd, 0, SEEK_CUR);
+//            if (st.st_size >= pos && pos >= 0) {
+//                siz += st.st_size - pos;
+//                if (siz > LONG_MAX) {
+//                    rb_raise(rb_eIOError, "file too big for single read");
+//                }
+//            }
+//        }
+//        else {
+            siz += BUFSIZ;
+//        }
+        return siz;
     }
 
     @Deprecated

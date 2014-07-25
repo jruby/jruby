@@ -21,15 +21,20 @@ public class TraceProber implements RubyNodeProber {
         final RubyWrapper wrapper;
 
         if (node instanceof RubyWrapper) {
-            throw new UnsupportedOperationException();
+            wrapper = (RubyWrapper) node;
         } else {
             wrapper = new RubyWrapper(node.getContext(), node.getEncapsulatingSourceSection(), node);
-            wrapper.tagAs(StandardSyntaxTag.STATEMENT);
         }
 
+        wrapper.tagAs(StandardSyntaxTag.STATEMENT);
         wrapper.getProbe().addInstrument(new TraceInstrument(node.getContext(), node.getEncapsulatingSourceSection()));
 
         return wrapper;
+    }
+
+    @Override
+    public RubyNode probeAsPeriodic(RubyNode node) {
+        return node;
     }
 
     @Override

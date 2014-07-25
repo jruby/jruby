@@ -1,28 +1,16 @@
 package org.jruby.ir.dataflow.analyses;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Set;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.dataflow.FlowGraphNode;
-import org.jruby.ir.instructions.ClosureAcceptingInstr;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.LoadLocalVarInstr;
-import org.jruby.ir.instructions.ResultInstr;
-import org.jruby.ir.instructions.StoreLocalVarInstr;
-import org.jruby.ir.operands.ClosureLocalVariable;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.TemporaryLocalVariable;
-import org.jruby.ir.operands.Variable;
-import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.instructions.*;
+import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.util.Edge;
+
+import java.util.*;
 
 public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlacementProblem, LoadLocalVarPlacementNode> {
     public LoadLocalVarPlacementNode(LoadLocalVarPlacementProblem prob, BasicBlock n) {

@@ -1176,20 +1176,58 @@ public class RubyBigDecimal extends RubyNumeric {
                                    context.runtime.newFixnum(((getAllDigits().length() / 4) + 1) * 4)});
     }
     
-    @JRubyMethod
-    public IRubyObject round(ThreadContext context) {
-        return new RubyBigDecimal(context.runtime, value.setScale(0, getRoundingMode(context.runtime))).to_int();
+    @JRubyMethod(name = "round", optional = 2)
+    public IRubyObject round(ThreadContext context, IRubyObject[] args) {
+        int scale = args.length > 0 ? num2int(args[0]) : 0;
+
+        // Special treatment for BigDecimal::NAN and BigDecimal::INFINITY
+        //
+        // If round is called without any argument, we should raise a
+        // FloatDomainError. Otherwise, we don't have to call round ;
+        // we can simply return the number itself.
+        if (scale == 0 && (isNaN() || isInfinity())) {
+            StringBuilder message = new StringBuilder("Computation results to ");
+            message.append("'").append(callMethod(context, "to_s")).append("'");
+
+            // To be consistent with MRI's output
+            if (isNaN()) message.append("(Not a Number)");
+
+            throw getRuntime().newFloatDomainError(message.toString());
+        } else {
+            if (isNaN()) {
+                return newNaN(context.runtime);
+            } else if (isInfinity()) {
+                return newInfinity(context.runtime, infinitySign);
+            }
+        }
+
+        RoundingMode mode = (args.length > 1) ? javaRoundingModeFromRubyRoundingMode(context.runtime, args[1]) : getRoundingMode(context.runtime);
+        // JRUBY-914: Java 1.4 BigDecimal does not allow a negative scale, so we have to simulate it
+        RubyBigDecimal bigDecimal = null;
+        if (scale < 0) {
+          // shift the decimal point just to the right of the digit to be rounded to (divide by 10**(abs(scale)))
+          // -1 -> 10's digit, -2 -> 100's digit, etc.
+          BigDecimal normalized = value.movePointRight(scale);
+          // ...round to that digit
+          BigDecimal rounded = normalized.setScale(0, mode);
+          // ...and shift the result back to the left (multiply by 10**(abs(scale)))
+          bigDecimal = new RubyBigDecimal(getRuntime(), rounded.movePointLeft(scale));
+        } else {
+          bigDecimal = new RubyBigDecimal(getRuntime(), value.setScale(scale, mode));
+        }
+        if (context.runtime.is1_8()) {
+            return bigDecimal;
+        } else {
+            if (args.length == 0) {
+                return bigDecimal.to_int();
+            } else {
+                return bigDecimal;
+            }
+        }
     }
     
-    @JRubyMethod
-    public IRubyObject round(ThreadContext context, IRubyObject scale) {
-        return new RubyBigDecimal(context.runtime, value.setScale(num2int(scale), getRoundingMode(context.runtime)));
-    }
-    
-    @JRubyMethod
     public IRubyObject round(ThreadContext context, IRubyObject scale, IRubyObject mode) {
-        return new RubyBigDecimal(context.runtime, 
-                                  value.setScale(num2int(scale), javaRoundingModeFromRubyRoundingMode(context.runtime, mode)));
+        return round(context, new IRubyObject[]{scale, mode});
     }    
 
     //this relies on the Ruby rounding enumerations == Java ones, which they (currently) all are

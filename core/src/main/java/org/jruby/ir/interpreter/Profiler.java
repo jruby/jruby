@@ -1,26 +1,17 @@
 package org.jruby.ir.interpreter;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.runtime.callsite.CacheEntry;
-
-import org.jruby.ir.Counter;
-import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRMethod;
-import org.jruby.ir.IRScope;
-import org.jruby.ir.Operation;
+import org.jruby.ir.*;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.runtime.CallSite;
+import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.callsite.CachingCallSite;
+
+import java.util.*;
 
 public class Profiler {
     private static class IRCallSite {

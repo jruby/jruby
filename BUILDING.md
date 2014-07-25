@@ -1,7 +1,10 @@
 Building JRuby from Source
 ==========================
 
-NOTE: needs maven-3.x
+Prerequisites:
+
+* A Java 7-compatible (or higher) Java development kit (JDK)
+* Maven 3+
 
 JRuby uses Maven for building and bootstrapping itself, along with Rake,
 RSpec, and MSpec for running integration tests.
@@ -110,17 +113,37 @@ After changing Java code, you can recompile quickly by running:
 mvn
 ```
 
+If you only want to build JRuby core (everything that goes in jruby.jar), you can use
+the following command:
+
+```
+mvn -pl core
+```
+
+This is generally the quickest way to build when you are just modifying JRuby core
+classes.
+
 ### Day to Day Testing
 
 For normal day-to-day testing, we recommend running the Ruby (MRI) tests
 via the following rake command:
 
 ```
-rake test:mri
+bin/jruby -S rake test:mri
 ```
 
-This is a reasonably good suite that does not take too long to run. For
-more complete assurance, you can also run 1.9 RubySpecs via the
+This suite takes a while to complete, so if you want to run an individual file
+from MRI's tests (under test/mri), use one of the following commands:
+
+```
+# Run a specific test method in a specific file
+jruby <test file> -n <specific test method>
+
+# Run a test file with known-failing tests excluded
+EXCLUDE_DIR=test/mri/excludes jruby -r minitest/excludes <test file>
+```
+
+For more complete assurance, you can also run 1.9 RubySpecs via the
 following command:
 
 ```
@@ -132,6 +155,15 @@ or embedding APIs, you should run JRuby's Java-based unit tests via
 
 ```
 mvn -Ptest
+```
+
+On travis the following tests will run
+
+```
+mvn -Ptest
+mvn -Prake -Dtask=test:extended
+mvn -Prake -Dtask=spec:ci\_interpreted\_travis
+mvn -Ptruffle
 ```
 
 There are some maven integration tests (i.e. consistency test if all gems are included, osgi test, etc) for the various distributions of JRuby which can be invoked with
@@ -236,7 +268,7 @@ rake maven:set_version
 ```
 
 manually rollback the poms in ./ext/ if their main versions have been changed
-and then commit and tag averything respectively.  Now deploy the maven 
+and then commit and tag everything respectively.  Now deploy the maven 
 artifact to sonatype oss.
 
 ```
@@ -249,7 +281,7 @@ go to oss.sonatype.org and close the deployment which will check if all 'require
 
 the build system uses the **ruby-maven** gem and with this the build files are **pom.rb** and **Mavenfile**. the **Mavenfile** are used whenever the module produces a gem and uses the gemspec file for the gem for setting up the POM. otherwise **pom.rb** are used. so any change in the build-system is done in those files !!!!
 
-instead of ```mvn``` the ```rmvn``` command is used. this command will also geneate **pom.xml** files which can be used by regular maven.
+instead of ```mvn``` the ```rmvn``` command is used. this command will also generate **pom.xml** files which can be used by regular maven.
 
 to (re)generate all pom.xml use
 ```
@@ -257,9 +289,16 @@ rake maven:dump_poms
 ```
 (which is basically ```rmvn validate -Pall```)
 
-about the ruby DSL for those poms just look in the existing pom.rb/Mavenfile files - there are plenty of examples for all kind of situations. (more documention to come).
+about the ruby DSL for those poms just look in the existing pom.rb/Mavenfile files - there are plenty of examples for all kind of situations. (more documentation to come).
 
-regular maven uses the the jruby from the installion, i.e. 9000.dev. this also means that a regular maven run does not depend under the hood on any other jruby versions from maven central.
+regular maven uses the the jruby from the installation, i.e. 9000.dev. this also means that a regular maven run does not depend under the hood on any other jruby versions from maven central.
 
 at some parts there are **inline** plugins in **pom.rb** or **Mavenfile** which will work directly with regular maven where there is a special plugin running those ruby parts. see **./lib/pom.rb**.
 
+### Start development
+
+After the release set the new development version:
+
+```
+mvn versions:set -DnewVersion=1.7.6-SNAPSHOT -Pall
+```

@@ -1,17 +1,17 @@
 package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
-import jnr.constants.platform.Signal;
+import jnr.constants.platform.Fcntl;
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
-import org.jruby.RubyThread;
+import org.jruby.ext.fcntl.FcntlLibrary;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.ResourceException;
 
 import java.io.Closeable;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
@@ -19,8 +19,6 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.Pipe;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 
 /**
  * Representations of as many native posix functions as possible applied to an NIO channel
@@ -255,10 +253,12 @@ public class PosixShim {
                 errno = Errno.valueOf(posix.errno());
                 return null;
             }
+            setCloexec(fds[0], true);
+            setCloexec(fds[1], true);
             return new Channel[]{new NativeDeviceChannel(fds[0]), new NativeDeviceChannel(fds[1])};
         }
 
-        // otherwise, Java pipe
+        // otherwise, Java pipe. Note Java pipe is not FD_CLOEXEC, but we can't use posix_spawn anyway
         try {
             Pipe pipe = Pipe.open();
             return new Channel[]{pipe.source(), pipe.sink()};
@@ -266,6 +266,126 @@ public class PosixShim {
             errno = Helpers.errnoFromException(ioe);
             return null;
         }
+    }
+    
+    public interface WaitMacros {
+        public abstract boolean WIFEXITED(long status);
+        public abstract boolean WIFSIGNALED(long status);
+        public abstract int WTERMSIG(long status);
+        public abstract int WEXITSTATUS(long status);
+        public abstract int WSTOPSIG(long status);
+        public abstract boolean WIFSTOPPED(long status);
+        public abstract boolean WCOREDUMP(long status);
+    }
+
+    public static class BSDWaitMacros implements WaitMacros {
+        public final long _WSTOPPED = 0177;
+
+        // Only confirmed on Darwin
+        public final long WCOREFLAG = 0200;
+
+        public long _WSTATUS(long status) {
+            return status & _WSTOPPED;
+        }
+
+        public boolean WIFEXITED(long status) {
+            return _WSTATUS(status) == 0;
+        }
+
+        public boolean WIFSIGNALED(long status) {
+            return _WSTATUS(status) != _WSTOPPED && _WSTATUS(status) != 0;
+        }
+
+        public int WTERMSIG(long status) {
+            return (int)_WSTATUS(status);
+        }
+
+        public int WEXITSTATUS(long status) {
+            // not confirmed on all platforms
+            return (int)((status >>> 8) & 0xFF);
+        }
+
+        public int WSTOPSIG(long status) {
+            return (int)(status >>> 8);
+        }
+
+        public boolean WIFSTOPPED(long status) {
+            return _WSTATUS(status) == _WSTOPPED && WSTOPSIG(status) != 0x13;
+        }
+
+        public boolean WCOREDUMP(long status) {
+            return (status & WCOREFLAG) != 0;
+        }
+    }
+
+    public static class LinuxWaitMacros implements WaitMacros {
+        private int __WAIT_INT(long status) { return (int)status; }
+
+        private int __W_EXITCODE(int ret, int sig) { return (ret << 8) | sig; }
+        private int __W_STOPCODE(int sig) { return (sig << 8) | 0x7f; }
+        private static int __W_CONTINUED = 0xffff;
+        private static int __WCOREFLAG = 0x80;
+
+        /* If WIFEXITED(STATUS), the low-order 8 bits of the status.  */
+        private int __WEXITSTATUS(long status) { return (int)((status & 0xff00) >> 8); }
+
+        /* If WIFSIGNALED(STATUS), the terminating signal.  */
+        private int __WTERMSIG(long status) { return (int)(status & 0x7f); }
+
+        /* If WIFSTOPPED(STATUS), the signal that stopped the child.  */
+        private int __WSTOPSIG(long status) { return __WEXITSTATUS(status); }
+
+        /* Nonzero if STATUS indicates normal termination.  */
+        private boolean __WIFEXITED(long status) { return __WTERMSIG(status) == 0; }
+
+        /* Nonzero if STATUS indicates termination by a signal.  */
+        private boolean __WIFSIGNALED(long status) {
+            return ((status & 0x7f) + 1) >> 1 > 0;
+        }
+
+        /* Nonzero if STATUS indicates the child is stopped.  */
+        private boolean __WIFSTOPPED(long status) { return (status & 0xff) == 0x7f; }
+
+        /* Nonzero if STATUS indicates the child dumped core.  */
+        private boolean __WCOREDUMP(long status) { return (status & __WCOREFLAG) != 0; }
+
+        /* Macros for constructing status values.  */
+        public int WEXITSTATUS(long status) { return __WEXITSTATUS (__WAIT_INT (status)); }
+        public int WTERMSIG(long status) { return __WTERMSIG(__WAIT_INT(status)); }
+        public int WSTOPSIG(long status) { return __WSTOPSIG(__WAIT_INT(status)); }
+        public boolean WIFEXITED(long status) { return __WIFEXITED(__WAIT_INT(status)); }
+        public boolean WIFSIGNALED(long status) { return __WIFSIGNALED(__WAIT_INT(status)); }
+        public boolean WIFSTOPPED(long status) { return __WIFSTOPPED(__WAIT_INT(status)); }
+        public boolean WCOREDUMP(long status) { return __WCOREDUMP(__WAIT_INT(status)); }
+    }
+
+    public static final WaitMacros WAIT_MACROS;
+    static {
+        if (Platform.IS_BSD) {
+            WAIT_MACROS = new BSDWaitMacros();
+        } else {
+            // need other platforms
+            WAIT_MACROS = new LinuxWaitMacros();
+        }
+    }
+
+    public int setCloexec(int fd, boolean cloexec) {
+        int ret = posix.fcntl(fd, Fcntl.F_GETFD);
+        if (ret == -1) {
+            errno = Errno.valueOf(posix.errno());
+            return -1;
+        }
+        if (
+                (cloexec && (ret & FcntlLibrary.FD_CLOEXEC) == FcntlLibrary.FD_CLOEXEC)
+                || (!cloexec && (ret & FcntlLibrary.FD_CLOEXEC) == 0)) {
+            return 0;
+        }
+        ret = cloexec ?
+                ret | FcntlLibrary.FD_CLOEXEC :
+                ret & ~FcntlLibrary.FD_CLOEXEC;
+        ret = posix.fcntlInt(fd, Fcntl.F_SETFD, ret);
+        if (ret == -1) errno = Errno.valueOf(posix.errno());
+        return ret;
     }
 
     public Channel open(String cwd, String path, ModeFlags flags, int perm) {

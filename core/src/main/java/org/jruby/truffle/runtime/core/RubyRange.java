@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
+
 public abstract class RubyRange extends RubyObject {
 
     protected final boolean excludeEnd;
@@ -94,6 +96,12 @@ public abstract class RubyRange extends RubyObject {
             }
         }
 
+        @Override
+        public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
+            getRubyClass().getContext().getCoreLibrary().box(begin).visitObjectGraph(visitor);
+            getRubyClass().getContext().getCoreLibrary().box(end).visitObjectGraph(visitor);
+        }
+
     }
 
     public static class ObjectRange extends RubyRange {
@@ -113,6 +121,12 @@ public abstract class RubyRange extends RubyObject {
 
         public Object getEnd() {
             return end;
+        }
+
+        @Override
+        public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
+            getRubyClass().getContext().getCoreLibrary().box(begin).visitObjectGraph(visitor);
+            getRubyClass().getContext().getCoreLibrary().box(end).visitObjectGraph(visitor);
         }
 
     }

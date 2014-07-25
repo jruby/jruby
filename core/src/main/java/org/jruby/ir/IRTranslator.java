@@ -1,15 +1,17 @@
 package org.jruby.ir;
 
-import java.io.IOException;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.RootNode;
-import org.jruby.ir.persistence.IRWriterFile;
 import org.jruby.ir.persistence.IRWriter;
+import org.jruby.ir.persistence.IRWriterFile;
+import org.jruby.ir.persistence.util.IRFileExpert;
+
+import java.io.IOException;
+
 //import org.jruby.ir.persistence.persist.string.IRToStringTranslator;
 //import org.jruby.ir.persistence.util.FileIO;
-import org.jruby.ir.persistence.util.IRFileExpert;
 
 /**
  * Abstract class that contains general logic for both IR Compiler and IR Interpreter

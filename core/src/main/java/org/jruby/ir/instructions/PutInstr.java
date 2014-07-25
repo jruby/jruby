@@ -2,9 +2,9 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.StringLiteral;
 
 import java.util.Map;
-import org.jruby.ir.operands.StringLiteral;
 
 // Represents target.ref = value or target = value where target is not a stack variable
 public abstract class PutInstr extends Instr implements FixedArityInstr {

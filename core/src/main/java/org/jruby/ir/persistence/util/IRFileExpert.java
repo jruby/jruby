@@ -1,7 +1,8 @@
 package org.jruby.ir.persistence.util;
 
-import java.io.File;
 import org.jruby.platform.Platform;
+
+import java.io.File;
 
 public class IRFileExpert {
     private static final String IR_FILE_EXTENSION = ".ir";

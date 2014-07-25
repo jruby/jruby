@@ -69,6 +69,7 @@ import org.jruby.util.IdUtil;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PopenExecutor;
 
 import java.io.ByteArrayOutputStream;
@@ -1383,9 +1384,27 @@ public class RubyKernel {
     }
 
     @JRubyMethod(name = "`", required = 1, module = true, visibility = PRIVATE)
-    public static IRubyObject backquote(ThreadContext context, IRubyObject recv, IRubyObject aString) {
+    public static IRubyObject backquote(ThreadContext context, IRubyObject recv, IRubyObject str) {
         Ruby runtime = context.runtime;
-        RubyString string = aString.convertToString();
+
+        if (runtime.getPosix().isNative()) {
+            IRubyObject port;
+            IRubyObject result;
+            OpenFile fptr;
+
+            str = str.convertToString();
+            context.setLastExitStatus(context.nil);
+            port = PopenExecutor.pipeOpen(context, str, "r", OpenFile.READABLE|OpenFile.TEXTMODE, null);
+            if (port.isNil()) return RubyString.newEmptyString(runtime);
+
+            fptr = ((RubyIO)port).getOpenFileChecked();
+            result = fptr.readAll(context, fptr.remainSize(), context.nil);
+            ((RubyIO)port).rbIoClose(runtime);
+
+            return result;
+        }
+
+        RubyString string = str.convertToString();
         IRubyObject[] args = new IRubyObject[] {string};
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         long[] tuple;
@@ -1397,7 +1416,8 @@ public class RubyKernel {
             tuple = new long[] {127, -1};
         }
 
-        context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple[0], tuple[1]));
+        // RubyStatus uses real native status now, so we unshift Java's shifted exit status
+        context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple[0] << 8, tuple[1]));
 
         byte[] out = output.toByteArray();
         int length = out.length;
@@ -1463,6 +1483,44 @@ public class RubyKernel {
     @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject system19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
+
+        if (runtime.getPosix().isNative()) {
+            // MRI: rb_f_system
+            long pid;
+            int[] status = new int[1];
+
+//            #if defined(SIGCLD) && !defined(SIGCHLD)
+//            # define SIGCHLD SIGCLD
+//            #endif
+//
+//            #ifdef SIGCHLD
+//            RETSIGTYPE (*chfunc)(int);
+
+            context.setLastExitStatus(context.nil);
+//            chfunc = signal(SIGCHLD, SIG_DFL);
+//            #endif
+            PopenExecutor executor = new PopenExecutor();
+            pid = executor.spawnInternal(context, args, null);
+//            #if defined(HAVE_FORK) || defined(HAVE_SPAWNV)
+            if (pid > 0) {
+                long ret;
+                ret = RubyProcess.waitpid(runtime, pid, 0);
+                if (ret == -1)
+                    throw runtime.newErrnoFromInt(runtime.getPosix().errno(), "Another thread waited the process started by system().");
+            }
+//            #endif
+//            #ifdef SIGCHLD
+//            signal(SIGCHLD, chfunc);
+//            #endif
+            if (pid < 0) {
+                return runtime.getNil();
+            }
+            status[0] = (int)((RubyProcess.RubyStatus)context.getLastExitStatus()).getStatus();
+            if (status[0] == 0) return runtime.getTrue();
+            return runtime.getFalse();
+        }
+
+        // else old JDK logic
         if (args[0] instanceof RubyHash) {
             RubyHash env = (RubyHash) args[0].convertToHash();
             if (env != null) {
@@ -1501,7 +1559,8 @@ public class RubyKernel {
             tuple = new long[] {127, -1};
         }
 
-        context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple[0], tuple[1]));
+        // RubyStatus uses real native status now, so we unshift Java's shifted exit status
+        context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple[0] << 8, tuple[1]));
         return (int)tuple[0];
     }
     
@@ -1553,6 +1612,7 @@ public class RubyKernel {
         
         boolean nativeFailed = false;
         boolean nativeExec = Options.NATIVE_EXEC.load();
+        boolean jmxStopped = false;
         System.setProperty("user.dir", runtime.getCurrentDirectory());
 
         if (nativeExec) {
@@ -1571,6 +1631,9 @@ public class RubyKernel {
                 String progStr = cfg.getExecArgs()[0];
 
                 String[] argv = cfg.getExecArgs();
+
+                // attempt to shut down the JMX server
+                jmxStopped = runtime.getBeanManager().tryShutdownAgent();
 
                 runtime.getPosix().chdir(System.getProperty("user.dir"));
                 
@@ -1599,6 +1662,9 @@ public class RubyKernel {
 
         // if we get here, either native exec failed or we should try an in-process exec
         if (nativeFailed) {
+            if (jmxStopped && runtime.getBeanManager().tryRestartAgent()) {
+                runtime.registerMBeans();
+            }
             throw runtime.newErrnoFromLastPOSIXErrno();
         }
         

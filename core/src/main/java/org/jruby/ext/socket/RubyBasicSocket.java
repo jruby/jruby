@@ -41,6 +41,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 
+import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.Sock;
 import org.jruby.Ruby;
@@ -53,6 +54,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -97,10 +99,10 @@ public class RubyBasicSocket extends RubyIO {
         int fileno = (int)_fileno.convertToInteger().getLongValue();
         RubyClass klass = (RubyClass)_klass;
 
-        ChannelFD fd = FilenoUtil.getWrapperFromFileno(runtime.getFilenoExtMap(fileno));
+        ChannelFD fd = FilenoUtil.getWrapperFromFileno(fileno);
 
         RubyBasicSocket basicSocket = (RubyBasicSocket)klass.getAllocator().allocate(runtime, klass);
-        basicSocket.initSocket(runtime, fd);
+        basicSocket.initSocket(fd);
 
         return basicSocket;
     }
@@ -383,26 +385,21 @@ public class RubyBasicSocket extends RubyIO {
     @JRubyMethod
     public IRubyObject close_write(ThreadContext context) {
         Ruby runtime = context.runtime;
+        OpenFile fptr;
 
-        if (!openFile.isWritable()) {
-            return runtime.getNil();
+//        if (rb_safe_level() >= 4 && !OBJ_TAINTED(sock)) {
+//            rb_raise(rb_eSecurityError, "Insecure: can't close socket");
+//        }
+        fptr = getOpenFileChecked();
+        if ((fptr.getMode() & OpenFile.READABLE) == 0) {
+            return rbIoClose(runtime);
         }
+        // shutdown write
+        try {
+            shutdownInternal(context, 1);
 
-        if (openFile.getPipeStream() == null && openFile.isReadable()) {
-            throw runtime.newIOError("closing non-duplex IO for writing");
-        }
-
-        if (!openFile.isReadable()) {
-            close();
-
-        } else {
-            // shutdown write
-            try {
-                shutdownInternal(context, 1);
-
-            } catch (BadDescriptorException e) {
-                throw runtime.newErrnoEBADFError();
-            }
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
         }
 
         return context.nil;
@@ -455,6 +452,11 @@ public class RubyBasicSocket extends RubyIO {
 
     private ByteList doReceive(ThreadContext context, int length) {
         Ruby runtime = context.runtime;
+        OpenFile fptr;
+
+        fptr = getOpenFileChecked();
+        fptr.checkReadable(context);
+
         ByteBuffer buf = ByteBuffer.allocate(length);
 
         try {
@@ -571,11 +573,6 @@ public class RubyBasicSocket extends RubyIO {
                 throw runtime.newIOError(e.getMessage());
             }
 
-            if(openFile.getPipeStream() != null) {
-                openFile.setMainStream(openFile.getPipeStream());
-                openFile.setPipeStream(null);
-            }
-
             openFile.setMode(openFile.getMode() & ~OpenFile.READABLE);
 
             return RubyFixnum.zero(runtime);
@@ -589,7 +586,6 @@ public class RubyBasicSocket extends RubyIO {
                 throw runtime.newIOError(e.getMessage());
             }
 
-            openFile.setPipeStream(null);
             openFile.setMode(openFile.getMode() & ~OpenFile.WRITABLE);
 
             return RubyFixnum.zero(runtime);
@@ -600,7 +596,7 @@ public class RubyBasicSocket extends RubyIO {
 
             return RubyFixnum.zero(runtime);
 
-            default:
+        default:
             throw runtime.newArgumentError("`how' should be either :SHUT_RD, :SHUT_WR, :SHUT_RDWR");
         }
     }
@@ -609,7 +605,17 @@ public class RubyBasicSocket extends RubyIO {
         return context.runtime.isDoNotReverseLookupEnabled() || doNotReverseLookup;
     }
 
-    protected void initSocket(Ruby runtime, ChannelFD fd) {
+    protected static ChannelFD newChannelFD(Ruby runtime, Channel channel) {
+        ChannelFD fd = new ChannelFD(channel, runtime.getPosix());
+
+        if (runtime.getPosix().isNative() && fd.realFileno >= 0) {
+            runtime.getPosix().fcntlInt(fd.realFileno, Fcntl.F_SETFD, FcntlLibrary.FD_CLOEXEC);
+        }
+
+        return fd;
+    }
+
+    protected void initSocket(ChannelFD fd) {
         // continue with normal initialization
         MakeOpenFile();
 

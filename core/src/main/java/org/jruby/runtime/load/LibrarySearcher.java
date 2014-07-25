@@ -1,13 +1,10 @@
 package org.jruby.runtime.load;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.DebugLog;
 import org.jruby.runtime.load.LoadService.SuffixType;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
@@ -15,9 +12,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 class LibrarySearcher {
     static class Ruby18 extends LibrarySearcher {
@@ -29,15 +27,20 @@ class LibrarySearcher {
         protected String resolveLoadName(FileResource unused, String ruby18Path) {
             return ruby18Path;
         }
+
+        @Override
+        protected String resolveScriptName(FileResource unused, String ruby18Path) {
+            return ruby18Path;
+        }
     }
 
     static class FoundLibrary implements Library {
         private final Library delegate;
-        private final String scriptName;
+        private final String loadName;
 
-        public FoundLibrary(Library delegate, String scriptName) {
+        public FoundLibrary(Library delegate, String loadName) {
             this.delegate = delegate;
-            this.scriptName = scriptName;
+            this.loadName = loadName;
         }
 
         @Override
@@ -45,12 +48,10 @@ class LibrarySearcher {
             delegate.load(runtime, wrap);
         }
 
-        public String getScriptName() {
-            return scriptName;
+        public String getLoadName() {
+            return loadName;
         }
     }
-
-    private static final Pattern ABSOLUTE_PATH_PATTERN = Pattern.compile("([^:]+:)*/.*");
 
     private final LoadService loadService;
     private final Ruby runtime;
@@ -67,15 +68,14 @@ class LibrarySearcher {
         FoundLibrary lib = findLibrary(state.searchFile, state.suffixType);
         if (lib != null) {
             state.library = lib;
-            state.loadName = lib.getScriptName();
+            state.loadName = lib.getLoadName();
         }
         return lib;
     }
 
     public FoundLibrary findLibrary(String baseName, SuffixType suffixType) {
         for (String suffix : suffixType.getSuffixes()) {
-            FoundLibrary library = null;
-            if (library == null) library = findBuiltinLibrary(baseName, suffix);
+            FoundLibrary library = findBuiltinLibrary(baseName, suffix);
             if (library == null) library = findResourceLibrary(baseName, suffix);
             if (library == null) library = findServiceLibrary(baseName, suffix);
 
@@ -133,20 +133,9 @@ class LibrarySearcher {
             return findFileResource(path, suffix);
         }
 
-        // If path is absolute, try loading it directly
-        if (ABSOLUTE_PATH_PATTERN.matcher(baseName).matches()) {
-            return findFileResource(baseName, suffix);
-        }
-
-        // A hack because apparently test_load tests expect to be able to load file:foo.jar even if
-        // '.' is not in $LOAD_PATH. *sigh*
-        // This probably shouldn't survive into real release.
-        if (baseName.startsWith("file:")) {
-            String name = baseName.substring(5);
-            FoundLibrary found = findFileResource(name, suffix);
-            if (found != null) {
-                return found;
-            }
+        // If path is considered absolute, bypass loadPath iteration and load as-is
+        if (isAbsolute(baseName)) {
+          return findFileResource(baseName, suffix);
         }
 
         for (IRubyObject loadPathEntry : loadService.loadPath.toJavaArray()) {
@@ -172,17 +161,39 @@ class LibrarySearcher {
         FileResource resource = JRubyFile.createResource(runtime, pathWithSuffix);
         if (resource.exists()) {
             DebugLog.Resource.logFound(pathWithSuffix);
-            String scriptName = resolveLoadName(resource, pathWithSuffix);
+            String scriptName = resolveScriptName(resource, pathWithSuffix);
+            String loadName = resolveLoadName(resource, searchName + suffix);
 
             return new FoundLibrary(
                     new ResourceLibrary(searchName, scriptName, resource),
-                    scriptName);
+                    loadName);
         }
 
         return null;
     }
 
+    private static boolean isAbsolute(String path) {
+        // jar: prefix doesn't mean anything anymore, but we might still encounter it
+        if (path.startsWith("jar:")) {
+            path = path.substring(4);
+        }
+
+        if (path.startsWith("file:")) {
+            // We treat any paths with a file schema as absolute, because apparently some tests
+            // explicitely depend on such behavior (test/test_load.rb). On other hand, maybe it's
+            // not too bad, since otherwise joining LOAD_PATH logic would be more complicated if
+            // it'd have to worry about schema.
+            return true;
+        }
+
+        return new File(path).isAbsolute();
+    }
+
     protected String resolveLoadName(FileResource resource, String ruby18path) {
+        return resource.absolutePath();
+    }
+
+    protected String resolveScriptName(FileResource resource, String ruby18Path) {
         return resource.absolutePath();
     }
 
@@ -235,7 +246,17 @@ class LibrarySearcher {
 
         private void loadJar(Ruby runtime, boolean wrap) {
             try {
-                URL url = new File(location).toURI().toURL();
+                URL url;
+                File f = new File(location);
+                if (f.exists() || location.contains( "!")){
+                    url = f.toURI().toURL();
+                    if ( location.contains( "!") ) {
+                        url = new URL( "jar:" + url );
+                    }
+                }
+                else {
+                    url = new URL(location);
+                }
                 runtime.getJRubyClassLoader().addURL(url);
             } catch (MalformedURLException badUrl) {
                 runtime.newIOErrorFromException(badUrl);

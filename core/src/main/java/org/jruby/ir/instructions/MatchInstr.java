@@ -7,6 +7,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -69,8 +70,8 @@ public class MatchInstr extends Instr implements ResultInstr, FixedArityInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        RubyRegexp regexp = (RubyRegexp) receiver.retrieve(context, self, currDynScope, temp);
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        RubyRegexp regexp = (RubyRegexp) receiver.retrieve(context, self, currScope, currDynScope, temp);
         return regexp.op_match2_19(context);
     }
 

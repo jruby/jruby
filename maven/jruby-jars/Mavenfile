@@ -66,4 +66,22 @@ build do
   final_name "#{model.artifact_id}-#{version.sub(/-SNAPSHOT/, '')}"
 end
 
+profile :snapshots do
+
+  # this needs to be on a "leaf" of the maven module directory structure
+  # FIX-UPSTREAM those execute block do not work in parent pom
+
+  execute :cleanup_snapshot_repo, :phase => :deploy do |ctx|
+    # delete all files which are NOT from today
+    # and leave the metadata.xml in place
+    snapshots_dir = ctx.project.properties[ 'snapshots.dir' ].to_s
+    require 'date'
+    format = Date.today.strftime( '%Y%m%d' )
+    Dir[ snapshots_dir + '/**/*' ].each do |f|
+      if File.file?( f ) && ! ( f =~ /maven-metadata.xml/ || f =~ /-#{format}\./ )
+        File.delete( f )
+      end
+    end
+  end
+end
 # vim: syntax=Ruby

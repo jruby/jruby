@@ -2,7 +2,6 @@ package org.jruby.util.io;
 
 import jnr.constants.platform.Errno;
 import jnr.constants.platform.OpenFlags;
-import jnr.constants.platform.Signal;
 import jnr.posix.SpawnAttribute;
 import jnr.posix.SpawnFileAction;
 import org.jcodings.transcode.EConvFlags;
@@ -31,10 +30,7 @@ import org.jruby.util.TypeConverter;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.channels.Channel;
-import java.nio.channels.Pipe;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -81,11 +77,22 @@ public class PopenExecutor {
 
         if (pid == -1) {
             if (errmsg[0] == null) {
-                throw runtime.newSystemCallError(fail_str.toString());
+                throw runtime.newErrnoFromErrno(executor.errno, fail_str.toString());
             }
             throw runtime.newErrnoFromErrno(executor.errno, errmsg[0]);
         }
         return runtime.newFixnum(pid);
+    }
+
+    // MRI: rb_spawn_internal
+    public long spawnInternal(ThreadContext context, IRubyObject[] argv, String[] errmsg) {
+        ExecArg eargp;
+        long ret;
+
+        eargp = execargNew(context, argv, true);
+        execargFixup(context, context.runtime, eargp);
+        ret = spawnProcess(context, context.runtime, eargp, errmsg);
+        return ret;
     }
 
     // MRI: rb_spawn_process
@@ -96,23 +103,35 @@ public class PopenExecutor {
 
         prog = eargp.use_shell ? eargp.command_name : eargp.command_name;
 
+        if (eargp.chdir_given()) {
+            // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
+            // just need to add chdir to the cmd
+            prog = (RubyString)prog.strDup(runtime).prepend(context, RubyString.newString(runtime, "cd '" + eargp.chdir_dir + "'; "));
+            eargp.chdir_dir = null;
+            eargp.chdir_given_clear();
+        }
+
         if (execargRunOptions(context, runtime, eargp, sarg, errmsg) < 0) {
             return -1;
         }
 
         if (prog != null && !eargp.use_shell) {
-            String[] argv = ARGVSTR2ARGV(eargp.argv_str.argv);
-            argv[0] = prog.toString();
+            String[] argv = eargp.argv_str.argv;
+            if (argv.length > 0) {
+                argv[0] = prog.toString();
+            }
         }
         if (eargp.use_shell) {
-            pid = procSpawnSh(runtime, prog.toString());
+            pid = procSpawnSh(runtime, prog.toString(), eargp);
         }
         else {
-            String[] argv = ARGVSTR2ARGV(eargp.argv_str.argv);
+            String[] argv = eargp.argv_str.argv;
             pid = procSpawnCmd(runtime, argv, prog.toString(), eargp);
         }
-        if (pid == -1)
+        if (pid == -1) {
             context.setLastExitStatus(new RubyProcess.RubyStatus(runtime, runtime.getProcStatus(), 0x7f << 8, 0));
+            errno = Errno.valueOf(runtime.getPosix().errno());
+        }
 
         execargRunOptions(context, runtime, sarg, null, errmsg);
 
@@ -123,27 +142,48 @@ public class PopenExecutor {
 //    #if defined(_WIN32)
 //    #define proc_spawn_cmd_internal(argv, prog) rb_w32_uaspawn(P_NOWAIT, (prog), (argv))
 //            #else
-    long procSpawnCmdInternal(Ruby runtime, String[] argv, String prog) {
+    long procSpawnCmdInternal(Ruby runtime, String[] argv, String prog, ExecArg eargp) {
         long status;
 
         if (prog == null)
             prog = argv[0];
-//        security(prog);
         prog = dlnFindExeR(runtime, prog, null);
-        if (prog == null)
+        if (prog == null) {
+            errno = Errno.ENOENT;
             return -1;
+        }
 
-        // TODO?
-//        beforeExec();
-        status = runtime.getPosix().posix_spawnp(prog, Collections.EMPTY_LIST, Collections.EMPTY_LIST, Arrays.asList(argv), Collections.EMPTY_LIST);
-        if (status == -1 && runtime.getPosix().errno() == Errno.ENOEXEC.intValue()) {
-            String[] newArgv = new String[argv.length + 1];
-            newArgv[1] = prog;
-            newArgv[0] = "sh";
-            status = runtime.getPosix().posix_spawnp("/bin/sh", Collections.EMPTY_LIST, Collections.EMPTY_LIST, Arrays.asList(argv), Collections.EMPTY_LIST);
-            // TODO?
-//            afterExec();
-            if (status == -1) errno = Errno.ENOEXEC;
+//        System.out.println(Arrays.asList(prog,
+//                eargp.fileActions,
+//                eargp.attributes,
+//                Arrays.asList(argv),
+//                eargp.envp_str == null ? Collections.EMPTY_LIST : Arrays.asList(eargp.envp_str)));
+        // MRI does not do this check, but posix_spawn does not reliably ENOENT for bad filenames like ''
+        if (prog == null || prog.length() == 0) {
+            errno = Errno.ENOENT;
+            return -1;
+        }
+        status = runtime.getPosix().posix_spawnp(
+                prog,
+                eargp.fileActions,
+                eargp.attributes,
+                Arrays.asList(argv),
+                eargp.envp_str == null ? Collections.EMPTY_LIST : Arrays.asList(eargp.envp_str));
+        if (status == -1) {
+            if (runtime.getPosix().errno() == Errno.ENOEXEC.intValue()) {
+                String[] newArgv = new String[argv.length + 1];
+                newArgv[1] = prog;
+                newArgv[0] = "sh";
+                status = runtime.getPosix().posix_spawnp(
+                        "/bin/sh",
+                        eargp.fileActions,
+                        eargp.attributes,
+                        Arrays.asList(argv),
+                        eargp.envp_str == null ? Collections.EMPTY_LIST : Arrays.asList(eargp.envp_str));
+                if (status == -1) errno = Errno.ENOEXEC;
+            } else {
+                errno = Errno.valueOf(runtime.getPosix().errno());
+            }
         }
         return status;
     }
@@ -153,6 +193,7 @@ public class PopenExecutor {
         long pid = -1;
 
         if (argv.length > 0 && argv[0] != null) {
+            // TODO: win32
 //            #if defined(_WIN32)
 //            DWORD flags = 0;
 //            if (eargp->new_pgroup_given && eargp->new_pgroup_flag) {
@@ -160,7 +201,7 @@ public class PopenExecutor {
 //            }
 //            pid = rb_w32_uaspawn_flags(P_NOWAIT, prog ? RSTRING_PTR(prog) : 0, argv, flags);
 //            #else
-            pid = procSpawnCmdInternal(runtime, argv, prog);
+            pid = procSpawnCmdInternal(runtime, argv, prog, eargp);
         }
         return pid;
     }
@@ -169,16 +210,21 @@ public class PopenExecutor {
 //    #if defined(_WIN32)
 //    #define proc_spawn_sh(str) rb_w32_uspawn(P_NOWAIT, (str), 0)
 //            #else
-    long procSpawnSh(Ruby runtime, String str) {
+    long procSpawnSh(Ruby runtime, String str, ExecArg eargp) {
         long status;
 
         String shell = dlnFindExeR(runtime, "sh", null);
-        // TODO? Stops some threads and signals
-//        before_exec();
-        status = runtime.getPosix().posix_spawnp(shell != null ? shell : "/bin/sh", Collections.EMPTY_LIST, Collections.EMPTY_LIST, Arrays.asList("sh", "-c", str), Collections.EMPTY_LIST);
+
+//        System.out.println("before: " + shell + ", fa=" + eargp.fileActions + ", a=" + eargp.attributes + ", argv=" + Arrays.asList("sh", "-c", str));
+        status = runtime.getPosix().posix_spawnp(
+                shell != null ? shell : "/bin/sh",
+                eargp.fileActions,
+                eargp.attributes,
+                Arrays.asList("sh", "-c", str),
+                eargp.envp_str == null ? Collections.EMPTY_LIST : Arrays.asList(eargp.envp_str));
+
         if (status == -1) errno = Errno.valueOf(runtime.getPosix().errno());
-        // TODO?
-//        after_exec();
+
         return status;
     }
 
@@ -344,12 +390,29 @@ public class PopenExecutor {
             return procSpawnSh(runtime, eargp, cmd, envp);
         }
 
-        return runtime.getPosix().posix_spawnp(
+//        System.out.println(Arrays.asList(
+//                cmd,
+//                eargp.fileActions,
+//                eargp.attributes,
+//                args == null ? Collections.EMPTY_LIST : Arrays.asList(args),
+//                envp == null ? Collections.EMPTY_LIST : Arrays.asList(envp)));
+        // MRI does not do this check, but posix_spawn does not reliably ENOENT for bad filenames like ''
+        if (cmd == null || cmd.length() == 0) {
+            errno = Errno.ENOENT;
+            return -1;
+        }
+        long ret = runtime.getPosix().posix_spawnp(
                 cmd,
                 eargp.fileActions,
                 eargp.attributes,
                 args == null ? Collections.EMPTY_LIST : Arrays.asList(args),
                 envp == null ? Collections.EMPTY_LIST : Arrays.asList(envp));
+
+        if (ret == -1) {
+            errno = Errno.valueOf(runtime.getPosix().errno());
+        }
+
+        return ret;
     }
 
     // MRI: Basically doing sh processing from proc_exec_sh but for non-fork path
@@ -358,7 +421,7 @@ public class PopenExecutor {
         int s = 0;
 
         sChars = str.toCharArray();
-        while (sChars[s] == ' ' || sChars[s] == '\t' || sChars[s] == '\n')
+        while (s < sChars.length && (sChars[s] == ' ' || sChars[s] == '\t' || sChars[s] == '\n'))
             s++;
 
         if (s >= sChars.length) {
@@ -384,12 +447,18 @@ public class PopenExecutor {
 //                    exit(status);
 //            }
 //            #else
-            return runtime.getPosix().posix_spawnp(
+            long ret = runtime.getPosix().posix_spawnp(
                     "/bin/sh",
                     eargp.fileActions,
                     eargp.attributes,
                     Arrays.asList("sh", "-c", str),
                     envp == null ? Collections.EMPTY_LIST : Arrays.asList(envp));
+
+            if (ret == -1) {
+                errno = Errno.valueOf(runtime.getPosix().errno());
+            }
+
+            return ret;
         }
     }
 
@@ -434,8 +503,16 @@ public class PopenExecutor {
         if (prog != null)
             cmd = StringSupport.checkEmbeddedNulls(runtime, prog).toString();
 
+        if (eargp.chdir_given()) {
+            // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
+            // just need to add chdir to the cmd
+            cmd = "cd '" + eargp.chdir_dir + "'; " + cmd;
+            eargp.chdir_dir = null;
+            eargp.chdir_given_clear();
+        }
+
         if (eargp != null && !eargp.use_shell) {
-            args = ARGVSTR2ARGV(eargp.argv_str.argv);
+            args = eargp.argv_str.argv;
         }
         Channel[] mainPipe = null, secondPipe = null;
         switch (fmode & (OpenFile.READABLE|OpenFile.WRITABLE)) {
@@ -542,77 +619,7 @@ public class PopenExecutor {
         }
         final long finalPid = pid;
         fptr.setPid(pid);
-        fptr.setProcess(new Process() {
-            volatile Integer exitValue = null;
-            @Override
-            public OutputStream getOutputStream() {
-                return null;
-            }
-
-            @Override
-            public InputStream getInputStream() {
-                return null;
-            }
-
-            @Override
-            public InputStream getErrorStream() {
-                return null;
-            }
-
-            @Override
-            public synchronized int waitFor() throws InterruptedException {
-                errno = null;
-
-                if (exitValue == null) {
-                    int[] stat_loc = {0};
-                    retry: while (true) {
-                        stat_loc[0] = 0;
-                        // TODO: investigate WNOHANG
-                        int result = runtime.getPosix().waitpid((int)finalPid, stat_loc, 0);
-                        if (result == -1) {
-                            Errno errno = Errno.valueOf(runtime.getPosix().errno());
-                            switch (errno) {
-                                case EINTR:
-                                    runtime.getCurrentContext().pollThreadEvents();
-                                    continue retry;
-                                case ECHILD:
-                                    PopenExecutor.this.errno = errno;
-                                    return -1;
-                                default:
-                                    throw new RuntimeException("unexpected waitpid errno: " + Errno.valueOf(runtime.getPosix().errno()));
-                            }
-                        }
-                        break;
-                    }
-                    // FIXME: Is this different across platforms? Got it all from Darwin's wait.h
-
-                    int status = stat_loc[0];
-                    if (WIFEXITED(status)) {
-                        exitValue = WEXITSTATUS(status);
-                    } else if (WIFSIGNALED(status)) {
-                        exitValue = WTERMSIG(status);
-                    } else if (WIFSTOPPED(status)) {
-                        exitValue = WSTOPSIG(status);
-                    }
-                }
-
-                return exitValue;
-            }
-
-            @Override
-            public int exitValue() {
-                try {
-                    return waitFor();
-                } catch (InterruptedException ie) {
-                    throw new IllegalThreadStateException();
-                }
-            }
-
-            @Override
-            public void destroy() {
-                runtime.getPosix().kill((int)finalPid, Signal.SIGTERM.intValue());
-            }
-        });
+        fptr.setProcess(new POSIXProcess(runtime, finalPid));
 
         if (write_fd != null) {
             write_port = runtime.getIO().allocate();
@@ -630,17 +637,6 @@ public class PopenExecutor {
 //        pipeAddFptr(fptr);
         return port;
     }
-
-    // FIXME: This are all from Darwin; other platforms may differ
-    static int _WSTATUS(int x)          { return x & 0177; }
-    static final int _WSTOPPED = 0177;
-    static int WEXITSTATUS(int x)       { return ((x) >> 8) & 0x000000ff; }
-    static int WSTOPSIG(int x)          { return x >> 8; }
-    static boolean WIFCONTINUED(int x)  { return _WSTATUS(x) == _WSTOPPED && WSTOPSIG(x) == 0x13; }
-    static boolean WIFSTOPPED(int x)    { return _WSTATUS(x) == _WSTOPPED && WSTOPSIG(x) != 0x13; }
-    static boolean WIFEXITED(int x)     { return _WSTATUS(x) == 0; }
-    static boolean WIFSIGNALED(int x)   { return _WSTATUS(x) != _WSTOPPED && _WSTATUS(x) != 0; }
-    static int WTERMSIG(int x)          { return _WSTATUS(x); }
 
     private void prepareStdioRedirects(Ruby runtime, Channel[] readPipe, Channel[] writePipe, ExecArg eargp) {
         // We insert these redirects directly into fd_dup2 so that chained redirection can be
@@ -1013,9 +1009,9 @@ public class PopenExecutor {
                 return -1;
         }
 
-        // This should probably check actual cwd rather than property
-        if (eargp.chdir_given() || !runtime.getCurrentDirectory().equals(SafePropertyAccessor.getProperty("user.dir"))) {
-            throw runtime.newNotImplementedError("chdir in the child is not supported");
+        if (eargp.chdir_given()) {
+            // should have been set up in pipe_open, so we just raise here
+            throw new RuntimeException("BUG: chdir not supported in posix_spawn; should have been made into chdir");
             // we can't chdir in the parent
 //            if (sargp != null) {
 //                String cwd = runtime.getCurrentDirectory();
@@ -1058,9 +1054,6 @@ public class PopenExecutor {
 //                sargp.dup2_tmpbuf = tmpbuf;
 //            }
 //        }
-
-        // Additional logic to clear all hooked signals
-        eargp.attributes.add(SpawnAttribute.sigmask(0));
 
         return 0;
     }
@@ -1761,12 +1754,21 @@ public class PopenExecutor {
             checkExecOptions(context, runtime, (RubyHash)opthash, eargp);
         }
 
+        // add chdir if necessary
+        if (!runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd())) {
+            if (!eargp.chdir_given()) { // only if :chdir is not specified
+                eargp.chdir_given_set();
+                eargp.chdir_dir = runtime.getCurrentDirectory();
+            }
+        }
+
         if (!env.isNil()) {
             eargp.env_modification = RubyIO.checkExecEnv(context, (RubyHash)env);
         }
 
         prog = prog.export(context);
-        eargp.use_shell = argc == 0;
+        // need to use shell
+        eargp.use_shell = argc == 0 || eargp.chdir_given();
         if (eargp.use_shell)
             eargp.command_name = prog;
         else
@@ -1837,8 +1839,8 @@ public class PopenExecutor {
                             }) != -1)
                         has_meta = true;
                 }
-                if (!has_meta) {
-                    /* avoid shell since no shell meta character found. */
+                if (!has_meta && !eargp.chdir_given()) {
+                    /* avoid shell since no shell meta character found and no chdir needed. */
                     eargp.use_shell = false;
                 }
                 if (!eargp.use_shell) {
@@ -1846,26 +1848,30 @@ public class PopenExecutor {
                     pBytes = prog.getByteList().unsafeBytes();
                     p = prog.getByteList().begin();
                     while (p < pBytes.length){
-                        while (pBytes[p] == ' ' || pBytes[p] == '\t')
+                        while (p < pBytes.length && (pBytes[p] == ' ' || pBytes[p] == '\t'))
                             p++;
                         if (p < pBytes.length){
                             int w = p;
                             while (p < pBytes.length && pBytes[p] != ' ' && pBytes[p] != '\t')
                                 p++;
                             argv_buf.add(Arrays.copyOfRange(pBytes, w, p));
+                            eargp.argv_buf = argv_buf;
                         }
                     }
-                    eargp.argv_buf = argv_buf;
-                    eargp.command_name = RubyString.newStringNoCopy(runtime, argv_buf.get(0));
+                    if (argv_buf.size() > 0) {
+                        eargp.command_name = RubyString.newStringNoCopy(runtime, argv_buf.get(0));
+                    } else {
+                        eargp.command_name = RubyString.newEmptyString(runtime); // empty command will get caught below shortly
+                    }
                 }
             }
         }
 
         if (!eargp.use_shell) {
-            RubyString abspath;
-            abspath = runtime.newString(dlnFindExeR(runtime, eargp.command_name.toString(), null));
-            if (abspath == null)
-                eargp.command_abspath = StringSupport.checkEmbeddedNulls(runtime, abspath);
+            String abspath;
+            abspath = dlnFindExeR(runtime, eargp.command_name.toString(), null);
+            if (abspath != null)
+                eargp.command_abspath = StringSupport.checkEmbeddedNulls(runtime, RubyString.newString(runtime, abspath));
             else
                 eargp.command_abspath = null;
         }
@@ -1885,10 +1891,10 @@ public class PopenExecutor {
 
         if (!eargp.use_shell) {
             ArgvStr argv_str = new ArgvStr();
-            argv_str.argv = new byte[eargp.argv_buf.size()][];
+            argv_str.argv = new String[eargp.argv_buf.size()];
             int i = 0;
             for (byte[] bytes : eargp.argv_buf) {
-                argv_str.argv[i++] = bytes;
+                argv_str.argv[i++] = new String(bytes);
             }
             eargp.argv_str = argv_str;
         }
@@ -1898,12 +1904,11 @@ public class PopenExecutor {
         if (path != null) throw new RuntimeException("BUG: dln_find_exe_r with path is not supported yet");
         // FIXME: need to reencode path as same
         File exePath = ShellLauncher.findPathExecutable(runtime, fname);
-        // TODO: should we error if executable can't be found?
-        return exePath != null ? exePath.getAbsolutePath() : fname;
+        return exePath != null ? exePath.getAbsolutePath() : null;
     }
 
     private static class ArgvStr {
-        byte[][] argv;
+        String[] argv;
     }
 
     public static class ExecArg {
@@ -2078,4 +2083,5 @@ public class PopenExecutor {
             return Integer.compare(o2.oldfd, o1.oldfd);
         }
     };
+
 }

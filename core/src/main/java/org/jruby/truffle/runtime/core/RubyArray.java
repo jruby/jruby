@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayAllocationSite;
+import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyContext;
@@ -277,6 +278,13 @@ public final class RubyArray extends RubyObject {
 
     public ArrayAllocationSite getAllocationSite() {
         return allocationSite;
+    }
+
+    @Override
+    public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
+        for (Object object : slowToArray()) {
+            getRubyClass().getContext().getCoreLibrary().box(object).visitObjectGraph(visitor);
+        }
     }
 
 

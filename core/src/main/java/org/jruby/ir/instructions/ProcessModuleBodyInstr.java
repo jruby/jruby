@@ -1,14 +1,15 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyModule;
+import org.jruby.RubyNil;
+import org.jruby.RubyProc;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.RubyNil;
-import org.jruby.RubyProc;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -63,10 +64,10 @@ public class ProcessModuleBodyInstr extends Instr implements ResultInstr, FixedA
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        InterpretedIRMethod bodyMethod = (InterpretedIRMethod)moduleBody.retrieve(context, self, currDynScope, temp);
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        InterpretedIRMethod bodyMethod = (InterpretedIRMethod)moduleBody.retrieve(context, self, currScope, currDynScope, temp);
 		RubyModule implClass = bodyMethod.getImplementationClass();
-        Object blk = block.retrieve(context, self, currDynScope, temp);
+        Object blk = block.retrieve(context, self, currScope, currDynScope, temp);
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
         return bodyMethod.call(context, implClass, implClass, null, new IRubyObject[]{}, (Block)blk);

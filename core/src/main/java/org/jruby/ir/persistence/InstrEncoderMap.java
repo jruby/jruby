@@ -7,87 +7,7 @@
 package org.jruby.ir.persistence;
 
 import org.jruby.RubyInstanceConfig;
-import org.jruby.ir.instructions.AliasInstr;
-import org.jruby.ir.instructions.AttrAssignInstr;
-import org.jruby.ir.instructions.BEQInstr;
-import org.jruby.ir.instructions.BFalseInstr;
-import org.jruby.ir.instructions.BNEInstr;
-import org.jruby.ir.instructions.BNilInstr;
-import org.jruby.ir.instructions.BTrueInstr;
-import org.jruby.ir.instructions.BuildLambdaInstr;
-import org.jruby.ir.instructions.BUndefInstr;
-import org.jruby.ir.instructions.BlockGivenInstr;
-import org.jruby.ir.instructions.BreakInstr;
-import org.jruby.ir.instructions.CallBase;
-import org.jruby.ir.instructions.CallInstr;
-import org.jruby.ir.instructions.CheckArgsArrayArityInstr;
-import org.jruby.ir.instructions.CheckArityInstr;
-import org.jruby.ir.instructions.ClassSuperInstr;
-import org.jruby.ir.instructions.ConstMissingInstr;
-import org.jruby.ir.instructions.CopyInstr;
-import org.jruby.ir.instructions.DefineClassInstr;
-import org.jruby.ir.instructions.DefineClassMethodInstr;
-import org.jruby.ir.instructions.DefineInstanceMethodInstr;
-import org.jruby.ir.instructions.DefineMetaClassInstr;
-import org.jruby.ir.instructions.DefineModuleInstr;
-import org.jruby.ir.instructions.EQQInstr;
-import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
-import org.jruby.ir.instructions.GVarAliasInstr;
-import org.jruby.ir.instructions.GetClassVarContainerModuleInstr;
-import org.jruby.ir.instructions.GetClassVariableInstr;
-import org.jruby.ir.instructions.GetEncodingInstr;
-import org.jruby.ir.instructions.GetFieldInstr;
-import org.jruby.ir.instructions.GetGlobalVariableInstr;
-import org.jruby.ir.instructions.GetInstr;
-import org.jruby.ir.instructions.InheritanceSearchConstInstr;
-import org.jruby.ir.instructions.InstanceSuperInstr;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.JumpInstr;
-import org.jruby.ir.instructions.LabelInstr;
-import org.jruby.ir.instructions.LexicalSearchConstInstr;
-import org.jruby.ir.instructions.LineNumberInstr;
-import org.jruby.ir.instructions.LoadLocalVarInstr;
-import org.jruby.ir.instructions.Match2Instr;
-import org.jruby.ir.instructions.Match3Instr;
-import org.jruby.ir.instructions.MatchInstr;
-import org.jruby.ir.instructions.MethodLookupInstr;
-import org.jruby.ir.instructions.NoResultCallInstr;
-import org.jruby.ir.instructions.NonlocalReturnInstr;
-import org.jruby.ir.instructions.OneOperandBranchInstr;
-import org.jruby.ir.instructions.OptArgMultipleAsgnInstr;
-import org.jruby.ir.instructions.ProcessModuleBodyInstr;
-import org.jruby.ir.instructions.PushBindingInstr;
-import org.jruby.ir.instructions.PutClassVariableInstr;
-import org.jruby.ir.instructions.PutConstInstr;
-import org.jruby.ir.instructions.PutFieldInstr;
-import org.jruby.ir.instructions.PutGlobalVarInstr;
-import org.jruby.ir.instructions.PutInstr;
-import org.jruby.ir.instructions.RaiseArgumentErrorInstr;
-import org.jruby.ir.instructions.ReceiveRubyExceptionInstr;
-import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
-import org.jruby.ir.instructions.ReceiveKeywordArgInstr;
-import org.jruby.ir.instructions.ReceiveKeywordRestArgInstr;
-import org.jruby.ir.instructions.ReceiveOptArgInstr;
-import org.jruby.ir.instructions.ReceivePostReqdArgInstr;
-import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
-import org.jruby.ir.instructions.ReceiveRestArgInstr;
-import org.jruby.ir.instructions.RecordEndBlockInstr;
-import org.jruby.ir.instructions.ReqdArgMultipleAsgnInstr;
-import org.jruby.ir.instructions.RescueEQQInstr;
-import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
-import org.jruby.ir.instructions.ResultInstr;
-import org.jruby.ir.instructions.ReturnInstr;
-import org.jruby.ir.instructions.RuntimeHelperCall;
-import org.jruby.ir.instructions.SearchConstInstr;
-import org.jruby.ir.instructions.StoreLocalVarInstr;
-import org.jruby.ir.instructions.ThreadPollInstr;
-import org.jruby.ir.instructions.ThrowExceptionInstr;
-import org.jruby.ir.instructions.ToAryInstr;
-import org.jruby.ir.instructions.TwoOperandBranchInstr;
-import org.jruby.ir.instructions.UndefMethodInstr;
-import org.jruby.ir.instructions.UnresolvedSuperInstr;
-import org.jruby.ir.instructions.YieldInstr;
-import org.jruby.ir.instructions.ZSuperInstr;
+import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Operand;
@@ -162,7 +82,7 @@ public class InstrEncoderMap {
             case POP_BINDING: /* no state */ break;
             case POP_FRAME: /* no state */ break;
             case PROCESS_MODULE_BODY: encodeProcessModuleBodyInstr((ProcessModuleBodyInstr) instr); break;
-            case PUSH_BINDING: encodePushBindingInstr((PushBindingInstr) instr); break;
+            case PUSH_BINDING: /* no state */ break;
             case PUSH_FRAME: /* no state */ break;
             case PUT_CONST: encodePutConstInstr((PutConstInstr) instr); break;
             case PUT_CVAR: encodePutClassVariableInstr((PutClassVariableInstr) instr); break;
@@ -436,10 +356,6 @@ public class InstrEncoderMap {
     private void encodeProcessModuleBodyInstr(ProcessModuleBodyInstr instr) {
         e.encode(instr.getModuleBody());
         e.encode(instr.getBlockArg());
-    }
-
-    private void encodePushBindingInstr(PushBindingInstr instr) {
-        e.encode(instr.getScope());
     }
 
     private void encodePutConstInstr(PutConstInstr instr) {

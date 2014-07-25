@@ -101,7 +101,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         return runtime.newArray(
                 runtime.newString("AF_UNIX"),
-                runtime.newString(fpath));
+                runtime.newString(openFile.getPath()));
     }
 
     @JRubyMethod(name = "recvfrom", required = 1, optional = 1)
@@ -157,14 +157,10 @@ public class RubyUNIXSocket extends RubyBasicSocket {
             sp = UnixSocketChannel.pair();
 
             RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
-            sock.channel = sp[0];
-            sock.fpath = "";
-            sock.init_sock(runtime);
+            sock.init_sock(runtime, sp[0], "");
 
             RubyUNIXSocket sock2 = (RubyUNIXSocket)(Helpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
-            sock2.channel = sp[1];
-            sock2.fpath = "";
-            sock2.init_sock(runtime);
+            sock2.init_sock(runtime, sp[1], "");
 
             return runtime.newArray(sock, sock2);
 
@@ -172,22 +168,6 @@ public class RubyUNIXSocket extends RubyBasicSocket {
             throw runtime.newIOErrorFromException(ioe);
 
         }
-    }
-
-    @Override
-    public IRubyObject close() {
-        Ruby runtime = getRuntime();
-
-        super.close();
-
-        try {
-            channel.close();
-
-        } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
-        }
-
-        return runtime.getNil();
     }
 
     @Override
@@ -228,7 +208,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     protected void init_unixsock(Ruby runtime, IRubyObject _path, boolean server) {
         ByteList path = _path.convertToString().getByteList();
-        fpath = Helpers.decodeByteList(runtime, path);
+        String fpath = Helpers.decodeByteList(runtime, path);
 
         int maxSize = 103; // Max size from Darwin, lowest common value we know of
         if (fpath.length() > 103) {
@@ -236,13 +216,15 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
 
         try {
-            if(server) {
+            if (server) {
                 UnixServerSocketChannel channel = UnixServerSocketChannel.open();
                 UnixServerSocket socket = channel.socket();
 
+                // TODO: listen backlog
+
                 socket.bind(new UnixSocketAddress(new File(fpath)));
 
-                this.channel = channel;
+                init_sock(runtime, channel, fpath);
 
             } else {
                 File fpathFile = new File(fpath);
@@ -255,40 +237,33 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
                 channel.connect(new UnixSocketAddress(fpathFile));
 
-                this.channel = channel;
+                init_sock(runtime, channel);
 
             }
 
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         }
-
-        if(server) {
-            // TODO: listen backlog
-        }
-
-        init_sock(runtime);
-
-        if(server) {
-            openFile.setPath(fpath);
-        }
     }
 
-    protected void init_sock(Ruby runtime) {
+    protected void init_sock(Ruby runtime, Channel channel, String path) {
+        openFile.setPath(path);
+
+        init_sock(runtime, channel);
+    }
+
+    protected void init_sock(Ruby runtime, Channel channel) {
         ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
         MakeOpenFile();
 
-        openFile.setChannel(channel);
+        openFile.setFD(newChannelFD(runtime, channel));
         openFile.setMode(modes.getOpenFileFlags());
         openFile.setSync(true);
     }
 
     private UnixSocketChannel asUnixSocket() {
-        return (UnixSocketChannel)channel;
+        return (UnixSocketChannel)getOpenFile().fd().ch;
     }
-
-    protected Channel channel;
-    protected String fpath;
 
     protected final static int F_GETFL = Fcntl.F_GETFL.intValue();
     protected final static int F_SETFL = Fcntl.F_SETFL.intValue();

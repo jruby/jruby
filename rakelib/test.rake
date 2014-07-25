@@ -27,12 +27,11 @@ namespace :test do
   desc "Run the comprehensive suite: #{all_tests}"
   task :all => [:compile, *all_tests]
 
+  desc "Run tests that are too slow for the main suite"
+  task :slow_suites => [:compile, *slow_tests]
+
   task :rake_targets => long_tests
-  
-  task :extended do    
-    # run Ruby integration tests
-    Rake::Task["test:rake_targets"].invoke
-  end
+  task :extended => long_tests
 
   desc "Run tracing tests"
   task :tracing do
@@ -65,6 +64,7 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     ENV['EXCLUDE_DIR'] = 'test/mri/excludes'
+    ENV['TESTOPT'] = '--tty=no'
     t.ruby_opts << '-J-ea'
     t.ruby_opts << '-I lib/ruby/shared'
     t.ruby_opts << '-I lib/ruby/2.1'
@@ -77,6 +77,7 @@ namespace :test do
 
   permute_tests(:jruby, compile_flags, 'test:compile') do |t|
     files = []
+    ENV['TESTOPT'] = '-v'
     File.open('test/jruby.index') do |f|
       f.each_line.each do |line|
         filename = "test/#{line.chomp}.rb"
@@ -153,7 +154,7 @@ namespace :test do
       "target/commons-logging.jar",
       "lib/jruby.jar",
       "target/test-classes",
-      "test/requireTest.jar",
+      "test/jruby/requireTest.jar",
       "test"
     ]
     

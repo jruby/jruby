@@ -1,48 +1,7 @@
 package org.jruby.ir.persistence.read.parser;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.BIG5Encoding;
-import org.jcodings.specific.Big5HKSCSEncoding;
-import org.jcodings.specific.Big5UAOEncoding;
-import org.jcodings.specific.CP1251Encoding;
-import org.jcodings.specific.CP949Encoding;
-import org.jcodings.specific.EUCJPEncoding;
-import org.jcodings.specific.EUCTWEncoding;
-import org.jcodings.specific.EmacsMuleEncoding;
-import org.jcodings.specific.GB18030Encoding;
-import org.jcodings.specific.GBKEncoding;
-import org.jcodings.specific.ISO8859_10Encoding;
-import org.jcodings.specific.ISO8859_11Encoding;
-import org.jcodings.specific.ISO8859_13Encoding;
-import org.jcodings.specific.ISO8859_14Encoding;
-import org.jcodings.specific.ISO8859_15Encoding;
-import org.jcodings.specific.ISO8859_16Encoding;
-import org.jcodings.specific.ISO8859_1Encoding;
-import org.jcodings.specific.ISO8859_2Encoding;
-import org.jcodings.specific.ISO8859_3Encoding;
-import org.jcodings.specific.ISO8859_4Encoding;
-import org.jcodings.specific.ISO8859_5Encoding;
-import org.jcodings.specific.ISO8859_6Encoding;
-import org.jcodings.specific.ISO8859_7Encoding;
-import org.jcodings.specific.ISO8859_8Encoding;
-import org.jcodings.specific.ISO8859_9Encoding;
-import org.jcodings.specific.KOI8Encoding;
-import org.jcodings.specific.KOI8REncoding;
-import org.jcodings.specific.KOI8UEncoding;
-import org.jcodings.specific.NonStrictEUCJPEncoding;
-import org.jcodings.specific.NonStrictUTF8Encoding;
-import org.jcodings.specific.SJISEncoding;
-import org.jcodings.specific.USASCIIEncoding;
-import org.jcodings.specific.UTF16BEEncoding;
-import org.jcodings.specific.UTF16LEEncoding;
-import org.jcodings.specific.UTF32BEEncoding;
-import org.jcodings.specific.UTF32LEEncoding;
-import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.specific.*;
 import org.jruby.RubyLocalJumpError.Reason;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -54,6 +13,10 @@ import org.jruby.parser.StaticScope.Type;
 import org.jruby.runtime.CallType;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class NonIRObjectFactory {
     public static Operation createOperation(String name) {

@@ -19,6 +19,65 @@ import org.jruby.truffle.runtime.core.*;
 @CoreClass(name = "TruffleDebug")
 public abstract class TruffleDebugNodes {
 
+    @CoreMethod(names = "array_storage_info", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    public abstract static class ArrayStorageInfo extends CoreMethodNode {
+
+        public ArrayStorageInfo(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ArrayStorageInfo(ArrayStorageInfo prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString javaClassOf(RubyArray array) {
+            notDesignedForCompilation();
+            return getContext().makeString("RubyArray(" + (array.getStore() == null ? "null" : array.getStore().getClass()) + "*" + array.getSize() + ")");
+        }
+
+    }
+
+    @CoreMethod(names = "dump_call_stack", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    public abstract static class DumpCallStack extends CoreMethodNode {
+
+        public DumpCallStack(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DumpCallStack(FullTreeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public NilPlaceholder dumpCallStack() {
+            notDesignedForCompilation();
+            RubyCallStack.dump(getContext(), this);
+            return NilPlaceholder.INSTANCE;
+        }
+
+    }
+
+    @CoreMethod(names = "full_tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
+    public abstract static class FullTreeNode extends CoreMethodNode {
+
+        public FullTreeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public FullTreeNode(FullTreeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString fullTree() {
+            notDesignedForCompilation();
+
+            return getContext().makeString(NodeUtil.printTreeToString(RubyCallStack.getCallerFrame().getCallNode().getRootNode()));
+        }
+
+    }
+
     @CoreMethod(names = "java_class_of", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
     public abstract static class JavaClassOf extends CoreMethodNode {
 
@@ -35,25 +94,6 @@ public abstract class TruffleDebugNodes {
             notDesignedForCompilation();
 
             return getContext().makeString(value.getClass().getName());
-        }
-
-    }
-
-    @CoreMethod(names = "array_storage_info", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
-    public abstract static class ArrayStorageInfo extends CoreMethodNode {
-
-        public ArrayStorageInfo(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ArrayStorageInfo(ArrayStorageInfo prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString javaClassOf(RubyArray array) {
-            notDesignedForCompilation();
-            return getContext().makeString("RubyArray(" + (array.getStore() == null ? "null" : array.getStore().getClass()) + "*" + array.getSize() + ")");
         }
 
     }
@@ -84,6 +124,25 @@ public abstract class TruffleDebugNodes {
 
     }
 
+    @CoreMethod(names = "slow_path", isModuleMethod = true, needsSelf = false, minArgs = 1, maxArgs = 1)
+    public abstract static class SlowPathNode extends CoreMethodNode {
+
+        public SlowPathNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SlowPathNode(SlowPathNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.SlowPath
+        @Specialization
+        public Object slowPath(Object value) {
+            return value;
+        }
+
+    }
+
     @CoreMethod(names = "tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
     public abstract static class TreeNode extends CoreMethodNode {
 
@@ -100,26 +159,6 @@ public abstract class TruffleDebugNodes {
             notDesignedForCompilation();
 
             return getContext().makeString(NodeUtil.printCompactTreeToString(RubyCallStack.getCallerFrame().getCallNode().getRootNode()));
-        }
-
-    }
-
-    @CoreMethod(names = "full_tree", isModuleMethod = true, needsSelf = false, maxArgs = 0)
-    public abstract static class FullTreeNode extends CoreMethodNode {
-
-        public FullTreeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public FullTreeNode(FullTreeNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString fullTree() {
-            notDesignedForCompilation();
-
-            return getContext().makeString(NodeUtil.printTreeToString(RubyCallStack.getCallerFrame().getCallNode().getRootNode()));
         }
 
     }

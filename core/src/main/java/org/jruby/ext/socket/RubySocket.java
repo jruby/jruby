@@ -155,7 +155,7 @@ public class RubySocket extends RubyBasicSocket {
 
             socket.initFieldsFromDescriptor(runtime, fd);
 
-            socket.initSocket(runtime, fd);
+            socket.initSocket(fd);
 
             return socket;
         } else {
@@ -175,7 +175,7 @@ public class RubySocket extends RubyBasicSocket {
 
         ChannelFD fd = initChannelFD(runtime);
 
-        initSocket(runtime, fd);
+        initSocket(fd);
 
         return this;
     }
@@ -188,7 +188,7 @@ public class RubySocket extends RubyBasicSocket {
 
         ChannelFD fd = initChannelFD(runtime);
 
-        initSocket(runtime, fd);
+        initSocket(fd);
 
         return this;
     }
@@ -379,7 +379,7 @@ public class RubySocket extends RubyBasicSocket {
         soType = serverSocket.soType;
         soProtocol = serverSocket.soProtocol;
 
-        initSocket(runtime, newChannelFD(runtime, socketChannel));
+        initSocket(newChannelFD(runtime, socketChannel));
     }
 
     protected ChannelFD initChannelFD(Ruby runtime) {
@@ -413,10 +413,6 @@ public class RubySocket extends RubyBasicSocket {
             throw SocketUtils.sockerr(runtime, "initialize: " + e.toString());
 
         }
-    }
-
-    protected static ChannelFD newChannelFD(Ruby runtime, Channel channel) {
-        return new ChannelFD(channel, runtime.getPosix());
     }
 
     private void initProtocol(Ruby runtime, IRubyObject protocol) {

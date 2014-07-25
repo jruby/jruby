@@ -35,7 +35,8 @@ module JRuby
       result = out.to_io.read
       exit_value = process.wait_for
 
-      status = RubyProcess::RubyStatus.newProcessStatus(JRuby.runtime, exit_value, pid)
+      # RubyStatus uses real native status now, so we unshift Java's shifted exit status
+      status = RubyProcess::RubyStatus.newProcessStatus(JRuby.runtime, exit_value << 8, pid)
       JRuby.runtime.current_context.last_exit_status = status
 
       result.gsub(/\r\n/, "\n")

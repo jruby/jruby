@@ -46,7 +46,7 @@ See [BUILDING](BUILDING.md) for more information.
 
 ## Testing
 
-See [README.test](docs/README.test.md) for more information.
+See [BUILDING: Developing and Testing](BUILDING.md#developing-and-testing) for more information.
 
 ## More Information
 

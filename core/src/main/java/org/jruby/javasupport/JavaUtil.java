@@ -104,7 +104,7 @@ public class JavaUtil {
             Object element = Array.get(array, i);
             if (element instanceof ArrayJavaProxy) {
                 outer.append(convertJavaArrayToRubyWithNesting(context, ((ArrayJavaProxy)element).getObject()));
-            } else if (element.getClass().isArray()) {
+            } else if (element != null && element.getClass().isArray()) {
                 outer.append(convertJavaArrayToRubyWithNesting(context, element));
             } else {
                 outer.append(JavaUtil.convertJavaToUsableRubyObject(context.runtime, element));

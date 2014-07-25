@@ -7,6 +7,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
@@ -40,9 +41,9 @@ public class UnresolvedSuperInstr extends CallInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        IRubyObject[] args = prepareArguments(context, self, getCallArgs(), currDynScope, temp);
-        Block block = prepareBlock(context, self, currDynScope, temp);
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        IRubyObject[] args = prepareArguments(context, self, getCallArgs(), currScope, currDynScope, temp);
+        Block block = prepareBlock(context, self, currScope, currDynScope, temp);
         return IRRuntimeHelpers.unresolvedSuper(context, self, args, block);
     }
 

@@ -4,7 +4,7 @@ require 'rspec'
 
 unless $is_rspec_reconfigured
   RSpec.configure do |config|
-    require File.expand_path('../../../test/test_helper', __FILE__)
+    require File.expand_path('../../../test/jruby/test_helper', __FILE__)
     config.include TestHelper
   end
   $is_rspec_reconfigured = true

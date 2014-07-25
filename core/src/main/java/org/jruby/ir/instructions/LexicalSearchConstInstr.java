@@ -5,6 +5,7 @@ import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
@@ -15,7 +16,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.Invalidator;
 
 import java.util.Map;
-import org.jruby.ir.operands.StringLiteral;
 
 // The runtime method call that GET_CONST is translated to in this case will call
 // a get_constant method on the scope meta-object which does the lookup of the constant table
@@ -80,8 +80,8 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr, Fixed
         return new LexicalSearchConstInstr(ii.getRenamedVariable(result), definingScope.cloneForInlining(ii), constName);
     }
 
-    private Object cache(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Ruby runtime, Object constant) {
-        StaticScope staticScope = (StaticScope) definingScope.retrieve(context, self, currDynScope, temp);
+    private Object cache(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp, Ruby runtime, Object constant) {
+        StaticScope staticScope = (StaticScope) definingScope.retrieve(context, self, currScope, currDynScope, temp);
         RubyModule object = runtime.getObject();
         // SSS FIXME: IRManager objects dont have a static-scope yet, so this hack of looking up the module right away
         // This IR needs fixing!
@@ -101,10 +101,10 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr, Fixed
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Ruby runtime = context.runtime;
         Object constant = cachedConstant; // Store to temp so it does null out on us mid-stream
-        if (!isCached(runtime, constant)) constant = cache(context, currDynScope, self, temp, runtime, constant);
+        if (!isCached(runtime, constant)) constant = cache(context, currScope, currDynScope, self, temp, runtime, constant);
 
         return constant;
     }

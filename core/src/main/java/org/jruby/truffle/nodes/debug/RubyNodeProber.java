@@ -16,4 +16,6 @@ public interface RubyNodeProber extends ASTNodeProber {
 
     RubyNode probeAsStatement(RubyNode node);
 
+    RubyNode probeAsPeriodic(RubyNode node);
+
 }

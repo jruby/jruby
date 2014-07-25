@@ -9,36 +9,23 @@
   <name>tomcat</name>
   <properties>
     <jruby.version>@project.version@</jruby.version>
-    <gem.path>${gem.home}</gem.path>
-    <gem.home>${project.build.outputDirectory}</gem.home>
-    <jruby.plugins.version>1.0.0</jruby.plugins.version>
+    <jruby.plugins.version>1.0.3</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-    <tesla.version>0.0.9</tesla.version>
+    <tesla.version>0.1.1</tesla.version>
   </properties>
   <dependencies>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby</artifactId>
+      <version>${jruby.version}</version>
+      <type>pom</type>
+    </dependency>
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>flickraw</artifactId>
       <version>0.9.7</version>
       <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby</artifactId>
-      <version>${jruby.version}</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>jruby-stdlib</artifactId>
-          <groupId>org.jruby</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-stdlib</artifactId>
-      <version>${jruby.version}</version>
-      <scope>provided</scope>
     </dependency>
   </dependencies>
   <repositories>
@@ -47,24 +34,7 @@
       <url>http://rubygems-proxy.torquebox.org/releases</url>
     </repository>
   </repositories>
-  <pluginRepositories>
-    <pluginRepository>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-      <id>sonatype</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-    </pluginRepository>
-  </pluginRepositories>
   <build>
-    <resources>
-      <resource>
-        <directory>src/main/ruby</directory>
-      </resource>
-    </resources>
     <plugins>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
@@ -83,30 +53,9 @@
         </configuration>
       </plugin>
       <plugin>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <version>2.8</version>
-        <executions>
-          <execution>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>unpack</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <artifactItems>
-            <artifactItem>
-              <groupId>org.jruby</groupId>
-              <artifactId>jruby-stdlib</artifactId>
-              <version>${jruby.version}</version>
-              <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-            </artifactItem>
-          </artifactItems>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>tomcat-maven-plugin</artifactId>
+        <version>1.1</version>
         <executions>
           <execution>
             <id>run-tomcat</id>

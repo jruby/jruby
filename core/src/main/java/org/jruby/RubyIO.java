@@ -51,6 +51,7 @@ import static org.jruby.util.io.EncodingUtils.vperm;
 import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.ModeFlags;
+import org.jruby.util.io.POSIXProcess;
 import org.jruby.util.io.PopenExecutor;
 import org.jruby.util.io.PosixShim;
 import org.jruby.util.io.SelectBlob;
@@ -137,14 +138,9 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
         
         openFile = MakeOpenFile();
-        
-        try {
-            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(outputStream)), autoclose));
-        } catch (InvalidValueException e) {
-            throw getRuntime().newErrnoEINVALError();
-        }
-        
+        openFile.setFD(new ChannelFD(Channels.newChannel(outputStream), runtime.getPosix()));
         openFile.setMode(OpenFile.WRITABLE | OpenFile.APPEND);
+        openFile.setAutoclose(autoclose);
     }
     
     public RubyIO(Ruby runtime, InputStream inputStream) {
@@ -155,13 +151,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         }
         
         openFile = MakeOpenFile();
-        
-        try {
-            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(inputStream))));
-        } catch (InvalidValueException e) {
-            throw getRuntime().newErrnoEINVALError();
-        }
-        
+        openFile.setFD(new ChannelFD(Channels.newChannel(inputStream), runtime.getPosix()));
         openFile.setMode(OpenFile.READABLE);
     }
     
@@ -578,7 +568,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
      * getline using logic of gets.  If limit is -1 then read unlimited amount.
      * mri: rb_io_getline_1 (mostly)
      */
-    private IRubyObject getlineInner(ThreadContext context, IRubyObject rs, int _limit, ByteListCache cache) {
+    private synchronized IRubyObject getlineInner(ThreadContext context, IRubyObject rs, int _limit, ByteListCache cache) {
         Ruby runtime = context.runtime;
         IRubyObject str = context.nil;
         boolean noLimit = false;
@@ -1209,9 +1199,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         ByteList strByteList = ((RubyString)str).getByteList();
         n = OpenFile.writeInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize());
-//        RB_GC_GUARD(str);
 
-        if (n == -1) throw runtime.newSystemCallError(fptr.getPath());
+        if (n == -1) throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
 
         return runtime.newFixnum(n);
     }
@@ -1300,7 +1289,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     // io_write
-    public IRubyObject write(ThreadContext context, IRubyObject str, boolean nosync) {
+    public synchronized IRubyObject write(ThreadContext context, IRubyObject str, boolean nosync) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
         long n;
@@ -1632,11 +1621,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         RubyIO io = GetWriteIO();
         fptr = io.getOpenFileChecked();
-        if (sync.isTrue()) {
-            fptr.setMode(fptr.getMode() | OpenFile.SYNC);
-        } else {
-            fptr.setMode(fptr.getMode() & ~OpenFile.SYNC);
-        }
+        fptr.setSync(sync.isTrue());
         return sync;
     }
 
@@ -1811,16 +1796,17 @@ public class RubyIO extends RubyObject implements IOEncodable {
         if (fptr.getProcess() != null) {
             context.setLastExitStatus(context.nil);
 
-            // If this is not a popen3/popen4 stream and it has a process, attempt to shut down that process
             if (runtime.getPosix().isNative()) {
                 // We do not need to nuke native-launched child process, since we now have full control
                 // over child process pipes.
-                IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, fptr.getProcess().exitValue(), fptr.getPid());
+                IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, ((POSIXProcess)fptr.getProcess()).status(), fptr.getPid());
                 context.setLastExitStatus(processResult);
             } else {
+                // If this is not a popen3/popen4 stream and it has a process, attempt to shut down that process
                 if (!popenSpecial) {
                     obliterateProcess(fptr.getProcess());
-                    IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, fptr.getProcess().exitValue(), fptr.getPid());
+                    // RubyStatus uses real native status now, so we unshift Java's shifted exit status
+                    IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, fptr.getProcess().exitValue() << 8, fptr.getPid());
                     context.setLastExitStatus(processResult);
                 }
             }
@@ -2005,7 +1991,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             case 1:
                 return prepareGetsSeparator(context, args[0], null);
             case 2:
-                return prepareGetsSeparator(context, args[1], args[2]);
+                return prepareGetsSeparator(context, args[0], args[1]);
         }
         throw new RuntimeException("invalid size for gets args: " + args.length);
     }
@@ -2054,7 +2040,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             case 1:
                 return prepareGetsLimit(context, args[0], null);
             case 2:
-                return prepareGetsLimit(context, args[1], args[2]);
+                return prepareGetsLimit(context, args[0], args[1]);
         }
         throw new RuntimeException("invalid size for gets args: " + args.length);
     }
@@ -2707,7 +2693,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
     // io_read
     @JRubyMethod(name = "read")
-    public IRubyObject read(ThreadContext context, IRubyObject length, IRubyObject str) {
+    public synchronized IRubyObject read(ThreadContext context, IRubyObject length, IRubyObject str) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
         int n, len;
@@ -3610,7 +3596,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     if (io.openFile.isOpen()) {
                         io.close();
                     }
-                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, process.waitFor(), ShellLauncher.getPidFromProcess(process)));
+                    // RubyStatus uses real native status now, so we unshift Java's shifted exit status
+                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, process.waitFor() << 8, ShellLauncher.getPidFromProcess(process)));
                 }
             }
             return io;
@@ -3668,10 +3655,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
                 try {
                     int exitValue = tuple.process.waitFor();
-                    
+
+                    // RubyStatus uses real native status now, so we unshift Java's shifted exit status
                     RubyProcess.RubyStatus status = RubyProcess.RubyStatus.newProcessStatus(
                             runtime,
-                            exitValue,
+                            exitValue << 8,
                             pid);
                     
                     rubyThread.cleanTerminate(status);
@@ -3722,7 +3710,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
                     return block.yield(context, yieldArgs);
                 } finally {
                     cleanupPOpen(tuple);
-                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple.process.waitFor(), ShellLauncher.getPidFromProcess(tuple.process)));
+                    // RubyStatus uses real native status now, so we unshift Java's shifted exit status
+                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple.process.waitFor() << 8, ShellLauncher.getPidFromProcess(tuple.process)));
                 }
             }
             return yieldArgs;

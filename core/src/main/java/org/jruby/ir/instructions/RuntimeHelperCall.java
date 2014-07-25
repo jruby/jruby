@@ -1,22 +1,20 @@
 package org.jruby.ir.instructions;
 
-import java.util.Arrays;
-
 import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
+import org.jruby.ir.operands.*;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.IRStaticScope;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import org.jruby.parser.IRStaticScope;
-
+import java.util.Arrays;
 import java.util.Map;
 
 public class RuntimeHelperCall extends Instr implements ResultInstr {
@@ -84,28 +82,28 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
         return (getResult() == null ? "" : (getResult() + " = ")) + getOperation()  + "(" + helperMethod + ", " + Arrays.toString(args) + ")";
     }
 
-    public IRubyObject callHelper(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block.Type blockType) {
+    public IRubyObject callHelper(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block.Type blockType) {
         IRStaticScope scope = (IRStaticScope) currDynScope.getStaticScope();
 
         switch (helperMethod) {
             case HANDLE_PROPAGATE_BREAK:
                 return IRRuntimeHelpers.handlePropagatedBreak(context, currDynScope,
-                        args[0].retrieve(context, self, currDynScope, temp), blockType);
+                        args[0].retrieve(context, self, currScope, currDynScope, temp), blockType);
             case HANDLE_NONLOCAL_RETURN:
-                return IRRuntimeHelpers.handleNonlocalReturn(scope, currDynScope,
-                        args[0].retrieve(context, self, currDynScope, temp), blockType);
+                return IRRuntimeHelpers.handleNonlocalReturn(scope, currScope, currDynScope,
+                        args[0].retrieve(context, self, currScope, currDynScope, temp), blockType);
             case HANDLE_BREAK_AND_RETURNS_IN_LAMBDA:
                 return IRRuntimeHelpers.handleBreakAndReturnsInLambdas(context, scope, currDynScope,
-                        args[0].retrieve(context, self, currDynScope, temp), blockType);
+                        args[0].retrieve(context, self, currScope, currDynScope, temp), blockType);
             case IS_DEFINED_BACKREF:
                 return IRRuntimeHelpers.isDefinedBackref(context);
             case IS_DEFINED_CALL:
                 return IRRuntimeHelpers.isDefinedCall(context, self,
-                        (IRubyObject) args[0].retrieve(context, self, currDynScope, temp),
+                        (IRubyObject) args[0].retrieve(context, self, currScope, currDynScope, temp),
                         ((StringLiteral) args[1]).getString());
             case IS_DEFINED_CONSTANT_OR_METHOD:
                 return IRRuntimeHelpers.isDefinedConstantOrMethod(context,
-                        (IRubyObject) args[0].retrieve(context, self, currDynScope, temp),
+                        (IRubyObject) args[0].retrieve(context, self, currScope, currDynScope, temp),
                         ((StringLiteral) args[1]).getString());
             case IS_DEFINED_NTH_REF:
                 return IRRuntimeHelpers.isDefinedNthRef(context, (int) ((Fixnum) args[0]).getValue());
@@ -113,24 +111,24 @@ public class RuntimeHelperCall extends Instr implements ResultInstr {
                 return IRRuntimeHelpers.isDefinedGlobal(context, ((StringLiteral) args[0]).getString());
             case IS_DEFINED_INSTANCE_VAR:
                 return IRRuntimeHelpers.isDefinedInstanceVar(context,
-                        (IRubyObject) args[0].retrieve(context, self, currDynScope, temp),
+                        (IRubyObject) args[0].retrieve(context, self, currScope, currDynScope, temp),
                         ((StringLiteral) args[1]).getString());
             case IS_DEFINED_CLASS_VAR:
                 return IRRuntimeHelpers.isDefinedClassVar(context,
-                        (RubyModule) args[0].retrieve(context, self, currDynScope, temp),
+                        (RubyModule) args[0].retrieve(context, self, currScope, currDynScope, temp),
                         ((StringLiteral) args[1]).getString());
             case IS_DEFINED_SUPER:
                 return IRRuntimeHelpers.isDefinedSuper(context,
-                        (IRubyObject) args[0].retrieve(context, self, currDynScope, temp));
+                        (IRubyObject) args[0].retrieve(context, self, currScope, currDynScope, temp));
             case IS_DEFINED_METHOD:
                 return IRRuntimeHelpers.isDefinedMethod(context,
-                        (IRubyObject) args[0].retrieve(context, self, currDynScope, temp),
+                        (IRubyObject) args[0].retrieve(context, self, currScope, currDynScope, temp),
                         ((StringLiteral) args[1]).getString(),
                         ((Boolean) args[2]).isTrue());
             case MERGE_KWARGS:
                 return IRRuntimeHelpers.mergeKeywordArguments(context,
-                        (IRubyObject) args[0].retrieve(context, self, currDynScope, temp),
-                        (IRubyObject) args[1].retrieve(context, self, currDynScope, temp));
+                        (IRubyObject) args[0].retrieve(context, self, currScope, currDynScope, temp),
+                        (IRubyObject) args[1].retrieve(context, self, currScope, currDynScope, temp));
         }
 
         throw new RuntimeException("Unknown IR runtime helper method: " + helperMethod + "; INSTR: " + this);

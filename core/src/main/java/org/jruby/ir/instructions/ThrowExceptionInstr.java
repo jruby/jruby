@@ -6,13 +6,14 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
-import org.jruby.runtime.Helpers;
 
 // Right now, this is primarily used by the JRuby implementation.
 // Ruby exceptions go through RubyKernel.raise (or RubyThread.raise).
@@ -49,12 +50,12 @@ public class ThrowExceptionInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         if (exceptionArg instanceof IRException) {
             throw ((IRException) exceptionArg).getException(context.runtime);
         }
 
-        Object excObj = exceptionArg.retrieve(context, self, currDynScope, temp);
+        Object excObj = exceptionArg.retrieve(context, self, currScope, currDynScope, temp);
 
         if (excObj instanceof IRubyObject) {
             RubyKernel.raise(context, context.runtime.getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);

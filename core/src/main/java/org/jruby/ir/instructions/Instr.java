@@ -2,14 +2,15 @@ package org.jruby.ir.instructions;
 
 // A generic IR instruction is of the form: v = OP(arg_array, attribute_array)
 
-import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -200,12 +201,12 @@ public abstract class Instr {
     }
 
     @Interp
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }
 
     @Interp
-    public int interpretAndGetNewIPC(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, int ipc) {
+    public int interpretAndGetNewIPC(ThreadContext context, DynamicScope currDynScope, StaticScope currScope, IRubyObject self, Object[] temp, int ipc) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }
 

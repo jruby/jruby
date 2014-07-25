@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.debug;
 import com.oracle.truffle.api.instrument.ASTNodeProber;
 import com.oracle.truffle.api.instrument.ASTProber;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
@@ -22,8 +23,12 @@ public class RubyASTProber implements ASTProber {
     private final List<RubyNodeProber> probers = new ArrayList<>();
 
     public RubyASTProber() {
-        if (Options.TRUFFLE_TRACE.load()) {
+        if (RubyContext.TRACE) {
             probers.add(new TraceProber());
+        }
+
+        if (RubyContext.OBJECTSPACE) {
+            probers.add(new ObjectSpaceSafepointProber());
         }
     }
 
@@ -41,6 +46,16 @@ public class RubyASTProber implements ASTProber {
 
         for (RubyNodeProber nodeProber : probers) {
             result = nodeProber.probeAsStatement(result);
+        }
+
+        return result;
+    }
+
+    public RubyNode probeAsPeriodic(RubyNode node) {
+        RubyNode result = node;
+
+        for (RubyNodeProber nodeProber : probers) {
+            result = nodeProber.probeAsPeriodic(result);
         }
 
         return result;

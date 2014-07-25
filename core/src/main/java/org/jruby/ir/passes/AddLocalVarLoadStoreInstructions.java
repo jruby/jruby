@@ -1,9 +1,5 @@
 package org.jruby.ir.passes;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
@@ -12,9 +8,14 @@ import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class AddLocalVarLoadStoreInstructions extends CompilerPass {
     @Override

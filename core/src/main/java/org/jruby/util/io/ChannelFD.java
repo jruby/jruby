@@ -132,7 +132,6 @@ public class ChannelFD implements Closeable {
         if (ch instanceof SeekableByteChannel) chSeek = (SeekableByteChannel)ch;
         else chSeek = null;
         if (ch instanceof SelectableChannel) chSelect = (SelectableChannel)ch;
-//        else if (realFileno != -1) chSelect = new NativeDeviceChannel(realFileno);
         else chSelect = null;
         if (ch instanceof FileChannel) chFile = (FileChannel)ch;
         else chFile = null;
@@ -144,7 +143,10 @@ public class ChannelFD implements Closeable {
         if (chNative != null) {
             // we have an ENXIO channel, but need to know if it's a regular file to skip selection
             FileStat stat = posix.fstat(chNative.getFD());
-            if (stat.isFile()) chSelect = null;
+            if (stat.isFile()) {
+                chSelect = null;
+                isNativeFile = true;
+            }
         }
     }
 
@@ -161,6 +163,7 @@ public class ChannelFD implements Closeable {
     private AtomicInteger refs;
     public FileLock currentLock;
     private POSIX posix;
+    public boolean isNativeFile = false;
 
     // FIXME shouldn't use static; would interfere with other runtimes in the same JVM
     public static int FIRST_FAKE_FD = 100000;

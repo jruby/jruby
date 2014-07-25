@@ -75,12 +75,12 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        StaticScope scope = (StaticScope) startingScope.retrieve(context, self, currDynScope, temp);
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        StaticScope scope = (StaticScope) startingScope.retrieve(context, self, currScope, currDynScope, temp);
         IRubyObject arg =
                 object == null ?
                         null :
-                        (IRubyObject) object.retrieve(context, self, currDynScope, temp);
+                        (IRubyObject) object.retrieve(context, self, currScope, currDynScope, temp);
 
         return IRRuntimeHelpers.getModuleFromScope(context, scope, arg);
     }

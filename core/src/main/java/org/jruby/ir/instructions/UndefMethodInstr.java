@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubyModule;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
@@ -8,7 +9,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.RubyModule;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -66,9 +67,9 @@ public class UndefMethodInstr extends Instr implements ResultInstr, FixedArityIn
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         RubyModule module = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
-        Object nameArg = methodName.retrieve(context, self, currDynScope, temp);
+        Object nameArg = methodName.retrieve(context, self, currScope, currDynScope, temp);
         String name = (nameArg instanceof String) ? (String) nameArg : nameArg.toString();
         module.undef(context, name);
         return context.runtime.getNil();

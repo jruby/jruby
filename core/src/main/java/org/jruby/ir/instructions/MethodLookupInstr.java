@@ -6,6 +6,7 @@ import org.jruby.ir.operands.MethodHandle;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -64,8 +65,8 @@ public class MethodLookupInstr extends Instr implements ResultInstr, FixedArityI
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        return methodHandle.retrieve(context, self, currDynScope, temp);
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        return methodHandle.retrieve(context, self, currScope, currDynScope, temp);
     }
 
     @Override

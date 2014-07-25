@@ -1,28 +1,9 @@
 package org.jruby.ir.representations;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
-import org.jruby.ir.instructions.BranchInstr;
-import org.jruby.ir.instructions.CallBase;
-import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
-import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.JumpInstr;
-import org.jruby.ir.instructions.LabelInstr;
-import org.jruby.ir.instructions.ThrowExceptionInstr;
+import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
@@ -32,6 +13,8 @@ import org.jruby.ir.util.DirectedGraph;
 import org.jruby.ir.util.Edge;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.util.*;
 
 /**
  * Represents the base build of a CFG.  All information here is accessed via

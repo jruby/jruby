@@ -139,4 +139,38 @@ freezing to) a specific jruby-complete jar version.</description>
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>snapshots</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>io.tesla.polyglot</groupId>
+            <artifactId>tesla-polyglot-maven-plugin</artifactId>
+            <version>${tesla.version}</version>
+            <executions>
+              <execution>
+                <id>cleanup_snapshot_repo</id>
+                <phase>deploy</phase>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <taskId>cleanup_snapshot_repo</taskId>
+                  <nativePom>Mavenfile</nativePom>
+                </configuration>
+              </execution>
+            </executions>
+            <dependencies>
+              <dependency>
+                <groupId>io.tesla.polyglot</groupId>
+                <artifactId>tesla-polyglot-ruby</artifactId>
+                <version>${tesla.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

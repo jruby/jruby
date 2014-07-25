@@ -1,17 +1,18 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
-import org.jruby.ir.operands.ScopeModule;
 
 public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
     private final IRScope scope;
@@ -36,7 +37,7 @@ public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[]{value, new ScopeModule(scope), lvar};
+        return new Operand[]{value, lvar};
     }
 
     @Override
@@ -60,8 +61,8 @@ public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Object varValue = value.retrieve(context, self, currDynScope, temp);
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        Object varValue = value.retrieve(context, self, currScope, currDynScope, temp);
         currDynScope.setValue((IRubyObject)varValue, lvar.getLocation(), lvar.getScopeDepth());
         return null;
     }

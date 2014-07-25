@@ -28,12 +28,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ir.listeners;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
 import org.jruby.ir.instructions.Instr;
+
+import java.util.*;
 
 public class InstructionsListenerDecorator implements List<Instr> {
     private final List<Instr> instrs;

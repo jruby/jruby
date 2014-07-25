@@ -25,6 +25,7 @@ import org.jruby.truffle.runtime.lookup.LookupFork;
 import org.jruby.truffle.runtime.lookup.LookupNode;
 import org.jruby.truffle.runtime.lookup.LookupTerminal;
 import org.jruby.truffle.runtime.methods.RubyMethod;
+import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 import java.util.*;
 
@@ -103,15 +104,6 @@ public class RubyModule extends RubyObject implements LookupNode {
         this.name = name;
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
-
-        /*
-         * Modules always go into the object space manager. Manually allocate an objectID, because
-         * the lazy mechanism uses the Ruby class of the object, which may not be set yet during
-         * bootstrap.
-         */
-
-        objectID = context.getNextObjectID();
-        context.getObjectSpaceManager().add(this);
     }
 
     public RubyModule getParentModule() {
@@ -471,6 +463,19 @@ public class RubyModule extends RubyObject implements LookupNode {
             this.isPrivate = isPrivate;
         }
 
+    }
+
+    @Override
+    public void visitObjectGraphChildren(ObjectSpaceManager.ObjectGraphVisitor visitor) {
+        for (RubyConstant constant : constants.values()) {
+            getRubyClass().getContext().getCoreLibrary().box(constant.value).visitObjectGraph(visitor);
+        }
+
+        for (RubyMethod method : methods.values()) {
+            if (method.getDeclarationFrame() != null) {
+                getRubyClass().getContext().getObjectSpaceManager().visitFrame(method.getDeclarationFrame(), visitor);
+            }
+        }
     }
 
 }

@@ -55,9 +55,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.ChannelFD;
-import org.jruby.util.io.ModeFlags;
-import org.jruby.util.io.ChannelDescriptor;
 
 public class RubyTCPSocket extends RubyIPSocket {
     static void createTCPSocket(Ruby runtime) {
@@ -115,7 +112,7 @@ public class RubyTCPSocket extends RubyIPSocket {
                 // only try to set blocking back if we succeeded to finish connecting
                 channel.configureBlocking(true);
 
-                initSocket(runtime, new ChannelFD(channel, runtime.getPosix()));
+                initSocket(newChannelFD(runtime, channel));
                 success = true;
             } catch(BindException e) {
             	throw runtime.newErrnoEADDRFromBindException(e, " to: " + remoteHost + ":" + String.valueOf(remotePort));

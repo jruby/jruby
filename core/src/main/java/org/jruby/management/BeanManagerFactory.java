@@ -45,5 +45,7 @@ public class BeanManagerFactory {
         public void unregisterMethodCache() {}
         public void unregisterParserStats() {}
         public void unregisterRuntime() {}
+        public boolean tryShutdownAgent() {return false;}
+        public boolean tryRestartAgent() {return false;}
     }
 }

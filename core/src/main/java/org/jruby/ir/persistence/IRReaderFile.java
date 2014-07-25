@@ -6,17 +6,6 @@
 
 package org.jruby.ir.persistence;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
@@ -28,6 +17,18 @@ import org.jruby.ir.operands.OperandType;
 import org.jruby.ir.operands.TemporaryVariableType;
 import org.jruby.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *

@@ -1,10 +1,11 @@
 language: java
 before_script:
-  - unset GEM_PATH GEM_HOME IRBRC
+  - unset GEM_PATH GEM_HOME IRBRC JRUBY_OPTS
   - "export PATH=`pwd`/bin:$PATH"
+  - "export JAVA_OPTS='-XX:+TieredCompilation -XX:TieredStopAtLevel=1'"
 
 jdk:
-  - oraclejdk7
+  - openjdk7
   - oraclejdk8
 
 os:
@@ -14,7 +15,15 @@ os:
 env:
   matrix:
     - TARGET='-Ptest'
-    - TARGET='-Prake -Dtask=test:extended'
+    - TARGET='-Prake -Dtask=test:rubicon'
+    - TARGET='-Prake -Dtask=test:jruby'
+    - TARGET='-Prake -Dtask=test:mri'
+    - TARGET='-Prake -Dtask=test:slow_suites'
+    - TARGET='-Prake -Dtask=test:tracing'
+    - TARGET='-Prake -Dtask=spec:ji'
+    - TARGET='-Prake -Dtask=spec:compiler'
+    - TARGET='-Prake -Dtask=spec:ffi'
+    - TARGET='-Prake -Dtask=spec:regression'
     - TARGET='-Prake -Dtask=spec:ci_interpreted_travis'
     - TARGET='-Ptruffle'
 
@@ -24,14 +33,14 @@ matrix:
     - env: TARGET='-Pdist'
       jdk: oraclejdk8
     - env: TARGET='-Pjruby-jars'
-      jdk: oraclejdk7
+      jdk: openjdk7
     - env: TARGET='-Pmain'
       jdk: oraclejdk7
     - env: TARGET='-Pcomplete'
       jdk: oraclejdk8
   fast_finish: true
   allow_failures:
-    - env: TARGET='-Prake -Dtask=spec:ci_interpreted_ir_travis'
+    - env: TARGET='-Prake -Dtask=spec:compiler'
 
 branches:
   only:
@@ -42,9 +51,7 @@ branches:
 before_install:
   - if [[ $TRAVIS_JDK_VERSION = 'oraclejdk8' ]]; then sudo apt-get update; sudo apt-get install oracle-java8-installer; else true; fi
 
-# the install stores the artifact in the localrepo for 
-# the second maven run with $TARGET
-script: ( mvn install -Pbootstrap | grep -v Down ) && mvn -Dinvoker.skip=false $TARGET
+script: mvn install $TARGET -Dinvoker.skip=false | egrep -v 'Download|\\[exec\\] [[:digit:]]+/[[:digit:]]+|^[[:space:]]*\\[exec\\][[:space:]]*$' ; [ ${PIPESTATUS[0]} == 0 ]
 install: /bin/true
 notifications:
   irc:

@@ -487,10 +487,14 @@ public class Helpers {
         // TODO: this is kinda gross
         if(t.getMessage() != null) {
             String errorMessage = t.getMessage();
+
             // All errors to sysread should be SystemCallErrors, but on a closed stream
             // Ruby returns an IOError.  Java throws same exception for all errors so
             // we resort to this hack...
-            if ("File not open".equals(errorMessage)) {
+
+            if ("Bad file descriptor".equals(errorMessage)) {
+                return Errno.EBADF;
+            } else if ("File not open".equals(errorMessage)) {
                 return null;
             } else if ("An established connection was aborted by the software in your host machine".equals(errorMessage)) {
                 return Errno.ECONNABORTED;

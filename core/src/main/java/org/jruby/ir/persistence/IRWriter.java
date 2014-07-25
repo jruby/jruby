@@ -1,17 +1,16 @@
 package org.jruby.ir.persistence;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.Self;
 import org.jruby.parser.StaticScope;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 /**
  *  Write IR data out to persistent store.  IRReader is capable of re-reading this

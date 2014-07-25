@@ -4,18 +4,15 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.UndefinedValue;
-import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.*;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.Invalidator;
 
 import java.util.Map;
-import org.jruby.ir.operands.UnboxedBoolean;
-import org.jruby.ir.operands.StringLiteral;
 
 // The runtime method call that GET_CONST is translated to in this case will call
 // a get_constant method on the scope meta-object which does the lookup of the constant table
@@ -93,9 +90,9 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr, F
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Ruby runtime = context.runtime;
-        Object cmVal = currentModule.retrieve(context, self, currDynScope, temp);
+        Object cmVal = currentModule.retrieve(context, self, currScope, currDynScope, temp);
         RubyModule module;
         if (cmVal instanceof RubyModule) {
             module = (RubyModule) cmVal;

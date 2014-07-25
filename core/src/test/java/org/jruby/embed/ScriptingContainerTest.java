@@ -45,6 +45,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassCache;
 import org.jruby.util.KCode;
+import org.jruby.util.cli.Options;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -1754,7 +1755,8 @@ public class ScriptingContainerTest {
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        assertEquals(CompileMode.OFF, instance.getCompileMode());
+        // compare to default, as specified by properties etc
+        assertEquals(Options.COMPILE_MODE.load(), instance.getCompileMode());
     }
 
     /**

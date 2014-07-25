@@ -10,11 +10,8 @@ import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ThreadContext;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ClassSuperInstr extends CallInstr {
@@ -44,11 +41,11 @@ public class ClassSuperInstr extends CallInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        IRubyObject[] args = prepareArguments(context, self, getCallArgs(), currDynScope, temp);
-        Block block = prepareBlock(context, self, currDynScope, temp);
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        IRubyObject[] args = prepareArguments(context, self, getCallArgs(), currScope, currDynScope, temp);
+        Block block = prepareBlock(context, self, currScope, currDynScope, temp);
         String methodName = methAddr.getName();
-        RubyModule definingModule = (RubyModule) getDefiningModule().retrieve(context, self, currDynScope, temp);
+        RubyModule definingModule = (RubyModule) getDefiningModule().retrieve(context, self, currScope, currDynScope, temp);
         RubyClass superClass = definingModule.getMetaClass().getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
         Object rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)

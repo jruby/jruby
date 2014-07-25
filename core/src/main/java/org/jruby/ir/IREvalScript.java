@@ -1,24 +1,23 @@
 package org.jruby.ir;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.jruby.EvalType;
 import org.jruby.RubyModule;
+import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Variable;
-import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
-import org.jruby.parser.IRStaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class IREvalScript extends IRClosure {
     private static final Logger LOG = LoggerFactory.getLogger("IREvalScript");

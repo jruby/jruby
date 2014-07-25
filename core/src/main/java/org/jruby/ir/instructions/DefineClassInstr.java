@@ -4,20 +4,21 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.IRClassBody;
-import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRMetaClassBody;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
-import org.jruby.ir.operands.ScopeModule;
 
 public class DefineClassInstr extends Instr implements ResultInstr, FixedArityInstr {
     private final IRClassBody newIRClassBody;
@@ -38,7 +39,7 @@ public class DefineClassInstr extends Instr implements ResultInstr, FixedArityIn
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[]{new ScopeModule(newIRClassBody), container, superClass};
+        return new Operand[]{container, superClass};
     }
 
     @Override
@@ -68,14 +69,14 @@ public class DefineClassInstr extends Instr implements ResultInstr, FixedArityIn
         return new DefineClassInstr(ii.getRenamedVariable(result), this.newIRClassBody, container.cloneForInlining(ii), superClass.cloneForInlining(ii));
     }
 
-    private RubyModule newClass(ThreadContext context, IRubyObject self, RubyModule classContainer, DynamicScope currDynScope, Object[] temp) {
+    private RubyModule newClass(ThreadContext context, IRubyObject self, RubyModule classContainer, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         if (newIRClassBody instanceof IRMetaClassBody) return classContainer.getMetaClass();
 
         RubyClass sc;
         if (superClass == UndefinedValue.UNDEFINED) {
             sc = null;
         } else {
-            Object o = superClass.retrieve(context, self, currDynScope, temp);
+            Object o = superClass.retrieve(context, self, currScope, currDynScope, temp);
 
             RubyClass.checkInheritable((IRubyObject) o);
 
@@ -86,14 +87,14 @@ public class DefineClassInstr extends Instr implements ResultInstr, FixedArityIn
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Object rubyContainer = container.retrieve(context, self, currDynScope, temp);
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        Object rubyContainer = container.retrieve(context, self, currScope, currDynScope, temp);
 
         if (!(rubyContainer instanceof RubyModule)) {
             throw context.runtime.newTypeError("no outer class/module");
         }
 
-        RubyModule newRubyClass = newClass(context, self, (RubyModule) rubyContainer, currDynScope, temp);
+        RubyModule newRubyClass = newClass(context, self, (RubyModule) rubyContainer, currScope, currDynScope, temp);
         newIRClassBody.getStaticScope().setModule(newRubyClass);
         return new InterpretedIRMethod(newIRClassBody, Visibility.PUBLIC, newRubyClass);
     }

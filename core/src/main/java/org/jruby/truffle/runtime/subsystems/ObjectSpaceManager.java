@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,7 +13,15 @@ import java.lang.ref.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameInstanceVisitor;
+import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -48,9 +56,6 @@ public class ObjectSpaceManager {
 
     private final RubyContext context;
 
-    // TODO(cs): this is wrong - WeakHashMap is not weak in the value
-    private final WeakHashMap<Long, RubyBasicObject> objects = new WeakHashMap<>();
-
     private final Map<RubyBasicObject, FinalizerReference> finalizerReferences = new WeakHashMap<>();
     private final ReferenceQueue<RubyBasicObject> finalizerQueue = new ReferenceQueue<>();
     private RubyThread finalizerThread;
@@ -62,16 +67,15 @@ public class ObjectSpaceManager {
         this.context = context;
     }
 
-    @CompilerDirectives.SlowPath
-    public void add(RubyBasicObject object) {
-        objects.put(object.getObjectID(), object);
-    }
-
     public RubyBasicObject lookupId(long id) {
-        return objects.get(id);
+        RubyNode.notDesignedForCompilation();
+
+        return collectLiveObjects().get(id);
     }
 
     public void defineFinalizer(RubyBasicObject object, RubyProc proc) {
+        RubyNode.notDesignedForCompilation();
+
         // Record the finalizer against the object
 
         FinalizerReference finalizerReference = finalizerReferences.get(object);
@@ -100,6 +104,8 @@ public class ObjectSpaceManager {
     }
 
     public void undefineFinalizer(RubyBasicObject object) {
+        RubyNode.notDesignedForCompilation();
+
         final FinalizerReference finalizerReference = finalizerReferences.get(object);
 
         if (finalizerReference != null) {
@@ -156,6 +162,8 @@ public class ObjectSpaceManager {
     }
 
     public void shutdown() {
+        RubyNode.notDesignedForCompilation();
+
         context.getThreadManager().enterGlobalLock(finalizerThread);
 
         try {
@@ -188,7 +196,126 @@ public class ObjectSpaceManager {
         }
     }
 
-    public Collection<RubyBasicObject> getObjects() {
-        return objects.values();
+    public static interface ObjectGraphVisitor {
+
+        boolean visit(RubyBasicObject object);
+
     }
+
+    private Map<Long, RubyBasicObject> liveObjects;
+    private ObjectGraphVisitor visitor;
+
+    @CompilerDirectives.CompilationFinal private Assumption notStoppingAssumption = Truffle.getRuntime().createAssumption();
+    private CyclicBarrier stoppedBarrier;
+    private CyclicBarrier markedBarrier;
+
+    public void checkSafepoint() {
+        try {
+            notStoppingAssumption.check();
+        } catch (InvalidAssumptionException e) {
+            final RubyThread thread = context.getThreadManager().leaveGlobalLock();
+
+            while (true) {
+                try {
+                    stoppedBarrier.await();
+                    break;
+                } catch (InterruptedException | BrokenBarrierException e2) {
+                }
+            }
+
+            synchronized (liveObjects) {
+                visitCallStack(visitor);
+            }
+
+            while (true) {
+                try {
+                    markedBarrier.await();
+                    break;
+                } catch (InterruptedException | BrokenBarrierException e2) {
+                }
+            }
+
+            // TODO(CS): error recovery
+
+            context.getThreadManager().enterGlobalLock(thread);
+        }
+    }
+
+    public Map<Long, RubyBasicObject> collectLiveObjects() {
+        RubyNode.notDesignedForCompilation();
+
+        synchronized (context.getThreadManager()) {
+            final RubyThread thread = context.getThreadManager().leaveGlobalLock();
+
+            liveObjects = new HashMap<Long, RubyBasicObject>();
+
+            visitor = new ObjectGraphVisitor() {
+
+                @Override
+                public boolean visit(RubyBasicObject object) {
+                    return liveObjects.put(object.getObjectID(), object) == null;
+                }
+
+            };
+
+            stoppedBarrier = new CyclicBarrier(2);
+            markedBarrier = new CyclicBarrier(2);
+
+            notStoppingAssumption.invalidate();
+
+            while (true) {
+                try {
+                    stoppedBarrier.await();
+                    break;
+                } catch (InterruptedException | BrokenBarrierException e){
+                }
+            }
+
+            synchronized (liveObjects) {
+                context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);
+                context.getCoreLibrary().getMainObject().visitObjectGraph(visitor);
+                context.getCoreLibrary().getObjectClass().visitObjectGraph(visitor);
+                visitCallStack(visitor);
+            }
+
+            notStoppingAssumption = Truffle.getRuntime().createAssumption();
+
+            while (true) {
+                try {
+                    markedBarrier.await();
+                    break;
+                } catch (InterruptedException | BrokenBarrierException e){
+                }
+            }
+
+            // TODO(CS): error recovery
+
+            context.getThreadManager().enterGlobalLock(thread);
+
+            return Collections.unmodifiableMap(liveObjects);
+        }
+    }
+
+    public void visitCallStack(final ObjectGraphVisitor visitor) {
+        visitFrameInstance(Truffle.getRuntime().getCurrentFrame(), visitor);
+
+        Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
+            @Override
+            public Void visitFrame(FrameInstance frameInstance) {
+                visitFrameInstance(frameInstance, visitor);
+                return null;
+            }
+        });
+    }
+
+    public void visitFrameInstance(FrameInstance frameInstance, ObjectGraphVisitor visitor) {
+        visitFrame(frameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, false), visitor);
+    }
+
+    public void visitFrame(Frame frame, ObjectGraphVisitor visitor) {
+        for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
+            context.getCoreLibrary().box(frame.getValue(slot)).visitObjectGraph(visitor);
+        }
+    }
+
 }

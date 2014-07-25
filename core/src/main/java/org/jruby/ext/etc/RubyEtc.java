@@ -398,11 +398,9 @@ public class RubyEtc {
     @JRubyMethod(module = true)
     public static IRubyObject systmpdir(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
-        ByteList tmp = ByteList.create("/tmp"); // default for all platforms except Windows
-        
+        ByteList tmp = ByteList.create(System.getProperty("java.io.tmpdir")); // default for all platforms except Windows
         if (Platform.IS_WINDOWS) {
             String commonAppData = System.getenv("CSIDL_COMMON_APPDATA");
-            // TODO: need fallback mechanism
             if (commonAppData != null) tmp = ByteList.create(commonAppData);
         }
         RubyString ret = RubyString.newString(runtime, tmp, runtime.getDefaultExternalEncoding());

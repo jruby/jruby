@@ -31,6 +31,7 @@ package org.jruby;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -46,7 +47,16 @@ public class PrependedModule extends IncludedModule {
     public PrependedModule(Ruby runtime, RubyClass superClass, RubyModule origin) {
         super(runtime, superClass, origin);
         methods = origin.methods;
-        origin.methods = Collections.EMPTY_MAP;
+        origin.methods = new ConcurrentHashMap<String, DynamicMethod>(0, 0.9f, 1);
+        origin.methodLocation = this;
+        for (Map.Entry<String, DynamicMethod> entry : methods.entrySet()) {
+            DynamicMethod method = entry.getValue();
+            method.setImplementationClass(this);
+        }
     }
 
+    @Override
+    public boolean isPrepended() {
+        return true;
+    }
 }

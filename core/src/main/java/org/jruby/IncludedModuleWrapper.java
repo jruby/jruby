@@ -55,6 +55,7 @@ import org.jruby.runtime.builtin.Variable;
 public class IncludedModuleWrapper extends IncludedModule {
     public IncludedModuleWrapper(Ruby runtime, RubyClass superClass, RubyModule origin) {
         super(runtime, superClass, origin);
+        origin.addIncludingHierarchy(this);
     }
 
     /**
@@ -77,13 +78,28 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
+    public boolean isIncluded() {
+        return true;
+    }
+
+    @Override
     public Map<String, DynamicMethod> getMethods() {
-        return origin.getMethods();
+        return origin.methodLocation.getMethods();
     }
 
     @Override
     public Map<String, DynamicMethod> getMethodsForWrite() {
-        return origin.getMethodsForWrite();
+        return origin.methodLocation.getMethodsForWrite();
+    }
+
+    @Override
+    public RubyModule getMethodLocation() {
+        return origin.getMethodLocation();
+    }
+
+    @Override
+    public RubyModule getNonIncludedClass() {
+        return origin;
     }
 
     @Override

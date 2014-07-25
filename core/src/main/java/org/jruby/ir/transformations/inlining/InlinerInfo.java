@@ -1,27 +1,21 @@
 package org.jruby.ir.transformations.inlining;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import org.jruby.runtime.Arity;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ToAryInstr;
 import org.jruby.ir.instructions.YieldInstr;
-import org.jruby.ir.operands.Array;
-import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Self;
-import org.jruby.ir.operands.Splat;
-import org.jruby.ir.operands.UndefinedValue;
-import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
+import org.jruby.runtime.Arity;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 // SSS FIXME: This class needs some refactoring / subclassing to more cleanly
 // provide support for the various inlining scenarios elaborated in CloneMode.java

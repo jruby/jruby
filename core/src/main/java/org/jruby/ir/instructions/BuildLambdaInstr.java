@@ -4,19 +4,16 @@ import org.jruby.RubyProc;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Variable;
-import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.operands.*;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.StringLiteral;
 
 public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityInstr, ClosureAcceptingInstr {
     /** The position for the block */
@@ -74,7 +71,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // SSS FIXME: Copied this from ast/LambdaNode ... Is this required here as well?
         //
         // JRUBY-5686: do this before executing so first time sets cref module
@@ -84,7 +81,7 @@ public class BuildLambdaInstr extends Instr implements ResultInstr, FixedArityIn
         // ENEBO: Now can live nil be passed as block reference?
         // SSS FIXME: Should we do the same %self retrieval as in the case of WrappedIRClosure? Or are lambdas special??
         return RubyProc.newProc(context.runtime,
-                (Block) (body == null ? context.runtime.getIRManager().getNil() : getLambdaBody()).retrieve(context, self, currDynScope, temp),
+                (Block) (body == null ? context.runtime.getIRManager().getNil() : getLambdaBody()).retrieve(context, self, currScope, currDynScope, temp),
                 Block.Type.LAMBDA, position);
     }
 

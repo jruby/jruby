@@ -1,11 +1,5 @@
 package org.jruby.ir.passes;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
@@ -16,6 +10,8 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
+
+import java.util.*;
 
 public class LocalOptimizationPass extends CompilerPass {
     boolean locallyOptimized = false;

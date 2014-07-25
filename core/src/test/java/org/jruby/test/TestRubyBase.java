@@ -71,7 +71,8 @@ public class TestRubyBase extends TestCase {
     protected String eval(String script) throws Exception {
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         out = new PrintStream(result);
-        RubyIO lStream = new RubyIO(runtime, out); 
+        RubyIO lStream = new RubyIO(runtime, out);
+        lStream.getOpenFileChecked().setSync(true);
         runtime.getGlobalVariables().set("$stdout", lStream);
         runtime.getGlobalVariables().set("$>", lStream);
         runtime.getGlobalVariables().set("$stderr", lStream);

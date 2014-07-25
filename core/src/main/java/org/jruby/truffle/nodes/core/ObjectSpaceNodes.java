@@ -75,7 +75,7 @@ public abstract class ObjectSpaceNodes {
         public NilPlaceholder eachObject(VirtualFrame frame, @SuppressWarnings("unused") UndefinedPlaceholder ofClass, RubyProc block) {
             notDesignedForCompilation();
 
-            for (RubyBasicObject object : getContext().getObjectSpaceManager().getObjects()) {
+            for (RubyBasicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
                 yield(frame, block, object);
             }
             return NilPlaceholder.INSTANCE;
@@ -85,7 +85,7 @@ public abstract class ObjectSpaceNodes {
         public NilPlaceholder eachObject(VirtualFrame frame, RubyClass ofClass, RubyProc block) {
             notDesignedForCompilation();
 
-            for (RubyBasicObject object : getContext().getObjectSpaceManager().getObjects()) {
+            for (RubyBasicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
                 if (object.getRubyClass().assignableTo(ofClass)) {
                     yield(frame, block, object);
                 }

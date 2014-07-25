@@ -16,15 +16,17 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
+import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 public abstract class RubyCallStack {
 
-    public static void dump(Node currentNode) {
+    public static void dump(final RubyContext context, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
 
         System.err.println("call stack ----------");
@@ -33,19 +35,63 @@ public abstract class RubyCallStack {
             System.err.println("    at " + currentNode.getEncapsulatingSourceSection());
         }
 
-        System.err.println("    in " + Truffle.getRuntime().getCurrentFrame().getCallTarget());
+        dumpFrame(context, Truffle.getRuntime().getCurrentFrame());
 
         Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Void>() {
 
             @Override
             public Void visitFrame(FrameInstance frameInstance) {
-                System.err.println("  from " + frameInstance.getCallNode().getEncapsulatingSourceSection());
+                dumpFrame(context, frameInstance);
                 return null;
             }
 
         });
 
         System.err.println("---------------------");
+    }
+
+    private static void dumpFrame(RubyContext context, FrameInstance frame) {
+        String sourceInfo = frame.getCallNode().getEncapsulatingSourceSection().toString();
+        System.err.print("\tfrom " + sourceInfo + " in " + formatMethodName(frame));
+
+        MaterializedFrame f = frame.getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
+        FrameDescriptor fd = f.getFrameDescriptor();
+        boolean first = true;
+        for (Object ident : fd.getIdentifiers()) {
+            if (ident instanceof String) {
+                RubyBasicObject value = context.getCoreLibrary().box(f.getValue(fd.findFrameSlot(ident)));
+                // TODO(CS): slow path send
+                String repr = value.send("inspect", null).toString();
+                if (first) {
+                    first = false;
+                    System.err.print(" with ");
+                } else {
+                    System.err.print(", ");
+                }
+                int maxLength = 12;
+                if (repr.length() > maxLength) {
+                    repr = repr.substring(0, maxLength) + "... (" + value.getRubyClass().getName() + ")";
+                }
+                System.err.print(ident + " = " + repr);
+            }
+        }
+        System.err.println();
+    }
+
+    public static String formatMethodName(FrameInstance frame) {
+        String methodName;
+        RubyMethod method = getMethod(frame);
+        if (method == null) {
+            methodName = "<main>";
+        } else {
+            RubyModule module = method.getDeclaringModule();
+            if (module == null) {
+                methodName = "?#" + method.getName();
+            } else {
+                methodName = module.getName() + "#" + method.getName();
+            }
+        }
+        return methodName;
     }
 
     public static FrameInstance getCallerFrame() {

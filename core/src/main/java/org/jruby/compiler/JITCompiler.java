@@ -131,8 +131,6 @@ public class JITCompiler implements JITCompilerMBean {
                 TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new DaemonThreadFactory("Ruby-" + runtime.getRuntimeNumber() + "-JIT", Thread.MIN_PRIORITY));
-        
-        runtime.getBeanManager().register(this);
     }
 
     public long getSuccessCount() {

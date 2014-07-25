@@ -5,18 +5,19 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
-import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
-import org.jruby.ir.operands.ScopeModule;
 
 // SSS FIXME: Should we merge DefineInstanceMethod and DefineClassMethod instructions?
 // identical except for 1 bit in interpret -- or will they diverge?
@@ -40,7 +41,7 @@ public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[]{container, new ScopeModule(method) };
+        return new Operand[]{container};
     }
 
     @Override
@@ -60,10 +61,10 @@ public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
 
     // SSS FIXME: Go through this and DefineInstanceMethodInstr.interpret, clean up, extract common code
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         String name = method.getName();
         Ruby runtime = context.runtime;
-        IRubyObject obj = (IRubyObject) container.retrieve(context, self, currDynScope, temp);
+        IRubyObject obj = (IRubyObject) container.retrieve(context, self, currScope, currDynScope, temp);
 
         if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {
             throw runtime.newTypeError("can't define singleton method \"" + name + "\" for " + obj.getMetaClass().getBaseName());

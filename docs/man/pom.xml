@@ -10,9 +10,13 @@
         <groupId>org.jruby</groupId>
         <artifactId>docs</artifactId>
 <<<<<<< HEAD
+<<<<<<< HEAD
         <version>9000.dev</version>
 =======
         <version>1.7.14-SNAPSHOT</version>
+>>>>>>> jruby-1_7
+=======
+        <version>1.7.14.dev-SNAPSHOT</version>
 >>>>>>> jruby-1_7
     </parent>
 

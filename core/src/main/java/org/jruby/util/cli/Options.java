@@ -123,6 +123,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_PRINT_RUNTIME = bool(TRUFFLE, "truffle.printRuntime", false, "Print the name of the Truffle runtime on startup.");
     public static final Option<Integer> TRUFFLE_GENERAL_DISPATCH_SIZE_WARNING_THRESHOLD = integer(TRUFFLE, "truffle.generalDispatchSizeWarningThreshold", 64, "Warn when a general dispatch cache grows larger than this many methods.");
     public static final Option<Boolean> TRUFFLE_TRACE = bool(TRUFFLE, "truffle.trace", true, "Install trace probes needed for set_trace_func.");
+    public static final Option<Boolean> TRUFFLE_OBJECTSPACE = bool(TRUFFLE, "truffle.object_space", true, "Install safepoints needed for ObjectSpace.");
     public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_java", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
     public static final Option<Boolean> TRUFFLE_LITERALS_INT = bool(TRUFFLE, "truffle.literals.int", true, "Use int for Fixnum literals where possible.");
     public static final Option<Integer> TRUFFLE_ARRAYS_UNINITIALIZED_SIZE = integer(TRUFFLE, "truffle.arrays.uninitialized_size", 32, "How large an array to allocate when we have no other information to go on.");

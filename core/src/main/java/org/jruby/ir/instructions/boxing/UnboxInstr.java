@@ -1,12 +1,12 @@
 package org.jruby.ir.instructions.boxing;
 
-import java.util.Map;
-
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+
+import java.util.Map;
 
 public class UnboxInstr extends Instr implements ResultInstr {
     private Variable result;

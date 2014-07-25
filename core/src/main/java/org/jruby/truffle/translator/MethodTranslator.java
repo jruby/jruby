@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.*;
 import org.jruby.truffle.nodes.control.AndNode;
 import org.jruby.truffle.nodes.control.IfNode;
+import org.jruby.truffle.nodes.debug.ObjectSpaceSafepointInstrument;
 import org.jruby.truffle.nodes.literal.NilLiteralNode;
 import org.jruby.truffle.nodes.methods.*;
 import org.jruby.truffle.nodes.methods.arguments.*;
@@ -152,6 +153,8 @@ class MethodTranslator extends BodyTranslator {
         if (isBlock && isTopLevel) {
             body = new CatchBreakAsReturnNode(context, sourceSection, body);
         }
+
+        body = context.getASTProber().probeAsPeriodic(body);
 
         final RubyRootNode rootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
 

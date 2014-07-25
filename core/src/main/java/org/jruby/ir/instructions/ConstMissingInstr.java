@@ -8,6 +8,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -54,8 +55,8 @@ public class ConstMissingInstr extends CallInstr implements ResultInstr, FixedAr
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        RubyModule module = (RubyModule) receiver.retrieve(context, self, currDynScope, temp);
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        RubyModule module = (RubyModule) receiver.retrieve(context, self, currScope, currDynScope, temp);
         return module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(missingConst));
     }
 

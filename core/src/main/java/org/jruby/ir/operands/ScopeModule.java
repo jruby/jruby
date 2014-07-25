@@ -1,7 +1,6 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -14,12 +13,12 @@ import java.util.List;
  * Wrap a scope for the purpose of finding live module which happens to be associated with it.
  */
 public class ScopeModule extends Operand {
-    private final IRScope scope;
+    private final int scopeModuleDepth;
 
-    public ScopeModule(IRScope scope) {
+    public ScopeModule(int scopeModuleDepth) {
         super(OperandType.SCOPE_MODULE);
 
-        this.scope = scope;
+        this.scopeModuleDepth = scopeModuleDepth;
     }
 
     @Override
@@ -34,12 +33,16 @@ public class ScopeModule extends Operand {
 
     @Override
     public int hashCode() {
-        return scope.hashCode();
+        return scopeModuleDepth;
+    }
+
+    public int getScopeModuleDepth() {
+        return scopeModuleDepth;
     }
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof ScopeModule && scope.equals(((ScopeModule) other).scope);
+        return other instanceof ScopeModule && scopeModuleDepth == ((ScopeModule) other).scopeModuleDepth;
     }
 
     @Override
@@ -47,19 +50,22 @@ public class ScopeModule extends Operand {
         return true;
     }
 
-    public IRScope getScope() {
-        return scope;
-    }
-
     @Override
     public String toString() {
-        return "module<" + scope.getName() + ">";
+        return "module<" + scopeModuleDepth + ">";
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-        StaticScope staticScope = scope.getStaticScope();
-        return staticScope != null ? staticScope.getModule() : context.runtime.getClass(scope.getName());
+    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+        StaticScope scope = currScope;
+        int n = scopeModuleDepth;
+        while (n > 0) {
+            scope = scope.getEnclosingScope();
+            if (scope.getScopeType() != null) {
+                n--;
+            }
+        }
+        return scope.getModule();
     }
 
     @Override

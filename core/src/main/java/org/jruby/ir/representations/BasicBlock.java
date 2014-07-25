@@ -1,7 +1,5 @@
 package org.jruby.ir.representations;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
@@ -16,6 +14,9 @@ import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.transformations.inlining.CloneMode;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.ir.util.ExplicitVertexID;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BasicBlock implements ExplicitVertexID, Comparable {
     private int         id;             // Basic Block id

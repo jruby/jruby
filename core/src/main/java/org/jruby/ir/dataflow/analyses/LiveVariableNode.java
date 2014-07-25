@@ -1,11 +1,5 @@
 package org.jruby.ir.dataflow.analyses;
 
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Set;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
@@ -20,6 +14,8 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.util.Edge;
+
+import java.util.*;
 
 public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVariableNode> {
     public LiveVariableNode(LiveVariablesProblem prob, BasicBlock n) {

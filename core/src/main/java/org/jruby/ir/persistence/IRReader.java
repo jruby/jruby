@@ -6,28 +6,18 @@
 
 package org.jruby.ir.persistence;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import org.jruby.EvalType;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.ir.IRClassBody;
-import org.jruby.ir.IRClosure;
-import org.jruby.ir.IREvalScript;
-import org.jruby.ir.IRFor;
-import org.jruby.ir.IRManager;
-import org.jruby.ir.IRMetaClassBody;
-import org.jruby.ir.IRMethod;
-import org.jruby.ir.IRModuleBody;
-import org.jruby.ir.IRScope;
-import org.jruby.ir.IRScopeType;
-import org.jruby.ir.IRScriptBody;
+import org.jruby.ir.*;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.Self;
 import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *

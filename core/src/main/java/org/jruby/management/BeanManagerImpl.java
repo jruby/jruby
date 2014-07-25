@@ -1,6 +1,7 @@
 package org.jruby.management;
 
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
 import java.security.AccessControlException;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
@@ -68,6 +69,27 @@ public class BeanManagerImpl implements BeanManager {
     }
     public void unregisterRuntime() {
         if (managementEnabled) unregister(base + "service=Runtime");
+    }
+
+    public boolean tryShutdownAgent() {
+        try {
+            Class agent = Class.forName("sun.management.Agent");
+            Method shutdown = agent.getDeclaredMethod("stopRemoteManagementAgent");
+            shutdown.setAccessible(true);
+            shutdown.invoke(null);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean tryRestartAgent() {
+        try {
+            sun.management.Agent.startAgent();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private void register(String name, Object bean) {

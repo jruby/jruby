@@ -6,8 +6,6 @@
 
 package org.jruby.ir.persistence;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -15,6 +13,9 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.parser.StaticScope;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *

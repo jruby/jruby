@@ -3,20 +3,11 @@ package org.jruby.ir.instructions;
 import org.jruby.RubyArray;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.ImmutableLiteral;
-import org.jruby.ir.operands.MethAddr;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Splat;
-import org.jruby.ir.operands.StringLiteral;
+import org.jruby.ir.operands.*;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
-import org.jruby.runtime.CallType;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.MethodIndex;
-import org.jruby.runtime.ThreadContext;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.ArrayList;
@@ -24,11 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static org.jruby.ir.IRFlags.BINDING_HAS_ESCAPED;
-import static org.jruby.ir.IRFlags.CAN_CAPTURE_CALLERS_BINDING;
-import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
-import static org.jruby.ir.IRFlags.USES_EVAL;
-import static org.jruby.ir.IRFlags.REQUIRES_FRAME;
+import static org.jruby.ir.IRFlags.*;
 
 public abstract class CallBase extends Instr implements Specializeable, ClosureAcceptingInstr {
     private static long callSiteCounter = 1;
@@ -417,38 +404,38 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
-        IRubyObject object = (IRubyObject) receiver.retrieve(context, self, dynamicScope, temp);
-        IRubyObject[] values = prepareArguments(context, self, arguments, dynamicScope, temp);
-        Block preparedBlock = prepareBlock(context, self, dynamicScope, temp);
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope dynamicScope, IRubyObject self, Object[] temp) {
+        IRubyObject object = (IRubyObject) receiver.retrieve(context, self, currScope, dynamicScope, temp);
+        IRubyObject[] values = prepareArguments(context, self, arguments, currScope, dynamicScope, temp);
+        Block preparedBlock = prepareBlock(context, self, currScope, dynamicScope, temp);
 
         return callSite.call(context, self, object, values, preparedBlock);
     }
 
-    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] arguments, DynamicScope dynamicScope, Object[] temp) {
+    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] arguments, StaticScope currScope, DynamicScope dynamicScope, Object[] temp) {
         return containsArgSplat ?
-                prepareArgumentsComplex(context, self, arguments, dynamicScope, temp) :
-                prepareArgumentsSimple(context, self, arguments, dynamicScope, temp);
+                prepareArgumentsComplex(context, self, arguments, currScope, dynamicScope, temp) :
+                prepareArgumentsSimple(context, self, arguments, currScope, dynamicScope, temp);
     }
 
-    protected IRubyObject[] prepareArgumentsSimple(ThreadContext context, IRubyObject self, Operand[] args, DynamicScope currDynScope, Object[] temp) {
+    protected IRubyObject[] prepareArgumentsSimple(ThreadContext context, IRubyObject self, Operand[] args, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         IRubyObject[] newArgs = new IRubyObject[args.length];
 
         for (int i = 0; i < args.length; i++) {
-            newArgs[i] = (IRubyObject) args[i].retrieve(context, self, currDynScope, temp);
+            newArgs[i] = (IRubyObject) args[i].retrieve(context, self, currScope, currDynScope, temp);
         }
 
         return newArgs;
     }
 
-    protected IRubyObject[] prepareArgumentsComplex(ThreadContext context, IRubyObject self, Operand[] args, DynamicScope currDynScope, Object[] temp) {
+    protected IRubyObject[] prepareArgumentsComplex(ThreadContext context, IRubyObject self, Operand[] args, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         // SSS: For regular calls, IR builder never introduces splats except as the first argument
         // But when zsuper is converted to SuperInstr with known args, splats can appear anywhere
         // in the list.  So, this looping handles both these scenarios, although if we wanted to
         // optimize for CallInstr which has splats only in the first position, we could do that.
         List<IRubyObject> argList = new ArrayList<IRubyObject>();
         for (Operand arg : args) {
-            IRubyObject rArg = (IRubyObject) arg.retrieve(context, self, currDynScope, temp);
+            IRubyObject rArg = (IRubyObject) arg.retrieve(context, self, currScope, currDynScope, temp);
             if (arg instanceof Splat) {
                 argList.addAll(Arrays.asList(((RubyArray) rArg).toJavaArray()));
             } else {
@@ -459,10 +446,9 @@ public abstract class CallBase extends Instr implements Specializeable, ClosureA
         return argList.toArray(new IRubyObject[argList.size()]);
     }
 
-    public Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+    public Block prepareBlock(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         if (closure == null) return Block.NULL_BLOCK;
 
-        return IRRuntimeHelpers.getBlockFromObject(context, closure.retrieve(context, self, currDynScope, temp));
+        return IRRuntimeHelpers.getBlockFromObject(context, closure.retrieve(context, self, currScope, currDynScope, temp));
     }
-
 }

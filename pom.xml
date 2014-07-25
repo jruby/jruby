@@ -92,7 +92,7 @@
   </distributionManagement>
   <properties>
     <minitest-excludes.version>1.0.2</minitest-excludes.version>
-    <tesla.version>0.0.8</tesla.version>
+    <tesla.version>0.1.1</tesla.version>
     <rspec-core.version>2.14.2</rspec-core.version>
     <jruby.basedir>${project.basedir}</jruby.basedir>
     <minitest.version>5.0.7</minitest.version>
@@ -506,7 +506,7 @@
     <profile>
       <id>rake</id>
       <build>
-        <defaultGoal>validate</defaultGoal>
+        <defaultGoal>test</defaultGoal>
       </build>
       <modules>
         <module>test</module>
@@ -515,7 +515,7 @@
     <profile>
       <id>exec</id>
       <build>
-        <defaultGoal>validate</defaultGoal>
+        <defaultGoal>test</defaultGoal>
       </build>
       <modules>
         <module>test</module>
@@ -524,7 +524,7 @@
     <profile>
       <id>truffle</id>
       <build>
-        <defaultGoal>validate</defaultGoal>
+        <defaultGoal>test</defaultGoal>
       </build>
       <modules>
         <module>test</module>
@@ -637,6 +637,9 @@
           <url>file:/builds/snapshots/maven</url>
         </snapshotRepository>
       </distributionManagement>
+      <properties>
+        <snapshots.dir>/builds/snapshots</snapshots.dir>
+      </properties>
     </profile>
   </profiles>
 </project>

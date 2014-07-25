@@ -51,16 +51,12 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.io.ChannelFD;
-import org.jruby.util.io.ModeFlags;
-import org.jruby.util.io.ChannelDescriptor;
 
 /**
  * @author <a href="mailto:pldms@mac.com">Damian Steer</a>
@@ -95,7 +91,7 @@ public class RubyUDPSocket extends RubyIPSocket {
 
         try {
             DatagramChannel channel = DatagramChannel.open();
-            initSocket(runtime, new ChannelFD(channel, runtime.getPosix()));
+            initSocket(newChannelFD(runtime, channel));
 
         } catch (ConnectException e) {
             throw runtime.newErrnoECONNREFUSEDError();

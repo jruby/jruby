@@ -325,13 +325,13 @@ class TestHash < Test::Unit::TestCase
     assert(!@h.include?('gumby'))
   end
 
-  def test_index
-    assert_equal(1,     @h.index('one'))
-    assert_equal(nil,   @h.index('nil'))
-    assert_equal('nil', @h.index(nil))
+  def test_key
+    assert_equal(1,     @h.key('one'))
+    assert_equal(nil,   @h.key('nil'))
+    assert_equal('nil', @h.key(nil))
 
-    assert_equal(nil,   @h.index('gumby'))
-    assert_equal(nil,   @cls[].index('gumby'))
+    assert_equal(nil,   @h.key('gumby'))
+    assert_equal(nil,   @cls[].key('gumby'))
   end
 
     def test_values_at

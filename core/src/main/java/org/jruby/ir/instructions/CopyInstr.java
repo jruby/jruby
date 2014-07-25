@@ -3,8 +3,8 @@ package org.jruby.ir.instructions;
 // This is of the form:
 //   d = s
 
-import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;

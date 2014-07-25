@@ -1,10 +1,10 @@
 package org.jruby.ir.operands;
 
 import org.jcodings.Encoding;
-import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -81,11 +81,11 @@ public class CompoundString extends Operand {
     }
 
     // SSS FIXME: Buggy?
-    String retrieveJavaString(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+    String retrieveJavaString(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         StringBuilder buf = new StringBuilder();
 
         for (Operand p : pieces) {
-            buf.append(p.retrieve(context, self, currDynScope, temp));
+            buf.append(p.retrieve(context, self, currScope, currDynScope, temp));
         }
 
         return buf.toString();
@@ -95,17 +95,17 @@ public class CompoundString extends Operand {
         return str.bytelist.getEncoding() == encoding;
     }
 
-    public RubyString[] retrievePieces(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+    public RubyString[] retrievePieces(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         RubyString[] strings = new RubyString[pieces.size()];
         int i = 0;
         for (Operand p : pieces) {
-            strings[i++] = (RubyString)p.retrieve(context, self, currDynScope, temp);
+            strings[i++] = (RubyString)p.retrieve(context, self, currScope, currDynScope, temp);
         }
         return strings;
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         // SSS FIXME: Doesn't work in all cases.  See example below
         //
         //    s = "x\234\355\301\001\001\000\000\000\200\220\376\257\356\b\n#{"\000" * 31}\030\200\000\000\001"
@@ -120,7 +120,7 @@ public class CompoundString extends Operand {
             if ((p instanceof StringLiteral) && (isSameEncoding((StringLiteral)p))) {
                 str.getByteList().append(((StringLiteral)p).bytelist);
             } else {
-               IRubyObject pval = (IRubyObject)p.retrieve(context, self, currDynScope, temp);
+               IRubyObject pval = (IRubyObject)p.retrieve(context, self, currScope, currDynScope, temp);
                str.append19(pval);
             }
         }

@@ -1,16 +1,12 @@
 package org.jruby.ir.passes;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.util.*;
 
 public class DominatorTreeBuilder extends CompilerPass {
     private static final Logger LOG = LoggerFactory.getLogger("DominatorTreeBuilder");

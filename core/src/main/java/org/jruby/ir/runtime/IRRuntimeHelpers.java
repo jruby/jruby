@@ -1,44 +1,20 @@
 package org.jruby.ir.runtime;
 
-import org.jruby.MetaClass;
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyHash;
-import org.jruby.RubyMatchData;
-import org.jruby.RubyMethod;
-import org.jruby.RubyModule;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyNil;
-import org.jruby.RubyProc;
-import org.jruby.RubyRegexp;
-import org.jruby.RubyString;
-import org.jruby.RubySymbol;
-import org.jruby.NativeException;
+import org.jruby.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.internal.runtime.methods.CompiledIRMethod;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.log.Logger;
@@ -112,7 +88,7 @@ public class IRRuntimeHelpers {
         throw IRReturnJump.create(dynScope, returnValue);
     }
 
-    public static IRubyObject handleNonlocalReturn(IRStaticScope scope, DynamicScope dynScope, Object rjExc, Block.Type blockType) throws RuntimeException {
+    public static IRubyObject handleNonlocalReturn(IRStaticScope scope, StaticScope currScope, DynamicScope dynScope, Object rjExc, Block.Type blockType) throws RuntimeException {
         if (!(rjExc instanceof IRReturnJump)) {
             Helpers.throwException((Throwable)rjExc);
             return null;
@@ -157,7 +133,7 @@ public class IRRuntimeHelpers {
             // We just unwound all the way up because of a non-local break
             throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
         } else if (exc instanceof IRReturnJump) {
-            return handleNonlocalReturn(scope, dynScope, exc, blockType);
+            return handleNonlocalReturn(scope, scope, dynScope, exc, blockType);
         } else {
             // Propagate
             Helpers.throwException((Throwable)exc);
@@ -531,7 +507,8 @@ public class IRRuntimeHelpers {
         RubyClass superClass = Helpers.findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
         DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
 
-        IRubyObject rVal = method.isUndefined() ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
+        // TODO tduehr 7/2014 There has to be a better way to break the recursion
+        IRubyObject rVal = (method.isUndefined() || (superClass.isPrepended() && (method.getImplementationClass() == self.getType()))) ? Helpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
                 : method.call(context, self, superClass, methodName, args, block);
 
         return rVal;

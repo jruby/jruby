@@ -815,21 +815,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return dup;
     }
 
-    /** rb_str_dup
-     * 
-     */
-    @Deprecated
-    public final RubyString strDup() {
-        return strDup(getRuntime(), getMetaClass());
-    }
-    
+    // MRI: rb_str_dup
     public final RubyString strDup(Ruby runtime) {
-        return strDup(runtime, getMetaClass());
-    }
-    
-    @Deprecated
-    final RubyString strDup(RubyClass clazz) {
-        return strDup(getRuntime(), getMetaClass());
+        return strDup(runtime, getMetaClass().getRealClass());
     }
 
     final RubyString strDup(Ruby runtime, RubyClass clazz) {
@@ -6312,5 +6300,15 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     public IRubyObject scrub(ThreadContext context, IRubyObject rep) {
         return callMethod(context, "scrub", rep);
+    }
+
+    @Deprecated
+    public final RubyString strDup() {
+        return strDup(getRuntime(), getMetaClass().getRealClass());
+    }
+
+    @Deprecated
+    final RubyString strDup(RubyClass clazz) {
+        return strDup(getRuntime(), getMetaClass());
     }
 }

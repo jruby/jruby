@@ -1,7 +1,5 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
-
 import org.jruby.RubyArray;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
@@ -11,10 +9,13 @@ import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedArityInstr {
     private final int preArgsCount;    // # of reqd args before rest-arg (-1 if we are fetching a pre-arg)
@@ -63,9 +64,9 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
     }
 
     @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
-        RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currDynScope, temp);
+        RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currScope, currDynScope, temp);
         int i = Helpers.irReqdArgMultipleAsgnIndex(rubyArray.getLength(), preArgsCount, index, postArgsCount);
         return i == -1 ? context.nil : rubyArray.entry(i);
     }

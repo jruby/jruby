@@ -1,11 +1,12 @@
 package org.jruby.ir.passes;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.representations.CFG;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class BasicCompilerPassListener implements CompilerPassListener {
     private static final Logger LOG = LoggerFactory.getLogger("BasicCompilerPassListener");

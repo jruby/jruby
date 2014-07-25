@@ -1,12 +1,13 @@
 package org.jruby.ir.dataflow;
 
-import java.util.BitSet;
-import java.util.List;
-import java.util.ListIterator;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.util.Edge;
+
+import java.util.BitSet;
+import java.util.List;
+import java.util.ListIterator;
 
 /* This framework right now implicitly uses the CFG as the flow graph -- perhaps it is worth abstracting away from this assumption
  * so that we can use this framework over non-CFG flow graphs.

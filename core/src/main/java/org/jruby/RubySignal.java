@@ -98,6 +98,25 @@ public class RubySignal {
     public static IRubyObject __jtrap_restore_kernel(final IRubyObject recv, IRubyObject sig) {
         return SIGNALS.ignore(recv, sig);
     }
+
+    @JRubyMethod(required = 1, module = true)
+    public static IRubyObject signame(ThreadContext context, final IRubyObject recv, IRubyObject sig) {
+        String signame = signo2signm(sig.convertToInteger().getLongValue());
+        if (signame == null) {
+            throw context.runtime.newArgumentError("invalid signal number: " + sig);
+        }
+        return context.runtime.newString(signame);
+    }
+
+    // MRI: signo2signm
+    public static String signo2signm(long no) {
+        for (Signal s : Signal.values()) {
+            if (s.intValue() == no) {
+                return s.name();
+            }
+        }
+        return null;
+    }
     
     private static final Set<String> RUBY_18_SIGNALS;
     static {

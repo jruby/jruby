@@ -3,8 +3,6 @@ package org.jruby.ir.operands;
 import org.jruby.ir.IRVisitor;
 import org.jruby.runtime.ThreadContext;
 
-import java.math.BigInteger;
-
 /*
  * Represents a literal fixnum.
  *

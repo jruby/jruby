@@ -1,38 +1,23 @@
 package org.jruby.ir;
 
-import java.util.List;
-import java.util.ArrayList;
-
-// Closures are contexts/scopes for the purpose of IR building.  They are self-contained and accumulate instructions
-// that don't merge into the flow of the containing scope.  They are manipulated as an unit.
-// Their parents are always execution scopes.
-import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Splat;
-import org.jruby.ir.operands.ClosureLocalVariable;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.TemporaryLocalVariable;
-import org.jruby.ir.operands.TemporaryClosureVariable;
-import org.jruby.ir.operands.Variable;
-import org.jruby.ir.operands.WrappedIRClosure;
-import org.jruby.ir.instructions.CallBase;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.ReceiveArgBase;
-import org.jruby.ir.instructions.ReceiveExceptionBase;
-import org.jruby.ir.instructions.ReceiveJRubyExceptionInstr;
-import org.jruby.ir.instructions.ReceiveRestArgInstr;
-import org.jruby.ir.instructions.ReturnInstr;
-import org.jruby.ir.instructions.RuntimeHelperCall;
-import org.jruby.ir.operands.TemporaryVariableType;
+import org.jruby.ir.instructions.*;
+import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
 import org.objectweb.asm.Handle;
+
+import java.util.ArrayList;
+import java.util.List;
+
+// Closures are contexts/scopes for the purpose of IR building.  They are self-contained and accumulate instructions
+// that don't merge into the flow of the containing scope.  They are manipulated as an unit.
+// Their parents are always execution scopes.
 
 public class IRClosure extends IRScope {
     public final Label startLabel; // Label for the start of the closure (used to implement redo)
@@ -55,7 +40,7 @@ public class IRClosure extends IRScope {
     public boolean addedGEBForUncaughtBreaks;
     private Handle handle;
 
-    // Used by IREvalScript as well
+    // Used by other constructions and by IREvalScript as well
     protected IRClosure(IRManager manager, IRScope lexicalParent, String fileName, int lineNumber, StaticScope staticScope, String prefix) {
         super(manager, lexicalParent, null, fileName, lineNumber, staticScope);
 
@@ -98,6 +83,10 @@ public class IRClosure extends IRScope {
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, String prefix) {
+        this(manager, lexicalParent, lineNumber, staticScope, arity, argumentType, prefix, false);
+    }
+
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, String prefix, boolean isBeginEndBlock) {
         this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, prefix);
         this.blockArgs = new ArrayList<Operand>();
         this.argumentType = argumentType;
@@ -108,7 +97,7 @@ public class IRClosure extends IRScope {
             this.body = null;
         } else {
             this.body = new InterpretedIRBlockBody(this, arity, argumentType);
-            if (staticScope != null) {
+            if (staticScope != null && !isBeginEndBlock) {
                 ((IRStaticScope)staticScope).setIRScope(this);
                 staticScope.setScopeType(this.getScopeType());
             }

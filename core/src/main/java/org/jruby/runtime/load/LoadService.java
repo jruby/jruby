@@ -1542,6 +1542,7 @@ public class LoadService {
         return false;
     }
 
+    private static final Pattern URI_PATTERN = Pattern.compile("([a-z]+?://.*)$");
     protected LoadServiceResource getClassPathResource(ClassLoader classLoader, String name) {
         boolean isClasspathScheme = false;
 
@@ -1556,8 +1557,24 @@ public class LoadService {
             name = name.substring(name.indexOf("!/") + 2);
         }
 
-        debugLogTry("fileInClasspath", name);
-        URL loc = classLoader.getResource(name);
+        URL loc;
+        Matcher m = URI_PATTERN.matcher( name );
+        final String pn;
+        if (m.matches()) {
+            debugLogTry("fileInClassloader", m.group( 1 ) );
+            try
+            {
+                loc = new URL( m.group( 1 ) );
+            }
+            catch (MalformedURLException e)
+            {
+                loc = null;
+            }
+        }
+        else {
+            debugLogTry("fileInClasspath", name);
+            loc = classLoader.getResource(name);
+        }
 
         if (loc != null) { // got it
             String path = "classpath:/" + name;

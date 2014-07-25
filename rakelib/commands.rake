@@ -36,7 +36,7 @@ def initialize_paths
     #  pathelement :path => "${java.class.path}"/>
     pathelement :path => File.join(LIB_DIR, 'jruby.jar')
     pathelement :location => TEST_CLASSES_DIR
-    pathelement :path => File.join(TEST_DIR, 'requireTest.jar')
+    pathelement :path => File.join(TEST_DIR, 'jruby', 'requireTest.jar')
     pathelement :location => TEST_DIR
   end
 end
