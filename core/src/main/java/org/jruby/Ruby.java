@@ -248,11 +248,12 @@ public final class Ruby {
             this.hashSeedK0 = this.random.nextLong();
             this.hashSeedK1 = this.random.nextLong();
         }
-        
-        this.beanManager.register(new Config(this));
-        this.beanManager.register(parserStats);
-        this.beanManager.register(new ClassCache(this));
-        this.beanManager.register(new org.jruby.management.Runtime(this));
+
+        this.configBean = new Config(this);
+        this.classCacheBean = new ClassCache(this);
+        this.runtimeBean = new org.jruby.management.Runtime(this);
+
+        registerMBeans();
 
         this.runtimeCache = new RuntimeCache();
         runtimeCache.initMethodCache(ClassIndex.MAX_CLASSES.ordinal() * MethodNames.values().length - 1);
@@ -266,6 +267,14 @@ public final class Ruby {
         }
 
         reinitialize(false);
+    }
+
+    public void registerMBeans() {
+        this.beanManager.register(jitCompiler);
+        this.beanManager.register(configBean);
+        this.beanManager.register(parserStats);
+        this.beanManager.register(classCacheBean);
+        this.beanManager.register(runtimeBean);
     }
 
     void reinitialize(boolean reinitCore) {
@@ -5038,4 +5047,8 @@ public final class Ruby {
 
     private static final AtomicInteger RUNTIME_NUMBER = new AtomicInteger(0);
     private final int runtimeNumber = RUNTIME_NUMBER.getAndIncrement();
+
+    private final Config configBean;
+    private final ClassCache classCacheBean;
+    private final org.jruby.management.Runtime runtimeBean;
 }
