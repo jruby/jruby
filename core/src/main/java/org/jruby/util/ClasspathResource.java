@@ -21,7 +21,7 @@ class ClasspathResource extends URLResource {
         String path = pathname.substring(CLASSPATH.length() );
         // this is the J2EE case
         URL url = Thread.currentThread().getContextClassLoader().getResource( path );
-        if (url == null) {
+        if (url == null && ClasspathResource.class.getClassLoader() != null) {
             // this is OSGi case
             url = ClasspathResource.class.getClassLoader().getResource( path );                
         }
