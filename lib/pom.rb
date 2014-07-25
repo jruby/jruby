@@ -212,10 +212,10 @@ project 'JRuby Lib Setup' do
     if KRYPT_VERSION == '0.0.2'
       file = 'lib/ruby/shared/krypt/provider.rb'
       content = File.read( file )
-      content.sub! /else/, <<EOS
-elsif java?
-    warn "FFI support not available for #{RUBY_PLATFORM}"
-  else
+      content.sub! /begin(.|[\n])*/, <<EOS
+unless java?
+  require_relative 'provider/ffi'
+end
 EOS
       File.open( file, 'w' ) do |f|
         f.print content
