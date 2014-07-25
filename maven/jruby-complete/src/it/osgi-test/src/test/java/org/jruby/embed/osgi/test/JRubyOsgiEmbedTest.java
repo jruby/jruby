@@ -63,6 +63,7 @@ public class JRubyOsgiEmbedTest {
     public void testJRubyCreate() throws InterruptedException {
         Bundle b = FrameworkUtil.getBundle(JRubyOsgiEmbedTest.class);
         assertNotNull(b);
+        //System.setProperty( "jruby.debug.loadService", "true" );
         OSGiScriptingContainer scriptingContainer = new OSGiScriptingContainer(b, LocalContextScope.CONCURRENT,
                 LocalVariableBehavior.TRANSIENT);
         // Ensure that we can load this class in the created ScriptingContainer.
