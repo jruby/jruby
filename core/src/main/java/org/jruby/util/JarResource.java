@@ -1,16 +1,20 @@
 package org.jruby.util;
 
-import jnr.posix.FileStat;
-import jnr.posix.POSIX;
-
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.util.jar.JarEntry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-abstract class JarResource implements FileResource {
+import jnr.posix.FileStat;
+import jnr.posix.POSIX;
+
+import org.jruby.runtime.load.ExtendedFileResource;
+
+abstract class JarResource implements ExtendedFileResource {
     private static Pattern PREFIX_MATCH = Pattern.compile("^(?:jar:)?(?:file:)?(.*)$");
 
     private static final JarCache jarCache = new JarCache();
@@ -83,6 +87,19 @@ abstract class JarResource implements FileResource {
     @Override
     public String absolutePath() {
         return jarPrefix + entryName();
+    }
+
+    @Override
+    public URL getURL()
+    {
+        try
+        {
+            return new URL( "jar:" + absolutePath() );
+        }
+        catch (MalformedURLException e)
+        {
+            return null;
+        }
     }
 
     @Override

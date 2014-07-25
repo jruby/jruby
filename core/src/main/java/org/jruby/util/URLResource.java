@@ -8,10 +8,11 @@ import java.net.URL;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 
+import org.jruby.runtime.load.ExtendedFileResource;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 
-class URLResource implements FileResource {
+class URLResource implements ExtendedFileResource {
 
     private final URL url;
     
@@ -119,7 +120,7 @@ class URLResource implements FileResource {
         return null;
     }
 
-    public static FileResource create(String pathname)
+    public static ExtendedFileResource create(String pathname)
     {
         URL url;
         try
@@ -135,6 +136,12 @@ class URLResource implements FileResource {
         {
             return null;
         }
+    }
+
+    @Override
+    public URL getURL()
+    {
+        return url;
     }
     
 }

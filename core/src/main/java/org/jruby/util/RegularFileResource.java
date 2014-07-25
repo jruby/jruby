@@ -1,25 +1,29 @@
 package org.jruby.util;
 
-import jnr.posix.FileStat;
-import jnr.posix.POSIX;
-import jnr.posix.POSIXFactory;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.channels.FileChannel;
 
+import jnr.posix.FileStat;
+import jnr.posix.POSIX;
+import jnr.posix.POSIXFactory;
+
+import org.jruby.runtime.load.ExtendedFileResource;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 
 /**
  * Represents a "regular" file, backed by regular file system.
  */
-class RegularFileResource implements FileResource {
+class RegularFileResource implements ExtendedFileResource {
     private final JRubyFile file;
     private final POSIX symlinkPosix = POSIXFactory.getPOSIX();
 
@@ -233,5 +237,18 @@ class RegularFileResource implements FileResource {
         //if (modes.isAppendable()) seek(0, Stream.SEEK_END);
 
         return new ChannelDescriptor(fileChannel, flags, fileDescriptor, isInAppendMode);
+    }
+
+    @Override
+    public URL getURL()
+    {
+        try
+        {
+            return new File(absolutePath()).toURI().toURL();
+        }
+        catch (MalformedURLException e)
+        {
+            return null;
+        }
     }
 }

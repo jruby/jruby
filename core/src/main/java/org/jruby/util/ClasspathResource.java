@@ -2,6 +2,8 @@ package org.jruby.util;
 
 import java.net.URL;
 
+import org.jruby.runtime.load.ExtendedFileResource;
+
 class ClasspathResource extends URLResource {
 
     private static final String CLASSPATH = "classpath:/";
@@ -12,7 +14,7 @@ class ClasspathResource extends URLResource {
         super(url);
     }
 
-    public static FileResource create(String pathname)
+    public static ExtendedFileResource create(String pathname)
     {
         if (!pathname.startsWith(CLASSPATH)) {
             return null;

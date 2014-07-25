@@ -1,13 +1,16 @@
 package org.jruby.util;
 
+import java.io.InputStream;
+import java.net.URL;
+
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
-import org.jruby.runtime.ThreadContext;
+
+import org.jruby.runtime.load.ExtendedFileResource;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
-import java.io.InputStream;
 
-class EmptyFileResource implements FileResource {
+class EmptyFileResource implements ExtendedFileResource {
     // All empty resources are the same and immutable, so may as well
     // cache the instance
     private static final EmptyFileResource INSTANCE = new EmptyFileResource();
@@ -93,5 +96,11 @@ class EmptyFileResource implements FileResource {
     @Override
     public ChannelDescriptor openDescriptor(ModeFlags flags, POSIX posix, int perm) throws ResourceException {
         throw new ResourceException.NotFound(absolutePath());
+    }
+
+    @Override
+    public URL getURL()
+    {
+        return null;
     }
 }

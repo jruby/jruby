@@ -53,48 +53,21 @@ import java.io.IOException;
  */
 public class JRubyFile extends JavaSecuredFile {
     private static final long serialVersionUID = 435364547567567L;
-
+    
     public static JRubyFile create(String cwd, String pathname) {
         return createNoUnicodeConversion(cwd, pathname);
     }
 
     public static FileResource createResource(ThreadContext context, String pathname) {
-      return createResource(context.runtime, pathname);
+      return FileResourceFactory.createResource(context.runtime, pathname);
     }
 
     public static FileResource createResource(Ruby runtime, String pathname) {
-      return createResource(runtime.getCurrentDirectory(), pathname);
+      return FileResourceFactory.createResource(runtime.getCurrentDirectory(), pathname);
     }
 
     public static FileResource createResource(String cwd, String pathname) {
-        FileResource emptyResource = EmptyFileResource.create(pathname);
-        if (emptyResource != null) {
-            return emptyResource;
-        }
-
-        FileResource jarResource = JarResource.create(pathname);
-        if (jarResource != null) {
-            return jarResource;
-        }
-
-        // HACK turn the pathname into something meaningful in case of being an URI
-        FileResource cpResource = ClasspathResource.create(pathname.replace(cwd == null ? "" : cwd, "" ));
-        if (cpResource != null) {
-            return cpResource;
-        }
-
-        // HACK this codes get triggers by LoadService via findOnClasspath, so remove the prefix to get the uri
-        FileResource urlResource = URLResource.create(pathname.replace("classpath:/", ""));
-        if (urlResource != null) {
-            return urlResource;
-        }
-
-        if (pathname.startsWith("file:")) {
-            pathname = pathname.substring(5);
-        }
-
-        // If any other special resource types fail, count it as a filesystem backed resource.
-        return new RegularFileResource(create(cwd, pathname));
+        return FileResourceFactory.createResource(cwd, pathname);
     }
 
     public static String normalizeSeps(String path) {

@@ -1,5 +1,12 @@
 package org.jruby.runtime.load;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Map;
+
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
@@ -7,15 +14,8 @@ import org.jruby.ast.executable.Script;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService.SuffixType;
 import org.jruby.util.FileResource;
+import org.jruby.util.FileResourceFactory;
 import org.jruby.util.JRubyFile;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.Map;
 
 class LibrarySearcher {
     static class Ruby18 extends LibrarySearcher {
@@ -24,12 +24,12 @@ class LibrarySearcher {
         }
 
         @Override
-        protected String resolveLoadName(FileResource unused, String ruby18Path) {
+        protected String resolveLoadName(ExtendedFileResource unused, String ruby18Path) {
             return ruby18Path;
         }
 
         @Override
-        protected String resolveScriptName(FileResource unused, String ruby18Path) {
+        protected String resolveScriptName(ExtendedFileResource unused, String ruby18Path) {
             return ruby18Path;
         }
     }
@@ -158,7 +158,7 @@ class LibrarySearcher {
         String pathWithSuffix = fullPath + suffix;
 
         DebugLog.Resource.logTry(pathWithSuffix);
-        FileResource resource = JRubyFile.createResource(runtime, pathWithSuffix);
+        ExtendedFileResource resource = FileResourceFactory.createResource(runtime, pathWithSuffix);
         if (resource.exists()) {
             DebugLog.Resource.logFound(pathWithSuffix);
             String scriptName = resolveScriptName(resource, pathWithSuffix);
@@ -189,11 +189,11 @@ class LibrarySearcher {
         return new File(path).isAbsolute();
     }
 
-    protected String resolveLoadName(FileResource resource, String ruby18path) {
+    protected String resolveLoadName(ExtendedFileResource resource, String ruby18path) {
         return resource.absolutePath();
     }
 
-    protected String resolveScriptName(FileResource resource, String ruby18Path) {
+    protected String resolveScriptName(ExtendedFileResource resource, String ruby18Path) {
         return resource.absolutePath();
     }
 
@@ -202,11 +202,13 @@ class LibrarySearcher {
         private final String scriptName;
         private final InputStream is;
         private final String location;
+        private final URL url;
 
-        public ResourceLibrary(String searchName, String scriptName, FileResource resource) {
+        public ResourceLibrary(String searchName, String scriptName, ExtendedFileResource resource) {
             this.searchName = searchName;
             this.scriptName = scriptName;
             this.location = resource.absolutePath();
+            this.url = resource.getURL();
 
             // getInputStream may return a null to denote that it cannot really read the resource.
             // We should raise LoadError in the end, but probably only once we actually try to load
@@ -245,22 +247,7 @@ class LibrarySearcher {
         }
 
         private void loadJar(Ruby runtime, boolean wrap) {
-            try {
-                URL url;
-                File f = new File(location);
-                if (f.exists() || location.contains( "!")){
-                    url = f.toURI().toURL();
-                    if ( location.contains( "!") ) {
-                        url = new URL( "jar:" + url );
-                    }
-                }
-                else {
-                    url = new URL(location);
-                }
-                runtime.getJRubyClassLoader().addURL(url);
-            } catch (MalformedURLException badUrl) {
-                runtime.newIOErrorFromException(badUrl);
-            }
+            runtime.getJRubyClassLoader().addURL(url);
 
             // If an associated Service library exists, load it as well
             ClassExtensionLibrary serviceExtension = ClassExtensionLibrary.tryFind(runtime, searchName);
