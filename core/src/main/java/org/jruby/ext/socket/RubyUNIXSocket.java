@@ -247,18 +247,18 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     }
 
     protected void init_sock(Ruby runtime, Channel channel, String path) {
-        openFile.setPath(path);
-
-        init_sock(runtime, channel);
-    }
-
-    protected void init_sock(Ruby runtime, Channel channel) {
-        ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
         MakeOpenFile();
+        
+        ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
 
         openFile.setFD(newChannelFD(runtime, channel));
         openFile.setMode(modes.getOpenFileFlags());
         openFile.setSync(true);
+        openFile.setPath(path);
+    }
+
+    protected void init_sock(Ruby runtime, Channel channel) {
+        init_sock(runtime, channel, null);
     }
 
     private UnixSocketChannel asUnixSocket() {
