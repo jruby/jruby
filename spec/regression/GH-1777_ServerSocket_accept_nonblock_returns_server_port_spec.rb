@@ -21,4 +21,4 @@ describe 'ServerSocket#accept_nonblock' do
     port.should eq(client_socket.remote_address.ip_port)
     port.should_not eq(server_port)
   end
-end
+end if RUBY_VERSION > '1.9'
