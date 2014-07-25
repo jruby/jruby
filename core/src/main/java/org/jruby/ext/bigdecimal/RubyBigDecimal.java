@@ -1219,17 +1219,15 @@ public class RubyBigDecimal extends RubyNumeric {
             return bigDecimal;
         } else {
             if (args.length == 0) {
-                return bigDecimal.to_int19();
+                return bigDecimal.to_int();
             } else {
                 return bigDecimal;
             }
         }
     }
     
-    @JRubyMethod
     public IRubyObject round(ThreadContext context, IRubyObject scale, IRubyObject mode) {
-        return new RubyBigDecimal(context.runtime, 
-                                  value.setScale(num2int(scale), javaRoundingModeFromRubyRoundingMode(context.runtime, mode)));
+        return round(context, new IRubyObject[]{scale, mode});
     }    
 
     //this relies on the Ruby rounding enumerations == Java ones, which they (currently) all are
