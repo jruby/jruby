@@ -18,15 +18,22 @@ function process_special_opts {
     esac
 }
 
-function main {
+# ----- Identify OS we are running under --------------------------------------
+function identify_platform {
   cygwin=false
-
-  # ----- Identify OS we are running under --------------------------------------
+  darwin=false
   case "$(uname)" in
     CYGWIN*) cygwin=true;;
     Darwin) darwin=true;;
     MINGW*) jruby.exe "$@"; exit $?;;
   esac
+}
+
+function main {
+
+  cygwin=false
+  darwin=false
+  identify_platform "$@"
 
   # ----- Verify and Set Required Environment Variables -------------------------
   if [ -z "$JAVA_VM" ]; then
