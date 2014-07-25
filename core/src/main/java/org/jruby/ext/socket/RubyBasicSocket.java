@@ -41,6 +41,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 
+import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.Sock;
 import org.jruby.Ruby;
@@ -53,6 +54,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -601,6 +603,16 @@ public class RubyBasicSocket extends RubyIO {
 
     public boolean doNotReverseLookup(ThreadContext context) {
         return context.runtime.isDoNotReverseLookupEnabled() || doNotReverseLookup;
+    }
+
+    protected static ChannelFD newChannelFD(Ruby runtime, Channel channel) {
+        ChannelFD fd = newChannelFD(runtime, channel);
+
+        if (runtime.getPosix().isNative() && fd.realFileno >= 0) {
+            runtime.getPosix().fcntlInt(fd.realFileno, Fcntl.F_SETFD, FcntlLibrary.FD_CLOEXEC);
+        }
+
+        return fd;
     }
 
     protected void initSocket(Ruby runtime, ChannelFD fd) {

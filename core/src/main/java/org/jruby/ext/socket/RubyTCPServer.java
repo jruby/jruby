@@ -110,7 +110,7 @@ public class RubyTCPServer extends RubyTCPSocket {
 
             ssc.socket().bind(socket_address);
 
-            initSocket(runtime, new ChannelFD(ssc, runtime.getPosix()));
+            initSocket(runtime, newChannelFD(runtime, ssc));
 
         } catch(UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
@@ -165,7 +165,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                     }
 
                     // otherwise one key has been selected (ours) so we get the channel and hand it off
-                    socket.initSocket(runtime, new ChannelFD(connected, runtime.getPosix()));
+                    socket.initSocket(runtime, newChannelFD(runtime, connected));
 
                     return socket;
                 }
@@ -198,7 +198,7 @@ public class RubyTCPServer extends RubyTCPSocket {
 
                 } else {
                     // otherwise one key has been selected (ours) so we get the channel and hand it off
-                    socket.initSocket(context.runtime, new ChannelFD(ssc.accept(), runtime.getPosix()));
+                    socket.initSocket(context.runtime, newChannelFD(runtime, ssc.accept()));
 
                     return socket;
                 }

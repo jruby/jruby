@@ -415,10 +415,6 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    protected static ChannelFD newChannelFD(Ruby runtime, Channel channel) {
-        return new ChannelFD(channel, runtime.getPosix());
-    }
-
     private void initProtocol(Ruby runtime, IRubyObject protocol) {
         ProtocolFamily protocolFamily = SocketUtils.protocolFamilyFromArg(protocol);
 

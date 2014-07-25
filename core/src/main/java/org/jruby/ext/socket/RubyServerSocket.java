@@ -146,7 +146,7 @@ public class RubyServerSocket extends RubySocket {
 
             }
 
-            return new ChannelFD(channel, runtime.getPosix());
+            return newChannelFD(runtime, channel);
 
         } catch (IOException e) {
             throw SocketUtils.sockerr(runtime, "initialize: " + e.toString());

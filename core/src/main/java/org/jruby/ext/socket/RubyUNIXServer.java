@@ -89,10 +89,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
                     RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
 
-                    sock.channel = socketChannel;
-                    sock.fpath = "";
-
-                    sock.init_sock(context.runtime);
+                    sock.init_sock(context.runtime, socketChannel, "");
 
                     return sock;
                 }
@@ -107,7 +104,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     public IRubyObject accept_nonblock(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        SelectableChannel selectable = (SelectableChannel)channel;
+        SelectableChannel selectable = (SelectableChannel)getChannel();
 
         synchronized (selectable.blockingLock()) {
             boolean oldBlocking = selectable.isBlocking();
@@ -116,14 +113,11 @@ public class RubyUNIXServer extends RubyUNIXSocket {
                 selectable.configureBlocking(false);
 
                 try {
-                    UnixSocketChannel socketChannel = ((UnixServerSocketChannel) channel).accept();
+                    UnixSocketChannel socketChannel = ((UnixServerSocketChannel) selectable).accept();
 
                     RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
 
-                    sock.channel = socketChannel;
-                    sock.fpath = "";
-
-                    sock.init_sock(context.runtime);
+                    sock.init_sock(context.runtime, socketChannel, "");
 
                     return sock;
 
@@ -154,7 +148,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
     @JRubyMethod
     public IRubyObject path(ThreadContext context) {
-        return context.runtime.newString(fpath);
+        return context.runtime.newString(openFile.getPath());
     }
 
     @JRubyMethod
@@ -163,7 +157,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
         return runtime.newArray(
                 runtime.newString("AF_UNIX"),
-                runtime.newString(fpath));
+                runtime.newString(openFile.getPath()));
     }
 
     @JRubyMethod
@@ -172,6 +166,6 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     }
 
     private UnixServerSocketChannel asUnixServer() {
-        return (UnixServerSocketChannel)channel;
+        return (UnixServerSocketChannel)getChannel();
     }
 }// RubyUNIXServer

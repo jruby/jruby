@@ -115,7 +115,7 @@ public class RubyTCPSocket extends RubyIPSocket {
                 // only try to set blocking back if we succeeded to finish connecting
                 channel.configureBlocking(true);
 
-                initSocket(runtime, new ChannelFD(channel, runtime.getPosix()));
+                initSocket(runtime, newChannelFD(runtime, channel));
                 success = true;
             } catch(BindException e) {
             	throw runtime.newErrnoEADDRFromBindException(e, " to: " + remoteHost + ":" + String.valueOf(remotePort));
