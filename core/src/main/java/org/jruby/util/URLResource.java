@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.channels.Channel;
 
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
@@ -119,6 +120,14 @@ class URLResource implements FileResource {
         return null;
     }
 
+    @Override
+    public Channel openChannel( ModeFlags flags, POSIX posix, int perm )
+            throws ResourceException
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     public static FileResource create(String pathname)
     {
         URL url;
@@ -135,6 +144,5 @@ class URLResource implements FileResource {
         {
             return null;
         }
-    }
-    
+    }    
 }
