@@ -77,6 +77,16 @@ public class JRubyFile extends JavaSecuredFile {
             return jarResource;
         }
 
+        FileResource cpResource = ClasspathResource.create(pathname.replace(cwd, "" ));
+        if (cpResource != null) {
+            return cpResource;
+        }
+
+        FileResource urlResource = URLResource.create(pathname.replace("classpath:/", ""));
+        if (urlResource != null) {
+            return urlResource;
+        }
+
         if (pathname.startsWith("file:")) {
             pathname = pathname.substring(5);
         }
