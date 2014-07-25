@@ -36,7 +36,7 @@ while [ -h "$SELF_PATH" ]; do
     # 4) append the basename
     DIR=$(dirname -- "$SELF_PATH")
     SYM=$(readlink "$SELF_PATH")
-    SELF_PATH=$(cd "$DIR" && cd $(dirname -- "$SYM") && pwd)/$(basename -- "$SYM")
+    SELF_PATH="$(cd "$DIR" && cd "$(dirname -- "$SYM")" && pwd)/$(basename -- "$SYM")"
 done
 
 PRG=$SELF_PATH
@@ -44,7 +44,7 @@ PRG=$SELF_PATH
 JRUBY_HOME_1=`dirname "$PRG"`           # the ./bin dir
 if [ "$JRUBY_HOME_1" = '.' ] ; then
   cwd=`pwd`
-  JRUBY_HOME=`dirname $cwd` # JRUBY-2699
+  JRUBY_HOME=`dirname "$cwd"` # JRUBY-2699
 else
   JRUBY_HOME=`dirname "$JRUBY_HOME_1"`  # the . dir
 fi
@@ -140,7 +140,7 @@ for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
         else
         JRUBY_CP="$j"
     fi
-    if [ $JRUBY_ALREADY_ADDED ]; then
+    if [ "$JRUBY_ALREADY_ADDED" ]; then
         echo "WARNING: more than one JRuby JAR found in lib directory"
     fi
     JRUBY_ALREADY_ADDED=true
@@ -334,8 +334,8 @@ if $cygwin; then
 fi
 
 if [ "$nailgun_client" != "" ]; then
-  if [ -f $JRUBY_HOME/tool/nailgun/ng ]; then
-    exec $JRUBY_HOME/tool/nailgun/ng org.jruby.util.NailMain $mode "$@"
+  if [ -f "$JRUBY_HOME/tool/nailgun/ng" ]; then
+    exec "$JRUBY_HOME/tool/nailgun/ng" org.jruby.util.NailMain $mode "$@"
   else
     echo "error: ng executable not found; run 'make' in ${JRUBY_HOME}/tool/nailgun"
     exit 1
