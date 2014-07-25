@@ -393,9 +393,10 @@ else
         "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
         "-Djruby.shell=$JRUBY_SHELL" \
         $java_class $mode "$@"
+
+      JRUBY_STATUS=$?
+
+      exit $JRUBY_STATUS
     fi
   fi
 fi
-
-# Be careful adding code down here, you might override the exit
-# status of the jruby invocation.
