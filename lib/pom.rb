@@ -44,7 +44,8 @@ default_gems =
    ImportedGem.new( 'krypt', KRYPT_VERSION, true ),
    ImportedGem.new( 'krypt-core', KRYPT_VERSION, true ),
    ImportedGem.new( 'krypt-provider-jdk', KRYPT_VERSION, true ),
-   ImportedGem.new( 'ffi', '1.9.3', true )
+   ImportedGem.new( 'ffi', '1.9.3', true ),
+   ImportedGem.new( 'jar-dependencies', '0.0.5', true )
   ]
 
 project 'JRuby Lib Setup' do
@@ -222,5 +223,9 @@ EOS
     else
       raise "please remove the obsolete PATCH for krypt in lib/pom.rb"
     end
+
+    # we do not want rubygems_plugin.rb within jruby
+    f = File.join( ruby_dir, 'shared', 'rubygems_plugin.rb' )
+    File.delete( f ) if File.exists?( f )
   end
 end

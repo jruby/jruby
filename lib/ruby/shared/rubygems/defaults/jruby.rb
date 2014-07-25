@@ -118,3 +118,8 @@ begin
   require 'rubygems/defaults/jruby_native'
 rescue LoadError
 end
+
+begin
+  require 'rubygems/defaults/jruby_jar_dependencies'
+rescue LoadError
+end
