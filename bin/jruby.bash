@@ -342,59 +342,59 @@ if [ "$nailgun_client" != "" ]; then
     exit 1
   fi
 else
-if [ "$VERIFY_JRUBY" != "" ]; then
-  if [ "$PROFILE_ARGS" != "" ]; then
-      echo "Running with instrumented profiler"
-  fi
+  if [ "$VERIFY_JRUBY" != "" ]; then
+    if [ "$PROFILE_ARGS" != "" ]; then
+        echo "Running with instrumented profiler"
+    fi
 
-  if [[ "${java_class:-}" == "${JAVA_CLASS_NGSERVER:-}" && -n "${JRUBY_OPTS:-}" ]]; then
-    echo "warning: starting a nailgun server; discarding JRUBY_OPTS: ${JRUBY_OPTS}"
-    JRUBY_OPTS=''
-  fi
+    if [[ "${java_class:-}" == "${JAVA_CLASS_NGSERVER:-}" && -n "${JRUBY_OPTS:-}" ]]; then
+      echo "warning: starting a nailgun server; discarding JRUBY_OPTS: ${JRUBY_OPTS}"
+      JRUBY_OPTS=''
+    fi
 
-  "$JAVACMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
-    "-Djruby.home=$JRUBY_HOME" \
-    "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
-    "-Djruby.shell=$JRUBY_SHELL" \
-    $java_class $JRUBY_OPTS "$@"
-
-  # Record the exit status immediately, or it will be overridden.
-  JRUBY_STATUS=$?
-
-  if [ "$PROFILE_ARGS" != "" ]; then
-      echo "Profiling results:"
-      cat profile.txt
-      rm profile.txt
-  fi
-
-  if $cygwin; then
-    stty icanon echo > /dev/null 2>&1
-  fi
-
-  exit $JRUBY_STATUS
-else
-  if $cygwin; then
-    # exec doed not work correctly with cygwin bash
-    "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
+    "$JAVACMD" $PROFILE_ARGS $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -classpath "$JRUBY_CP$CP_DELIMITER$CP$CP_DELIMITER$CLASSPATH" \
       "-Djruby.home=$JRUBY_HOME" \
       "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
       "-Djruby.shell=$JRUBY_SHELL" \
-      $java_class $mode "$@"
+      $java_class $JRUBY_OPTS "$@"
 
     # Record the exit status immediately, or it will be overridden.
     JRUBY_STATUS=$?
 
-    stty icanon echo > /dev/null 2>&1
+    if [ "$PROFILE_ARGS" != "" ]; then
+        echo "Profiling results:"
+        cat profile.txt
+        rm profile.txt
+    fi
+
+    if $cygwin; then
+      stty icanon echo > /dev/null 2>&1
+    fi
 
     exit $JRUBY_STATUS
   else
-    exec "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
-      "-Djruby.home=$JRUBY_HOME" \
-      "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
-      "-Djruby.shell=$JRUBY_SHELL" \
-      $java_class $mode "$@"
+    if $cygwin; then
+      # exec doed not work correctly with cygwin bash
+      "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
+        "-Djruby.home=$JRUBY_HOME" \
+        "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
+        "-Djruby.shell=$JRUBY_SHELL" \
+        $java_class $mode "$@"
+
+      # Record the exit status immediately, or it will be overridden.
+      JRUBY_STATUS=$?
+
+      stty icanon echo > /dev/null 2>&1
+
+      exit $JRUBY_STATUS
+    else
+      exec "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS" "${java_args[@]}" -Xbootclasspath/a:"$JRUBY_CP" -classpath "$CP$CP_DELIMITER$CLASSPATH" \
+        "-Djruby.home=$JRUBY_HOME" \
+        "-Djruby.lib=$JRUBY_HOME/lib" -Djruby.script=jruby \
+        "-Djruby.shell=$JRUBY_SHELL" \
+        $java_class $mode "$@"
+    fi
   fi
-fi
 fi
 
 # Be careful adding code down here, you might override the exit
