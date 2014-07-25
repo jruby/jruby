@@ -28,4 +28,19 @@ public interface BeanManager {
     
     void unregisterRuntime();
 
+    /**
+     * Attempt to shut down the current JVM's JMX agent. Uses reflection tricks,
+     * so it may fail; return value indicates if it was successful.
+     *
+     * @return true if successful; false otherwise
+     */
+    boolean tryShutdownAgent();
+
+    /**
+     * Attempt to restart the current JVM's JMX agent. May fail, so the return value indicates success.
+     *
+     * @return true if successful; false otherwise
+     */
+    boolean tryRestartAgent();
+
 }

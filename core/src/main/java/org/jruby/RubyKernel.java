@@ -1799,6 +1799,7 @@ public class RubyKernel {
         
         boolean nativeFailed = false;
         boolean nativeExec = Options.NATIVE_EXEC.load();
+        boolean jmxStopped = false;
         System.setProperty("user.dir", runtime.getCurrentDirectory());
 
         if (nativeExec) {
@@ -1816,6 +1817,9 @@ public class RubyKernel {
                 String progStr = cfg.getExecArgs()[0];
 
                 String[] argv = cfg.getExecArgs();
+
+                // attempt to shut down the JMX server
+                jmxStopped = runtime.getBeanManager().tryShutdownAgent();
 
                 runtime.getPosix().chdir(System.getProperty("user.dir"));
                 
@@ -1843,6 +1847,7 @@ public class RubyKernel {
 
         // if we get here, either native exec failed or we should try an in-process exec
         if (nativeFailed) {
+            if (jmxStopped) runtime.getBeanManager().tryRestartAgent();
             throw runtime.newErrnoFromLastPOSIXErrno();
         }
         
