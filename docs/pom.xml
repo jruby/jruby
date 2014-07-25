@@ -9,7 +9,11 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
+<<<<<<< HEAD
     <version>9000.dev-SNAPSHOT</version>
+=======
+    <version>1.7.14.dev-SNAPSHOT</version>
+>>>>>>> jruby-1_7
   </parent>
 
   <groupId>org.jruby</groupId>

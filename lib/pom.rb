@@ -39,7 +39,8 @@ default_gems =
    ImportedGem.new( 'krypt', KRYPT_VERSION, true ),
    ImportedGem.new( 'krypt-core', KRYPT_VERSION, true ),
    ImportedGem.new( 'krypt-provider-jdk', KRYPT_VERSION, true ),
-   ImportedGem.new( 'ffi', '1.9.3', true )
+   ImportedGem.new( 'ffi', '1.9.3', true ),
+   ImportedGem.new( 'jar-dependencies', '0.0.5', true )
   ]
 
 project 'JRuby Lib Setup' do
@@ -203,10 +204,10 @@ project 'JRuby Lib Setup' do
     if KRYPT_VERSION == '0.0.2'
       file = 'lib/ruby/shared/krypt/provider.rb'
       content = File.read( file )
-      content.sub! /else/, <<EOS
-elsif java?
-    warn "FFI support not available for #{RUBY_PLATFORM}"
-  else
+      content.sub! /begin(.|[\n])*/, <<EOS
+unless java?
+  require_relative 'provider/ffi'
+end
 EOS
       File.open( file, 'w' ) do |f|
         f.print content
@@ -214,5 +215,9 @@ EOS
     else
       raise "please remove the obsolete PATCH for krypt in lib/pom.rb"
     end
+
+    # we do not want rubygems_plugin.rb within jruby
+    f = File.join( ruby_dir, 'shared', 'rubygems_plugin.rb' )
+    File.delete( f ) if File.exists?( f )
   end
 end

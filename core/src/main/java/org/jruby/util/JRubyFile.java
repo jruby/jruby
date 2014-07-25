@@ -77,6 +77,18 @@ public class JRubyFile extends JavaSecuredFile {
             return jarResource;
         }
 
+        // HACK turn the pathname into something meaningful in case of being an URI
+        FileResource cpResource = ClasspathResource.create(pathname.replace(cwd == null ? "" : cwd, "" ));
+        if (cpResource != null) {
+            return cpResource;
+        }
+
+        // HACK this codes get triggers by LoadService via findOnClasspath, so remove the prefix to get the uri
+        FileResource urlResource = URLResource.create(pathname.replace("classpath:/", ""));
+        if (urlResource != null) {
+            return urlResource;
+        }
+
         if (pathname.startsWith("file:")) {
             pathname = pathname.substring(5);
         }

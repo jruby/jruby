@@ -23,6 +23,7 @@ lib/ruby/shared/krypt*
 lib/ruby/shared/jopenssl*
 lib/ruby/shared/org/
 lib/ruby/shared/openssl
+lib/ruby/shared/jar*
 nbproject/private
 share
 latest_source_cache

@@ -295,3 +295,10 @@ regular maven uses the the jruby from the installion, i.e. 9000.dev. this also m
 
 at some parts there are **inline** plugins in **pom.rb** or **Mavenfile** which will work directly with regular maven where there is a special plugin running those ruby parts. see **./lib/pom.rb**.
 
+### Start development
+
+After the release set the new development version:
+
+```
+mvn versions:set -DnewVersion=1.7.6-SNAPSHOT -Pall
+```
