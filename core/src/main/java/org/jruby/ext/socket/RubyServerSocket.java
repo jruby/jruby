@@ -167,7 +167,7 @@ public class RubyServerSocket extends RubySocket {
 
                         RubySocket socket = doAccept(context, channel);
                         SocketChannel socketChannel = (SocketChannel)socket.getChannel();
-                        InetSocketAddress addr = (InetSocketAddress)socketChannel.socket().getLocalSocketAddress();
+                        InetSocketAddress addr = (InetSocketAddress)socketChannel.socket().getRemoteSocketAddress();
 
                         return context.runtime.newArray(
                                 socket,
