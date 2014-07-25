@@ -1847,7 +1847,9 @@ public class RubyKernel {
 
         // if we get here, either native exec failed or we should try an in-process exec
         if (nativeFailed) {
-            if (jmxStopped) runtime.getBeanManager().tryRestartAgent();
+            if (jmxStopped && runtime.getBeanManager().tryRestartAgent()) {
+                runtime.registerMBeans();
+            }
             throw runtime.newErrnoFromLastPOSIXErrno();
         }
         
