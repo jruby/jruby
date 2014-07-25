@@ -1559,6 +1559,28 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = "round", optional = 2)
     public IRubyObject round(ThreadContext context, IRubyObject[] args) {
         int scale = args.length > 0 ? num2int(args[0]) : 0;
+
+        // Special treatment for BigDecimal::NAN and BigDecimal::INFINITY
+        //
+        // If round is called without any argument, we should raise a
+        // FloatDomainError. Otherwise, we don't have to call round ;
+        // we can simply return the number itself.
+        if (scale == 0 && (isNaN() || isInfinity())) {
+            StringBuilder message = new StringBuilder("Computation results to ");
+            message.append("'").append(callMethod(context, "to_s")).append("'");
+
+            // To be consistent with MRI's output
+            if (isNaN()) message.append("(Not a Number)");
+
+            throw getRuntime().newFloatDomainError(message.toString());
+        } else {
+            if (isNaN()) {
+                return newNaN(context.runtime);
+            } else if (isInfinity()) {
+                return newInfinity(context.runtime, infinitySign);
+            }
+        }
+
         RoundingMode mode = (args.length > 1) ? javaRoundingModeFromRubyRoundingMode(context.runtime, args[1]) : getRoundingMode(context.runtime);
         // JRUBY-914: Java 1.4 BigDecimal does not allow a negative scale, so we have to simulate it
         RubyBigDecimal bigDecimal = null;
