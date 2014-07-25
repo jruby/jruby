@@ -209,11 +209,11 @@ do
             JAVA_STACK=$val
         elif [ "${val}" = "" ]; then
             $JAVACMD -help
-            echo "(Prepend -J in front of these options when using 'jruby' command)" 
+            echo "(Prepend -J in front of these options when using 'jruby' command)"
             exit
         elif [ "${val}" = "-X" ]; then
             $JAVACMD -X
-            echo "(Prepend -J in front of these options when using 'jruby' command)" 
+            echo "(Prepend -J in front of these options when using 'jruby' command)"
             exit
         elif [ "${val}" = "-classpath" ]; then
             CP="$CP$CP_DELIMITER$2"
@@ -234,13 +234,13 @@ do
         ;;
      # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
      -X*)
-	val=${1:2}
-	if expr "$val" : '.*[.]' > /dev/null; then
-	  java_args=("${java_args[@]}" "-Djruby.${val}")
-	else
-	  ruby_args=("${ruby_args[@]}" "-X${val}")
-	fi
-	;;
+        val=${1:2}
+        if expr "$val" : '.*[.]' > /dev/null; then
+          java_args=("${java_args[@]}" "-Djruby.${val}")
+        else
+          ruby_args=("${ruby_args[@]}" "-X${val}")
+        fi
+        ;;
      # Match switches that take an argument
      -C|-e|-I|-S) ruby_args=("${ruby_args[@]}" "$1" "$2"); shift ;;
      # Match same switches with argument stuck together
@@ -262,7 +262,7 @@ do
           else
             JAVACMD="$JAVA_HOME/bin/jdb"
           fi
-        fi 
+        fi
         java_args=("${java_args[@]}" "-sourcepath" "$JRUBY_HOME/lib/ruby/1.9:.")
         JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C") ;;
      --client)
