@@ -91,7 +91,7 @@ public class RubyUDPSocket extends RubyIPSocket {
 
         try {
             DatagramChannel channel = DatagramChannel.open();
-            initSocket(runtime, newChannelFD(runtime, channel));
+            initSocket(newChannelFD(runtime, channel));
 
         } catch (ConnectException e) {
             throw runtime.newErrnoECONNREFUSEDError();

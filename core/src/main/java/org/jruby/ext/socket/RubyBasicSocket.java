@@ -102,7 +102,7 @@ public class RubyBasicSocket extends RubyIO {
         ChannelFD fd = FilenoUtil.getWrapperFromFileno(fileno);
 
         RubyBasicSocket basicSocket = (RubyBasicSocket)klass.getAllocator().allocate(runtime, klass);
-        basicSocket.initSocket(runtime, fd);
+        basicSocket.initSocket(fd);
 
         return basicSocket;
     }
@@ -615,7 +615,7 @@ public class RubyBasicSocket extends RubyIO {
         return fd;
     }
 
-    protected void initSocket(Ruby runtime, ChannelFD fd) {
+    protected void initSocket(ChannelFD fd) {
         // continue with normal initialization
         MakeOpenFile();
 
