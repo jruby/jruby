@@ -4,7 +4,7 @@ import java.net.URL;
 
 class ClasspathResource extends URLResource {
 
-    private static final String CLASSPATH = "classpath:";
+    private static final String CLASSPATH = "classpath:/";
 
     ClasspathResource(URL url)
     {
