@@ -606,7 +606,7 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     protected static ChannelFD newChannelFD(Ruby runtime, Channel channel) {
-        ChannelFD fd = newChannelFD(runtime, channel);
+        ChannelFD fd = new ChannelFD(channel, runtime.getPosix());
 
         if (runtime.getPosix().isNative() && fd.realFileno >= 0) {
             runtime.getPosix().fcntlInt(fd.realFileno, Fcntl.F_SETFD, FcntlLibrary.FD_CLOEXEC);
