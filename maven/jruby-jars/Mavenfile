@@ -1,5 +1,5 @@
 #-*- mode: ruby -*-
-
+# WARNING this file it broken in the moment - not sure if it ever gets fixed again on jruby-1_7 branch
 gemspec
 
 inherit "org.jruby:jruby-artifacts:#{model.version}"
