@@ -148,7 +148,7 @@ public class RubyServerSocket extends RubySocket {
 
             return new ChannelFD(channel, runtime.getPosix());
 
-        } catch(IOException e) {
+        } catch (IOException e) {
             throw SocketUtils.sockerr(runtime, "initialize: " + e.toString());
 
         }
@@ -181,7 +181,7 @@ public class RubyServerSocket extends RubySocket {
 
             }
 
-        } catch(IOException e) {
+        } catch (IOException e) {
             throw SocketUtils.sockerr(context.runtime, e.getLocalizedMessage());
 
         }
@@ -216,7 +216,7 @@ public class RubyServerSocket extends RubySocket {
             // indicates that no connection is available in non-blocking mode
             throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
 
-        } catch(IOException e) {
+        } catch (IOException e) {
             throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
 
         }
@@ -234,13 +234,13 @@ public class RubyServerSocket extends RubySocket {
                 throw runtime.newErrnoENOPROTOOPTError();
             }
 
-        } catch(UnknownHostException e) {
+        } catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "bind(2): unknown host");
 
-        } catch(SocketException e) {
+        } catch (SocketException e) {
             handleSocketException(runtime, "bind", e);
 
-        } catch(IOException e) {
+        } catch (IOException e) {
             throw SocketUtils.sockerr(runtime, "bind(2): name or service not known");
 
         } catch (IllegalArgumentException iae) {
@@ -266,7 +266,7 @@ public class RubyServerSocket extends RubySocket {
 
             return new ChannelDescriptor(channel, modeFlags);
 
-        } catch(IOException e) {
+        } catch (IOException e) {
             throw SocketUtils.sockerr(runtime, "initialize: " + e.toString());
 
         }
