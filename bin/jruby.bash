@@ -58,9 +58,10 @@ unset JRUBY_OPTS_TEMP
 function process_special_opts {
     case $1 in
         --ng) nailgun_client=true;;
-        *) break;;
+        *) return;;
     esac
 }
+
 for opt in ${JRUBY_OPTS[@]}; do
     for special in ${JRUBY_OPTS_SPECIAL[@]}; do
         if [ $opt != $special ]; then
