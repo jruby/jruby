@@ -11,7 +11,7 @@
 #
 # -----------------------------------------------------------------------------
 
-function process_special_opts {
+process_special_opts() {
     case $1 in
         --ng) nailgun_client=true;;
         *) return;;
@@ -19,7 +19,7 @@ function process_special_opts {
 }
 
 # ----- Identify OS we are running under --------------------------------------
-function identify_platform {
+identify_platform() {
   cygwin=false
   darwin=false
   case "$(uname)" in
@@ -29,19 +29,9 @@ function identify_platform {
   esac
 }
 
-function main {
-
-  cygwin=false
-  darwin=false
-  identify_platform "$@"
-
-  # ----- Verify and Set Required Environment Variables -------------------------
-  if [ -z "$JAVA_VM" ]; then
-    JAVA_VM=-client
-  fi
-
+set_self_path() {
   # get the absolute path of the executable
-  SELF_PATH=$(builtin cd -P -- "$(dirname -- "$0")" >/dev/null && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$0")
+  SELF_PATH=$(cd -P -- "$(dirname -- "$1")" >/dev/null && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$1")
 
   # resolve symlinks
   while [ -h "$SELF_PATH" ]; do
@@ -53,41 +43,55 @@ function main {
       SYM=$(readlink "$SELF_PATH")
       SELF_PATH="$(cd "$DIR" && cd "$(dirname -- "$SYM")" && pwd)/$(basename -- "$SYM")"
   done
-
   PRG=$SELF_PATH
+}
 
-  JRUBY_HOME_1=$(dirname "$PRG")           # the ./bin dir
-  if [ "$JRUBY_HOME_1" = '.' ] ; then
+set_jruby_home() {
+  jruby_home_1=$(dirname "$1")  # the ./bin dir
+  if [ "$jruby_home_1" = '.' ] ; then
     cwd=$(pwd)
     JRUBY_HOME=$(dirname "$cwd") # JRUBY-2699
   else
-    JRUBY_HOME=$(dirname "$JRUBY_HOME_1")  # the . dir
+    JRUBY_HOME=$(dirname "$jruby_home_1")  # the . dir
   fi
+}
 
-  if [ -z "$JRUBY_OPTS" ] ; then
-    JRUBY_OPTS=""
-  fi
-
+set_special_jruby_opts() {
   JRUBY_OPTS_SPECIAL="--ng" # space-separated list of special flags
   unset JRUBY_OPTS_TEMP
 
   for opt in ${JRUBY_OPTS[@]}; do
       for special in ${JRUBY_OPTS_SPECIAL[@]}; do
-          if [ $opt != $special ]; then
+          if [ "$opt" != $special ]; then
               JRUBY_OPTS_TEMP="${JRUBY_OPTS_TEMP} $opt"
           else
               # make sure flags listed in JRUBY_OPTS_SPECIAL are processed
               case "$opt" in
               --ng)
-                  process_special_opts $opt;;
+                  process_special_opts "$opt";;
               esac
           fi
       done
-      if [ $opt == "-server" ]; then # JRUBY-4204
+      if [ "$opt" = "-server" ]; then # JRUBY-4204
           JAVA_VM="-server"
       fi
   done
   JRUBY_OPTS=${JRUBY_OPTS_TEMP}
+}
+
+set_env_defaults() {
+  JAVA_ENCODING=""
+  JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
+  java_class=$JAVA_CLASS_JRUBY_MAIN
+  JAVA_CLASS_NGSERVER=org.jruby.main.NailServerMain
+
+  if [ -z "$JRUBY_OPTS" ] ; then
+    JRUBY_OPTS=""
+  fi
+
+  if [ -z "$JAVA_VM" ]; then
+    JAVA_VM=-client
+  fi
 
   if [ -z "$JAVACMD" ] ; then
     if [ -z "$JAVA_HOME" ] ; then
@@ -108,10 +112,11 @@ function main {
   if [ -z "$JAVA_STACK" ] ; then
     JAVA_STACK=-Xss2048k
   fi
+}
 
-  # process JAVA_OPTS
-  unset JAVA_OPTS_TEMP
-  JAVA_OPTS_TEMP=""
+# process JAVA_OPTS
+process_java_opts() {
+  java_opts_temp=""
   for opt in ${JAVA_OPTS[@]}; do
     case $opt in
       -server)
@@ -123,21 +128,15 @@ function main {
       -Xss*)
         JAVA_STACK=$opt;;
       *)
-        JAVA_OPTS_TEMP="${JAVA_OPTS_TEMP} $opt";;
+        java_opts_temp="${java_opts_temp} $opt";;
     esac
   done
 
-  JAVA_OPTS=$JAVA_OPTS_TEMP
+  JAVA_OPTS=$java_opts_temp
+}
 
-
-  # If you're seeing odd exceptions, you may have a bad JVM install.
-  # Uncomment this and report the version to the JRuby team along with error.
-  #$JAVACMD -version
-
-  JRUBY_SHELL=/bin/sh
-
-  # ----- Set Up The Boot Classpath -------------------------------------------
-
+# ----- Set Up The Boot Classpath -------------------------------------------
+set_boot_classpath() {
   CP_DELIMITER=":"
 
   # add main jruby jar to the bootclasspath
@@ -159,19 +158,20 @@ function main {
   if $cygwin; then
       JRUBY_CP=$(cygpath -p -w "$JRUBY_CP")
   fi
+}
 
-  # ----- Set Up The System Classpath -------------------------------------------
-
+# ----- Set Up The System Classpath -------------------------------------------
+set_system_classpath() {
   if [ "$JRUBY_PARENT_CLASSPATH" != "" ]; then
       # Use same classpath propagated from parent jruby
       CP=$JRUBY_PARENT_CLASSPATH
   else
       # add other jars in lib to CP for command-line execution
       for j in "$JRUBY_HOME"/lib/*.jar; do
-          if [ "$j" == "$JRUBY_HOME"/lib/jruby.jar ]; then
+          if [ "$j" = "$JRUBY_HOME"/lib/jruby.jar ]; then
             continue
           fi
-          if [ "$j" == "$JRUBY_HOME"/lib/jruby-complete.jar ]; then
+          if [ "$j" = "$JRUBY_HOME"/lib/jruby-complete.jar ]; then
             continue
           fi
           if [ "$CP" ]; then
@@ -190,18 +190,9 @@ function main {
       # switch delimiter only after building Unix style classpaths
       CP_DELIMITER=";"
   fi
+}
 
-  # ----- Execute The Requested Command -----------------------------------------
-  JAVA_ENCODING=""
-
-  declare -a java_args
-  declare -a ruby_args
-  mode=""
-
-  JAVA_CLASS_JRUBY_MAIN=org.jruby.Main
-  java_class=$JAVA_CLASS_JRUBY_MAIN
-  JAVA_CLASS_NGSERVER=org.jruby.main.NailServerMain
-
+split_ruby_and_java_args() {
   # Split out any -J argument for passing to the JVM.
   # Scanning for args is aborted by '--'.
   set -- $JRUBY_OPTS "$@"
@@ -317,46 +308,82 @@ function main {
   # Append the rest of the arguments
   ruby_args=("${ruby_args[@]}" "$@")
 
+  JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_MEM_MIN $JAVA_STACK"
+  JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
+}
+
+set_cygwin_options() {
+  JRUBY_HOME=$(cygpath --mixed "$JRUBY_HOME")
+  JRUBY_SHELL=$(cygpath --mixed "$JRUBY_SHELL")
+
+  if [[ ( "${1:0:1}" = "/" ) && ( ( -f "$1" ) || ( -d "$1" )) ]]; then
+    win_arg=$(cygpath -w "$1")
+    shift
+    win_args=("$win_arg" "$@")
+    set -- "${win_args[@]}"
+  fi
+
+  # fix JLine to use UnixTerminal
+  stty -icanon min 1 -echo > /dev/null 2>&1
+  if [ $? = 0 ]; then
+    JAVA_OPTS="$JAVA_OPTS -Djline.terminal=jline.UnixTerminal"
+  fi
+}
+
+launch_nailgun_client() {
+  if [ -f "$JRUBY_HOME/tool/nailgun/ng" ]; then
+    exec "$JRUBY_HOME/tool/nailgun/ng" org.jruby.util.NailMain $mode "$@"
+  else
+    echo "error: ng executable not found; run 'make' in ${JRUBY_HOME}/tool/nailgun"
+    exit 1
+  fi
+}
+
+main() {
+
+  cygwin=false
+  darwin=false
+  identify_platform "$@"
+
+  # ----- Verify and Set Required Environment Variables -------------------------
+  set_self_path "$0"
+
+  set_jruby_home "$PRG"
+
+  set_special_jruby_opts
+
+  set_env_defaults
+
+  process_java_opts
+
+  # If you're seeing odd exceptions, you may have a bad JVM install.
+  # Uncomment this and report the version to the JRuby team along with error.
+  #$JAVACMD -version
+
+  JRUBY_SHELL=/bin/sh
+
+  set_boot_classpath
+
+  # ----- Execute The Requested Command -----------------------------------------
+
+  declare -a java_args
+  declare -a ruby_args
+  mode=""
+
+  split_ruby_and_java_args "$@"
+
   # Put the ruby_args back into the position arguments $1, $2 etc
   set -- "${ruby_args[@]}"
 
-  JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_MEM_MIN $JAVA_STACK"
-
-  JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
-
-  if $cygwin; then
-    JRUBY_HOME=$(cygpath --mixed "$JRUBY_HOME")
-    JRUBY_SHELL=$(cygpath --mixed "$JRUBY_SHELL")
-
-    if [[ ( "${1:0:1}" = "/" ) && ( ( -f "$1" ) || ( -d "$1" )) ]]; then
-      win_arg=$(cygpath -w "$1")
-      shift
-      win_args=("$win_arg" "$@")
-      set -- "${win_args[@]}"
-    fi
-
-    # fix JLine to use UnixTerminal
-    stty -icanon min 1 -echo > /dev/null 2>&1
-    if [ $? = 0 ]; then
-      JAVA_OPTS="$JAVA_OPTS -Djline.terminal=jline.UnixTerminal"
-    fi
-
-  fi
+  $cygwin && set_cygwin_options "$@"
 
   if [ "$nailgun_client" != "" ]; then
-    if [ -f "$JRUBY_HOME/tool/nailgun/ng" ]; then
-      exec "$JRUBY_HOME/tool/nailgun/ng" org.jruby.util.NailMain $mode "$@"
-    else
-      echo "error: ng executable not found; run 'make' in ${JRUBY_HOME}/tool/nailgun"
-      exit 1
-    fi
+    launch_nailgun_client "$@"
   else
     if [ "$VERIFY_JRUBY" != "" ]; then
-      if [ "$PROFILE_ARGS" != "" ]; then
-          echo "Running with instrumented profiler"
-      fi
+      [ "$PROFILE_ARGS" != "" ] && echo "Running with instrumented profiler"
 
-      if [[ "${java_class:-}" == "${JAVA_CLASS_NGSERVER:-}" && -n "${JRUBY_OPTS:-}" ]]; then
+      if [[ "${java_class:-}" = "${JAVA_CLASS_NGSERVER:-}" && -n "${JRUBY_OPTS:-}" ]]; then
         echo "warning: starting a nailgun server; discarding JRUBY_OPTS: ${JRUBY_OPTS}"
         JRUBY_OPTS=''
       fi
@@ -376,9 +403,7 @@ function main {
           rm profile.txt
       fi
 
-      if $cygwin; then
-        stty icanon echo > /dev/null 2>&1
-      fi
+      $cygwin && stty icanon echo > /dev/null 2>&1
 
       exit $JRUBY_STATUS
     else
