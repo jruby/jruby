@@ -124,14 +124,16 @@ class URLResource implements FileResource {
         URL url;
         try
         {
-            url = new URL(pathname);
+            url = new URL(pathname.replaceAll("([^:])//", "$1/"));
             // we do not want to deal with those url here like this though they are valid url/uri
             if (url.getProtocol().startsWith("http") || url.getProtocol().equals("file")|| url.getProtocol().equals("jar")){
                 return null;
             }   
+            // make sure we can also open the stream
+            url.openStream();
             return new URLResource(url);
         }
-        catch (MalformedURLException e)
+        catch (IOException e)
         {
             return null;
         }

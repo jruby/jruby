@@ -1591,9 +1591,10 @@ public class LoadService {
             debugLogTry("fileInClassloader", m.group( 1 ) );
             try
             {
-                loc = new URL( m.group( 1 ) );
+                loc = new URL( m.group( 1 ).replaceAll("([^:])//", "$1/") );
+                loc.openStream();
             }
-            catch (MalformedURLException e)
+            catch (IOException e)
             {
                 loc = null;
             }
