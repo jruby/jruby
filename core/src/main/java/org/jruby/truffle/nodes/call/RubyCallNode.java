@@ -215,7 +215,7 @@ public class RubyCallNode extends RubyNode {
             }
         } else if (method.isUndefined()) {
             return NilPlaceholder.INSTANCE;
-        } else if (!method.isVisibleTo(self)) {
+        } else if (!method.isVisibleTo(this, self)) {
             return NilPlaceholder.INSTANCE;
         }
 

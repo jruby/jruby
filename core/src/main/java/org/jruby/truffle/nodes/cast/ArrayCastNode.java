@@ -58,7 +58,7 @@ public abstract class ArrayCastNode extends RubyNode {
 
         if (!(result instanceof RubyArray)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeErrorShouldReturn(object.toString(), toArrayNode.getName(), "Array"));
+            throw new RaiseException(getContext().getCoreLibrary().typeErrorShouldReturn(object.toString(), toArrayNode.getName(), "Array", this));
         }
 
         return result;

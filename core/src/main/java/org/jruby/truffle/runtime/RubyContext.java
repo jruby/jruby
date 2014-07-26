@@ -95,19 +95,19 @@ public class RubyContext {
         fiberManager = new FiberManager(this);
     }
 
-    public void load(Source source) {
-        execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
+    public void load(Source source, RubyNode currentNode) {
+        execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
     }
 
-    public void loadFile(String fileName) {
+    public void loadFile(String fileName, RubyNode currentNode) {
         if (new File(fileName).isAbsolute()) {
-            loadFileAbsolute(fileName);
+            loadFileAbsolute(fileName, currentNode);
         } else {
-            loadFileAbsolute(this.getRuntime().getCurrentDirectory() + File.separator + fileName);
+            loadFileAbsolute(this.getRuntime().getCurrentDirectory() + File.separator + fileName, currentNode);
         }
     }
 
-    private void loadFileAbsolute(String fileName) {
+    private void loadFileAbsolute(String fileName, RubyNode currentNode) {
         final Source source = sourceManager.get(fileName);
 
         final String code = source.getCode();
@@ -115,7 +115,7 @@ public class RubyContext {
             throw new RuntimeException("Can't read file " + fileName);
         }
         coreLibrary.getLoadedFeatures().slowPush(makeString(fileName));
-        execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
+        execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
     }
 
     public RubySymbol.SymbolTable getSymbolTable() {
@@ -132,19 +132,19 @@ public class RubyContext {
         return symbolTable.getSymbol(name);
     }
 
-    public Object eval(String code) {
+    public Object eval(String code, RubyNode currentNode) {
         final Source source = sourceManager.get("(eval)", code);
-        return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null);
+        return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode);
     }
 
-    public Object eval(String code, RubyModule module) {
+    public Object eval(String code, RubyModule module, RubyNode currentNode) {
         final Source source = sourceManager.get("(eval)", code);
-        return execute(this, source, TranslatorDriver.ParserContext.MODULE, module, null);
+        return execute(this, source, TranslatorDriver.ParserContext.MODULE, module, null, currentNode);
     }
 
-    public Object eval(String code, RubyBinding binding) {
+    public Object eval(String code, RubyBinding binding, RubyNode currentNode) {
         final Source source = sourceManager.get("(eval)", code);
-        return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame());
+        return execute(this, source, TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame(), currentNode);
     }
 
     public void runShell(Node node, MaterializedFrame frame) {
@@ -169,8 +169,6 @@ public class RubyContext {
 
                 System.out.println("=> " + result.getResult());
 
-
-
                 existingLocals = result.getFrame();
             } catch (BreakShellException e) {
                 return;
@@ -182,11 +180,11 @@ public class RubyContext {
 
     public ShellResult evalShell(String code, MaterializedFrame existingLocals) {
         final Source source = sourceManager.get("(shell)", code);
-        return (ShellResult) execute(this, source, TranslatorDriver.ParserContext.SHELL, coreLibrary.getMainObject(), existingLocals);
+        return (ShellResult) execute(this, source, TranslatorDriver.ParserContext.SHELL, coreLibrary.getMainObject(), existingLocals, null);
     }
 
-    public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame) {
-        final RubyParserResult parseResult = translator.parse(context, source, parserContext, parentFrame);
+    public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode) {
+        final RubyParserResult parseResult = translator.parse(context, source, parserContext, parentFrame, currentNode);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
         return callTarget.call(RubyArguments.pack(parentFrame, self, null));
     }

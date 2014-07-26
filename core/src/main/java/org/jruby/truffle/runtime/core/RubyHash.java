@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import java.util.*;
 
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
@@ -21,17 +22,17 @@ public class RubyHash extends RubyObject {
 
     /**
      * The class from which we create the object that is {@code Hash}. A subclass of
-     * {@link org.jruby.truffle.runtime.core.RubyClass} so that we can override {@link #newInstance} and allocate a
+     * {@link org.jruby.truffle.runtime.core.RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
      * {@link RubyHash} rather than a normal {@link org.jruby.truffle.runtime.core.RubyBasicObject}.
      */
     public static class RubyHashClass extends RubyClass {
 
         public RubyHashClass(RubyClass objectClass) {
-            super(null, objectClass, "Hash");
+            super(null, null, objectClass, "Hash");
         }
 
         @Override
-        public RubyBasicObject newInstance() {
+        public RubyBasicObject newInstance(RubyNode currentNode) {
             return new RubyHash(this, null, null, 0);
         }
 

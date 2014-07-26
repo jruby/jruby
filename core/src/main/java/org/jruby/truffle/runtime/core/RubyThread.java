@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import java.util.*;
 import java.util.concurrent.*;
 
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.subsystems.*;
@@ -25,17 +26,17 @@ public class RubyThread extends RubyObject {
 
     /**
      * The class from which we create the object that is {@code Thread}. A subclass of
-     * {@link RubyClass} so that we can override {@link #newInstance} and allocate a
+     * {@link RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
      * {@link RubyThread} rather than a normal {@link RubyBasicObject}.
      */
     public static class RubyThreadClass extends RubyClass {
 
         public RubyThreadClass(RubyClass objectClass) {
-            super(null, objectClass, "Thread");
+            super(null, null, objectClass, "Thread");
         }
 
         @Override
-        public RubyBasicObject newInstance() {
+        public RubyBasicObject newInstance(RubyNode currentNode) {
             return new RubyThread(this, getContext().getThreadManager());
         }
 
@@ -53,7 +54,7 @@ public class RubyThread extends RubyObject {
         this.manager = manager;
     }
 
-    public void initialize(RubyProc block) {
+    public void initialize(final RubyNode currentNode, RubyProc block) {
         final RubyProc finalBlock = block;
 
         initialize(new Runnable() {
@@ -63,7 +64,7 @@ public class RubyThread extends RubyObject {
                 try {
                     finalBlock.call();
                 } catch (ReturnException e) {
-                    exception = getRubyClass().getContext().getCoreLibrary().unexpectedReturn();
+                    exception = getRubyClass().getContext().getCoreLibrary().unexpectedReturn(currentNode);
                 }
             }
 

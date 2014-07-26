@@ -13,6 +13,7 @@ import java.util.*;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.utilities.*;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.*;
 
@@ -23,7 +24,7 @@ public class LookupTerminal implements LookupNode {
 
     public static final LookupTerminal INSTANCE = new LookupTerminal();
 
-    public boolean setClassVariableIfAlreadySet(String variableName, Object value) {
+    public boolean setClassVariableIfAlreadySet(RubyNode currentNode, String variableName, Object value) {
         return false;
     }
 

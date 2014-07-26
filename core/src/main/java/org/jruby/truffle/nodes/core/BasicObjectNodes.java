@@ -174,7 +174,7 @@ public abstract class BasicObjectNodes {
         }
 
         private Object methodMissing(RubyBasicObject self, RubySymbol name, Object[] args, RubyProc block) {
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name.toString(), self.toString()));
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name.toString(), self.toString(), this));
         }
 
 
@@ -221,7 +221,7 @@ public abstract class BasicObjectNodes {
 
             final String name = args[0].toString();
             final Object[] sendArgs = Arrays.copyOfRange(args, 1, args.length);
-            return self.send(name, block, sendArgs);
+            return self.send(this, name, block, sendArgs);
         }
 
     }

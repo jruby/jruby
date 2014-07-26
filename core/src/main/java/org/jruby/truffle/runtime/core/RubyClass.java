@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import java.util.*;
 
 import com.oracle.truffle.api.CompilerDirectives.*;
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.lookup.*;
@@ -31,12 +32,12 @@ public class RubyClass extends RubyModule {
     public static class RubyClassClass extends RubyClass {
 
         public RubyClassClass(RubyContext context) {
-            super(context, null, null, null, "Class");
+            super(null, context, null, null, null, "Class");
         }
 
         @Override
-        public RubyBasicObject newInstance() {
-            return new RubyClass(null, getContext().getCoreLibrary().getObjectClass(), "(unnamed class)");
+        public RubyBasicObject newInstance(RubyNode currentNode) {
+            return new RubyClass(null, null, getContext().getCoreLibrary().getObjectClass(), "(unnamed class)");
         }
 
     }
@@ -52,17 +53,17 @@ public class RubyClass extends RubyModule {
      */
     private ObjectLayout objectLayoutForInstances = null;
 
-    public RubyClass(RubyModule parentModule, RubyClass rubySuperclass, String name) {
-        this(parentModule, rubySuperclass, name, false);
+    public RubyClass(Node currentNode, RubyModule parentModule, RubyClass rubySuperclass, String name) {
+        this(currentNode, parentModule, rubySuperclass, name, false);
     }
 
-    public RubyClass(RubyModule parentModule, RubyClass rubySuperclass, String name, boolean isSingleton) {
-        this(rubySuperclass.getContext(), rubySuperclass.getContext().getCoreLibrary().getClassClass(), parentModule, rubySuperclass, name);
+    public RubyClass(Node currentNode, RubyModule parentModule, RubyClass rubySuperclass, String name, boolean isSingleton) {
+        this(currentNode, rubySuperclass.getContext(), rubySuperclass.getContext().getCoreLibrary().getClassClass(), parentModule, rubySuperclass, name);
 
         // TODO(CS): Why am I doing this? Why does it break if I don't?
 
         if (!isSingleton) {
-            getSingletonClass();
+            getSingletonClass(currentNode);
         }
     }
 
@@ -70,13 +71,13 @@ public class RubyClass extends RubyModule {
      * This constructor supports initialization and solves boot-order problems and should not
      * normally be used from outside this class.
      */
-    public RubyClass(RubyContext context, RubyClass classClass, RubyModule parentModule, RubyClass superclass, String name) {
+    public RubyClass(Node currentNode, RubyContext context, RubyClass classClass, RubyModule parentModule, RubyClass superclass, String name) {
         super(context, classClass, parentModule, name);
 
         if (superclass == null) {
             objectLayoutForInstances = ObjectLayout.EMPTY;
         } else {
-            unsafeSetSuperclass(superclass);
+            unsafeSetSuperclass(currentNode, superclass);
         }
     }
 
@@ -86,7 +87,7 @@ public class RubyClass extends RubyModule {
     }
 
     @Override
-    public RubyClass getSingletonClass() {
+    public RubyClass getSingletonClass(Node currentNode) {
         RubyNode.notDesignedForCompilation();
 
         if (rubySingletonClass == null) {
@@ -95,10 +96,10 @@ public class RubyClass extends RubyModule {
             if (superclass == null) {
                 singletonSuperclass = getRubyClass();
             } else {
-                singletonSuperclass = superclass.getSingletonClass();
+                singletonSuperclass = superclass.getSingletonClass(currentNode);
             }
 
-            rubySingletonClass = new RubyClass(getParentModule(), singletonSuperclass, String.format("#<Class:%s>", getName()), true);
+            rubySingletonClass = new RubyClass(currentNode, getParentModule(), singletonSuperclass, String.format("#<Class:%s>", getName()), true);
 
             lookupNode = new LookupFork(rubySingletonClass, lookupNode);
         }
@@ -110,7 +111,7 @@ public class RubyClass extends RubyModule {
      * This method supports initialization and solves boot-order problems and should not normally be
      * used.
      */
-    public void unsafeSetSuperclass(RubyClass newSuperclass) {
+    public void unsafeSetSuperclass(Node currentNode, RubyClass newSuperclass) {
         RubyNode.notDesignedForCompilation();
 
         assert superclass == null;
@@ -119,13 +120,13 @@ public class RubyClass extends RubyModule {
         superclass.addDependent(this);
         superclass.subClasses.add(this);
 
-        include(superclass);
+        include(currentNode, superclass);
 
         objectLayoutForInstances = new ObjectLayout(superclass.objectLayoutForInstances);
     }
 
     @SlowPath
-    public RubyBasicObject newInstance() {
+    public RubyBasicObject newInstance(RubyNode currentNode) {
         return new RubyObject(this);
     }
 

@@ -16,15 +16,17 @@ import com.oracle.truffle.api.*;
  */
 public final class CoreSourceSection implements NullSourceSection {
 
-    private final String name;
+    private final String className;
+    private final String methodName;
 
-    public CoreSourceSection(String name) {
-        this.name = name;
+    public CoreSourceSection(String className, String methodName) {
+        this.className = className;
+        this.methodName = methodName;
     }
 
     @Override
     public Source getSource() {
-        return new CoreSource(name);
+        return new CoreSource(toString());
     }
 
     @Override
@@ -54,12 +56,12 @@ public final class CoreSourceSection implements NullSourceSection {
 
     @Override
     public String getIdentifier() {
-        return null;
+        return methodName;
     }
 
     @Override
     public String getCode() {
-        return name;
+        return toString();
     }
 
     @Override
@@ -69,7 +71,7 @@ public final class CoreSourceSection implements NullSourceSection {
 
     @Override
     public String toString() {
-        return name;
+        return className + "#" + methodName;
     }
 
 }

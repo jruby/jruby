@@ -502,7 +502,7 @@ public abstract class StringNodes {
         public RubyString gsub(RubyString string, RubyString regexpString, RubyString replacement) {
             notDesignedForCompilation();
 
-            final RubyRegexp regexp = new RubyRegexp(getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
             return gsub(string, regexp, replacement);
         }
 
@@ -617,7 +617,7 @@ public abstract class StringNodes {
         public Object match(RubyString string, RubyString regexpString) {
             notDesignedForCompilation();
 
-            final RubyRegexp regexp = new RubyRegexp(getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
             return regexp.match(string.toString());
         }
 
@@ -671,7 +671,7 @@ public abstract class StringNodes {
         public RubyArray scan(RubyString string, RubyString regexpString) {
             notDesignedForCompilation();
 
-            final RubyRegexp regexp = new RubyRegexp(getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.toString(), Option.DEFAULT);
             return scan(string, regexp);
         }
 

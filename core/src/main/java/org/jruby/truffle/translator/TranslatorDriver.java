@@ -40,7 +40,7 @@ public class TranslatorDriver {
         this.context = context;
     }
 
-    public MethodDefinitionNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
+    public MethodDefinitionNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, RubyNode currentNode) {
         final SourceSection sourceSection = new DefaultSourceSection(
                 context.getSourceManager().get(bodyNode.getPosition().getFile()),
                 "(unknown)", bodyNode.getPosition().getStartLine() + 1, -1, -1, -1);
@@ -48,7 +48,7 @@ public class TranslatorDriver {
         final SharedMethodInfo sharedMethod = new SharedMethodInfo(sourceSection, "(unknown)", false, parseTree);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(
-                context, environmentForFrame(context, null), this, allocateReturnID(), true, true, sharedMethod, sharedMethod.getName());
+                context, environmentForFrame(context, null), this, allocateReturnID(), true, true, sharedMethod, sharedMethod.getName(), false);
 
         // All parsing contexts have a visibility slot at their top level
 
@@ -56,12 +56,12 @@ public class TranslatorDriver {
 
         // Translate to Ruby Truffle nodes
 
-        final MethodTranslator translator = new MethodTranslator(context, null, environment, false, false, context.getSourceManager().get(bodyNode.getPosition().getFile()));
+        final MethodTranslator translator = new MethodTranslator(currentNode, context, null, environment, false, false, context.getSourceManager().get(bodyNode.getPosition().getFile()));
 
         return translator.compileFunctionNode(sourceSection, "(unknown)", argsNode, bodyNode, false);
     }
 
-    public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame) {
+    public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, RubyNode currentNode) {
         // Set up the JRuby parser
 
         final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getRuntime());
@@ -104,23 +104,23 @@ public class TranslatorDriver {
                 message = "(no message)";
             }
 
-            throw new RaiseException(new RubyException(context.getCoreLibrary().getSyntaxErrorClass(), message, RubyCallStack.getRubyStacktrace()));
+            throw new RaiseException(new RubyException(context.getCoreLibrary().getSyntaxErrorClass(), context.makeString(message), RubyCallStack.getCallStackAsRubyArray(context, currentNode)));
         }
 
-        return parse(context, source, parserContext, parentFrame, node);
+        return parse(currentNode, context, source, parserContext, parentFrame, node);
     }
 
-    public RubyParserResult parse(RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(new DefaultSourceSection(source, "(root)", 0, 0, 0, 0), "(root)", false, rootNode);
+    public RubyParserResult parse(RubyNode currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(new DefaultSourceSection(source, "<main>", 0, 0, 0, 0), "<main>", false, rootNode);
 
-        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName());
+        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);
 
         // Get the DATA constant
 
         final Object data = getData(context);
 
         if (data != null) {
-            context.getCoreLibrary().getObjectClass().setConstant("DATA", data);
+            context.getCoreLibrary().getObjectClass().setConstant(currentNode, "DATA", data);
         }
 
         // All parsing contexts have a visibility slot at their top level
@@ -132,9 +132,9 @@ public class TranslatorDriver {
         final BodyTranslator translator;
 
         if (parserContext == TranslatorDriver.ParserContext.MODULE) {
-            translator = new ModuleTranslator(context, null, environment, source);
+            translator = new ModuleTranslator(currentNode, context, null, environment, source);
         } else {
-            translator = new BodyTranslator(context, null, environment, source);
+            translator = new BodyTranslator(currentNode, context, null, environment, source);
         }
 
         RubyNode truffleNode;
@@ -212,7 +212,8 @@ public class TranslatorDriver {
         } else {
             final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(SourceSection.NULL, "(unknown)", false, null);
             final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame.getArguments());
-            return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName());
+            // TODO(CS): how do we know if the frame is a block or not?
+            return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);
         }
     }
 

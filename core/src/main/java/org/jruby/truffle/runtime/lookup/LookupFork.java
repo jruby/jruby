@@ -13,6 +13,7 @@ import java.util.*;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.utilities.*;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.*;
 
@@ -29,12 +30,12 @@ public class LookupFork implements LookupNode {
         this.second = second;
     }
 
-    public boolean setClassVariableIfAlreadySet(String variableName, Object value) {
-        if (first.setClassVariableIfAlreadySet(variableName, value)) {
+    public boolean setClassVariableIfAlreadySet(RubyNode currentNode, String variableName, Object value) {
+        if (first.setClassVariableIfAlreadySet(currentNode, variableName, value)) {
             return true;
         }
 
-        return second.setClassVariableIfAlreadySet(variableName, value);
+        return second.setClassVariableIfAlreadySet(currentNode, variableName, value);
     }
 
     @Override

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.utilities.*;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -24,16 +25,15 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
  */
 public class TryNode extends RubyNode {
 
-    @Child protected RubyNode tryPart;
+    @Child protected ExceptionTranslatingNode tryPart;
     @Children final RescueNode[] rescueParts;
     @Child protected RubyNode elsePart;
 
     private final BranchProfile elseProfile = new BranchProfile();
     private final BranchProfile controlFlowProfile = new BranchProfile();
     private final BranchProfile raiseExceptionProfile = new BranchProfile();
-    private final BranchProfile runtimeExceptionProfile = new BranchProfile();
 
-    public TryNode(RubyContext context, SourceSection sourceSection, RubyNode tryPart, RescueNode[] rescueParts, RubyNode elsePart) {
+    public TryNode(RubyContext context, SourceSection sourceSection, ExceptionTranslatingNode tryPart, RescueNode[] rescueParts, RubyNode elsePart) {
         super(context, sourceSection);
         this.tryPart = tryPart;
         this.rescueParts = rescueParts;
@@ -58,14 +58,6 @@ public class TryNode extends RubyNode {
 
                 try {
                     return handleException(frame, exception);
-                } catch (RetryException e) {
-                    continue;
-                }
-            } catch (RuntimeException exception) {
-                runtimeExceptionProfile.enter();
-
-                try {
-                    return handleException(frame, new RaiseException(ExceptionTranslator.translateException(getContext(), exception)));
                 } catch (RetryException e) {
                     continue;
                 }

@@ -12,27 +12,27 @@ package org.jruby.truffle;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
-import org.jruby.*;
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.Node;
+import org.jruby.TruffleBridge;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.TruffleBridge;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.CoreMethodNodeManager;
 import org.jruby.truffle.nodes.methods.MethodDefinitionNode;
+import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyParserResult;
-import org.jruby.truffle.runtime.control.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.translator.TranslatorDriver;
 
 public class TruffleBridgeImpl implements TruffleBridge {
 
-    private final Ruby runtime;
+    private final org.jruby.Ruby runtime;
     private final RubyContext truffleContext;
 
-    public TruffleBridgeImpl(Ruby runtime) {
+    public TruffleBridgeImpl(org.jruby.Ruby runtime) {
         assert runtime != null;
 
         this.runtime = runtime;
@@ -80,16 +80,30 @@ public class TruffleBridgeImpl implements TruffleBridge {
     }
 
     @Override
-    public TruffleMethod truffelize(DynamicMethod originalMethod, ArgsNode argsNode, Node bodyNode) {
-        final MethodDefinitionNode methodDefinitionNode = truffleContext.getTranslator().parse(truffleContext, null, argsNode, bodyNode);
+    public TruffleMethod truffelize(DynamicMethod originalMethod, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
+        final MethodDefinitionNode methodDefinitionNode = truffleContext.getTranslator().parse(truffleContext, null, argsNode, bodyNode, null);
         return new TruffleMethod(originalMethod, Truffle.getRuntime().createCallTarget(methodDefinitionNode.getMethodRootNode()));
     }
 
     @Override
     public Object execute(TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
-        final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, truffleContext.getSourceManager().get(rootNode.getPosition().getFile()), parserContext, parentFrame, rootNode);
-        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
-        return callTarget.call(RubyArguments.pack(parentFrame, self, null));
+        try {
+            final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, truffleContext.getSourceManager().get(rootNode.getPosition().getFile()), parserContext, parentFrame, null);
+            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
+            return callTarget.call(RubyArguments.pack(parentFrame, self, null));
+        } catch (RaiseException e) {
+            // TODO(CS): what's this cast about?
+            printUncaughtException((RubyException) e.getRubyException());
+            return NilPlaceholder.INSTANCE;
+        }
+    }
+
+    private void printUncaughtException(RubyException exception) {
+        System.err.println(exception.getMessage());
+
+        for (Object line : exception.getBacktrace().slowToArray()) {
+            System.err.println(line);
+        }
     }
 
     @Override

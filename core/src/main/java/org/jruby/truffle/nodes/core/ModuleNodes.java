@@ -53,7 +53,7 @@ public abstract class ModuleNodes {
         public RubyModule aliasMethod(RubyModule module, RubySymbol newName, RubySymbol oldName) {
             notDesignedForCompilation();
 
-            module.alias(newName.toString(), oldName.toString());
+            module.alias(this, newName.toString(), oldName.toString());
             return module;
         }
     }
@@ -73,7 +73,7 @@ public abstract class ModuleNodes {
         public NilPlaceholder appendFeatures(RubyModule module, RubyModule other) {
             notDesignedForCompilation();
 
-            module.appendFeatures(other);
+            module.appendFeatures(this, other);
             return NilPlaceholder.INSTANCE;
         }
     }
@@ -104,13 +104,13 @@ public abstract class ModuleNodes {
                     throw new UnsupportedOperationException();
                 }
 
-                attrReader(getContext(), sourceSection, module, accessorName);
+                attrReader(this, getContext(), sourceSection, module, accessorName);
             }
 
             return NilPlaceholder.INSTANCE;
         }
 
-        public static void attrReader(RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
+        public static void attrReader(RubyNode currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
             CompilerDirectives.transferToInterpreter();
 
             final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, Arity.NO_ARGS);
@@ -126,7 +126,7 @@ public abstract class ModuleNodes {
             final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final RubyMethod method = new RubyMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null, true);
-            module.addMethod(method);
+            module.addMethod(currentNode, method);
         }
     }
 
@@ -156,13 +156,13 @@ public abstract class ModuleNodes {
                     throw new UnsupportedOperationException();
                 }
 
-                attrWriter(getContext(), sourceSection, module, accessorName);
+                attrWriter(this, getContext(), sourceSection, module, accessorName);
             }
 
             return NilPlaceholder.INSTANCE;
         }
 
-        public static void attrWriter(RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
+        public static void attrWriter(RubyNode currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
             CompilerDirectives.transferToInterpreter();
 
             final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, Arity.ONE_ARG);
@@ -179,7 +179,7 @@ public abstract class ModuleNodes {
             final RubyRootNode rootNode = new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final RubyMethod method = new RubyMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null, true);
-            module.addMethod(method);
+            module.addMethod(currentNode, method);
         }
     }
 
@@ -209,16 +209,16 @@ public abstract class ModuleNodes {
                     throw new UnsupportedOperationException();
                 }
 
-                attrAccessor(getContext(), sourceSection, module, accessorName);
+                attrAccessor(this, getContext(), sourceSection, module, accessorName);
             }
 
             return NilPlaceholder.INSTANCE;
         }
 
-        public static void attrAccessor(RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
+        public static void attrAccessor(RubyNode currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
             CompilerDirectives.transferToInterpreter();
-            AttrReaderNode.attrReader(context, sourceSection, module, name);
-            AttrWriterNode.attrWriter(context, sourceSection, module, name);
+            AttrReaderNode.attrReader(currentNode, context, sourceSection, module, name);
+            AttrWriterNode.attrWriter(currentNode, context, sourceSection, module, name);
         }
 
     }
@@ -239,7 +239,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final Source source = getContext().getSourceManager().get("(eval)", code.toString());
-            return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize());
+            return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
         }
 
         @Specialization(order = 2)
@@ -247,7 +247,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final Source source = getContext().getSourceManager().get(file.toString(), code.toString());
-            return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize());
+            return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
         }
 
         @Specialization(order = 3)
@@ -255,7 +255,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final Source source = getContext().getSourceManager().get(file.toString(), code.toString());
-            return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize());
+            return getContext().execute(getContext(), source, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this);
         }
 
         @Specialization(order = 4)
@@ -412,7 +412,7 @@ public abstract class ModuleNodes {
 
             final CallTarget modifiedCallTarget = Truffle.getRuntime().createCallTarget(modifiedRootNode);
             final RubyMethod modifiedMethod = new RubyMethod(proc.getSharedMethodInfo(), name.toString(), null, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame(), true);
-            module.addMethod(modifiedMethod);
+            module.addMethod(this, modifiedMethod);
         }
 
     }
@@ -503,7 +503,7 @@ public abstract class ModuleNodes {
         public RubyModule moduleEval(RubyModule module, RubyString code, @SuppressWarnings("unused") Object file, @SuppressWarnings("unused") Object line) {
             notDesignedForCompilation();
 
-            module.moduleEval(code.toString());
+            module.moduleEval(this, code.toString());
             return module;
         }
     }
@@ -552,7 +552,7 @@ public abstract class ModuleNodes {
                         throw new UnsupportedOperationException();
                     }
 
-                    module.getSingletonClass().addMethod(method);
+                    module.getSingletonClass(this).addMethod(this, method);
                 }
             }
 
@@ -575,7 +575,7 @@ public abstract class ModuleNodes {
         public RubyModule doPublic(RubyModule module, Object... args) {
             notDesignedForCompilation();
 
-            module.visibilityMethod(args, Visibility.PUBLIC);
+            module.visibilityMethod(this, args, Visibility.PUBLIC);
             return module;
         }
     }
@@ -595,7 +595,7 @@ public abstract class ModuleNodes {
         public RubyModule doPrivate(RubyModule module, Object... args) {
             notDesignedForCompilation();
 
-            module.visibilityMethod(args, Visibility.PRIVATE);
+            module.visibilityMethod(this, args, Visibility.PRIVATE);
             return module;
         }
     }
@@ -615,7 +615,7 @@ public abstract class ModuleNodes {
         public RubyModule privateClassMethod(RubyModule module, Object... args) {
             notDesignedForCompilation();
 
-            final RubyClass moduleSingleton = module.getSingletonClass();
+            final RubyClass moduleSingleton = module.getSingletonClass(this);
 
             for (Object arg : args) {
                 final String methodName;
@@ -632,7 +632,7 @@ public abstract class ModuleNodes {
                     throw new RuntimeException("Couldn't find method " + arg.toString());
                 }
 
-                moduleSingleton.addMethod(method.withNewVisibility(Visibility.PRIVATE));
+                moduleSingleton.addMethod(this, method.withNewVisibility(Visibility.PRIVATE));
             }
 
             return module;
@@ -736,7 +736,7 @@ public abstract class ModuleNodes {
 
             for (Object ob : args) {
                 if (ob instanceof RubySymbol){
-                    module.changeConstantVisibility((RubySymbol) ob, true);
+                    module.changeConstantVisibility(this, (RubySymbol) ob, true);
                 }
             }
             return module;
@@ -760,7 +760,7 @@ public abstract class ModuleNodes {
 
             for (Object ob : args) {
                 if (ob instanceof RubySymbol){
-                    module.changeConstantVisibility((RubySymbol) ob, false);
+                    module.changeConstantVisibility(this, (RubySymbol) ob, false);
                 }
             }
             return module;
@@ -782,7 +782,7 @@ public abstract class ModuleNodes {
         public RubyModule doProtected(VirtualFrame frame, RubyModule module, Object... args) {
             notDesignedForCompilation();
 
-            module.visibilityMethod(args, Visibility.PROTECTED);
+            module.visibilityMethod(this, args, Visibility.PROTECTED);
             return module;
         }
     }
@@ -802,7 +802,7 @@ public abstract class ModuleNodes {
         public RubyModule removeClassVariable(RubyModule module, RubyString name) {
             notDesignedForCompilation();
 
-            module.removeClassVariable(name.toString());
+            module.removeClassVariable(this, name.toString());
             return module;
         }
 
@@ -810,7 +810,7 @@ public abstract class ModuleNodes {
         public RubyModule removeClassVariable(RubyModule module, RubySymbol name) {
             notDesignedForCompilation();
 
-            module.removeClassVariable(name.toString());
+            module.removeClassVariable(this, name.toString());
             return module;
         }
 
@@ -831,7 +831,7 @@ public abstract class ModuleNodes {
         public RubyModule removeMethod(RubyModule module, RubyString name) {
             notDesignedForCompilation();
 
-            module.removeMethod(name.toString());
+            module.removeMethod(this, name.toString());
             return module;
         }
 
@@ -839,7 +839,7 @@ public abstract class ModuleNodes {
         public RubyModule removeMethod(RubyModule module, RubySymbol name) {
             notDesignedForCompilation();
 
-            module.removeMethod(name.toString());
+            module.removeMethod(this, name.toString());
             return module;
         }
 
@@ -878,7 +878,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final RubyMethod method = module.lookupMethod(name.toString());
-            module.undefMethod(method);
+            module.undefMethod(this, method);
             return module;
         }
 
@@ -887,7 +887,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final RubyMethod method = module.lookupMethod(name.toString());
-            module.undefMethod(method);
+            module.undefMethod(this, method);
             return module;
         }
 
@@ -908,7 +908,7 @@ public abstract class ModuleNodes {
         public RubyModule setConstant(RubyModule module, RubyString name, Object object) {
             notDesignedForCompilation();
 
-            module.setConstant(name.toString(), object);
+            module.setConstant(this, name.toString(), object);
             return module;
         }
 

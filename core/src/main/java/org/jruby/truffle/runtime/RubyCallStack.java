@@ -9,84 +9,23 @@
  */
 package org.jruby.truffle.runtime;
 
-import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.RootCallTarget;
-import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyObject;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 
 public abstract class RubyCallStack {
 
     public static void dump(RubyContext context, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-
-        System.err.println("call stack ----------");
-
-        if (currentNode != null) {
-            System.err.println("    at " + currentNode.getEncapsulatingSourceSection());
+        for (String line : getCallStack(currentNode, context)) {
+            System.err.println(line);
         }
-
-        System.err.println("    in " + Truffle.getRuntime().getCurrentFrame().getCallTarget());
-
-        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
-            dumpFrame(context, frame);
-        }
-
-        System.err.println("---------------------");
-    }
-
-    private static void dumpFrame(RubyContext context, FrameInstance frame) {
-        String sourceInfo = frame.getCallNode().getEncapsulatingSourceSection().toString();
-        System.err.print("\tfrom " + sourceInfo + " in " + formatMethodName(frame));
-
-        MaterializedFrame f = frame.getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize();
-        FrameDescriptor fd = f.getFrameDescriptor();
-        boolean first = true;
-        for (Object ident : fd.getIdentifiers()) {
-            if (ident instanceof String) {
-                RubyBasicObject value = context.getCoreLibrary().box(f.getValue(fd.findFrameSlot(ident)));
-                // TODO(CS): slow path send
-                String repr = value.send("inspect", null).toString();
-                if (first) {
-                    first = false;
-                    System.err.print(" with ");
-                } else {
-                    System.err.print(", ");
-                }
-                int maxLength = 12;
-                if (repr.length() > maxLength) {
-                    repr = repr.substring(0, maxLength) + "... (" + value.getRubyClass().getName() + ")";
-                }
-                System.err.print(ident + " = " + repr);
-            }
-        }
-        System.err.println();
-    }
-
-    public static String formatMethodName(FrameInstance frame) {
-        String methodName;
-        RubyMethod method = getMethod(frame);
-        if (method == null) {
-            methodName = "<main>";
-        } else {
-            RubyModule module = method.getDeclaringModule();
-            if (module == null) {
-                methodName = "?#" + method.getName();
-            } else {
-                methodName = module.getName() + "#" + method.getName();
-            }
-        }
-        return methodName;
     }
 
     public static FrameInstance getCallerFrame() {
@@ -163,24 +102,87 @@ public abstract class RubyCallStack {
         return getCurrentMethod().getDeclaringModule();
     }
 
-    public static String getRubyStacktrace(){
-        StringBuilder stack = new StringBuilder();
-        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
-            stack.append("from " + frame.getCallNode().getEncapsulatingSourceSection() +"\n");
-        }
-        try {
-            return String.format("%s at %s \n %s", getCurrentMethod().getName(), getCurrentMethod().getSharedMethodInfo().getSourceSection().getShortDescription(), stack);
-        } catch(UnsupportedOperationException ex) {
-            return String.format("(root) at %s:%s", getFilename(), getLineNumber());
-        }
-    }
-
     public static String getFilename(){
         return getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName();
     }
 
     public static int getLineNumber(){
         return getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine();
+    }
+
+    public static String[] getCallStack(Node currentNode, RubyContext context) {
+        final ArrayList<String> callStack = new ArrayList<>();
+
+        final String suffix = "(suffix)";
+
+        if (currentNode != null) {
+            callStack.add(formatInLine(currentNode.getEncapsulatingSourceSection(), suffix));
+        }
+
+        final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
+
+        if (currentFrame.getCallNode() != null) {
+            callStack.add(formatFromLine(context, currentFrame.getCallNode().getEncapsulatingSourceSection(), currentFrame.getFrame(FrameInstance.FrameAccess.READ_ONLY, false)));
+        }
+
+        // TODO: pretty sure putting frame instances on the heap is wrong, but the API will change soon anyway
+
+        final ArrayList<FrameInstance> frameInstances = new ArrayList<>();
+
+        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
+            frameInstances.add(frame);
+        }
+
+        for (FrameInstance frame : frameInstances) {
+            callStack.add(formatFromLine(context, frame.getCallNode().getEncapsulatingSourceSection(), frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, false)));
+        }
+
+        return callStack.toArray(new String[callStack.size()]);
+    }
+
+    private static String formatInLine(SourceSection sourceSection, String suffix) {
+        return String.format("%s:%d:in `%s': %s", sourceSection.getSource().getName(), sourceSection.getStartLine(), sourceSection.getIdentifier(), suffix);
+    }
+
+    private static String formatFromLine(RubyContext context, SourceSection sourceSection, Frame frame) {
+        return String.format("\tfrom %s:%d:in `%s'%s", sourceSection.getSource().getName(), sourceSection.getStartLine(), sourceSection.getIdentifier(), formatLocals(context, frame));
+    }
+
+    private static String formatLocals(RubyContext context, Frame frame) {
+        final StringBuilder builder = new StringBuilder();
+        FrameDescriptor fd = frame.getFrameDescriptor();
+        boolean first = true;
+        for (Object ident : fd.getIdentifiers()) {
+            if (ident instanceof String) {
+                RubyBasicObject value = context.getCoreLibrary().box(frame.getValue(fd.findFrameSlot(ident)));
+                // TODO(CS): slow path send
+                String repr = value.send(null, "inspect", null).toString();
+                if (first) {
+                    first = false;
+                    builder.append(" with ");
+                } else {
+                    builder.append(", ");
+                }
+                int maxLength = 12;
+                if (repr.length() > maxLength) {
+                    repr = repr.substring(0, maxLength) + "... (" + value.getRubyClass().getName() + ")";
+                }
+                builder.append(ident + " = " + repr);
+            }
+        }
+        return builder.toString();
+    }
+
+    public static RubyArray getCallStackAsRubyArray(RubyContext context, Node currentNode) {
+        final String[] callStack = getCallStack(currentNode, context);
+
+        final Object[] callStackAsRubyString = new Object[callStack.length];
+
+        for (int n = 0;n < callStack.length; n++) {
+            callStackAsRubyString[n] = context.makeString(callStack[n]);
+        }
+
+        return RubyArray.fromObjects(context.getCoreLibrary().getArrayClass(), callStackAsRubyString);
     }
 
 }

@@ -73,7 +73,7 @@ public class UninitializedReadConstantNode extends ReadConstantChainNode {
         }
 
         if (constant == null) {
-            throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(name));
+            throw new RaiseException(context.getCoreLibrary().nameErrorUninitializedConstant(name, this));
         }
 
         replace(new CachedReadConstantNode(receiver.getRubyClass(), constant.value, this));

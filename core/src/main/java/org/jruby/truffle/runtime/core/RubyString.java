@@ -24,17 +24,17 @@ public class RubyString extends RubyObject {
 
     /**
      * The class from which we create the object that is {@code String}. A subclass of
-     * {@link RubyClass} so that we can override {@link #newInstance} and allocate a
+     * {@link RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
      * {@link RubyString} rather than a normal {@link RubyBasicObject}.
      */
     public static class RubyStringClass extends RubyClass {
 
         public RubyStringClass(RubyClass objectClass) {
-            super(null, objectClass, "String");
+            super(null, null, objectClass, "String");
         }
 
         @Override
-        public RubyBasicObject newInstance() {
+        public RubyBasicObject newInstance(RubyNode currentNode) {
             return new RubyString(this, new ByteList());
         }
 

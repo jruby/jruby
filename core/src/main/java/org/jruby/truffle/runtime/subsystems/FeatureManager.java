@@ -14,6 +14,7 @@ import java.net.*;
 import java.util.Arrays;
 
 import org.jruby.common.IRubyWarnings;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -32,7 +33,7 @@ public class FeatureManager {
         this.context = context;
     }
 
-    public boolean require(String feature) throws IOException {
+    public boolean require(String feature, RubyNode currentNode) throws IOException {
         final RubyModule.RubyConstant dataConstantBefore = context.getCoreLibrary().getObjectClass().lookupConstant("DATA");
 
         try {
@@ -67,13 +68,13 @@ public class FeatureManager {
 
             // Try as a full path
 
-            if (requireInPath("", feature)) {
+            if (requireInPath("", feature, currentNode)) {
                 return true;
             }
 
             // Try as a path relative to the current director
 
-            if (requireInPath(context.getRuntime().getCurrentDirectory(), feature)) {
+            if (requireInPath(context.getRuntime().getCurrentDirectory(), feature, currentNode)) {
                 return true;
             }
 
@@ -82,44 +83,44 @@ public class FeatureManager {
             for (Object pathObject : context.getCoreLibrary().getLoadPath().slowToArray()) {
                 final String path = pathObject.toString();
 
-                if (requireInPath(path, feature)) {
+                if (requireInPath(path, feature, currentNode)) {
                     return true;
                 }
             }
 
             // Didn't find the feature
 
-            throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature));
+            throw new RaiseException(context.getCoreLibrary().loadErrorCannotLoad(feature, currentNode));
         } finally {
             if (dataConstantBefore == null) {
-                context.getCoreLibrary().getObjectClass().removeConstant("DATA");
+                context.getCoreLibrary().getObjectClass().removeConstant(currentNode, "DATA");
             } else {
-                context.getCoreLibrary().getObjectClass().setConstant("DATA", dataConstantBefore.value);
+                context.getCoreLibrary().getObjectClass().setConstant(currentNode, "DATA", dataConstantBefore.value);
             }
         }
     }
 
-    public boolean requireInPath(String path, String feature) throws IOException {
-        if (requireFile(feature)) {
+    public boolean requireInPath(String path, String feature, RubyNode currentNode) throws IOException {
+        if (requireFile(feature, currentNode)) {
             return true;
         }
 
-        if (requireFile(feature + ".rb")) {
+        if (requireFile(feature + ".rb", currentNode)) {
             return true;
         }
 
-        if (requireFile(path + File.separator + feature)) {
+        if (requireFile(path + File.separator + feature, currentNode)) {
             return true;
         }
 
-        if (requireFile(path + File.separator + feature + ".rb")) {
+        if (requireFile(path + File.separator + feature + ".rb", currentNode)) {
             return true;
         }
 
         return false;
     }
 
-    private boolean requireFile(String fileName) throws IOException {
+    private boolean requireFile(String fileName, RubyNode currentNode) throws IOException {
         if (Arrays.asList(context.getCoreLibrary().getLoadedFeatures().slowToArray()).contains(fileName)) {
             return true;
         }
@@ -130,7 +131,7 @@ public class FeatureManager {
          */
 
         if (new File(fileName).isFile()) {
-            context.loadFile(fileName);
+            context.loadFile(fileName, currentNode);
             context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(fileName));
             return true;
         } else {
@@ -150,7 +151,7 @@ public class FeatureManager {
                 return false;
             }
 
-            context.load(context.getSourceManager().get(url.toString(), inputStream));
+            context.load(context.getSourceManager().get(url.toString(), inputStream), currentNode);
             context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(fileName));
             ((RubyArray) context.getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$LOADED_FEATURES")).slowPush(context.makeString(fileName));
             return true;

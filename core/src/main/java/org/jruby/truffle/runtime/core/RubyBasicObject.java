@@ -14,6 +14,7 @@ import java.util.Map.Entry;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
@@ -68,7 +69,7 @@ public class RubyBasicObject extends ObjectStorage {
         }
     }
 
-    public RubyClass getSingletonClass() {
+    public RubyClass getSingletonClass(Node currentNode) {
         RubyNode.notDesignedForCompilation();
 
         if (rubySingletonClass == null) {
@@ -79,9 +80,9 @@ public class RubyBasicObject extends ObjectStorage {
             if (getRubyClass() == coreLibrary.getNilClass() || getRubyClass() == coreLibrary.getTrueClass() || getRubyClass() == coreLibrary.getFalseClass()) {
                 rubySingletonClass = getRubyClass();
             } else if (getRubyClass() == coreLibrary.getFixnumClass() || getRubyClass() == coreLibrary.getFloatClass() || getRubyClass() == coreLibrary.getSymbolClass()) {
-                throw new RaiseException(coreLibrary.typeError("can't define singleton"));
+                throw new RaiseException(coreLibrary.typeError("can't define singleton", currentNode));
             } else {
-                rubySingletonClass = new RubyClass(rubyClass.getParentModule(), rubyClass, String.format("#<Class:#<%s:0x%x>>", rubyClass.getName(), getObjectID()), true);
+                rubySingletonClass = new RubyClass(currentNode, rubyClass.getParentModule(), rubyClass, String.format("#<Class:#<%s:0x%x>>", rubyClass.getName(), getObjectID()), true);
                 lookupNode = new LookupFork(rubySingletonClass, rubyClass);
                 lookupNodeChanged();
             }
@@ -131,19 +132,19 @@ public class RubyBasicObject extends ObjectStorage {
         setInstanceVariables(instanceVariables);
     }
 
-    public void extend(RubyModule module) {
+    public void extend(RubyModule module, RubyNode currentNode) {
         RubyNode.notDesignedForCompilation();
 
-        getSingletonClass().include(module);
+        getSingletonClass(currentNode).include(currentNode, module);
     }
 
-    public Object send(String name, RubyProc block, Object... args) {
+    public Object send(RubyNode currentNode, String name, RubyProc block, Object... args) {
         RubyNode.notDesignedForCompilation();
 
         final RubyMethod method = getLookupNode().lookupMethod(name);
 
         if (method == null || method.isUndefined()) {
-            throw new RaiseException(getRubyClass().getContext().getCoreLibrary().noMethodError(name, toString()));
+            throw new RaiseException(getRubyClass().getContext().getCoreLibrary().noMethodError(name, toString(), currentNode));
         }
 
         return method.call(this, block, args);

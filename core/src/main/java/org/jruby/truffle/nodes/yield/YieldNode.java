@@ -47,7 +47,7 @@ public class YieldNode extends RubyNode {
 
         if (block == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().noBlockToYieldTo());
+            throw new RaiseException(getContext().getCoreLibrary().noBlockToYieldTo(this));
         }
 
         if (unsplat) {

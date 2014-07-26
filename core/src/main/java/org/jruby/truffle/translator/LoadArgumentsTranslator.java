@@ -45,8 +45,8 @@ public class LoadArgumentsTranslator extends Translator {
 
     private org.jruby.ast.ArgsNode argsNode;
 
-    public LoadArgumentsTranslator(RubyContext context, Source source, boolean isBlock, BodyTranslator methodBodyTranslator) {
-        super(context, source);
+    public LoadArgumentsTranslator(RubyNode currentNode, RubyContext context, Source source, boolean isBlock, BodyTranslator methodBodyTranslator) {
+        super(currentNode, context, source);
         this.isBlock = isBlock;
         this.methodBodyTranslator = methodBodyTranslator;
     }
@@ -278,6 +278,11 @@ public class LoadArgumentsTranslator extends Translator {
 
     protected RubyNode loadArray(SourceSection sourceSection) {
         return ReadLocalVariableNodeFactory.create(context, sourceSection, arraySlotStack.peek());
+    }
+
+    @Override
+    protected String getIentifier() {
+        return methodBodyTranslator.getIentifier();
     }
 
 }

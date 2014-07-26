@@ -290,7 +290,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isNull", order = 1)
         public Object setNull(RubyHash hash, Object key, Object value) {
-            hash.checkFrozen();
+            hash.checkFrozen(this);
             final Object[] store = new Object[RubyContext.HASHES_SMALL * 2];
             store[0] = key;
             store[1] = value;
@@ -301,7 +301,7 @@ public abstract class HashNodes {
         @ExplodeLoop
         @Specialization(guards = "isObjectArray", order = 2)
         public Object setObjectArray(VirtualFrame frame, RubyHash hash, Object key, Object value) {
-            hash.checkFrozen();
+            hash.checkFrozen(this);
 
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getStoreSize();
@@ -349,7 +349,7 @@ public abstract class HashNodes {
         public Object setObjectLinkedHashMap(RubyHash hash, Object key, Object value) {
             notDesignedForCompilation();
 
-            hash.checkFrozen();
+            hash.checkFrozen(this);
 
             // TODO(CS): not correct - using Java's Object#equals
 
@@ -377,7 +377,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isNull", order = 1)
         public NilPlaceholder deleteNull(RubyHash hash, Object key) {
-            hash.checkFrozen();
+            hash.checkFrozen(this);
             return NilPlaceholder.INSTANCE;
         }
 
@@ -387,7 +387,7 @@ public abstract class HashNodes {
 
             // TODO(CS): seriously not correct
 
-            hash.checkFrozen();
+            hash.checkFrozen(this);
 
             final Object[] oldStore = (Object[]) hash.getStore();
 
@@ -413,7 +413,7 @@ public abstract class HashNodes {
         public Object delete(RubyHash hash, Object key) {
             notDesignedForCompilation();
 
-            hash.checkFrozen();
+            hash.checkFrozen(this);
 
             final LinkedHashMap<Object, Object> store = (LinkedHashMap<Object, Object>) hash.getStore();
 

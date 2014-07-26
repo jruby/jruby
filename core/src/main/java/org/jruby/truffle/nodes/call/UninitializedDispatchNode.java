@@ -78,7 +78,7 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
                     try {
                         method = lookup(boxedCallingSelf, receiverObject, "method_missing");
                     } catch (UseMethodMissingException e2) {
-                        throw new RaiseException(context.getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing"));
+                        throw new RaiseException(context.getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing", this));
                     }
 
                     BoxedDispatchNode newDispatch = new CachedBoxedMethodMissingDispatchNode(getContext(), receiverObject.getLookupNode(), method, name, this);
@@ -183,7 +183,7 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
                     try {
                         method = lookup(boxedCallingSelf, receiverObject, "method_missing");
                     } catch (UseMethodMissingException e2) {
-                        throw new RaiseException(context.getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing"));
+                        throw new RaiseException(context.getCoreLibrary().runtimeError(receiverObject.toString() + " didn't have a #method_missing", this));
                     }
 
                     BoxedDispatchNode newDispatch = new CachedBoxedMethodMissingDispatchNode(getContext(), receiverObject.getLookupNode(), method, name, this);

@@ -11,15 +11,9 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
-import com.oracle.truffle.api.RootCallTarget;
-import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
-import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.methods.arguments.BehaveAsBlockNode;
 import org.jruby.truffle.runtime.RubyArguments;
-import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.methods.*;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
@@ -30,17 +24,17 @@ public class RubyProc extends RubyObject {
 
     /**
      * The class from which we create the object that is {@code Proc}. A subclass of
-     * {@link RubyClass} so that we can override {@link #newInstance} and allocate a
+     * {@link RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
      * {@link RubyProc} rather than a normal {@link RubyBasicObject}.
      */
     public static class RubyProcClass extends RubyClass {
 
         public RubyProcClass(RubyClass objectClass) {
-            super(null, objectClass, "Proc");
+            super(null, null, objectClass, "Proc");
         }
 
         @Override
-        public RubyBasicObject newInstance() {
+        public RubyBasicObject newInstance(RubyNode currentNode) {
             return new RubyProc(this, Type.PROC);
         }
 

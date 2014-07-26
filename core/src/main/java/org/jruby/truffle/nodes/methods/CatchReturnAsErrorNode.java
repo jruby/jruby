@@ -35,7 +35,7 @@ public class CatchReturnAsErrorNode extends RubyNode {
             return body.execute(frame);
         } catch (ReturnException e) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().unexpectedReturn());
+            throw new RaiseException(getContext().getCoreLibrary().unexpectedReturn(this));
         }
     }
 

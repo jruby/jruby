@@ -16,6 +16,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -45,6 +46,9 @@ public class ExceptionTranslatingNode extends RubyNode {
         } catch (RaiseException e) {
             rethrowProfile.enter();
             throw e;
+        } catch (ArithmeticException e) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(translate(e));
         } catch (UnsupportedSpecializationException e) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(translate(e));
@@ -54,15 +58,25 @@ public class ExceptionTranslatingNode extends RubyNode {
         }
     }
 
+    private RubyBasicObject translate(ArithmeticException exception) {
+        if (RubyContext.EXCEPTIONS_PRINT_JAVA) {
+            exception.printStackTrace();
+        }
+
+        throw new RaiseException(getContext().getCoreLibrary().zeroDivisionError(this));
+    }
+
     private RubyBasicObject translate(UnsupportedSpecializationException exception) {
-        final UnsupportedSpecializationException specialization = (UnsupportedSpecializationException) exception;
+        if (RubyContext.EXCEPTIONS_PRINT_JAVA) {
+            exception.printStackTrace();
+        }
 
         final StringBuilder builder = new StringBuilder();
         builder.append("Truffle doesn't have a case for the ");
-        builder.append(specialization.getNode().getClass().getName());
+        builder.append(exception.getNode().getClass().getName());
         builder.append(" node with values of type ");
 
-        for (Object value : specialization.getSuppliedValues()) {
+        for (Object value : exception.getSuppliedValues()) {
             builder.append(" ");
 
             if (value instanceof RubyBasicObject) {
@@ -99,7 +113,7 @@ public class ExceptionTranslatingNode extends RubyNode {
 
         builder.append(" - this is either a feature we haven't implemented for Truffle yet, or it might be disallowed in Ruby anyway");
 
-        return new RubyException(getContext().getCoreLibrary().getRubyTruffleErrorClass(), builder.toString());
+        return new RubyException(getContext().getCoreLibrary().getRubyTruffleErrorClass(), getContext().makeString(builder.toString()), RubyCallStack.getCallStackAsRubyArray(getContext(), this));
     }
 
     public RubyBasicObject translate(Exception exception) {
@@ -115,7 +129,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             message = exception.getClass().getSimpleName() + ": " + exception.getMessage();
         }
 
-        return new RubyException(getContext().getCoreLibrary().getRubyTruffleErrorClass(), message/*, RubyCallStack.getRubyStacktrace()*/);
+        return new RubyException(getContext().getCoreLibrary().getRubyTruffleErrorClass(), getContext().makeString(message), RubyCallStack.getCallStackAsRubyArray(getContext(), this));
     }
 
 }

@@ -39,7 +39,7 @@ public abstract class StructNodes {
             }
 
             for (RubySymbol symbol : symbols) {
-                ModuleNodes.AttrAccessorNode.attrAccessor(getContext(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection(), struct, symbol.toString());
+                ModuleNodes.AttrAccessorNode.attrAccessor(this, getContext(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection(), struct, symbol.toString());
             }
 
             if (!RubyNilClass.isNil(block)) {

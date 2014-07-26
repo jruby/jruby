@@ -13,17 +13,17 @@ public class RubyEncoding extends RubyObject{
 
     /**
      * The class from which we create the object that is {@code Encoding}. A subclass of
-     * {@link RubyClass} so that we can override {@link #newInstance} and allocate a
+     * {@link RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
      * {@link RubyEncoding} rather than a normal {@link RubyBasicObject}.
      */
     public static class RubyEncodingClass extends RubyClass {
 
         public RubyEncodingClass(RubyClass objectClass) {
-            super(null, objectClass, "Encoding");
+            super(null, null, objectClass, "Encoding");
         }
 
         @Override
-        public RubyBasicObject newInstance() {
+        public RubyBasicObject newInstance(RubyNode currentNode) {
             return new RubyEncoding(getContext().getCoreLibrary().getEncodingClass(), USASCIIEncoding.INSTANCE);
         }
 

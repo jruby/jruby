@@ -81,7 +81,7 @@ public class DispatchNode extends Node {
         // Check for methods that are explicitly undefined
 
         if (method.isUndefined()) {
-            throw new RaiseException(context.getCoreLibrary().noMethodError(name, receiverBasicObject.toString()));
+            throw new RaiseException(context.getCoreLibrary().noMethodError(name, receiverBasicObject.toString(), this));
         }
 
         // Check visibility
@@ -90,9 +90,9 @@ public class DispatchNode extends Node {
             return method;
         }
 
-        if (!method.isVisibleTo(boxedCallingSelf, receiverBasicObject)) {
+        if (!method.isVisibleTo(this, boxedCallingSelf, receiverBasicObject)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().noMethodError(name, receiverBasicObject.toString()));
+            throw new RaiseException(context.getCoreLibrary().noMethodError(name, receiverBasicObject.toString(), this));
         }
 
         return method;

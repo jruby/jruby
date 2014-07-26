@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.lookup;
 import java.util.*;
 
 import com.oracle.truffle.api.*;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.methods.*;
 
@@ -21,7 +22,7 @@ import org.jruby.truffle.runtime.methods.*;
  */
 public interface LookupNode {
 
-    boolean setClassVariableIfAlreadySet(String variableName, Object value);
+    boolean setClassVariableIfAlreadySet(RubyNode currentNode, String variableName, Object value);
 
     RubyModule.RubyConstant lookupConstant(String constantName);
 
