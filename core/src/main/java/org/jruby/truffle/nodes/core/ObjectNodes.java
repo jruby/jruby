@@ -257,7 +257,7 @@ public abstract class ObjectNodes {
             notDesignedForCompilation();
 
             for (int n = 0; n < args.length; n++) {
-                self.extend((RubyModule) args[n]);
+                self.extend((RubyModule) args[n], this);
             }
 
             return self;
@@ -322,7 +322,7 @@ public abstract class ObjectNodes {
             notDesignedForCompilation();
 
             if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
-                throw new RaiseException(getContext().getCoreLibrary().typeError("no class to make alias"));
+                throw new RaiseException(getContext().getCoreLibrary().typeError("no class to make alias", this));
             }
 
             return block.callWithModifiedSelf(receiver);
@@ -352,14 +352,14 @@ public abstract class ObjectNodes {
         public boolean isInstanceVariableDefined(RubyBasicObject object, RubyString name) {
             notDesignedForCompilation();
 
-            return object.isFieldDefined(RubyObject.checkInstanceVariableName(getContext(), name.toString()));
+            return object.isFieldDefined(RubyObject.checkInstanceVariableName(getContext(), name.toString(), this));
         }
 
         @Specialization
         public boolean isInstanceVariableDefined(RubyBasicObject object, RubySymbol name) {
             notDesignedForCompilation();
 
-            return object.isFieldDefined(RubyObject.checkInstanceVariableName(getContext(), name.toString()));
+            return object.isFieldDefined(RubyObject.checkInstanceVariableName(getContext(), name.toString(), this));
         }
 
     }
@@ -379,14 +379,14 @@ public abstract class ObjectNodes {
         public Object isInstanceVariableGet(RubyBasicObject object, RubyString name) {
             notDesignedForCompilation();
 
-            return object.getInstanceVariable(RubyObject.checkInstanceVariableName(getContext(), name.toString()));
+            return object.getInstanceVariable(RubyObject.checkInstanceVariableName(getContext(), name.toString(), this));
         }
 
         @Specialization
         public Object isInstanceVariableGet(RubyBasicObject object, RubySymbol name) {
             notDesignedForCompilation();
 
-            return object.getInstanceVariable(RubyObject.checkInstanceVariableName(getContext(), name.toString()));
+            return object.getInstanceVariable(RubyObject.checkInstanceVariableName(getContext(), name.toString(), this));
         }
 
     }
@@ -406,7 +406,7 @@ public abstract class ObjectNodes {
         public Object isInstanceVariableSet(RubyBasicObject object, RubyString name, Object value) {
             notDesignedForCompilation();
 
-            object.setInstanceVariable(RubyObject.checkInstanceVariableName(getContext(), name.toString()), value);
+            object.setInstanceVariable(RubyObject.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
@@ -414,7 +414,7 @@ public abstract class ObjectNodes {
         public Object isInstanceVariableSet(RubyBasicObject object, RubySymbol name, Object value) {
             notDesignedForCompilation();
 
-            object.setInstanceVariable(RubyObject.checkInstanceVariableName(getContext(), name.toString()), value);
+            object.setInstanceVariable(RubyObject.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
@@ -676,7 +676,7 @@ public abstract class ObjectNodes {
         public RubyClass singletonClass(Object self) {
             notDesignedForCompilation();
 
-            return getContext().getCoreLibrary().box(self).getSingletonClass();
+            return getContext().getCoreLibrary().box(self).getSingletonClass(this);
         }
 
     }
@@ -709,7 +709,7 @@ public abstract class ObjectNodes {
 
             final RubyArray array = new RubyArray(self.getRubyClass().getContext().getCoreLibrary().getArrayClass());
 
-            for (RubyMethod method : self.getSingletonClass().getDeclaredMethods()) {
+            for (RubyMethod method : self.getSingletonClass(this).getDeclaredMethods()) {
                 array.slowPush(RubySymbol.newSymbol(self.getRubyClass().getContext(), method.getName()));
             }
 

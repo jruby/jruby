@@ -31,6 +31,7 @@ public class TranslatorEnvironment {
 
     private TranslatorDriver parser;
     private final long returnID;
+    private final boolean isBlock;
 
     private final boolean ownScopeForAssignments;
     private final boolean neverAssignInParentScope;
@@ -47,7 +48,7 @@ public class TranslatorEnvironment {
     public boolean hasRestParameter = false;
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, FrameDescriptor frameDescriptor, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments,
-                    boolean neverAssignInParentScope, SharedMethodInfo sharedMethodInfo, String namedMethodName) {
+                    boolean neverAssignInParentScope, SharedMethodInfo sharedMethodInfo, String namedMethodName, boolean isBlock) {
         this.context = context;
         this.parent = parent;
         this.frameDescriptor = frameDescriptor;
@@ -57,11 +58,12 @@ public class TranslatorEnvironment {
         this.neverAssignInParentScope = neverAssignInParentScope;
         this.sharedMethodInfo = sharedMethodInfo;
         this.namedMethodName = namedMethodName;
+        this.isBlock = isBlock;
     }
 
     public TranslatorEnvironment(RubyContext context, TranslatorEnvironment parent, TranslatorDriver parser, long returnID, boolean ownScopeForAssignments, boolean neverAssignInParentScope,
-                    SharedMethodInfo methodIdentifier, String namedMethodName) {
-        this(context, parent, new FrameDescriptor(RubyFrameTypeConversion.getInstance()), parser, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier, namedMethodName);
+                    SharedMethodInfo methodIdentifier, String namedMethodName, boolean isBlock) {
+        this(context, parent, new FrameDescriptor(RubyFrameTypeConversion.getInstance()), parser, returnID, ownScopeForAssignments, neverAssignInParentScope, methodIdentifier, namedMethodName, isBlock);
     }
 
     public TranslatorEnvironment getParent() {
@@ -174,5 +176,9 @@ public class TranslatorEnvironment {
 
     public String getNamedMethodName() {
         return namedMethodName;
+    }
+
+    public boolean isBlock() {
+        return isBlock;
     }
 }

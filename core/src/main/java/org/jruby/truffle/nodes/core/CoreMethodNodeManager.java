@@ -18,8 +18,10 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
+import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.nodes.methods.arguments.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
+import org.jruby.truffle.runtime.core.CoreSourceSection;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -126,7 +128,7 @@ public abstract class CoreMethodNodeManager {
         RubyModule module;
 
         if (methodDetails.getClassAnnotation().name().equals("main")) {
-            module = context.getCoreLibrary().getMainObject().getSingletonClass();
+            module = context.getCoreLibrary().getMainObject().getSingletonClass(null);
         } else {
             module = (RubyModule) rubyObjectClass.lookupConstant(methodDetails.getClassAnnotation().name()).value;
         }
@@ -146,27 +148,25 @@ public abstract class CoreMethodNodeManager {
         final RubyMethod method = new RubyMethod(rootNode.getSharedMethodInfo(), canonicalName, module, visibility, false,
                 Truffle.getRuntime().createCallTarget(rootNode), null, true);
 
-        module.addMethod(method);
+        module.addMethod(null, method);
 
         if (methodDetails.getMethodAnnotation().isModuleMethod()) {
-            module.getSingletonClass().addMethod(method);
+            module.getSingletonClass(null).addMethod(null, method);
         }
 
         for (String alias : aliases) {
             final RubyMethod withAlias = method.withNewName(alias);
 
-            module.addMethod(withAlias);
+            module.addMethod(null, withAlias);
 
             if (methodDetails.getMethodAnnotation().isModuleMethod()) {
-                module.getSingletonClass().addMethod(withAlias);
+                module.getSingletonClass(null).addMethod(null, withAlias);
             }
         }
     }
 
     private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails) {
-        final String indicativeName = methodDetails.getClassAnnotation().name() + "#" + methodDetails.getMethodAnnotation().names()[0];
-
-        final SourceSection sourceSection = new NullSourceSection("Ruby core library", indicativeName);
+        final SourceSection sourceSection = new CoreSourceSection(methodDetails.getClassAnnotation().name(), methodDetails.getMethodAnnotation().names()[0]);
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, methodDetails.getIndicativeName(), false, null);
 
@@ -207,8 +207,9 @@ public abstract class CoreMethodNodeManager {
         final RubyNode methodNode = methodDetails.getNodeFactory().createNode(context, sourceSection, argumentsNodes.toArray(new RubyNode[argumentsNodes.size()]));
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
+        final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, block);
 
-        return new RubyRootNode(sourceSection, null, sharedMethodInfo, block);
+        return new RubyRootNode(sourceSection, null, sharedMethodInfo, exceptionTranslatingNode);
     }
 
     public static class MethodDetails {

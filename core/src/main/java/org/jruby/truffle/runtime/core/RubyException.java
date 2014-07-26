@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.jruby.truffle.nodes.RubyNode;
+
 /**
  * Represents the Ruby {@code Exception} class.
  */
@@ -16,56 +18,49 @@ public class RubyException extends RubyObject {
 
     /**
      * The class from which we create the object that is {@code Exception}. A subclass of
-     * {@link RubyClass} so that we can override {@link #newInstance} and allocate a
+     * {@link RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
      * {@link RubyException} rather than a normal {@link RubyBasicObject}.
      */
     public static class RubyExceptionClass extends RubyClass {
 
         public RubyExceptionClass(RubyClass superClass, String name) {
-            super(null, superClass, name);
+            super(null, null, superClass, name);
         }
 
         @Override
-        public RubyBasicObject newInstance() {
+        public RubyBasicObject newInstance(RubyNode currentNode) {
             return new RubyException(this);
         }
 
     }
 
     private RubyString message;
-    private String stacktrace;
+    private RubyArray backtrace;
 
     public RubyException(RubyClass rubyClass) {
         super(rubyClass);
         message = rubyClass.getContext().makeString("(object uninitialized)");
+        backtrace = new RubyArray(rubyClass.getContext().getCoreLibrary().getArrayClass(), null, 0);
     }
 
-    public RubyException(RubyClass rubyClass, String message, String stacktrace) {
-        this(rubyClass, rubyClass.getContext().makeString(message), stacktrace);
-    }
-
-    public RubyException(RubyClass rubyClass, String message) {
-        this(rubyClass, message, null);
-    }
-
-    public RubyException(RubyClass rubyClass, RubyString message, String stacktrace) {
+    public RubyException(RubyClass rubyClass, RubyString message, RubyArray backtrace) {
         this(rubyClass);
-        this.stacktrace = stacktrace;
-        initialize(message);
+        initialize(message, backtrace);
     }
 
-    public void initialize(RubyString setMessage) {
-        assert setMessage != null;
-        message = setMessage;
+    public void initialize(RubyString message, RubyArray backtrace) {
+        assert message != null;
+        assert backtrace != null;
+        this.message = message;
+        this.backtrace = backtrace;
     }
 
     public RubyString getMessage() {
         return message;
     }
 
-    @Override
-    public String toString() {
-        // Giving some space between the java stacktrace and the ruby stacktrace
-        return String.format("\n\n %s \n %s \n", message.toString(), stacktrace);
+    public RubyArray getBacktrace() {
+        return backtrace;
     }
+
 }

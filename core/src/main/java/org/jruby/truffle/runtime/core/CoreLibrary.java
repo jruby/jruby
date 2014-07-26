@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.nodes.Node;
 import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.SJISEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -105,91 +106,91 @@ public class CoreLibrary {
         // Create the cyclic classes and modules
 
         classClass = new RubyClass.RubyClassClass(context);
-        basicObjectClass = new RubyClass(context, classClass, null, null, "BasicObject");
-        objectClass = new RubyClass(null, basicObjectClass, "Object");
+        basicObjectClass = new RubyClass(null, context, classClass, null, null, "BasicObject");
+        objectClass = new RubyClass(null, null, basicObjectClass, "Object");
         moduleClass = new RubyModule.RubyModuleClass(context);
 
         // Close the cycles
 
         moduleClass.unsafeSetRubyClass(classClass);
-        classClass.unsafeSetSuperclass(moduleClass);
-        moduleClass.unsafeSetSuperclass(objectClass);
+        classClass.unsafeSetSuperclass(null, moduleClass);
+        moduleClass.unsafeSetSuperclass(null, objectClass);
         classClass.unsafeSetRubyClass(classClass);
 
         // Create all other classes and modules
 
-        numericClass = new RubyClass(null, objectClass, "Numeric");
-        integerClass = new RubyClass(null, numericClass, "Integer");
+        numericClass = new RubyClass(null, null, objectClass, "Numeric");
+        integerClass = new RubyClass(null, null, numericClass, "Integer");
 
         exceptionClass = new RubyException.RubyExceptionClass(objectClass, "Exception");
         standardErrorClass = new RubyException.RubyExceptionClass(exceptionClass, "StandardError");
 
-        ioClass = new RubyClass(null, objectClass, "IO");
+        ioClass = new RubyClass(null, null, objectClass, "IO");
 
         argumentErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "ArgumentError");
         arrayClass = new RubyArray.RubyArrayClass(objectClass);
-        bignumClass = new RubyClass(null, integerClass, "Bignum");
-        bindingClass = new RubyClass(null, objectClass, "Binding");
+        bignumClass = new RubyClass(null, null, integerClass, "Bignum");
+        bindingClass = new RubyClass(null, null, objectClass, "Binding");
         comparableModule = new RubyModule(moduleClass, null, "Comparable");
         configModule = new RubyModule(moduleClass, null, "Config");
-        continuationClass = new RubyClass(null, objectClass, "Continuation");
-        dirClass = new RubyClass(null, objectClass, "Dir");
+        continuationClass = new RubyClass(null, null, objectClass, "Continuation");
+        dirClass = new RubyClass(null, null, objectClass, "Dir");
         encodingClass = new RubyEncoding.RubyEncodingClass(objectClass);
         errnoModule = new RubyModule(moduleClass, null, "Errno");
         enumerableModule = new RubyModule(moduleClass, null, "Enumerable");
-        falseClass = new RubyClass(null, objectClass, "FalseClass");
+        falseClass = new RubyClass(null, null, objectClass, "FalseClass");
         fiberClass = new RubyFiber.RubyFiberClass(objectClass);
-        fileClass = new RubyClass(null, ioClass, "File");
-        fixnumClass = new RubyClass(null, integerClass, "Fixnum");
-        floatClass = new RubyClass(null, objectClass, "Float");
+        fileClass = new RubyClass(null, null, ioClass, "File");
+        fixnumClass = new RubyClass(null, null, integerClass, "Fixnum");
+        floatClass = new RubyClass(null, null, objectClass, "Float");
         hashClass = new RubyHash.RubyHashClass(objectClass);
         kernelModule = new RubyModule(moduleClass, null, "Kernel");
         loadErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "LoadError");
         localJumpErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "LocalJumpError");
-        matchDataClass = new RubyClass(null, objectClass, "MatchData");
+        matchDataClass = new RubyClass(null, null, objectClass, "MatchData");
         mathModule = new RubyModule(moduleClass, null, "Math");
-        nameErrorClass = new RubyClass(null, standardErrorClass, "NameError");
-        nilClass = new RubyClass(null, objectClass, "NilClass");
+        nameErrorClass = new RubyClass(null, null, standardErrorClass, "NameError");
+        nilClass = new RubyClass(null, null, objectClass, "NilClass");
         noMethodErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "NoMethodError");
         objectSpaceModule = new RubyModule(moduleClass, null, "ObjectSpace");
         procClass = new RubyProc.RubyProcClass(objectClass);
-        processClass = new RubyClass(null, objectClass, "Process");
-        rangeClass = new RubyClass(null, objectClass, "Range");
+        processClass = new RubyClass(null, null, objectClass, "Process");
+        rangeClass = new RubyClass(null, null, objectClass, "Range");
         rangeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RangeError");
         regexpClass = new RubyRegexp.RubyRegexpClass(objectClass);
         rubyTruffleErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RubyTruffleError");
         runtimeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "RuntimeError");
         signalModule = new RubyModule(moduleClass, null, "Signal");
         stringClass = new RubyString.RubyStringClass(objectClass);
-        structClass = new RubyClass(null, ioClass, "Struct");
-        symbolClass = new RubyClass(null, objectClass, "Symbol");
+        structClass = new RubyClass(null, null, ioClass, "Struct");
+        symbolClass = new RubyClass(null, null, objectClass, "Symbol");
         syntaxErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "SyntaxError");
         systemCallErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "SystemCallError");
         systemExitClass = new RubyException.RubyExceptionClass(exceptionClass, "SystemExit");
         threadClass = new RubyThread.RubyThreadClass(objectClass);
         timeClass = new RubyTime.RubyTimeClass(objectClass);
-        trueClass = new RubyClass(null, objectClass, "TrueClass");
+        trueClass = new RubyClass(null, null, objectClass, "TrueClass");
         truffleDebugModule = new RubyModule(moduleClass, null, "TruffleDebug");
         typeErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "TypeError");
         zeroDivisionErrorClass = new RubyException.RubyExceptionClass(standardErrorClass, "ZeroDivisionError");
 
         // Includes
 
-        objectClass.include(kernelModule);
+        objectClass.include(null, kernelModule);
 
         // Set constants
 
-        objectClass.setConstant("RUBY_VERSION", RubyString.fromJavaString(stringClass, "2.1.0"));
-        objectClass.setConstant("RUBY_PATCHLEVEL", 0);
-        objectClass.setConstant("RUBY_ENGINE", RubyString.fromJavaString(stringClass, "rubytruffle"));
-        objectClass.setConstant("RUBY_PLATFORM", RubyString.fromJavaString(stringClass, "jvm"));
+        objectClass.setConstant(null, "RUBY_VERSION", RubyString.fromJavaString(stringClass, "2.1.0"));
+        objectClass.setConstant(null, "RUBY_PATCHLEVEL", 0);
+        objectClass.setConstant(null, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, "rubytruffle"));
+        objectClass.setConstant(null, "RUBY_PLATFORM", RubyString.fromJavaString(stringClass, "jvm"));
 
         argv = new RubyArray(arrayClass);
-        objectClass.setConstant("ARGV", argv);
-        objectClass.setConstant("ENV", getEnv());
-        objectClass.setConstant("TRUE", true);
-        objectClass.setConstant("FALSE", false);
-        objectClass.setConstant("NIL", NilPlaceholder.INSTANCE);
+        objectClass.setConstant(null, "ARGV", argv);
+        objectClass.setConstant(null, "ENV", getEnv());
+        objectClass.setConstant(null, "TRUE", true);
+        objectClass.setConstant(null, "FALSE", false);
+        objectClass.setConstant(null, "NIL", NilPlaceholder.INSTANCE);
 
         final LinkedHashMap<Object, Object> configHashMap = new LinkedHashMap<>();
         configHashMap.put(RubyString.fromJavaString(stringClass, "ruby_install_name"), RubyString.fromJavaString(stringClass, "rubytruffle"));
@@ -198,24 +199,24 @@ public class CoreLibrary {
         configHashMap.put(RubyString.fromJavaString(stringClass, "exeext"), RubyString.fromJavaString(stringClass, ""));
         configHashMap.put(RubyString.fromJavaString(stringClass, "EXEEXT"), RubyString.fromJavaString(stringClass, "rubytruffle"));
         final RubyHash configHash = new RubyHash(hashClass, null, configHashMap, 0);
-        configModule.setConstant("CONFIG", configHash);
+        configModule.setConstant(null, "CONFIG", configHash);
 
-        objectClass.setConstant("RbConfig", configModule);
+        objectClass.setConstant(null, "RbConfig", configModule);
 
-        mathModule.setConstant("PI", Math.PI);
+        mathModule.setConstant(null, "PI", Math.PI);
 
-        fileClass.setConstant("SEPARATOR", RubyString.fromJavaString(stringClass, File.separator));
-        fileClass.setConstant("Separator", RubyString.fromJavaString(stringClass, File.separator));
-        fileClass.setConstant("ALT_SEPARATOR", NilPlaceholder.INSTANCE);
-        fileClass.setConstant("PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
-        fileClass.setConstant("FNM_SYSCASE", 0);
+        fileClass.setConstant(null, "SEPARATOR", RubyString.fromJavaString(stringClass, File.separator));
+        fileClass.setConstant(null, "Separator", RubyString.fromJavaString(stringClass, File.separator));
+        fileClass.setConstant(null, "ALT_SEPARATOR", NilPlaceholder.INSTANCE);
+        fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
+        fileClass.setConstant(null, "FNM_SYSCASE", 0);
 
-        errnoModule.setConstant("ENOENT", new RubyClass(null, systemCallErrorClass, "ENOENT"));
-        errnoModule.setConstant("EPERM", new RubyClass(null, systemCallErrorClass, "EPERM"));
-        errnoModule.setConstant("ENOTEMPTY", new RubyClass(null, systemCallErrorClass, "ENOTEMPTY"));
-        errnoModule.setConstant("EEXIST", new RubyClass(null, systemCallErrorClass, "EEXIST"));
-        errnoModule.setConstant("EXDEV", new RubyClass(null, systemCallErrorClass, "EXDEV"));
-        errnoModule.setConstant("EACCES", new RubyClass(null, systemCallErrorClass, "EACCES"));
+        errnoModule.setConstant(null, "ENOENT", new RubyClass(null, null, systemCallErrorClass, "ENOENT"));
+        errnoModule.setConstant(null, "EPERM", new RubyClass(null, null, systemCallErrorClass, "EPERM"));
+        errnoModule.setConstant(null, "ENOTEMPTY", new RubyClass(null, null, systemCallErrorClass, "ENOTEMPTY"));
+        errnoModule.setConstant(null, "EEXIST", new RubyClass(null, null, systemCallErrorClass, "EEXIST"));
+        errnoModule.setConstant(null, "EXDEV", new RubyClass(null, null, systemCallErrorClass, "EXDEV"));
+        errnoModule.setConstant(null, "EACCES", new RubyClass(null, null, systemCallErrorClass, "EACCES"));
 
         // Add all classes and modules as constants in Object
 
@@ -276,7 +277,7 @@ public class CoreLibrary {
                         zeroDivisionErrorClass};
 
         for (RubyModule module : modules) {
-            objectClass.setConstant(module.getName(), module);
+            objectClass.setConstant(null, module.getName(), module);
         }
 
         // Create some key objects
@@ -305,32 +306,32 @@ public class CoreLibrary {
         // Just create a dummy object for $stdout - we can use Kernel#print
 
         final RubyBasicObject stdout = new RubyBasicObject(objectClass);
-        stdout.getSingletonClass().addMethod(stdout.getLookupNode().lookupMethod("print").withNewVisibility(Visibility.PUBLIC));
+        stdout.getSingletonClass(null).addMethod(null, stdout.getLookupNode().lookupMethod("print").withNewVisibility(Visibility.PUBLIC));
         globalVariablesObject.setInstanceVariable("$stdout", stdout);
 
-        objectClass.setConstant("STDIN", new RubyBasicObject(objectClass));
-        objectClass.setConstant("STDOUT", globalVariablesObject.getInstanceVariable("$stdout"));
-        objectClass.setConstant("STDERR", globalVariablesObject.getInstanceVariable("$stdout"));
-        objectClass.setConstant("RUBY_RELEASE_DATE", context.makeString(Constants.COMPILE_DATE));
-        objectClass.setConstant("RUBY_DESCRIPTION", context.makeString(OutputStrings.getVersionString()));
+        objectClass.setConstant(null, "STDIN", new RubyBasicObject(objectClass));
+        objectClass.setConstant(null, "STDOUT", globalVariablesObject.getInstanceVariable("$stdout"));
+        objectClass.setConstant(null, "STDERR", globalVariablesObject.getInstanceVariable("$stdout"));
+        objectClass.setConstant(null, "RUBY_RELEASE_DATE", context.makeString(Constants.COMPILE_DATE));
+        objectClass.setConstant(null, "RUBY_DESCRIPTION", context.makeString(OutputStrings.getVersionString()));
 
-        bignumClass.getSingletonClass().undefMethod("new");
-        falseClass.getSingletonClass().undefMethod("new");
-        fixnumClass.getSingletonClass().undefMethod("new");
-        floatClass.getSingletonClass().undefMethod("new");
-        integerClass.getSingletonClass().undefMethod("new");
-        nilClass.getSingletonClass().undefMethod("new");
-        numericClass.getSingletonClass().undefMethod("new");
-        trueClass.getSingletonClass().undefMethod("new");
-        encodingClass.getSingletonClass().undefMethod("new");
+        bignumClass.getSingletonClass(null).undefMethod(null, "new");
+        falseClass.getSingletonClass(null).undefMethod(null, "new");
+        fixnumClass.getSingletonClass(null).undefMethod(null, "new");
+        floatClass.getSingletonClass(null).undefMethod(null, "new");
+        integerClass.getSingletonClass(null).undefMethod(null, "new");
+        nilClass.getSingletonClass(null).undefMethod(null, "new");
+        numericClass.getSingletonClass(null).undefMethod(null, "new");
+        trueClass.getSingletonClass(null).undefMethod(null, "new");
+        encodingClass.getSingletonClass(null).undefMethod(null, "new");
     }
 
     public void initializeEncodingConstants() {
-        encodingClass.setConstant("US_ASCII", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
-        encodingClass.setConstant("ASCII_8BIT", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
-        encodingClass.setConstant("UTF_8", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
-        encodingClass.setConstant("EUC_JP", new RubyEncoding(encodingClass, EUCJPEncoding.INSTANCE));
-        encodingClass.setConstant("Windows_31J", new RubyEncoding(encodingClass, SJISEncoding.INSTANCE));
+        encodingClass.setConstant(null, "US_ASCII", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
+        encodingClass.setConstant(null, "ASCII_8BIT", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
+        encodingClass.setConstant(null, "UTF_8", new RubyEncoding(encodingClass, USASCIIEncoding.INSTANCE));
+        encodingClass.setConstant(null, "EUC_JP", new RubyEncoding(encodingClass, EUCJPEncoding.INSTANCE));
+        encodingClass.setConstant(null, "Windows_31J", new RubyEncoding(encodingClass, SJISEncoding.INSTANCE));
 
     }
 
@@ -382,104 +383,104 @@ public class CoreLibrary {
         throw new UnsupportedOperationException("Don't know how to box " + object.getClass().getName());
     }
 
-    public RubyException runtimeError(String message) {
-        return new RubyException(runtimeErrorClass, String.format("RuntimeError: %s", message), RubyCallStack.getRubyStacktrace());
+    public RubyException runtimeError(String message, Node currentNode) {
+        return new RubyException(runtimeErrorClass, context.makeString(String.format("RuntimeError: %s", message)), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
     }
 
-    public RubyException frozenError(String className) {
-        return runtimeError(String.format("FrozenError: can't modify frozen %s \n %s", className, RubyCallStack.getRubyStacktrace()));
+    public RubyException frozenError(String className, Node currentNode) {
+        return runtimeError(String.format("FrozenError: can't modify frozen %s \n %s", className), currentNode);
     }
 
-    public RubyException argumentError(String message) {
-        return new RubyException(argumentErrorClass, String.format("ArgumentError: %s", message), RubyCallStack.getRubyStacktrace());
+    public RubyException argumentError(String message, Node currentNode) {
+        return new RubyException(argumentErrorClass, context.makeString(String.format("ArgumentError: %s", message)), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
     }
 
-    public RubyException argumentError(int passed, int required) {
-        return argumentError(String.format("ArgumentError: wrong number of arguments (%d for %d)", passed, required));
+    public RubyException argumentError(int passed, int required, Node currentNode) {
+        return argumentError(String.format("ArgumentError: wrong number of arguments (%d for %d)", passed, required), currentNode);
     }
 
-    public RubyException argumentErrorUncaughtThrow(Object tag) {
-        return argumentError(String.format("ArgumentError: uncaught throw `%s'", tag));
+    public RubyException argumentErrorUncaughtThrow(Object tag, Node currentNode) {
+        return argumentError(String.format("ArgumentError: uncaught throw `%s'", tag), currentNode);
     }
 
-    public RubyException localJumpError(String message) {
-        return new RubyException(localJumpErrorClass, String.format("LocalJumpError: %s", message), RubyCallStack.getRubyStacktrace());
+    public RubyException localJumpError(String message, Node currentNode) {
+        return new RubyException(localJumpErrorClass, context.makeString(String.format("LocalJumpError: %s", message)), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
     }
 
-    public RubyException unexpectedReturn() {
-        return localJumpError("unexpected return");
+    public RubyException unexpectedReturn(Node currentNode) {
+        return localJumpError("unexpected return", currentNode);
     }
 
-    public RubyException noBlockToYieldTo() {
-        return localJumpError("no block given (yield)");
+    public RubyException noBlockToYieldTo(Node currentNode) {
+        return localJumpError("no block given (yield)", currentNode);
     }
 
-    public RubyException typeError(String message) {
-        return new RubyException(typeErrorClass, String.format("%s ", message), RubyCallStack.getRubyStacktrace());
+    public RubyException typeError(String message, Node currentNode) {
+        return new RubyException(typeErrorClass, context.makeString(String.format("%s ", message)), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
     }
 
-    public RubyException typeErrorShouldReturn(String object, String method, String expectedType) {
-        return typeError(String.format("TypeError: %s#%s should return %s", object, method, expectedType));
+    public RubyException typeErrorShouldReturn(String object, String method, String expectedType, Node currentNode) {
+        return typeError(String.format("TypeError: %s#%s should return %s", object, method, expectedType), currentNode);
     }
 
-    public RubyException typeError(String from, String to) {
-        return typeError(String.format("TypeError: can't convert %s to %s", from, to));
+    public RubyException typeError(String from, String to, Node currentNode) {
+        return typeError(String.format("TypeError: can't convert %s to %s", from, to), currentNode);
     }
 
-    public RubyException typeErrorIsNotA(String value, String expectedType) {
-        return typeError(String.format("TypeError: %s is not a %s", value, expectedType));
+    public RubyException typeErrorIsNotA(String value, String expectedType, Node currentNode) {
+        return typeError(String.format("TypeError: %s is not a %s", value, expectedType), currentNode);
     }
 
-    public RubyException typeErrorNeedsToBe(String name, String expectedType) {
-        return typeError(String.format("TypeError: %s needs to be %s", name, expectedType));
+    public RubyException typeErrorNeedsToBe(String name, String expectedType, Node currentNode) {
+        return typeError(String.format("TypeError: %s needs to be %s", name, expectedType), currentNode);
     }
 
-    public RubyException rangeError(String message) {
-        return new RubyException(rangeErrorClass, message, RubyCallStack.getRubyStacktrace());
+    public RubyException rangeError(String message, Node currentNode) {
+        return new RubyException(rangeErrorClass, context.makeString(message), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
     }
 
-    public RubyException nameError(String message) {
-        return new RubyException(nameErrorClass, String.format("%s ", message), RubyCallStack.getRubyStacktrace());
+    public RubyException nameError(String message, Node currentNode) {
+        return new RubyException(nameErrorClass, context.makeString(String.format("%s ", message)), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
     }
 
-    public RubyException nameErrorUninitializedConstant(String name) {
-        return nameError(String.format("NameError: uninitialized constant %s", name));
+    public RubyException nameErrorUninitializedConstant(String name, Node currentNode) {
+        return nameError(String.format("NameError: uninitialized constant %s", name), currentNode);
     }
 
-    public RubyException nameErrorNoMethod(String name, String object) {
-        return nameError(String.format("NameError: undefined local variable or method `%s' for %s", name, object));
+    public RubyException nameErrorNoMethod(String name, String object, Node currentNode) {
+        return nameError(String.format("NameError: undefined local variable or method `%s' for %s", name, object), currentNode);
     }
 
-    public RubyException nameErrorInstanceNameNotAllowable(String name) {
-        return nameError(String.format("`%s' is not allowable as an instance variable name", name));
+    public RubyException nameErrorInstanceNameNotAllowable(String name, Node currentNode) {
+        return nameError(String.format("`%s' is not allowable as an instance variable name", name), currentNode);
     }
 
-    public RubyException nameErrorUncaughtThrow(Object tag) {
-        return nameError(String.format("NameError: uncaught throw `%s'", tag));
+    public RubyException nameErrorUncaughtThrow(Object tag, Node currentNode) {
+        return nameError(String.format("NameError: uncaught throw `%s'", tag), currentNode);
     }
 
-    public RubyException noMethodError(String message) {
-        return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), message, RubyCallStack.getRubyStacktrace());
+    public RubyException noMethodError(String message, Node currentNode) {
+        return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), context.makeString(message), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
     }
 
-    public RubyException noMethodError(String name, String object) {
-        return noMethodError(String.format("NameError: undefined method `%s' for %s", name, object));
+    public RubyException noMethodError(String name, String object, Node currentNode) {
+        return noMethodError(String.format("NameError: undefined method `%s' for %s", name, object), currentNode);
     }
 
-    public RubyException loadError(String message) {
-        return new RubyException(context.getCoreLibrary().getLoadErrorClass(), message, RubyCallStack.getRubyStacktrace());
+    public RubyException loadError(String message, Node currentNode) {
+        return new RubyException(context.getCoreLibrary().getLoadErrorClass(), context.makeString(message), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
     }
 
-    public RubyException loadErrorCannotLoad(String name) {
-        return loadError(String.format("LoadError: cannot load such file -- %s", name));
+    public RubyException loadErrorCannotLoad(String name, Node currentNode) {
+        return loadError(String.format("LoadError: cannot load such file -- %s", name), currentNode);
     }
 
-    public RubyException zeroDivisionError() {
-        return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(),"divided by 0", RubyCallStack.getRubyStacktrace());
+    public RubyException zeroDivisionError(Node currentNode) {
+        return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), context.makeString("divided by 0"), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
     }
 
-    public RubyException syntaxError(String message) {
-        return new RubyException(syntaxErrorClass, String.format("SyntaxError: %s ", message), RubyCallStack.getRubyStacktrace());
+    public RubyException syntaxError(String message, Node currentNode) {
+        return new RubyException(syntaxErrorClass, context.makeString(String.format("SyntaxError: %s ", message)), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
     }
 
     public RubyContext getContext() {

@@ -35,7 +35,7 @@ public class CheckMatchVariableTypeNode extends RubyNode {
 
         if (!(childValue instanceof RubyMatchData || childValue instanceof NilPlaceholder || childValue instanceof RubyNilClass)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().typeError("wrong argument type (expected MatchData)"));
+            throw new RaiseException(getContext().getCoreLibrary().typeError("wrong argument type (expected MatchData)", this));
         }
 
         return childValue;

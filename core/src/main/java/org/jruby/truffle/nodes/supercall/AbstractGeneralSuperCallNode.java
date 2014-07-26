@@ -53,7 +53,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
         if (!(declaringModule instanceof RubyClass)) {
             method = null;
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name, "wasn't a class"));
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name, "wasn't a class", this));
         }
 
         assert declaringModule instanceof RubyClass;
@@ -61,7 +61,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
         if (method == null || method.isUndefined()) {
             method = null;
-            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name, "no such method"));
+            throw new RaiseException(getContext().getCoreLibrary().nameErrorNoMethod(name, "no such method", this));
         }
 
         final DirectCallNode newCallNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
@@ -89,7 +89,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
                 lookup();
             }
 
-            if (method == null || method.isUndefined() || !method.isVisibleTo(self)) {
+            if (method == null || method.isUndefined() || !method.isVisibleTo(this, self)) {
                 return NilPlaceholder.INSTANCE;
             } else {
                 return context.makeString("super");

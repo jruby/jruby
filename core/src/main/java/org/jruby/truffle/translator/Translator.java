@@ -18,23 +18,23 @@ import org.jruby.truffle.runtime.RubyContext;
 
 public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor<RubyNode> {
 
+    protected final RubyNode currentNode;
     protected final RubyContext context;
     protected final Source source;
-    private final String sourceIdentifier;
 
     protected SourceSection parentSourceSection;
 
-    public Translator(RubyContext context, Source source, String sourceIdentifier) {
+    public Translator(RubyNode currentNode, RubyContext context, Source source) {
+        this.currentNode = currentNode;
         this.context = context;
         this.source = source;
-        this.sourceIdentifier = sourceIdentifier;
     }
 
     protected SourceSection translate(org.jruby.lexer.yacc.ISourcePosition sourcePosition) {
-        return translate(source, sourceIdentifier, sourcePosition);
+        return translate(source, sourcePosition);
     }
 
-    public SourceSection translate(Source source, String sourceIdentifier, org.jruby.lexer.yacc.ISourcePosition sourcePosition) {
+    public SourceSection translate(Source source, org.jruby.lexer.yacc.ISourcePosition sourcePosition) {
         if (sourcePosition == ISourcePosition.INVALID_POSITION) {
             if (parentSourceSection == null) {
                 throw new UnsupportedOperationException("Truffle doesn't want invalid positions - find a way to give me a real position!");
@@ -43,13 +43,15 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
             }
         } else if (sourcePosition instanceof IDetailedSourcePosition) {
             final IDetailedSourcePosition detailedSourcePosition = (IDetailedSourcePosition) sourcePosition;
-            return source.createSection(sourceIdentifier, detailedSourcePosition.getOffset(), detailedSourcePosition.getLength());
+            return source.createSection(getIentifier(), detailedSourcePosition.getOffset(), detailedSourcePosition.getLength());
         } else if (RubyContext.ALLOW_SIMPLE_SOURCE_SECTIONS) {
             // If we didn't run with -X+T, so maybe we're using truffelize, we might still get simple source sections
-            return source.createSection(sourceIdentifier, sourcePosition.getStartLine() + 1);
+            return source.createSection(getIentifier(), sourcePosition.getStartLine() + 1);
         } else {
             throw new UnsupportedOperationException("Truffle needs detailed source positions unless you know what you are doing and set truffle.allow_simple_source_sections - got " + sourcePosition.getClass());
         }
     }
+
+    protected abstract String getIentifier();
 
 }

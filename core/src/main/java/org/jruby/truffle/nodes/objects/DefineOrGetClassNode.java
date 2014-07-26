@@ -45,7 +45,7 @@ public class DefineOrGetClassNode extends RubyNode {
         try {
             parentModuleObject = parentModule.executeRubyModule(frame);
         } catch (UnexpectedResultException e) {
-            throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(e.getResult().toString(), "module"));
+            throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(e.getResult().toString(), "module", this));
         }
 
         // Look for a current definition of the class, or create a new one
@@ -62,16 +62,16 @@ public class DefineOrGetClassNode extends RubyNode {
             } else if (superClassObject instanceof RubyString.RubyStringClass) {
                 definingClass = new RubyString.RubyStringClass(superClassObject);
             } else {
-                definingClass = new RubyClass(parentModuleObject, superClassObject, name);
+                definingClass = new RubyClass(this, parentModuleObject, superClassObject, name);
             }
 
-            parentModuleObject.setConstant(name, definingClass);
-            parentModuleObject.getSingletonClass().setConstant(name, definingClass);
+            parentModuleObject.setConstant(this, name, definingClass);
+            parentModuleObject.getSingletonClass(this).setConstant(this, name, definingClass);
         } else {
             if (constant.value instanceof RubyClass) {
                 definingClass = (RubyClass) constant.value;
             } else {
-                throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constant.value.toString(), "class"));
+                throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(constant.value.toString(), "class", this));
             }
         }
 

@@ -82,7 +82,7 @@ benchmarks = [
   "spectral-norm",
   "neural-net",
   "richards",
-  "deltablue"
+  #"deltablue"
 ]
 
 disable_splitting = [

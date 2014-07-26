@@ -9,7 +9,8 @@
  */
 package org.jruby.truffle.runtime.core;
 
-import java.text.*;
+import org.jruby.truffle.nodes.RubyNode;
+
 import java.util.*;
 
 /**
@@ -20,17 +21,17 @@ public class RubyTime extends RubyObject {
 
     /**
      * The class from which we create the object that is {@code Time}. A subclass of
-     * {@link RubyClass} so that we can override {@link #newInstance} and allocate a
+     * {@link RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
      * {@link RubyTime} rather than a normal {@link RubyBasicObject}.
      */
     public static class RubyTimeClass extends RubyClass {
 
         public RubyTimeClass(RubyClass objectClass) {
-            super(null, objectClass, "Time");
+            super(null, null, objectClass, "Time");
         }
 
         @Override
-        public RubyBasicObject newInstance() {
+        public RubyBasicObject newInstance(RubyNode currentNode) {
             return new RubyTime(this, milisecondsToNanoseconds(System.currentTimeMillis()));
         }
 

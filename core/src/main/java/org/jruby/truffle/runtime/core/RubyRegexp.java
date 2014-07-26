@@ -34,17 +34,17 @@ public class RubyRegexp extends RubyObject {
 
     /**
      * The class from which we create the object that is {@code Regexp}. A subclass of
-     * {@link RubyClass} so that we can override {@link #newInstance} and allocate a
+     * {@link RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
      * {@link RubyRegexp} rather than a normal {@link RubyBasicObject}.
      */
     public static class RubyRegexpClass extends RubyClass {
 
         public RubyRegexpClass(RubyClass objectClass) {
-            super(null, objectClass, "Regexp");
+            super(null, null, objectClass, "Regexp");
         }
 
         @Override
-        public RubyBasicObject newInstance() {
+        public RubyBasicObject newInstance(RubyNode currentNode) {
             return new RubyRegexp(getContext().getCoreLibrary().getRegexpClass());
         }
 
@@ -57,9 +57,9 @@ public class RubyRegexp extends RubyObject {
         super(regexpClass);
     }
 
-    public RubyRegexp(RubyClass regexpClass, String regex, int options) {
+    public RubyRegexp(RubyNode currentNode, RubyClass regexpClass, String regex, int options) {
         this(regexpClass);
-        initialize(compile(getRubyClass().getContext(), regex, options), regex);
+        initialize(compile(currentNode, getRubyClass().getContext(), regex, options), regex);
     }
 
     public RubyRegexp(RubyClass regexpClass, Regex regex, String source) {
@@ -67,8 +67,8 @@ public class RubyRegexp extends RubyObject {
         initialize(regex, source);
     }
 
-    public void initialize(String setRegex) {
-        regex = compile(getRubyClass().getContext(), setRegex, Option.DEFAULT);
+    public void initialize(RubyNode currentNode, String setRegex) {
+        regex = compile(currentNode, getRubyClass().getContext(), setRegex, Option.DEFAULT);
         source = setRegex;
     }
 
@@ -308,20 +308,20 @@ public class RubyRegexp extends RubyObject {
         return true;
     }
 
-    public static Regex compile(RubyContext context, String pattern, int options) {
+    public static Regex compile(RubyNode currentNode, RubyContext context, String pattern, int options) {
         RubyNode.notDesignedForCompilation();
 
         final byte[] bytes = pattern.getBytes(StandardCharsets.UTF_8);
-        return compile(context, bytes, UTF8Encoding.INSTANCE, options);
+        return compile(currentNode, context, bytes, UTF8Encoding.INSTANCE, options);
     }
 
-    public static Regex compile(RubyContext context, byte[] bytes, Encoding encoding, int options) {
+    public static Regex compile(RubyNode currentNode, RubyContext context, byte[] bytes, Encoding encoding, int options) {
         RubyNode.notDesignedForCompilation();
 
         try {
             return new Regex(bytes, 0, bytes.length, options, encoding, Syntax.RUBY);
         } catch (ValueException e) {
-            throw new org.jruby.truffle.runtime.control.RaiseException(context.getCoreLibrary().runtimeError("error compiling regex"));
+            throw new org.jruby.truffle.runtime.control.RaiseException(context.getCoreLibrary().runtimeError("error compiling regex", currentNode));
         }
     }
 

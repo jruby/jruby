@@ -36,8 +36,8 @@ class MethodTranslator extends BodyTranslator {
     private boolean isTopLevel;
     private boolean isBlock;
 
-    public MethodTranslator(RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, boolean isTopLevel, Source source) {
-        super(context, parent, environment, source);
+    public MethodTranslator(RubyNode currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, boolean isBlock, boolean isTopLevel, Source source) {
+        super(currentNode, context, parent, environment, source);
         this.isBlock = isBlock;
         this.isTopLevel = isTopLevel;
     }
@@ -71,13 +71,17 @@ class MethodTranslator extends BodyTranslator {
 
         if (bodyNode != null) {
             parentSourceSection = sourceSection;
-            body = bodyNode.accept(this);
-            parentSourceSection = null;
+
+            try {
+                body = bodyNode.accept(this);
+            } finally {
+                parentSourceSection = null;
+            }
         } else {
             body = new NilLiteralNode(context, sourceSection);
         }
 
-        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(context, source, isBlock, this);
+        final LoadArgumentsTranslator loadArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
         final RubyNode loadArguments = argsNode.accept(loadArgumentsTranslator);
 
         final RubyNode prelude;
@@ -105,7 +109,7 @@ class MethodTranslator extends BodyTranslator {
                 final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
                 final RubyNode writeArrayNode = WriteLocalVariableNodeFactory.create(context, sourceSection, arraySlot, castArrayNode);
 
-                final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(context, source, isBlock, this);
+                final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(currentNode, context, source, isBlock, this);
                 destructureArgumentsTranslator.pushArraySlot(arraySlot);
                 final RubyNode newDestructureArguments = argsNode.accept(destructureArgumentsTranslator);
 
@@ -157,6 +161,10 @@ class MethodTranslator extends BodyTranslator {
         }
 
         body = context.getASTProber().probeAsPeriodic(body);
+
+        if (!isBlock) {
+            body = new ExceptionTranslatingNode(context, sourceSection, body);
+        }
 
         final RubyRootNode rootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
 

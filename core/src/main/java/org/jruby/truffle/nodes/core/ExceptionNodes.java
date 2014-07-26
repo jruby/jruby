@@ -31,10 +31,10 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public NilPlaceholder initialize(RubyException exception, @SuppressWarnings("unused") UndefinedPlaceholder message) {
+        public NilPlaceholder initialize(RubyException exception, UndefinedPlaceholder message) {
             notDesignedForCompilation();
 
-            exception.initialize(getContext().makeString(" "));
+            exception.initialize(getContext().makeString(" "), new RubyArray(getContext().getCoreLibrary().getArrayClass()));
             return NilPlaceholder.INSTANCE;
         }
 
@@ -42,13 +42,13 @@ public abstract class ExceptionNodes {
         public NilPlaceholder initialize(RubyException exception, RubyString message) {
             notDesignedForCompilation();
 
-            exception.initialize(message);
+            exception.initialize(message, new RubyArray(getContext().getCoreLibrary().getArrayClass()));
             return NilPlaceholder.INSTANCE;
         }
 
     }
 
-    @CoreMethod(names = "backtrace", needsSelf = false, maxArgs = 0)
+    @CoreMethod(names = "backtrace", maxArgs = 0)
     public abstract static class BacktraceNode extends CoreMethodNode {
 
         public BacktraceNode(RubyContext context, SourceSection sourceSection) {
@@ -60,10 +60,8 @@ public abstract class ExceptionNodes {
         }
 
         @Specialization
-        public RubyArray backtrace() {
-            notDesignedForCompilation();
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+        public RubyArray backtrace(RubyException exception) {
+            return exception.getBacktrace();
         }
 
     }
@@ -81,8 +79,6 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public RubyString message(RubyException exception) {
-            notDesignedForCompilation();
-
             return exception.getMessage();
         }
 

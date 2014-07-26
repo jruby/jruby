@@ -64,15 +64,15 @@ public class AddMethodNode extends RubyNode {
         if (receiverObject instanceof RubyModule) {
             module = (RubyModule) receiverObject;
         } else {
-            module = ((RubyBasicObject) receiverObject).getSingletonClass();
+            module = ((RubyBasicObject) receiverObject).getSingletonClass(this);
         }
 
         final RubyMethod methodWithDeclaringModule = methodObject.withDeclaringModule(module);
 
-        module.addMethod(methodWithDeclaringModule);
+        module.addMethod(this, methodWithDeclaringModule);
 
         if (moduleFunctionFlag) {
-            module.getSingletonClass().addMethod(methodWithDeclaringModule);
+            module.getSingletonClass(this).addMethod(this, methodWithDeclaringModule);
         }
 
         return NilPlaceholder.INSTANCE;

@@ -24,17 +24,17 @@ public class RubyProc extends RubyObject {
 
     /**
      * The class from which we create the object that is {@code Proc}. A subclass of
-     * {@link RubyClass} so that we can override {@link #newInstance} and allocate a
+     * {@link RubyClass} so that we can override {@link RubyClass#newInstance} and allocate a
      * {@link RubyProc} rather than a normal {@link RubyBasicObject}.
      */
     public static class RubyProcClass extends RubyClass {
 
         public RubyProcClass(RubyClass objectClass) {
-            super(null, objectClass, "Proc");
+            super(null, null, objectClass, "Proc");
         }
 
         @Override
-        public RubyBasicObject newInstance() {
+        public RubyBasicObject newInstance(RubyNode currentNode) {
             return new RubyProc(this, Type.PROC);
         }
 

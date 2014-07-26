@@ -50,7 +50,7 @@ public abstract class MainNodes {
                     final RubyModule included = (RubyModule) args[n];
 
                     // Note that we do appear to do full method lookup here
-                    appendFeaturesNode.dispatch(frame, included, null, main.getSingletonClass());
+                    appendFeaturesNode.dispatch(frame, included, null, main.getSingletonClass(this));
 
                     // TODO(cs): call included hook
                 }

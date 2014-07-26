@@ -40,7 +40,7 @@ public class RubySymbol extends RubyObject {
         return runtime.getSymbolTable().getSymbol(name);
     }
 
-    public RubyProc toProc(SourceSection sourceSection) {
+    public RubyProc toProc(SourceSection sourceSection, final RubyNode currentNode) {
         RubyNode.notDesignedForCompilation();
 
         final RubyContext context = getRubyClass().getContext();
@@ -58,7 +58,7 @@ public class RubySymbol extends RubyObject {
                 final Object[] arguments = RubyArguments.extractUserArguments(args);
                 final Object[] sendArgs = Arrays.copyOfRange(arguments, 1, arguments.length);
                 final RubyBasicObject receiverObject = context.getCoreLibrary().box(receiver);
-                return receiverObject.send(symbol, RubyArguments.getBlock(args), sendArgs);
+                return receiverObject.send(currentNode, symbol, RubyArguments.getBlock(args), sendArgs);
             }
 
         };

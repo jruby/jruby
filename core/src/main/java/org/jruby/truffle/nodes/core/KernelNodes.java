@@ -31,7 +31,6 @@ import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.subsystems.*;
 
 @CoreClass(name = "Kernel")
@@ -141,7 +140,7 @@ public abstract class
 
             if (block == null) {
                 // TODO(CS): should really have acceptsBlock and needsBlock to do this automatically
-                throw new RaiseException(context.getCoreLibrary().localJumpError("no block given"));
+                throw new RaiseException(context.getCoreLibrary().localJumpError("no block given", this));
             }
 
             final RubyContinuation continuation = new RubyContinuation(context.getCoreLibrary().getContinuationClass());
@@ -193,14 +192,14 @@ public abstract class
         public Object eval(RubyString source, @SuppressWarnings("unused") UndefinedPlaceholder binding) {
             notDesignedForCompilation();
 
-            return getContext().eval(source.toString());
+            return getContext().eval(source.toString(), this);
         }
 
         @Specialization
         public Object eval(RubyString source, RubyBinding binding) {
             notDesignedForCompilation();
 
-            return getContext().eval(source.toString(), binding);
+            return getContext().eval(source.toString(), binding, this);
         }
 
     }
@@ -444,7 +443,7 @@ public abstract class
         public boolean load(RubyString file) {
             notDesignedForCompilation();
 
-            getContext().loadFile(file.toString());
+            getContext().loadFile(file.toString(), this);
             return true;
         }
     }
@@ -668,7 +667,7 @@ public abstract class
                 }
             } else {
                 // TODO(CS): slow path send
-                standardOut.println(context.getCoreLibrary().box(value).send("to_s", null));
+                standardOut.println(context.getCoreLibrary().box(value).send(this, "to_s", null));
             }
         }
 
@@ -707,7 +706,7 @@ public abstract class
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message) {
             notDesignedForCompilation();
 
-            final RubyBasicObject exception = exceptionClass.newInstance();
+            final RubyBasicObject exception = exceptionClass.newInstance(this);
             initialize.dispatch(frame, exception, null, message);
             throw new RaiseException(exception);
         }
@@ -730,7 +729,7 @@ public abstract class
             notDesignedForCompilation();
 
             try {
-                getContext().getFeatureManager().require(feature.toString());
+                getContext().getFeatureManager().require(feature.toString(), this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

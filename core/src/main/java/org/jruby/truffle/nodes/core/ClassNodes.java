@@ -77,7 +77,7 @@ public abstract class ClassNodes {
         }
 
         private RubyBasicObject doNewInstance(VirtualFrame frame, RubyClass rubyClass, Object[] args, RubyProc block) {
-            final RubyBasicObject instance = rubyClass.newInstance();
+            final RubyBasicObject instance = rubyClass.newInstance(this);
             initialize.dispatch(frame, instance, block, args);
             return instance;
         }

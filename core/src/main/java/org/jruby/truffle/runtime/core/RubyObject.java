@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.Ruby;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -26,18 +27,18 @@ public class RubyObject extends RubyBasicObject {
         super(rubyClass);
     }
 
-    public void checkFrozen() {
+    public void checkFrozen(Node currentNode) {
         if (frozen) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getRubyClass().getContext().getCoreLibrary().frozenError(getRubyClass().getName().toLowerCase()));
+            throw new RaiseException(getRubyClass().getContext().getCoreLibrary().frozenError(getRubyClass().getName().toLowerCase(), currentNode));
         }
     }
 
-    public static String checkInstanceVariableName(RubyContext context, String name) {
+    public static String checkInstanceVariableName(RubyContext context, String name, RubyNode currentNode) {
         RubyNode.notDesignedForCompilation();
 
         if (!name.startsWith("@")) {
-            throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name));
+            throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
 
         return name;

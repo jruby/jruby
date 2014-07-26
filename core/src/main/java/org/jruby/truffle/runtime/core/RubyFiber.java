@@ -28,11 +28,11 @@ public class RubyFiber extends RubyObject {
     public static class RubyFiberClass extends RubyClass {
 
         public RubyFiberClass(RubyClass objectClass) {
-            super(null, objectClass, "Fiber");
+            super(null, null, objectClass, "Fiber");
         }
 
         @Override
-        public RubyBasicObject newInstance() {
+        public RubyBasicObject newInstance(RubyNode currentNode) {
             return new RubyFiber(this, getContext().getFiberManager(), getContext().getThreadManager());
         }
 

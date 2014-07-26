@@ -152,7 +152,7 @@ public abstract class RegexpNodes {
         public NilPlaceholder initialize(RubyRegexp regexp, RubyString string) {
             notDesignedForCompilation();
 
-            regexp.initialize(string.toString());
+            regexp.initialize(this, string.toString());
             return NilPlaceholder.INSTANCE;
         }
 

@@ -12,9 +12,11 @@ package org.jruby.truffle.runtime.methods;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.methods.arguments.BehaveAsBlockNode;
 import org.jruby.truffle.runtime.*;
@@ -124,7 +126,7 @@ public class RubyMethod {
         return new RubyMethod(sharedMethodInfo, name, declaringModule, visibility, true, callTarget, declarationFrame, mapCallTarget);
     }
 
-    public boolean isVisibleTo(RubyBasicObject caller, RubyBasicObject receiver) {
+    public boolean isVisibleTo(Node currentNode, RubyBasicObject caller, RubyBasicObject receiver) {
         if (caller == receiver.getRubyClass()){
             return true;
         }
@@ -132,28 +134,28 @@ public class RubyMethod {
         if (caller == receiver){
             return true;
         }
-        return isVisibleTo(caller);
+        return isVisibleTo(currentNode, caller);
     }
 
-    public boolean isVisibleTo(RubyBasicObject caller) {
+    public boolean isVisibleTo(Node currentNode, RubyBasicObject caller) {
         if (caller instanceof RubyModule) {
-            if (isVisibleTo((RubyModule) caller)) {
+            if (isVisibleTo(currentNode, (RubyModule) caller)) {
                 return true;
             }
         }
 
-        if (isVisibleTo(caller.getRubyClass())) {
+        if (isVisibleTo(currentNode, caller.getRubyClass())) {
             return true;
         }
 
-        if (isVisibleTo(caller.getSingletonClass())) {
+        if (isVisibleTo(currentNode, caller.getSingletonClass(currentNode))) {
             return true;
         }
 
         return false;
     }
 
-    private boolean isVisibleTo(RubyModule module) {
+    private boolean isVisibleTo(Node currentNode, RubyModule module) {
         switch (visibility) {
             case PUBLIC:
                 return true;
@@ -163,11 +165,11 @@ public class RubyMethod {
                     return true;
                 }
 
-                if (module.getSingletonClass() == declaringModule) {
+                if (module.getSingletonClass(currentNode) == declaringModule) {
                     return true;
                 }
 
-                if (module.getParentModule() != null && isVisibleTo(module.getParentModule())) {
+                if (module.getParentModule() != null && isVisibleTo(currentNode, module.getParentModule())) {
                     return true;
                 }
 
@@ -178,11 +180,11 @@ public class RubyMethod {
                     return true;
                 }
 
-                if (module.getSingletonClass() == declaringModule) {
+                if (module.getSingletonClass(currentNode) == declaringModule) {
                     return true;
                 }
 
-                if (module.getParentModule() != null && isVisibleTo(module.getParentModule())) {
+                if (module.getParentModule() != null && isVisibleTo(currentNode, module.getParentModule())) {
                     return true;
                 }
 

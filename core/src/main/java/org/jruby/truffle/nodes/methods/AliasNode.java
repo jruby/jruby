@@ -38,10 +38,10 @@ public class AliasNode extends RubyNode {
 
         if (object instanceof RubyModule) {
             // Module definition or class_eval
-            ((RubyModule) object).alias(newName, oldName);
+            ((RubyModule) object).alias(this, newName, oldName);
         } else {
             // instance_eval?
-            ((RubyBasicObject) object).getSingletonClass().alias(newName, oldName);
+            ((RubyBasicObject) object).getSingletonClass(this).alias(this, newName, oldName);
         }
     }
 

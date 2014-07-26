@@ -33,8 +33,8 @@ import org.jruby.truffle.runtime.methods.*;
  */
 class ModuleTranslator extends BodyTranslator {
 
-    public ModuleTranslator(RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source) {
-        super(context, parent, environment, source);
+    public ModuleTranslator(RubyNode currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source) {
+        super(currentNode, context, parent, environment, source);
         useClassVariablesAsIfInClass = true;
     }
 
@@ -47,8 +47,12 @@ class ModuleTranslator extends BodyTranslator {
 
         if (bodyNode != null) {
             parentSourceSection = sourceSection;
-            body = bodyNode.accept(this);
-            parentSourceSection = null;
+
+            try {
+                body = bodyNode.accept(this);
+            } finally {
+                parentSourceSection = null;
+            }
         } else {
             body = new NilLiteralNode(context, sourceSection);
         }
@@ -94,8 +98,8 @@ class ModuleTranslator extends BodyTranslator {
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, node.getName(), false, node.getBodyNode());
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
-                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName());
-        final MethodTranslator methodCompiler = new MethodTranslator(context, this, newEnvironment, false, false, source);
+                context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);
+        final MethodTranslator methodCompiler = new MethodTranslator(currentNode, context, this, newEnvironment, false, false, source);
         final MethodDefinitionNode functionExprNode = methodCompiler.compileFunctionNode(translate(node.getPosition()), node.getName(), node.getArgsNode(), node.getBodyNode(), false);
 
         return new AddMethodNode(context, sourceSection, new SelfNode(context, sourceSection), functionExprNode);

@@ -1876,10 +1876,10 @@ public abstract class ArrayNodes {
                 throw new UnsupportedOperationException();
             }
 
-            Object accumulator = getContext().getCoreLibrary().box(store[0]).send(symbol.toString(), null, store[1]);
+            Object accumulator = getContext().getCoreLibrary().box(store[0]).send(this, symbol.toString(), null, store[1]);
 
             for (int n = 2; n < array.getSize(); n++) {
-                accumulator = getContext().getCoreLibrary().box(accumulator).send(symbol.toString(), null, store[n]);
+                accumulator = getContext().getCoreLibrary().box(accumulator).send(this, symbol.toString(), null, store[n]);
             }
 
             return accumulator;
@@ -2279,14 +2279,12 @@ public abstract class ArrayNodes {
         private final CallTarget callTarget;
 
         public MaxBlock(RubyContext context) {
-            final String name = "(max-block)";
-
-            final SourceSection sourceSection = new NullSourceSection(name, name);
+            final SourceSection sourceSection = new CoreSourceSection("Array", "block in max");
 
             frameDescriptor = new FrameDescriptor();
             frameSlot = frameDescriptor.addFrameSlot("maximum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, name, false, null);
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, "", false, null);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(sourceSection, null, sharedMethodInfo,
                     ArrayNodesFactory.MaxBlockNodeFactory.create(context, sourceSection, new RubyNode[]{
@@ -2393,14 +2391,12 @@ public abstract class ArrayNodes {
         private final CallTarget callTarget;
 
         public MinBlock(RubyContext context) {
-            final String name = "(min-block)";
-
-            final SourceSection sourceSection = new NullSourceSection(name, name);
+            final SourceSection sourceSection = new CoreSourceSection("Array", "block in min");
 
             frameDescriptor = new FrameDescriptor();
             frameSlot = frameDescriptor.addFrameSlot("minimum_memo");
 
-            sharedMethodInfo = new SharedMethodInfo(sourceSection, name, false, null);
+            sharedMethodInfo = new SharedMethodInfo(sourceSection, "block in min", false, null);
 
             callTarget = Truffle.getRuntime().createCallTarget(new RubyRootNode(sourceSection, null, sharedMethodInfo,
                     ArrayNodesFactory.MinBlockNodeFactory.create(context, sourceSection, new RubyNode[]{

@@ -28,11 +28,11 @@ public final class RubyArray extends RubyObject {
     public static class RubyArrayClass extends RubyClass {
 
         public RubyArrayClass(RubyClass objectClass) {
-            super(null, objectClass, "Array");
+            super(null, null, objectClass, "Array");
         }
 
         @Override
-        public RubyBasicObject newInstance() {
+        public RubyBasicObject newInstance(RubyNode currentNode) {
             return new RubyArray(this);
         }
 

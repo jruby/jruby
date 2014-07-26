@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.utilities.*;
 import org.jruby.truffle.nodes.*;
+import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.*;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -25,13 +26,15 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
  */
 public class TryNode extends RubyNode {
 
-    @Child protected RubyNode tryPart;
+    @Child protected ExceptionTranslatingNode tryPart;
     @Children final RescueNode[] rescueParts;
     @Child protected RubyNode elsePart;
 
+    private final BranchProfile elseProfile = new BranchProfile();
     private final BranchProfile controlFlowProfile = new BranchProfile();
+    private final BranchProfile raiseExceptionProfile = new BranchProfile();
 
-    public TryNode(RubyContext context, SourceSection sourceSection, RubyNode tryPart, RescueNode[] rescueParts, RubyNode elsePart) {
+    public TryNode(RubyContext context, SourceSection sourceSection, ExceptionTranslatingNode tryPart, RescueNode[] rescueParts, RubyNode elsePart) {
         super(context, sourceSection);
         this.tryPart = tryPart;
         this.rescueParts = rescueParts;
@@ -45,14 +48,14 @@ public class TryNode extends RubyNode {
         while (true) {
             try {
                 final Object result = tryPart.execute(frame);
+                elseProfile.enter();
                 elsePart.executeVoid(frame);
                 return result;
             } catch (ControlFlowException exception) {
                 controlFlowProfile.enter();
-
                 throw exception;
-            } catch (RuntimeException exception) {
-                CompilerDirectives.transferToInterpreter();
+            } catch (RaiseException exception) {
+                raiseExceptionProfile.enter();
 
                 try {
                     return handleException(frame, exception);
@@ -63,17 +66,14 @@ public class TryNode extends RubyNode {
         }
     }
 
-    private Object handleException(VirtualFrame frame, RuntimeException exception) {
+    @ExplodeLoop
+    private Object handleException(VirtualFrame frame, RaiseException exception) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final RubyContext context = getContext();
-
-        final RubyBasicObject rubyException = ExceptionTranslator.translateException(context, exception);
-
-        context.getCoreLibrary().getGlobalVariablesObject().setInstanceVariable("$!", rubyException);
+        getContext().getCoreLibrary().getGlobalVariablesObject().setInstanceVariable("$!", exception.getRubyException());
 
         for (RescueNode rescue : rescueParts) {
-            if (rescue.canHandle(frame, rubyException)) {
+            if (rescue.canHandle(frame, exception.getRubyException())) {
                 return rescue.execute(frame);
             }
         }

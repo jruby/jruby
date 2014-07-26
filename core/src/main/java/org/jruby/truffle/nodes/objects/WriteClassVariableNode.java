@@ -40,7 +40,7 @@ public class WriteClassVariableNode extends RubyNode {
 
         final Object rhsValue = rhs.execute(frame);
 
-        moduleObject.setClassVariable(name, rhsValue);
+        moduleObject.setClassVariable(this, name, rhsValue);
 
         return rhsValue;
     }

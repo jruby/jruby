@@ -46,7 +46,7 @@ public class WriteConstantNode extends RubyNode {
         assert rhsValue != null;
         assert !(rhsValue instanceof String);
 
-        moduleObject.setModuleConstant(name, rhsValue);
+        moduleObject.setModuleConstant(this, name, rhsValue);
 
         return rhsValue;
     }

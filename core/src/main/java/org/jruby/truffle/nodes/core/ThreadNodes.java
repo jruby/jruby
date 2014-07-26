@@ -33,7 +33,7 @@ public abstract class ThreadNodes {
         public NilPlaceholder initialize(RubyThread thread, RubyProc block) {
             notDesignedForCompilation();
 
-            thread.initialize(block);
+            thread.initialize(this, block);
             return NilPlaceholder.INSTANCE;
         }
 
