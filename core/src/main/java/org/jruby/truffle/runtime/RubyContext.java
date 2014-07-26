@@ -186,19 +186,9 @@ public class RubyContext {
     }
 
     public Object execute(RubyContext context, Source source, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame) {
-        try {
-            final RubyParserResult parseResult = translator.parse(context, source, parserContext, parentFrame);
-            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
-            return callTarget.call(RubyArguments.pack(parentFrame, self, null));
-        } catch (RaiseException e) {
-            throw e;
-        } catch (ThrowException e) {
-            throw new RaiseException(context.getCoreLibrary().argumentErrorUncaughtThrow(e.getTag()));
-        } catch (BreakShellException | QuitException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new RaiseException(ExceptionTranslator.translateException(this, e));
-        }
+        final RubyParserResult parseResult = translator.parse(context, source, parserContext, parentFrame);
+        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
+        return callTarget.call(RubyArguments.pack(parentFrame, self, null));
     }
 
     public long getNextObjectID() {

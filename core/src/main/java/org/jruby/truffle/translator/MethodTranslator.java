@@ -163,6 +163,10 @@ class MethodTranslator extends BodyTranslator {
             body = new ObjectSpaceSafepointNode(context, sourceSection, body);
         }
 
+        if (!isBlock) {
+            body = new ExceptionTranslatingNode(context, sourceSection, body);
+        }
+
         final RubyRootNode rootNode = new RubyRootNode(sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
 
         if (isBlock) {

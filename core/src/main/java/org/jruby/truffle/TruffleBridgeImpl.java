@@ -87,18 +87,9 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
     @Override
     public Object execute(TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode) {
-        try {
-            final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, truffleContext.getSourceManager().get(rootNode.getPosition().getFile()), parserContext, parentFrame, rootNode);
-            final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
-            return callTarget.call(RubyArguments.pack(parentFrame, self, null));
-        } catch (ThrowException e) {
-            throw new RaiseException(truffleContext.getCoreLibrary().nameErrorUncaughtThrow(e.getTag()));
-        } catch (RaiseException | BreakShellException | QuitException e) {
-            throw e;
-        } catch (Throwable e) {
-            e.printStackTrace();
-            throw new RaiseException(ExceptionTranslator.translateException(truffleContext, e));
-        }
+        final RubyParserResult parseResult = truffleContext.getTranslator().parse(truffleContext, truffleContext.getSourceManager().get(rootNode.getPosition().getFile()), parserContext, parentFrame, rootNode);
+        final CallTarget callTarget = Truffle.getRuntime().createCallTarget(parseResult.getRootNode());
+        return callTarget.call(RubyArguments.pack(parentFrame, self, null));
     }
 
     @Override

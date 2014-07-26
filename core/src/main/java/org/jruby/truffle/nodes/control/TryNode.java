@@ -28,7 +28,10 @@ public class TryNode extends RubyNode {
     @Children final RescueNode[] rescueParts;
     @Child protected RubyNode elsePart;
 
+    private final BranchProfile elseProfile = new BranchProfile();
     private final BranchProfile controlFlowProfile = new BranchProfile();
+    private final BranchProfile raiseExceptionProfile = new BranchProfile();
+    private final BranchProfile runtimeExceptionProfile = new BranchProfile();
 
     public TryNode(RubyContext context, SourceSection sourceSection, RubyNode tryPart, RescueNode[] rescueParts, RubyNode elsePart) {
         super(context, sourceSection);
@@ -44,17 +47,25 @@ public class TryNode extends RubyNode {
         while (true) {
             try {
                 final Object result = tryPart.execute(frame);
+                elseProfile.enter();
                 elsePart.executeVoid(frame);
                 return result;
             } catch (ControlFlowException exception) {
                 controlFlowProfile.enter();
-
                 throw exception;
-            } catch (RuntimeException exception) {
-                CompilerDirectives.transferToInterpreter();
+            } catch (RaiseException exception) {
+                raiseExceptionProfile.enter();
 
                 try {
                     return handleException(frame, exception);
+                } catch (RetryException e) {
+                    continue;
+                }
+            } catch (RuntimeException exception) {
+                runtimeExceptionProfile.enter();
+
+                try {
+                    return handleException(frame, new RaiseException(ExceptionTranslator.translateException(getContext(), exception)));
                 } catch (RetryException e) {
                     continue;
                 }
@@ -62,17 +73,14 @@ public class TryNode extends RubyNode {
         }
     }
 
-    private Object handleException(VirtualFrame frame, RuntimeException exception) {
+    @ExplodeLoop
+    private Object handleException(VirtualFrame frame, RaiseException exception) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final RubyContext context = getContext();
-
-        final RubyBasicObject rubyException = ExceptionTranslator.translateException(context, exception);
-
-        context.getCoreLibrary().getGlobalVariablesObject().setInstanceVariable("$!", rubyException);
+        getContext().getCoreLibrary().getGlobalVariablesObject().setInstanceVariable("$!", exception.getRubyException());
 
         for (RescueNode rescue : rescueParts) {
-            if (rescue.canHandle(frame, rubyException)) {
+            if (rescue.canHandle(frame, exception.getRubyException())) {
                 return rescue.execute(frame);
             }
         }
