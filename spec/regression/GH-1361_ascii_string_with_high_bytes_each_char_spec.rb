@@ -5,6 +5,6 @@ describe "An ASCII string with high-range bytes" do
     str.each_char {|c| ary << c}
 
     expect(ary.length).to eq 6
-    expect(ary).to eq(['M', "\xA1", 'x', 'i', 'c', 'o'])
+    expect(ary).to eq(['M', "\xA1", 'x', 'i', 'c', 'o'].map{|c| c.force_encoding('ASCII')})
   end
 end unless RUBY_VERSION < '1.9'
