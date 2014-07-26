@@ -36,6 +36,7 @@ import java.io.InputStream;
 import java.util.List;
 import org.jcodings.Encoding;
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.parser.ParserConfiguration;
 import org.jruby.util.ByteList;
 
@@ -60,6 +61,9 @@ public abstract class LexerSource {
     
     // Virtual line as specified by eval, etc...
     protected int lineOffset = 0;
+
+    // How many bytes into the source were we when we started this lexeme?
+    protected int startOffset = 0;
     
     // How many bytes into the source are we?
     protected int offset = 0;
@@ -73,6 +77,8 @@ public abstract class LexerSource {
     // Last full line read.
     private StringBuilder sourceLine;
 
+    public static boolean useDetailedPositions = false;
+
     /**
      * Create our food-source for the lexer
      * 
@@ -85,7 +91,13 @@ public abstract class LexerSource {
             boolean extraPositionInformation) {
         this.sourceName = sourceName;
         this.lineOffset = lineOffset;
-        positionFactory = new SimplePositionFactory(this, line);
+
+        if (useDetailedPositions) {
+            positionFactory = new SimpleDetailedPositionFactory(this, line);
+        } else {
+            positionFactory = new SimplePositionFactory(this, line);
+        }
+
         this.list = list;
         lineBuffer = new StringBuilder(160);
         sourceLine = new StringBuilder(160);
@@ -110,6 +122,10 @@ public abstract class LexerSource {
     public int getVirtualLine() {
         return line + lineOffset;
     }
+
+    public int getStartOffset() {
+        return startOffset;
+    }
     
     /**
      * The location of the last byte we read from the source.
@@ -122,20 +138,26 @@ public abstract class LexerSource {
 
     /**
      * Where is the reader within the source {filename,row}
+     *
+     * Node that this method updates some internal state - it's not just a constructor
      * 
      * @return the current position
      */
     public ISourcePosition getPosition(ISourcePosition startPosition) {
-    	return positionFactory.getPosition(startPosition);
+        ISourcePosition sourcePosition = positionFactory.getPosition(startPosition);
+        startOffset = offset;
+        return sourcePosition;
     }
     
     /**
      * Where is the reader within the source {filename,row}
+     *
+     * Node that this method updates some internal state - it's not just a constructor
      * 
      * @return the current position
      */
     public ISourcePosition getPosition() {
-    	return positionFactory.getPosition(null);
+    	return getPosition(null);
     }
 
     /**

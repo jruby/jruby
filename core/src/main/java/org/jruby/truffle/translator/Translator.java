@@ -11,6 +11,8 @@ package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.lexer.yacc.IDetailedSourcePosition;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -19,6 +21,8 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
     protected final RubyContext context;
     protected final Source source;
     private final String sourceIdentifier;
+
+    protected SourceSection parentSourceSection;
 
     public Translator(RubyContext context, Source source, String sourceIdentifier) {
         this.context = context;
@@ -30,17 +34,21 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
         return translate(source, sourceIdentifier, sourcePosition);
     }
 
-    public static SourceSection translate(Source source, String sourceIdentifier, org.jruby.lexer.yacc.ISourcePosition sourcePosition) {
-        try {
-            if (sourcePosition.getStartLine() == -1) {
-                // TODO(CS): why on earth is the line -1?
-                return source.createSection(sourceIdentifier, 0, source.getCode().length());
+    public SourceSection translate(Source source, String sourceIdentifier, org.jruby.lexer.yacc.ISourcePosition sourcePosition) {
+        if (sourcePosition == ISourcePosition.INVALID_POSITION) {
+            if (parentSourceSection == null) {
+                throw new UnsupportedOperationException("Truffle doesn't want invalid positions - find a way to give me a real position!");
             } else {
-                // TODO(CS): can we not get column info?
-                return source.createSection(sourceIdentifier, sourcePosition.getStartLine() + 1);
+                return parentSourceSection;
             }
-        } catch (UnsupportedOperationException e) {
-            return source.createSection(sourceIdentifier, 0, source.getCode().length());
+        } else if (sourcePosition instanceof IDetailedSourcePosition) {
+            final IDetailedSourcePosition detailedSourcePosition = (IDetailedSourcePosition) sourcePosition;
+            return source.createSection(sourceIdentifier, detailedSourcePosition.getOffset(), detailedSourcePosition.getLength());
+        } else if (RubyContext.ALLOW_SIMPLE_SOURCE_SECTIONS) {
+            // If we didn't run with -X+T, so maybe we're using truffelize, we might still get simple source sections
+            return source.createSection(sourceIdentifier, sourcePosition.getStartLine() + 1);
+        } else {
+            throw new UnsupportedOperationException("Truffle needs detailed source positions unless you know what you are doing and set truffle.allow_simple_source_sections - got " + sourcePosition.getClass());
         }
     }
 

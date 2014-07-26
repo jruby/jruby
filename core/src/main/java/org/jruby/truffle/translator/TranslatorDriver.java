@@ -144,8 +144,10 @@ public class TranslatorDriver {
 
         RubyNode truffleNode;
 
-        if (rootNode.getBodyNode() == null) {
+        if (rootNode.getBodyNode() == null || rootNode.getBodyNode() instanceof org.jruby.ast.NilNode) {
+            translator.parentSourceSection = sharedMethodInfo.getSourceSection();
             truffleNode = new NilLiteralNode(context, null);
+            translator.parentSourceSection = null;
         } else {
             truffleNode = rootNode.getBodyNode().accept(translator);
         }

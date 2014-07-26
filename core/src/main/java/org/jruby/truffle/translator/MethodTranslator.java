@@ -70,7 +70,9 @@ class MethodTranslator extends BodyTranslator {
         RubyNode body;
 
         if (bodyNode != null) {
+            parentSourceSection = sourceSection;
             body = bodyNode.accept(this);
+            parentSourceSection = null;
         } else {
             body = new NilLiteralNode(context, sourceSection);
         }
