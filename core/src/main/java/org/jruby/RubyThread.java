@@ -1310,7 +1310,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * directly to mail delivery, bypassing all Ruby Thread-related steps.
      */
     public void dieFromFinalizer() {
-        genericKill(getRuntime(), this);
+        genericKill(getRuntime(), null);
     }
 
     private static void debug(RubyThread thread, String message) {
