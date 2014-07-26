@@ -231,12 +231,24 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitBlockNode(org.jruby.ast.BlockNode node) {
-        final List<org.jruby.ast.Node> children = node.childNodes();
+        final SourceSection sourceSection = translate(node.getPosition());
 
         final List<RubyNode> translatedChildren = new ArrayList<>();
 
-        for (int n = 0; n < children.size(); n++) {
-            final RubyNode translatedChild = children.get(n).accept(this);
+        for (org.jruby.ast.Node child : node.childNodes()) {
+            if (child.getPosition() == ISourcePosition.INVALID_POSITION) {
+                parentSourceSection = sourceSection;
+            }
+
+            final RubyNode translatedChild;
+
+            try {
+                translatedChild = child.accept(this);
+            } finally {
+                if (child.getPosition() == ISourcePosition.INVALID_POSITION) {
+                    parentSourceSection = null;
+                }
+            }
 
             if (!(translatedChild instanceof DeadNode)) {
                 translatedChildren.add(translatedChild);
@@ -246,7 +258,7 @@ public class BodyTranslator extends Translator {
         if (translatedChildren.size() == 1) {
             return translatedChildren.get(0);
         } else {
-            return SequenceNode.sequence(context, translate(node.getPosition()), translatedChildren.toArray(new RubyNode[translatedChildren.size()]));
+            return SequenceNode.sequence(context, sourceSection, translatedChildren.toArray(new RubyNode[translatedChildren.size()]));
         }
     }
 
@@ -1170,7 +1182,17 @@ public class BodyTranslator extends Translator {
         if (node.getValueNode() == null) {
             rhs = new DeadNode(context, sourceSection);
         } else {
-            rhs = node.getValueNode().accept(this);
+            if (node.getValueNode().getPosition() == ISourcePosition.INVALID_POSITION) {
+                parentSourceSection = sourceSection;
+            }
+
+            try {
+                rhs = node.getValueNode().accept(this);
+            } finally {
+                if (node.getValueNode().getPosition() == ISourcePosition.INVALID_POSITION) {
+                    parentSourceSection = null;
+                }
+            }
         }
 
         RubyNode translated = ((ReadNode) lhs).makeWriteNode(rhs);
@@ -1505,8 +1527,20 @@ public class BodyTranslator extends Translator {
         } else {
             final boolean t = translatingNextExpression;
             translatingNextExpression = true;
-            resultNode = node.getValueNode().accept(this);
-            translatingNextExpression = t;
+
+            if (node.getValueNode().getPosition() == ISourcePosition.INVALID_POSITION) {
+                parentSourceSection = sourceSection;
+            }
+
+            try {
+                resultNode = node.getValueNode().accept(this);
+            } finally {
+                if (node.getValueNode().getPosition() == ISourcePosition.INVALID_POSITION) {
+                    parentSourceSection = null;
+                }
+
+                translatingNextExpression = t;
+            }
         }
 
         return new NextNode(context, sourceSection, resultNode);
