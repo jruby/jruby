@@ -31,6 +31,7 @@ package org.jruby.util.cli;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.exceptions.MainExitException;
+import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.runtime.profile.builtin.ProfileOutput;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
@@ -350,6 +351,9 @@ public class ArgumentProcessor {
                     } else if (extendedOption.equals("+C") || extendedOption.equals("+CIR")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
                     } else if (extendedOption.equals("+T")) {
+                        // LexerSource can't see the InstanceConfig when it starts, so if any instanceof of JRuby in
+                        // this VM is using Truffle we set this global option.
+                        LexerSource.useDetailedPositions = true;
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
                         Options.WARN_USELESSS_USE_OF.force(Boolean.toString(false));
                         config.setDisableGems(true);
