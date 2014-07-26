@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import org.joni.Regex;
 import org.jruby.ast.Node;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.nodes.DefinedNode;
 import org.jruby.truffle.nodes.ReadNode;
 import org.jruby.truffle.nodes.RubyNode;
@@ -256,7 +257,21 @@ public class BodyTranslator extends Translator {
         RubyNode resultNode;
 
         if (node.getValueNode() == null) {
-            resultNode = new NilLiteralNode(context, sourceSection);
+            parentSourceSection = sourceSection;
+
+            try {
+                resultNode = new NilLiteralNode(context, sourceSection);
+            } finally {
+                parentSourceSection = null;
+            }
+        } else if (node.getValueNode().getPosition() == ISourcePosition.INVALID_POSITION) {
+            parentSourceSection = sourceSection;
+
+            try {
+                resultNode = node.getValueNode().accept(this);
+            } finally {
+                parentSourceSection = null;
+            }
         } else {
             resultNode = node.getValueNode().accept(this);
         }
@@ -1480,7 +1495,13 @@ public class BodyTranslator extends Translator {
         RubyNode resultNode;
 
         if (node.getValueNode() == null) {
-            resultNode = new NilLiteralNode(context, sourceSection);
+            parentSourceSection = sourceSection;
+
+            try {
+                resultNode = new NilLiteralNode(context, sourceSection);
+            } finally {
+                parentSourceSection = null;
+            }
         } else {
             final boolean t = translatingNextExpression;
             translatingNextExpression = true;
@@ -1493,6 +1514,10 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitNilNode(org.jruby.ast.NilNode node) {
+        if (node.getPosition() == ISourcePosition.INVALID_POSITION && parentSourceSection == null) {
+            throw new UnsupportedOperationException();
+        }
+
         return new NilLiteralNode(context, translate(node.getPosition()));
     }
 

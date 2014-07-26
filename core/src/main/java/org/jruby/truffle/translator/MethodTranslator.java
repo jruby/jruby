@@ -70,8 +70,12 @@ class MethodTranslator extends BodyTranslator {
 
         if (bodyNode != null) {
             parentSourceSection = sourceSection;
-            body = bodyNode.accept(this);
-            parentSourceSection = null;
+
+            try {
+                body = bodyNode.accept(this);
+            } finally {
+                parentSourceSection = null;
+            }
         } else {
             body = new NilLiteralNode(context, sourceSection);
         }

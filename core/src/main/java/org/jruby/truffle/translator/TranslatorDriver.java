@@ -141,8 +141,12 @@ public class TranslatorDriver {
 
         if (rootNode.getBodyNode() == null || rootNode.getBodyNode() instanceof org.jruby.ast.NilNode) {
             translator.parentSourceSection = sharedMethodInfo.getSourceSection();
-            truffleNode = new NilLiteralNode(context, null);
-            translator.parentSourceSection = null;
+            
+            try {
+                truffleNode = new NilLiteralNode(context, null);
+            } finally {
+                translator.parentSourceSection = null;
+            }
         } else {
             truffleNode = rootNode.getBodyNode().accept(translator);
         }
