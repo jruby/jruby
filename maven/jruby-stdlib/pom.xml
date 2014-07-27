@@ -74,6 +74,31 @@
         <version>${jruby.plugins.version}</version>
         <executions>
           <execution>
+            <id>create .jrubydir files</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+	      <script>
+                def process( dir, root = false )
+                  File.open( dir + '/.jrubydir', 'w' ) do |f|
+                    f.puts ".." unless root
+	            f.puts "."
+		    Dir[ dir + '/*'].entries.each do |e|
+                      f.print File.basename( e )
+		      if File.directory?( e )
+		        process( e )
+		      end
+		      f.puts
+                    end
+		  end
+		end
+		process( 'target/classes', true )
+	      </script>
+	    </configuration>
+	  </execution>
+          <execution>
             <id>fix shebang on gem bin files and add *.bat files</id>
             <phase>initialize</phase>
             <goals>
