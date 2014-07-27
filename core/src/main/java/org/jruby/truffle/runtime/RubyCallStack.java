@@ -156,7 +156,7 @@ public abstract class RubyCallStack {
     }
 
     private static String formatFromLine(RubyContext context, SourceSection sourceSection, Frame frame) {
-        return String.format("\tfrom %s:%d:in `%s'%s", sourceSection.getSource().getName(), sourceSection.getStartLine(), sourceSection.getIdentifier(), formatLocals(context, frame));
+        return String.format("\tfrom %s:%d:in `%s'%s", sourceSection.getSource().getName(), sourceSection.getStartLine(), sourceSection.getIdentifier(), RubyContext.BACKTRACE_PRINT_LOCALS ? formatLocals(context, frame) : "");
     }
 
     private static String formatLocals(RubyContext context, Frame frame) {
@@ -179,17 +179,21 @@ public abstract class RubyCallStack {
                 }
                 if (first) {
                     first = false;
-                    builder.append(" with ");
+                    builder.append(" with {");
                 } else {
                     builder.append(", ");
                 }
-                int maxLength = 12;
-                if (repr.length() > maxLength) {
-                    repr = repr.substring(0, maxLength) + "... (" + value.getRubyClass().getName() + ")";
+                if (repr.length() > RubyContext.BACKTRACE_PRINT_LOCALS_MAX) {
+                    repr = repr.substring(0, RubyContext.BACKTRACE_PRINT_LOCALS_MAX) + "...";
                 }
-                builder.append(ident + " = " + repr);
+                builder.append(ident + ": " + repr);
             }
         }
+
+        if (builder.length() > 0) {
+            builder.append("}");
+        }
+
         return builder.toString();
     }
 
