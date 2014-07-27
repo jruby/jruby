@@ -9,24 +9,14 @@
  */
 package org.jruby.truffle.runtime;
 
-import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.RootCallTarget;
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
-import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.runtime.core.CoreSourceSection;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.control.TruffleFatalException;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
 import java.util.ArrayList;
@@ -61,12 +51,16 @@ public abstract class RubyCallStack {
         }
 
         method = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<RubyMethod>() {
-
             @Override
             public RubyMethod visitFrame(FrameInstance frameInstance) {
-                return getMethod(frameInstance);
-            }
+                final RubyMethod method = getMethod(frameInstance);
 
+                if (method == null) {
+                    return null;
+                } else {
+                    return method;
+                }
+            }
         });
 
         if (method != null) {
@@ -118,80 +112,110 @@ public abstract class RubyCallStack {
     }
 
     public static String[] getCallStack(Node currentNode, RubyContext context) {
-        final ArrayList<String> callStack = new ArrayList<>();
+        try {
+            final ArrayList<String> callStack = new ArrayList<>();
 
-        final String suffix = "(suffix)";
+            final String suffix = "(suffix)";
 
-        if (currentNode != null) {
-            callStack.add(formatInLine(currentNode.getEncapsulatingSourceSection(), suffix));
+            final CallStackFrame[] materializedCallStackFrames = materializeCallStackFrames();
+
+            if (currentNode != null) {
+                callStack.add(formatInLine(currentNode.getEncapsulatingSourceSection(), suffix));
+            }
+
+            for (CallStackFrame frame : materializedCallStackFrames) {
+                if (frame.getCallNode() != null) {
+                    callStack.add(formatFromLine(context, frame.getCallNode().getEncapsulatingSourceSection(), frame.getFrame()));
+                }
+            }
+
+            return callStack.toArray(new String[callStack.size()]);
+        } catch (Exception e) {
+            throw new TruffleFatalException("Exception while trying to build Ruby call stack", e);
         }
+    }
+
+    private static CallStackFrame[] materializeCallStackFrames() {
+        final ArrayList<CallStackFrame> frames = new ArrayList<>();
 
         final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
 
-        if (currentFrame.getCallNode() != null) {
-            callStack.add(formatFromLine(context, currentFrame.getCallNode().getEncapsulatingSourceSection(), currentFrame.getFrame(FrameInstance.FrameAccess.READ_ONLY, false)));
+        try {
+            frames.add(new CallStackFrame(currentFrame.getCallNode(), currentFrame.getFrame(FrameInstance.FrameAccess.MATERIALIZE, false)));
+        } catch (IndexOutOfBoundsException e) {
+            // TODO(CS): what causes this error?
         }
-
-        // TODO: pretty sure putting frame instances on the heap is wrong, but the API will change soon anyway
-
-        final ArrayList<FrameInstance> frameInstances = new ArrayList<>();
 
         Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Void>() {
 
             @Override
             public Void visitFrame(FrameInstance frameInstance) {
-                frameInstances.add(frameInstance);
+                frames.add(new CallStackFrame(frameInstance.getCallNode(), frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, false)));
                 return null;
             }
 
         });
 
-        for (FrameInstance frame : frameInstances) {
-            callStack.add(formatFromLine(context, frame.getCallNode().getEncapsulatingSourceSection(), frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, false)));
-        }
-
-        return callStack.toArray(new String[callStack.size()]);
+        return frames.toArray(new CallStackFrame[frames.size()]);
     }
 
     private static String formatInLine(SourceSection sourceSection, String suffix) {
         if (sourceSection instanceof CoreSourceSection) {
-            return String.format("core:in `%s': %s", ((CoreSourceSection) sourceSection).getMethodName(), suffix);
+            final CoreSourceSection coreSourceSection = ((CoreSourceSection) sourceSection);
+            return String.format("in %s#%s: %s", coreSourceSection.getClassName(), coreSourceSection.getMethodName(), suffix);
         } else {
-            return String.format("%s:%d:in `%s': %s", sourceSection.getSource().getName(), sourceSection.getStartLine(), sourceSection.getIdentifier(), suffix);
+            return String.format("%s:%d:in : %s", sourceSection.getSource().getName(), sourceSection.getStartLine(), sourceSection.getIdentifier(), suffix);
         }
     }
 
     private static String formatFromLine(RubyContext context, SourceSection sourceSection, Frame frame) {
         if (sourceSection instanceof CoreSourceSection) {
-            return String.format("\tfrom core:in `%s'%s", ((CoreSourceSection) sourceSection).getMethodName(), formatLocals(context, frame));
+            final CoreSourceSection coreSourceSection = ((CoreSourceSection) sourceSection);
+            return String.format("\tin %s#%s", coreSourceSection.getClassName(), coreSourceSection.getMethodName(), RubyContext.BACKTRACE_PRINT_LOCALS ? formatLocals(context, frame) : "");
         } else {
-            return String.format("\tfrom %s:%d:in `%s'%s", sourceSection.getSource().getName(), sourceSection.getStartLine(), sourceSection.getIdentifier(), formatLocals(context, frame));
+            return String.format("\tfrom %s:%d:in `%s'%s", sourceSection.getSource().getName(), sourceSection.getStartLine(), sourceSection.getIdentifier(), RubyContext.BACKTRACE_PRINT_LOCALS ? formatLocals(context, frame) : "");
         }
     }
 
     private static String formatLocals(RubyContext context, Frame frame) {
         final StringBuilder builder = new StringBuilder();
-        FrameDescriptor fd = frame.getFrameDescriptor();
-        boolean first = true;
-        for (Object ident : fd.getIdentifiers()) {
-            if (ident instanceof String) {
-                RubyBasicObject value = context.getCoreLibrary().box(frame.getValue(fd.findFrameSlot(ident)));
-                // TODO(CS): slow path send
-                String repr = value.send(null, "inspect", null).toString();
-                if (first) {
-                    first = false;
-                    builder.append(" with ");
-                } else {
-                    builder.append(", ");
-                }
-                int maxLength = 12;
-                if (repr.length() > maxLength) {
-                    repr = repr.substring(0, maxLength) + "... (" + value.getRubyClass().getName() + ")";
-                }
-                builder.append(ident + " = " + repr);
+        final FrameDescriptor fd = frame.getFrameDescriptor();
+
+        builder.append(" with {self: ");
+        builder.append(formatLocalValue(context, RubyArguments.getSelf(frame.getArguments())));
+
+        for (Object identifier : fd.getIdentifiers()) {
+            if (identifier instanceof String) {
+                builder.append(", ");
+                builder.append(identifier);
+                builder.append(": ");
+                builder.append(formatLocalValue(context, frame.getValue(fd.findFrameSlot(identifier))));
             }
         }
+
+        if (builder.length() > 0) {
+            builder.append("}");
+        }
+
         return builder.toString();
+    }
+
+    private static String formatLocalValue(RubyContext context, Object value) {
+        try {
+            // TODO(CS): slow path send
+            final String inspected = context.getCoreLibrary().box(value).send(null, "inspect", null).toString();
+
+            if (inspected.length() <= RubyContext.BACKTRACE_PRINT_LOCALS_MAX) {
+                return inspected;
+            } else {
+                return inspected.substring(0, RubyContext.BACKTRACE_PRINT_LOCALS_MAX) + "...";
+            }
+        } catch (Exception e) {
+            if (RubyContext.EXCEPTIONS_PRINT_JAVA) {
+                e.printStackTrace();
+            }
+            return "<exception>";
+        }
     }
 
     public static RubyArray getCallStackAsRubyArray(RubyContext context, Node currentNode) {
@@ -204,6 +228,26 @@ public abstract class RubyCallStack {
         }
 
         return RubyArray.fromObjects(context.getCoreLibrary().getArrayClass(), callStackAsRubyString);
+    }
+
+    private static class CallStackFrame {
+
+        private final Node callNode;
+        private final Frame frame;
+
+        public CallStackFrame(Node callNode, Frame frame) {
+            this.callNode = callNode;
+            this.frame = frame;
+        }
+
+        public Node getCallNode() {
+            return callNode;
+        }
+
+        public Frame getFrame() {
+            return frame;
+        }
+
     }
 
 }

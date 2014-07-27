@@ -58,6 +58,8 @@ public class RubyContext extends ExecutionContext {
     public static final int HASHES_SMALL = Options.TRUFFLE_HASHES_SMALL.load();
     public static final boolean COMPILER_PASS_LOOPS_THROUGH_BLOCKS = Options.TRUFFLE_COMPILER_PASS_LOOPS_THROUGH_BLOCKS.load();
     public static final boolean ALLOW_SIMPLE_SOURCE_SECTIONS = Options.TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS.load();
+    public static final boolean BACKTRACE_PRINT_LOCALS = Options.TRUFFLE_BACKTRACE_PRINT_LOCALS.load();
+    public static final int BACKTRACE_PRINT_LOCALS_MAX = Options.TRUFFLE_BACKTRACE_PRINT_LOCALS_MAX.load();
 
     private final Ruby runtime;
     private final TranslatorDriver translator;
