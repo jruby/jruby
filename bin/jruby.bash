@@ -192,6 +192,100 @@ set_system_classpath() {
   fi
 }
 
+set_java_args_from_j_option() {
+  val=${1:2}
+  if [ "${val:0:4}" = "-Xmx" ]; then
+      JAVA_MEM=$val
+  elif [ "${val:0:4}" = "-Xms" ]; then
+      JAVA_MEM_MIN=$val
+  elif [ "${val:0:4}" = "-Xss" ]; then
+      JAVA_STACK=$val
+  elif [ "${val}" = "" ]; then
+      $JAVACMD -help
+      echo "(Prepend -J in front of these options when using 'jruby' command)"
+      exit
+  elif [ "${val}" = "-X" ]; then
+      $JAVACMD -X
+      echo "(Prepend -J in front of these options when using 'jruby' command)"
+      exit
+  elif [ "${val}" = "-classpath" ]; then
+      CP="$CP$CP_DELIMITER$2"
+      CLASSPATH=""
+      shift
+  elif [ "${val}" = "-cp" ]; then
+      CP="$CP$CP_DELIMITER$2"
+      CLASSPATH=""
+      shift
+  else
+      if [ "${val:0:3}" = "-ea" ]; then
+          VERIFY_JRUBY="yes"
+      elif [ "${val:0:16}" = "-Dfile.encoding=" ]; then
+          JAVA_ENCODING=$val
+      fi
+      java_args=("${java_args[@]}" "${1:2}")
+  fi
+}
+
+set_defines_from_x_options() {
+  val=${1:2}
+  if expr "$val" : '.*[.]' > /dev/null; then
+    java_args=("${java_args[@]}" "-Djruby.${val}")
+  else
+    ruby_args=("${ruby_args[@]}" "-X${val}")
+  fi
+}
+
+# Run with JMX management enabled
+enable_jmx() {
+  java_args=("${java_args[@]}" "-Dcom.sun.management.jmxremote")
+  java_args=("${java_args[@]}" "-Djruby.management.enabled=true")
+}
+
+# Don't launch a GUI window, no matter what
+enable_headless() {
+  java_args=("${java_args[@]}" "-Djava.awt.headless=true")
+}
+
+# Run under JDB
+enable_jdb() {
+  if [ -z "$JAVA_HOME" ] ; then
+    JAVACMD='jdb'
+  else
+    if $cygwin; then
+      JAVACMD="$(cygpath -u "$JAVA_HOME")/bin/jdb"
+    else
+      JAVACMD="$JAVA_HOME/bin/jdb"
+    fi
+  fi
+  java_args=("${java_args[@]}" "-sourcepath" "$JRUBY_HOME/lib/ruby/1.9:.")
+  JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C")
+}
+
+enable_fast_startup() {
+  JAVA_VM=-client
+  JAVA_OPTS="$JAVA_OPTS -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djruby.compile.mode=OFF -Djruby.compile.invokedynamic=false"
+}
+
+enable_java_profiler() {
+  java_args=("${java_args[@]}" "-Xprof")
+}
+
+# Start up as Nailgun server
+start_nailgun_server() {
+  java_class=$JAVA_CLASS_NGSERVER
+  VERIFY_JRUBY=true
+}
+
+# Use native Nailgun client to toss commands to server
+start_nailgun_client() {
+  process_special_opts "--ng"
+}
+
+# warn but ignore
+ignored() {
+  echo "warning: $1 ignored"
+}
+
 split_ruby_and_java_args() {
   # Split out any -J argument for passing to the JVM.
   # Scanning for args is aborted by '--'.
@@ -201,95 +295,34 @@ split_ruby_and_java_args() {
       case "$1" in
       # Stuff after '-J' in this argument goes to JVM
       -J*)
-          val=${1:2}
-          if [ "${val:0:4}" = "-Xmx" ]; then
-              JAVA_MEM=$val
-          elif [ "${val:0:4}" = "-Xms" ]; then
-              JAVA_MEM_MIN=$val
-          elif [ "${val:0:4}" = "-Xss" ]; then
-              JAVA_STACK=$val
-          elif [ "${val}" = "" ]; then
-              $JAVACMD -help
-              echo "(Prepend -J in front of these options when using 'jruby' command)"
-              exit
-          elif [ "${val}" = "-X" ]; then
-              $JAVACMD -X
-              echo "(Prepend -J in front of these options when using 'jruby' command)"
-              exit
-          elif [ "${val}" = "-classpath" ]; then
-              CP="$CP$CP_DELIMITER$2"
-              CLASSPATH=""
-              shift
-          elif [ "${val}" = "-cp" ]; then
-              CP="$CP$CP_DELIMITER$2"
-              CLASSPATH=""
-              shift
-          else
-              if [ "${val:0:3}" = "-ea" ]; then
-                  VERIFY_JRUBY="yes"
-              elif [ "${val:0:16}" = "-Dfile.encoding=" ]; then
-                  JAVA_ENCODING=$val
-              fi
-              java_args=("${java_args[@]}" "${1:2}")
-          fi
+          set_java_args_from_j_option "$1"
           ;;
        # Match -Xa.b.c=d to translate to -Da.b.c=d as a java option
        -X*)
-          val=${1:2}
-          if expr "$val" : '.*[.]' > /dev/null; then
-            java_args=("${java_args[@]}" "-Djruby.${val}")
-          else
-            ruby_args=("${ruby_args[@]}" "-X${val}")
-          fi
+          set_defines_from_x_options "$1"
           ;;
        # Match switches that take an argument
        -C|-e|-I|-S) ruby_args=("${ruby_args[@]}" "$1" "$2"); shift ;;
        # Match same switches with argument stuck together
        -e*|-I*|-S*) ruby_args=("${ruby_args[@]}" "$1" ) ;;
-       # Run with JMX management enabled
-       --manage)
-          java_args=("${java_args[@]}" "-Dcom.sun.management.jmxremote")
-          java_args=("${java_args[@]}" "-Djruby.management.enabled=true") ;;
-       # Don't launch a GUI window, no matter what
-       --headless)
-          java_args=("${java_args[@]}" "-Djava.awt.headless=true") ;;
-       # Run under JDB
-       --jdb)
-          if [ -z "$JAVA_HOME" ] ; then
-            JAVACMD='jdb'
-          else
-            if $cygwin; then
-              JAVACMD="$(cygpath -u "$JAVA_HOME")/bin/jdb"
-            else
-              JAVACMD="$JAVA_HOME/bin/jdb"
-            fi
-          fi
-          java_args=("${java_args[@]}" "-sourcepath" "$JRUBY_HOME/lib/ruby/1.9:.")
-          JRUBY_OPTS=("${JRUBY_OPTS[@]}" "-X+C") ;;
+       --manage) enable_jmx ;;
+       --headless) enable_headless ;;
+       --jdb) enable_jdb ;;
        --client)
           JAVA_VM=-client ;;
        --server)
           JAVA_VM=-server ;;
-       --dev)
-          JAVA_VM=-client
-          JAVA_OPTS="$JAVA_OPTS -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Djruby.compile.mode=OFF -Djruby.compile.invokedynamic=false" ;;
+       --dev) enable_fast_startup ;;
        --noclient)         # JRUBY-4296
           unset JAVA_VM ;; # For IBM JVM, neither '-client' nor '-server' is applicable
-       --sample)
-          java_args=("${java_args[@]}" "-Xprof") ;;
-       --ng-server)
-          # Start up as Nailgun server
-          java_class=$JAVA_CLASS_NGSERVER
-          VERIFY_JRUBY=true ;;
-       --ng)
-          # Use native Nailgun client to toss commands to server
-          process_special_opts "--ng" ;;
-       # warn but ignore
-       --1.8) echo "warning: --1.8 ignored" ;;
-       # warn but ignore
-       --1.9) echo "warning: --1.9 ignored" ;;
-       # warn but ignore
-       --2.0) echo "warning: --1.9 ignored" ;;
+       --sample) enable_java_profiler ;;
+       --ng-server) start_nailgun_server ;;
+       --ng) start_nailgun_client ;;
+       --1.8) ignored "$1";;
+       --1.9) ignored "$1" ;;
+       --2.0) ignored "$1" ;;
+       --profile.out) ruby_args=("${ruby_args[@]}" "$1" "$2"); shift ;;
+       --profile*) ruby_args=("${ruby_args[@]}" "$1") ;;
        # Abort processing on the double dash
        --) break ;;
        # Other opts go to ruby
