@@ -1,13 +1,9 @@
 package org.jruby.util;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.channels.Channel;
-import java.util.LinkedList;
-import java.util.List;
 
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
@@ -23,16 +19,15 @@ public class ClasspathResource implements FileResource {
 
     private final InputStream is;
     
-    private final String[] list;
+    private String[] list = null;
     
     private final JarFileStat fileStat;
 
-    ClasspathResource(String uri, InputStream is, String[] files)
+    ClasspathResource(String uri) throws IOException
     {
         this.uri = uri;
-        this.is = is;
+        this.is = getResourceURL(uri).openStream();
         this.fileStat = new JarFileStat(this);
-        this.list = files;
     }
 
     public static URL getResourceURL(String pathname) {
@@ -49,20 +44,19 @@ public class ClasspathResource implements FileResource {
         return null;
     }
     
+    public static boolean isResource(String pathname) {
+        return getResourceURL(pathname) != null;
+    }
+
     public static FileResource create(String pathname) {
         if (!pathname.startsWith(CLASSPATH)) {
             return null;
         }
         
-        String[] files = listFiles(pathname);
-        if (files != null) {
-            return new ClasspathResource(pathname, null, files);
-        }
-        URL url = getResourceURL(pathname);
-        if (url != null) {
+        if (isResource(pathname)) {
             try
             {
-                return new ClasspathResource(pathname, url.openStream(), null);
+                return new ClasspathResource(pathname);
             }
             catch (IOException e)
             {
@@ -70,15 +64,6 @@ public class ClasspathResource implements FileResource {
             }
         }
         return null;
-    }
-
-    private static String[] listFiles(String pathname) {
-        pathname = pathname + ( pathname.endsWith( "/" ) ? "" : "/" ) + ".jrubydir";
-        URL url = getResourceURL(pathname);
-        if (url == null) {
-            return null;
-        }
-        return URLResource.listFilesFromURL( url );
     }
 
     @Override

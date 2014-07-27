@@ -1,14 +1,9 @@
 package org.jruby.util;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channel;
-import java.util.LinkedList;
-import java.util.List;
 
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
@@ -18,25 +13,19 @@ import org.jruby.util.io.ModeFlags;
 
 class URLResource implements FileResource {
 
-    private final String uri;
-
-    private final String[] list;
-
-    private final InputStream is;
+    private final URL url;
 
     private final JarFileStat fileStat;
 
-    URLResource(String uri, InputStream is, String[] files) {
-        this.uri = uri;
-        this.list = files;
-        this.is = is;
+    URLResource(URL url) {
+        this.url = url;
         this.fileStat = new JarFileStat(this);
     }
     
     @Override
     public String absolutePath()
     {
-        return uri;
+        return url.toExternalForm();
     }
 
     @Override
@@ -48,13 +37,13 @@ class URLResource implements FileResource {
     @Override
     public boolean isDirectory()
     {
-        return list != null;
+        return false;
     }
 
     @Override
     public boolean isFile()
     {
-        return list == null;
+        return true;
     }
 
     @Override
@@ -86,7 +75,7 @@ class URLResource implements FileResource {
     @Override
     public String[] list()
     {
-        return list;
+        return null;
     }
 
     @Override
@@ -115,7 +104,14 @@ class URLResource implements FileResource {
     @Override
     public InputStream getInputStream()
     {
-        return is;
+        try
+        {
+            return url.openStream();
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
     }
 
     @Override
@@ -138,65 +134,16 @@ class URLResource implements FileResource {
         URL url;
         try
         {
-            pathname = pathname.replaceAll("([^:])//", "$1/");
-            url = new URL(pathname);
+            url = new URL(pathname.replaceAll("([^:])//", "$1/"));
             // we do not want to deal with those url here like this though they are valid url/uri
             if (url.getProtocol().startsWith("http") || url.getProtocol().equals("file")|| url.getProtocol().equals("jar")){
                 return null;
             }   
+            // make sure we can also open the stream
+            url.openStream();
+            return new URLResource(url);
         }
         catch (IOException e)
-        {
-            return null;
-        }
-        String[] files = listFiles(pathname);
-        if (files != null) {
-            return new URLResource(pathname, null, files);
-        }
-        try
-        {
-            return new URLResource(pathname, url.openStream(), null);
-        }
-        catch (IOException e)
-        {
-            return null;
-        }
-    }
-
-    public static String[] listFilesFromURL(URL url) {
-        BufferedReader reader = null;
-        try {
-            List<String> files = new LinkedList<String>();
-            reader = new BufferedReader( new InputStreamReader( url.openStream() ) );
-            String line = reader.readLine();
-            while (line != null) {
-                files.add( line );
-                line = reader.readLine();
-            }
-            return files.toArray( new String[ files.size() ] );
-        }
-        catch (IOException e) {
-            return null;
-        }
-        finally {
-            if (reader != null) {
-                try
-                {
-                    reader.close();
-                }
-                catch (IOException ignored)
-                {
-                }
-            }
-        }
-    }
-    
-    private static String[] listFiles(String pathname) {
-        try
-        {
-            return listFilesFromURL(new URL(pathname + ".jrubydir"));
-        }
-        catch (MalformedURLException e)
         {
             return null;
         }
