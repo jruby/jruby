@@ -20,10 +20,13 @@ public class ClasspathResource implements FileResource {
     
     private String[] list = null;
     
+    private final JarFileStat fileStat;
+
     ClasspathResource(String uri) throws IOException
     {
         this.uri = uri;
         this.is = getResourceURL(uri).openStream();
+        this.fileStat = new JarFileStat(this);
     }
 
     public static URL getResourceURL(String pathname) {
@@ -126,8 +129,7 @@ public class ClasspathResource implements FileResource {
 
     @Override
     public FileStat stat(POSIX posix) {
-        // TODO Auto-generated method stub
-        return null;
+        return fileStat;
     }
 
     @Override

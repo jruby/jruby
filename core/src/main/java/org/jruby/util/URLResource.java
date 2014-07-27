@@ -2,7 +2,6 @@ package org.jruby.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import jnr.posix.FileStat;
@@ -14,9 +13,12 @@ import org.jruby.util.io.ModeFlags;
 class URLResource implements FileResource {
 
     private final URL url;
-    
+
+    private final JarFileStat fileStat;
+
     URLResource(URL url) {
         this.url = url;
+        this.fileStat = new JarFileStat(this);
     }
     
     @Override
@@ -40,7 +42,7 @@ class URLResource implements FileResource {
     @Override
     public boolean isFile()
     {
-        return false;
+        return true;
     }
 
     @Override
@@ -82,17 +84,16 @@ class URLResource implements FileResource {
     }
 
     @Override
-    public FileStat stat(POSIX posix)
-    {
-        return null;
+    public FileStat stat(POSIX posix) {
+        return fileStat;
     }
 
     @Override
-    public FileStat lstat(POSIX posix)
-    {
-        return null;
+    public FileStat lstat(POSIX posix) {
+      // jars don't have symbolic links, so lstat is no different than regular stat
+      return stat(posix);
     }
-
+ 
     @Override
     public JRubyFile hackyGetJRubyFile()
     {
