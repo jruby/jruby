@@ -122,7 +122,7 @@ public abstract class RubyCallStack {
         final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
 
         if (currentFrame.getCallNode() != null) {
-            callStack.add(formatFromLine(context, currentFrame.getCallNode().getEncapsulatingSourceSection(), currentFrame.getFrame(FrameInstance.FrameAccess.READ_ONLY, false)));
+            callStack.add(formatFromLine(context, currentFrame.getCallNode().getEncapsulatingSourceSection(), currentFrame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true)));
         }
 
         // TODO: pretty sure putting frame instances on the heap is wrong, but the API will change soon anyway
@@ -134,7 +134,7 @@ public abstract class RubyCallStack {
         }
 
         for (FrameInstance frame : frameInstances) {
-            callStack.add(formatFromLine(context, frame.getCallNode().getEncapsulatingSourceSection(), frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, false)));
+            callStack.add(formatFromLine(context, frame.getCallNode().getEncapsulatingSourceSection(), frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true)));
         }
 
         return callStack.toArray(new String[callStack.size()]);

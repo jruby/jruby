@@ -304,7 +304,7 @@ public class ObjectSpaceManager {
     }
 
     public void visitFrameInstance(FrameInstance frameInstance, ObjectGraphVisitor visitor) {
-        visitFrame(frameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, false), visitor);
+        visitFrame(frameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true), visitor);
     }
 
     public void visitFrame(Frame frame, ObjectGraphVisitor visitor) {
