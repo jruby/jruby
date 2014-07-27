@@ -2,21 +2,22 @@ package org.jruby.util;
 
 import jnr.posix.FileStat;
 
+// TODO needs a better name like ReadOnlyFileStat
 class JarFileStat implements FileStat {
-    private final JarResource jarResource;
+    private final FileResource resource;
 
-    public JarFileStat(JarResource jarResource) {
-        this.jarResource = jarResource;
+    public JarFileStat(FileResource resource) {
+        this.resource = resource;
     }
 
     @Override
     public long atime() {
-        return jarResource.lastModified();
+        return resource.lastModified();
     }
 
     @Override
     public long blocks() {
-        return jarResource.length();
+        return resource.length();
     }
 
     @Override
@@ -26,7 +27,7 @@ class JarFileStat implements FileStat {
 
     @Override
     public long ctime() {
-        return jarResource.lastModified();
+        return resource.lastModified();
     }
 
     @Override
@@ -66,12 +67,12 @@ class JarFileStat implements FileStat {
 
     @Override
     public boolean isDirectory() {
-        return jarResource.isDirectory();
+        return resource.isDirectory();
     }
 
     @Override
     public boolean isEmpty() {
-        return jarResource.length() == 0;
+        return resource.length() == 0;
     }
 
     @Override
@@ -91,7 +92,7 @@ class JarFileStat implements FileStat {
 
     @Override
     public boolean isFile() {
-        return !jarResource.isDirectory();
+        return !resource.isDirectory();
     }
 
     @Override
@@ -101,7 +102,7 @@ class JarFileStat implements FileStat {
 
     @Override
     public boolean isIdentical(FileStat fs) {
-        return fs instanceof JarFileStat && ((JarFileStat)fs).jarResource.equals(jarResource);
+        return fs instanceof JarFileStat && ((JarFileStat)fs).resource.equals(resource);
     }
 
     @Override
@@ -181,7 +182,7 @@ class JarFileStat implements FileStat {
 
         @Override
         public long mtime() {
-            return jarResource.lastModified();
+            return resource.lastModified();
         }
 
         @Override
@@ -196,7 +197,7 @@ class JarFileStat implements FileStat {
 
         @Override
         public long st_size() {
-            return jarResource.length();
+            return resource.length();
         }
 
         @Override
