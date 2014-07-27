@@ -19,6 +19,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyException;
@@ -45,6 +46,8 @@ public class ExceptionTranslatingNode extends RubyNode {
             throw e;
         } catch (RaiseException e) {
             rethrowProfile.enter();
+            throw e;
+        } catch (TruffleFatalException e) {
             throw e;
         } catch (ArithmeticException e) {
             CompilerDirectives.transferToInterpreter();

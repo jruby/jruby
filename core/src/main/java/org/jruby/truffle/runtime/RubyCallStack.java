@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.RubyMethod;
 
@@ -115,26 +116,30 @@ public abstract class RubyCallStack {
 
         final String suffix = "(suffix)";
 
-        if (currentNode != null) {
-            callStack.add(formatInLine(currentNode.getEncapsulatingSourceSection(), suffix));
-        }
+        try {
+            if (currentNode != null) {
+                callStack.add(formatInLine(currentNode.getEncapsulatingSourceSection(), suffix));
+            }
 
-        final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
+            final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
 
-        if (currentFrame.getCallNode() != null) {
-            callStack.add(formatFromLine(context, currentFrame.getCallNode().getEncapsulatingSourceSection(), currentFrame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true)));
-        }
+            if (currentFrame.getCallNode() != null) {
+                callStack.add(formatFromLine(context, currentFrame.getCallNode().getEncapsulatingSourceSection(), currentFrame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true)));
+            }
 
-        // TODO: pretty sure putting frame instances on the heap is wrong, but the API will change soon anyway
+            // TODO: pretty sure putting frame instances on the heap is wrong, but the API will change soon anyway
 
-        final ArrayList<FrameInstance> frameInstances = new ArrayList<>();
+            final ArrayList<FrameInstance> frameInstances = new ArrayList<>();
 
-        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
-            frameInstances.add(frame);
-        }
+            for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
+                frameInstances.add(frame);
+            }
 
-        for (FrameInstance frame : frameInstances) {
-            callStack.add(formatFromLine(context, frame.getCallNode().getEncapsulatingSourceSection(), frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true)));
+            for (FrameInstance frame : frameInstances) {
+                callStack.add(formatFromLine(context, frame.getCallNode().getEncapsulatingSourceSection(), frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true)));
+            }
+        } catch (Exception e) {
+            throw new TruffleFatalException("Exception while trying to build Ruby call stack", e);
         }
 
         return callStack.toArray(new String[callStack.size()]);
