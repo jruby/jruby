@@ -32,7 +32,7 @@ project 'JRuby Stdlib' do
         end
       end
     end
-    process( ctx.project.build.output_directory.to_pathname, true )
+    process( File.join( ctx.project.build.output_directory.to_pathname, 'META-INF', 'jruby.home' ), true )
   end
 
   execute( 'fix shebang on gem bin files and add *.bat files',
