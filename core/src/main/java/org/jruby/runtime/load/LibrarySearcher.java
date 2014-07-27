@@ -1,19 +1,21 @@
 package org.jruby.runtime.load;
 
-import org.jruby.Ruby;
-import org.jruby.RubyHash;
-import org.jruby.RubyString;
-import org.jruby.ast.executable.Script;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.LoadService.SuffixType;
-import org.jruby.util.FileResource;
-import org.jruby.util.JRubyFile;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
+
+import org.jruby.Ruby;
+import org.jruby.RubyHash;
+import org.jruby.RubyString;
+import org.jruby.ast.executable.Script;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.LoadService.SuffixType;
+import org.jruby.util.ClasspathResource;
+import org.jruby.util.FileResource;
+import org.jruby.util.JRubyFile;
 
 class LibrarySearcher {
     static class Ruby18 extends LibrarySearcher {
@@ -245,15 +247,22 @@ class LibrarySearcher {
         private void loadJar(Ruby runtime, boolean wrap) {
             try {
                 URL url;
-                File f = new File(location);
-                if (f.exists() || location.contains( "!")){
-                    url = f.toURI().toURL();
-                    if ( location.contains( "!") ) {
-                        url = new URL( "jar:" + url );
-                    }
+                if (location.startsWith(ClasspathResource.CLASSPATH)){
+                    // get URL directly from the classloader with its StreamHandler set
+                    // by the classloader itself
+                    url = ClasspathResource.getResourceURL(location);
                 }
                 else {
-                    url = new URL(location);
+                    File f = new File(location);
+                    if (f.exists() || location.contains( "!")){
+                        url = f.toURI().toURL();
+                        if ( location.contains( "!") ) {
+                            url = new URL( "jar:" + url );
+                        }
+                    }
+                    else {
+                        url = new URL(location);
+                    }
                 }
                 runtime.getJRubyClassLoader().addURL(url);
             } catch (MalformedURLException badUrl) {
