@@ -112,37 +112,43 @@ public abstract class RubyCallStack {
     }
 
     public static String[] getCallStack(Node currentNode, RubyContext context) {
-        final ArrayList<String> callStack = new ArrayList<>();
-
-        final String suffix = "(suffix)";
-
         try {
+            final ArrayList<String> callStack = new ArrayList<>();
+
+            final String suffix = "(suffix)";
+
+            final MaterializedCallStackFrame[] materializedCallStackFrames = materializeCallStackFrames();
+
             if (currentNode != null) {
                 callStack.add(formatInLine(currentNode.getEncapsulatingSourceSection(), suffix));
             }
 
-            final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
-
-            if (currentFrame.getCallNode() != null) {
-                callStack.add(formatFromLine(context, currentFrame.getCallNode().getEncapsulatingSourceSection(), currentFrame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true)));
+            for (MaterializedCallStackFrame frame : materializedCallStackFrames) {
+                callStack.add(formatFromLine(context, frame.getCallNode().getEncapsulatingSourceSection(), frame.getMaterializedFrame()));
             }
 
-            // TODO: pretty sure putting frame instances on the heap is wrong, but the API will change soon anyway
-
-            final ArrayList<FrameInstance> frameInstances = new ArrayList<>();
-
-            for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
-                frameInstances.add(frame);
-            }
-
-            for (FrameInstance frame : frameInstances) {
-                callStack.add(formatFromLine(context, frame.getCallNode().getEncapsulatingSourceSection(), frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true)));
-            }
+            return callStack.toArray(new String[callStack.size()]);
         } catch (Exception e) {
             throw new TruffleFatalException("Exception while trying to build Ruby call stack", e);
         }
+    }
 
-        return callStack.toArray(new String[callStack.size()]);
+    private static MaterializedCallStackFrame[] materializeCallStackFrames() {
+        final ArrayList<MaterializedCallStackFrame> frames = new ArrayList<>();
+
+        final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
+
+        try {
+            frames.add(new MaterializedCallStackFrame(currentFrame.getCallNode(), (MaterializedFrame) currentFrame.getFrame(FrameInstance.FrameAccess.MATERIALIZE, false)));
+        } catch (IndexOutOfBoundsException e) {
+            // TODO(CS): what causes this error?
+        }
+
+        for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
+            frames.add(new MaterializedCallStackFrame(frame.getCallNode(), (MaterializedFrame) frame.getFrame(FrameInstance.FrameAccess.MATERIALIZE, false)));
+        }
+
+        return frames.toArray(new MaterializedCallStackFrame[frames.size()]);
     }
 
     private static String formatInLine(SourceSection sourceSection, String suffix) {
@@ -160,8 +166,17 @@ public abstract class RubyCallStack {
         for (Object ident : fd.getIdentifiers()) {
             if (ident instanceof String) {
                 RubyBasicObject value = context.getCoreLibrary().box(frame.getValue(fd.findFrameSlot(ident)));
-                // TODO(CS): slow path send
-                String repr = value.send(null, "inspect", null).toString();
+                String repr;
+                try {
+                    // TODO(CS): slow path send
+                    repr = value.send(null, "inspect", null).toString();
+                } catch (Exception e) {
+                    if (RubyContext.EXCEPTIONS_PRINT_JAVA) {
+                        e.printStackTrace();
+                    }
+
+                    repr = "<exception>";
+                }
                 if (first) {
                     first = false;
                     builder.append(" with ");
@@ -188,6 +203,26 @@ public abstract class RubyCallStack {
         }
 
         return RubyArray.fromObjects(context.getCoreLibrary().getArrayClass(), callStackAsRubyString);
+    }
+
+    private static class MaterializedCallStackFrame {
+
+        private final Node callNode;
+        private final MaterializedFrame materializedFrame;
+
+        public MaterializedCallStackFrame(Node callNode, MaterializedFrame materializedFrame) {
+            this.callNode = callNode;
+            this.materializedFrame = materializedFrame;
+        }
+
+        public Node getCallNode() {
+            return callNode;
+        }
+
+        public MaterializedFrame getMaterializedFrame() {
+            return materializedFrame;
+        }
+
     }
 
 }
