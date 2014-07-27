@@ -18,6 +18,23 @@ project 'JRuby Stdlib' do
               'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home',
               'jruby.complete.gems' => '${jruby.complete.home}/lib/ruby/gems/shared' )
 
+  execute( 'create .jrubydir files', 'process-resources' ) do |ctx|
+    def process( dir, root = false )
+      File.open( dir + '/.jrubydir', 'w' ) do |f|
+        f.puts ".." unless root
+        f.puts "."
+        Dir[ dir + '/*'].entries.each do |e|
+          f.print File.basename( e )
+          if File.directory?( e )
+            process( e )
+          end
+          f.puts
+        end
+      end
+    end
+    process( File.join( ctx.project.build.output_directory.to_pathname, 'META-INF', 'jruby.home' ), true )
+  end
+
   execute( 'fix shebang on gem bin files and add *.bat files',
            'initialize' ) do |ctx|
     

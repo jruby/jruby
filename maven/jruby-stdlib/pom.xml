@@ -76,6 +76,17 @@
         <version>${tesla.version}</version>
         <executions>
           <execution>
+            <id>create .jrubydir files</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <taskId>create .jrubydir files</taskId>
+              <nativePom>pom.rb</nativePom>
+            </configuration>
+          </execution>
+          <execution>
             <id>fix shebang on gem bin files and add *.bat files</id>
             <phase>initialize</phase>
             <goals>

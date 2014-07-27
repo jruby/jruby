@@ -550,6 +550,8 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     protected RubyHashEntry internalGetEntry(IRubyObject key) {
+        if (size == 0) return NO_ENTRY;
+
         final int hash = hashValue(key.hashCode());
         for (RubyHashEntry entry = table[bucketIndex(hash, table.length)]; entry != null; entry = entry.next) {
             if (internalKeyExist(entry, hash, key)) {
@@ -568,6 +570,8 @@ public class RubyHash extends RubyObject implements Map {
 
 
     protected RubyHashEntry internalDelete(final IRubyObject key) {
+        if (size == 0) return NO_ENTRY;
+
         return internalDelete(hashValue(key.hashCode()), MATCH_KEY, key);
     }
 
