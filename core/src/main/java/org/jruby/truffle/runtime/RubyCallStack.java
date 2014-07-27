@@ -13,6 +13,8 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.RootNode;
+import org.jruby.truffle.nodes.CoreSource;
+import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.*;
@@ -117,14 +119,16 @@ public abstract class RubyCallStack {
 
             final String suffix = "(suffix)";
 
-            final MaterializedCallStackFrame[] materializedCallStackFrames = materializeCallStackFrames();
+            final CallStackFrame[] callStackFrames = materializeCallStackFrames();
 
             if (currentNode != null) {
                 callStack.add(formatInLine(currentNode.getEncapsulatingSourceSection(), suffix));
             }
 
-            for (MaterializedCallStackFrame frame : materializedCallStackFrames) {
-                callStack.add(formatFromLine(context, frame.getCallNode().getEncapsulatingSourceSection(), frame.getMaterializedFrame()));
+            for (CallStackFrame frame : callStackFrames) {
+                if (frame.getCallNode() != null) {
+                    callStack.add(formatFromLine(context, frame.getCallNode().getEncapsulatingSourceSection(), frame.getFrame()));
+                }
             }
 
             return callStack.toArray(new String[callStack.size()]);
@@ -133,30 +137,38 @@ public abstract class RubyCallStack {
         }
     }
 
-    private static MaterializedCallStackFrame[] materializeCallStackFrames() {
-        final ArrayList<MaterializedCallStackFrame> frames = new ArrayList<>();
+    private static CallStackFrame[] materializeCallStackFrames() {
+        final ArrayList<CallStackFrame> frames = new ArrayList<>();
 
         final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
 
         try {
-            frames.add(new MaterializedCallStackFrame(currentFrame.getCallNode(), (MaterializedFrame) currentFrame.getFrame(FrameInstance.FrameAccess.MATERIALIZE, false)));
+            frames.add(new CallStackFrame(currentFrame.getCallNode(), currentFrame.getFrame(FrameInstance.FrameAccess.MATERIALIZE, false)));
         } catch (IndexOutOfBoundsException e) {
             // TODO(CS): what causes this error?
         }
 
         for (FrameInstance frame : Truffle.getRuntime().getStackTrace()) {
-            frames.add(new MaterializedCallStackFrame(frame.getCallNode(), (MaterializedFrame) frame.getFrame(FrameInstance.FrameAccess.MATERIALIZE, false)));
+            frames.add(new CallStackFrame(frame.getCallNode(), frame.getFrame(FrameInstance.FrameAccess.MATERIALIZE, false)));
         }
 
-        return frames.toArray(new MaterializedCallStackFrame[frames.size()]);
+        return frames.toArray(new CallStackFrame[frames.size()]);
     }
 
     private static String formatInLine(SourceSection sourceSection, String suffix) {
-        return String.format("%s:%d:in `%s': %s", sourceSection.getSource().getName(), sourceSection.getStartLine(), sourceSection.getIdentifier(), suffix);
+        if (sourceSection instanceof CoreSourceSection) {
+            return String.format("in %s: %s", sourceSection.getIdentifier(), suffix);
+        } else {
+            return String.format("%s:%d:in `%s': %s", sourceSection.getSource().getName(), sourceSection.getStartLine(), sourceSection.getIdentifier(), suffix);
+        }
     }
 
     private static String formatFromLine(RubyContext context, SourceSection sourceSection, Frame frame) {
-        return String.format("\tfrom %s:%d:in `%s'%s", sourceSection.getSource().getName(), sourceSection.getStartLine(), sourceSection.getIdentifier(), RubyContext.BACKTRACE_PRINT_LOCALS ? formatLocals(context, frame) : "");
+        if (sourceSection instanceof CoreSourceSection) {
+            return String.format("\tin %s", sourceSection.getIdentifier(), RubyContext.BACKTRACE_PRINT_LOCALS ? formatLocals(context, frame) : "");
+        } else {
+            return String.format("\tfrom %s:%d:in `%s'%s", sourceSection.getSource().getName(), sourceSection.getStartLine(), sourceSection.getIdentifier(), RubyContext.BACKTRACE_PRINT_LOCALS ? formatLocals(context, frame) : "");
+        }
     }
 
     private static String formatLocals(RubyContext context, Frame frame) {
@@ -212,22 +224,22 @@ public abstract class RubyCallStack {
         return RubyArray.fromObjects(context.getCoreLibrary().getArrayClass(), callStackAsRubyString);
     }
 
-    private static class MaterializedCallStackFrame {
+    private static class CallStackFrame {
 
         private final Node callNode;
-        private final MaterializedFrame materializedFrame;
+        private final Frame frame;
 
-        public MaterializedCallStackFrame(Node callNode, MaterializedFrame materializedFrame) {
+        public CallStackFrame(Node callNode, Frame frame) {
             this.callNode = callNode;
-            this.materializedFrame = materializedFrame;
+            this.frame = frame;
         }
 
         public Node getCallNode() {
             return callNode;
         }
 
-        public MaterializedFrame getMaterializedFrame() {
-            return materializedFrame;
+        public Frame getFrame() {
+            return frame;
         }
 
     }
