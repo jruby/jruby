@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.channels.Channel;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -169,6 +170,13 @@ public class ClasspathResource implements FileResource {
     @Override
     public ChannelDescriptor openDescriptor( ModeFlags flags, POSIX posix,
                                              int perm )
+            throws ResourceException
+    {
+        return null;
+    }
+
+    @Override
+    public Channel openChannel( ModeFlags flags, POSIX posix, int perm )
             throws ResourceException
     {
         return null;
