@@ -161,32 +161,17 @@ public abstract class RubyCallStack {
 
     private static String formatLocals(RubyContext context, Frame frame) {
         final StringBuilder builder = new StringBuilder();
-        FrameDescriptor fd = frame.getFrameDescriptor();
-        boolean first = true;
-        for (Object ident : fd.getIdentifiers()) {
-            if (ident instanceof String) {
-                RubyBasicObject value = context.getCoreLibrary().box(frame.getValue(fd.findFrameSlot(ident)));
-                String repr;
-                try {
-                    // TODO(CS): slow path send
-                    repr = value.send(null, "inspect", null).toString();
-                } catch (Exception e) {
-                    if (RubyContext.EXCEPTIONS_PRINT_JAVA) {
-                        e.printStackTrace();
-                    }
+        final FrameDescriptor fd = frame.getFrameDescriptor();
 
-                    repr = "<exception>";
-                }
-                if (first) {
-                    first = false;
-                    builder.append(" with {");
-                } else {
-                    builder.append(", ");
-                }
-                if (repr.length() > RubyContext.BACKTRACE_PRINT_LOCALS_MAX) {
-                    repr = repr.substring(0, RubyContext.BACKTRACE_PRINT_LOCALS_MAX) + "...";
-                }
-                builder.append(ident + ": " + repr);
+        builder.append(" with {self: ");
+        builder.append(formatLocalValue(context, RubyArguments.getSelf(frame.getArguments())));
+
+        for (Object identifier : fd.getIdentifiers()) {
+            if (identifier instanceof String) {
+                builder.append(", ");
+                builder.append(identifier);
+                builder.append(": ");
+                builder.append(formatLocalValue(context, frame.getValue(fd.findFrameSlot(identifier))));
             }
         }
 
@@ -195,6 +180,24 @@ public abstract class RubyCallStack {
         }
 
         return builder.toString();
+    }
+
+    private static String formatLocalValue(RubyContext context, Object value) {
+        try {
+            // TODO(CS): slow path send
+            final String inspected = context.getCoreLibrary().box(value).send(null, "inspect", null).toString();
+
+            if (inspected.length() <= RubyContext.BACKTRACE_PRINT_LOCALS_MAX) {
+                return inspected;
+            } else {
+                return inspected.substring(0, RubyContext.BACKTRACE_PRINT_LOCALS_MAX) + "...";
+            }
+        } catch (Exception e) {
+            if (RubyContext.EXCEPTIONS_PRINT_JAVA) {
+                e.printStackTrace();
+            }
+            return "<exception>";
+        }
     }
 
     public static RubyArray getCallStackAsRubyArray(RubyContext context, Node currentNode) {
