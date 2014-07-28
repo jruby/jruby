@@ -16,34 +16,19 @@ Rule of Thumb:
 File Organization:
 
  Each source file should have a file comment starting in line 1 mentioning
- the project name, the CVS version information and a copyright statement.
- It must also reference the licenses but should not contain the full text.
+ the project name and a copyright statement. It must also reference the
+ licenses but should not contain the full text.
 
- Let your IDE spell out all imports, do not use ".*" for imports.
+ Let your IDE spell out all imports, do not use ".*" for imports.  One
+ exception is static imports of enum values.
  
  Remove unused imports.
  
- Use this order
- 
-  - file comment
-  - package declaration
-  - imports
-  - javadoc comment
-  - class or interface or enum definition
-  - static variables
-  - instance variables
-  - constructors
-  - ruby declarations
-  - getter and setter methods
-  - other methods
-  - nested classes
-
-
 Indentation:
 
  Indent by 4 spaces - do not use tab
  
- Do not use lines longer than 100 chars if possible.
+ Do not use lines longer than 120 chars if possible.
  
 
 Comments:
@@ -67,10 +52,6 @@ Declarations:
 
  Use one declaration per line for variable declarations. Local variable
  declaration of the same type might be written in one line.
- 
- If a non-local variable is set only once and only read thereafter, make
- it final.  Do not bother to declare parameters or local variables final
- unless it is required because of usage in inner classes.
  
  Use whole names for variables (except for mundane: e.g. 'i' for 'index').
  
@@ -145,7 +126,7 @@ Naming conventions:
 
 Best practices:
 
- Use "//TODO: jfklsjflkds" to mark missing parts.  Most modern IDE can
+ Use "//FIXME: jfklsjflkds" to mark missing parts.  Most modern IDE can
  find these comments and list them for easy reference.
 
  Do not, never, I repeat, never, use something like "if (expr == true)".
