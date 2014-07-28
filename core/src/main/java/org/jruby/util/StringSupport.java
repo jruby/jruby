@@ -121,7 +121,8 @@ public final class StringSupport {
     public static int CONSTRUCT_MBCLEN_CHARFOUND(int n) {
         return n;
     }
-    
+
+    // MRI: search_nonascii
     public static int searchNonAscii(byte[]bytes, int p, int end) {
         while (p < end) {
             if (!Encoding.isAscii(bytes[p])) return p;
