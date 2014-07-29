@@ -46,6 +46,9 @@ import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
+import org.jcodings.specific.UTF16LEEncoding;
+import org.jcodings.specific.UTF32BEEncoding;
+import org.jcodings.specific.UTF32LEEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.IntHash;
@@ -94,6 +97,10 @@ import static org.jruby.util.StringSupport.CR_BROKEN;
 import static org.jruby.util.StringSupport.CR_MASK;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
 import static org.jruby.util.StringSupport.CR_VALID;
+import static org.jruby.util.StringSupport.MBCLEN_CHARFOUND_LEN;
+import static org.jruby.util.StringSupport.MBCLEN_CHARFOUND_P;
+import static org.jruby.util.StringSupport.MBCLEN_INVALID_P;
+import static org.jruby.util.StringSupport.MBCLEN_NEEDMORE_P;
 import static org.jruby.util.StringSupport.codeLength;
 import static org.jruby.util.StringSupport.codePoint;
 import static org.jruby.util.StringSupport.codeRangeScan;
@@ -125,6 +132,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     private static final int SHARE_LEVEL_BUFFER = 1;
     // string doesn't have it's own ByteList (values)
     private static final int SHARE_LEVEL_BYTELIST = 2;
+
+    private static final byte[] SCRUB_REPL_UTF8 = new byte[]{(byte)0xEF, (byte)0xBF, (byte)0xBD};
+    private static final byte[] SCRUB_REPL_ASCII = new byte[]{(byte)'?'};
+    private static final byte[] SCRUB_REPL_UTF16BE = new byte[]{(byte)0xFF, (byte)0xFD};
+    private static final byte[] SCRUB_REPL_UTF16LE = new byte[]{(byte)0xFD, (byte)0xFF};
+    private static final byte[] SCRUB_REPL_UTF32BE = new byte[]{(byte)0x00, (byte)0x00, (byte)0xFF, (byte)0xFD};
+    private static final byte[] SCRUB_REPL_UTF32LE = new byte[]{(byte)0xFD, (byte)0xFF, (byte)0x00, (byte)0x00};
 
     private volatile int shareLevel = SHARE_LEVEL_NONE;
 
@@ -6228,6 +6242,20 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return dup;
     }
 
+    // MRI: str_scrub arity 0
+    @JRubyMethod
+    public IRubyObject scrub(ThreadContext context, Block block) {
+        return scrub(context, context.nil, block);
+    }
+
+    // MRI: str_scrub arity 1
+    @JRubyMethod
+    public IRubyObject scrub(ThreadContext context, IRubyObject repl, Block block) {
+        IRubyObject newStr = strScrub(context, repl, block);
+        if (newStr.isNil()) return strDup(context.runtime);
+        return newStr;
+    }
+
     /**
      * Mutator for internal string representation.
      *
@@ -6292,14 +6320,251 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     /**
-     * Utility to invoke #scrub on this string by redispatching to the Ruby impl.
+     * Scrub the contents of this string, replacing invalid characters as appropriate.
      *
-     * @param context
-     * @param rep
-     * @return
+     * MRI: rb_str_scrub
      */
-    public IRubyObject scrub(ThreadContext context, IRubyObject rep) {
-        return callMethod(context, "scrub", rep);
+    public IRubyObject strScrub(ThreadContext context, IRubyObject repl, Block block) {
+        Ruby runtime = context.runtime;
+        int cr = getCodeRange();
+        Encoding enc;
+        Encoding encidx;
+
+        if (cr == CR_7BIT || cr == CR_VALID)
+            return context.nil;
+
+        enc = getEncoding();
+        if (!repl.isNil()) {
+            repl = EncodingUtils.strCompatAndValid(context, repl, enc);
+        }
+
+        if (enc.isDummy()) {
+            return context.nil;
+        }
+        encidx = enc;
+
+        if (enc.isAsciiCompatible()) {
+            byte[] pBytes = value.unsafeBytes();
+            int p = value.begin();
+            int e = p + value.getRealSize();
+            int p1 = p;
+            byte[] repBytes;
+            int rep;
+            int replen;
+            boolean rep7bit_p;
+            IRubyObject buf = context.nil;
+            if (block.isGiven()) {
+                repBytes = null;
+                rep = 0;
+                replen = 0;
+                rep7bit_p = false;
+            }
+            else if (!repl.isNil()) {
+                repBytes = ((RubyString)repl).value.unsafeBytes();
+                rep = ((RubyString)repl).value.begin();
+                replen = ((RubyString)repl).value.getRealSize();
+                rep7bit_p = (((RubyString)repl).getCodeRange() == CR_7BIT);
+            }
+            else if (encidx == UTF8Encoding.INSTANCE) {
+                repBytes = SCRUB_REPL_UTF8;
+                rep = 0;
+                replen = repBytes.length;
+                rep7bit_p = false;
+            }
+            else {
+                repBytes = SCRUB_REPL_ASCII;
+                rep = 0;
+                replen = repBytes.length;
+                rep7bit_p = false;
+            }
+            cr = CR_7BIT;
+
+            p = StringSupport.searchNonAscii(pBytes, p, e);
+            if (p == -1) {
+                p = e;
+            }
+            while (p < e) {
+                int ret = enc.length(pBytes, p, e);
+                if (MBCLEN_NEEDMORE_P(ret)) {
+                    break;
+                }
+                else if (MBCLEN_CHARFOUND_P(ret)) {
+                    cr = CR_VALID;
+                    p += MBCLEN_CHARFOUND_LEN(ret);
+                }
+                else if (MBCLEN_INVALID_P(ret)) {
+                    /*
+                     * p1~p: valid ascii/multibyte chars
+                     * p ~e: invalid bytes + unknown bytes
+                     */
+                    int clen = enc.maxLength();
+                    if (buf.isNil()) buf = RubyString.newStringLight(runtime, value.getRealSize());
+                    if (p > p1) {
+                        ((RubyString)buf).cat(pBytes, p1, p - p1);
+                    }
+
+                    if (e - p < clen) clen = e - p;
+                    if (clen <= 2) {
+                        clen = 1;
+                    }
+                    else {
+                        int q = p;
+                        clen--;
+                        for (; clen > 1; clen--) {
+                            ret = enc.length(pBytes, q, q + clen);
+                            if (MBCLEN_NEEDMORE_P(ret)) break;
+                            if (MBCLEN_INVALID_P(ret)) continue;
+                        }
+                    }
+                    if (repBytes != null) {
+                        ((RubyString)buf).cat(repBytes, rep, replen);
+                        if (!rep7bit_p) cr = CR_VALID;
+                    }
+                    else {
+                        repl = block.yieldSpecific(context, RubyString.newString(runtime, pBytes, p, clen, enc));
+                        repl = EncodingUtils.strCompatAndValid(context, repl, enc);
+                        ((RubyString)buf).cat((RubyString)repl);
+                        if (((RubyString)repl).getCodeRange() == CR_VALID)
+                            cr = CR_VALID;
+                    }
+                    p += clen;
+                    p1 = p;
+                    p = StringSupport.searchNonAscii(pBytes, p, e);
+                    if (p == -1) {
+                        p = e;
+                        break;
+                    }
+                }
+            }
+            if (buf.isNil()) {
+                if (p == e) {
+                    setCodeRange(cr);
+                    return context.nil;
+                }
+                buf = RubyString.newStringLight(runtime, value.getRealSize());
+            }
+            if (p1 < p) {
+                ((RubyString)buf).cat(pBytes, p1, p - p1);
+            }
+            if (p < e) {
+                if (repBytes != null) {
+                    ((RubyString)buf).cat(repBytes, rep, replen);
+                    if (!rep7bit_p) cr = CR_VALID;
+                }
+                else {
+                    repl = block.yieldSpecific(context, RubyString.newString(runtime, pBytes, p, e - p, enc));
+                    repl = EncodingUtils.strCompatAndValid(context, repl, enc);
+                    ((RubyString)buf).cat((RubyString)repl);
+                    if (((RubyString)repl).getCodeRange() == CR_VALID)
+                        cr = CR_VALID;
+                }
+            }
+            ((RubyString)buf).setEncodingAndCodeRange(enc, cr);
+            return buf;
+        }
+        else {
+	        /* ASCII incompatible */
+            byte[] pBytes = value.unsafeBytes();
+            int p = value.begin();
+            int e = p + value.getRealSize();
+            int p1 = p;
+            IRubyObject buf = context.nil;
+            byte[] repBytes;
+            int rep;
+            int replen;
+            int mbminlen = enc.minLength();
+            if (!repl.isNil()) {
+                repBytes = ((RubyString)repl).value.unsafeBytes();
+                rep = ((RubyString)repl).value.begin();
+                replen = ((RubyString)repl).value.getRealSize();
+            }
+            else if (encidx == UTF16BEEncoding.INSTANCE) {
+                repBytes = SCRUB_REPL_UTF16BE;
+                rep = 0;
+                replen = repBytes.length;
+            }
+            else if (encidx == UTF16LEEncoding.INSTANCE) {
+                repBytes = SCRUB_REPL_UTF16LE;
+                rep = 0;
+                replen = repBytes.length;
+            }
+            else if (encidx == UTF32BEEncoding.INSTANCE) {
+                repBytes = SCRUB_REPL_UTF32BE;
+                rep = 0;
+                replen = repBytes.length;
+            }
+            else if (encidx == UTF32LEEncoding.INSTANCE) {
+                repBytes = SCRUB_REPL_UTF32LE;
+                rep = 0;
+                replen = repBytes.length;
+            }
+            else {
+                repBytes = SCRUB_REPL_ASCII;
+                rep = 0;
+                replen = repBytes.length;
+            }
+
+            while (p < e) {
+                int ret = enc.length(pBytes, p, e);
+                if (MBCLEN_NEEDMORE_P(ret)) {
+                    break;
+                }
+                else if (MBCLEN_CHARFOUND_P(ret)) {
+                    p += MBCLEN_CHARFOUND_LEN(ret);
+                }
+                else if (MBCLEN_INVALID_P(ret)) {
+                    int q = p;
+                    int clen = enc.maxLength();
+                    if (buf.isNil()) buf = RubyString.newStringLight(runtime, value.getRealSize());
+                    if (p > p1) ((RubyString)buf).cat(pBytes, p1, p - p1);
+
+                    if (e - p < clen) clen = e - p;
+                    if (clen <= mbminlen * 2) {
+                        clen = mbminlen;
+                    }
+                    else {
+                        clen -= mbminlen;
+                        for (; clen > mbminlen; clen-=mbminlen) {
+                            ret = enc.length(pBytes, q, q + clen);
+                            if (MBCLEN_NEEDMORE_P(ret)) break;
+                            if (MBCLEN_INVALID_P(ret)) continue;
+                        }
+                    }
+                    if (repBytes != null) {
+                        ((RubyString)buf).cat(repBytes, rep, replen);
+                    }
+                    else {
+                        repl = block.yieldSpecific(context, RubyString.newString(runtime, pBytes, p, e-p, enc));
+                        repl = EncodingUtils.strCompatAndValid(context, repl, enc);
+                        ((RubyString)buf).cat((RubyString)repl);
+                    }
+                    p += clen;
+                    p1 = p;
+                }
+            }
+            if (buf.isNil()) {
+                if (p == e) {
+                    setCodeRange(CR_VALID);
+                    return context.nil;
+                }
+                buf = RubyString.newStringLight(runtime, value.getRealSize());
+            }
+            if (p1 < p) {
+                ((RubyString)buf).cat(pBytes, p1, p - p1);
+            }
+            if (p < e) {
+                if (repBytes != null) {
+                    ((RubyString)buf).cat(repBytes, rep, replen);
+                }
+                else {
+                    repl = block.yieldSpecific(context, RubyString.newString(runtime, pBytes, p, e - p, enc));
+                    repl = EncodingUtils.strCompatAndValid(context, repl, enc);
+                    ((RubyString)buf).cat((RubyString)repl);
+                }
+            }
+            ((RubyString)buf).setEncodingAndCodeRange(enc, CR_VALID);
+            return buf;
+        }
     }
 
     @Deprecated

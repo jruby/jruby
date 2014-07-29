@@ -3820,8 +3820,8 @@ public final class Ruby {
      * TODO: Should we include this into Errno code somewhere do we can use this from other places as well?
      */
     public RaiseException newIOErrorFromException(IOException e) {
-        if (e instanceof ClosedChannelException) {
-            return newErrnoEBADFError();
+        if (e instanceof ClosedChannelException || e.getMessage().equals("Bad file descriptor")) {
+            throw newErrnoEBADFError();
         }
 
         // TODO: this is kinda gross

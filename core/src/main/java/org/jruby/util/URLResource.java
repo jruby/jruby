@@ -2,7 +2,6 @@ package org.jruby.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channel;
 
@@ -15,9 +14,12 @@ import org.jruby.util.io.ModeFlags;
 class URLResource implements FileResource {
 
     private final URL url;
-    
+
+    private final JarFileStat fileStat;
+
     URLResource(URL url) {
         this.url = url;
+        this.fileStat = new JarFileStat(this);
     }
     
     @Override
@@ -41,7 +43,7 @@ class URLResource implements FileResource {
     @Override
     public boolean isFile()
     {
-        return false;
+        return true;
     }
 
     @Override
@@ -83,17 +85,16 @@ class URLResource implements FileResource {
     }
 
     @Override
-    public FileStat stat(POSIX posix)
-    {
-        return null;
+    public FileStat stat(POSIX posix) {
+        return fileStat;
     }
 
     @Override
-    public FileStat lstat(POSIX posix)
-    {
-        return null;
+    public FileStat lstat(POSIX posix) {
+      // jars don't have symbolic links, so lstat is no different than regular stat
+      return stat(posix);
     }
-
+ 
     @Override
     public JRubyFile hackyGetJRubyFile()
     {
@@ -133,16 +134,18 @@ class URLResource implements FileResource {
         URL url;
         try
         {
-            url = new URL(pathname);
+            url = new URL(pathname.replaceAll("([^:])//", "$1/"));
             // we do not want to deal with those url here like this though they are valid url/uri
             if (url.getProtocol().startsWith("http") || url.getProtocol().equals("file")|| url.getProtocol().equals("jar")){
                 return null;
             }   
+            // make sure we can also open the stream
+            url.openStream();
             return new URLResource(url);
         }
-        catch (MalformedURLException e)
+        catch (IOException e)
         {
             return null;
         }
-    }    
+    }
 }

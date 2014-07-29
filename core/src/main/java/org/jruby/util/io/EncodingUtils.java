@@ -31,6 +31,7 @@ import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
@@ -872,7 +873,7 @@ public class EncodingUtils {
                     if (!ecopts.isNil()) {
                         rep = ((RubyHash)ecopts).op_aref(context, runtime.newString("replace"));
                     }
-                    dest = ((RubyString)str).scrub(context, rep);
+                    dest = ((RubyString)str).scrub(context, rep, Block.NULL_BLOCK);
                     if (dest.isNil()) dest = str;
                     self_p[0] = dest;
                     return dencindex;
@@ -1793,5 +1794,28 @@ public class EncodingUtils {
         }
         if (len_p != null) len_p[0] = StringSupport.MBCLEN_CHARFOUND_LEN(r);
         return StringSupport.codePoint(runtime, enc, pBytes, p, e);
+    }
+
+    // MRI: str_compat_and_valid
+    public static IRubyObject strCompatAndValid(ThreadContext context, IRubyObject _str, Encoding enc) {
+        int cr;
+        RubyString str = _str.convertToString();
+        cr = str.scanForCodeRange();
+        if (cr == StringSupport.CR_BROKEN) {
+            throw context.runtime.newArgumentError("replacement must be valid byte sequence '" + str + "'");
+        }
+        else if (cr == StringSupport.CR_7BIT) {
+            Encoding e = str.getEncoding();
+            if (!enc.isAsciiCompatible()) {
+                throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
+            }
+        }
+        else { /* ENC_CODERANGE_VALID */
+            Encoding e = str.getEncoding();
+            if (enc != e) {
+                throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
+            }
+        }
+        return str;
     }
 }
