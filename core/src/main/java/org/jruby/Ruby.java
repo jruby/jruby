@@ -1332,13 +1332,13 @@ public final class Ruby {
         classClass = RubyClass.createBootstrapClass(this, "Class", moduleClass, RubyClass.CLASS_ALLOCATOR);
 
         basicObjectClass.setMetaClass(classClass);
-        objectClass.setMetaClass(classClass);
+        objectClass.setMetaClass(basicObjectClass);
         moduleClass.setMetaClass(classClass);
         classClass.setMetaClass(classClass);
 
         RubyClass metaClass;
         metaClass = basicObjectClass.makeMetaClass(classClass);
-        metaClass = objectClass.makeMetaClass(classClass);
+        metaClass = objectClass.makeMetaClass(metaClass);
         metaClass = moduleClass.makeMetaClass(metaClass);
         metaClass = classClass.makeMetaClass(metaClass);
 

@@ -1739,7 +1739,7 @@ public class RubyModule extends RubyObject {
         ArrayList<IRubyObject> list = new ArrayList<IRubyObject>();
 
         for (RubyModule module = this; module != null; module = module.getSuperClass()) {
-            if(!(module.isSingleton() || module.methodLocation != module)) list.add(module.getNonIncludedClass());
+            if (module.methodLocation == module) list.add(module.getNonIncludedClass());
         }
 
         return list;

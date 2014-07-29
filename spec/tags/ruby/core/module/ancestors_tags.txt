@@ -1,1 +1,0 @@
-fails:Module#ancestors when called on a singleton class includes the singleton classes of ancestors
