@@ -10,8 +10,7 @@ project 'JRuby Ext' do
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true )
 
-  modules [ 'openssl',
-            'readline',
+  modules [ 'readline',
             'ripper' ]
 
   plugin( :deploy,

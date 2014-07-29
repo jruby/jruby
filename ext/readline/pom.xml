@@ -2,30 +2,28 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-<<<<<<< HEAD
   <groupId>org.jruby.gems</groupId>
   <artifactId>jruby-readline</artifactId>
-  <version>1.0.dev-SNAPSHOT</version>
+  <version>1.0.dev</version>
   <packaging>gem</packaging>
-=======
-  <parent>
-    <groupId>org.jruby</groupId>
-    <artifactId>jruby-ext</artifactId>
-    <version>1.7.14.dev-SNAPSHOT</version>
-  </parent>
-  <artifactId>readline</artifactId>
-  <version>1.0</version>
-  <packaging>jar</packaging>
-
->>>>>>> jruby-1_7
   <name>JRuby Readline</name>
   <description>readline extension for JRuby</description>
   <url>https://github.com/jruby/jruby</url>
+  <developers>
+    <developer>
+      <name>JRuby contributors</name>
+      <email>dev@jruby.org</email>
+    </developer>
+  </developers>
+  <scm>
+    <connection>https://github.com/jruby/jruby.git</connection>
+    <url>https://github.com/jruby/jruby</url>
+  </scm>
   <properties>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <gem.path>${gem.home}</gem.path>
     <gem.home>../target/rubygems</gem.home>
-    <jruby.plugins.version>1.0.0-rc4</jruby.plugins.version>
+    <jruby.plugins.version>1.0.3</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
   </properties>
@@ -52,7 +50,7 @@
     <extensions>
       <extension>
         <groupId>de.saumya.mojo</groupId>
-        <artifactId>gem-extension</artifactId>
+        <artifactId>gem-with-jar-extension</artifactId>
         <version>${jruby.plugins.version}</version>
       </extension>
     </extensions>
@@ -83,6 +81,7 @@
               <directory>lib</directory>
               <includes>
                 <include>readline.jar</include>
+                <include>*/**/*.jar</include>
               </includes>
             </fileset>
           </filesets>
@@ -103,6 +102,7 @@
         <configuration>
           <gemspec>readline.gemspec</gemspec>
           <includeDependencies>true</includeDependencies>
+          <useRepositoryLayout>true</useRepositoryLayout>
         </configuration>
       </plugin>
       <plugin>
