@@ -141,7 +141,7 @@ public abstract class RubyCallStack {
         final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
 
         try {
-            frames.add(new CallStackFrame(currentFrame.getCallNode(), currentFrame.getFrame(FrameInstance.FrameAccess.MATERIALIZE, false)));
+            frames.add(new CallStackFrame(currentFrame.getCallNode(), currentFrame.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true)));
         } catch (IndexOutOfBoundsException e) {
             // TODO(CS): what causes this error?
         }
@@ -150,7 +150,7 @@ public abstract class RubyCallStack {
 
             @Override
             public Void visitFrame(FrameInstance frameInstance) {
-                frames.add(new CallStackFrame(frameInstance.getCallNode(), frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, false)));
+                frames.add(new CallStackFrame(frameInstance.getCallNode(), frameInstance.getFrame(FrameInstance.FrameAccess.MATERIALIZE, true)));
                 return null;
             }
 
