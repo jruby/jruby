@@ -570,7 +570,7 @@ public class SSLContext extends RubyObject {
 
                 public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
                     final IRubyObject cert = args[0];
-                    if ( _Certificate.isInstance(cert) ) {
+                    if ( ! ( _Certificate.isInstance(cert) ) ) {
                         throw context.runtime.newTypeError("wrong argument : " + cert.inspect() + " is not a " + _Certificate.getName());
                     }
                     result.add((X509Cert) cert);
