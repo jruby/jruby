@@ -351,6 +351,7 @@ public class ArgumentProcessor {
                     } else if (extendedOption.equals("+C") || extendedOption.equals("+CIR")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
                     } else if (extendedOption.equals("+T")) {
+                        checkGraalVersion();
                         // LexerSource can't see the InstanceConfig when it starts, so if any instanceof of JRuby in
                         // this VM is using Truffle we set this global option.
                         LexerSource.useDetailedPositions = true;
@@ -663,4 +664,16 @@ public class ArgumentProcessor {
             config.getError().println("Searched: " + path);
         }
     }
+
+    public static void checkGraalVersion() {
+        final String graalVersion = System.getProperty("graal.version", "unknown");
+        final String expectedGraalVersion = "0.4-dev";
+
+        if (graalVersion.equals("unknown")) {
+            return;
+        } else if (!graalVersion.equals(expectedGraalVersion)) {
+            throw new RuntimeException("This version of JRuby is built against Graal " + expectedGraalVersion + " but you are using it with version " + graalVersion + " - either update Graal or use with (-J)-original to disable Graal and ignore this error");
+        }
+    }
+
 }
