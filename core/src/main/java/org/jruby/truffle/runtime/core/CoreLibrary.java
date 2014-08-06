@@ -384,7 +384,7 @@ public class CoreLibrary {
     }
 
     public RubyException runtimeError(String message, Node currentNode) {
-        return new RubyException(runtimeErrorClass, context.makeString(String.format("RuntimeError: %s", message)), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
+        return new RubyException(runtimeErrorClass, context.makeString(String.format("RuntimeError: %s", message)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException frozenError(String className, Node currentNode) {
@@ -392,7 +392,7 @@ public class CoreLibrary {
     }
 
     public RubyException argumentError(String message, Node currentNode) {
-        return new RubyException(argumentErrorClass, context.makeString(String.format("ArgumentError: %s", message)), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
+        return new RubyException(argumentErrorClass, context.makeString(String.format("ArgumentError: %s", message)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException argumentError(int passed, int required, Node currentNode) {
@@ -404,7 +404,7 @@ public class CoreLibrary {
     }
 
     public RubyException localJumpError(String message, Node currentNode) {
-        return new RubyException(localJumpErrorClass, context.makeString(String.format("LocalJumpError: %s", message)), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
+        return new RubyException(localJumpErrorClass, context.makeString(String.format("LocalJumpError: %s", message)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException unexpectedReturn(Node currentNode) {
@@ -416,7 +416,7 @@ public class CoreLibrary {
     }
 
     public RubyException typeError(String message, Node currentNode) {
-        return new RubyException(typeErrorClass, context.makeString(String.format("%s ", message)), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
+        return new RubyException(typeErrorClass, context.makeString(String.format("%s ", message)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException typeErrorShouldReturn(String object, String method, String expectedType, Node currentNode) {
@@ -436,11 +436,11 @@ public class CoreLibrary {
     }
 
     public RubyException rangeError(String message, Node currentNode) {
-        return new RubyException(rangeErrorClass, context.makeString(message), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
+        return new RubyException(rangeErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException nameError(String message, Node currentNode) {
-        return new RubyException(nameErrorClass, context.makeString(String.format("%s ", message)), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
+        return new RubyException(nameErrorClass, context.makeString(String.format("%s ", message)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException nameErrorUninitializedConstant(String name, Node currentNode) {
@@ -460,7 +460,7 @@ public class CoreLibrary {
     }
 
     public RubyException noMethodError(String message, Node currentNode) {
-        return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), context.makeString(message), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
+        return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException noMethodError(String name, String object, Node currentNode) {
@@ -468,7 +468,7 @@ public class CoreLibrary {
     }
 
     public RubyException loadError(String message, Node currentNode) {
-        return new RubyException(context.getCoreLibrary().getLoadErrorClass(), context.makeString(message), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
+        return new RubyException(context.getCoreLibrary().getLoadErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException loadErrorCannotLoad(String name, Node currentNode) {
@@ -476,11 +476,11 @@ public class CoreLibrary {
     }
 
     public RubyException zeroDivisionError(Node currentNode) {
-        return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), context.makeString("divided by 0"), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
+        return new RubyException(context.getCoreLibrary().getZeroDivisionErrorClass(), context.makeString("divided by 0"), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException syntaxError(String message, Node currentNode) {
-        return new RubyException(syntaxErrorClass, context.makeString(String.format("SyntaxError: %s ", message)), RubyCallStack.getCallStackAsRubyArray(context, currentNode));
+        return new RubyException(syntaxErrorClass, context.makeString(String.format("SyntaxError: %s ", message)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyContext getContext() {

@@ -94,7 +94,7 @@ public abstract class ModuleNodes {
         public NilPlaceholder attrReader(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
-            final SourceSection sourceSection = RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
             for (Object arg : args) {
                 final String accessorName;
@@ -146,7 +146,7 @@ public abstract class ModuleNodes {
         public NilPlaceholder attrWriter(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
-            final SourceSection sourceSection = RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
             for (Object arg : args) {
                 final String accessorName;
@@ -199,7 +199,7 @@ public abstract class ModuleNodes {
         public NilPlaceholder attrAccessor(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
-            final SourceSection sourceSection = RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection();
+            final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
             for (Object arg : args) {
                 final String accessorName;
@@ -310,7 +310,7 @@ public abstract class ModuleNodes {
         public RubyArray constants(@SuppressWarnings("unused") RubyModule module) {
             notDesignedForCompilation();
 
-            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Module#constants returns an empty array");
+            getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Module#constants returns an empty array");
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         }
     }
@@ -525,7 +525,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             if (args.length == 0) {
-                final Frame unpacked = RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+                final Frame unpacked = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
                 final FrameSlot slot = unpacked.getFrameDescriptor().findFrameSlot(RubyModule.MODULE_FUNCTION_FLAG_FRAME_SLOT_ID);
 

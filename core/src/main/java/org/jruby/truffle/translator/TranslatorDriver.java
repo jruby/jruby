@@ -109,7 +109,7 @@ public class TranslatorDriver {
                 message = "(no message)";
             }
 
-            throw new RaiseException(new RubyException(context.getCoreLibrary().getSyntaxErrorClass(), context.makeString(message), RubyCallStack.getCallStackAsRubyArray(context, currentNode)));
+            throw new RaiseException(new RubyException(context.getCoreLibrary().getSyntaxErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode)));
         }
 
         return parse(currentNode, context, source, parserContext, parentFrame, node);

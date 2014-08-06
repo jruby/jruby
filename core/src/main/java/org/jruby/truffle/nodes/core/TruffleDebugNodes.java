@@ -14,6 +14,7 @@ import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.core.*;
 
 @CoreClass(name = "TruffleDebug")
@@ -52,7 +53,11 @@ public abstract class TruffleDebugNodes {
         @Specialization
         public NilPlaceholder dumpCallStack() {
             notDesignedForCompilation();
-            RubyCallStack.dump(getContext(), this);
+
+            for (String line : new MRIBacktraceFormatter().format(getContext(), null, RubyCallStack.getBacktrace(this))) {
+                System.err.println(line);
+            }
+
             return NilPlaceholder.INSTANCE;
         }
 
@@ -73,7 +78,7 @@ public abstract class TruffleDebugNodes {
         public RubyString fullTree() {
             notDesignedForCompilation();
 
-            return getContext().makeString(NodeUtil.printTreeToString(RubyCallStack.getCallerFrame().getCallNode().getRootNode()));
+            return getContext().makeString(NodeUtil.printTreeToString(Truffle.getRuntime().getCallerFrame().getCallNode().getRootNode()));
         }
 
     }
@@ -158,7 +163,7 @@ public abstract class TruffleDebugNodes {
         public RubyString tree() {
             notDesignedForCompilation();
 
-            return getContext().makeString(NodeUtil.printCompactTreeToString(RubyCallStack.getCallerFrame().getCallNode().getRootNode()));
+            return getContext().makeString(NodeUtil.printCompactTreeToString(Truffle.getRuntime().getCallerFrame().getCallNode().getRootNode()));
         }
 
     }

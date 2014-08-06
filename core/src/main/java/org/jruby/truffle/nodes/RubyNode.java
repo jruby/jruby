@@ -205,35 +205,4 @@ public abstract class RubyNode extends Node {
         CompilerAsserts.neverPartOfCompilation();
     }
 
-    public void panic(RubyContext context, Object... info) {
-        panic(context, this, info);
-    }
-
-    private static void panic(RubyContext context, RubyNode node, Object... info) {
-        CompilerDirectives.transferToInterpreter();
-
-        System.err.println("panic -----------------------");
-
-        if (info.length > 0) {
-            System.err.println();
-
-            for (Object i : info) {
-                if (i == null) {
-                    System.err.println("null");
-                } else {
-                    System.err.println(i + " " + i.getClass().toString());
-                }
-            }
-        }
-
-        System.err.println();
-        RubyCallStack.dump(context, node);
-        System.err.println();
-        new Exception().printStackTrace(System.err);
-        System.err.println();
-        System.err.println("-----------------------------");
-
-        System.exit(1);
-    }
-
 }

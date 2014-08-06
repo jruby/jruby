@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameSlot;
@@ -18,7 +19,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.lookup.LookupFork;
@@ -391,7 +391,7 @@ public class RubyModule extends RubyObject implements LookupNode {
     public static void setCurrentVisibility(Visibility visibility) {
         RubyNode.notDesignedForCompilation();
 
-        final Frame callerFrame = RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+        final Frame callerFrame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
         assert callerFrame != null;
         assert callerFrame.getFrameDescriptor() != null;

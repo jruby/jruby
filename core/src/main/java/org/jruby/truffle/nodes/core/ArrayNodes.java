@@ -865,7 +865,6 @@ public abstract class ArrayNodes {
                 if (normalisedBegin == 0 && normalisedEnd == array.getSize() - 1) {
                     array.setStore(Arrays.copyOf((int[]) other.getStore(), other.getSize()), other.getSize());
                 } else {
-                    panic(getContext());
                     throw new RuntimeException();
                 }
             }

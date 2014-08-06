@@ -10,6 +10,9 @@
 package org.jruby.truffle.runtime.core;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 
 /**
  * Represents the Ruby {@code Exception} class.
@@ -35,20 +38,20 @@ public class RubyException extends RubyObject {
     }
 
     private RubyString message;
-    private RubyArray backtrace;
+    private Backtrace backtrace;
 
     public RubyException(RubyClass rubyClass) {
         super(rubyClass);
         message = rubyClass.getContext().makeString("(object uninitialized)");
-        backtrace = new RubyArray(rubyClass.getContext().getCoreLibrary().getArrayClass(), null, 0);
+        backtrace = null;
     }
 
-    public RubyException(RubyClass rubyClass, RubyString message, RubyArray backtrace) {
+    public RubyException(RubyClass rubyClass, RubyString message, Backtrace backtrace) {
         this(rubyClass);
         initialize(message, backtrace);
     }
 
-    public void initialize(RubyString message, RubyArray backtrace) {
+    public void initialize(RubyString message, Backtrace backtrace) {
         assert message != null;
         assert backtrace != null;
         this.message = message;
@@ -59,8 +62,20 @@ public class RubyException extends RubyObject {
         return message;
     }
 
-    public RubyArray getBacktrace() {
+    public Backtrace getBacktrace() {
         return backtrace;
+    }
+
+    public RubyArray asRubyStringArray() {
+        final String[] lines = new MRIBacktraceFormatter().format(getRubyClass().getContext(), this, backtrace);
+
+        final Object[] array = new Object[lines.length];
+
+        for (int n = 0;n < lines.length; n++) {
+            array[n] = getRubyClass().getContext().makeString(lines[n]);
+        }
+
+        return RubyArray.fromObjects(getRubyClass().getContext().getCoreLibrary().getArrayClass(), array);
     }
 
 }

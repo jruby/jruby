@@ -119,7 +119,7 @@ public abstract class SymbolNodes {
             notDesignedForCompilation();
 
             // TODO(CS): this should be doing all kinds of caching
-            return symbol.toProc(RubyCallStack.getCallerFrame().getCallNode().getEncapsulatingSourceSection(), this);
+            return symbol.toProc(Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection(), this);
         }
     }
 
