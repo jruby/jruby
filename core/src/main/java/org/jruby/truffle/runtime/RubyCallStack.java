@@ -157,7 +157,8 @@ public abstract class RubyCallStack {
 
     private static String formatInLine(SourceSection sourceSection, String suffix) {
         if (sourceSection instanceof CoreSourceSection) {
-            return String.format("in %s: %s", sourceSection.getIdentifier(), suffix);
+            final CoreSourceSection coreSourceSection = (CoreSourceSection) sourceSection;
+            return String.format("in %s#%s: %s", coreSourceSection.getSource().getClassName(), coreSourceSection.getSource().getMethodName(), suffix);
         } else {
             return String.format("%s:%d:in `%s': %s", sourceSection.getSource().getName(), sourceSection.getStartLine(), sourceSection.getIdentifier(), suffix);
         }
@@ -165,7 +166,8 @@ public abstract class RubyCallStack {
 
     private static String formatFromLine(RubyContext context, SourceSection sourceSection, Frame frame) {
         if (sourceSection instanceof CoreSourceSection) {
-            return String.format("\tin %s", sourceSection.getIdentifier(), RubyContext.BACKTRACE_PRINT_LOCALS ? formatLocals(context, frame) : "");
+            final CoreSourceSection coreSourceSection = (CoreSourceSection) sourceSection;
+            return String.format("\tin %s#%s%s", coreSourceSection.getSource().getClassName(), coreSourceSection.getSource().getMethodName(), RubyContext.BACKTRACE_PRINT_LOCALS ? formatLocals(context, frame) : "");
         } else {
             return String.format("\tfrom %s:%d:in `%s'%s", sourceSection.getSource().getName(), sourceSection.getStartLine(), sourceSection.getIdentifier(), RubyContext.BACKTRACE_PRINT_LOCALS ? formatLocals(context, frame) : "");
         }

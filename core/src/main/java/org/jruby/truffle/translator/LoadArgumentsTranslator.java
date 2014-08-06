@@ -281,8 +281,8 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     @Override
-    protected String getIentifier() {
-        return methodBodyTranslator.getIentifier();
+    protected String getIdentifier() {
+        return methodBodyTranslator.getIdentifier();
     }
 
 }

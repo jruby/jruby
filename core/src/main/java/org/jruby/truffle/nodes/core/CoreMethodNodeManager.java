@@ -14,6 +14,7 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.CoreSource;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -165,7 +166,8 @@ public abstract class CoreMethodNodeManager {
     }
 
     private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails) {
-        final SourceSection sourceSection = new CoreSourceSection(methodDetails.getClassAnnotation().name(), methodDetails.getMethodAnnotation().names()[0]);
+        final CoreSource source = new CoreSource(methodDetails.getClassAnnotation().name(), methodDetails.getMethodAnnotation().names()[0]);
+        final CoreSourceSection sourceSection = new CoreSourceSection(source);
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, methodDetails.getIndicativeName(), false, null);
 

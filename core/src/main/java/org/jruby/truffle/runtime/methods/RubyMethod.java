@@ -205,4 +205,8 @@ public class RubyMethod {
         return sharedMethodInfo.toString();
     }
 
+    public static String blockDecorator(String lexicalParentMethodName) {
+        return "block in " + lexicalParentMethodName;
+    }
+
 }

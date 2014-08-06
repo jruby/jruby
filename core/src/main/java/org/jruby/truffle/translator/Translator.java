@@ -42,15 +42,15 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
 
         if (sourcePosition instanceof IDetailedSourcePosition) {
             final IDetailedSourcePosition detailedSourcePosition = (IDetailedSourcePosition) sourcePosition;
-            return new DefaultSourceSection(source, getIentifier(), sourcePosition.getStartLine() + 1, 0, detailedSourcePosition.getOffset(), detailedSourcePosition.getLength());
+            return new DefaultSourceSection(source, getIdentifier(), sourcePosition.getStartLine() + 1, 0, detailedSourcePosition.getOffset(), detailedSourcePosition.getLength());
         } else if (RubyContext.ALLOW_SIMPLE_SOURCE_SECTIONS) {
             // If we didn't run with -X+T, so maybe we're using truffelize, we might still get simple source sections
-            return new DefaultSourceSection(source, getIentifier(), sourcePosition.getStartLine() + 1, 0, 0, 0);
+            return new DefaultSourceSection(source, getIdentifier(), sourcePosition.getStartLine() + 1, 0, 0, 0);
         } else {
             throw new UnsupportedOperationException("Truffle needs detailed source positions unless you know what you are doing and set truffle.allow_simple_source_sections - got " + sourcePosition.getClass());
         }
     }
 
-    protected abstract String getIentifier();
+    protected abstract String getIdentifier();
 
 }
