@@ -44,18 +44,21 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
 
         final SourceSection sourceSection = activations.get(0).getCallNode().getEncapsulatingSourceSection();
         final SourceSection reportedSourceSection;
+        final String reportedName;
 
         if (sourceSection instanceof CoreSourceSection) {
             reportedSourceSection = activations.get(1).getCallNode().getEncapsulatingSourceSection();
+            reportedName = ((CoreSourceSection) sourceSection).getSource().getMethodName();
         } else {
             reportedSourceSection = sourceSection;
+            reportedName = sourceSection.getIdentifier();
         }
 
         builder.append(reportedSourceSection.getSource().getName());
         builder.append(":");
         builder.append(reportedSourceSection.getStartLine());
         builder.append(":in `");
-        builder.append(sourceSection.getIdentifier());
+        builder.append(reportedName);
         builder.append("'");
 
         if (exception != null) {
@@ -76,19 +79,21 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
 
         final SourceSection sourceSection = activations.get(n).getCallNode().getEncapsulatingSourceSection();
         final SourceSection reportedSourceSection;
-
+        final String reportedName;
 
         if (sourceSection instanceof CoreSourceSection) {
             reportedSourceSection = activations.get(n + 1).getCallNode().getEncapsulatingSourceSection();
+            reportedName = ((CoreSourceSection) sourceSection).getSource().getMethodName();
         } else {
             reportedSourceSection = sourceSection;
+            reportedName = sourceSection.getIdentifier();
         }
 
         builder.append(reportedSourceSection.getSource().getName());
         builder.append(":");
         builder.append(reportedSourceSection.getStartLine());
         builder.append(":in `");
-        builder.append(sourceSection.getIdentifier());
+        builder.append(reportedName);
         builder.append("'");
 
         return builder.toString();
