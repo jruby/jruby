@@ -247,7 +247,7 @@ public class RaiseException extends JumpException {
         this.nativeException = nativeException;
     }
 
-    private StackTraceElement[] javaTraceFromRubyTrace(RubyStackTraceElement[] trace) {
+    public static StackTraceElement[] javaTraceFromRubyTrace(RubyStackTraceElement[] trace) {
         StackTraceElement[] newTrace = new StackTraceElement[trace.length];
         for (int i = 0; i < newTrace.length; i++) {
             newTrace[i] = trace[i].getElement();

@@ -306,12 +306,17 @@ public class IRRuntimeHelpers {
                 }
             }
         } else if (Helpers.checkJavaException(throwable, excType, context)) {
-            if (!arrayCheck) {
+            IRubyObject exceptionObj;
+            if (excType == runtime.getNativeException()) {
                 // wrap Throwable in a NativeException object
-                IRubyObject exceptionObj = new NativeException(runtime, runtime.getNativeException(), throwable);
+                exceptionObj = new NativeException(runtime, runtime.getNativeException(), throwable);
                 ((NativeException)exceptionObj).prepareIntegratedBacktrace(context, throwable.getStackTrace());
-                runtime.getGlobalVariables().set("$!", exceptionObj);
+            } else {
+                // wrap as normal JI object
+                exceptionObj = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
             }
+
+            runtime.getGlobalVariables().set("$!", exceptionObj);
             return true;
         }
 
@@ -324,6 +329,7 @@ public class IRRuntimeHelpers {
             for (int i = 0, n = testTypes.getLength(); i < n; i++) {
                 IRubyObject testType = testTypes.eltInternal(i);
                 if (IRRuntimeHelpers.isRubyExceptionHandled(context, testType, excObj)) {
+                    context.runtime.getGlobalVariables().set("$!", (IRubyObject)excObj);
                     return true;
                 }
             }
@@ -333,7 +339,10 @@ public class IRRuntimeHelpers {
                 throw context.runtime.newTypeError("class or module required for rescue clause. Found: " + excType);
             }
 
-            return excType.callMethod(context, "===", (IRubyObject)excObj).isTrue();
+            if (excType.callMethod(context, "===", (IRubyObject)excObj).isTrue()) {
+                context.runtime.getGlobalVariables().set("$!", (IRubyObject)excObj);
+                return true;
+            }
         }
         return false;
     }

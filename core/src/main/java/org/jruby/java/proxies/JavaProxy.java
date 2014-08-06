@@ -314,8 +314,8 @@ public class JavaProxy extends RubyObject {
         String name = rubyName.asJavaString();
         Ruby runtime = context.runtime;
         
-        JavaMethod method = new JavaMethod(runtime, getMethod(name));
-        return method.invokeDirect(getObject());
+        JavaMethod method = new JavaMethod(runtime, getMethod(context, name));
+        return method.invokeDirect(context, getObject());
     }
 
     @JRubyMethod
@@ -329,8 +329,8 @@ public class JavaProxy extends RubyObject {
             throw JavaMethod.newArgSizeMismatchError(runtime, argTypesClasses);
         }
 
-        JavaMethod method = new JavaMethod(runtime, getMethod(name));
-        return method.invokeDirect(getObject());
+        JavaMethod method = new JavaMethod(runtime, getMethod(context, name));
+        return method.invokeDirect(context, getObject());
     }
 
     @JRubyMethod
@@ -346,11 +346,11 @@ public class JavaProxy extends RubyObject {
 
         Class argTypeClass = (Class)argTypesAry.eltInternal(0).toJava(Class.class);
 
-        JavaMethod method = new JavaMethod(runtime, getMethod(name, argTypeClass));
-        return method.invokeDirect(getObject(), arg0.toJava(argTypeClass));
+        JavaMethod method = new JavaMethod(runtime, getMethod(context, name, argTypeClass));
+        return method.invokeDirect(context, getObject(), arg0.toJava(argTypeClass));
     }
 
-    @JRubyMethod(required = 4, rest = true)
+    @JRubyMethod(required = 1, rest = true)
     public IRubyObject java_send(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         
@@ -370,15 +370,15 @@ public class JavaProxy extends RubyObject {
             argsAry[i] = args[i + 2].toJava(argTypesClasses[i]);
         }
 
-        JavaMethod method = new JavaMethod(runtime, getMethod(name, argTypesClasses));
-        return method.invokeDirect(getObject(), argsAry);
+        JavaMethod method = new JavaMethod(runtime, getMethod(context, name, argTypesClasses));
+        return method.invokeDirect(context, getObject(), argsAry);
     }
 
     @JRubyMethod
     public IRubyObject java_method(ThreadContext context, IRubyObject rubyName) {
         String name = rubyName.asJavaString();
 
-        return getRubyMethod(name);
+        return getRubyMethod(context, name);
     }
 
     @JRubyMethod
@@ -387,7 +387,7 @@ public class JavaProxy extends RubyObject {
         RubyArray argTypesAry = argTypes.convertToArray();
         Class[] argTypesClasses = (Class[])argTypesAry.toArray(new Class[argTypesAry.size()]);
 
-        return getRubyMethod(name, argTypesClasses);
+        return getRubyMethod(context, name, argTypesClasses);
     }
 
     @JRubyMethod
@@ -436,11 +436,11 @@ public class JavaProxy extends RubyObject {
         return System.identityHashCode(object);
     }
 
-    private Method getMethod(String name, Class... argTypes) {
+    private Method getMethod(ThreadContext context, String name, Class... argTypes) {
         try {
             return getObject().getClass().getMethod(name, argTypes);
         } catch (NoSuchMethodException nsme) {
-            throw JavaMethod.newMethodNotFoundError(getRuntime(), getObject().getClass(), name + CodegenUtils.prettyParams(argTypes), name);
+            throw JavaMethod.newMethodNotFoundError(context.runtime, getObject().getClass(), name + CodegenUtils.prettyParams(argTypes), name);
         }
     }
 
@@ -452,8 +452,8 @@ public class JavaProxy extends RubyObject {
         }
     }
 
-    private RubyMethod getRubyMethod(String name, Class... argTypes) {
-        Method jmethod = getMethod(name, argTypes);
+    private RubyMethod getRubyMethod(ThreadContext context, String name, Class... argTypes) {
+        Method jmethod = getMethod(context, name, argTypes);
         if (Modifier.isStatic(jmethod.getModifiers())) {
             return RubyMethod.newMethod(metaClass.getSingletonClass(), CodegenUtils.prettyParams(argTypes), metaClass.getSingletonClass(), name, getMethodInvoker(jmethod), getMetaClass());
         } else {

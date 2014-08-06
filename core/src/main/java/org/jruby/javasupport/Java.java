@@ -601,7 +601,7 @@ public class Java implements Library {
             Ruby runtime = context.runtime;
 
             JavaMethod method = new JavaMethod(runtime, getMethodFromClass(runtime, recv, name));
-            return method.invokeStaticDirect();
+            return method.invokeStaticDirect(context);
         }
 
         @JRubyMethod(meta = true)
@@ -616,7 +616,7 @@ public class Java implements Library {
             }
 
             JavaMethod method = new JavaMethod(runtime, getMethodFromClass(runtime, recv, name));
-            return method.invokeStaticDirect();
+            return method.invokeStaticDirect(context);
         }
 
         @JRubyMethod(meta = true)
@@ -632,10 +632,10 @@ public class Java implements Library {
             Class argTypeClass = (Class) argTypesAry.eltInternal(0).toJava(Class.class);
 
             JavaMethod method = new JavaMethod(runtime, getMethodFromClass(runtime, recv, name, argTypeClass));
-            return method.invokeStaticDirect(arg0.toJava(argTypeClass));
+            return method.invokeStaticDirect(context, arg0.toJava(argTypeClass));
         }
 
-        @JRubyMethod(required = 4, rest = true, meta = true)
+        @JRubyMethod(required = 1, rest = true, meta = true)
         public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
             Ruby runtime = context.runtime;
 
@@ -655,7 +655,7 @@ public class Java implements Library {
             }
 
             JavaMethod method = new JavaMethod(runtime, getMethodFromClass(runtime, recv, name, argTypesClasses));
-            return method.invokeStaticDirect(argsAry);
+            return method.invokeStaticDirect(context, argsAry);
         }
 
         @JRubyMethod(meta = true, visibility = PRIVATE)

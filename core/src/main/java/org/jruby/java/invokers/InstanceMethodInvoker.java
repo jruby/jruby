@@ -41,7 +41,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
                 convertedArgs[i] = convertArg(args[i], method, i);
             }
         }
-        return method.invokeDirect(proxy.getObject(), convertedArgs);
+        return method.invokeDirect(context, proxy.getObject(), convertedArgs);
     }
 
     @Override
@@ -49,7 +49,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         if (javaVarargsCallables != null) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY);
         JavaProxy proxy = castJavaProxy(self);
         JavaMethod method = (JavaMethod)findCallableArityZero(self, name);
-        return method.invokeDirect(proxy.getObject());
+        return method.invokeDirect(context, proxy.getObject());
     }
 
     @Override
@@ -58,7 +58,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         JavaProxy proxy = castJavaProxy(self);
         JavaMethod method = (JavaMethod)findCallableArityOne(self, name, arg0);
         Object cArg0 = convertArg(arg0, method, 0);
-        return method.invokeDirect(proxy.getObject(), cArg0);
+        return method.invokeDirect(context, proxy.getObject(), cArg0);
     }
 
     @Override
@@ -68,7 +68,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         JavaMethod method = (JavaMethod)findCallableArityTwo(self, name, arg0, arg1);
         Object cArg0 = convertArg(arg0, method, 0);
         Object cArg1 = convertArg(arg1, method, 1);
-        return method.invokeDirect(proxy.getObject(), cArg0, cArg1);
+        return method.invokeDirect(context, proxy.getObject(), cArg0, cArg1);
     }
 
     @Override
@@ -79,7 +79,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         Object cArg0 = convertArg(arg0, method, 0);
         Object cArg1 = convertArg(arg1, method, 1);
         Object cArg2 = convertArg(arg2, method, 2);
-        return method.invokeDirect(proxy.getObject(), cArg0, cArg1, cArg2);
+        return method.invokeDirect(context, proxy.getObject(), cArg0, cArg1, cArg2);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -95,7 +95,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
             for (int i = 0; i < len + 1; i++) {
                 convertedArgs[i] = convertArg(intermediate[i], method, i);
             }
-            return method.invokeDirect(proxy.getObject(), convertedArgs);
+            return method.invokeDirect(context, proxy.getObject(), convertedArgs);
         } else {
             return call(context, self, clazz, name, args);
         }
@@ -108,7 +108,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
             RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
             JavaMethod method = (JavaMethod)findCallableArityOne(self, name, proc);
             Object cArg0 = convertArg(proc, method, 0);
-            return method.invokeDirect(proxy.getObject(), cArg0);
+            return method.invokeDirect(context, proxy.getObject(), cArg0);
         } else {
             return call(context, self, clazz, name);
         }
@@ -122,7 +122,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
             JavaMethod method = (JavaMethod)findCallableArityTwo(self, name, arg0, proc);
             Object cArg0 = convertArg(arg0, method, 0);
             Object cArg1 = convertArg(proc, method, 1);
-            return method.invokeDirect(proxy.getObject(), cArg0, cArg1);
+            return method.invokeDirect(context, proxy.getObject(), cArg0, cArg1);
         } else {
             return call(context, self, clazz, name, arg0);
         }
@@ -137,7 +137,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
             Object cArg0 = convertArg(arg0, method, 0);
             Object cArg1 = convertArg(arg1, method, 1);
             Object cArg2 = convertArg(proc, method, 2);
-            return method.invokeDirect(proxy.getObject(), cArg0, cArg1, cArg2);
+            return method.invokeDirect(context, proxy.getObject(), cArg0, cArg1, cArg2);
         } else {
             return call(context, self, clazz, name, arg0, arg1);
         }
@@ -153,7 +153,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
             Object cArg1 = convertArg(arg1, method, 1);
             Object cArg2 = convertArg(arg2, method, 2);
             Object cArg3 = convertArg(proc, method, 3);
-            return method.invokeDirect(proxy.getObject(), cArg0, cArg1, cArg2, cArg3);
+            return method.invokeDirect(context, proxy.getObject(), cArg0, cArg1, cArg2, cArg3);
         } else {
             return call(context, self, clazz, name, arg0, arg1, arg2);
         }

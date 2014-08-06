@@ -39,7 +39,7 @@ public class StaticMethodInvoker extends MethodInvoker {
                 convertedArgs[i] = convertArg(args[i], method, i);
             }
         }
-        return method.invokeStaticDirect(convertedArgs);
+        return method.invokeStaticDirect(context, convertedArgs);
     }
 
     @Override
@@ -47,7 +47,7 @@ public class StaticMethodInvoker extends MethodInvoker {
         if (javaVarargsCallables != null) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY);
         JavaMethod method = (JavaMethod)findCallableArityZero(self, name);
 
-        return method.invokeStaticDirect();
+        return method.invokeStaticDirect(context);
     }
 
     @Override
@@ -57,7 +57,7 @@ public class StaticMethodInvoker extends MethodInvoker {
         if (method.isVarArgs()) return call(context, self, clazz, name, new IRubyObject[] {arg0});
         Object cArg0 = convertArg(arg0, method, 0);
 
-        return method.invokeStaticDirect(cArg0);
+        return method.invokeStaticDirect(context, cArg0);
     }
 
     @Override
@@ -67,7 +67,7 @@ public class StaticMethodInvoker extends MethodInvoker {
         Object cArg0 = convertArg(arg0, method, 0);
         Object cArg1 = convertArg(arg1, method, 1);
 
-        return method.invokeStaticDirect(cArg0, cArg1);
+        return method.invokeStaticDirect(context, cArg0, cArg1);
     }
 
     @Override
@@ -78,7 +78,7 @@ public class StaticMethodInvoker extends MethodInvoker {
         Object cArg1 = convertArg(arg1, method, 1);
         Object cArg2 = convertArg(arg2, method, 2);
 
-        return method.invokeStaticDirect(cArg0, cArg1, cArg2);
+        return method.invokeStaticDirect(context, cArg0, cArg1, cArg2);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -94,7 +94,7 @@ public class StaticMethodInvoker extends MethodInvoker {
                 convertedArgs[i] = convertArg(intermediate[i], method, i);
             }
 
-            return method.invokeStaticDirect(convertedArgs);
+            return method.invokeStaticDirect(context, convertedArgs);
         } else {
             return call(context, self, clazz, name, args);
         }
@@ -107,7 +107,7 @@ public class StaticMethodInvoker extends MethodInvoker {
             JavaMethod method = (JavaMethod)findCallableArityOne(self, name, proc);
             Object cArg0 = convertArg(proc, method, 0);
 
-            return method.invokeStaticDirect(cArg0);
+            return method.invokeStaticDirect(context, cArg0);
         } else {
             return call(context, self, clazz, name);
         }
@@ -121,7 +121,7 @@ public class StaticMethodInvoker extends MethodInvoker {
             Object cArg0 = convertArg(arg0, method, 0);
             Object cArg1 = convertArg(proc, method, 1);
 
-            return method.invokeStaticDirect(cArg0, cArg1);
+            return method.invokeStaticDirect(context, cArg0, cArg1);
         } else {
             return call(context, self, clazz, name, arg0);
         }
@@ -136,7 +136,7 @@ public class StaticMethodInvoker extends MethodInvoker {
             Object cArg1 = convertArg(arg1, method, 1);
             Object cArg2 = convertArg(proc, method, 2);
 
-            return method.invokeStaticDirect(cArg0, cArg1, cArg2);
+            return method.invokeStaticDirect(context, cArg0, cArg1, cArg2);
         } else {
             return call(context, self, clazz, name, arg0, arg1);
         }
@@ -152,7 +152,7 @@ public class StaticMethodInvoker extends MethodInvoker {
             Object cArg2 = convertArg(arg2, method, 2);
             Object cArg3 = convertArg(proc, method, 3);
 
-            return method.invokeStaticDirect(cArg0, cArg1, cArg2, cArg3);
+            return method.invokeStaticDirect(context, cArg0, cArg1, cArg2, cArg3);
         } else {
             return call(context, self, clazz, name, arg0, arg1, arg2);
         }

@@ -12,6 +12,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class Yield19Node extends YieldNode {
     public Yield19Node(ISourcePosition position, Node node) {
-        super(ISourcePosition.INVALID_POSITION, node, false);
+        super(position, node, false);
     }
 }

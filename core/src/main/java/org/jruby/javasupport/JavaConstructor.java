@@ -46,6 +46,7 @@ import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="Java::JavaConstructor")
@@ -236,7 +237,7 @@ public class JavaConstructor extends JavaCallable {
         }
     }
 
-    public Object newInstanceDirect(Object... arguments) {
+    public Object newInstanceDirect(ThreadContext context, Object... arguments) {
         checkArity(arguments.length);
 
         try {
@@ -246,13 +247,13 @@ public class JavaConstructor extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite, constructor);
+            return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
-            return handleThrowable(t, constructor);
+            return handleThrowable(context, t);
         }
     }
 
-    public Object newInstanceDirect() {
+    public Object newInstanceDirect(ThreadContext context) {
         checkArity(0);
 
         try {
@@ -262,13 +263,13 @@ public class JavaConstructor extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite, constructor);
+            return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
-            return handleThrowable(t, constructor);
+            return handleThrowable(context, t);
         }
     }
 
-    public Object newInstanceDirect(Object arg0) {
+    public Object newInstanceDirect(ThreadContext context, Object arg0) {
         checkArity(1);
 
         try {
@@ -278,13 +279,13 @@ public class JavaConstructor extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite, constructor);
+            return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
-            return handleThrowable(t, constructor);
+            return handleThrowable(context, t);
         }
     }
 
-    public Object newInstanceDirect(Object arg0, Object arg1) {
+    public Object newInstanceDirect(ThreadContext context, Object arg0, Object arg1) {
         checkArity(2);
 
         try {
@@ -294,13 +295,13 @@ public class JavaConstructor extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite, constructor);
+            return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
-            return handleThrowable(t, constructor);
+            return handleThrowable(context, t);
         }
     }
 
-    public Object newInstanceDirect(Object arg0, Object arg1, Object arg2) {
+    public Object newInstanceDirect(ThreadContext context, Object arg0, Object arg1, Object arg2) {
         checkArity(3);
 
         try {
@@ -310,13 +311,13 @@ public class JavaConstructor extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite, constructor);
+            return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
-            return handleThrowable(t, constructor);
+            return handleThrowable(context, t);
         }
     }
 
-    public Object newInstanceDirect(Object arg0, Object arg1, Object arg2, Object arg3) {
+    public Object newInstanceDirect(ThreadContext context, Object arg0, Object arg1, Object arg2, Object arg3) {
         checkArity(4);
 
         try {
@@ -326,9 +327,9 @@ public class JavaConstructor extends JavaCallable {
         } catch (IllegalAccessException iae) {
             return handleIllegalAccessEx(iae);
         } catch (InvocationTargetException ite) {
-            return handleInvocationTargetEx(ite, constructor);
+            return handleInvocationTargetEx(context, ite);
         } catch (Throwable t) {
-            return handleThrowable(t, constructor);
+            return handleThrowable(context, t);
         }
     }
 
