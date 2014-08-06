@@ -524,7 +524,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             if (args.length == 0) {
-                final Frame unpacked = RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+                final Frame unpacked = RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
                 final FrameSlot slot = unpacked.getFrameDescriptor().findFrameSlot(RubyModule.MODULE_FUNCTION_FLAG_FRAME_SLOT_ID);
 

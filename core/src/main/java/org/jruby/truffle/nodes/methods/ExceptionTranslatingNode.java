@@ -116,7 +116,7 @@ public class ExceptionTranslatingNode extends RubyNode {
 
         builder.append(" - this is either a feature we haven't implemented for Truffle yet, or it might be disallowed in Ruby anyway");
 
-        return new RubyException(getContext().getCoreLibrary().getRubyTruffleErrorClass(), getContext().makeString(builder.toString()), RubyCallStack.getCallStackAsRubyArray(getContext(), this));
+        return new RubyException(getContext().getCoreLibrary().getRubyTruffleErrorClass(), getContext().makeString(builder.toString()), RubyCallStack.getBacktrace(this));
     }
 
     public RubyBasicObject translate(Exception exception) {
@@ -132,7 +132,7 @@ public class ExceptionTranslatingNode extends RubyNode {
             message = exception.getClass().getSimpleName() + ": " + exception.getMessage();
         }
 
-        return new RubyException(getContext().getCoreLibrary().getRubyTruffleErrorClass(), getContext().makeString(message), RubyCallStack.getCallStackAsRubyArray(getContext(), this));
+        return new RubyException(getContext().getCoreLibrary().getRubyTruffleErrorClass(), getContext().makeString(message), RubyCallStack.getBacktrace(this));
     }
 
 }
