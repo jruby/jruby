@@ -307,9 +307,15 @@ public class IRRuntimeHelpers {
             }
         } else if (Helpers.checkJavaException(throwable, excType, context)) {
             if (!arrayCheck) {
-                // wrap Throwable in a NativeException object
-                IRubyObject exceptionObj = new NativeException(runtime, runtime.getNativeException(), throwable);
-                ((NativeException)exceptionObj).prepareIntegratedBacktrace(context, throwable.getStackTrace());
+                IRubyObject exceptionObj;
+                if (excType == runtime.getNativeException()) {
+                    // wrap Throwable in a NativeException object
+                    exceptionObj = new NativeException(runtime, runtime.getNativeException(), throwable);
+                    ((NativeException)exceptionObj).prepareIntegratedBacktrace(context, throwable.getStackTrace());
+                } else {
+                    // wrap as normal JI object
+                    exceptionObj = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
+                }
                 runtime.getGlobalVariables().set("$!", exceptionObj);
             }
             return true;
