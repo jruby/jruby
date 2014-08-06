@@ -350,7 +350,7 @@ public class JavaProxy extends RubyObject {
         return method.invokeDirect(context, getObject(), arg0.toJava(argTypeClass));
     }
 
-    @JRubyMethod(required = 4, rest = true)
+    @JRubyMethod(required = 1, rest = true)
     public IRubyObject java_send(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         
