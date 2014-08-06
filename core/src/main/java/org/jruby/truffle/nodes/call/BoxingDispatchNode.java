@@ -33,7 +33,12 @@ public class BoxingDispatchNode extends UnboxedDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
-        return next.dispatch(frame, boxing.box(receiverObject), blockObject, argumentsObjects);
+        return dispatch(frame, RubyArguments.getSelf(frame.getArguments()), receiverObject, blockObject, argumentsObjects);
+    }
+
+    @Override
+    public Object dispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+        return next.dispatch(frame, boxing.box(callingSelf), boxing.box(receiverObject), blockObject, argumentsObjects);
     }
 
     @Override

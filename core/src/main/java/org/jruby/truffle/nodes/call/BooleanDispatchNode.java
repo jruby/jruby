@@ -64,6 +64,11 @@ public class BooleanDispatchNode extends UnboxedDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+        return dispatch(frame, RubyArguments.getSelf(frame.getArguments()), receiverObject, blockObject, argumentsObjects);
+    }
+
+    @Override
+    public Object dispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
         // Check it's a boolean
 
         if (!(receiverObject instanceof Boolean)) {

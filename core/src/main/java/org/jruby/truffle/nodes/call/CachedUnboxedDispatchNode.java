@@ -48,6 +48,11 @@ public class CachedUnboxedDispatchNode extends UnboxedDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+        return dispatch(frame, RubyArguments.getSelf(frame.getArguments()), receiverObject, blockObject, argumentsObjects);
+    }
+
+    @Override
+    public Object dispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
         // Check the class is what we expect
 
         if (receiverObject.getClass() != expectedClass) {

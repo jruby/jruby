@@ -37,13 +37,13 @@ public class CachedBoxedReturnMissingDispatchNode extends BoxedDispatchNode {
     }
 
     @Override
-    public Object dispatch(VirtualFrame frame, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+    public Object dispatch(VirtualFrame frame, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
         RubyNode.notDesignedForCompilation();
 
         // Check the lookup node is what we expect
 
         if (receiverObject.getLookupNode() != expectedLookupNode) {
-            return next.dispatch(frame, receiverObject, blockObject, argumentsObjects);
+            return next.dispatch(frame, boxedCallingSelf, receiverObject, blockObject, argumentsObjects);
         }
 
         // Check the class has not been modified
