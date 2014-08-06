@@ -44,6 +44,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
@@ -164,9 +165,9 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
         return str.toString();
     }
 
-    protected IRubyObject handleThrowable(Throwable t, Member target) {
+    protected IRubyObject handleThrowable(ThreadContext context, Throwable t) {
         if (REWRITE_JAVA_TRACE) {
-            Helpers.rewriteStackTraceAndThrow(t, getRuntime());
+            Helpers.rewriteStackTraceAndThrow(context, t);
         }
 
         Helpers.throwException(t);
@@ -174,7 +175,7 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
         return getRuntime().getNil();
     }
 
-    protected IRubyObject handleInvocationTargetEx(InvocationTargetException ite, Member target) {
-        return handleThrowable(ite.getTargetException(), target);
+    protected IRubyObject handleInvocationTargetEx(ThreadContext context, InvocationTargetException ite) {
+        return handleThrowable(context, ite.getTargetException());
     }
 }

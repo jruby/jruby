@@ -65,7 +65,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
             }
         }
         
-        proxy.setObject(constructor.newInstanceDirect(convertedArgs));
+        proxy.setObject(constructor.newInstanceDirect(context, convertedArgs));
         
         return self;
     }
@@ -76,7 +76,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
         JavaProxy proxy = castJavaProxy(self);
         JavaConstructor constructor = (JavaConstructor)findCallableArityZero(self, name);
 
-        proxy.setObject(constructor.newInstanceDirect());
+        proxy.setObject(constructor.newInstanceDirect(context));
         
         return self;
     }
@@ -88,7 +88,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
         JavaConstructor constructor = (JavaConstructor)findCallableArityOne(self, name, arg0);
         Object cArg0 = convertArg(arg0, constructor, 0);
 
-        proxy.setObject(constructor.newInstanceDirect(cArg0));
+        proxy.setObject(constructor.newInstanceDirect(context, cArg0));
         
         return self;
     }
@@ -101,7 +101,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
         Object cArg0 = convertArg(arg0, constructor, 0);
         Object cArg1 = convertArg(arg1, constructor, 1);
 
-        proxy.setObject(constructor.newInstanceDirect(cArg0, cArg1));
+        proxy.setObject(constructor.newInstanceDirect(context, cArg0, cArg1));
 
         return self;
     }
@@ -115,7 +115,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
         Object cArg1 = convertArg(arg1, constructor, 1);
         Object cArg2 = convertArg(arg2, constructor, 2);
 
-        proxy.setObject(constructor.newInstanceDirect(cArg0, cArg1, cArg2));
+        proxy.setObject(constructor.newInstanceDirect(context, cArg0, cArg1, cArg2));
 
         return self;
     }
@@ -136,7 +136,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
                 convertedArgs[i] = convertArg(intermediate[i], constructor, i);
             }
 
-            proxy.setObject(constructor.newInstanceDirect(convertedArgs));
+            proxy.setObject(constructor.newInstanceDirect(context, convertedArgs));
 
             return self;
         } else {
@@ -153,7 +153,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
             JavaConstructor constructor = (JavaConstructor)findCallableArityOne(self, name, proc);
             Object cArg0 = convertArg(proc, constructor, 0);
 
-            proxy.setObject(constructor.newInstanceDirect(cArg0));
+            proxy.setObject(constructor.newInstanceDirect(context, cArg0));
 
             return self;
         } else {
@@ -171,7 +171,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
             Object cArg0 = convertArg(arg0, constructor, 0);
             Object cArg1 = convertArg(proc, constructor, 1);
 
-            proxy.setObject(constructor.newInstanceDirect(cArg0, cArg1));
+            proxy.setObject(constructor.newInstanceDirect(context, cArg0, cArg1));
 
             return self;
         } else {
@@ -190,7 +190,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
             Object cArg1 = convertArg(arg1, constructor, 1);
             Object cArg2 = convertArg(proc, constructor, 2);
 
-            proxy.setObject(constructor.newInstanceDirect(cArg0, cArg1, cArg2));
+            proxy.setObject(constructor.newInstanceDirect(context, cArg0, cArg1, cArg2));
 
             return self;
         } else {
@@ -210,7 +210,7 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
             Object cArg2 = convertArg(arg2, constructor, 2);
             Object cArg3 = convertArg(proc, constructor, 3);
 
-            proxy.setObject(constructor.newInstanceDirect(cArg0, cArg1, cArg2, cArg3));
+            proxy.setObject(constructor.newInstanceDirect(context, cArg0, cArg1, cArg2, cArg3));
 
             return self;
         } else {

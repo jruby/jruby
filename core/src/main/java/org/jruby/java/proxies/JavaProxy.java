@@ -315,7 +315,7 @@ public class JavaProxy extends RubyObject {
         Ruby runtime = context.runtime;
         
         JavaMethod method = new JavaMethod(runtime, getMethod(name));
-        return method.invokeDirect(getObject());
+        return method.invokeDirect(context, getObject());
     }
 
     @JRubyMethod
@@ -330,7 +330,7 @@ public class JavaProxy extends RubyObject {
         }
 
         JavaMethod method = new JavaMethod(runtime, getMethod(name));
-        return method.invokeDirect(getObject());
+        return method.invokeDirect(context, getObject());
     }
 
     @JRubyMethod
@@ -347,7 +347,7 @@ public class JavaProxy extends RubyObject {
         Class argTypeClass = (Class)argTypesAry.eltInternal(0).toJava(Class.class);
 
         JavaMethod method = new JavaMethod(runtime, getMethod(name, argTypeClass));
-        return method.invokeDirect(getObject(), arg0.toJava(argTypeClass));
+        return method.invokeDirect(context, getObject(), arg0.toJava(argTypeClass));
     }
 
     @JRubyMethod(required = 4, rest = true)
@@ -371,7 +371,7 @@ public class JavaProxy extends RubyObject {
         }
 
         JavaMethod method = new JavaMethod(runtime, getMethod(name, argTypesClasses));
-        return method.invokeDirect(getObject(), argsAry);
+        return method.invokeDirect(context, getObject(), argsAry);
     }
 
     @JRubyMethod
