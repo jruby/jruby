@@ -9,9 +9,17 @@
  */
 package org.jruby.lexer.yacc;
 
-public interface IDetailedSourcePosition extends ISourcePosition {
+public interface SourcePositionFactory {
 
-    public int getOffset();
-    public int getLength();
+    // Sorry for creating a factory factory (CS)
+    public interface SourcePositionFactoryFactory {
+
+        public SourcePositionFactory create(LexerSource source, int line);
+
+    }
+
+    ISourcePosition getPosition(ISourcePosition startPosition);
+
+    ISourcePosition getPosition();
 
 }
