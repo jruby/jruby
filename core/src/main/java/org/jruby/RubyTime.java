@@ -53,7 +53,6 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -194,39 +193,34 @@ public class RubyTime extends RubyObject {
 
         Matcher tzMatcher = TZ_PATTERN.matcher(zone);
         if (tzMatcher.matches()) {
-            String zoneName = tzMatcher.group(1);
-            if (!zoneName.equalsIgnoreCase("UTC") && !zoneName.equalsIgnoreCase("GMT")) {
-                // e.g.: "JST-9"
-                zone = zoneName;
+            String sign = tzMatcher.group(2);
+            String hours = tzMatcher.group(3);
+            String minutes = tzMatcher.group(4);
+            
+            if (Integer.parseInt(hours) > 23 ||
+                    (minutes != null && Integer.parseInt(minutes) > 59)) {
+                throw runtime.newArgumentError("utc_offset out of range");
+            }
+            
+            // GMT+00:00 --> Etc/GMT, see "MRI behavior"
+            // comment below.
+            if (("00".equals(hours) || "0".equals(hours)) &&
+                    (minutes == null || "00".equals(minutes) || "0".equals(minutes))) {
+                zone = "Etc/GMT";
             } else {
-                String sign = tzMatcher.group(2);
-                String hours = tzMatcher.group(3);
-                String minutes = tzMatcher.group(4);
+                // Invert the sign, since TZ format and Java format
+                // use opposite signs, sigh... Also, Java API requires
+                // the sign to be always present, be it "+" or "-".
+                sign = ("-".equals(sign)? "+" : "-");
 
-                if (Integer.parseInt(hours) > 23 ||
-                        (minutes != null && Integer.parseInt(minutes) > 59)) {
-                    throw runtime.newArgumentError("utc_offset out of range");
-                }
+                // Always use "GMT" since that's required by Java API.
+                zone = "GMT" + sign + hours;
 
-                // GMT+00:00 --> Etc/GMT, see "MRI behavior"
-                // comment below.
-                if (("00".equals(hours) || "0".equals(hours)) &&
-                        (minutes == null || "00".equals(minutes) || "0".equals(minutes))) {
-                    zone = "Etc/GMT";
-                } else {
-                    // Invert the sign, since TZ format and Java format
-                    // use opposite signs, sigh... Also, Java API requires
-                    // the sign to be always present, be it "+" or "-".
-                    sign = ("-".equals(sign) ? "+" : "-");
-
-                    // Always use "GMT" since that's required by Java API.
-                    zone = "GMT" + sign + hours;
-
-                    if (minutes != null) {
-                        zone += minutes;
-                    }
+                if (minutes != null) {
+                    zone += minutes;
                 }
             }
+            
             tz = TimeZone.getTimeZone(zone);
         } else {
             if (LONG_TZNAME.containsKey(zone)) tz.setID(LONG_TZNAME.get(zone.toUpperCase()));
@@ -918,11 +912,6 @@ public class RubyTime extends RubyObject {
         if (dt.getZone() != DateTimeZone.UTC) {
             long offset = dt.getZone().getOffset(dt.getMillis());
             string.setInternalVariable("offset", runtime.newFixnum(offset / 1000));
-
-            String zone = dt.getZone().getShortName(dt.getMillis());
-            if (!TIME_OFFSET_PATTERN.matcher(zone).matches()) {
-                string.setInternalVariable("zone", runtime.newString(zone));
-            }
         }
 
         return string;
@@ -1161,53 +1150,21 @@ public class RubyTime extends RubyObject {
 
         from.getInstanceVariables().copyInstanceVariablesInto(time);
 
-        // pull out nanos, offset, zone
+        // pull out nanos, offset
         IRubyObject nano_num = (IRubyObject) from.getInternalVariables().getInternalVariable("nano_num");
         IRubyObject nano_den = (IRubyObject) from.getInternalVariables().getInternalVariable("nano_den");
-        IRubyObject offsetVar = (IRubyObject) from.getInternalVariables().getInternalVariable("offset");
-        IRubyObject zoneVar = (IRubyObject) from.getInternalVariables().getInternalVariable("zone");
+        IRubyObject offset = (IRubyObject) from.getInternalVariables().getInternalVariable("offset");
 
         if (nano_num != null && nano_den != null) {
             long nanos = nano_num.convertToInteger().getLongValue() / nano_den.convertToInteger().getLongValue();
             time.nsec += nanos;
         }
 
-        DateTimeZone dtz;
-
-        long offset = 0;
-        if (offsetVar != null) {
-            try {
-                offset = offsetVar.convertToInteger().getLongValue();
-            } catch (RaiseException typeError) {
-                offsetVar = null;
-            }
+        if (offset != null) {
+            long tz = offset.convertToInteger().getLongValue();
+            time.dt = dt.withZone(DateTimeZone.forOffsetMillis((int)(tz * 1000)));
         }
 
-        String zone = null;
-        if (zoneVar != null) {
-            try {
-                zone = zoneVar.convertToString().toString();
-            } catch (RaiseException typeError) {
-            }
-        }
-
-        if (zone == null) {
-            if (offset == 0) {
-                dtz = DateTimeZone.UTC;
-            } else {
-                dtz = getTimeZone(runtime, offset);
-            }
-        } else {
-            dtz = getTimeZone(runtime, zone);
-            if (offsetVar == null || offset*1000 == dtz.getOffset(dt.getMillis())) {
-                // nothing to do, zone is consistent with offset
-            } else {
-                // prefer offset if zone is inconsistent
-                dtz = getTimeZone(runtime, offset);
-            }
-        }
-
-        time.dt = dt.withZone(dtz);
         return time;
     }
 
