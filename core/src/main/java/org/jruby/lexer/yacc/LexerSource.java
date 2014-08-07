@@ -117,6 +117,10 @@ public abstract class LexerSource {
     public int getStartOffset() {
         return startOffset;
     }
+
+    public void startOfToken() {
+        startOffset = offset;
+    }
     
     /**
      * The location of the last byte we read from the source.
@@ -136,7 +140,6 @@ public abstract class LexerSource {
      */
     public ISourcePosition getPosition(ISourcePosition startPosition) {
         ISourcePosition sourcePosition = positionFactory.getPosition(startPosition);
-        startOffset = offset;
         return sourcePosition;
     }
     

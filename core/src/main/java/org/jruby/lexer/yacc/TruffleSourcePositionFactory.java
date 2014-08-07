@@ -41,15 +41,11 @@ public class TruffleSourcePositionFactory extends SimpleSourcePositionFactory {
 
     public TruffleSourcePositionFactory(LexerSource source, int line) {
         super(source, line);
-
         lastPosition = new TruffleSourcePosition(source.getFilename(), line, 0, 0);
     }
 
     public ISourcePosition getPosition() {
-        if (lastPosition.getStartLine() == source.getVirtualLine()) return lastPosition;
-
         lastPosition = new TruffleSourcePosition(source.getFilename(), source.getVirtualLine(), source.getStartOffset(), source.getOffset() - source.getStartOffset());
-
         return lastPosition;
     }
 }
