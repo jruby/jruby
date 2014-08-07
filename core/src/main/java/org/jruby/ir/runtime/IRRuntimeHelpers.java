@@ -507,7 +507,7 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject unresolvedSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        RubyBasicObject objClass = context.runtime.getObject();
+
         // We have to rely on the frame stack to find the implementation class
         RubyModule klazz = context.getFrameKlazz();
         String methodName = context.getCurrentFrame().getName();

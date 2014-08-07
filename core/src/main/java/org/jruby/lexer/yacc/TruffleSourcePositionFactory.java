@@ -34,7 +34,7 @@ public class TruffleSourcePositionFactory extends SimpleSourcePositionFactory {
 
         @Override
         public SourcePositionFactory create(LexerSource source, int line) {
-            return new SimpleSourcePositionFactory(source, line);
+            return new TruffleSourcePositionFactory(source, line);
         }
 
     }
