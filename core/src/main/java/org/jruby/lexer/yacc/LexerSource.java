@@ -36,7 +36,6 @@ import java.io.InputStream;
 import java.util.List;
 import org.jcodings.Encoding;
 
-import org.jruby.RubyInstanceConfig;
 import org.jruby.parser.ParserConfiguration;
 import org.jruby.util.ByteList;
 
@@ -51,7 +50,7 @@ import org.jruby.util.ByteList;
  */
 public abstract class LexerSource {
 	// Where we get new positions from.
-	private SimplePositionFactory positionFactory;
+	private SourcePositionFactory positionFactory;
 	
     // The name of this source (e.g. a filename: foo.rb)
     private final String sourceName;
@@ -77,8 +76,6 @@ public abstract class LexerSource {
     // Last full line read.
     private StringBuilder sourceLine;
 
-    public static boolean useDetailedPositions = false;
-
     /**
      * Create our food-source for the lexer
      * 
@@ -88,16 +85,10 @@ public abstract class LexerSource {
      * @param extraPositionInformation will gives us extra information that an IDE may want (deprecated)
      */
     protected LexerSource(String sourceName, List<String> list, int lineOffset, 
-            boolean extraPositionInformation) {
+            boolean extraPositionInformation, SourcePositionFactory.SourcePositionFactoryFactory sourcePositionFactoryFactory) {
         this.sourceName = sourceName;
         this.lineOffset = lineOffset;
-
-        if (useDetailedPositions) {
-            positionFactory = new SimpleDetailedPositionFactory(this, line);
-        } else {
-            positionFactory = new SimplePositionFactory(this, line);
-        }
-
+        positionFactory = sourcePositionFactoryFactory.create(this, line);
         this.list = list;
         lineBuffer = new StringBuilder(160);
         sourceLine = new StringBuilder(160);
@@ -168,15 +159,15 @@ public abstract class LexerSource {
      * @return the new source
      */
     public static LexerSource getSource(String name, InputStream content, List<String> list,
-            ParserConfiguration configuration) {
+            ParserConfiguration configuration, SourcePositionFactory.SourcePositionFactoryFactory sourcePositionFactoryFactory) {
         return new InputStreamLexerSource(name, content, list, configuration.getLineNumber(), 
-                configuration.hasExtraPositionInformation());
+                configuration.hasExtraPositionInformation(), sourcePositionFactoryFactory);
     }
 
     public static LexerSource getSource(String name, byte[] content, List<String> list,
-            ParserConfiguration configuration) {
+            ParserConfiguration configuration, SourcePositionFactory.SourcePositionFactoryFactory sourcePositionFactoryFactory) {
         return new ByteArrayLexerSource(name, content, list, configuration.getLineNumber(),
-                configuration.hasExtraPositionInformation());
+                configuration.hasExtraPositionInformation(), sourcePositionFactoryFactory);
     }
 
     private void captureFeatureNewline() {

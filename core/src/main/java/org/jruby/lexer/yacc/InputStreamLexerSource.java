@@ -2,7 +2,6 @@
 
 package org.jruby.lexer.yacc;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -36,8 +35,8 @@ public class InputStreamLexerSource extends LexerSource {
      * @param extraPositionInformation will gives us extra information that an IDE may want
      */
     public InputStreamLexerSource(String sourceName, InputStream in, List<String> list, int line, 
-            boolean extraPositionInformation) {
-        super(sourceName, list, line, extraPositionInformation);
+            boolean extraPositionInformation, SourcePositionFactory.SourcePositionFactoryFactory sourcePositionFactoryFactory) {
+        super(sourceName, list, line, extraPositionInformation, sourcePositionFactoryFactory);
         
         this.in = in;
     }

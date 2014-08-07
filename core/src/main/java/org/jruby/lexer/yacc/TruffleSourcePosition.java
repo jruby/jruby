@@ -9,23 +9,21 @@
  */
 package org.jruby.lexer.yacc;
 
-public class SimpleDetailedSourcePosition extends SimpleSourcePosition implements IDetailedSourcePosition {
+public class TruffleSourcePosition extends SimpleSourcePosition {
 
     private final int offset;
     private final int length;
 
-    public SimpleDetailedSourcePosition(String filename, int line, int offset, int length) {
+    public TruffleSourcePosition(String filename, int line, int offset, int length) {
         super(filename, line);
         this.offset = offset;
         this.length = length;
     }
 
-    @Override
     public int getOffset() {
         return offset;
     }
 
-    @Override
     public int getLength() {
         return length;
     }
