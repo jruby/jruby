@@ -54,13 +54,7 @@ public class DefineOrGetClassNode extends RubyNode {
         RubyClass definingClass;
 
         if (constant == null) {
-            final Object superClassObj = superClass.execute(frame);
-            RubyClass superClassObject = null;
-            if( superClassObj instanceof RubyClass) {
-                superClassObject = (RubyClass) superClassObj;
-            } else {
-                throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(superClassObj.toString(), "Class", this));
-            }
+            RubyClass superClassObject = getRubySuperClass(frame, context);
 
             if (superClassObject instanceof RubyException.RubyExceptionClass) {
                 definingClass = new RubyException.RubyExceptionClass(superClassObject, name);
@@ -81,5 +75,14 @@ public class DefineOrGetClassNode extends RubyNode {
         }
 
         return definingClass;
+    }
+
+    private RubyClass getRubySuperClass(VirtualFrame frame, RubyContext context) {
+        final Object superClassObj = superClass.execute(frame);
+
+        if (superClassObj instanceof RubyClass){
+            return (RubyClass) superClassObj;
+        }
+        throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(superClassObj.toString(), "Class", this));
     }
 }
