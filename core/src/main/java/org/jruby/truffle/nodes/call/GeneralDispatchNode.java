@@ -35,8 +35,8 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
 
     @Child protected IndirectCallNode callNode;
 
-    public GeneralDispatchNode(RubyContext context, String name) {
-        super(context);
+    public GeneralDispatchNode(RubyContext context, boolean ignoreVisibility, String name) {
+        super(context, ignoreVisibility);
         assert name != null;
         this.name = name;
         callNode = Truffle.getRuntime().createIndirectCallNode();

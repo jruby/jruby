@@ -24,10 +24,12 @@ import org.jruby.truffle.runtime.methods.*;
 public class DispatchNode extends Node {
 
     private final RubyContext context;
+    private final boolean ignoreVisibility;
 
-    public DispatchNode(RubyContext context) {
+    public DispatchNode(RubyContext context, boolean ignoreVisibility) {
         assert context != null;
         this.context = context;
+        this.ignoreVisibility = ignoreVisibility;
     }
 
     /**
@@ -91,9 +93,9 @@ public class DispatchNode extends Node {
             return method;
         }
 
-        if (!method.isVisibleTo(this, boxedCallingSelf, receiverBasicObject)) {
+        if (!ignoreVisibility && !method.isVisibleTo(this, boxedCallingSelf, receiverBasicObject)) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(context.getCoreLibrary().noMethodError(name, receiverBasicObject.toString(), this));
+            throw new RaiseException(context.getCoreLibrary().privateNoMethodError(name, receiverBasicObject.toString(), this));
         }
 
         return method;
@@ -102,5 +104,7 @@ public class DispatchNode extends Node {
     public RubyContext getContext() {
         return context;
     }
+
+    public boolean getIgnoreVisibility() { return ignoreVisibility; }
 
 }

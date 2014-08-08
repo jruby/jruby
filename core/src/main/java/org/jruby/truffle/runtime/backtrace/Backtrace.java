@@ -9,13 +9,17 @@
  */
 package org.jruby.truffle.runtime.backtrace;
 
-import com.oracle.truffle.api.nodes.Node;
+import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 public class Backtrace {
+
+    public static final BacktraceFormatter DISPLAY_FORMATTER = getDisplayFormatter();
+    public static final BacktraceFormatter OBJECT_FORMATTER = new MRIBacktraceFormatter();
+    public static final BacktraceFormatter DEBUG_FORMATTER = new MRIBacktraceFormatter();
 
     private final Activation[] activations;
 
@@ -25,6 +29,17 @@ public class Backtrace {
 
     public List<Activation> getActivations() {
         return Collections.unmodifiableList(Arrays.asList(activations));
+    }
+
+    private static BacktraceFormatter getDisplayFormatter() {
+        switch (Options.TRUFFLE_BACKTRACE_FORMAT.load()) {
+            case "mri":
+                return new MRIBacktraceFormatter();
+            case "rubinius":
+                return new RubiniusBacktraceFormatter();
+            default:
+                throw new UnsupportedOperationException();
+        }
     }
 
 }

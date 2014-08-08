@@ -22,6 +22,7 @@ import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyParserResult;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -106,7 +107,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
             // TODO(CS): what's this cast about?
             final RubyException rubyException = (RubyException) e.getRubyException();
 
-            for (String line : new MRIBacktraceFormatter().format(truffleContext, rubyException, rubyException.getBacktrace())) {
+            for (String line : Backtrace.DISPLAY_FORMATTER.format(truffleContext, rubyException, rubyException.getBacktrace())) {
                 System.err.println(line);
             }
 

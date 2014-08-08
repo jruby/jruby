@@ -67,7 +67,7 @@ public class RubyException extends RubyObject {
     }
 
     public RubyArray asRubyStringArray() {
-        final String[] lines = new MRIBacktraceFormatter().format(getRubyClass().getContext(), this, backtrace);
+        final String[] lines = Backtrace.OBJECT_FORMATTER.format(getRubyClass().getContext(), this, backtrace);
 
         final Object[] array = new Object[lines.length];
 

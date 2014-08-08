@@ -15,9 +15,9 @@ import org.jruby.truffle.runtime.methods.RubyMethod;
 
 public class Activation {
 
-    final RubyMethod method;
-    final Node callNode;
-    final MaterializedFrame materializedFrame;
+    private final RubyMethod method;
+    private final Node callNode;
+    private final MaterializedFrame materializedFrame;
 
     public Activation(RubyMethod method, Node callNode, MaterializedFrame materializedFrame) {
         this.method = method;

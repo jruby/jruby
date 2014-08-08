@@ -42,8 +42,8 @@ public class CachedBoxedSymbolDispatchNode extends BoxedDispatchNode {
     @Child protected DirectCallNode callNode;
     @Child protected BoxedDispatchNode next;
 
-    public CachedBoxedSymbolDispatchNode(RubyContext context, RubyMethod method, BoxedDispatchNode next) {
-        super(context);
+    public CachedBoxedSymbolDispatchNode(RubyContext context, boolean ignoreVisibility, RubyMethod method, BoxedDispatchNode next) {
+        super(context, ignoreVisibility);
         unmodifiedAssumption = context.getCoreLibrary().getSymbolClass().getUnmodifiedAssumption();
         this.method = method;
         this.next = next;

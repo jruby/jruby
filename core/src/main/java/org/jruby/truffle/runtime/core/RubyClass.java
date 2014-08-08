@@ -100,7 +100,6 @@ public class RubyClass extends RubyModule {
             }
 
             rubySingletonClass = new RubyClass(currentNode, getParentModule(), singletonSuperclass, String.format("#<Class:%s>", getName()), true);
-
             lookupNode = new LookupFork(rubySingletonClass, lookupNode);
         }
 

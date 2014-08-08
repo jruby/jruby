@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.call;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.source.*;
 import com.oracle.truffle.api.frame.*;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -34,7 +33,11 @@ public class DispatchHeadNode extends DispatchNode {
     @Child protected UnboxedDispatchNode dispatch;
 
     public DispatchHeadNode(RubyContext context, String name, boolean isSplatted, MissingBehavior missingBehavior) {
-        super(context);
+        this(context, false, name, isSplatted, missingBehavior);
+    }
+
+    public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, String name, boolean isSplatted, MissingBehavior missingBehavior) {
+        super(context, ignoreVisibility);
 
         assert context != null;
         assert name != null;
@@ -42,10 +45,9 @@ public class DispatchHeadNode extends DispatchNode {
         this.name = name;
         this.isSplatted = isSplatted;
 
-        final UninitializedDispatchNode uninitializedDispatch = new UninitializedDispatchNode(context, name, missingBehavior);
-        dispatch = new UninitializedBoxingDispatchNode(context, uninitializedDispatch);
+        final UninitializedDispatchNode uninitializedDispatch = new UninitializedDispatchNode(context, ignoreVisibility, name, missingBehavior);
+        dispatch = new UninitializedBoxingDispatchNode(context, ignoreVisibility, uninitializedDispatch);
     }
-
 
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
         return dispatch(frame, RubyArguments.getSelf(frame.getArguments()), receiverObject, blockObject, argumentsObjects);
@@ -70,7 +72,7 @@ public class DispatchHeadNode extends DispatchNode {
     public Object respecialize(VirtualFrame frame, String reason, Object receiverObject, RubyProc blockObject, Object... argumentObjects) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), name, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
+        final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), getIgnoreVisibility(), name, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
         replace(newHead, reason);
         return newHead.dispatch(frame, receiverObject, blockObject, argumentObjects);
     }
@@ -78,7 +80,7 @@ public class DispatchHeadNode extends DispatchNode {
     public boolean respecializeAndDoesRespondTo(VirtualFrame frame, String reason, Object receiverObject) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), name, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
+        final DispatchHeadNode newHead = new DispatchHeadNode(getContext(), getIgnoreVisibility(), name, isSplatted, MissingBehavior.CALL_METHOD_MISSING);
         replace(newHead, reason);
         return newHead.doesRespondTo(frame, receiverObject);
     }

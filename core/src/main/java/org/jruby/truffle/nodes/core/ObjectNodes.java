@@ -10,11 +10,12 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.nodes.call.DynamicNameDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -222,20 +223,35 @@ public abstract class ObjectNodes {
     @CoreMethod(names = {"dup", "clone"}, maxArgs = 0)
     public abstract static class DupNode extends CoreMethodNode {
 
+        @Child protected DispatchHeadNode initializeDupNode;
+
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            initializeDupNode = new DispatchHeadNode(context, true, "initialize_dup", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public DupNode(DupNode prev) {
             super(prev);
+            initializeDupNode = prev.initializeDupNode;
         }
 
         @Specialization
-        public Object dup(RubyObject self) {
+        public Object dup(VirtualFrame frame, RubyObject self) {
             notDesignedForCompilation();
 
             final RubyObject newObject = new RubyObject(self.getRubyClass());
             newObject.setInstanceVariables(self.getFields());
+            initializeDupNode.dispatch(frame, newObject, null, self);
+            return newObject;
+        }
+
+        @Specialization
+        public Object dup(VirtualFrame frame, RubyModule self) {
+            notDesignedForCompilation();
+
+            final RubyBasicObject newObject = self.getRubyClass().newInstance(this);
+            newObject.setInstanceVariables(self.getFields());
+            initializeDupNode.dispatch(frame, newObject, null, self);
             return newObject;
         }
 
@@ -302,6 +318,49 @@ public abstract class ObjectNodes {
             notDesignedForCompilation();
 
             return self.frozen;
+        }
+
+    }
+
+    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, minArgs = 1, maxArgs = 1)
+    public abstract static class InitializeCopyNode extends CoreMethodNode {
+
+        public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InitializeCopyNode(InitializeCopyNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object initializeCopy(RubyObject self, RubyObject other) {
+            notDesignedForCompilation();
+
+            return NilPlaceholder.INSTANCE;
+        }
+
+    }
+
+    @CoreMethod(names = "initialize_dup", visibility = Visibility.PRIVATE, minArgs = 1, maxArgs = 1)
+    public abstract static class InitializeDupNode extends CoreMethodNode {
+
+        @Child protected DispatchHeadNode initializeCopyNode;
+
+        public InitializeDupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            initializeCopyNode = new DispatchHeadNode(context, "initialize_copy", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        }
+
+        public InitializeDupNode(InitializeDupNode prev) {
+            super(prev);
+            initializeCopyNode = prev.initializeCopyNode;
+        }
+
+        @Specialization
+        public Object initializeDup(VirtualFrame frame, RubyObject self, RubyObject other) {
+            notDesignedForCompilation();
+            return initializeCopyNode.dispatch(frame, self, null, other);
         }
 
     }

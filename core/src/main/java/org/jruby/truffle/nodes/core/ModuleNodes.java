@@ -29,6 +29,7 @@ import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.methods.*;
@@ -414,6 +415,27 @@ public abstract class ModuleNodes {
             final CallTarget modifiedCallTarget = Truffle.getRuntime().createCallTarget(modifiedRootNode);
             final RubyMethod modifiedMethod = new RubyMethod(proc.getSharedMethodInfo(), name.toString(), null, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame(), true);
             module.addMethod(this, modifiedMethod);
+        }
+
+    }
+
+    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, minArgs = 1, maxArgs = 1)
+    public abstract static class InitializeCopyNode extends CoreMethodNode {
+
+        public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InitializeCopyNode(InitializeCopyNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object initializeCopy(RubyModule self, RubyModule other) {
+            notDesignedForCompilation();
+
+            self.initCopy(other);
+            return NilPlaceholder.INSTANCE;
         }
 
     }
@@ -878,7 +900,10 @@ public abstract class ModuleNodes {
         public RubyModule undefMethod(RubyModule module, RubyString name) {
             notDesignedForCompilation();
 
-            final RubyMethod method = module.lookupMethod(name.toString());
+            final RubyMethod method = module.getLookupNode().lookupMethod(name.toString());
+            if (method == null) {
+                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), module.toString(), this));
+            }
             module.undefMethod(this, method);
             return module;
         }
@@ -887,7 +912,10 @@ public abstract class ModuleNodes {
         public RubyModule undefMethod(RubyModule module, RubySymbol name) {
             notDesignedForCompilation();
 
-            final RubyMethod method = module.lookupMethod(name.toString());
+            final RubyMethod method = module.getLookupNode().lookupMethod(name.toString());
+            if (method == null) {
+                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), module.toString(), this));
+            }
             module.undefMethod(this, method);
             return module;
         }

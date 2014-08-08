@@ -68,7 +68,6 @@ public class LookupFork implements LookupNode {
         if (firstResult != null) {
             return firstResult;
         }
-
         return second.lookupMethod(methodName);
     }
 

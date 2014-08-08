@@ -17,8 +17,6 @@ import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
-import javax.xml.ws.Dispatch;
-
 @CoreClass(name = "main")
 public abstract class MainNodes {
 

@@ -71,7 +71,8 @@ public class RubyModule extends RubyObject implements LookupNode {
      * The module in which this module was defined. By analogy, if superclass is the dynamic scope,
      * the parent module is the lexical scope.
      */
-    private final RubyModule parentModule;
+    @CompilerDirectives.CompilationFinal
+    private RubyModule parentModule;
 
     /*
      * The first thing to lookup names in. Not always the class, as we also have singleton classes,
@@ -79,7 +80,8 @@ public class RubyModule extends RubyObject implements LookupNode {
      */
     private LookupNode lookupParent = LookupTerminal.INSTANCE;
 
-    private final String name;
+    @CompilerDirectives.CompilationFinal
+    private String name;
     private final Map<String, RubyMethod> methods = new HashMap<>();
     private final Map<String, RubyConstant> constants = new HashMap<>();
     private final Map<String, Object> classVariables = new HashMap<>();
@@ -106,6 +108,16 @@ public class RubyModule extends RubyObject implements LookupNode {
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
     }
 
+    public void initCopy(RubyModule other) {
+        this.name = other.name;
+        this.parentModule = other.parentModule;
+        this.methods.putAll(other.methods);
+        this.constants.putAll(other.constants);
+        this.classVariables.putAll(other.classVariables);
+        this.lookupParent = other.lookupParent;
+        this.lookupNode = other.lookupNode;
+    }
+
     public RubyModule getParentModule() {
         return parentModule;
     }
@@ -114,7 +126,6 @@ public class RubyModule extends RubyObject implements LookupNode {
         RubyNode.notDesignedForCompilation();
 
         checkFrozen(currentNode);
-
         lookupParent = new LookupFork(module, lookupParent);
         newVersion();
         module.addDependent(this);
@@ -211,13 +222,16 @@ public class RubyModule extends RubyObject implements LookupNode {
 
     public void undefMethod(RubyNode currentNode, String methodName) {
         RubyNode.notDesignedForCompilation();
-
-        undefMethod(currentNode, lookupMethod(methodName));
+        final RubyMethod method = lookupMethod(methodName);
+        if (method == null) {
+            undefMethod(currentNode, getLookupNode().lookupMethod(methodName));
+        } else {
+            undefMethod(currentNode, lookupMethod(methodName));
+        }
     }
 
     public void undefMethod(RubyNode currentNode, RubyMethod method) {
         RubyNode.notDesignedForCompilation();
-
         addMethod(currentNode, method.undefined());
     }
 
@@ -313,7 +327,6 @@ public class RubyModule extends RubyObject implements LookupNode {
         // Look in this module
 
         final RubyMethod method = getMethods().get(methodName);
-
         if (method != null) {
             return method;
         }

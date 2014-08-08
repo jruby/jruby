@@ -21,8 +21,8 @@ import org.jruby.truffle.runtime.core.*;
  */
 public abstract class BoxedDispatchNode extends DispatchNode {
 
-    public BoxedDispatchNode(RubyContext context) {
-        super(context);
+    public BoxedDispatchNode(RubyContext context, boolean ignoreVisibility) {
+        super(context, ignoreVisibility);
     }
 
     public abstract Object dispatch(VirtualFrame frame, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects);
