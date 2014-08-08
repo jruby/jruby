@@ -6,10 +6,11 @@ package org.jruby.ir.operands;
  * debug string.
  */
 public class TemporaryLocalReplacementVariable extends TemporaryLocalVariable {
+    public static final String PREFIX = "%t_";
     private final String oldName;
 
     public TemporaryLocalReplacementVariable(String oldName, int offset) {
-        super(offset);
+        super(PREFIX + oldName + "_" + offset, offset);
 
         this.oldName = oldName;
     }
