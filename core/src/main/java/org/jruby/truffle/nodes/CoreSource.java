@@ -13,35 +13,34 @@ import java.io.*;
 
 import com.oracle.truffle.api.*;
 
-/**
- * Singleton source used for core method nodes.
- */
 public final class CoreSource implements Source {
 
-    private final String name;
+    private final String className;
+    private final String methodName;
 
-    public CoreSource(String name) {
-        this.name = name;
+    public CoreSource(String className, String methodName) {
+        this.className = className;
+        this.methodName = methodName;
     }
 
     @Override
     public String getName() {
-        return name;
+        return toString();
     }
 
     @Override
     public String getShortName() {
-        return name;
+        return toString();
     }
 
     @Override
     public String getCode() {
-        return name;
+        return toString();
     }
 
     @Override
     public String toString() {
-        return name;
+        return String.format("%s#%s", className, methodName);
     }
 
     @Override
@@ -82,6 +81,14 @@ public final class CoreSource implements Source {
     @Override
     public int getLineLength(int lineNumber) {
         return 0;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public String getMethodName() {
+        return methodName;
     }
 
 }

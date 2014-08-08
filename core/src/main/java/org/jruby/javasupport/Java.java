@@ -635,7 +635,7 @@ public class Java implements Library {
             return method.invokeStaticDirect(context, arg0.toJava(argTypeClass));
         }
 
-        @JRubyMethod(required = 4, rest = true, meta = true)
+        @JRubyMethod(required = 1, rest = true, meta = true)
         public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
             Ruby runtime = context.runtime;
 

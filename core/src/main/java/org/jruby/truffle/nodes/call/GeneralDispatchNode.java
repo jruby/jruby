@@ -41,13 +41,11 @@ public class GeneralDispatchNode extends BoxedDispatchNode {
     }
 
     @Override
-    public Object dispatch(VirtualFrame frame, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+    public Object dispatch(VirtualFrame frame, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
         MethodCacheEntry entry = lookupInCache(receiverObject.getLookupNode());
 
         if (entry == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-
-            final RubyBasicObject boxedCallingSelf = getContext().getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
 
             try {
                 entry = new MethodCacheEntry(lookup(boxedCallingSelf, receiverObject, name), false);

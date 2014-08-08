@@ -29,6 +29,8 @@ public abstract class UnboxedDispatchNode extends DispatchNode {
 
     public abstract Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects);
 
+    public abstract Object dispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects);
+
     public abstract boolean doesRespondTo(VirtualFrame frame, Object receiverObject);
 
     public void setNext(@SuppressWarnings("unused") UnboxedDispatchNode next) {

@@ -352,9 +352,6 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
                     } else if (extendedOption.equals("+T")) {
                         checkGraalVersion();
-                        // LexerSource can't see the InstanceConfig when it starts, so if any instanceof of JRuby in
-                        // this VM is using Truffle we set this global option.
-                        LexerSource.useDetailedPositions = true;
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
                         Options.WARN_USELESSS_USE_OF.force(Boolean.toString(false));
                         config.setDisableGems(true);

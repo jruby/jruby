@@ -22,6 +22,8 @@ import org.jruby.truffle.runtime.NilPlaceholder;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyParserResult;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyException;
@@ -93,16 +95,13 @@ public class TruffleBridgeImpl implements TruffleBridge {
             return callTarget.call(RubyArguments.pack(parentFrame, self, null));
         } catch (RaiseException e) {
             // TODO(CS): what's this cast about?
-            printUncaughtException((RubyException) e.getRubyException());
+            final RubyException rubyException = (RubyException) e.getRubyException();
+
+            for (String line : Backtrace.DISPLAY_FORMATTER.format(truffleContext, rubyException, rubyException.getBacktrace())) {
+                System.err.println(line);
+            }
+
             return NilPlaceholder.INSTANCE;
-        }
-    }
-
-    private void printUncaughtException(RubyException exception) {
-        System.err.println(exception.getMessage());
-
-        for (Object line : exception.getBacktrace().slowToArray()) {
-            System.err.println(line);
         }
     }
 

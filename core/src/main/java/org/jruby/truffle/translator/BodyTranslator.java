@@ -40,6 +40,7 @@ import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyFixnum;
 import org.jruby.truffle.runtime.core.RubyRegexp;
+import org.jruby.truffle.runtime.methods.RubyMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
@@ -1117,7 +1118,7 @@ public class BodyTranslator extends Translator {
 
         // Unset this flag for any for any blocks within the for statement's body
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, "(" + currentCallMethodName + "-block)", true, node.getBodyNode());
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, RubyMethod.blockDecorator(currentCallMethodName), true, node.getBodyNode());
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getReturnID(), hasOwnScope, false, sharedMethodInfo, environment.getNamedMethodName(), true);
@@ -2058,7 +2059,7 @@ public class BodyTranslator extends Translator {
     }
 
     @Override
-    protected String getIentifier() {
+    protected String getIdentifier() {
         if (environment.isBlock()) {
             TranslatorEnvironment methodParent = environment.getParent();
 
@@ -2066,7 +2067,7 @@ public class BodyTranslator extends Translator {
                 methodParent = methodParent.getParent();
             }
 
-            return "block in " + methodParent.getNamedMethodName();
+            return RubyMethod.blockDecorator(methodParent.getNamedMethodName());
         } else {
             return environment.getNamedMethodName();
         }

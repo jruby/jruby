@@ -85,7 +85,7 @@ public class RubyRegexp extends RubyObject {
     public Object matchOperator(String string) {
         // TODO(CS) merge with match
 
-        final Frame frame = RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+        final Frame frame = RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
         final RubyContext context = getRubyClass().getContext();
 
@@ -157,7 +157,7 @@ public class RubyRegexp extends RubyObject {
     public Object match(String string) {
         final RubyContext context = getRubyClass().getContext();
 
-        final Frame frame = RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+        final Frame frame = RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
         final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
         final Matcher matcher = regex.matcher(stringBytes);

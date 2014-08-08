@@ -13,6 +13,8 @@ import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.runtime.*;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.backtrace.MRIBacktraceFormatter;
 import org.jruby.truffle.runtime.core.*;
 
 @CoreClass(name = "TruffleDebug")
@@ -51,7 +53,11 @@ public abstract class TruffleDebugNodes {
         @Specialization
         public NilPlaceholder dumpCallStack() {
             notDesignedForCompilation();
-            RubyCallStack.dump(getContext(), this);
+
+            for (String line : Backtrace.DEBUG_FORMATTER.format(getContext(), null, RubyCallStack.getBacktrace(this))) {
+                System.err.println(line);
+            }
+
             return NilPlaceholder.INSTANCE;
         }
 

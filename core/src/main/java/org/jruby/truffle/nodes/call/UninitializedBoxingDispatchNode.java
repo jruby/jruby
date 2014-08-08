@@ -32,6 +32,11 @@ public class UninitializedBoxingDispatchNode extends UnboxedDispatchNode {
 
     @Override
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+        return dispatch(frame, RubyArguments.getSelf(frame.getArguments()), receiverObject, blockObject, argumentsObjects);
+    }
+
+    @Override
+    public Object dispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
         CompilerDirectives.transferToInterpreter();
 
         /*
@@ -47,7 +52,7 @@ public class UninitializedBoxingDispatchNode extends UnboxedDispatchNode {
             this.replace(new BoxingDispatchNode(getContext(), next));
         }
 
-        return next.dispatch(frame, getContext().getCoreLibrary().box(receiverObject), blockObject, argumentsObjects);
+        return next.dispatch(frame, getContext().getCoreLibrary().box(callingSelf), getContext().getCoreLibrary().box(receiverObject), blockObject, argumentsObjects);
     }
 
     @Override

@@ -45,11 +45,16 @@ public class DispatchHeadNode extends DispatchNode {
         dispatch = new UninitializedBoxingDispatchNode(context, uninitializedDispatch);
     }
 
+
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
+        return dispatch(frame, RubyArguments.getSelf(frame.getArguments()), receiverObject, blockObject, argumentsObjects);
+    }
+
+    public Object dispatch(VirtualFrame frame, Object callingSelf, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
         assert RubyContext.shouldObjectBeVisible(receiverObject);
         assert RubyContext.shouldObjectsBeVisible(argumentsObjects);
 
-        return dispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
+        return dispatch.dispatch(frame, callingSelf, receiverObject, blockObject, argumentsObjects);
     }
 
     public boolean doesRespondTo(VirtualFrame frame, Object receiverObject) {

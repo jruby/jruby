@@ -34,19 +34,15 @@ package org.jruby.parser;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyFile;
-import org.jruby.RubyHash;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.ast.Node;
-import org.jruby.lexer.yacc.LexerSource;
-import org.jruby.lexer.yacc.SyntaxException;
+import org.jruby.lexer.yacc.*;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.cli.Options;
 
 /**
  * Serves as a simple facade for all the parsing magic.
@@ -79,7 +75,7 @@ public class Parser {
     public Node parse(String file, byte[] content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         RubyArray list = getLines(configuration, runtime, file);
-        LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration);
+        LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration, getSourcePositionFactoryFactory());
         return parse(file, lexerSource, blockScope, configuration);
     }
 
@@ -90,7 +86,7 @@ public class Parser {
         if (content instanceof LoadServiceResourceInputStream) {
             return parse(file, ((LoadServiceResourceInputStream) content).getBytes(), blockScope, configuration);
         } else {
-            LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration);
+            LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration, getSourcePositionFactoryFactory());
             return parse(file, lexerSource, blockScope, configuration);
         }
     }
@@ -177,4 +173,15 @@ public class Parser {
         }
         return list;
     }
+
+    // I'm really sorry, this is a factory factory factory method (CS)
+    private SourcePositionFactory.SourcePositionFactoryFactory getSourcePositionFactoryFactory() {
+        if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE || Options.PARSER_ALWAYS_TRUFFLE_POSITIONS.load()) {
+            return new TruffleSourcePositionFactory.Factory();
+        } else {
+            return new SimpleSourcePositionFactory.Factory();
+        }
+    }
+
+
 }

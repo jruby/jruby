@@ -56,6 +56,7 @@ public class Options {
     // This section holds all Options for JRuby. They will be listed in the
     // --properties output.
 
+    public static final Option<Boolean> PARSER_ALWAYS_TRUFFLE_POSITIONS = bool(PARSER, "parser.always_truffle_positions", false, "Always generate Truffle source positions, even if we're not -X+T.");
     public static final Option<Boolean> WARN_USELESSS_USE_OF = bool(PARSER, "parser.warnuselessuseof", true, "Print warnings about potentially useless expressions in void contents.");
 
     public static final Option<CompileMode> COMPILE_MODE = enumeration(COMPILER, "compile.mode", CompileMode.class, CompileMode.JIT, "Set compilation mode. JIT = at runtime; FORCE = before execution.");
@@ -135,8 +136,7 @@ public class Options {
     public static final Option<Integer> TRUFFLE_HASHES_SMALL = integer(TRUFFLE, "truffle.hashes.small", 3, "Maximum size of a Hash to consider small for optimisations.");
     public static final Option<Boolean> TRUFFLE_COMPILER_PASS_LOOPS_THROUGH_BLOCKS = bool(TRUFFLE, "truffle.compiler.pass_loops_through_blocks", true, "Pass loop counts through blocks to the method that is calling the block.");
     public static final Option<Boolean> TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS = bool(TRUFFLE, "truffle.allow_simple_source_sections", false, "Allow simple source sections.");
-    public static final Option<Boolean> TRUFFLE_BACKTRACE_PRINT_LOCALS = bool(TRUFFLE, "truffle.backtrace.print_locals", true, "Print the value of local variabes in backtraces.");
-    public static final Option<Integer> TRUFFLE_BACKTRACE_PRINT_LOCALS_MAX = integer(TRUFFLE, "truffle.backtrace.print_locals.max", 12, "Maximum length of a local variable printed in backtraces.");
+    public static final Option<String> TRUFFLE_BACKTRACE_FORMAT = string(TRUFFLE, "truffle.backtrace.format", new String[]{"mri", "rubinius"}, "mri", "How to format backtraces.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");

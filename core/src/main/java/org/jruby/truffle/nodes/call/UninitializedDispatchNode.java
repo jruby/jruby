@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.call;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -39,7 +38,7 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
     }
 
     @Override
-    public Object dispatch(VirtualFrame frame, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+    public Object dispatch(VirtualFrame frame, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
         CompilerDirectives.transferToInterpreter();
 
         final RubyContext context = getContext();
@@ -60,8 +59,6 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
             return newBoxing.dispatch(frame, receiverObject, blockObject, argumentsObjects);
         }
 
-        final RubyBasicObject boxedCallingSelf = getContext().getCoreLibrary().box(RubyArguments.getSelf(frame.getArguments()));
-
         RubyMethod method;
 
         try {
@@ -71,7 +68,7 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
                 case RETURN_MISSING: {
                     BoxedDispatchNode newDispatch = new CachedBoxedReturnMissingDispatchNode(getContext(), receiverObject.getLookupNode(), this);
                     replace(newDispatch, "appending new boxed return nil dispatch node to chain");
-                    return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
+                    return newDispatch.dispatch(frame, boxedCallingSelf, receiverObject, blockObject, argumentsObjects);
                 }
 
                 case CALL_METHOD_MISSING: {
@@ -83,7 +80,7 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
 
                     BoxedDispatchNode newDispatch = new CachedBoxedMethodMissingDispatchNode(getContext(), receiverObject.getLookupNode(), method, name, this);
                     replace(newDispatch, "appending new boxed method missing dispatch node to chain");
-                    return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
+                    return newDispatch.dispatch(frame, boxedCallingSelf, receiverObject, blockObject, argumentsObjects);
                 }
 
                 default:
@@ -138,7 +135,7 @@ public class UninitializedDispatchNode extends BoxedDispatchNode {
         }
 
         replace(newDispatch, "appending new boxed dispatch node to chain");
-        return newDispatch.dispatch(frame, receiverObject, blockObject, argumentsObjects);
+        return newDispatch.dispatch(frame, boxedCallingSelf, receiverObject, blockObject, argumentsObjects);
     }
 
     @Override

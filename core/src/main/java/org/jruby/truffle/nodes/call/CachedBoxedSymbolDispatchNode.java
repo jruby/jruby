@@ -52,11 +52,11 @@ public class CachedBoxedSymbolDispatchNode extends BoxedDispatchNode {
     }
 
     @Override
-    public Object dispatch(VirtualFrame frame, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
+    public Object dispatch(VirtualFrame frame, RubyBasicObject boxedCallingSelf, RubyBasicObject receiverObject, RubyProc blockObject, Object[] argumentsObjects) {
         // Check it is a symbol
 
         if (!(receiverObject instanceof RubySymbol)) {
-            return next.dispatch(frame, receiverObject, blockObject, argumentsObjects);
+            return next.dispatch(frame, boxedCallingSelf, receiverObject, blockObject, argumentsObjects);
         }
 
         // Check no symbols have had their lookup modified

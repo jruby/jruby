@@ -401,7 +401,7 @@ public class RubyModule extends RubyObject implements LookupNode {
     public static void setCurrentVisibility(Visibility visibility) {
         RubyNode.notDesignedForCompilation();
 
-        final Frame callerFrame = RubyCallStack.getCallerFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+        final Frame callerFrame = RubyCallStack.getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
         assert callerFrame != null;
         assert callerFrame.getFrameDescriptor() != null;

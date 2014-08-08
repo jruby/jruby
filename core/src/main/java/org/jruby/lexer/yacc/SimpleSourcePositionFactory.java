@@ -28,18 +28,39 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.lexer.yacc;
 
-public class SimpleDetailedPositionFactory extends SimplePositionFactory {
+public class SimpleSourcePositionFactory implements SourcePositionFactory {
 
-    public SimpleDetailedPositionFactory(LexerSource source, int line) {
-        super(source, line);
+    public static class Factory implements SourcePositionFactoryFactory {
 
-        lastPosition = new SimpleDetailedSourcePosition(source.getFilename(), line, 0, 0);
+        @Override
+        public SourcePositionFactory create(LexerSource source, int line) {
+            return new SimpleSourcePositionFactory(source, line);
+        }
+
+    }
+
+    protected LexerSource source;
+    protected ISourcePosition lastPosition;
+
+    public SimpleSourcePositionFactory(LexerSource source, int line) {
+        this.source = source;
+        lastPosition = new SimpleSourcePosition(source.getFilename(), line);
+    }
+
+    public ISourcePosition getPosition(ISourcePosition startPosition) {
+        if (startPosition != null) {
+            lastPosition = startPosition;
+            
+            return lastPosition;
+        }
+
+        return getPosition();
     }
 
     public ISourcePosition getPosition() {
         if (lastPosition.getStartLine() == source.getVirtualLine()) return lastPosition;
 
-        lastPosition = new SimpleDetailedSourcePosition(source.getFilename(), source.getVirtualLine(), source.getStartOffset(), source.getOffset() - source.getStartOffset());
+        lastPosition = new SimpleSourcePosition(source.getFilename(), source.getVirtualLine());
 
         return lastPosition;
     }
