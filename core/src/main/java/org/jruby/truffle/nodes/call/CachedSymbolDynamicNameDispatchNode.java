@@ -27,7 +27,7 @@ public class CachedSymbolDynamicNameDispatchNode extends DynamicNameDispatchNode
     public CachedSymbolDynamicNameDispatchNode(RubyContext context, RubySymbol cachedName, DynamicNameDispatchNode next) {
         super(context);
         this.cachedName = cachedName;
-        dispatchHeadNode = new DispatchHeadNode(context, false, cachedName.toString(), false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        dispatchHeadNode = new DispatchHeadNode(context, cachedName.toString(), false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         this.next = next;
     }
 

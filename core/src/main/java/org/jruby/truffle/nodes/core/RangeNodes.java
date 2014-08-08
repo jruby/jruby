@@ -212,9 +212,9 @@ public abstract class RangeNodes {
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            callLess = new DispatchHeadNode(context, false, "<", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
-            callGreater = new DispatchHeadNode(context, false, ">", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
-            callGreaterEqual = new DispatchHeadNode(context, false, ">=", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            callLess = new DispatchHeadNode(context, "<", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            callGreater = new DispatchHeadNode(context, ">", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            callGreaterEqual = new DispatchHeadNode(context, ">=", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public IncludeNode(IncludeNode prev) {
@@ -364,7 +364,7 @@ public abstract class RangeNodes {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context, false, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public ToSNode(ToSNode prev) {

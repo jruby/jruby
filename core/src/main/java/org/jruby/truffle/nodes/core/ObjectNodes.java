@@ -349,7 +349,7 @@ public abstract class ObjectNodes {
 
         public InitializeDupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeCopyNode = new DispatchHeadNode(context, false, "initialize_copy", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initializeCopyNode = new DispatchHeadNode(context, "initialize_copy", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public InitializeDupNode(InitializeDupNode prev) {

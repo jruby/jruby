@@ -446,7 +446,7 @@ public abstract class ModuleNodes {
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            appendFeaturesNode = new DispatchHeadNode(context, false, "append_features", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            appendFeaturesNode = new DispatchHeadNode(context, "append_features", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public IncludeNode(IncludeNode prev) {

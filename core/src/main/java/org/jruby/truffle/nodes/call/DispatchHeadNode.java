@@ -31,6 +31,10 @@ public class DispatchHeadNode extends DispatchNode {
 
     @Child protected UnboxedDispatchNode dispatch;
 
+    public DispatchHeadNode(RubyContext context, String name, boolean isSplatted, MissingBehavior missingBehavior) {
+        this(context, false, name, isSplatted, missingBehavior);
+    }
+
     public DispatchHeadNode(RubyContext context, boolean ignoreVisibility, String name, boolean isSplatted, MissingBehavior missingBehavior) {
         super(context, ignoreVisibility);
 
@@ -43,7 +47,6 @@ public class DispatchHeadNode extends DispatchNode {
         final UninitializedDispatchNode uninitializedDispatch = new UninitializedDispatchNode(context, ignoreVisibility, name, missingBehavior);
         dispatch = new UninitializedBoxingDispatchNode(context, ignoreVisibility, uninitializedDispatch);
     }
-
 
     public Object dispatch(VirtualFrame frame, Object receiverObject, RubyProc blockObject, Object... argumentsObjects) {
         return dispatch(frame, RubyArguments.getSelf(frame.getArguments()), receiverObject, blockObject, argumentsObjects);

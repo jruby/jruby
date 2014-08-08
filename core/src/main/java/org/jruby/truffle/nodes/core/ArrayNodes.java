@@ -409,7 +409,7 @@ public abstract class ArrayNodes {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equals = new DispatchHeadNode(context, false, "==", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            equals = new DispatchHeadNode(context, "==", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public EqualNode(EqualNode prev) {
@@ -1155,7 +1155,7 @@ public abstract class ArrayNodes {
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            threeEqual = new DispatchHeadNode(context, false, "===", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            threeEqual = new DispatchHeadNode(context, "===", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public DeleteNode(DeleteNode prev) {
@@ -1730,7 +1730,7 @@ public abstract class ArrayNodes {
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            threeEqual = new DispatchHeadNode(context, false, "===", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            threeEqual = new DispatchHeadNode(context, "===", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public IncludeNode(IncludeNode prev) {
@@ -1941,7 +1941,7 @@ public abstract class ArrayNodes {
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            inspect = new DispatchHeadNode(context, false, "inspect", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            inspect = new DispatchHeadNode(context, "inspect", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public InspectNode(InspectNode prev) {
@@ -2207,7 +2207,7 @@ public abstract class ArrayNodes {
 
         public MaxNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eachNode = new DispatchHeadNode(context, false, "each", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            eachNode = new DispatchHeadNode(context, "each", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
             maxBlock = context.getCoreLibrary().getArrayMaxBlock();
         }
 
@@ -2247,7 +2247,7 @@ public abstract class ArrayNodes {
 
         public MaxBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareNode = new DispatchHeadNode(context, false, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            compareNode = new DispatchHeadNode(context, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public MaxBlockNode(MaxBlockNode prev) {
@@ -2319,7 +2319,7 @@ public abstract class ArrayNodes {
 
         public MinNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eachNode = new DispatchHeadNode(context, false, "each", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            eachNode = new DispatchHeadNode(context, "each", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
             minBlock = context.getCoreLibrary().getArrayMinBlock();
         }
 
@@ -2359,7 +2359,7 @@ public abstract class ArrayNodes {
 
         public MinBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareNode = new DispatchHeadNode(context, false, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            compareNode = new DispatchHeadNode(context, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public MinBlockNode(MinBlockNode prev) {
@@ -3040,7 +3040,7 @@ public abstract class ArrayNodes {
 
         public SortNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            compareDispatchNode = new DispatchHeadNode(context, false, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            compareDispatchNode = new DispatchHeadNode(context, "<=>", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public SortNode(SortNode prev) {
