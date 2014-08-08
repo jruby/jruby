@@ -81,8 +81,12 @@ public class DefineOrGetClassNode extends RubyNode {
         final Object superClassObj = superClass.execute(frame);
 
         if (superClassObj instanceof RubyClass){
+            if (((RubyClass) superClassObj).isSingleton()){
+                throw new RaiseException(context.getCoreLibrary().typeError(("can't make subclass of virtual class"), this));
+            }
+
             return (RubyClass) superClassObj;
         }
-        throw new RaiseException(context.getCoreLibrary().typeErrorIsNotA(superClassObj.toString(), "Class", this));
+        throw new RaiseException(context.getCoreLibrary().typeError(("superclass must be a Class"), this));
     }
 }
