@@ -227,7 +227,7 @@ public abstract class ObjectNodes {
 
         public DupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeDupNode = new DispatchHeadNode(context, "initialize_dup", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initializeDupNode = new DispatchHeadNode(context, true, "initialize_dup", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public DupNode(DupNode prev) {
@@ -251,9 +251,6 @@ public abstract class ObjectNodes {
 
             final RubyBasicObject newObject = self.getRubyClass().newInstance(this);
             newObject.setInstanceVariables(self.getFields());
-            System.out.println("dup called on "+self);
-            System.out.println("calling initialize_dup on " + newObject);
-            final VirtualFrame initializeDupFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, newObject, null), frame.getFrameDescriptor());
             initializeDupNode.dispatch(frame, newObject, null, self);
             return newObject;
         }
@@ -343,7 +340,6 @@ public abstract class ObjectNodes {
             return NilPlaceholder.INSTANCE;
         }
 
-
     }
 
     @CoreMethod(names = "initialize_dup", visibility = Visibility.PRIVATE, minArgs = 1, maxArgs = 1)
@@ -353,7 +349,7 @@ public abstract class ObjectNodes {
 
         public InitializeDupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initializeCopyNode = new DispatchHeadNode(context, "initialize_copy", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initializeCopyNode = new DispatchHeadNode(context, false, "initialize_copy", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public InitializeDupNode(InitializeDupNode prev) {
@@ -364,7 +360,6 @@ public abstract class ObjectNodes {
         @Specialization
         public Object initializeDup(VirtualFrame frame, RubyObject self, RubyObject other) {
             notDesignedForCompilation();
-
             return initializeCopyNode.dispatch(frame, self, null, other);
         }
 

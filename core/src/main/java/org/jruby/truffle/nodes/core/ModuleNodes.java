@@ -434,7 +434,6 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             self.initCopy(other);
-
             return NilPlaceholder.INSTANCE;
         }
 
@@ -447,7 +446,7 @@ public abstract class ModuleNodes {
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            appendFeaturesNode = new DispatchHeadNode(context, "append_features", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            appendFeaturesNode = new DispatchHeadNode(context, false, "append_features", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public IncludeNode(IncludeNode prev) {
@@ -900,7 +899,7 @@ public abstract class ModuleNodes {
         public RubyModule undefMethod(RubyModule module, RubyString name) {
             notDesignedForCompilation();
 
-            final RubyMethod method = module.lookupMethod(name.toString());
+            final RubyMethod method = module.getLookupNode().lookupMethod(name.toString());
             if (method == null) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), module.toString(), this));
             }
@@ -912,7 +911,7 @@ public abstract class ModuleNodes {
         public RubyModule undefMethod(RubyModule module, RubySymbol name) {
             notDesignedForCompilation();
 
-            final RubyMethod method = module.lookupMethod(name.toString());
+            final RubyMethod method = module.getLookupNode().lookupMethod(name.toString());
             if (method == null) {
                 throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), module.toString(), this));
             }

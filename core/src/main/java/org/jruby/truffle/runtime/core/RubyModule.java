@@ -114,6 +114,8 @@ public class RubyModule extends RubyObject implements LookupNode {
         this.methods.putAll(other.methods);
         this.constants.putAll(other.constants);
         this.classVariables.putAll(other.classVariables);
+        this.lookupParent = other.lookupParent;
+        this.lookupNode = other.lookupNode;
     }
 
     public RubyModule getParentModule() {
@@ -124,7 +126,6 @@ public class RubyModule extends RubyObject implements LookupNode {
         RubyNode.notDesignedForCompilation();
 
         checkFrozen(currentNode);
-
         lookupParent = new LookupFork(module, lookupParent);
         newVersion();
         module.addDependent(this);
@@ -221,13 +222,16 @@ public class RubyModule extends RubyObject implements LookupNode {
 
     public void undefMethod(RubyNode currentNode, String methodName) {
         RubyNode.notDesignedForCompilation();
-
-        undefMethod(currentNode, lookupMethod(methodName));
+        final RubyMethod method = lookupMethod(methodName);
+        if (method == null) {
+            undefMethod(currentNode, getLookupNode().lookupMethod(methodName));
+        } else {
+            undefMethod(currentNode, lookupMethod(methodName));
+        }
     }
 
     public void undefMethod(RubyNode currentNode, RubyMethod method) {
         RubyNode.notDesignedForCompilation();
-
         addMethod(currentNode, method.undefined());
     }
 
@@ -323,7 +327,6 @@ public class RubyModule extends RubyObject implements LookupNode {
         // Look in this module
 
         final RubyMethod method = getMethods().get(methodName);
-
         if (method != null) {
             return method;
         }

@@ -35,4 +35,5 @@ public interface LookupNode {
     Set<String> getClassVariables();
 
     void getMethods(Map<String, RubyMethod> methods);
+
 }

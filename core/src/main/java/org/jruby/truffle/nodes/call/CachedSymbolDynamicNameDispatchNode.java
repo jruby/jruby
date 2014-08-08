@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import org.jruby.truffle.runtime.RubyContext;
@@ -28,7 +27,7 @@ public class CachedSymbolDynamicNameDispatchNode extends DynamicNameDispatchNode
     public CachedSymbolDynamicNameDispatchNode(RubyContext context, RubySymbol cachedName, DynamicNameDispatchNode next) {
         super(context);
         this.cachedName = cachedName;
-        dispatchHeadNode = new DispatchHeadNode(context, cachedName.toString(), false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        dispatchHeadNode = new DispatchHeadNode(context, false, cachedName.toString(), false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         this.next = next;
     }
 

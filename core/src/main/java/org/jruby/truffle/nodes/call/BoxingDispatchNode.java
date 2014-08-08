@@ -25,8 +25,8 @@ public class BoxingDispatchNode extends UnboxedDispatchNode {
     @Child protected BoxedDispatchNode next;
     @Child protected BoxingNode boxing;
 
-    public BoxingDispatchNode(RubyContext context, BoxedDispatchNode next) {
-        super(context);
+    public BoxingDispatchNode(RubyContext context, boolean ignoreVisibility, BoxedDispatchNode next) {
+        super(context, ignoreVisibility);
         this.next = next;
         boxing = new BoxingNode(context, null, null);
     }

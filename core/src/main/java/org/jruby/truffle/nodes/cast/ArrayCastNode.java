@@ -12,7 +12,6 @@ package org.jruby.truffle.nodes.cast;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.call.DispatchHeadNode;
 import org.jruby.truffle.runtime.*;
@@ -26,7 +25,7 @@ public abstract class ArrayCastNode extends RubyNode {
 
     public ArrayCastNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        toArrayNode = new DispatchHeadNode(context, "to_ary", false, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
+        toArrayNode = new DispatchHeadNode(context, false, "to_ary", false, DispatchHeadNode.MissingBehavior.RETURN_MISSING);
     }
 
     public ArrayCastNode(ArrayCastNode prev) {

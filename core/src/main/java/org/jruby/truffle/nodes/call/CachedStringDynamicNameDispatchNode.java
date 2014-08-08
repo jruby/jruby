@@ -28,7 +28,7 @@ public class CachedStringDynamicNameDispatchNode extends DynamicNameDispatchNode
     public CachedStringDynamicNameDispatchNode(RubyContext context, RubyString cachedName, DynamicNameDispatchNode next) {
         super(context);
         this.cachedName = cachedName.getBytes();
-        dispatchHeadNode = new DispatchHeadNode(context, cachedName.toString(), false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        dispatchHeadNode = new DispatchHeadNode(context, false, cachedName.toString(), false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         this.next = next;
     }
 

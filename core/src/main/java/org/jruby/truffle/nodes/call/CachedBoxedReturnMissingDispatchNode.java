@@ -29,8 +29,8 @@ public class CachedBoxedReturnMissingDispatchNode extends BoxedDispatchNode {
 
     @Child protected BoxedDispatchNode next;
 
-    public CachedBoxedReturnMissingDispatchNode(RubyContext context, LookupNode expectedLookupNode, BoxedDispatchNode next) {
-        super(context);
+    public CachedBoxedReturnMissingDispatchNode(RubyContext context, boolean ignoreVisibility, LookupNode expectedLookupNode, BoxedDispatchNode next) {
+        super(context, ignoreVisibility);
         this.expectedLookupNode = expectedLookupNode;
         unmodifiedAssumption = expectedLookupNode.getUnmodifiedAssumption();
         this.next = next;

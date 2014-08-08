@@ -41,8 +41,8 @@ public class CachedBoxedMethodMissingDispatchNode extends BoxedDispatchNode {
     @Child protected BoxedDispatchNode next;
     @Child protected DirectCallNode callNode;
 
-    public CachedBoxedMethodMissingDispatchNode(RubyContext context, LookupNode expectedLookupNode, RubyMethod method, String name, BoxedDispatchNode next) {
-        super(context);
+    public CachedBoxedMethodMissingDispatchNode(RubyContext context, boolean ignoreVisibility, LookupNode expectedLookupNode, RubyMethod method, String name, BoxedDispatchNode next) {
+        super(context, ignoreVisibility);
 
         assert expectedLookupNode != null;
         assert method != null;

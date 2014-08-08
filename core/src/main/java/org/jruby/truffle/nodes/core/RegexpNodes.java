@@ -68,7 +68,7 @@ public abstract class RegexpNodes {
 
         public MatchOperatorNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            matchNode = new DispatchHeadNode(context, "=~", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            matchNode = new DispatchHeadNode(context, false, "=~", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public MatchOperatorNode(MatchOperatorNode prev) {

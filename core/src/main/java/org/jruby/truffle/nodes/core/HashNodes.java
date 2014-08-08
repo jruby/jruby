@@ -33,7 +33,7 @@ public abstract class HashNodes {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = new DispatchHeadNode(context, "==", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            equalNode = new DispatchHeadNode(context, false, "==", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public EqualNode(EqualNode prev) {
@@ -200,7 +200,7 @@ public abstract class HashNodes {
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new DispatchHeadNode(context, "eql?", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            eqlNode = new DispatchHeadNode(context, false, "eql?", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public GetIndexNode(GetIndexNode prev) {
@@ -280,7 +280,7 @@ public abstract class HashNodes {
 
         public SetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new DispatchHeadNode(context, "eql?", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            eqlNode = new DispatchHeadNode(context, false, "eql?", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public SetIndexNode(SetIndexNode prev) {
@@ -367,7 +367,7 @@ public abstract class HashNodes {
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new DispatchHeadNode(context, "eql?", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            eqlNode = new DispatchHeadNode(context, false, "eql?", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public DeleteNode(DeleteNode prev) {
@@ -643,7 +643,7 @@ public abstract class HashNodes {
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            inspect = new DispatchHeadNode(context, "inspect", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            inspect = new DispatchHeadNode(context, false, "inspect", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public InspectNode(InspectNode prev) {
@@ -803,7 +803,7 @@ public abstract class HashNodes {
 
         public MergeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new DispatchHeadNode(context, "eql?", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            eqlNode = new DispatchHeadNode(context, false, "eql?", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public MergeNode(MergeNode prev) {
@@ -908,7 +908,7 @@ public abstract class HashNodes {
 
         public KeyNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            eqlNode = new DispatchHeadNode(context, "eql?", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            eqlNode = new DispatchHeadNode(context, false, "eql?", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public KeyNode(KeyNode prev) {

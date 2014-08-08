@@ -24,8 +24,8 @@ public class UninitializedBoxingDispatchNode extends UnboxedDispatchNode {
 
     @Child protected BoxedDispatchNode next;
 
-    public UninitializedBoxingDispatchNode(RubyContext context, BoxedDispatchNode next) {
-        super(context);
+    public UninitializedBoxingDispatchNode(RubyContext context, boolean ignoreVisibility, BoxedDispatchNode next) {
+        super(context, ignoreVisibility);
 
         this.next = next;
     }
@@ -49,7 +49,7 @@ public class UninitializedBoxingDispatchNode extends UnboxedDispatchNode {
          */
 
         if (!(next instanceof UninitializedDispatchNode)) {
-            this.replace(new BoxingDispatchNode(getContext(), next));
+            this.replace(new BoxingDispatchNode(getContext(), getIgnoreVisibility(), next));
         }
 
         return next.dispatch(frame, getContext().getCoreLibrary().box(callingSelf), getContext().getCoreLibrary().box(receiverObject), blockObject, argumentsObjects);
@@ -69,7 +69,7 @@ public class UninitializedBoxingDispatchNode extends UnboxedDispatchNode {
          */
 
         if (!(next instanceof UninitializedDispatchNode)) {
-            this.replace(new BoxingDispatchNode(getContext(), next));
+            this.replace(new BoxingDispatchNode(getContext(), getIgnoreVisibility(), next));
         }
 
         return next.doesRespondTo(frame, getContext().getCoreLibrary().box(receiverObject));

@@ -371,7 +371,7 @@ public abstract class
 
         public IntegerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toInt = new DispatchHeadNode(context, "to_int", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toInt = new DispatchHeadNode(context, false, "to_int", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public IntegerNode(IntegerNode prev) {
@@ -478,7 +478,7 @@ public abstract class
 
         public PNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            inspect = new DispatchHeadNode(context, "inspect", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            inspect = new DispatchHeadNode(context, false, "inspect", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public PNode(PNode prev) {
@@ -588,7 +588,7 @@ public abstract class
 
         public PrettyInspectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toS = new DispatchHeadNode(context, false, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public PrettyInspectNode(PrettyInspectNode prev) {
@@ -679,7 +679,7 @@ public abstract class
 
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            initialize = new DispatchHeadNode(context, "initialize", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            initialize = new DispatchHeadNode(context, false, "initialize", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public RaiseNode(RaiseNode prev) {
@@ -773,7 +773,7 @@ public abstract class
 
         public StringNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+            toS = new DispatchHeadNode(context, false, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
         }
 
         public StringNode(StringNode prev) {

@@ -11,7 +11,6 @@ package org.jruby.truffle.nodes.call;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.*;
-import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.core.*;
 
@@ -41,8 +40,8 @@ public class DispatchHeadNode extends DispatchNode {
         this.name = name;
         this.isSplatted = isSplatted;
 
-        final UninitializedDispatchNode uninitializedDispatch = new UninitializedDispatchNode(context, name, missingBehavior);
-        dispatch = new UninitializedBoxingDispatchNode(context, uninitializedDispatch);
+        final UninitializedDispatchNode uninitializedDispatch = new UninitializedDispatchNode(context, ignoreVisibility, name, missingBehavior);
+        dispatch = new UninitializedBoxingDispatchNode(context, ignoreVisibility, uninitializedDispatch);
     }
 
 

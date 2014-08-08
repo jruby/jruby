@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.*;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.*;
 import org.jruby.truffle.nodes.*;
@@ -30,7 +29,7 @@ public final class InterpolatedStringNode extends RubyNode {
     public InterpolatedStringNode(RubyContext context, SourceSection sourceSection, RubyNode[] children) {
         super(context, sourceSection);
         this.children = children;
-        toS = new DispatchHeadNode(context, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
+        toS = new DispatchHeadNode(context, false, "to_s", false, DispatchHeadNode.MissingBehavior.CALL_METHOD_MISSING);
     }
 
     @ExplodeLoop

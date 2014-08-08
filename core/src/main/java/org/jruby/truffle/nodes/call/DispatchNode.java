@@ -31,10 +31,6 @@ public class DispatchNode extends Node {
         this.ignoreVisibility = ignoreVisibility;
     }
 
-    public DispatchNode(RubyContext context) {
-        this(context, false);
-    }
-
     /**
      * Get the depth of this node in the dispatch chain. The first node below
      * {@link DispatchHeadNode} is at depth 1.
@@ -108,5 +104,6 @@ public class DispatchNode extends Node {
         return context;
     }
 
-    public boolean getIgnoreVisibility () { return ignoreVisibility; }
+    public boolean getIgnoreVisibility() { return ignoreVisibility; }
+
 }

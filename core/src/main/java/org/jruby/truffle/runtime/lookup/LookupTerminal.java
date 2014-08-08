@@ -52,6 +52,6 @@ public class LookupTerminal implements LookupNode {
         return Collections.emptySet();
     }
 
-    public void getMethods(Map<String, RubyMethod> methods) {
-    }
+    public void getMethods(Map<String, RubyMethod> methods) { }
+
 }
