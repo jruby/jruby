@@ -13,8 +13,9 @@
   <properties>
     <jruby.home>${basedir}/..</jruby.home>
     <tesla.dump.readonly>true</tesla.dump.readonly>
+    <jruby.plugins.version>1.0.4</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
-    <tesla.version>0.1.0</tesla.version>
+    <tesla.version>0.1.1</tesla.version>
   </properties>
   <dependencies>
     <dependency>
@@ -76,6 +77,13 @@
       <version>0.0.5</version>
       <type>gem</type>
     </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>ruby-maven</artifactId>
+      <version>3.1.1.0.8</version>
+      <type>gem</type>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
   <repositories>
     <repository>
@@ -103,95 +111,6 @@
         <configuration>
           <skip>true</skip>
         </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy gems</id>
-            <phase>package</phase>
-            <goals>
-              <goal>copy</goal>
-            </goals>
-            <configuration>
-              <useBaseVersion>true</useBaseVersion>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>rubygems</groupId>
-                  <artifactId>jruby-openssl</artifactId>
-                  <version>0.9.5</version>
-                  <type>gem</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>rubygems</groupId>
-                  <artifactId>rake</artifactId>
-                  <version>${rake.version}</version>
-                  <type>gem</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>rubygems</groupId>
-                  <artifactId>rdoc</artifactId>
-                  <version>${rdoc.version}</version>
-                  <type>gem</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>rubygems</groupId>
-                  <artifactId>json</artifactId>
-                  <version>${json.version}</version>
-                  <type>gem</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>rubygems</groupId>
-                  <artifactId>krypt</artifactId>
-                  <version>0.0.2</version>
-                  <type>gem</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>rubygems</groupId>
-                  <artifactId>krypt-core</artifactId>
-                  <version>0.0.2</version>
-                  <type>gem</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>rubygems</groupId>
-                  <artifactId>krypt-provider-jdk</artifactId>
-                  <version>0.0.2</version>
-                  <type>gem</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>rubygems</groupId>
-                  <artifactId>ffi</artifactId>
-                  <version>1.9.3</version>
-                  <type>gem</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>rubygems</groupId>
-                  <artifactId>jar-dependencies</artifactId>
-                  <version>0.0.5</version>
-                  <type>gem</type>
-                  <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                </artifactItem>
-              </artifactItems>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>io.tesla.polyglot</groupId>
